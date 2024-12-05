@@ -29,11 +29,11 @@ func getAllRoutingSkillGroups(ctx context.Context, clientConfig *platformclientv
 
 	allSkillGroups, resp, err := proxy.getAllRoutingSkillGroups(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get routing skill groups: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing skill groups: %v", err), resp)
 	}
 
 	for _, skillGroup := range *allSkillGroups {
-		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{Name: *skillGroup.Name}
+		resources[*skillGroup.Id] = &resourceExporter.ResourceMeta{BlockLabel: *skillGroup.Name}
 	}
 
 	return resources, nil
@@ -56,13 +56,13 @@ func createSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	if skillConditions := d.Get("skill_conditions").(string); skillConditions != "" {
 		if err := json.Unmarshal([]byte(skillConditions), &createRequestBody.SkillConditions); err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON skill conditions while creating the skills group %v", &createRequestBody.Name), err)
+			return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to unmarshal the JSON skill conditions while creating the skills group %v", &createRequestBody.Name), err)
 		}
 	}
 
 	group, response, err := proxy.createRoutingSkillGroups(ctx, &createRequestBody)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create skill groups %v error: %s", &createRequestBody.Name, err), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create skill groups %v error: %s", &createRequestBody.Name, err), response)
 	}
 
 	d.SetId(*group.Id)
@@ -79,7 +79,7 @@ func createSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSkillGroupsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSkillGroup(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading skills group %s", d.Id())
 
@@ -87,9 +87,9 @@ func readSkillGroups(ctx context.Context, d *schema.ResourceData, meta interface
 		skillGroup, resp, err := proxy.getRoutingSkillGroupsById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read skill groups %s | error: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", skillGroup.Name)
@@ -140,13 +140,13 @@ func updateSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	if SkillConditions := d.Get("skill_conditions").(string); SkillConditions != "" {
 		if err := json.Unmarshal([]byte(SkillConditions), &updateRequestBody.SkillConditions); err != nil {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to unmarshal the JSON skill conditions while updating the skills group %v", &updateRequestBody.Name), err)
+			return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to unmarshal the JSON skill conditions while updating the skills group %v", &updateRequestBody.Name), err)
 		}
 	}
 
 	group, resp, err := proxy.updateRoutingSkillGroups(ctx, d.Id(), &updateRequestBody)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update skill groups %v error: %s", &updateRequestBody.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update skill groups %v error: %s", &updateRequestBody.Name, err), resp)
 	}
 
 	log.Printf("Updated skill group %v", &group.Name)
@@ -166,7 +166,7 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Deleting skill group %s", d.Id())
 	resp, err := proxy.deleteRoutingSkillGroups(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete skill group %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete skill group %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -176,9 +176,9 @@ func deleteSkillGroups(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted skills group %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting skill group %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting skill group %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Skill group %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Skill group %s still exists", d.Id()), resp))
 	})
 }
 
@@ -218,7 +218,7 @@ func createRoutingSkillGroupsMemberDivisions(ctx context.Context, d *schema.Reso
 
 	resp, err := proxy.createRoutingSkillGroupsMemberDivision(ctx, d.Id(), reqBody)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update skill group %s member divisions error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update skill group %s member divisions error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated skill group %s member divisions", d.Id())
@@ -233,7 +233,7 @@ func readSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 
 	memberDivisions, resp, err := proxy.getRoutingSkillGroupsMemberDivison(ctx, d.Id())
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get member divisions for skill group %s error: %s", d.Id(), err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get member divisions for skill group %s error: %s", d.Id(), err), resp)
 	}
 
 	skillGroupMemberDivisionIds := make([]string, 0)
@@ -247,14 +247,14 @@ func readSkillGroupMemberDivisions(ctx context.Context, d *schema.ResourceData, 
 }
 
 func GenerateRoutingSkillGroupResourceBasic(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description="%s"
 	}
-	`, resourceName, resourceID, name, description)
+	`, ResourceType, resourceLabel, name, description)
 }
 
 // Todo: remove once auth divisions is refactored into its own package
@@ -291,7 +291,7 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		}
 
 		for _, division := range *divisions.Entities {
-			resources[*division.Id] = &resourceExporter.ResourceMeta{Name: *division.Name}
+			resources[*division.Id] = &resourceExporter.ResourceMeta{BlockLabel: *division.Name}
 		}
 	}
 

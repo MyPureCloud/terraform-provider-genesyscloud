@@ -156,7 +156,7 @@ func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus)
 }
 
 func GenerateOutboundContactListContact(
-	resourceId,
+	resourceLabel,
 	contactListId,
 	contactId,
 	callable,
@@ -169,7 +169,7 @@ func GenerateOutboundContactListContact(
     callable        = %s
     %s
     %s
-}`, resourceName, resourceId, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
+}`, ResourceType, resourceLabel, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
 }
 
 func GeneratePhoneNumberStatus(key, callable string) string {

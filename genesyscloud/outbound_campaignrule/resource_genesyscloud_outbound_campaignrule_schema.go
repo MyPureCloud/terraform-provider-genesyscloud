@@ -1,11 +1,12 @@
 package outbound_campaignrule
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -16,7 +17,7 @@ resource_genesycloud_outbound_campaignrule_schema.go holds four functions within
 3.  The datasource schema definitions for the outbound_campaignrule datasource.
 4.  The resource exporter configuration for the outbound_campaignrule exporter.
 */
-const resourceName = "genesyscloud_outbound_campaignrule"
+const ResourceType = "genesyscloud_outbound_campaignrule"
 
 var (
 	outboundCampaignRuleEntities = &schema.Resource{
@@ -58,9 +59,9 @@ var (
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundCampaignrule())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundCampaignrule())
-	regInstance.RegisterExporter(resourceName, OutboundCampaignruleExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundCampaignrule())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundCampaignrule())
+	regInstance.RegisterExporter(ResourceType, OutboundCampaignruleExporter())
 }
 
 // ResourceOutboundCampaignrule registers the genesyscloud_outbound_campaignrule resource with Terraform

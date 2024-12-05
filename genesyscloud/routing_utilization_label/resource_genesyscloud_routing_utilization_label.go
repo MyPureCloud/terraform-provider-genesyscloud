@@ -26,11 +26,11 @@ func getAllRoutingUtilizationLabels(ctx context.Context, clientConfig *platformc
 
 	labels, resp, getErr := proxy.getAllRoutingUtilizationLabels(ctx, "")
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of labels error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of labels error: %s", getErr), resp)
 	}
 
 	for _, label := range *labels {
-		resources[*label.Id] = &resourceExporter.ResourceMeta{Name: *label.Name}
+		resources[*label.Id] = &resourceExporter.ResourceMeta{BlockLabel: *label.Name}
 	}
 	return resources, nil
 }
@@ -46,7 +46,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 		Name: &name,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create label %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create label %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*label.Id)
@@ -58,7 +58,7 @@ func createRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingUtilizationLabelProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilizationLabel(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading label %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -66,9 +66,9 @@ func readRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, me
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read label %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		_ = d.Set("name", *label.Name)
@@ -89,7 +89,7 @@ func updateRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 		Name: &name,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update label %s error: %s", id, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update label %s error: %s", id, err), resp)
 	}
 
 	log.Printf("Updated label %s", id)
@@ -105,7 +105,7 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 	resp, err := proxy.deleteRoutingUtilizationLabel(ctx, d.Id(), true)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete label %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete label %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -116,8 +116,8 @@ func deleteRoutingUtilizationLabel(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted Routing label %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Routing label %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Routing label %s: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Routing label %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Routing label %s still exists", d.Id()), resp))
 	})
 }

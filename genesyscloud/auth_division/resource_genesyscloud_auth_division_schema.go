@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_auth_division"
+const ResourceType = "genesyscloud_auth_division"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceAuthDivision())
-	regInstance.RegisterDataSource(resourceName, DataSourceAuthDivision())
-	regInstance.RegisterExporter(resourceName, AuthDivisionExporter())
+	regInstance.RegisterResource(ResourceType, ResourceAuthDivision())
+	regInstance.RegisterDataSource(ResourceType, DataSourceAuthDivision())
+	regInstance.RegisterExporter(ResourceType, AuthDivisionExporter())
 }
 
 func ResourceAuthDivision() *schema.Resource {

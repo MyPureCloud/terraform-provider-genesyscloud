@@ -23,14 +23,14 @@ tests for task_management_workbin.
 func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 	t.Parallel()
 	var (
-		workbinResId    = "workbin_1"
-		workbinName     = "tf_workbin_" + uuid.NewString()
-		workDescription = "created for CX as Code test case"
+		workbinResourceLabel = "workbin_1"
+		workbinName          = "tf_workbin_" + uuid.NewString()
+		workDescription      = "created for CX as Code test case"
 
-		divisionResId1 = "div_1"
-		divisionName1  = "tf_div_1_" + uuid.NewString()
-		divisionResId2 = "div_2"
-		divisionName2  = "tf_div_2_" + uuid.NewString()
+		divisionResourceLabel1 = "div_1"
+		divisionName1          = "tf_div_1_" + uuid.NewString()
+		divisionResourceLabel2 = "div_2"
+		divisionName2          = "tf_div_2_" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -39,31 +39,31 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Default division
 			{
-				Config: GenerateWorkbinResource(workbinResId, workbinName, workDescription, nullValue) +
+				Config: GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, nullValue) +
 					"\n data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "name", workbinName),
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "description", workDescription),
-					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResId, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "name", workbinName),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "description", workDescription),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+workbinResourceLabel, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
 				),
 			},
 			// Change division
 			{
-				Config: authDivision.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
-					authDivision.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
-					GenerateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId1+".id"),
+				Config: authDivision.GenerateAuthDivisionBasic(divisionResourceLabel1, divisionName1) +
+					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel2, divisionName2) +
+					GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, "genesyscloud_auth_division."+divisionResourceLabel1+".id"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "name", workbinName),
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResId, "description", workDescription),
-					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResId, "division_id", "genesyscloud_auth_division."+divisionResId1, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "name", workbinName),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "description", workDescription),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+workbinResourceLabel, "division_id", "genesyscloud_auth_division."+divisionResourceLabel1, "id"),
 				),
 			},
 			{
-				Config: authDivision.GenerateAuthDivisionBasic(divisionResId1, divisionName1) +
-					authDivision.GenerateAuthDivisionBasic(divisionResId2, divisionName2) +
-					GenerateWorkbinResource(workbinResId, workbinName, workDescription, "genesyscloud_auth_division."+divisionResId2+".id"),
+				Config: authDivision.GenerateAuthDivisionBasic(divisionResourceLabel1, divisionName1) +
+					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel2, divisionName2) +
+					GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, "genesyscloud_auth_division."+divisionResourceLabel2+".id"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResId, "division_id", "genesyscloud_auth_division."+divisionResId2, "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+workbinResourceLabel, "division_id", "genesyscloud_auth_division."+divisionResourceLabel2, "id"),
 				),
 			},
 		},

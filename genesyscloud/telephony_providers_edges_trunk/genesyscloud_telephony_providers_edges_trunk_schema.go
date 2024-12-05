@@ -1,17 +1,18 @@
 package telephony_providers_edges_trunk
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_telephony_providers_edges_trunk"
+const ResourceType = "genesyscloud_telephony_providers_edges_trunk"
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceTrunk())
-	l.RegisterResource(resourceName, ResourceTrunk())
-	l.RegisterExporter(resourceName, TrunkExporter())
+	l.RegisterDataSource(ResourceType, DataSourceTrunk())
+	l.RegisterResource(ResourceType, ResourceTrunk())
+	l.RegisterExporter(ResourceType, TrunkExporter())
 }
 
 func DataSourceTrunk() *schema.Resource {

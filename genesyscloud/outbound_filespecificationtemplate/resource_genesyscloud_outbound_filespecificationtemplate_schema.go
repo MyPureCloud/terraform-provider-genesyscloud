@@ -1,14 +1,15 @@
 package outbound_filespecificationtemplate
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_outbound_filespecificationtemplate"
+const ResourceType = "genesyscloud_outbound_filespecificationtemplate"
 
 var (
 	outboundFileSpecificationTemplateColumnInformationResource = &schema.Resource{
@@ -149,9 +150,9 @@ func dataSourceOutboundFileSpecificationTemplate() *schema.Resource {
 }
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, dataSourceOutboundFileSpecificationTemplate())
-	l.RegisterResource(resourceName, ResourceOutboundFileSpecificationTemplate())
-	l.RegisterExporter(resourceName, OutboundFileSpecificationTemplateExporter())
+	l.RegisterDataSource(ResourceType, dataSourceOutboundFileSpecificationTemplate())
+	l.RegisterResource(ResourceType, ResourceOutboundFileSpecificationTemplate())
+	l.RegisterExporter(ResourceType, OutboundFileSpecificationTemplateExporter())
 }
 
 func OutboundFileSpecificationTemplateExporter() *resourceExporter.ResourceExporter {

@@ -20,7 +20,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingSkill()
+	providerResources[ResourceType] = ResourceRoutingSkill()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingSkill()
+	providerDataSources[ResourceType] = DataSourceRoutingSkill()
 }
 
 // initTestResources initializes all test resources and data sources.

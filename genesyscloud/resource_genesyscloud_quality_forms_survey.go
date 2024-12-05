@@ -217,7 +217,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, surveyForm := range *surveyForms.Entities {
-			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{Name: *surveyForm.Name}
+			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{BlockLabel: *surveyForm.Name}
 		}
 	}
 
@@ -347,7 +347,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm(), constants.DefaultConsistencyChecks, "genesyscloud_quality_forms_survey")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm(), constants.ConsistencyChecks(), "genesyscloud_quality_forms_survey")
 
 	log.Printf("Reading survey form %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -629,7 +629,7 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 	return questionList
 }
 
-func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct) string {
+func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStruct) string {
 	form := fmt.Sprintf(`resource "genesyscloud_quality_forms_survey" "%s" {
 		name = "%s"
 		published = %v
@@ -640,7 +640,7 @@ func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct)
 		%s
         %s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		surveyForm.Name,
 		surveyForm.Published,
 		surveyForm.Disabled,

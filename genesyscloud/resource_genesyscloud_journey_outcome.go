@@ -110,7 +110,7 @@ func getAllJourneyOutcomes(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, journeyOutcome := range *journeyOutcomes.Entities {
-			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{Name: *journeyOutcome.DisplayName}
+			resources[*journeyOutcome.Id] = &resourceExporter.ResourceMeta{BlockLabel: *journeyOutcome.DisplayName}
 		}
 
 		pageCount = *journeyOutcomes.PageCount
@@ -160,7 +160,7 @@ func createJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta inte
 func readJourneyOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcome(), constants.DefaultConsistencyChecks, "genesyscloud_journey_outcome")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcome(), constants.ConsistencyChecks(), "genesyscloud_journey_outcome")
 
 	log.Printf("Reading journey outcome %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

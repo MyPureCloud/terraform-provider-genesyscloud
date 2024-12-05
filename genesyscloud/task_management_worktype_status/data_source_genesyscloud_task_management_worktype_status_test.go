@@ -2,13 +2,14 @@ package task_management_worktype_status
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	workType "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+
+	"github.com/google/uuid"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
@@ -21,27 +22,27 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 	t.Parallel()
 	var (
 		// Workbin
-		wbResourceId  = "workbin_1"
-		wbName        = "wb_" + uuid.NewString()
-		wbDescription = "workbin created for CX as Code test case"
+		wbResourceLabel = "workbin_1"
+		wbName          = "wb_" + uuid.NewString()
+		wbDescription   = "workbin created for CX as Code test case"
 
 		// Schema
-		wsResourceId  = "schema_1"
-		wsName        = "ws_" + uuid.NewString()
-		wsDescription = "workitem schema created for CX as Code test case"
+		wsResourceLabel = "schema_1"
+		wsName          = "ws_" + uuid.NewString()
+		wsDescription   = "workitem schema created for CX as Code test case"
 
 		// Worktype
-		wtResourceId  = "worktype_id"
-		wtName        = "wt_" + uuid.NewString()
-		wtDescription = "test worktype description"
+		wtResourceLabel = "worktype_id"
+		wtName          = "wt_" + uuid.NewString()
+		wtDescription   = "test worktype description"
 
 		// Status Resource
-		statusResourceId = "status_resource"
-		statusName       = "status-" + uuid.NewString()
-		statusCategory   = "Open"
+		statusResourceLabel = "status_resource"
+		statusName          = "status-" + uuid.NewString()
+		statusCategory      = "Open"
 
 		// Status Data Source
-		statusDataSourceId = "status_data"
+		statusDataSourceLabel = "status_data"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -49,19 +50,19 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
-					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
+				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
 					workType.GenerateWorktypeResourceBasic(
-						wtResourceId,
+						wtResourceLabel,
 						wtName,
 						wtDescription,
-						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
-						fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceId),
+						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+						fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 						"",
 					) +
 					GenerateWorktypeStatusResource(
-						statusResourceId,
-						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceId),
+						statusResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						statusName,
 						statusCategory,
 						"",
@@ -69,14 +70,14 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 						"",
 					) +
 					generateWorktypeStatusDataSource(
-						statusDataSourceId,
-						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceId),
+						statusDataSourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						statusName,
-						resourceName+"."+statusResourceId,
+						ResourceType+"."+statusResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStatusIds(
-						fmt.Sprintf("data.%s.%s", resourceName, statusDataSourceId), "id", fmt.Sprintf("%s.%s", resourceName, statusResourceId), "id",
+						fmt.Sprintf("data.%s.%s", ResourceType, statusDataSourceLabel), "id", fmt.Sprintf("%s.%s", ResourceType, statusResourceLabel), "id",
 					),
 				),
 			},
@@ -84,11 +85,11 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 	})
 }
 
-func generateWorktypeStatusDataSource(dataSourceId string, worktypeId string, name string, dependsOnResource string) string {
+func generateWorktypeStatusDataSource(dataSourceLabel string, worktypeId string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		worktype_id = %s
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceId, worktypeId, name, dependsOnResource)
+	`, ResourceType, dataSourceLabel, worktypeId, name, dependsOnResource)
 }

@@ -29,7 +29,7 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 	clients, resp, getErr := oauthClientProxy.getAllOAuthClients(ctx)
 
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of oauth clients error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of oauth clients error: %s", getErr), resp)
 	}
 
 	for _, client := range *clients {
@@ -37,7 +37,7 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 			// Don't include clients disabled by support
 			continue
 		}
-		resources[*client.Id] = &resourceExporter.ResourceMeta{Name: *client.Name}
+		resources[*client.Id] = &resourceExporter.ResourceMeta{BlockLabel: *client.Name}
 	}
 	return resources, nil
 }
@@ -77,11 +77,11 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	client, resp, err := oauthClientProxy.createOAuthClient(ctx, *oauthRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create oauth client %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create oauth client %s error: %s", name, err), resp)
 	}
 
 	if client == nil || client.Id == nil {
-		return util.BuildAPIDiagnosticError(resourceName, "failed to retrieve client ID from createOAuthClient.", resp)
+		return util.BuildAPIDiagnosticError(ResourceType, "failed to retrieve client ID from createOAuthClient.", resp)
 	}
 
 	createCredential(ctx, d, client, oauthClientProxy)
@@ -94,7 +94,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oAuthProxy := GetOAuthClientProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOAuthClient(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading oauth client %s", d.Id())
 
@@ -102,9 +102,9 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 		client, resp, getErr := oAuthProxy.getOAuthClient(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read oauth client %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", client.Name)
@@ -160,7 +160,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	resp, err := oauthClientProxy.deleteOAuthClient(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete oauth client %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete oauth client %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -171,7 +171,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted OAuth client %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting OAuth client %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting OAuth client %s | error: %s", d.Id(), err), resp))
 		}
 
 		if oauthClient.State != nil && *oauthClient.State == "deleted" {
@@ -179,7 +179,7 @@ func deleteOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 			log.Printf("Deleted OAuth client %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("OAuth client %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("OAuth client %s still exists", d.Id()), resp))
 	})
 }
 
@@ -189,7 +189,7 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 	//Step #1 Retrieve the parent oauth client from the token API and check to make sure it is not a client credential grant
 	tokenInfo, resp, err := op.getParentOAuthClientToken(ctx)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error trying to retrieve the token for the OAuth client running our CX as Code provider %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error trying to retrieve the token for the OAuth client running our CX as Code provider %s", err), resp)
 	}
 
 	if *tokenInfo.OAuthClient.Organization.Id != "purecloud-builtin" {
@@ -201,17 +201,17 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 	log.Printf("The OAuth Client being used is purecloud-builtin. Retrieving the user running the terraform client and assigning the target role to them.")
 	terraformUser, resp, err := op.GetTerraformUser(ctx)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieved the terraform user running this terraform code %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieved the terraform user running this terraform code %s", err), resp)
 	}
 
 	if terraformUser == nil || terraformUser.Id == nil {
-		return util.BuildAPIDiagnosticError(resourceName, "Failed to retrieve the terraform user ID with the function GetTerraformUser", resp)
+		return util.BuildAPIDiagnosticError(ResourceType, "Failed to retrieve the terraform user ID with the function GetTerraformUser", resp)
 	}
 
 	//Step #3: Lookup the users addedRoles
 	userRoles, resp, err := op.GetTerraformUserRoles(ctx, *terraformUser.Id)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve the terraform user addedRoles running this terraform code %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve the terraform user addedRoles running this terraform code %s", err), resp)
 	}
 
 	var totalRoles []string
@@ -237,7 +237,7 @@ func updateTerraformUserWithRole(ctx context.Context, sdkConfig *platformclientv
 	//Step #5 - Update addedRoles
 	_, resp, err = op.UpdateTerraformUserRoles(ctx, *terraformUser.Id, totalRoles)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update the terraform user addedRoles running this terraform code %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update the terraform user addedRoles running this terraform code %s", err), resp)
 	}
 
 	//Do not remove this sleep.  The auth service is a mishmash of caches and eventually consistency.  After we perform an update we need
@@ -275,7 +275,7 @@ func cascadeUpdateOAuthClient(ctx context.Context, d *schema.ResourceData, meta 
 		RoleDivisions:              roles,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update oauth client %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update oauth client %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated oauth client %s", name)
@@ -286,7 +286,7 @@ func cascadeUpdateOAuthClient(ctx context.Context, d *schema.ResourceData, meta 
 		if credentialId != nil {
 			currentCredential, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, *credentialId)
 			if getErr != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration credential %s %s", *credentialId, getErr), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration credential %s %s", *credentialId, getErr), resp)
 			}
 
 			if currentCredential != nil {
@@ -325,7 +325,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 		log.Printf("Creating Integration Credential client %s", *credentialName)
 		credential, resp, err := oauthClientProxy.createIntegrationClient(ctx, createCredential)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", *credentialName, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create credential %s error: %s", *credentialName, err), resp)
 		}
 
 		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
@@ -356,7 +356,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, client *platf
 		credential, resp, err := oauthClientProxy.updateIntegrationClient(ctx, *credentialId, updateCred)
 
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update credential %s error: %s", *credentialName, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update credential %s error: %s", *credentialName, err), resp)
 		}
 
 		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
@@ -374,11 +374,11 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, oauthClientPr
 		log.Printf("Deleting integration credential %s", *credentialId)
 		_, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, *credentialId)
 		if getErr != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration credential %s %s", *credentialId, getErr), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration credential %s %s", *credentialId, getErr), resp)
 		}
 		_, err := oauthClientProxy.deleteIntegrationCredential(ctx, *credentialId)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete integration credential %s %s", *credentialId, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete integration credential %s %s", *credentialId, err), resp)
 		}
 		log.Printf("Deleted Integration Credential client %s", *credentialId)
 

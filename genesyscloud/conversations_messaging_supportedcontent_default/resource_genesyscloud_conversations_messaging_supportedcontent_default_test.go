@@ -23,12 +23,12 @@ tests for conversations_messaging_supportedcontent_default.
 func TestAccResourceConversationsMessagingSupportedcontentDefault(t *testing.T) {
 	t.Parallel()
 	var (
-		defaultResource = "testSupportedDefaultContent"
+		defaultResourceLabel = "testSupportedDefaultContent"
 
-		name         = "Terraform Supported Content - " + uuid.NewString()
-		resourceId   = "testSupportedContent"
-		inboundType  = "*/*"
-		outboundType = "*/*"
+		name          = "Terraform Supported Content - " + uuid.NewString()
+		resourceLabel = "testSupportedContent"
+		inboundType   = "*/*"
+		outboundType  = "*/*"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -38,37 +38,37 @@ func TestAccResourceConversationsMessagingSupportedcontentDefault(t *testing.T) 
 			{
 				Config: supportedContent.GenerateSupportedContentResource(
 					"genesyscloud_conversations_messaging_supportedcontent",
-					resourceId,
+					resourceLabel,
 					name,
 					supportedContent.GenerateInboundTypeBlock(inboundType),
 					supportedContent.GenerateOutboundTypeBlock(outboundType),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.inbound.0.type", inboundType),
-					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceId, "media_types.0.allow.0.outbound.0.type", outboundType),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "media_types.0.allow.0.inbound.0.type", inboundType),
+					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "media_types.0.allow.0.outbound.0.type", outboundType),
 				),
 			},
 			{
 				Config: supportedContent.GenerateSupportedContentResource(
 					"genesyscloud_conversations_messaging_supportedcontent",
-					resourceId,
+					resourceLabel,
 					name,
 					supportedContent.GenerateInboundTypeBlock(inboundType),
 					supportedContent.GenerateOutboundTypeBlock(outboundType),
 				) +
 					GenerateSupportedContentDefaultResource(
-						defaultResource,
-						"genesyscloud_conversations_messaging_supportedcontent."+resourceId+".id",
+						defaultResourceLabel,
+						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabel+".id",
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_supportedcontent_default."+defaultResource, "content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_conversations_messaging_supportedcontent_default."+defaultResourceLabel, "content_id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_conversations_messaging_supportedcontent_default." + defaultResource,
+				ResourceName:      "genesyscloud_conversations_messaging_supportedcontent_default." + defaultResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -78,14 +78,14 @@ func TestAccResourceConversationsMessagingSupportedcontentDefault(t *testing.T) 
 }
 
 func GenerateSupportedContentDefaultResource(
-	resourceId string,
+	resourceLabel string,
 	id string,
 ) string {
 	return fmt.Sprintf(`
 		resource "genesyscloud_conversations_messaging_supportedcontent_default" "%s" {
 			content_id = %s
 		}
-	`, resourceId, id)
+	`, resourceLabel, id)
 }
 
 func testVerifyConversationsMessagingSupportedcontentDefaultDestroyed(state *terraform.State) error {

@@ -1,10 +1,11 @@
 package journey_outcome_predictor
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -14,12 +15,12 @@ resource_genesycloud_journey_outcome_predictor_schema.go holds four functions wi
 2.  The resource schema definitions for the journey_outcome_predictor resource.
 3.  The resource exporter configuration for the journey_outcome_predictor exporter.
 */
-const resourceName = "genesyscloud_journey_outcome_predictor"
+const ResourceType = "genesyscloud_journey_outcome_predictor"
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceJourneyOutcomePredictor())
-	regInstance.RegisterExporter(resourceName, JourneyOutcomePredictorExporter())
+	regInstance.RegisterResource(ResourceType, ResourceJourneyOutcomePredictor())
+	regInstance.RegisterExporter(ResourceType, JourneyOutcomePredictorExporter())
 }
 
 // ResourceJourneyOutcomePredictor registers the genesyscloud_journey_outcome_predictor resource with Terraform

@@ -22,9 +22,9 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOutboundWrapUpCodeMappings()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceOutboundWrapUpCodeMappings()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 
 }
 

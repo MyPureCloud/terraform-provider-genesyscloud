@@ -21,25 +21,25 @@ func TestAccDataSourceTaskManagementWorktype(t *testing.T) {
 	t.Parallel()
 	var (
 		// Workbin
-		wbResourceId  = "workbin_1"
-		wbName        = "wb_" + uuid.NewString()
-		wbDescription = "workbin created for CX as Code test case"
+		wbResourceLabel = "workbin_1"
+		wbName          = "wb_" + uuid.NewString()
+		wbDescription   = "workbin created for CX as Code test case"
 
 		// Schema
-		wsResourceId  = "schema_1"
-		wsName        = "ws_" + uuid.NewString()
-		wsDescription = "workitem schema created for CX as Code test case"
+		wsResourceLabel = "schema_1"
+		wsName          = "ws_" + uuid.NewString()
+		wsDescription   = "workitem schema created for CX as Code test case"
 
 		// Worktype
 		wtRes = worktypeConfig{
-			resID:            "worktype_1",
+			resourceLabel:    "worktype_1",
 			name:             "tf_worktype_" + uuid.NewString(),
 			description:      "worktype created for CX as Code test case",
-			defaultWorkbinId: fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceId),
-			schemaId:         fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceId),
+			defaultWorkbinId: fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+			schemaId:         fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 		}
 
-		dataSourceId = "data_worktype_1"
+		dataSourceLabel = "data_worktype_1"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -47,22 +47,22 @@ func TestAccDataSourceTaskManagementWorktype(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: workbin.GenerateWorkbinResource(wbResourceId, wbName, wbDescription, util.NullValue) +
-					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceId, wsName, wsDescription) +
-					GenerateWorktypeResourceBasic(wtRes.resID, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, "") +
-					generateWorktypeDataSource(dataSourceId, wtRes.name, resourceName+"."+wtRes.resID),
+				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
+					GenerateWorktypeResourceBasic(wtRes.resourceLabel, wtRes.name, wtRes.description, wtRes.defaultWorkbinId, wtRes.schemaId, "") +
+					generateWorktypeDataSource(dataSourceLabel, wtRes.name, ResourceType+"."+wtRes.resourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceId, "id", resourceName+"."+wtRes.resID, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id", ResourceType+"."+wtRes.resourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateWorktypeDataSource(dataSourceId string, name string, dependsOnResource string) string {
+func generateWorktypeDataSource(dataSourceLabel string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceId, name, dependsOnResource)
+	`, ResourceType, dataSourceLabel, name, dependsOnResource)
 }

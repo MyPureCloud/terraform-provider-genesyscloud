@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_idp_okta"] = ResourceIdpOkta()
+	providerResources[ResourceType] = ResourceIdpOkta()
 }
 
 // initTestResources initializes all test_data resources and data sources.

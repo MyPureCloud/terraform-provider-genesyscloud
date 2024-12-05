@@ -33,22 +33,22 @@ func getAllAuthOutboundRuleset(ctx context.Context, clientConfig *platformclient
 
 	rulesets, resp, rsErr := proxy.getAllOutboundRuleset(ctx)
 	if rsErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get rulesets error: %s", rsErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get rulesets error: %s", rsErr), resp)
 	}
 
 	// DEVTOOLING-319: filters rule sets by removing the ones that reference skills that no longer exist in GC
 	skillMap, skillErr := routingSkill.GetAllRoutingSkills(ctx, clientConfig)
 	if skillErr != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get skill resources"), fmt.Errorf("%v", skillErr))
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get skill resources"), fmt.Errorf("%v", skillErr))
 	}
 	filteredRuleSets, filterErr := filterOutboundRulesets(*rulesets, skillMap)
 	if filterErr != nil {
-		return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to filter outbound rulesets"), fmt.Errorf("%v", filterErr))
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to filter outbound rulesets"), fmt.Errorf("%v", filterErr))
 	}
 
 	for _, ruleset := range filteredRuleSets {
 		log.Printf("Dealing with ruleset id : %s", *ruleset.Id)
-		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{Name: *ruleset.Name}
+		resources[*ruleset.Id] = &resourceExporter.ResourceMeta{BlockLabel: *ruleset.Name}
 	}
 	return resources, nil
 }
@@ -85,7 +85,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	ruleset, resp, err := proxy.createOutboundRuleset(ctx, &outboundRuleset)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create ruleset %s error: %s", *outboundRuleset.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create ruleset %s error: %s", *outboundRuleset.Name, err), resp)
 	}
 
 	d.SetId(*ruleset.Id)
@@ -97,7 +97,7 @@ func createOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newOutboundRulesetProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundRuleset(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Ruleset %s", d.Id())
 
@@ -105,9 +105,9 @@ func readOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta inter
 		ruleset, resp, getErr := proxy.getOutboundRulesetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Ruleset %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Ruleset %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Ruleset %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Ruleset %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", ruleset.Name)
@@ -129,7 +129,7 @@ func updateOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	ruleset, resp, err := proxy.updateOutboundRuleset(ctx, d.Id(), &outboundRuleset)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update ruleset %s error: %s", *outboundRuleset.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update ruleset %s error: %s", *outboundRuleset.Name, err), resp)
 	}
 
 	log.Printf("Updated Outbound Ruleset %s", *ruleset.Id)
@@ -143,7 +143,7 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 
 	resp, err := proxy.deleteOutboundRuleset(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete ruleset %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete ruleset %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 1800*time.Second, func() *retry.RetryError {
@@ -158,8 +158,8 @@ func deleteOutboundRuleset(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Ruleset %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Outbound Ruleset %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Ruleset %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound Ruleset %s still exists", d.Id()), resp))
 	})
 }

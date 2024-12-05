@@ -33,7 +33,7 @@ func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformcl
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
 
 	_, resp, err = proxy.getAllWrapupCodes(ctx)
@@ -42,9 +42,9 @@ func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformcl
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "wrapupcodemappings"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "wrapupcodemappings"}
 	return resources, nil
 }
 
@@ -59,7 +59,7 @@ func createOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundWrapupCodeMappingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundWrapUpCodeMappings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Wrap-up Code Mappings")
 
@@ -67,14 +67,14 @@ func readOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceData,
 		sdkWrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Wrap-up Code Mappings: %s", err), resp))
 		}
 
 		wrapupCodes, resp, err := proxy.getAllWrapupCodes(ctx)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get wrapup codes: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get wrapup codes: %s", err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "default_set", sdkWrapupCodeMappings.DefaultSet)
@@ -102,7 +102,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		wrapupCodeMappings, resp, err := proxy.getAllOutboundWrapupCodeMappings(ctx)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get  wrap-up code mappings error: %s", err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get  wrap-up code mappings error: %s", err), resp)
 		}
 
 		wrapupCodeUpdate := platformclientv2.Wrapupcodemapping{
@@ -112,7 +112,7 @@ func updateOutboundWrapUpCodeMappings(ctx context.Context, d *schema.ResourceDat
 		}
 		_, resp, err = proxy.updateOutboundWrapUpCodeMappings(ctx, wrapupCodeUpdate)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrap-up code mappings %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update wrap-up code mappings %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})

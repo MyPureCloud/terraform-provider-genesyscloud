@@ -18,11 +18,11 @@ Test Class for the supported content Data Source
 func TestAccDataSourceSupportedContent(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId   = "testSupportedContent"
-		dataSourceId = "testSupportedContent_data"
-		name         = "Terraform Supported Content - " + uuid.NewString()
-		inboundType  = "*/*"
-		outboundType = "image/*"
+		resourceLabel   = "testSupportedContent"
+		dataSourceLabel = "testSupportedContent_data"
+		name            = "Terraform Supported Content - " + uuid.NewString()
+		inboundType     = "*/*"
+		outboundType    = "image/*"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,19 +31,19 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSupportedContentResource(
-					resourceName,
-					resourceId,
+					ResourceType,
+					resourceLabel,
 					name,
 					GenerateInboundTypeBlock(inboundType),
 					GenerateOutboundTypeBlock(outboundType),
 				) +
 					GenerateDataSourceForSupportedContent(
-						resourceName,
-						dataSourceId,
+						ResourceType,
+						dataSourceLabel,
 						name,
-						"genesyscloud_conversations_messaging_supportedcontent."+resourceId),
+						"genesyscloud_conversations_messaging_supportedcontent."+resourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_supportedcontent."+dataSourceId, "id", "genesyscloud_conversations_messaging_supportedcontent."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_supportedcontent."+dataSourceLabel, "id", "genesyscloud_conversations_messaging_supportedcontent."+resourceLabel, "id"),
 				),
 			},
 		},
@@ -51,8 +51,8 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 }
 
 func GenerateDataSourceForSupportedContent(
-	resourceName string,
-	resourceId string,
+	resourceType string,
+	resourceLabel string,
 	name string,
 	dependsOn string,
 ) string {
@@ -61,5 +61,5 @@ func GenerateDataSourceForSupportedContent(
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceName, resourceId, name, dependsOn)
+	`, resourceType, resourceLabel, name, dependsOn)
 }

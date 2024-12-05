@@ -30,11 +30,11 @@ func getAllArchitectSchedules(ctx context.Context, clientConfig *platformclientv
 
 	schedules, proxyResponse, getErr := proxy.getAllArchitectSchedules(ctx)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of schedule error: %s", getErr), proxyResponse)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of schedule error: %s", getErr), proxyResponse)
 	}
 
 	for _, schedule := range *schedules {
-		resources[*schedule.Id] = &resourceExporter.ResourceMeta{Name: *schedule.Name}
+		resources[*schedule.Id] = &resourceExporter.ResourceMeta{BlockLabel: *schedule.Name}
 	}
 
 	return resources, nil
@@ -56,12 +56,12 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
 	schedStart, err := time.Parse(timeFormat, start)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse date %s", start), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse date %s", start), err)
 	}
 
 	schedEnd, err := time.Parse(timeFormat, end)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to parse date %s", end), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse date %s", end), err)
 	}
 
 	schedule := platformclientv2.Schedule{
@@ -88,7 +88,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 		}
 
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create schedule %s | Error: %s. %s", name, err, msg), proxyResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create schedule %s | Error: %s. %s", name, err, msg), proxyResponse)
 	}
 
 	d.SetId(*scheduleResponse.Id)
@@ -100,7 +100,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulesProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading schedule %s", d.Id())
 
@@ -108,9 +108,9 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		scheduleResponse, proxyResponse, err := proxy.getArchitectSchedulesById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
 			}
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
 		}
 
 		start := new(string)
@@ -169,7 +169,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		scheduleResponse, proxyResponse, err := proxy.getArchitectSchedulesById(ctx, d.Id())
 
 		if err != nil {
-			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read schedule %s error: %s", d.Id(), err), proxyResponse)
+			return proxyResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read schedule %s error: %s", d.Id(), err), proxyResponse)
 		}
 
 		log.Printf("Updating schedule %s", name)
@@ -188,7 +188,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 				msg = "\nYou must have all divisions and future divisions selected in your OAuth client role"
 			}
 
-			return proxyUpdResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update schedule %s | Error: %s. %s", name, putErr, msg), proxyUpdResponse)
+			return proxyUpdResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update schedule %s | Error: %s. %s", name, putErr, msg), proxyUpdResponse)
 		}
 		return proxyUpdResponse, nil
 	})
@@ -211,7 +211,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		log.Printf("Deleting schedule %s", d.Id())
 		proxyDelResponse, err := proxy.deleteArchitectSchedules(ctx, d.Id())
 		if err != nil {
-			return proxyDelResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete schedule %s error: %s", d.Id(), err), proxyDelResponse)
+			return proxyDelResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete schedule %s error: %s", d.Id(), err), proxyDelResponse)
 		}
 		return proxyDelResponse, nil
 	})
@@ -228,7 +228,7 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted schedule %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting schedule %s | error: %s", d.Id(), err), proxyGetResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting schedule %s | error: %s", d.Id(), err), proxyGetResponse))
 		}
 
 		if scheduleResponse.State != nil && *scheduleResponse.State == "deleted" {
@@ -236,12 +236,12 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 			log.Printf("Deleted group %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Schedule %s still exists", d.Id()), proxyGetResponse))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Schedule %s still exists", d.Id()), proxyGetResponse))
 	})
 }
 
 func GenerateArchitectSchedulesResource(
-	schedResource1 string,
+	schedResourceLabel string,
 	name string,
 	divisionId string,
 	description string,
@@ -256,5 +256,5 @@ func GenerateArchitectSchedulesResource(
 		end = "%s"
 		rrule = "%s"
 	}
-	`, schedResource1, name, divisionId, description, start, end, rrule)
+	`, schedResourceLabel, name, divisionId, description, start, end, rrule)
 }

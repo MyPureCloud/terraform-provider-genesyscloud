@@ -32,11 +32,11 @@ func dataSourceExternalContactsContactRead(ctx context.Context, d *schema.Resour
 		contactId, retryable, resp, err := ep.getExternalContactIdBySearch(ctx, search)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching exteral contact %s | error: %s", search, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching exteral contact %s | error: %s", search, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No external contact found with search %s", search), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No external contact found with search %s", search), resp))
 		}
 
 		d.SetId(contactId)

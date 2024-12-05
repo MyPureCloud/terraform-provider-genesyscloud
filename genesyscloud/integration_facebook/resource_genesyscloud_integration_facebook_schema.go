@@ -18,13 +18,13 @@ resource_genesycloud_integration_facebook_schema.go holds four functions within 
 3.  The datasource schema definitions for the integration_facebook datasource.
 4.  The resource exporter configuration for the integration_facebook exporter.
 */
-const resourceName = "genesyscloud_integration_facebook"
+const ResourceType = "genesyscloud_integration_facebook"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceIntegrationFacebook())
-	regInstance.RegisterDataSource(resourceName, DataSourceIntegrationFacebook())
-	regInstance.RegisterExporter(resourceName, IntegrationFacebookExporter())
+	regInstance.RegisterResource(ResourceType, ResourceIntegrationFacebook())
+	regInstance.RegisterDataSource(ResourceType, DataSourceIntegrationFacebook())
+	regInstance.RegisterExporter(ResourceType, IntegrationFacebookExporter())
 }
 
 // ResourceIntegrationFacebook registers the genesyscloud_integration_facebook resource with Terraform
@@ -62,15 +62,15 @@ func ResourceIntegrationFacebook() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`page_access_token`: {
-				Description: `The long-lived Page Access Token of Facebook page. 
-			See https://developers.facebook.com/docs/facebook-login/access-tokens. 
+				Description: `The long-lived Page Access Token of Facebook page.
+			See https://developers.facebook.com/docs/facebook-login/access-tokens.
 			Either pageAccessToken or userAccessToken should be provided.`,
 				Optional: true,
 				Type:     schema.TypeString,
 			},
 			`user_access_token`: {
-				Description: `The short-lived User Access Token of the Facebook user logged into the Facebook app. 
-			See https://developers.facebook.com/docs/facebook-login/access-tokens. 
+				Description: `The short-lived User Access Token of the Facebook user logged into the Facebook app.
+			See https://developers.facebook.com/docs/facebook-login/access-tokens.
 			Either pageAccessToken or userAccessToken should be provided.`,
 				Optional: true,
 				Type:     schema.TypeString,

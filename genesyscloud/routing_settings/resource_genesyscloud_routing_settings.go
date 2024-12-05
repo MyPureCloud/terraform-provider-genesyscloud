@@ -35,7 +35,7 @@ func getAllRoutingSettings(ctx context.Context, clientConfig *platformclientv2.C
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
 
 	_, resp, err = proxy.getRoutingSettingsContactCenter(ctx)
@@ -44,7 +44,7 @@ func getAllRoutingSettings(ctx context.Context, clientConfig *platformclientv2.C
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s contact center due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s contact center due to error: %s", ResourceType, err), resp)
 	}
 
 	_, resp, err = proxy.getRoutingSettingsTranscription(ctx)
@@ -53,10 +53,10 @@ func getAllRoutingSettings(ctx context.Context, clientConfig *platformclientv2.C
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s transcription due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s transcription due to error: %s", ResourceType, err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "routing_settings"}
 	return resources, nil
 }
 
@@ -69,7 +69,7 @@ func createRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading routing settings")
 
@@ -77,9 +77,9 @@ func readRoutingSettings(ctx context.Context, d *schema.ResourceData, meta inter
 		settings, resp, getErr := proxy.getRoutingSettings(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Routing Setting %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "reset_agent_on_presence_change", settings.ResetAgentScoreOnPresenceChange)
@@ -119,7 +119,7 @@ func updateRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 
 	_, resp, err := proxy.updateRoutingSettings(ctx, &update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update routing settings %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update routing settings %s error: %s", d.Id(), err), resp)
 	}
 
 	time.Sleep(5 * time.Second)
@@ -135,7 +135,7 @@ func deleteRoutingSettings(ctx context.Context, d *schema.ResourceData, meta int
 	log.Printf("Resetting Routing Setting")
 	resp, err := proxy.deleteRoutingSettings(ctx)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing settings %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete routing settings %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Reset Routing Settings")
@@ -148,7 +148,7 @@ func readRoutingSettingsContactCenter(ctx context.Context, d *schema.ResourceDat
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read contact center for routing setting %s error: %s", d.Id(), getErr), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read contact center for routing setting %s error: %s", d.Id(), getErr), resp)
 	}
 
 	if contactCenter == nil {
@@ -180,7 +180,7 @@ func updateContactCenter(ctx context.Context, d *schema.ResourceData, proxy *rou
 
 			resp, err := proxy.updateRoutingSettingsContactCenter(ctx, contactCenterSettings)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update contact center for routing settings %s error: %s", d.Id(), err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update contact center for routing settings %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -193,7 +193,7 @@ func readRoutingSettingsTranscription(ctx context.Context, d *schema.ResourceDat
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read contact center for routing settings %s error: %s", d.Id(), getErr), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read contact center for routing settings %s error: %s", d.Id(), getErr), resp)
 	}
 
 	if transcription == nil {
@@ -242,7 +242,7 @@ func updateTranscription(ctx context.Context, d *schema.ResourceData, proxy *rou
 
 		_, resp, err := proxy.updateRoutingSettingsTranscription(ctx, transcriptionRequest)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Transcription for routing settings %s error: %s", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Transcription for routing settings %s error: %s", d.Id(), err), resp)
 		}
 	}
 	return nil

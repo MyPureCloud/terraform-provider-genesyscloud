@@ -12,12 +12,12 @@ import (
 
 func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	var (
-		knowledgeBaseResource1     = "test-knowledgebase1"
-		knowledgeBaseName1         = "Terraform Test Knowledge Base 1-" + uuid.NewString()
-		knowledgeBaseDescription1  = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1 = "en-US"
+		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
+		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseDescription1   = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1  = "en-US"
 
-		knowledgeBaseDataSource = "test-knowledgebase-ds"
+		knowledgeBaseDataSourceLabel = "test-knowledgebase-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,19 +27,19 @@ func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResource1,
+					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
 				) + generateKnowledgeKnowledgebaseDataSource(
-					knowledgeBaseDataSource,
-					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1+".name",
-					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1+".core_language",
-					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1,
+					knowledgeBaseDataSourceLabel,
+					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1+".name",
+					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1+".core_language",
+					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_knowledgebase."+knowledgeBaseDataSource,
-						"id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResource1, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_knowledgebase."+knowledgeBaseDataSourceLabel,
+						"id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id",
 					),
 				),
 			},
@@ -48,7 +48,7 @@ func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 }
 
 func generateKnowledgeKnowledgebaseDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -60,5 +60,5 @@ func generateKnowledgeKnowledgebaseDataSource(
         core_language = %s
         depends_on=[%s]
 	}
-	`, resourceID, name, coreLanguage, dependsOn)
+	`, resourceLabel, name, coreLanguage, dependsOn)
 }

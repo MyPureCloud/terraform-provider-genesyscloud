@@ -19,12 +19,12 @@ resource_genesycloud_idp_onelogin_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_onelogin datasource.
 4.  The resource exporter configuration for the idp_onelogin exporter.
 */
-const resourceName = "genesyscloud_idp_onelogin"
+const ResourceType = "genesyscloud_idp_onelogin"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceIdpOnelogin())
-	regInstance.RegisterExporter(resourceName, IdpOneloginExporter())
+	regInstance.RegisterResource(ResourceType, ResourceIdpOnelogin())
+	regInstance.RegisterExporter(ResourceType, IdpOneloginExporter())
 }
 
 // ResourceIdpOnelogin registers the genesyscloud_idp_onelogin resource with Terraform

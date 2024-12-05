@@ -25,10 +25,10 @@ type PromptAudioData struct {
 }
 
 type UserPromptStruct struct {
-	ResourceID  string
-	Name        string
-	Description string
-	Resources   []*UserPromptResourceStruct
+	ResourceLabel string
+	Name          string
+	Description   string
+	Resources     []*UserPromptResourceStruct
 }
 
 type UserPromptResourceStruct struct {
@@ -165,7 +165,7 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 		description = %s
 		%s
 	}
-	`, userPrompt.ResourceID,
+	`, userPrompt.ResourceLabel,
 		userPrompt.Name,
 		userPrompt.Description,
 		resourcesString,

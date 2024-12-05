@@ -19,9 +19,9 @@ import (
 func TestAccResourceResponseManagementLibrary(t *testing.T) {
 
 	var (
-		libraryResource = "response_management_library"
-		name1           = "Library " + uuid.NewString()
-		name2           = "Library " + uuid.NewString()
+		libraryResourceLabel = "response_management_library"
+		name1                = "Library " + uuid.NewString()
+		name2                = "Library " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,21 +30,21 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateResponseManagementLibraryResource(libraryResource, name1),
+				Config: GenerateResponseManagementLibraryResource(libraryResourceLabel, name1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResource, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResourceLabel, "name", name1),
 				),
 			},
 			{
 				// Update
-				Config: GenerateResponseManagementLibraryResource(libraryResource, name2),
+				Config: GenerateResponseManagementLibraryResource(libraryResourceLabel, name2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResource, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResourceLabel, "name", name2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_responsemanagement_library." + libraryResource,
+				ResourceName:      "genesyscloud_responsemanagement_library." + libraryResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -66,10 +66,10 @@ func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error 
 				if util.IsStatus404(resp) {
 					continue
 				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Unexpected error: %s", err), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
 
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Library %s still exists", rs.Primary.ID), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Library %s still exists", rs.Primary.ID), resp))
 		}
 		return nil
 	})

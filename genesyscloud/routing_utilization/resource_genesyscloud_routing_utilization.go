@@ -33,9 +33,9 @@ func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "routing_utilization"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "routing_utilization"}
 	return resources, nil
 }
 
@@ -48,7 +48,7 @@ func createRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingUtilizationProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilization(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilization(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Routing Utilization")
 
@@ -56,9 +56,9 @@ func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta in
 		orgUtilization, resp, err := proxy.getRoutingUtilization(ctx)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Utilization: %s", err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Routing Utilization: %s", err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Routing Utilization: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Routing Utilization: %s", err), resp))
 		}
 
 		if orgUtilization.Utilization != nil {
@@ -97,7 +97,7 @@ func updateRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 		})
 
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Routing Utilization %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Routing Utilization %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -119,7 +119,7 @@ func deleteRoutingUtilization(ctx context.Context, _ *schema.ResourceData, meta 
 
 	resp, err := proxy.deleteRoutingUtilization(ctx)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to reset Routing Utilization | error: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to reset Routing Utilization | error: %s", err), resp)
 	}
 	log.Printf("Reset Routing Utilization")
 	return nil

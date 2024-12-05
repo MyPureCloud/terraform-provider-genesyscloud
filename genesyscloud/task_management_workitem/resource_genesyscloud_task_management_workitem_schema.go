@@ -20,13 +20,13 @@ resource_genesycloud_task_management_workitem_schema.go holds four functions wit
 3.  The datasource schema definitions for the task_management_workitem datasource.
 4.  The resource exporter configuration for the task_management_workitem exporter.
 */
-const resourceName = "genesyscloud_task_management_workitem"
+const ResourceType = "genesyscloud_task_management_workitem"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementWorkitem())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementWorkitem())
-	regInstance.RegisterExporter(resourceName, TaskManagementWorkitemExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementWorkitem())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementWorkitem())
+	regInstance.RegisterExporter(ResourceType, TaskManagementWorkitemExporter())
 }
 
 // ResourceTaskManagementWorkitem registers the genesyscloud_task_management_workitem resource with Terraform

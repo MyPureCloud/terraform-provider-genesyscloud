@@ -1,14 +1,15 @@
 package telephony_providers_edges_edge_group
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
-	resourceName = "genesyscloud_telephony_providers_edges_edge_group"
+	ResourceType = "genesyscloud_telephony_providers_edges_edge_group"
 )
 
 func ResourceEdgeGroup() *schema.Resource {

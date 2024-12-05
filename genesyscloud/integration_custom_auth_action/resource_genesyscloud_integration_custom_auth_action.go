@@ -51,14 +51,14 @@ func getAllModifiedCustomAuthActions(ctx context.Context, clientConfig *platform
 
 	actions, resp, err := cap.getAllIntegrationCustomAuthActions(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration custom auth actions error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration custom auth actions error: %s", err), resp)
 	}
 
 	for _, action := range *actions {
 		if *action.Version == 1 {
 			continue
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
 	}
 	return resources, nil
 }
@@ -75,7 +75,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 
 	// Precheck that integration type and its credential type if it should have a custom auth data action
 	if ok, err := isIntegrationAndCredTypesCorrect(ctx, cap, integrationId); !ok || err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("configuration of integration %s does not allow for a custom auth data action", integrationId), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("configuration of integration %s does not allow for a custom auth data action", integrationId), err)
 	}
 
 	log.Printf("Retrieving the custom auth action of integration %s", integrationId)
@@ -86,9 +86,9 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 		authAction, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("cannot find custom auth action of integration %s | error: %v", integrationId, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("cannot find custom auth action of integration %s | error: %v", integrationId, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error getting custom auth action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error getting custom auth action %s | error: %s", d.Id(), err), resp))
 		}
 
 		// Get default name if not to be overriden
@@ -111,7 +111,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 		// Get the latest action version to send with PATCH
 		action, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s error: %s", authActionId, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration custom auth action %s error: %s", authActionId, err), resp)
 		}
 
 		_, resp, err = cap.updateCustomAuthAction(ctx, authActionId, &platformclientv2.Updateactioninput{
@@ -120,7 +120,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 			Config:  BuildSdkCustomAuthActionConfig(d),
 		})
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s error: %s", *name, err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action %s error: %s", *name, err), resp)
 		}
 		return resp, nil
 	})
@@ -136,7 +136,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading integration action %s", d.Id())
 
@@ -144,9 +144,9 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 		action, resp, err := cap.getCustomAuthActionById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration custom auth action %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration custom auth action %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration custom auth action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration custom auth action %s | error: %s", d.Id(), err), resp))
 		}
 
 		// Retrieve config request/response templates
@@ -156,7 +156,7 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		successTemp, resp, err := cap.getIntegrationActionTemplate(ctx, d.Id(), successTemplateFileName)
@@ -165,7 +165,7 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", action.Name)
@@ -203,7 +203,7 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 		// Get the latest action version to send with PATCH
 		action, resp, err := cap.getCustomAuthActionById(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration custom auth action %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration custom auth action %s error: %s", d.Id(), err), resp)
 		}
 		if name == nil {
 			name = action.Name
@@ -215,7 +215,7 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 			Config:  BuildSdkCustomAuthActionConfig(d),
 		})
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s error: %s", *name, err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action %s error: %s", *name, err), resp)
 		}
 		return resp, nil
 	})

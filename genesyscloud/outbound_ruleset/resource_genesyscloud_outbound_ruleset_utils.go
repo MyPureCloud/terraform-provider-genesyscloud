@@ -307,7 +307,7 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 		if condition.AttributeName != nil && strings.EqualFold(*condition.AttributeName, "skill") && condition.Value != nil {
 			var found bool
 			for _, value := range skillMap {
-				if value.Name == *condition.Value {
+				if value.BlockLabel == *condition.Value {
 					found = true
 					break // found skill, evaluate next condition
 				}
@@ -321,11 +321,11 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 	return false
 }
 
-func GenerateOutboundRuleSetResourceAndIdReference(resourceId, name string) (string, string) {
-	reference := resourceName + "." + resourceId
+func GenerateOutboundRuleSetResourceAndLabel(resourceLabel, name string) (string, string) {
+	reference := ResourceType + "." + resourceLabel
 	return fmt.Sprintf(`
 resource "%s" "%s" {
 	name = "%s"
 }
-	`, resourceName, resourceId, name), reference
+	`, ResourceType, resourceLabel, name), reference
 }

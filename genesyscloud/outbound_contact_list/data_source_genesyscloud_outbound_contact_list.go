@@ -21,7 +21,7 @@ func dataSourceOutboundContactListRead(ctx context.Context, d *schema.ResourceDa
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		contactListId, retryable, resp, err := proxy.getOutboundContactlistIdByName(ctx, name)
 		if err != nil {
-			diagErr := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting contact list %s | error: %s", name, err), resp)
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting contact list %s | error: %s", name, err), resp)
 			if !retryable {
 				return retry.NonRetryableError(diagErr)
 			}

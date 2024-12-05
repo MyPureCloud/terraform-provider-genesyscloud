@@ -28,7 +28,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 
 	flows, resp, err := p.GetAllFlows(ctx, "", nil)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get architect flows %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get architect flows %v", err), resp)
 	}
 
 	for _, flow := range *flows {
@@ -38,12 +38,12 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 		overrideBCPNaming := os.Getenv("OVERRIDE_BCP_NAMING")
 
 		if overrideBCPNaming != "" {
-			resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.Name}
+			resources[*flow.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flow.Name}
 			continue
 		}
 
 		//This is our go forward naming standard for flows.
-		resources[*flow.Id] = &resourceExporter.ResourceMeta{Name: *flow.VarType + "_" + *flow.Name}
+		resources[*flow.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flow.VarType + "_" + *flow.Name}
 	}
 
 	return resources, nil
@@ -58,9 +58,9 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", flow.Name)
@@ -87,7 +87,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
 			setFileContentHashToNil(d)
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to unlock targeted flow %s with error %s", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to unlock targeted flow %s with error %s", d.Id(), err), resp)
 		}
 	}
 
@@ -101,7 +101,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			errorString = response.ErrorMessage
 		}
 		setFileContentHashToNil(d)
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to register job %s", errorString), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to register job %s", errorString), response)
 	}
 
 	presignedUrl := *flowJob.PresignedUrl
@@ -131,18 +131,18 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := p.GetFlowsDeployJob(ctx, jobId)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error retrieving job status. JobID: %s, error: %s ", jobId, err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving job status. JobID: %s, error: %s ", jobId, err), response))
 		}
 
 		if *flowJob.Status == "Failure" {
 			if flowJob.Messages == nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("flow publish failed. JobID: %s, no tracing messages available", jobId), response))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, no tracing messages available", jobId), response))
 			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
 				messages = append(messages, *m.Text)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")), response))
 		}
 
 		if *flowJob.Status == "Success" {
@@ -151,7 +151,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Job (%s) could not finish in 16 minutes and timed out ", jobId), response))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Job (%s) could not finish in 16 minutes and timed out ", jobId), response))
 	})
 
 	if retryErr != nil {
@@ -161,7 +161,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if flowID == "" {
 		setFileContentHashToNil(d)
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))
 	}
 
 	d.SetId(flowID)
@@ -180,7 +180,7 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if isForceUnlockEnabled(d) {
 		resp, err := p.ForceUnlockFlow(ctx, d.Id())
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to unlock targeted flow %s with error %v", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to unlock targeted flow %s with error %v", d.Id(), err), resp)
 		}
 	}
 
@@ -193,9 +193,9 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				return nil
 			}
 			if resp.StatusCode == http.StatusConflict {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
 		}
 		return nil
 	})

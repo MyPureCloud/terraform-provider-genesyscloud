@@ -30,7 +30,7 @@ func getTeamMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *pl
 	gp := getTeamProxy(sdkConfig)
 	members, resp, err := gp.getMembersById(ctx, d.Id())
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
 	}
 
 	memberIds := make([]string, len(*members))
@@ -60,7 +60,7 @@ func updateTeamMembers(ctx context.Context, d *schema.ResourceData, sdkConfig *p
 					if diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 						resp, err := proxy.deleteMembers(ctx, d.Id(), strings.Join(membersToRemove, ","))
 						if err != nil {
-							return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to remove members from team %s: %s", d.Id(), err), resp)
+							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove members from team %s: %s", d.Id(), err), resp)
 						}
 						return resp, nil
 					}); diagErr != nil {
@@ -99,7 +99,7 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 
 	_, resp, err := proxy.createMembers(ctx, d.Id(), *teamMembers)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add team members %s: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members %s: %s", d.Id(), err), resp)
 	}
 
 	return nil
@@ -110,7 +110,7 @@ func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclie
 	members, resp, err := proxy.getMembersById(ctx, teamId)
 
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read members for team %s: %s", teamId, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for team %s: %s", teamId, err), resp)
 	}
 
 	if members == nil || len(*members) == 0 {

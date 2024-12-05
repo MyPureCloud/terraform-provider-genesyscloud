@@ -25,11 +25,11 @@ func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configura
 
 	scripts, resp, err := scriptsProxy.getAllPublishedScripts(ctx)
 	if err != nil {
-		return resources, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of scripts error: %s", err), resp)
+		return resources, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of scripts error: %s", err), resp)
 	}
 
 	for _, script := range *scripts {
-		resources[*script.Id] = &resourceExporter.ResourceMeta{Name: *script.Name}
+		resources[*script.Id] = &resourceExporter.ResourceMeta{BlockLabel: *script.Name}
 	}
 
 	return resources, nil
@@ -83,16 +83,16 @@ func updateScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	scriptsProxy := getScriptsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceScript(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		script, resp, err := scriptsProxy.getScriptById(ctx, d.Id())
 		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow %s | error: %s", d.Id(), err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read flow %s | error: %s", d.Id(), err), resp))
 		}
 
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read flow %s | error: %s", d.Id(), err), resp))
 		}
 
 		if script.Name != nil {
@@ -111,7 +111,7 @@ func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Deleting script %s", d.Id())
 	if err := scriptsProxy.deleteScript(ctx, d.Id()); err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to delete script %s", d.Id()), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to delete script %s", d.Id()), err)
 	}
 
 	log.Printf("Successfully deleted script %s", d.Id())

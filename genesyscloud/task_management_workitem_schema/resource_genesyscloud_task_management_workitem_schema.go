@@ -33,12 +33,12 @@ func getAllTaskManagementWorkitemSchemas(ctx context.Context, clientConfig *plat
 
 	schemas, resp, err := proxy.getAllTaskManagementWorkitemSchema(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all workitem schemas error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all workitem schemas error: %s", err), resp)
 	}
 
 	for _, schema := range *schemas {
 		log.Printf("Dealing with task management workitem schema id: %s", *schema.Id)
-		resources[*schema.Id] = &resourceExporter.ResourceMeta{Name: *schema.Name}
+		resources[*schema.Id] = &resourceExporter.ResourceMeta{BlockLabel: *schema.Name}
 	}
 	return resources, nil
 }
@@ -50,13 +50,13 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 	dataSchema, err := BuildSdkWorkitemSchema(d, nil)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("create: failed to build task management workitem schema"), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("create: failed to build task management workitem schema"), err)
 	}
 
 	log.Printf("Creating task management workitem schema")
 	schema, resp, err := proxy.createTaskManagementWorkitemSchema(ctx, dataSchema)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management workitem schema %s error: %s", *dataSchema.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management workitem schema %s error: %s", *dataSchema.Name, err), resp)
 	}
 
 	d.SetId(*schema.Id)
@@ -67,7 +67,7 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 		dataSchema.Version = platformclientv2.Int(1)
 		_, resp, err := proxy.updateTaskManagementWorkitemSchema(ctx, *schema.Id, dataSchema)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management workitem schema %s error: %s", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management workitem schema %s error: %s", d.Id(), err), resp)
 		}
 		log.Printf("Updated newly created workitem schema: %s. 'enabled' set to to 'false'", *schema.Name)
 	}
@@ -80,7 +80,7 @@ func createTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitemSchema(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitemSchema(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading task management workitem schema %s", d.Id())
 
@@ -88,14 +88,14 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 		schema, resp, getErr := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem schema %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management workitem schema %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workitem schema %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management workitem schema %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		schemaProps, err := json.Marshal(schema.JsonSchema.Properties)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error in reading json schema properties of %s | error: %v", *schema.Name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error in reading json schema properties of %s | error: %v", *schema.Name, err), resp))
 		}
 		var schemaPropsPtr *string
 		if string(schemaProps) != util.NullValue {
@@ -121,18 +121,18 @@ func updateTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 	log.Printf("Getting version of workitem schema")
 	curSchema, resp, err := proxy.getTaskManagementWorkitemSchemaById(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management workitem schema By id %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management workitem schema By id %s error: %s", d.Id(), err), resp)
 	}
 
 	dataSchema, err := BuildSdkWorkitemSchema(d, curSchema.Version)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("update: failed to build task management workitem schema"), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("update: failed to build task management workitem schema"), err)
 	}
 
 	log.Printf("Updating task management workitem schema")
 	updatedSchema, resp, err := proxy.updateTaskManagementWorkitemSchema(ctx, d.Id(), dataSchema)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management workitem schema %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management workitem schema %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated task management workitem schema %s", *updatedSchema.Id)
@@ -146,7 +146,7 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 
 	resp, err := proxy.deleteTaskManagementWorkitemSchema(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management workitem schema %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management workitem schema %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -156,13 +156,13 @@ func deleteTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceD
 				log.Printf("Deleted task management workitem schema %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management workitem schema %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting task management workitem schema %s | error: %s", d.Id(), err), resp))
 		}
 
 		if isDeleted {
 			log.Printf("Deleted task management workitem schema %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management workitem schema %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("task management workitem schema %s still exists", d.Id()), resp))
 	})
 }

@@ -28,10 +28,10 @@ func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platfo
 
 	configurations, resp, err := wp.getWebDeploymentsConfiguration(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get webdeployments configuration error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get webdeployments configuration error: %s", err), resp)
 	}
 	for _, configuration := range *configurations.Entities {
-		resources[*configuration.Id] = &resourceExporter.ResourceMeta{Name: *configuration.Name}
+		resources[*configuration.Id] = &resourceExporter.ResourceMeta{BlockLabel: *configuration.Name}
 	}
 	return resources, nil
 }
@@ -44,16 +44,16 @@ func waitForConfigurationDraftToBeActive(ctx context.Context, meta interface{}, 
 		configuration, resp, err := wp.getWebdeploymentsConfigurationVersionsDraft(ctx, id)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error verifying active status for new web deployment configuration %s | error: %s", id, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error verifying active status for new web deployment configuration %s | error: %s", id, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error verifying active status for new web deployment configuration %s | error: %s", id, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error verifying active status for new web deployment configuration %s | error: %s", id, err), resp))
 		}
 
 		if *configuration.Status == "Active" {
 			return nil
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("web deployment configuration %s not active yet. Status: %s", id, *configuration.Status), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("web deployment configuration %s not active yet. Status: %s", id, *configuration.Status), resp))
 	})
 }
 
@@ -73,9 +73,9 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 				extraErrorInfo = fmt.Sprintf("Feature '%s' is not yet implemented", fieldName)
 			}
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to create web deployment configuration %s: %s. %s", name, err, extraErrorInfo), resp))
 		}
 		d.SetId(*configuration.Id)
 		_ = d.Set("status", configuration.Status)
@@ -88,16 +88,16 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	activeError := waitForConfigurationDraftToBeActive(ctx, meta, d.Id())
 	if activeError != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment configuration %s did not become active and could not be published", name), fmt.Errorf("%v", activeError))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Web deployment configuration %s did not become active and could not be published", name), fmt.Errorf("%v", activeError))
 	}
 
 	diagErr = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
 		}
 		_ = d.Set("version", configuration.Version)
 		_ = d.Set("status", configuration.Status)
@@ -115,7 +115,7 @@ func createWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	wp := getWebDeploymentConfigurationsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeploymentConfiguration(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeploymentConfiguration(), constants.ConsistencyChecks(), ResourceType)
 
 	version := d.Get("version").(string)
 	log.Printf("Reading web deployment configuration %s", d.Id())
@@ -127,9 +127,9 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read web deployment configuration %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read web deployment configuration %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read web deployment configuration %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read web deployment configuration %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		_ = d.Set("name", *configuration.Name)
@@ -168,9 +168,9 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 		_, resp, err := wp.updateWebdeploymentsConfigurationVersionsDraft(ctx, d.Id(), *inputCfg)
 		if err != nil {
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error updating web deployment configuration %s | error: %s", name, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error updating web deployment configuration %s | error: %s", name, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error updating web deployment configuration %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error updating web deployment configuration %s | error: %s", name, err), resp))
 		}
 		return nil
 	})
@@ -180,16 +180,16 @@ func updateWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 
 	activeError := waitForConfigurationDraftToBeActive(ctx, meta, d.Id())
 	if activeError != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Web deployment configuration %s did not become active and could not be published", name), fmt.Errorf("%v", activeError))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Web deployment configuration %s did not become active and could not be published", name), fmt.Errorf("%v", activeError))
 	}
 
 	diagErr = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		configuration, resp, err := wp.createWebdeploymentsConfigurationVersionsDraftPublish(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus400(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error publishing web deployment configuration %s | error: %s", name, err), resp))
 		}
 		_ = d.Set("version", configuration.Version)
 		_ = d.Set("status", configuration.Status)
@@ -213,7 +213,7 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 	resp, err := wp.deleteWebDeploymentConfiguration(ctx, d.Id())
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete web deployment configuration %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete web deployment configuration %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -224,8 +224,8 @@ func deleteWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceDat
 				log.Printf("Deleted web deployment configuration %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting web deployment configuration %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting web deployment configuration %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Web deployment configuration %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Web deployment configuration %s still exists", d.Id()), resp))
 	})
 }

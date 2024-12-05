@@ -30,9 +30,9 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceArchitectSchedulegroups()
-	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceArchitectSchedulegroups()
+	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -40,7 +40,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceArchitectSchedulegroups()
+	providerDataSources[ResourceType] = DataSourceArchitectSchedulegroups()
 }
 
 // initTestResources initializes all test resources and data sources.

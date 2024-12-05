@@ -15,18 +15,18 @@ import (
 func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 
 	var (
-		resourceName = "AD-123"
-		name         = "name-1"
-		street       = "street-1"
-		city         = "city-1"
-		region       = "region-1"
-		postalCode   = "postal-code-1"
-		countryCode  = "country-code-1"
-		destroyValue = false //This type of org does not go out to SMS vendors. When you try and create an address in this case its trying to save it with the vendor, getting a mocked response and not storing any value. Hence cannot be deleted.
+		resourceLabel = "AD-123"
+		name          = "name-1"
+		street        = "street-1"
+		city          = "city-1"
+		region        = "region-1"
+		postalCode    = "postal-code-1"
+		countryCode   = "country-code-1"
+		destroyValue  = false //This type of org does not go out to SMS vendors. When you try and create an address in this case its trying to save it with the vendor, getting a mocked response and not storing any value. Hence cannot be deleted.
 
 	)
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		resourceName = "sms-address1"
+		resourceLabel = "sms-address1"
 		name = "name-1"
 		street = "street-1"
 		city = "city-1"
@@ -42,7 +42,7 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 			{
 				// Create
 				Config: generateRoutingSmsAddressesResource(
-					resourceName,
+					resourceLabel,
 					name,
 					street,
 					city,
@@ -52,18 +52,18 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "street", street),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "city", city),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "region", region),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "postal_code", postalCode),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "country_code", countryCode),
-					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceName, "auto_correct_address", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceLabel, "street", street),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceLabel, "city", city),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceLabel, "region", region),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceLabel, "postal_code", postalCode),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceLabel, "country_code", countryCode),
+					resource.TestCheckResourceAttr("genesyscloud_routing_sms_address."+resourceLabel, "auto_correct_address", util.FalseValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_routing_sms_address." + resourceName,
+				ResourceName:            "genesyscloud_routing_sms_address." + resourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"auto_correct_address"},
@@ -95,7 +95,7 @@ func testVerifySmsAddressDestroyed(state *terraform.State) error {
 }
 
 func generateRoutingSmsAddressesResource(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	street string,
 	city string,
@@ -114,5 +114,5 @@ func generateRoutingSmsAddressesResource(
 			country_code = "%s"
 			auto_correct_address = %s
 		}
-	`, resourceId, name, street, city, region, postalCode, countryCode, autoCorrectAddress)
+	`, resourceLabel, name, street, city, region, postalCode, countryCode, autoCorrectAddress)
 }

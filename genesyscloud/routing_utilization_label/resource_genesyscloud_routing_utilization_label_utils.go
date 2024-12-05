@@ -5,34 +5,34 @@ import (
 	"strings"
 )
 
-func GenerateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
+func GenerateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
 	dependsOn := ""
 
 	if dependsOnResource != "" {
-		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
+		dependsOn = fmt.Sprintf("depends_on=[%s.%s]", ResourceType, dependsOnResource)
 	}
 
-	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
+	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		%s
 	}
-	`, resourceID, name, dependsOn)
+	`, ResourceType, resourceLabel, name, dependsOn)
 }
 
 func GenerateLabelUtilization(
 	labelResource string,
 	maxCapacity string,
-	interruptingLabelResourceNames ...string) string {
+	interruptingLabelResourceLabels ...string) string {
 
 	interruptingLabelResources := make([]string, 0)
-	for _, resourceName := range interruptingLabelResourceNames {
-		interruptingLabelResources = append(interruptingLabelResources, "genesyscloud_routing_utilization_label."+resourceName+".id")
+	for _, resourceLabel := range interruptingLabelResourceLabels {
+		interruptingLabelResources = append(interruptingLabelResources, ResourceType+"."+resourceLabel+".id")
 	}
 
 	return fmt.Sprintf(`label_utilizations {
-		label_id = genesyscloud_routing_utilization_label.%s.id
+		label_id = %s.%s.id
 		maximum_capacity = %s
 		interrupting_label_ids = [%s]
 	}
-	`, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
+	`, ResourceType, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
 }

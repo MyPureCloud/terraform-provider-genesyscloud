@@ -46,7 +46,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 
 	externalContacts, resp, err := ep.getAllExternalContacts(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get External Contacts error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get External Contacts error: %s", err), resp)
 	}
 
 	for _, externalContact := range *externalContacts {
@@ -54,7 +54,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 			continue
 		}
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
-		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{Name: *externalContact.Id}
+		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalContact.Id}
 	}
 	return resources, nil
 }
@@ -68,12 +68,12 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	externalContact := getExternalContactFromResourceData(d)
 	contact, resp, err := ep.createExternalContact(ctx, externalContact)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create external contact error: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create external contact error: %s", err), resp)
 	}
 
 	if contact == nil || contact.Id == nil {
 		msg := "No contact ID was returned on the response object from createExternalContact"
-		return util.BuildDiagnosticError(resourceName, msg, fmt.Errorf("%s", msg))
+		return util.BuildDiagnosticError(ResourceType, msg, fmt.Errorf("%s", msg))
 	}
 
 	d.SetId(*contact.Id)
@@ -85,7 +85,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getExternalContactsContactsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading external contact %s", d.Id())
 
@@ -93,9 +93,9 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		externalContact, resp, getErr := ep.getExternalContactById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read external contact %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "first_name", externalContact.FirstName)
@@ -132,7 +132,7 @@ func updateExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	externalContact := getExternalContactFromResourceData(d)
 	_, resp, err := ep.updateExternalContact(ctx, d.Id(), externalContact)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update external contact %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update external contact %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated external contact %s", d.Id())
@@ -147,20 +147,20 @@ func deleteExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 	log.Printf("Deleting external contact %s", d.Id())
 	resp, err := ep.deleteExternalContactId(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete external contact %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete external contact %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := ep.getExternalContactById(ctx, d.Id())
 
 		if err == nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting external contact %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting external contact %s | error: %s", d.Id(), err), resp))
 		}
 		if util.IsStatus404(resp) {
 			// Success  : External contact deleted
 			log.Printf("Deleted external contact %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("External contact %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("External contact %s still exists", d.Id()), resp))
 	})
 }

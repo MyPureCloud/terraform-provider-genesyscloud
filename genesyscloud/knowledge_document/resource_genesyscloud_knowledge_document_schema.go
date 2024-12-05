@@ -12,9 +12,10 @@ import (
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceKnowledgeDocument())
-	l.RegisterExporter(resourceName, KnowledgeDocumentExporter())
+	l.RegisterResource(ResourceType, ResourceKnowledgeDocument())
+	l.RegisterExporter(ResourceType, KnowledgeDocumentExporter())
 }
+
 func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocuments),
@@ -24,7 +25,7 @@ func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-const resourceName = "genesyscloud_knowledge_document"
+const ResourceType = "genesyscloud_knowledge_document"
 
 var (
 	knowledgeDocument = &schema.Resource{

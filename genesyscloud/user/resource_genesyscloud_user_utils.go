@@ -73,14 +73,14 @@ func executeUpdateUser(ctx context.Context, d *schema.ResourceData, proxy *userP
 	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		currentUser, proxyResponse, errGet := proxy.getUserById(ctx, d.Id(), nil, "")
 		if errGet != nil {
-			return proxyResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), errGet), proxyResponse)
+			return proxyResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), errGet), proxyResponse)
 		}
 
 		updateUser.Version = currentUser.Version
 
 		_, proxyPatchResponse, patchErr := proxy.updateUser(ctx, d.Id(), &updateUser)
 		if patchErr != nil {
-			return proxyPatchResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Faild to update user %s | Error: %s.", d.Id(), patchErr), proxyPatchResponse)
+			return proxyPatchResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Faild to update user %s | Error: %s.", d.Id(), patchErr), proxyPatchResponse)
 		}
 		return proxyPatchResponse, nil
 	})
@@ -134,7 +134,7 @@ func updateUserSkills(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics
 		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := proxy.userApi.PatchUserRoutingskillsBulk(d.Id(), chunk)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update skills for user %s error: %s", d.Id(), err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update skills for user %s error: %s", d.Id(), err), resp)
 			}
 			return nil, nil
 		})
@@ -185,7 +185,7 @@ func updateUserLanguages(d *schema.ResourceData, proxy *userProxy) diag.Diagnost
 					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 						resp, err := proxy.userApi.DeleteUserRoutinglanguage(d.Id(), langID)
 						if err != nil {
-							return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to remove language from user %s error: %s", d.Id(), err), resp)
+							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove language from user %s error: %s", d.Id(), err), resp)
 						}
 						return nil, nil
 					})
@@ -224,7 +224,7 @@ func updateUserProfileSkills(d *schema.ResourceData, proxy *userProxy) diag.Diag
 			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				_, resp, err := proxy.userApi.PutUserProfileskills(d.Id(), *profileSkills)
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update profile skills for user %s error: %s", d.Id(), err), resp)
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update profile skills for user %s error: %s", d.Id(), err), resp)
 				}
 				return nil, nil
 			})
@@ -271,13 +271,13 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 				}
 
 				if err != nil {
-					return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to update Routing Utilization for user %s", d.Id()), err)
+					return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Routing Utilization for user %s", d.Id()), err)
 				}
 			} else {
 				// Reset to org-wide defaults
 				resp, err := proxy.userApi.DeleteRoutingUserUtilization(d.Id())
 				if err != nil {
-					return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing utilization for user %s error: %s", d.Id(), err), resp)
+					return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete routing utilization for user %s error: %s", d.Id(), err), resp)
 				}
 			}
 
@@ -308,7 +308,7 @@ func updateUserRoutingLanguages(userID string, langsToUpdate []string, langProfs
 		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := proxy.userApi.PatchUserRoutinglanguagesBulk(userID, chunk)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update languages for user %s error: %s", userID, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update languages for user %s error: %s", userID, err), resp)
 			}
 			return nil, nil
 		})
@@ -329,7 +329,7 @@ func getUserRoutingLanguages(userID string, proxy *userProxy) ([]platformclientv
 	for pageNum := 1; ; pageNum++ {
 		langs, resp, err := proxy.userApi.GetUserRoutinglanguages(userID, maxPageSize, pageNum, "")
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
 		}
 		if langs == nil || langs.Entities == nil || len(*langs.Entities) == 0 {
 			return sdkLanguages, nil
@@ -356,7 +356,7 @@ func getDeletedUserId(email string, proxy *userProxy) (*string, diag.Diagnostics
 		},
 	})
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to search for user %s error: %s", email, getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to search for user %s error: %s", email, getErr), resp)
 	}
 	if results.Results != nil && len(*results.Results) > 0 {
 		// User found
@@ -374,7 +374,7 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		currentUser, proxyResp, err := proxy.getUserById(ctx, d.Id(), nil, "deleted")
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), err), proxyResp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), err), proxyResp)
 		}
 
 		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, d.Id(), &platformclientv2.Updateuser{
@@ -383,7 +383,7 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 		})
 
 		if patchErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Faild to restored deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Faild to restored deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
 		}
 
 		return nil, updateUser(ctx, d, meta)
@@ -404,7 +404,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 			d.SetId("") // User doesn't exist
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
 	}
 
 	agentUtilization := &agentUtilizationWithLabels{}
@@ -887,11 +887,11 @@ func generateRoutingUtilMediaType(
 func generateLabelUtilization(
 	labelResource string,
 	maxCapacity string,
-	interruptingLabelResourceNames ...string) string {
+	interruptingLabelResourceLabels ...string) string {
 
 	interruptingLabelResources := make([]string, 0)
-	for _, resourceName := range interruptingLabelResourceNames {
-		interruptingLabelResources = append(interruptingLabelResources, "genesyscloud_routing_utilization_label."+resourceName+".id")
+	for _, resourceLabel := range interruptingLabelResourceLabels {
+		interruptingLabelResources = append(interruptingLabelResources, "genesyscloud_routing_utilization_label."+resourceLabel+".id")
 	}
 
 	return fmt.Sprintf(`label_utilizations {
@@ -902,7 +902,7 @@ func generateLabelUtilization(
 	`, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
 }
 
-func generateRoutingUtilizationLabelResource(resourceID string, name string, dependsOnResource string) string {
+func generateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
 	dependsOn := ""
 
 	if dependsOnResource != "" {
@@ -913,15 +913,15 @@ func generateRoutingUtilizationLabelResource(resourceID string, name string, dep
 		name = "%s"
 		%s
 	}
-	`, resourceID, name, dependsOn)
+	`, resourceLabel, name, dependsOn)
 }
 
 // Basic user with minimum required fields
-func GenerateBasicUserResource(resourceID string, email string, name string) string {
-	return GenerateUserResource(resourceID, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
+func GenerateBasicUserResource(resourceLabel string, email string, name string) string {
+	return GenerateUserResource(resourceLabel, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
 }
 
-func GenerateUserResource(resourceID string, email string, name string, state string, title string, department string, manager string, acdAutoAnswer string, profileSkills string, certifications string) string {
+func GenerateUserResource(resourceLabel string, email string, name string, state string, title string, department string, manager string, acdAutoAnswer string, profileSkills string, certifications string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
 		name = "%s"
@@ -933,5 +933,5 @@ func GenerateUserResource(resourceID string, email string, name string, state st
 		profile_skills = [%s]
 		certifications = [%s]
 	}
-	`, resourceName, resourceID, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+	`, ResourceType, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }

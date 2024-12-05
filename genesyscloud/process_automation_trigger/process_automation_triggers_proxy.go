@@ -168,7 +168,7 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integAPI)
 
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)
 		}
 
 		if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {
@@ -176,7 +176,7 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 		}
 
 		for _, trigger := range *processAutomationTriggers.Entities {
-			resources[*trigger.Id] = &resourceExporter.ResourceMeta{Name: *trigger.Name}
+			resources[*trigger.Id] = &resourceExporter.ResourceMeta{BlockLabel: *trigger.Name}
 		}
 
 		if processAutomationTriggers.NextUri == nil {

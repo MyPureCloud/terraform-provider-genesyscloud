@@ -32,7 +32,7 @@ func dataSourceSupportedContentRead(ctx context.Context, d *schema.ResourceData,
 		dataSourceSupportedContentCache = rc.NewDataSourceCache(sdkConfig, hydrateSupportedContentCacheFn, getSupportedContentIdByName)
 	}
 
-	contentId, err := rc.RetrieveId(dataSourceSupportedContentCache, resourceName, key, ctx)
+	contentId, err := rc.RetrieveId(dataSourceSupportedContentCache, ResourceType, key, ctx)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ var (
 )
 
 func hydrateSupportedContentCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
-	log.Printf("hydrating cache for data source " + resourceName)
+	log.Printf("hydrating cache for data source " + ResourceType)
 	proxy := getSupportedContentProxy(c.ClientConfig)
 
 	supportedContents, resp, getErr := proxy.getAllSupportedContent(ctx)
@@ -61,7 +61,7 @@ func hydrateSupportedContentCacheFn(c *rc.DataSourceCache, ctx context.Context) 
 	for _, supportedContent := range *supportedContents {
 		c.Cache[*supportedContent.Name] = *supportedContent.Id
 	}
-	log.Printf("cache hydration completed for data source " + resourceName)
+	log.Printf("cache hydration completed for data source " + ResourceType)
 	return nil
 }
 
@@ -72,11 +72,11 @@ func getSupportedContentIdByName(c *rc.DataSourceCache, searchName string, ctx c
 		supportedContentId, retryable, resp, err := proxy.getSupportedContentIdByName(ctx, searchName)
 
 		if err != nil && !retryable {
-			retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching supported content %s: %s", searchName, err), resp))
+			retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching supported content %s: %s", searchName, err), resp))
 		}
 
 		if retryable {
-			retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No supported content found with name %s", searchName), resp))
+			retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No supported content found with name %s", searchName), resp))
 		}
 
 		contentId = supportedContentId

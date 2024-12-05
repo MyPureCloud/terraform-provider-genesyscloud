@@ -51,11 +51,11 @@ func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclient
 	archProxy := getArchitectDatatableProxy(clientConfig)
 	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
 	if err != nil {
-		return resources, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error encountered while calling getAllArchitectDatattables error: %s", err), resp)
+		return resources, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error encountered while calling getAllArchitectDatattables error: %s", err), resp)
 	}
 
 	for _, table := range *tables {
-		resources[*table.Id] = &resourceExporter.ResourceMeta{Name: *table.Name}
+		resources[*table.Id] = &resourceExporter.ResourceMeta{BlockLabel: *table.Name}
 	}
 
 	return resources, nil
@@ -91,7 +91,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 
 	table, resp, err := archProxy.createArchitectDatatable(ctx, datatable)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create architect_datatable %s error: %s", *datatable.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create architect_datatable %s error: %s", *datatable.Name, err), resp)
 	}
 
 	d.SetId(*table.Id)
@@ -103,7 +103,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading architect_datatable %s", d.Id())
 
@@ -111,9 +111,9 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 		datatable, resp, getErr := archProxy.getArchitectDatatable(ctx, d.Id(), "schema")
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		_ = d.Set("name", *datatable.Name)
@@ -169,7 +169,7 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 
 	_, resp, err := archProxy.updateArchitectDatatable(ctx, datatable)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update architect_datatable %s, error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update architect_datatable %s, error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated architect_datatable %s", name)
@@ -185,7 +185,7 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Deleting architect_datatable %s", name)
 	resp, err := archProxy.deleteArchitectDatatable(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete architect_datatable %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete architect_datatable %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -197,8 +197,8 @@ func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted architect_datatable row %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting architect_datatable row %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting architect_datatable row %s | error: %s", name, err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Datatable row %s still exists", name), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Datatable row %s still exists", name), resp))
 	})
 }

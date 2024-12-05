@@ -50,11 +50,11 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
 
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of process automation triggers: %s", getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %s", getErr), resp))
 			}
 
 			if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no process automation triggers found with name: %s", triggerName), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no process automation triggers found with name: %s", triggerName), resp))
 			}
 
 			for _, trigger := range *processAutomationTriggers.Entities {
@@ -65,7 +65,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			}
 
 			if processAutomationTriggers.NextUri == nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no process automation triggers found with name: %s", getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no process automation triggers found with name: %s", getErr), resp))
 			}
 
 			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri

@@ -50,14 +50,14 @@ func updateWorktypeDefaultStatus(ctx context.Context, proxy *taskManagementWorkt
 
 	_, resp, err := proxy.worktypeProxy.UpdateTaskManagementWorktype(ctx, worktypeId, &worktypeUpdate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update worktype %s with default status %s.", worktypeId, statusId), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update worktype %s with default status %s.", worktypeId, statusId), resp)
 	}
 
 	return nil
 }
 
 func GenerateWorktypeStatusResource(
-	resourceName,
+	resourceLabel,
 	workTypeId,
 	name,
 	category,
@@ -76,7 +76,7 @@ func GenerateWorktypeStatusResource(
 		status_transition_time = "%s"
 		%s
 	}
-`, resourceName, workTypeId, name, category, description, defaultDestinationStatusId, statusTransitionTime, strings.Join(attrs, "\n"))
+`, resourceLabel, workTypeId, name, category, description, defaultDestinationStatusId, statusTransitionTime, strings.Join(attrs, "\n"))
 }
 
 // ValidateStatusIds will check that two status ids are the same

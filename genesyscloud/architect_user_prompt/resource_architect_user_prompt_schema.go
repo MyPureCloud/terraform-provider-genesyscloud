@@ -10,13 +10,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_architect_user_prompt"
+const ResourceType = "genesyscloud_architect_user_prompt"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectUserPrompt())
-	regInstance.RegisterDataSource(resourceName, DataSourceUserPrompt())
-	regInstance.RegisterExporter(resourceName, ArchitectUserPromptExporter())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectUserPrompt())
+	regInstance.RegisterDataSource(ResourceType, DataSourceUserPrompt())
+	regInstance.RegisterExporter(ResourceType, ArchitectUserPromptExporter())
 }
 
 func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {

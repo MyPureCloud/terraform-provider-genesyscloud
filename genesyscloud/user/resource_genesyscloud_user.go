@@ -36,12 +36,12 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 	users, proxyResponse, err := proxy.getAllUser(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of users error: %s", err), proxyResponse)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of users error: %s", err), proxyResponse)
 	}
 
 	// Add resources to metamap
 	for _, user := range *users {
-		resources[*user.Id] = &resourceExporter.ResourceMeta{Name: *user.Email}
+		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email}
 	}
 
 	return resources, nil
@@ -100,7 +100,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				return restoreDeletedUser(ctx, d, meta, proxy)
 			}
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create user %s error: %s", email, postErr), proxyPostResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create user %s error: %s", email, postErr), proxyPostResponse)
 	}
 
 	d.SetId(*userResponse.Id)
@@ -119,7 +119,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		})
 
 		if patchErr != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update user %s error: %s", d.Id(), patchErr), proxyPatchResponse)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update user %s error: %s", d.Id(), patchErr), proxyPatchResponse)
 		}
 	}
 
@@ -135,7 +135,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getUserProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading user %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -152,9 +152,9 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 		if errGet != nil {
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), errGet), proxyResponse))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), errGet), proxyResponse))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), errGet), proxyResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), errGet), proxyResponse))
 		}
 
 		// Required attributes
@@ -252,7 +252,7 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		_, proxyDelResponse, err := proxy.deleteUser(ctx, d.Id())
 		if err != nil {
 			time.Sleep(5 * time.Second)
-			return proxyDelResponse, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete user %s error: %s", d.Id(), err), proxyDelResponse)
+			return proxyDelResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete user %s error: %s", d.Id(), err), proxyDelResponse)
 		}
 		log.Printf("Deleted user %s", email)
 		return nil, nil

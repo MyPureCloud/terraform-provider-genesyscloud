@@ -28,12 +28,12 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 
 	didPools, resp, err := proxy.getAllTelephonyDidPools(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get did pools error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get did pools error: %s", err), resp)
 	}
 
 	for _, didPool := range *didPools {
 		if didPool.State != nil && *didPool.State != "deleted" {
-			resources[*didPool.Id] = &resourceExporter.ResourceMeta{Name: *didPool.StartPhoneNumber}
+			resources[*didPool.Id] = &resourceExporter.ResourceMeta{BlockLabel: *didPool.StartPhoneNumber}
 		}
 	}
 	return resources, nil
@@ -60,7 +60,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Creating DID pool %s", startPhoneNumber)
 	createdDidPool, resp, err := proxy.createTelephonyDidPool(ctx, didPool)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create DID pool %s error: %s", startPhoneNumber, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create DID pool %s error: %s", startPhoneNumber, err), resp)
 	}
 
 	d.SetId(*createdDidPool.Id)
@@ -73,7 +73,7 @@ func createDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTelephonyDidPoolProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTelephonyDidPool(), constants.ConsistencyChecks(), ResourceType)
 	utilE164 := util.NewUtilE164Service()
 
 	log.Printf("Reading DID pool %s", d.Id())
@@ -81,9 +81,9 @@ func readDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		didPool, resp, getErr := proxy.getTelephonyDidPoolById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read DID pool %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if didPool.State != nil && *didPool.State == "deleted" {
@@ -124,7 +124,7 @@ func updateDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Updating DID pool %s", d.Id())
 	if _, resp, err := proxy.updateTelephonyDidPool(ctx, d.Id(), didPoolBody); err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update DID pool %s error: %s", startPhoneNumber, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update DID pool %s error: %s", startPhoneNumber, err), resp)
 	}
 
 	log.Printf("Updated DID pool %s", d.Id())
@@ -143,7 +143,7 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 		log.Printf("Deleting DID pool with starting number %s", startPhoneNumber)
 		resp, err := proxy.deleteTelephonyDidPool(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete DID pool %s error: %s", startPhoneNumber, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete DID pool %s error: %s", startPhoneNumber, err), resp)
 		}
 		return resp, nil
 	})
@@ -159,7 +159,7 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted DID pool %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting DID pool %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting DID pool %s | error: %s", d.Id(), err), resp))
 		}
 
 		if didPool.State != nil && *didPool.State == "deleted" {
@@ -167,6 +167,6 @@ func deleteDidPool(ctx context.Context, d *schema.ResourceData, meta interface{}
 			log.Printf("Deleted DID pool %s", d.Id())
 			return nil
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("DID pool %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("DID pool %s still exists", d.Id()), resp))
 	})
 }

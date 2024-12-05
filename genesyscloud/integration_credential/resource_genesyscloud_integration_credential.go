@@ -50,7 +50,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 
 	credentials, resp, err := ip.getAllIntegrationCreds(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all credentials error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all credentials error: %s", err), resp)
 	}
 
 	for _, cred := range *credentials {
@@ -74,7 +74,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
 				}
 			}
-			resources[*cred.Id] = &resourceExporter.ResourceMeta{Name: *cred.Name}
+			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: *cred.Name}
 		}
 	}
 	return resources, nil
@@ -106,7 +106,7 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	credential, resp, err := ip.createIntegrationCred(ctx, &createCredential)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create credential %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create credential %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*credential.Id)
@@ -127,7 +127,7 @@ func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, 
 func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading credential %s", d.Id())
 
@@ -135,9 +135,9 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 		currentCredential, resp, err := ip.getIntegrationCredById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read credential %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read credential %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read credential %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read credential %s | error: %s", d.Id(), err), resp))
 		}
 
 		_ = d.Set("name", *currentCredential.Name)
@@ -169,7 +169,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 			CredentialFields: &fields,
 		})
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update credential %s error: %s", name, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update credential %s error: %s", name, err), resp)
 		}
 	}
 	log.Printf("Updated credential %s %s", name, d.Id())
@@ -183,7 +183,7 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	resp, err := ip.deleteIntegrationCred(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete credential %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete credential %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -194,8 +194,8 @@ func deleteCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted Integration credential %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting credential action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting credential action %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration credential %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("integration credential %s still exists", d.Id()), resp))
 	})
 }

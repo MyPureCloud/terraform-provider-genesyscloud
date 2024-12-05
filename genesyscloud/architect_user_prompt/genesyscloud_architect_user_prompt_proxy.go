@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -22,6 +23,8 @@ var internalProxy *architectUserPromptProxy
 
 type createArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string, checkCache bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
+type getAllArchitectUserPromptsFilterByNameFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error)
+type getArchitectUserPromptPageCountFunc func(ctx context.Context, p *architectUserPromptProxy, name string) (int, *platformclientv2.APIResponse, error)
 type getAllArchitectUserPromptsFunc func(ctx context.Context, p *architectUserPromptProxy, includeMediaUris bool, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type updateArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type deleteArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error)
@@ -38,6 +41,8 @@ type architectUserPromptProxy struct {
 	architectApi                                   *platformclientv2.ArchitectApi
 	createArchitectUserPromptAttr                  createArchitectUserPromptFunc
 	getArchitectUserPromptAttr                     getArchitectUserPromptFunc
+	getAllArchitectUserPromptsFilterByNameAttr     getAllArchitectUserPromptsFilterByNameFunc
+	getArchitectUserPromptPageCountAttr            getArchitectUserPromptPageCountFunc
 	getAllArchitectUserPromptsAttr                 getAllArchitectUserPromptsFunc
 	updateArchitectUserPromptAttr                  updateArchitectUserPromptFunc
 	deleteArchitectUserPromptAttr                  deleteArchitectUserPromptFunc
@@ -58,6 +63,8 @@ func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *
 		architectApi:                                   api,
 		createArchitectUserPromptAttr:                  createArchitectUserPromptFn,
 		getArchitectUserPromptAttr:                     getArchitectUserPromptFn,
+		getAllArchitectUserPromptsFilterByNameAttr:     getAllArchitectUserPromptsFilterByNameFn,
+		getArchitectUserPromptPageCountAttr:            getArchitectUserPromptPageCountFn,
 		getAllArchitectUserPromptsAttr:                 getAllArchitectUserPromptsFn,
 		updateArchitectUserPromptAttr:                  updateArchitectUserPromptFn,
 		deleteArchitectUserPromptAttr:                  deleteArchitectUserPromptFn,
@@ -87,6 +94,14 @@ func (p *architectUserPromptProxy) createArchitectUserPrompt(ctx context.Context
 // getArchitectUserPrompt retrieves a user prompt
 func (p *architectUserPromptProxy) getArchitectUserPrompt(ctx context.Context, id string, includeMediaUris, includeResources bool, languages []string, checkCache bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	return p.getArchitectUserPromptAttr(ctx, p, id, includeMediaUris, includeResources, languages, checkCache)
+}
+
+func (p *architectUserPromptProxy) getAllArchitectUserPromptsFilterByName(ctx context.Context, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
+	return p.getAllArchitectUserPromptsFilterByNameAttr(ctx, p, includeMediaUris, includeResources, name)
+}
+
+func (p *architectUserPromptProxy) getArchitectUserPromptPageCount(ctx context.Context, name string) (int, *platformclientv2.APIResponse, error) {
+	return p.getArchitectUserPromptPageCountAttr(ctx, p, name)
 }
 
 // getAllArchitectUserPrompts retrieves a list of user prompts
@@ -153,6 +168,52 @@ func deleteArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy,
 	}
 	rc.DeleteCacheItem(p.promptCache, id)
 	return nil, nil
+}
+
+func getAllArchitectUserPromptsFilterByNameFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, exportNameFilter string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
+	var allPrompts []platformclientv2.Prompt
+	var response *platformclientv2.APIResponse
+
+	for _, filter := range strings.Split(exportNameFilter, "") {
+		userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{filter + "*"}, "", "", "", "", includeMediaUris, includeResources, nil)
+		if err != nil {
+			return nil, response, err
+		}
+
+		allPrompts = append(allPrompts, *userPrompts.Entities...)
+
+		pageCount := *userPrompts.PageCount
+		if userPrompts.Entities != nil || len(*userPrompts.Entities) != 0 {
+			for pageNum := 2; pageNum <= pageCount; pageNum++ {
+				userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, []string{filter + "*"}, "", "", "", "", includeMediaUris, includeResources, nil)
+				if getErr != nil {
+					return nil, response, getErr
+				}
+
+				if userPrompts == nil || userPrompts.Entities == nil || len(*userPrompts.Entities) == 0 {
+					break
+				}
+
+				allPrompts = append(allPrompts, *userPrompts.Entities...)
+			}
+		}
+	}
+
+	for _, prompt := range allPrompts {
+		rc.SetCache(p.promptCache, *prompt.Id, prompt)
+	}
+
+	return &allPrompts, response, nil
+}
+
+func getArchitectUserPromptPageCountFn(_ context.Context, p *architectUserPromptProxy, name string) (int, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
+	userPrompts, resp, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{name}, "", "", "", "", false, false, nil)
+	if err != nil {
+		return 0, resp, err
+	}
+	return *userPrompts.PageCount, nil, nil
 }
 
 func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {

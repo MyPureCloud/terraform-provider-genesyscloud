@@ -14,12 +14,12 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceName = "genesyscloud_group_roles"
+const ResourceType = "genesyscloud_group_roles"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceGroupRoles())
-	l.RegisterExporter(resourceName, GroupRolesExporter())
+	l.RegisterResource(ResourceType, ResourceGroupRoles())
+	l.RegisterExporter(ResourceType, GroupRolesExporter())
 }
 
 var (
@@ -94,7 +94,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 		const pageSize = 100
 		groups, resp, getErr := groupsAPI.GetGroups(pageSize, pageNum, nil, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of groups error: %s", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of groups error: %s", getErr), resp)
 		}
 
 		if groups.Entities == nil || len(*groups.Entities) == 0 {
@@ -102,7 +102,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 		}
 
 		for _, group := range *groups.Entities {
-			resources[*group.Id] = &resourceExporter.ResourceMeta{Name: *group.Name}
+			resources[*group.Id] = &resourceExporter.ResourceMeta{BlockLabel: *group.Name}
 		}
 	}
 

@@ -193,7 +193,7 @@ func getAllEvaluationForms(_ context.Context, clientConfig *platformclientv2.Con
 		}
 
 		for _, evaluationForm := range *evaluationForms.Entities {
-			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{Name: *evaluationForm.Name}
+			resources[*evaluationForm.Id] = &resourceExporter.ResourceMeta{BlockLabel: *evaluationForm.Name}
 		}
 	}
 
@@ -288,7 +288,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm(), constants.DefaultConsistencyChecks, "genesyscloud_quality_forms_evaluation")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEvaluationForm(), constants.ConsistencyChecks(), "genesyscloud_quality_forms_evaluation")
 
 	log.Printf("Reading evaluation form %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -641,13 +641,13 @@ func flattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 	return []interface{}{visibilityConditionMap}
 }
 
-func GenerateEvaluationFormResource(resourceID string, evaluationForm *EvaluationFormStruct) string {
+func GenerateEvaluationFormResource(resourceLabel string, evaluationForm *EvaluationFormStruct) string {
 	return fmt.Sprintf(`resource "genesyscloud_quality_forms_evaluation" "%s" {
 		name = "%s"
 		published = %v
 		%s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		evaluationForm.Name,
 		evaluationForm.Published,
 		GenerateEvaluationFormQuestionGroups(&evaluationForm.QuestionGroups),

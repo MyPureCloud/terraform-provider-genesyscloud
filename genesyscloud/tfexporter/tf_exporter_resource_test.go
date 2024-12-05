@@ -7,8 +7,10 @@ import (
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
+	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	knowledge "terraform-provider-genesyscloud/genesyscloud/knowledge"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 
@@ -20,6 +22,7 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
+	cMessagingOpen "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	defaultSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
@@ -39,6 +42,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
+	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	"terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -98,6 +102,8 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -122,111 +128,111 @@ type registerTestInstance struct {
 }
 
 func (r *registerTestInstance) registerTestResources() {
-	providerResources["genesyscloud_organization_authentication_settings"] = oAuthSettings.ResourceOrganizationAuthenticationSettings()
-	providerResources["genesyscloud_orgauthorization_pairing"] = oAuthPairing.ResourceOrgauthorizationPairing()
-	providerResources["genesyscloud_architect_grammar"] = grammar.ResourceArchitectGrammar()
-	providerResources["genesyscloud_architect_grammar_language"] = grammarLanguage.ResourceArchitectGrammarLanguage()
-	providerResources["genesyscloud_architect_datatable"] = dt.ResourceArchitectDatatable()
-	providerResources["genesyscloud_architect_datatable_row"] = architect_datatable_row.ResourceArchitectDatatableRow()
-	providerResources["genesyscloud_architect_emergencygroup"] = emergencyGroup.ResourceArchitectEmergencyGroup()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_flow_milestone"] = flowMilestone.ResourceFlowMilestone()
-	providerResources["genesyscloud_flow_outcome"] = flowOutcome.ResourceFlowOutcome()
-	providerResources["genesyscloud_architect_ivr"] = archIvr.ResourceArchitectIvrConfig()
-	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
-	providerResources["genesyscloud_architect_schedulegroups"] = architectSchedulegroups.ResourceArchitectSchedulegroups()
-	providerResources["genesyscloud_architect_user_prompt"] = userPrompt.ResourceArchitectUserPrompt()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
-	providerResources["genesyscloud_employeeperformance_externalmetrics_definitions"] = employeeperformanceExternalmetricsDefinition.ResourceEmployeeperformanceExternalmetricsDefinition()
-	providerResources["genesyscloud_flow_loglevel"] = flowLogLevel.ResourceFlowLoglevel()
-	providerResources["genesyscloud_group"] = group.ResourceGroup()
-	providerResources["genesyscloud_group_roles"] = groupRoles.ResourceGroupRoles()
-	providerResources["genesyscloud_idp_adfs"] = idpAdfs.ResourceIdpAdfs()
-	providerResources["genesyscloud_idp_generic"] = idpGeneric.ResourceIdpGeneric()
-	providerResources["genesyscloud_idp_gsuite"] = idpGsuite.ResourceIdpGsuite()
-	providerResources["genesyscloud_idp_okta"] = idpOkta.ResourceIdpOkta()
-	providerResources["genesyscloud_idp_onelogin"] = idpOneLogin.ResourceIdpOnelogin()
-	providerResources["genesyscloud_idp_ping"] = idpPing.ResourceIdpPing()
-	providerResources["genesyscloud_idp_salesforce"] = idpSalesforce.ResourceIdpSalesforce()
-	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
-	providerResources["genesyscloud_integration_action"] = integrationAction.ResourceIntegrationAction()
-	providerResources["genesyscloud_integration_credential"] = integrationCred.ResourceIntegrationCredential()
-	providerResources["genesyscloud_integration_facebook"] = integrationFacebook.ResourceIntegrationFacebook()
-	providerResources["genesyscloud_conversations_messaging_integrations_instagram"] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
-	providerResources["genesyscloud_journey_action_map"] = gcloud.ResourceJourneyActionMap()
-	providerResources["genesyscloud_journey_action_template"] = gcloud.ResourceJourneyActionTemplate()
+	providerResources[oAuthSettings.ResourceType] = oAuthSettings.ResourceOrganizationAuthenticationSettings()
+	providerResources[oAuthPairing.ResourceType] = oAuthPairing.ResourceOrgauthorizationPairing()
+	providerResources[grammar.ResourceType] = grammar.ResourceArchitectGrammar()
+	providerResources[grammarLanguage.ResourceType] = grammarLanguage.ResourceArchitectGrammarLanguage()
+	providerResources[dt.ResourceType] = dt.ResourceArchitectDatatable()
+	providerResources[architect_datatable_row.ResourceType] = architect_datatable_row.ResourceArchitectDatatableRow()
+	providerResources[emergencyGroup.ResourceType] = emergencyGroup.ResourceArchitectEmergencyGroup()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[flowMilestone.ResourceType] = flowMilestone.ResourceFlowMilestone()
+	providerResources[flowOutcome.ResourceType] = flowOutcome.ResourceFlowOutcome()
+	providerResources[archIvr.ResourceType] = archIvr.ResourceArchitectIvrConfig()
+	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
+	providerResources[architectSchedulegroups.ResourceType] = architectSchedulegroups.ResourceArchitectSchedulegroups()
+	providerResources[userPrompt.ResourceType] = userPrompt.ResourceArchitectUserPrompt()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[employeeperformanceExternalmetricsDefinition.ResourceType] = employeeperformanceExternalmetricsDefinition.ResourceEmployeeperformanceExternalmetricsDefinition()
+	providerResources[flowLogLevel.ResourceType] = flowLogLevel.ResourceFlowLoglevel()
+	providerResources[group.ResourceType] = group.ResourceGroup()
+	providerResources[groupRoles.ResourceType] = groupRoles.ResourceGroupRoles()
+	providerResources[idpAdfs.ResourceType] = idpAdfs.ResourceIdpAdfs()
+	providerResources[idpGeneric.ResourceType] = idpGeneric.ResourceIdpGeneric()
+	providerResources[idpGsuite.ResourceType] = idpGsuite.ResourceIdpGsuite()
+	providerResources[idpOkta.ResourceType] = idpOkta.ResourceIdpOkta()
+	providerResources[idpOneLogin.ResourceType] = idpOneLogin.ResourceIdpOnelogin()
+	providerResources[idpPing.ResourceType] = idpPing.ResourceIdpPing()
+	providerResources[idpSalesforce.ResourceType] = idpSalesforce.ResourceIdpSalesforce()
+	providerResources[integration.ResourceType] = integration.ResourceIntegration()
+	providerResources[integrationAction.ResourceType] = integrationAction.ResourceIntegrationAction()
+	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
+	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
+	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
+	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
+	providerResources[journeyActionTemplate.ResourceType] = journeyActionTemplate.ResourceJourneyActionTemplate()
+	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
+	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
+	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
+	providerResources[obSettings.ResourceType] = obSettings.ResourceOutboundSettings()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[respmanagementLibrary.ResourceType] = respmanagementLibrary.ResourceResponsemanagementLibrary()
+	providerResources[respManagementRespAsset.ResourceType] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
+	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
+	providerResources[routingEmailRoute.ResourceType] = routingEmailRoute.ResourceRoutingEmailRoute()
+	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[routingQueueConditionalGroupRouting.ResourceType] = routingQueueConditionalGroupRouting.ResourceRoutingQueueConditionalGroupRouting()
+	providerResources[routingQueueOutboundEmailAddress.ResourceType] = routingQueueOutboundEmailAddress.ResourceRoutingQueueOutboundEmailAddress()
+	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
+	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
+	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
+	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[edgeExtension.ResourceType] = edgeExtension.ResourceTelephonyExtensionPool()
+	providerResources[edgePhone.ResourceType] = edgePhone.ResourcePhone()
+	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
+	providerResources[outboundRoute.ResourceType] = outboundRoute.ResourceSiteOutboundRoute()
+	providerResources[phonebaseSettings.ResourceType] = phonebaseSettings.ResourcePhoneBaseSettings()
+	providerResources[tbs.ResourceType] = tbs.ResourceTrunkBaseSettings()
+	providerResources[edgesTrunk.ResourceType] = edgesTrunk.ResourceTrunk()
+	providerResources[edgeGroup.ResourceType] = edgeGroup.ResourceEdgeGroup()
+	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
+	providerResources[webdeployDeploy.ResourceType] = webdeployDeploy.ResourceWebDeployment()
+	providerResources[webdeployConfig.ResourceType] = webdeployConfig.ResourceWebDeploymentConfiguration()
+	providerResources[pat.ResourceType] = pat.ResourceProcessAutomationTrigger()
+	providerResources[outboundAttemptLimit.ResourceType] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
+	providerResources[obCallResponseSet.ResourceType] = obCallResponseSet.ResourceOutboundCallanalysisresponseset()
+	providerResources[obCallableTimeset.ResourceType] = obCallableTimeset.ResourceOutboundCallabletimeset()
+	providerResources[obCampaign.ResourceType] = obCampaign.ResourceOutboundCampaign()
+	providerResources[outboundContactList.ResourceType] = outboundContactList.ResourceOutboundContactList()
+	providerResources[outboundContactListTemplate.ResourceType] = outboundContactListTemplate.ResourceOutboundContactListTemplate()
+	providerResources[outboundContactListContact.ResourceType] = outboundContactListContact.ResourceOutboundContactListContact()
+	providerResources[obContactListFilter.ResourceType] = obContactListFilter.ResourceOutboundContactlistfilter()
+	providerResources[ob.ResourceType] = ob.ResourceOutboundMessagingCampaign()
+	providerResources[obSequence.ResourceType] = obSequence.ResourceOutboundSequence()
+	providerResources[obDncList.ResourceType] = obDncList.ResourceOutboundDncList()
+	providerResources[obCampaignRule.ResourceType] = obCampaignRule.ResourceOutboundCampaignrule()
+	providerResources[obDigitalRuleset.ResourceType] = obDigitalRuleset.ResourceOutboundDigitalruleset()
+	providerResources[obfst.ResourceType] = obfst.ResourceOutboundFileSpecificationTemplate()
+	providerResources[obw.ResourceType] = obw.ResourceOutboundWrapUpCodeMappings()
+	providerResources[responsemanagementResponse.ResourceType] = responsemanagementResponse.ResourceResponsemanagementResponse()
+	providerResources[routingSmsAddress.ResourceType] = routingSmsAddress.ResourceRoutingSmsAddress()
+	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
+	providerResources[didPool.ResourceType] = didPool.ResourceTelephonyDidPool()
+	providerResources[scripts.ResourceType] = scripts.ResourceScript()
+	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
+	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
+	providerResources[supportedContent.ResourceType] = supportedContent.ResourceSupportedContent()
+	providerResources[cMessagingSettings.ResourceType] = cMessagingSettings.ResourceConversationsMessagingSettings()
+	providerResources[defaultSupportedContent.ResourceType] = defaultSupportedContent.ResourceConversationsMessagingSupportedcontentDefault()
+	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
+	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
+	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
+	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
+
+	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
+	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
+	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
+	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
+	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_document"] = knowledgeDocument.ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
-	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
-	providerResources["genesyscloud_location"] = location.ResourceLocation()
-	providerResources["genesyscloud_recording_media_retention_policy"] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
-	providerResources["genesyscloud_oauth_client"] = oauth_client.ResourceOAuthClient()
-	providerResources["genesyscloud_outbound_settings"] = obSettings.ResourceOutboundSettings()
-	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
-	providerResources["genesyscloud_responsemanagement_library"] = respmanagementLibrary.ResourceResponsemanagementLibrary()
-	providerResources["genesyscloud_responsemanagement_responseasset"] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
-	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_email_route"] = routingEmailRoute.ResourceRoutingEmailRoute()
-	providerResources["genesyscloud_routing_language"] = routinglanguage.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_queue_conditional_group_routing"] = routingQueueConditionalGroupRouting.ResourceRoutingQueueConditionalGroupRouting()
-	providerResources["genesyscloud_routing_queue_outbound_email_address"] = routingQueueOutboundEmailAddress.ResourceRoutingQueueOutboundEmailAddress()
-	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
-	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
-	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
-	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_telephony_providers_edges_extension_pool"] = edgeExtension.ResourceTelephonyExtensionPool()
-	providerResources["genesyscloud_telephony_providers_edges_phone"] = edgePhone.ResourcePhone()
-	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
-	providerResources["genesyscloud_telephony_providers_edges_site_outbound_route"] = outboundRoute.ResourceSiteOutboundRoute()
-	providerResources["genesyscloud_telephony_providers_edges_phonebasesettings"] = phonebaseSettings.ResourcePhoneBaseSettings()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = tbs.ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_telephony_providers_edges_trunk"] = edgesTrunk.ResourceTrunk()
-	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = edgeGroup.ResourceEdgeGroup()
-
-	providerResources["genesyscloud_user_roles"] = userRoles.ResourceUserRoles()
-	providerResources["genesyscloud_webdeployments_deployment"] = webdeployDeploy.ResourceWebDeployment()
-	providerResources["genesyscloud_webdeployments_configuration"] = webdeployConfig.ResourceWebDeploymentConfiguration()
-	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
-	providerResources["genesyscloud_processautomation_trigger"] = pat.ResourceProcessAutomationTrigger()
-
-	providerResources["genesyscloud_outbound_attempt_limit"] = outboundAttemptLimit.ResourceOutboundAttemptLimit()
-	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obCallResponseSet.ResourceOutboundCallanalysisresponseset()
-	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_outbound_campaign"] = obCampaign.ResourceOutboundCampaign()
-	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_outbound_contact_list_template"] = outboundContactListTemplate.ResourceOutboundContactListTemplate()
-	providerResources["genesyscloud_outbound_contact_list_contact"] = outboundContactListContact.ResourceOutboundContactListContact()
-	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
-	providerResources["genesyscloud_outbound_messagingcampaign"] = ob.ResourceOutboundMessagingCampaign()
-	providerResources["genesyscloud_outbound_sequence"] = obSequence.ResourceOutboundSequence()
-	providerResources["genesyscloud_outbound_dnclist"] = obDncList.ResourceOutboundDncList()
-	providerResources["genesyscloud_outbound_campaignrule"] = obCampaignRule.ResourceOutboundCampaignrule()
-	providerResources["genesyscloud_outbound_digitalruleset"] = obDigitalRuleset.ResourceOutboundDigitalruleset()
-	providerResources["genesyscloud_outbound_filespecificationtemplate"] = obfst.ResourceOutboundFileSpecificationTemplate()
-	providerResources["genesyscloud_outbound_wrapupcodemappings"] = obw.ResourceOutboundWrapUpCodeMappings()
-	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
-	providerResources["genesyscloud_responsemanagement_response"] = responsemanagementResponse.ResourceResponsemanagementResponse()
-	providerResources["genesyscloud_routing_sms_address"] = routingSmsAddress.ResourceRoutingSmsAddress()
-	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
-	providerResources["genesyscloud_script"] = scripts.ResourceScript()
-
-	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
-	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
-	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
-
-	providerResources["genesyscloud_conversations_messaging_supportedcontent"] = supportedContent.ResourceSupportedContent()
-	providerResources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.ResourceConversationsMessagingSettings()
-	providerResources["genesyscloud_conversations_messaging_supportedcontent_default"] = defaultSupportedContent.ResourceConversationsMessagingSupportedcontentDefault()
-	providerResources["genesyscloud_task_management_worktype_status"] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -262,13 +268,13 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_integration_credential", integrationCred.IntegrationCredentialExporter())
 	RegisterExporter("genesyscloud_integration_facebook", integrationFacebook.IntegrationFacebookExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_instagram", integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
-	RegisterExporter("genesyscloud_journey_action_map", gcloud.JourneyActionMapExporter())
-	RegisterExporter("genesyscloud_journey_action_template", gcloud.JourneyActionTemplateExporter())
+	RegisterExporter("genesyscloud_journey_action_map", journeyActionMap.JourneyActionMapExporter())
+	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplate.JourneyActionTemplateExporter())
 	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
 	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
 	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
 	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())
-	RegisterExporter("genesyscloud_knowledge_category", gcloud.KnowledgeCategoryExporter())
+	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
 	RegisterExporter("genesyscloud_location", location.LocationExporter())
 	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
@@ -321,7 +327,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 
 	RegisterExporter("genesyscloud_knowledge_document_variation", knowledge.KnowledgeDocumentVariationExporter())
-	RegisterExporter("genesyscloud_knowledge_label", gcloud.KnowledgeLabelExporter())
+	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
 
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
@@ -335,21 +341,21 @@ func (r *registerTestInstance) registerTestExporters() {
 
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent_default", defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
-
+	RegisterExporter("genesyscloud_conversations_messaging_integrations_open", cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
-
+	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_script"] = scripts.DataSourceScript()
-	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
-	providerDataSources["genesyscloud_conversations_messaging_settings"] = cMessagingSettings.DataSourceConversationsMessagingSettings()
+	providerDataSources[scripts.ResourceType] = scripts.DataSourceScript()
+	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
+	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 }
 
-func RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
-	resourceExporters[exporterName] = resourceExporter
+func RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter) {
+	resourceExporters[exporterResourceType] = resourceExporter
 }
 
 func TestMain(m *testing.M) {

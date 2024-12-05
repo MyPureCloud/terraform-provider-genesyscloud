@@ -31,11 +31,11 @@ func getAllAuthJourneyOutcomePredictors(ctx context.Context, clientConfig *platf
 
 	predictors, resp, err := op.getAllJourneyOutcomePredictor(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get predictors: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get predictors: %v", err), resp)
 	}
 
 	for _, predictor := range *predictors {
-		resources[*predictor.Id] = &resourceExporter.ResourceMeta{Name: *predictor.Id}
+		resources[*predictor.Id] = &resourceExporter.ResourceMeta{BlockLabel: *predictor.Id}
 	}
 
 	return resources, nil
@@ -60,7 +60,7 @@ func createJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 
 	predictor, resp, err := op.createJourneyOutcomePredictor(ctx, &predictorRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create predictor: %s | error: %s", outcomeId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create predictor: %s | error: %s", outcomeId, err), resp)
 	}
 
 	d.SetId(*predictor.Id)
@@ -72,7 +72,7 @@ func createJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 func readJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	op := getJourneyOutcomePredictorProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcomePredictor(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyOutcomePredictor(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading predictor %s", d.Id())
 
@@ -80,9 +80,9 @@ func readJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, me
 		predictor, resp, getErr := op.getJourneyOutcomePredictorById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read predictor %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read predictor %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read predictor %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read predictor %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		d.Set("outcome_id", *predictor.Outcome.Id)
@@ -98,14 +98,14 @@ func deleteJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 
 	resp, err := op.deleteJourneyOutcomePredictor(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete predictor %s | error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete predictor %s | error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := op.getJourneyOutcomePredictorById(ctx, d.Id())
 
 		if err == nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting predictor %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting predictor %s | error: %s", d.Id(), err), resp))
 		}
 		if util.IsStatus404(resp) {
 			// Success  : Predictor deleted
@@ -113,6 +113,6 @@ func deleteJourneyOutcomePredictor(ctx context.Context, d *schema.ResourceData, 
 			return nil
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Predictor %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Predictor %s still exists", d.Id()), resp))
 	})
 }

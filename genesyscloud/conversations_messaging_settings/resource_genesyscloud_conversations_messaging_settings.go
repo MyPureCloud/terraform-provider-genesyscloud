@@ -24,11 +24,11 @@ func getAllAuthConversationsMessagingSettings(ctx context.Context, clientConfig 
 
 	messagingSettings, resp, err := proxy.getAllConversationsMessagingSettings(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get Conversations messaging Settings: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Conversations messaging Settings: %s", err), resp)
 	}
 
 	for _, messagingSetting := range *messagingSettings {
-		resources[*messagingSetting.Id] = &resourceExporter.ResourceMeta{Name: *messagingSetting.Name}
+		resources[*messagingSetting.Id] = &resourceExporter.ResourceMeta{BlockLabel: *messagingSetting.Name}
 	}
 
 	return resources, nil
@@ -43,7 +43,7 @@ func createConversationsMessagingSettings(ctx context.Context, d *schema.Resourc
 	log.Printf("Creating conversations messaging settings %s", *conversationsMessagingSettingsReq.Name)
 	messagingSetting, resp, err := proxy.createConversationsMessagingSettings(ctx, &conversationsMessagingSettingsReq)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create conversations messaging setting %s error: %s", *conversationsMessagingSettingsReq.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create conversations messaging setting %s error: %s", *conversationsMessagingSettingsReq.Name, err), resp)
 	}
 
 	d.SetId(*messagingSetting.Id)
@@ -54,7 +54,7 @@ func createConversationsMessagingSettings(ctx context.Context, d *schema.Resourc
 func readConversationsMessagingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsMessagingSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingSettings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading conversations messaging settings %s", d.Id())
 
@@ -62,9 +62,9 @@ func readConversationsMessagingSettings(ctx context.Context, d *schema.ResourceD
 		messagingSetting, resp, err := proxy.getConversationsMessagingSettingsById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging settings %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging settings %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging settings %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging settings %s | error: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", messagingSetting.Name)
@@ -98,7 +98,7 @@ func updateConversationsMessagingSettings(ctx context.Context, d *schema.Resourc
 
 	_, resp, err := proxy.updateConversationsMessagingSettings(ctx, d.Id(), &conversationsMessagingSettings)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update conversations messaging settings %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update conversations messaging settings %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated conversations messaging settings %s", d.Id())
@@ -113,15 +113,15 @@ func deleteConversationsMessagingSettings(ctx context.Context, d *schema.Resourc
 	// Check that messaging setting is not the default setting before deletion
 	defaultSetting, response, getErr := proxy.getConversationsMessagingSettingsDefault(ctx)
 	if getErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get conversations messaging setting default %s error: %s", d.Id(), getErr), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get conversations messaging setting default %s error: %s", d.Id(), getErr), response)
 	}
 	if defaultSetting != nil && *defaultSetting.Id == d.Id() {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Messaging Settings: %s cannot be deleted since it is the default config for an organization", d.Id()), fmt.Errorf("messaging Settings cannot be deleted since it is the default config for an organization"))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Messaging Settings: %s cannot be deleted since it is the default config for an organization", d.Id()), fmt.Errorf("messaging Settings cannot be deleted since it is the default config for an organization"))
 	}
 
 	resp, err := proxy.deleteConversationsMessagingSettings(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete conversations messaging setting %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete conversations messaging setting %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -131,8 +131,8 @@ func deleteConversationsMessagingSettings(ctx context.Context, d *schema.Resourc
 				log.Printf("Deleted Conversations messaging Setting")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Conversations messaging Setting: %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Conversations messaging Setting: %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Conversations messaging Setting %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Conversations messaging Setting %s still exists", d.Id()), resp))
 	})
 }

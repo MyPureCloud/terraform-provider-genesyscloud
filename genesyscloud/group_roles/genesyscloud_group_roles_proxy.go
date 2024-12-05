@@ -111,7 +111,7 @@ func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, ro
 		diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			resp, err := p.authorizationApi.PostAuthorizationSubjectBulkadd(roleId, roleDivPairsToGrants(grantsToAdd), subjectType)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to add role grants for subject %s: %s", roleId, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to add role grants for subject %s: %s", roleId, err), resp)
 			}
 			return nil, nil
 		})

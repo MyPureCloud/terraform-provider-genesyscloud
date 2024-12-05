@@ -26,11 +26,11 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 	key := d.Get("name").(string)
 
 	if dataSourceRoutingQueueCache == nil {
-		log.Printf("Instantiating the %s data source cache object", resourceName)
+		log.Printf("Instantiating the %s data source cache object", ResourceType)
 		dataSourceRoutingQueueCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingQueueCacheFn, getQueueByNameFn)
 	}
 
-	queueId, err := rc.RetrieveId(dataSourceRoutingQueueCache, resourceName, key, ctx)
+	queueId, err := rc.RetrieveId(dataSourceRoutingQueueCache, ResourceType, key, ctx)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
 
-	log.Printf("Hydrating cache for data source %s", resourceName)
+	log.Printf("Hydrating cache for data source %s", ResourceType)
 
 	allQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
@@ -59,7 +59,7 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		c.Cache[*queue.Name] = *queue.Id
 	}
 
-	log.Printf("Cache hydration complete for data source %s", resourceName)
+	log.Printf("Cache hydration complete for data source %s", ResourceType)
 	return nil
 }
 
@@ -71,7 +71,7 @@ func getQueueByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		queueID, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name)
 		if getErr != nil {
-			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp)
+			errMsg := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp)
 			if !retryable {
 				return retry.NonRetryableError(errMsg)
 			}

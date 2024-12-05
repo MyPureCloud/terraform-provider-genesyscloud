@@ -23,11 +23,11 @@ var (
 
 func TestAccResourceAuthDivisionBasic(t *testing.T) {
 	var (
-		divResource1 = "auth-division1"
-		divName1     = "Terraform Div-" + uuid.NewString()
-		divName2     = "Terraform Div-" + uuid.NewString()
-		divDesc1     = "Terraform test division"
-		divisionID   string
+		divResourceLabel1 = "auth-division1"
+		divName1          = "Terraform Div-" + uuid.NewString()
+		divName2          = "Terraform Div-" + uuid.NewString()
+		divDesc1          = "Terraform test division"
+		divisionID        string
 	)
 	cleanupAuthDivision("Terraform")
 
@@ -38,22 +38,22 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateAuthDivisionResource(
-					divResource1,
+					divResourceLabel1,
 					divName1,
 					util.NullValue, // No description
 					util.NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName1),
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", ""),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResourceLabel1, "name", divName1),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResourceLabel1, "description", ""),
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
 						return nil
 					},
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource1]
+						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResourceLabel1]
 						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResource1)
+							return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResourceLabel1)
 						}
 						divisionID = rs.Primary.ID
 						log.Printf("Division ID: %s\n", divisionID) // Print ID
@@ -64,7 +64,7 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 			{
 				// Update with a new name and description
 				Config: GenerateAuthDivisionResource(
-					divResource1,
+					divResourceLabel1,
 					divName2,
 					strconv.Quote(divDesc1),
 					util.NullValue, // Not home division
@@ -79,19 +79,19 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 			{
 				// Update with a new name and description
 				Config: GenerateAuthDivisionResource(
-					divResource1,
+					divResourceLabel1,
 					divName2,
 					strconv.Quote(divDesc1),
 					util.NullValue, // Not home division
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "name", divName2),
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResource1, "description", divDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResourceLabel1, "name", divName2),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divResourceLabel1, "description", divDesc1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_auth_division." + divResource1,
+				ResourceName:      "genesyscloud_auth_division." + divResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
@@ -106,10 +106,10 @@ func TestAccResourceAuthDivisionBasic(t *testing.T) {
 
 func TestAccResourceAuthDivisionHome(t *testing.T) {
 	var (
-		divHomeRes  = "auth-division-home"
-		divHomeName = "New Home"
-		homeDesc    = "Home"
-		homeDesc2   = "Home Division"
+		divHomeResourceLabel = "auth-division-home"
+		divHomeName          = "New Home"
+		homeDesc             = "Home"
+		homeDesc2            = "Home Division"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -119,7 +119,7 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 			{
 				// Set home division description
 				Config: GenerateAuthDivisionResource(
-					divHomeRes,
+					divHomeResourceLabel,
 					divHomeName,
 					strconv.Quote(homeDesc),
 					util.TrueValue, // Home division
@@ -128,21 +128,21 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 			{
 				// Set home division description again
 				Config: GenerateAuthDivisionResource(
-					divHomeRes,
+					divHomeResourceLabel,
 					divHomeName,
 					strconv.Quote(homeDesc),
 					util.TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "description", homeDesc),
-					validateHomeDivisionID("genesyscloud_auth_division."+divHomeRes),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeResourceLabel, "name", divHomeName),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeResourceLabel, "description", homeDesc),
+					validateHomeDivisionID("genesyscloud_auth_division."+divHomeResourceLabel),
 				),
 			},
 			{
 				// Set home division description
 				Config: GenerateAuthDivisionResource(
-					divHomeRes,
+					divHomeResourceLabel,
 					divHomeName,
 					strconv.Quote(homeDesc2),
 					util.TrueValue, // Home division
@@ -157,19 +157,19 @@ func TestAccResourceAuthDivisionHome(t *testing.T) {
 			{
 				// Set home division description again
 				Config: GenerateAuthDivisionResource(
-					divHomeRes,
+					divHomeResourceLabel,
 					divHomeName,
 					strconv.Quote(homeDesc2),
 					util.TrueValue, // Home division
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "name", divHomeName),
-					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeRes, "description", homeDesc2),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeResourceLabel, "name", divHomeName),
+					resource.TestCheckResourceAttr("genesyscloud_auth_division."+divHomeResourceLabel, "description", homeDesc2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_auth_division." + divHomeRes,
+				ResourceName:      "genesyscloud_auth_division." + divHomeResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Check: resource.ComposeTestCheckFunc(
@@ -216,11 +216,11 @@ func testVerifyDivisionsDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
+func validateHomeDivisionID(divResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		divResource, ok := state.RootModule().Resources[divResourceName]
+		divResource, ok := state.RootModule().Resources[divResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find division %s in state", divResourceName)
+			return fmt.Errorf("Failed to find division %s in state", divResourcePath)
 		}
 		divID := divResource.Primary.ID
 		homeDivID, err := util.GetHomeDivisionID()
@@ -229,7 +229,7 @@ func validateHomeDivisionID(divResourceName string) resource.TestCheckFunc {
 		}
 
 		if divID != homeDivID {
-			return fmt.Errorf("Resource %s division ID %s not equal to home division ID %s", divResourceName, divID, homeDivID)
+			return fmt.Errorf("Resource %s division ID %s not equal to home division ID %s", divResourcePath, divID, homeDivID)
 		}
 		return nil
 	}

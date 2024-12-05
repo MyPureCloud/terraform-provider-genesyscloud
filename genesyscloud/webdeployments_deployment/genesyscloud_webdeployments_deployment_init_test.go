@@ -1,10 +1,11 @@
 package webdeployments_deployment
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // providerDataSources holds a map of all registered webdeployments_configuration
@@ -23,8 +24,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceWebDeployment()
-	providerResources["genesyscloud_webdeployments_configuration"] = webDeployConfig.ResourceWebDeploymentConfiguration()
+	providerResources[ResourceType] = ResourceWebDeployment()
+	providerResources[webDeployConfig.ResourceType] = webDeployConfig.ResourceWebDeploymentConfiguration()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -32,8 +33,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceWebDeploymentsDeployment()
-	providerResources["genesyscloud_webdeployments_configuration"] = webDeployConfig.DataSourceWebDeploymentsConfiguration()
+	providerDataSources[ResourceType] = DataSourceWebDeploymentsDeployment()
+	providerResources[webDeployConfig.ResourceType] = webDeployConfig.DataSourceWebDeploymentsConfiguration()
 }
 
 // initTestResources initializes all test resources and data sources.

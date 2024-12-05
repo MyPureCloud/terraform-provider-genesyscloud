@@ -18,6 +18,7 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
+	cMessagingOpen "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -41,6 +42,8 @@ import (
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
+	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
 	"terraform-provider-genesyscloud/genesyscloud/knowledge"
@@ -78,8 +81,11 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
-	location "terraform-provider-genesyscloud/genesyscloud/location"
+	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
@@ -255,6 +261,7 @@ func registerResources() {
 	userRoles.SetRegistrar(regInstance)                                    //Registering user roles
 	user.SetRegistrar(regInstance)                                         //Registering user
 	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
+	journeyActionTemplate.SetRegistrar(regInstance)                        //Registering journey action template
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
@@ -265,6 +272,7 @@ func registerResources() {
 	routingUtilization.SetRegistrar(regInstance)                           //Registering routing utilization
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
+	journeyActionMap.SetRegistrar(regInstance)                             //Registering journey Action Map
 	routingWrapupcode.SetRegistrar(regInstance)                            //Registering routing wrapupcode
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
 	routingEmailDomain.SetRegistrar(regInstance)                           //Registering Routing Email Domain
@@ -274,25 +282,28 @@ func registerResources() {
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
+	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
+	externalOrganization.SetRegistrar(regInstance)                         //Registering external organization
+	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
+	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
-
 }
 
-func (r *RegisterInstance) RegisterResource(resourceName string, resource *schema.Resource) {
+func (r *RegisterInstance) RegisterResource(resourceType string, resource *schema.Resource) {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources[resourceName] = resource
+	providerResources[resourceType] = resource
 }
 
-func (r *RegisterInstance) RegisterDataSource(dataSourceName string, datasource *schema.Resource) {
+func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[dataSourceName] = datasource
+	providerDataSources[dataSourceType] = datasource
 }
 
 func (r *RegisterInstance) RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {

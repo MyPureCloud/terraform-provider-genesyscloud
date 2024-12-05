@@ -33,7 +33,7 @@ func deleteGroupRoles(_ context.Context, _ *schema.ResourceData, _ interface{}) 
 func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGroupRolesProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupRoles(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading roles for group %s", d.Id())
 
@@ -43,9 +43,9 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 		roles, resp, err := flattenSubjectRoles(d, proxy)
 		if err != nil {
 			if util.IsStatus404ByInt(resp.StatusCode) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))
 		}
 		d.Set("roles", roles)
 
@@ -70,7 +70,7 @@ func updateGroupRoles(ctx context.Context, d *schema.ResourceData, meta interfac
 	resp, diagErr := proxy.updateGroupRoles(ctx, d.Id(), rolesConfig, "PC_GROUP")
 
 	if diagErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update group role %s error: %s", d.Id(), diagErr), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group role %s error: %s", d.Id(), diagErr), resp)
 	}
 	log.Printf("Updated group roles %v", d.Id())
 	return readGroupRoles(ctx, d, meta)
