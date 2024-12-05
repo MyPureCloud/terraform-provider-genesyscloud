@@ -72,7 +72,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin(), constants.DefaultConsistencyChecks, ResourceType)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin(), constants.ConsistencyChecks(), ResourceType)
 
 		if oneLogin.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*oneLogin.Certificate}))

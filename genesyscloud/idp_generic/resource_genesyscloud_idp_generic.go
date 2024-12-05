@@ -62,7 +62,7 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading idp generic %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		genericSAML, resp, getErr := proxy.getIdpGeneric(ctx)

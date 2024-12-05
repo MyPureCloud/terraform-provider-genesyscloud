@@ -62,7 +62,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading idp ping")
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		pingIdentity, resp, getErr := proxy.getIdpPing(ctx)

@@ -65,7 +65,7 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Architect Grammar Language %s", d.Id())
 

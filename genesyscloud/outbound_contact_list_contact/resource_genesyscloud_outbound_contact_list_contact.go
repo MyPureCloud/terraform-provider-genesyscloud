@@ -87,7 +87,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		contactId = d.Get("contact_id").(string)
 	}
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContact(), constants.ConsistencyChecks(), ResourceType)
 
 	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var contactResponseBody *platformclientv2.Dialercontact

@@ -57,7 +57,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 func readJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneyActionMapProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyActionMap(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading journey action map %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

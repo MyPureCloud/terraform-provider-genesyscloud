@@ -64,7 +64,7 @@ func createRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta int
 func readRoutingLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingLanguageProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingLanguage(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading routing language %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

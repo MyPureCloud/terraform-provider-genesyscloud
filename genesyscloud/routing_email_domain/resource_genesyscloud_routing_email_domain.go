@@ -76,7 +76,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailDomainProxy(sdkConfig)
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading routing email domain %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

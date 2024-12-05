@@ -156,7 +156,7 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_knowledgebase")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase(), constants.ConsistencyChecks(), "genesyscloud_knowledge_knowledgebase")
 
 	log.Printf("Reading knowledge base %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

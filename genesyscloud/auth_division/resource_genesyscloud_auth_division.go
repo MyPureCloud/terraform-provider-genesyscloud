@@ -73,7 +73,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthDivisionProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading division %s", d.Id())
 

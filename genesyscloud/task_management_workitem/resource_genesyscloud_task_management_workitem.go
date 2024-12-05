@@ -67,7 +67,7 @@ func createTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, m
 func readTaskManagementWorkitem(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkitemProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkitem(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading task management workitem %s", d.Id())
 

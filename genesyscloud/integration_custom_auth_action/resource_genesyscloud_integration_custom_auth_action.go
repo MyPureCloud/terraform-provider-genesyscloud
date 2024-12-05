@@ -136,7 +136,7 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cap := getCustomAuthActionsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCustomAuthAction(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading integration action %s", d.Id())
 

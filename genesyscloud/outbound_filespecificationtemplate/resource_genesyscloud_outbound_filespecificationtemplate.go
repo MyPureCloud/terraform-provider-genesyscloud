@@ -72,7 +72,7 @@ func updateOutboundFileSpecificationTemplate(ctx context.Context, d *schema.Reso
 func readOutboundFileSpecificationTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundFilespecificationtemplateProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundFileSpecificationTemplate(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundFileSpecificationTemplate(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound File Specification Template %s", d.Id())
 

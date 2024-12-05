@@ -62,7 +62,7 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading flow milestone %s", d.Id())
 

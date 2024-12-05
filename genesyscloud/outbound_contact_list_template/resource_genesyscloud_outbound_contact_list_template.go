@@ -131,7 +131,7 @@ func updateOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlisttemplateProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListTemplate(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListTemplate(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Contact List Template %s", d.Id())
 

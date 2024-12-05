@@ -73,7 +73,7 @@ func createOutboundSequence(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundSequence(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSequenceProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSequence(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading outbound sequence %s", d.Id())
 

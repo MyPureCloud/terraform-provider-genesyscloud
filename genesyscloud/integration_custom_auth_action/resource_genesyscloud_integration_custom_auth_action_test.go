@@ -46,12 +46,12 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 	var (
 		// Integration Credentials
 		credentialResourceLabel1   = "test_integration_credential_1"
-		credentialResourceNameAttr = "Terraform Cred-" + uuid.NewString()
+		credentialResourceTypeAttr = "Terraform Cred-" + uuid.NewString()
 		credKey1                   = "loginUrl"
 		credVal1                   = "https://www.test-login.com"
 		credentialResourceConfig   = integrationCred.GenerateCredentialResource(
 			credentialResourceLabel1,
-			strconv.Quote(credentialResourceNameAttr),
+			strconv.Quote(credentialResourceTypeAttr),
 			strconv.Quote(customAuthCredentialType),
 			integrationCred.GenerateCredentialFields(
 				map[string]string{
@@ -62,14 +62,14 @@ func TestAccResourceIntegrationCustomAuthAction(t *testing.T) {
 
 		// Web Services Data Action Integration
 		integResourceLabel1       = "test_integration1"
-		integResourceNameAttr1    = "Terraform Integration-" + uuid.NewString()
+		integResourceTypeAttr1    = "Terraform Integration-" + uuid.NewString()
 		integTypeID               = "custom-rest-actions"
 		integrationResourceConfig = integration.GenerateIntegrationResource(
 			integResourceLabel1,
 			util.NullValue,
 			strconv.Quote(integTypeID),
 			integration.GenerateIntegrationConfig(
-				strconv.Quote(integResourceNameAttr1),
+				strconv.Quote(integResourceTypeAttr1),
 				util.NullValue, // no notes
 				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResourceLabel1),
 				util.NullValue, // no properties

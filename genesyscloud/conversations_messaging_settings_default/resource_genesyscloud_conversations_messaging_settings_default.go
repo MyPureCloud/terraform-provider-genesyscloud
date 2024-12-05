@@ -25,7 +25,7 @@ func createConversationsMessagingSettingsDefault(ctx context.Context, d *schema.
 func readConversationsMessagingSettingsDefault(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsMessagingSettingsDefaultProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingSettingsDefault(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingSettingsDefault(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading conversations messaging settings default %s", d.Id())
 
