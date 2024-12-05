@@ -2,11 +2,12 @@ package architect_datatable
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sort"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func buildSdkDatatableSchema(d *schema.ResourceData) (*Jsonschemadocument, diag.Diagnostics) {
@@ -73,7 +74,7 @@ func buildSdkDatatableProperties(d *schema.ResourceData) (*map[string]Datatablep
 					case "number":
 						defaultVal, err = strconv.ParseFloat(def, 64)
 					default:
-						return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid type %s for Datatable property %s", propType, propName), fmt.Errorf("invalid type for Datatable property"))
+						return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Invalid type %s for Datatable property %s", propType, propName), fmt.Errorf("invalid type for Datatable property"))
 					}
 					if err != nil {
 						return nil, diag.FromErr(err)

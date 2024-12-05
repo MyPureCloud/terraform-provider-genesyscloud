@@ -169,7 +169,7 @@ func GenerateOutboundContactListContact(
     callable        = %s
     %s
     %s
-}`, resourceName, resourceLabel, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
+}`, ResourceType, resourceLabel, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
 }
 
 func GeneratePhoneNumberStatus(key, callable string) string {

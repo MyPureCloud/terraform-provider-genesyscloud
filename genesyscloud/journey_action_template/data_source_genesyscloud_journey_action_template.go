@@ -1,4 +1,4 @@
-package genesyscloud
+package journey_action_template
 
 import (
 	"context"
@@ -14,20 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-func dataSourceJourneyActionTemplate() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Action Template. Select a journey action template by name",
-		ReadContext: provider.ReadWithPooledClient(dataSourceJourneyActionTemplateRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Journey Action Template name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
-
 func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
@@ -41,13 +27,13 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 			const pageSize = 100
 			journeyActionTemplates, resp, getErr := journeyApi.GetJourneyActiontemplates(pageNum, pageSize, "", "", "", nil, "")
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("failed to get page of journey action template: %v", getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of journey action template: %v", getErr), resp))
 			}
 
 			response = resp
 
 			if journeyActionTemplates.Entities == nil || len(*journeyActionTemplates.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("no journey action template found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey action template found with name %s", name), resp))
 			}
 
 			for _, actionTemplate := range *journeyActionTemplates.Entities {
@@ -59,6 +45,6 @@ func dataSourceJourneyActionTemplateRead(ctx context.Context, d *schema.Resource
 
 			pageCount = *journeyActionTemplates.PageCount
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_action_template", fmt.Sprintf("no journey action template found with name %s", name), response))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey action template found with name %s", name), response))
 	})
 }

@@ -29,7 +29,7 @@ func dataSourceAuthDivisionRead(ctx context.Context, d *schema.ResourceData, m i
 		dataSourceAuthDivisionCache = rc.NewDataSourceCache(sdkConfig, hydrateAuthDivisionCacheFn, getDivisionIdByNameFn)
 	}
 
-	divisionId, err := rc.RetrieveId(dataSourceAuthDivisionCache, resourceName, key, ctx)
+	divisionId, err := rc.RetrieveId(dataSourceAuthDivisionCache, ResourceType, key, ctx)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func normaliseAuthDivisionName(name string) string {
 func hydrateAuthDivisionCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	proxy := getAuthDivisionProxy(c.ClientConfig)
 
-	log.Printf("hydrating cache for data source %s", resourceName)
+	log.Printf("hydrating cache for data source %s", ResourceType)
 
 	allDivisions, resp, err := proxy.getAllAuthDivision(ctx, "")
 	if err != nil {
@@ -59,7 +59,7 @@ func hydrateAuthDivisionCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		c.Cache[normaliseAuthDivisionName(*div.Name)] = *div.Id
 	}
 
-	log.Printf("cache hydration complete for data source %s", resourceName)
+	log.Printf("cache hydration complete for data source %s", ResourceType)
 	return nil
 }
 
@@ -72,7 +72,7 @@ func getDivisionIdByNameFn(c *rc.DataSourceCache, name string, ctx context.Conte
 	diagErr := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		divisionId, resp, retryable, err := proxy.getAuthDivisionIdByName(ctx, name)
 		if err != nil {
-			errorDetails := util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf(`Could not find division "%s" | error: %s`, name, err.Error()), resp)
+			errorDetails := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf(`Could not find division "%s" | error: %s`, name, err.Error()), resp)
 			if !retryable {
 				return retry.NonRetryableError(errorDetails)
 			}

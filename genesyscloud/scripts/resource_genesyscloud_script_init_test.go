@@ -23,7 +23,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceScript()
+	providerResources[ResourceType] = ResourceScript()
 }
 
 // registerTestResource registers the CX as Code resources used in test
@@ -31,7 +31,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceScript()
+	providerDataSources[ResourceType] = DataSourceScript()
 }
 
 // initTestResources initializes all the data sources and resources

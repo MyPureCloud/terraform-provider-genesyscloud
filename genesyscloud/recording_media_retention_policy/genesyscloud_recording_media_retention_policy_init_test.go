@@ -48,19 +48,19 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceMediaRetentionPolicy()
-	providerResources["genesyscloud_routing_email_domain"] = routingEmailDomain.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_user_roles"] = userRoles.ResourceUserRoles()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
+	providerResources[ResourceType] = ResourceMediaRetentionPolicy()
+	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
+	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
-	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
-	providerResources["genesyscloud_routing_language"] = routingLanguage.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[integration.ResourceType] = integration.ResourceIntegration()
+	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -68,7 +68,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRecordingMediaRetentionPolicy()
+	providerDataSources[ResourceType] = DataSourceRecordingMediaRetentionPolicy()
 }
 
 // initTestResources initializes all test resources and data sources.

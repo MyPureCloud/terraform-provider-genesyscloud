@@ -20,11 +20,11 @@ func dataSourceConversationsMessagingSettingsRead(ctx context.Context, d *schema
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		messageSettingsId, resp, retryable, err := proxy.getConversationsMessagingSettingsIdByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting conversations messaging setting by name %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting conversations messaging setting by name %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no conversations messaging setting found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no conversations messaging setting found with name %s", name), resp))
 		}
 		d.SetId(messageSettingsId)
 		return nil

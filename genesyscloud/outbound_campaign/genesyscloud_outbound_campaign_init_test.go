@@ -50,19 +50,19 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOutboundCampaign()
-	providerResources["genesyscloud_outbound_contact_list"] = outboundContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_outbound_callanalysisresponseset"] = obResponseSet.ResourceOutboundCallanalysisresponseset()
-	providerResources["genesyscloud_location"] = location.ResourceLocation()
-	providerResources["genesyscloud_telephony_providers_edges_site"] = telephonyProvidersEdgesSite.ResourceSite()
-	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
-	providerResources["genesyscloud_outbound_ruleset"] = outboundRuleset.ResourceOutboundRuleset()
-	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceOutboundCampaign()
+	providerResources[outboundContactList.ResourceType] = outboundContactList.ResourceOutboundContactList()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[obResponseSet.ResourceType] = obResponseSet.ResourceOutboundCallanalysisresponseset()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[telephonyProvidersEdgesSite.ResourceType] = telephonyProvidersEdgesSite.ResourceSite()
+	providerResources[obDnclist.ResourceType] = obDnclist.ResourceOutboundDncList()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[obContactListFilter.ResourceType] = obContactListFilter.ResourceOutboundContactlistfilter()
+	providerResources[outboundRuleset.ResourceType] = outboundRuleset.ResourceOutboundRuleset()
+	providerResources[obCallableTimeset.ResourceType] = obCallableTimeset.ResourceOutboundCallabletimeset()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -70,7 +70,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOutboundCampaign()
+	providerDataSources[ResourceType] = DataSourceOutboundCampaign()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 

@@ -50,7 +50,7 @@ func updateWorktypeDefaultStatus(ctx context.Context, proxy *taskManagementWorkt
 
 	_, resp, err := proxy.worktypeProxy.UpdateTaskManagementWorktype(ctx, worktypeId, &worktypeUpdate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update worktype %s with default status %s.", worktypeId, statusId), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update worktype %s with default status %s.", worktypeId, statusId), resp)
 	}
 
 	return nil

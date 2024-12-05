@@ -1,20 +1,21 @@
 package architect_datatable_row
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_architect_datatable_row"
+const ResourceType = "genesyscloud_architect_datatable_row"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectDatatableRow())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectDatatableRow())
 	//No Datasource defined
-	regInstance.RegisterExporter(resourceName, ArchitectDatatableRowExporter())
+	regInstance.RegisterExporter(ResourceType, ArchitectDatatableRowExporter())
 }
 
 func ArchitectDatatableRowExporter() *resourceExporter.ResourceExporter {

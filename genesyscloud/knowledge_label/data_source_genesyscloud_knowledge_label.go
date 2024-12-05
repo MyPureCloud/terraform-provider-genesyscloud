@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge_label
 
 import (
 	"context"
@@ -13,25 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
-
-func dataSourceKnowledgeLabel() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Knowledge Base Label. Select a label by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceKnowledgeLabelRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Knowledge base label name",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"knowledge_base_name": {
-				Description: "Knowledge base name",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
 
 func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig

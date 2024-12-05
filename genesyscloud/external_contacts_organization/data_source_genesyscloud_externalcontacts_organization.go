@@ -26,7 +26,7 @@ func dataSourceExternalContactsOrganizationRead(ctx context.Context, d *schema.R
 	name := d.Get("name").(string)
 
 	if dataSourceOrganizationCache == nil {
-		log.Printf("Instantiating the %s data source cache object", resourceType)
+		log.Printf("Instantiating the %s data source cache object", ResourceType)
 		dataSourceOrganizationCache = rc.NewDataSourceCache(sdkConfig, hydrateOrganizationCacheFn, getOrganizationByNameFn)
 	}
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
@@ -34,9 +34,9 @@ func dataSourceExternalContactsOrganizationRead(ctx context.Context, d *schema.R
 
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("No organizations found with the provided name %s", name), response))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No organizations found with the provided name %s", name), response))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Error searching exteral organization %s | error: %s", name, err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching exteral organization %s | error: %s", name, err), response))
 
 		}
 
@@ -48,7 +48,7 @@ func dataSourceExternalContactsOrganizationRead(ctx context.Context, d *schema.R
 func hydrateOrganizationCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	proxy := getExternalContactsOrganizationProxy(c.ClientConfig)
 
-	log.Printf("Hydrating cache for data source %s", resourceType)
+	log.Printf("Hydrating cache for data source %s", ResourceType)
 
 	allExternalOrganization, resp, err := proxy.getAllExternalContactsOrganization(ctx, "")
 	if err != nil {
@@ -64,7 +64,7 @@ func hydrateOrganizationCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		c.Cache[*organization.Name] = *organization.Id
 	}
 
-	log.Printf("Cache hydration complete for data source %s", resourceType)
+	log.Printf("Cache hydration complete for data source %s", ResourceType)
 	return nil
 }
 
@@ -76,7 +76,7 @@ func getOrganizationByNameFn(c *rc.DataSourceCache, name string, ctx context.Con
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		organizationID, retryable, response, err := proxy.getExternalContactsOrganizationIdByName(ctx, name)
 		if err != nil {
-			errMsg := util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("error requesting organization %s | error %s", name, err), response)
+			errMsg := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting organization %s | error %s", name, err), response)
 			if !retryable {
 				return retry.NonRetryableError(errMsg)
 			}

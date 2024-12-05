@@ -33,7 +33,7 @@ func getAllAuthConversationsMessagingIntegrationsOpens(ctx context.Context, clie
 
 	openIntegrationRequests, resp, err := proxy.getAllConversationsMessagingIntegrationsOpen(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("Failed to get conversations messaging integrations open: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get conversations messaging integrations open: %v", err), resp)
 	}
 
 	for _, openIntegrationRequest := range *openIntegrationRequests {
@@ -53,7 +53,7 @@ func createConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema
 	log.Printf("Creating conversations messaging integrations open %s", *conversationsMessagingIntegrationsOpen.Name)
 	openIntegrationRequest, resp, err := proxy.createConversationsMessagingIntegrationsOpen(ctx, &conversationsMessagingIntegrationsOpen)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("Failed to create conversations messaging integrations open: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create conversations messaging integrations open: %s", err), resp)
 	}
 
 	d.SetId(*openIntegrationRequest.Id)
@@ -68,15 +68,15 @@ func readConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.R
 
 	log.Printf("Reading conversations messaging integrations open %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsOpen(), constants.DefaultConsistencyChecks, resourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsOpen(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		openIntegrationRequest, resp, err := proxy.getConversationsMessagingIntegrationsOpenById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Failed to read conversations messaging integrations open %s: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations open %s: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Failed to read conversations messaging integrations open %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations open %s: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", openIntegrationRequest.Name)
@@ -114,7 +114,7 @@ func updateConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema
 	log.Printf("Updating conversations messaging integrations open %s", *conversationsMessagingIntegrationsOpen.Name)
 	openIntegrationRequest, resp, err := proxy.updateConversationsMessagingIntegrationsOpen(ctx, d.Id(), &conversationsMessagingIntegrationsOpen)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("Failed to update conversations messaging integrations open: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update conversations messaging integrations open: %s", err), resp)
 	}
 
 	log.Printf("Updated conversations messaging integrations open %s", *openIntegrationRequest.Id)
@@ -128,7 +128,7 @@ func deleteConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema
 
 	resp, err := proxy.deleteConversationsMessagingIntegrationsOpen(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("Failed to delete conversations messaging integrations open %s: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete conversations messaging integrations open %s: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -139,9 +139,9 @@ func deleteConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema
 				log.Printf("Deleted conversations messaging integrations open %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Error deleting conversations messaging integrations open %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting conversations messaging integrations open %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("conversations messaging integrations open %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("conversations messaging integrations open %s still exists", d.Id()), resp))
 	})
 }

@@ -372,7 +372,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_document_variation")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.ConsistencyChecks(), "genesyscloud_knowledge_document_variation")
 
 	documentState := ""
 

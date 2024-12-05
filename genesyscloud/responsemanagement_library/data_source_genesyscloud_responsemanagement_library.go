@@ -3,11 +3,12 @@ package responsemanagement_library
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
@@ -27,11 +28,11 @@ func dataSourceResponsemanagementLibraryRead(ctx context.Context, d *schema.Reso
 		libraryId, retryable, resp, err := proxy.getResponsemanagementLibraryIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching responsemanagement library %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching responsemanagement library %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No responsemanagement library found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No responsemanagement library found with name %s", name), resp))
 		}
 		d.SetId(libraryId)
 		return nil

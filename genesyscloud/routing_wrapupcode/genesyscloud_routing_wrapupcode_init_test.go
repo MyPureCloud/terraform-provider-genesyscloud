@@ -29,8 +29,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceRoutingWrapupCode()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -38,7 +38,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingWrapupCode()
+	providerDataSources[ResourceType] = DataSourceRoutingWrapupCode()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -16,13 +16,13 @@ resource_genesycloud_conversations_messaging_integrations_instagram_schema.go ho
 3.  The datasource schema definitions for the conversations_messaging_integrations_instagram datasource.
 4.  The resource exporter configuration for the conversations_messaging_integrations_instagram exporter.
 */
-const resourceName = "genesyscloud_conversations_messaging_integrations_instagram"
+const ResourceType = "genesyscloud_conversations_messaging_integrations_instagram"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingIntegrationsInstagram())
-	regInstance.RegisterDataSource(resourceName, DataSourceConversationsMessagingIntegrationsInstagram())
-	regInstance.RegisterExporter(resourceName, ConversationsMessagingIntegrationsInstagramExporter())
+	regInstance.RegisterResource(ResourceType, ResourceConversationsMessagingIntegrationsInstagram())
+	regInstance.RegisterDataSource(ResourceType, DataSourceConversationsMessagingIntegrationsInstagram())
+	regInstance.RegisterExporter(ResourceType, ConversationsMessagingIntegrationsInstagramExporter())
 }
 
 // ResourceConversationsMessagingIntegrationsInstagram registers the genesyscloud_conversations_messaging_integrations_instagram resource with Terraform

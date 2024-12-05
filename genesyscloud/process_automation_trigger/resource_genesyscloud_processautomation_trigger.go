@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	resourceName = "genesyscloud_processautomation_trigger"
+	ResourceType = "genesyscloud_processautomation_trigger"
 )
 
 var (
@@ -166,7 +166,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	if eventTTLSeconds > 0 && delayBySeconds > 0 {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 	}
 
 	log.Printf("Creating process automation trigger %s", name)
@@ -191,7 +191,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		trigger, resp, err := postProcessAutomationTrigger(triggerInput, integAPI)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create process automation trigger %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create process automation trigger %s error: %s", name, err), resp)
 		}
 
 		d.SetId(*trigger.Id)
@@ -208,7 +208,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 
@@ -216,9 +216,9 @@ func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, m
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read process automation trigger %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to process read automation trigger %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to process read automation trigger %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if trigger.Name != nil {
@@ -284,11 +284,11 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		// Get the latest trigger version to send with PATCH
 		trigger, resp, getErr := getProcessAutomationTrigger(d.Id(), integAPI)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read process automation trigger %s error: %s", d.Id(), getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read process automation trigger %s error: %s", d.Id(), getErr), resp)
 		}
 
 		if eventTTLSeconds > 0 && delayBySeconds > 0 {
-			return resp, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
+			return resp, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Only one of event_ttl_seconds or delay_by_seconds can be set."), fmt.Errorf("event_ttl_seconds and delay_by_seconds are both set"))
 		}
 
 		triggerInput := &ProcessAutomationTrigger{
@@ -312,7 +312,7 @@ func updateProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 		_, putResp, err := putProcessAutomationTrigger(d.Id(), triggerInput, integAPI)
 
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update process automation trigger %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update process automation trigger %s error: %s", name, err), resp)
 		}
 		return putResp, nil
 	})
@@ -340,7 +340,7 @@ func removeProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 				log.Printf("process automation trigger already deleted %s", d.Id())
 				return nil
 			}
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("process automation trigger %s still exists", d.Id()), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("process automation trigger %s still exists", d.Id()), resp))
 		}
 		return nil
 	})

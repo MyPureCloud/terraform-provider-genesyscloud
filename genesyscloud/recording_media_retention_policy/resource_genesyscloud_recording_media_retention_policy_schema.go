@@ -1,11 +1,12 @@
 package recording_media_retention_policy
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -17,13 +18,13 @@ The genesyscloud_recording_media_retention_policy_schema.go should hold four typ
 4.  The resource exporter configuration for the genesyscloud_recording_media_retention_policy exporter.
 */
 
-const resourceName = "genesyscloud_recording_media_retention_policy"
+const ResourceType = "genesyscloud_recording_media_retention_policy"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceRecordingMediaRetentionPolicy())
-	l.RegisterResource(resourceName, ResourceMediaRetentionPolicy())
-	l.RegisterExporter(resourceName, MediaRetentionPolicyExporter())
+	l.RegisterDataSource(ResourceType, DataSourceRecordingMediaRetentionPolicy())
+	l.RegisterResource(ResourceType, ResourceMediaRetentionPolicy())
+	l.RegisterExporter(ResourceType, MediaRetentionPolicyExporter())
 }
 
 // ResourceMediaRetentionPolicy registers the genesyscloud_recording_media_retention_policy resource with Terraform

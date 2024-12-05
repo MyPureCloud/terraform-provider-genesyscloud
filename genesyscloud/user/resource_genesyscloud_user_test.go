@@ -66,17 +66,17 @@ func TestAccResourceUserBasic(t *testing.T) {
 					"",             // No certs
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "state", stateActive),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "title", title1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "department", department1),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "password.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "manager", ""),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "acd_auto_answer", "false"),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "profile_skills.%"),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "certifications.%"),
-					provider.TestDefaultHomeDivision(resourceName+"."+userResourceLabel1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "state", stateActive),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "title", title1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "department", department1),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "password.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "manager", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "acd_auto_answer", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "profile_skills.%"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "certifications.%"),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
 				),
 			},
 			{
@@ -94,16 +94,16 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(cert1),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "state", stateInactive),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "title", title2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "department", department2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "manager", ""),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "acd_auto_answer", "true"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "profile_skills.0", profileSkill1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "certifications.0", cert1),
-					provider.TestDefaultHomeDivision(resourceName+"."+userResourceLabel1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "state", stateInactive),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "title", title2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "department", department2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "manager", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "acd_auto_answer", "true"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "profile_skills.0", profileSkill1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "certifications.0", cert1),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
 				),
 			},
 			{
@@ -126,18 +126,18 @@ func TestAccResourceUserBasic(t *testing.T) {
 					util.NullValue, // Active
 					strconv.Quote(title1),
 					strconv.Quote(department1),
-					resourceName+"."+userResourceLabel1+".id",
+					ResourceType+"."+userResourceLabel1+".id",
 					util.TrueValue, // AcdAutoAnswer
 					strconv.Quote(profileSkill1),
 					strconv.Quote(cert1),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel2, "email", email3),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel2, "name", userName1),
-					resource.TestCheckResourceAttrPair(resourceName+"."+userResourceLabel2, "manager", resourceName+"."+userResourceLabel1, "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "manager", ""),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "profile_skills.0", profileSkill2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "certifications.0", cert2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel2, "email", email3),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel2, "name", userName1),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+userResourceLabel2, "manager", ResourceType+"."+userResourceLabel1, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "manager", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "profile_skills.0", profileSkill2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "certifications.0", cert2),
 				),
 			},
 			{
@@ -155,16 +155,16 @@ func TestAccResourceUserBasic(t *testing.T) {
 					"",              // No certs
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel2, "email", email3),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel2, "name", userName1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel2, "manager", ""),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel2, "profile_skills.%"),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel2, "certifications.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel2, "email", email3),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel2, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel2, "manager", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel2, "profile_skills.%"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel2, "certifications.%"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + userResourceLabel2,
+				ResourceName:      ResourceType + "." + userResourceLabel2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -179,7 +179,7 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 		name = "%s"
 		%s
 	}
-	`, resourceName, resourceLabel, email, name, strings.Join(attrs, "\n"))
+	`, ResourceType, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
 func TestAccResourceUserAddresses(t *testing.T) {
@@ -239,22 +239,22 @@ func TestAccResourceUserAddresses(t *testing.T) {
 							strconv.Quote(addrTypeHome),
 						),
 					),
-					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceName, extensionPoolResourceLabel1),
+					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceType, extensionPoolResourceLabel1),
 				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "name", addrUserName1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone1),
-					resource.TestCheckNoResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.address", addrEmail2),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.type", addrTypeHome),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone1),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.address", addrEmail2),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.type", addrTypeHome),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + addrUserResourceLabel1,
+				ResourceName:      ResourceType + "." + addrUserResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -278,14 +278,14 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "name", addrUserName1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", smsMediaType),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeHome),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhoneExt1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.address", addrEmail3),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.type", addrTypeWork),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", smsMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeHome),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhoneExt1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.address", addrEmail3),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.type", addrTypeWork),
 				),
 			},
 			{
@@ -304,14 +304,14 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel2, "email", addrEmail2),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel2, "name", addrUserName2),
-					resource.TestCheckNoResourceAttr(resourceName+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.number"),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.type", addrTypeHome),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.extension", addrPhoneExt2),
-					resource.TestCheckNoResourceAttr(resourceName+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.address"),
-					resource.TestCheckNoResourceAttr(resourceName+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.type"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "email", addrEmail2),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "name", addrUserName2),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.type", addrTypeHome),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.extension", addrPhoneExt2),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.address"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.type"),
 				),
 			},
 		},
@@ -361,15 +361,15 @@ func TestAccResourceUserPhone(t *testing.T) {
 							strconv.Quote(addrPhone1), // extension
 						),
 					),
-					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceName, extensionPoolResourceLabel1),
+					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceType, extensionPoolResourceLabel1),
 				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckNoResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 				),
 			},
 			{
@@ -387,12 +387,12 @@ func TestAccResourceUserPhone(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckNoResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone2),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone2),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 				),
 			},
 			{
@@ -410,12 +410,12 @@ func TestAccResourceUserPhone(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckNoResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 				),
 			},
 			{
@@ -433,12 +433,12 @@ func TestAccResourceUserPhone(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt1),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(resourceName+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 				),
 			},
 		},
@@ -473,7 +473,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					generateUserRoutingSkill("genesyscloud_routing_skill."+skillResourceLabel1+".id", proficiency1),
 				) + routingSkill.GenerateRoutingSkillResource(skillResourceLabel1, skillName1),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserSkill(resourceName+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel1, proficiency1),
+					validateUserSkill(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel1, proficiency1),
 				),
 			},
 			{
@@ -492,8 +492,8 @@ func TestAccResourceUserSkills(t *testing.T) {
 					skillName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserSkill(resourceName+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel1, proficiency1),
-					validateUserSkill(resourceName+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel2, proficiency2),
+					validateUserSkill(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel1, proficiency1),
+					validateUserSkill(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel2, proficiency2),
 				),
 			},
 			{
@@ -508,7 +508,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					skillName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserSkill(resourceName+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel2, proficiency1),
+					validateUserSkill(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_skill."+skillResourceLabel2, proficiency1),
 				),
 			},
 			{
@@ -520,7 +520,7 @@ func TestAccResourceUserSkills(t *testing.T) {
 					"routing_skills = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "skills.%"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "skills.%"),
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
 						return nil
@@ -559,7 +559,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					generateUserRoutingLang("genesyscloud_routing_language."+langResourceLabel1+".id", proficiency1),
 				) + routinglanguage.GenerateRoutingLanguageResource(langResourceLabel1, langName1),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserLanguage(resourceName+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel1, proficiency1),
+					validateUserLanguage(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel1, proficiency1),
 				),
 			},
 			{
@@ -578,8 +578,8 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					langName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserLanguage(resourceName+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel1, proficiency1),
-					validateUserLanguage(resourceName+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel2, proficiency2),
+					validateUserLanguage(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel1, proficiency1),
+					validateUserLanguage(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel2, proficiency2),
 				),
 			},
 			{
@@ -594,7 +594,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					langName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserLanguage(resourceName+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel2, proficiency1),
+					validateUserLanguage(ResourceType+"."+userResourceLabel1, "genesyscloud_routing_language."+langResourceLabel2, proficiency1),
 				),
 			},
 			{
@@ -606,7 +606,7 @@ func TestAccResourceUserLanguages(t *testing.T) {
 					"routing_languages = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_languages.%"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_languages.%"),
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
 						return nil
@@ -648,9 +648,9 @@ func TestAccResourceUserLocations(t *testing.T) {
 					),
 				) + location.GenerateLocationResourceBasic(locResourceLabel1, locName1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email),
-					resource.TestCheckResourceAttrPair(resourceName+"."+userResourceLabel1, "locations.0.location_id", "genesyscloud_location."+locResourceLabel1, "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "locations.0.notes", locNotes1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+userResourceLabel1, "locations.0.location_id", "genesyscloud_location."+locResourceLabel1, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "locations.0.notes", locNotes1),
 				),
 			},
 			{
@@ -665,9 +665,9 @@ func TestAccResourceUserLocations(t *testing.T) {
 					),
 				) + location.GenerateLocationResourceBasic(locResourceLabel2, locName2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email),
-					resource.TestCheckResourceAttrPair(resourceName+"."+userResourceLabel1, "locations.0.location_id", "genesyscloud_location."+locResourceLabel2, "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "locations.0.notes", locNotes2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+userResourceLabel1, "locations.0.location_id", "genesyscloud_location."+locResourceLabel2, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "locations.0.notes", locNotes2),
 				),
 			},
 		},
@@ -709,12 +709,12 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.official_name", offName1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.employee_id", ""),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.employee_type", ""),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.date_hire", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.official_name", offName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.employee_id", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.employee_type", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.date_hire", ""),
 				),
 			},
 			{
@@ -731,12 +731,12 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.official_name", ""),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.employee_id", empID1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.employee_type", empTypeFull),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.date_hire", hireDate1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.official_name", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.employee_id", empID1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.employee_type", empTypeFull),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.date_hire", hireDate1),
 				),
 			},
 			{
@@ -753,12 +753,12 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.official_name", offName2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.employee_id", empID2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.employee_type", empTypePart),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.0.date_hire", hireDate2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.official_name", offName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.employee_id", empID2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.employee_type", empTypePart),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.0.date_hire", hireDate2),
 				),
 			},
 			{
@@ -770,9 +770,9 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 					"employer_info = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "employer_info.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "employer_info.%"),
 				),
 			},
 		},
@@ -812,22 +812,22 @@ func TestAccResourceUserroutingUtilBasic(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Agent"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types.%"),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types.%"),
 				),
 			},
 			{
@@ -845,22 +845,22 @@ func TestAccResourceUserroutingUtilBasic(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Agent"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
 				),
 			},
 			{
@@ -878,22 +878,22 @@ func TestAccResourceUserroutingUtilBasic(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Agent"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
 				),
 			},
 			{
@@ -905,8 +905,8 @@ func TestAccResourceUserroutingUtilBasic(t *testing.T) {
 					"routing_utilization = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Organization"),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.%"),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Organization"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.%"),
 				),
 			},
 		},
@@ -958,26 +958,26 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Agent"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.FalseValue),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types.%"),
-					resource.TestCheckResourceAttrSet(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.label_id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity1),
-					resource.TestCheckResourceAttrSet(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.label_id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity1),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.FalseValue),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types.%"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity1),
 				),
 			},
 			{
@@ -1000,26 +1000,26 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Agent"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttrSet(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.label_id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity2),
-					resource.TestCheckResourceAttrSet(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.label_id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity2),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity2),
 				),
 			},
 			{
@@ -1042,26 +1042,26 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Agent"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
-					util.ValidateStringInArray(resourceName+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
-					resource.TestCheckResourceAttrSet(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.label_id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity0),
-					resource.TestCheckResourceAttrSet(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.label_id"),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity0),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.include_non_acd", util.TrueValue),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel1, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity0),
 				),
 			},
 			{
@@ -1073,8 +1073,8 @@ func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
 					"routing_utilization = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateUserUtilizationLevel(resourceName+"."+userResourceLabel1, "Organization"),
-					resource.TestCheckNoResourceAttr(resourceName+"."+userResourceLabel1, "routing_utilization.%"),
+					validateUserUtilizationLevel(ResourceType+"."+userResourceLabel1, "Organization"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel1, "routing_utilization.%"),
 				),
 			},
 		},
@@ -1106,8 +1106,8 @@ func TestAccResourceUserRestore(t *testing.T) {
 					userName1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName1),
 				),
 			},
 			{
@@ -1127,8 +1127,8 @@ func TestAccResourceUserRestore(t *testing.T) {
 					userName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName2),
 				),
 			},
 		},
@@ -1157,8 +1157,8 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 					userName1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName1),
 				),
 			},
 			{
@@ -1178,9 +1178,9 @@ func TestAccResourceUserCreateWhenDestroyed(t *testing.T) {
 					userName2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "email", email1),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "name", userName2),
-					resource.TestCheckResourceAttr(resourceName+"."+userResourceLabel1, "state", stateActive),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "state", stateActive),
 				),
 			},
 		},
@@ -1193,7 +1193,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 
 	diagErr := util.WithRetries(context.Background(), 20*time.Second, func() *retry.RetryError {
 		for _, rs := range state.RootModule().Resources {
-			if rs.Type != resourceName {
+			if rs.Type != ResourceType {
 				continue
 			}
 			err := checkUserDeleted(rs.Primary.ID)(state)
@@ -1206,10 +1206,10 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 				if util.IsStatus404(resp) {
 					continue
 				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Unexpected error: %s", err), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
 
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("User (%s) still exists", rs.Primary.ID), resp))
 		}
 		return nil
 	})
@@ -1262,17 +1262,17 @@ func isUserDeleted(id string) (bool, error) {
 	return false, nil
 }
 
-func validateUserSkill(userResourceName string, skillResourceName string, proficiency string) resource.TestCheckFunc {
+func validateUserSkill(userResourcePath string, skillResourcePath string, proficiency string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		userResource, ok := state.RootModule().Resources[userResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 
-		skillResource, ok := state.RootModule().Resources[skillResourceName]
+		skillResource, ok := state.RootModule().Resources[skillResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find skill %s in state", skillResourceName)
+			return fmt.Errorf("Failed to find skill %s in state", skillResourcePath)
 		}
 		skillID := skillResource.Primary.ID
 
@@ -1296,17 +1296,17 @@ func validateUserSkill(userResourceName string, skillResourceName string, profic
 	}
 }
 
-func validateUserLanguage(userResourceName string, langResourceName string, proficiency string) resource.TestCheckFunc {
+func validateUserLanguage(userResourcePath string, langResourcePath string, proficiency string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		userResource, ok := state.RootModule().Resources[userResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 
-		langResource, ok := state.RootModule().Resources[langResourceName]
+		langResource, ok := state.RootModule().Resources[langResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find language %s in state", langResourceName)
+			return fmt.Errorf("Failed to find language %s in state", langResourcePath)
 		}
 		langID := langResource.Primary.ID
 
@@ -1330,11 +1330,11 @@ func validateUserLanguage(userResourceName string, langResourceName string, prof
 	}
 }
 
-func validateUserUtilizationLevel(userResourceName string, level string) resource.TestCheckFunc {
+func validateUserUtilizationLevel(userResourcePath string, level string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		userResource, ok := state.RootModule().Resources[userResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 

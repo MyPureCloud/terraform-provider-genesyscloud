@@ -1,8 +1,9 @@
 package architect_datatable
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"testing"
 )
@@ -22,14 +23,14 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_architect_datatable"] = ResourceArchitectDatatable()
+	providerResources[ResourceType] = ResourceArchitectDatatable()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_architect_datatable"] = DataSourceArchitectDatatable()
+	providerDataSources[ResourceType] = DataSourceArchitectDatatable()
 }
 
 // initTestResources initializes all test_data resources and data sources.

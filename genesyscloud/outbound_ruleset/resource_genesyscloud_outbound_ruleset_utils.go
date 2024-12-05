@@ -322,10 +322,10 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 }
 
 func GenerateOutboundRuleSetResourceAndLabel(resourceLabel, name string) (string, string) {
-	reference := resourceName + "." + resourceLabel
+	reference := ResourceType + "." + resourceLabel
 	return fmt.Sprintf(`
 resource "%s" "%s" {
 	name = "%s"
 }
-	`, resourceName, resourceLabel, name), reference
+	`, ResourceType, resourceLabel, name), reference
 }

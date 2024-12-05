@@ -66,10 +66,10 @@ func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error 
 				if util.IsStatus404(resp) {
 					continue
 				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Unexpected error: %s", err), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Unexpected error: %s", err), resp))
 			}
 
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Library %s still exists", rs.Primary.ID), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Library %s still exists", rs.Primary.ID), resp))
 		}
 		return nil
 	})

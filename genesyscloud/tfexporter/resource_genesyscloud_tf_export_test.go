@@ -2070,14 +2070,14 @@ func loadJsonFileToMap(filename string) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func testUserPromptAudioFileExport(filePath, resourceType, resourceLabel, exportDir, resourceName string) resource.TestCheckFunc {
+func testUserPromptAudioFileExport(filePath, resourceType, resourceLabel, exportDir, nameAttrRef string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)
 		if err != nil {
 			return err
 		}
 		var r *json.RawMessage
-		if err := json.Unmarshal(*raw[resourceName], &r); err != nil {
+		if err := json.Unmarshal(*raw[nameAttrRef], &r); err != nil {
 			return err
 		}
 
@@ -3084,11 +3084,11 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 }
 
 // Check if flow is published, then check if flow name and type are correct
-func validateFlow(flowResourceName, flowName string) resource.TestCheckFunc {
+func validateFlow(flowResourcePath, flowName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		flowResource, ok := state.RootModule().Resources[flowResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("failed to find flow %s in state", flowResourcePath)
 		}
 		flowID := flowResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()

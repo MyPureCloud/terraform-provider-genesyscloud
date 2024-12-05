@@ -23,9 +23,9 @@ func dataSourceAuthorizationProductRead(ctx context.Context, d *schema.ResourceD
 
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Authorization product %s | error: %s", authProductId, err), resp))
 		}
 
 		d.SetId(authProductId)

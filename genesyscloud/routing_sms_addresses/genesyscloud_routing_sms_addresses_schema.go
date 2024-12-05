@@ -1,18 +1,19 @@
 package genesyscloud
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // SetRegistrar registers all the resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceRoutingSmsAddress())
-	l.RegisterResource(resourceName, ResourceRoutingSmsAddress())
-	l.RegisterExporter(resourceName, RoutingSmsAddressExporter())
+	l.RegisterDataSource(ResourceType, DataSourceRoutingSmsAddress())
+	l.RegisterResource(ResourceType, ResourceRoutingSmsAddress())
+	l.RegisterExporter(ResourceType, RoutingSmsAddressExporter())
 }
 
 func RoutingSmsAddressExporter() *resourceExporter.ResourceExporter {

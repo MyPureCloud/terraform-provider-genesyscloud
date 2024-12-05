@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_outbound_dnclist"] = ResourceOutboundDncList()
+	providerResources[ResourceType] = ResourceOutboundDncList()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -38,7 +38,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_outbound_dnclist"] = DataSourceOutboundDncList()
+	providerDataSources[ResourceType] = DataSourceOutboundDncList()
 
 }
 

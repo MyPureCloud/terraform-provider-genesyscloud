@@ -31,7 +31,7 @@ func getAllAuthExternalContactsOrganizations(ctx context.Context, clientConfig *
 
 	externalOrganizations, response, err := proxy.getAllExternalContactsOrganization(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
 	}
 
 	for _, externalOrganization := range *externalOrganizations {
@@ -48,13 +48,13 @@ func createExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 
 	externalContactsOrganization, err := getExternalContactsOrganizationFromResourceData(d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceType, fmt.Sprintf("failed to build external organization error:"), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to build external organization error:"), err)
 	}
 
 	log.Printf("Creating external contacts organization %s", *externalContactsOrganization.Name)
 	externalOrganization, response, err := proxy.createExternalContactsOrganization(ctx, &externalContactsOrganization)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
 	}
 
 	d.SetId(*externalOrganization.Id)
@@ -73,9 +73,9 @@ func readExternalContactsOrganization(ctx context.Context, d *schema.ResourceDat
 		externalOrganization, response, err := proxy.getExternalContactsOrganizationById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404ByInt(response.StatusCode) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Failed to read organization contact %s | error: %s", d.Id(), err), response))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read organization contact %s | error: %s", d.Id(), err), response))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("Failed to read organization contact %s | error: %s", d.Id(), err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read organization contact %s | error: %s", d.Id(), err), response))
 		}
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContactsOrganization(), 0, "")
@@ -120,13 +120,13 @@ func updateExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 	externalContactsOrganization, err := getExternalContactsOrganizationFromResourceData(d)
 
 	if err != nil {
-		return util.BuildDiagnosticError(resourceType, fmt.Sprintf("failed to build external organization error: %s", err), nil)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to build external organization error: %s", err), nil)
 	}
 
 	log.Printf("Updating external contacts organization %s", *externalContactsOrganization.Name)
 	externalOrganization, response, err := proxy.updateExternalContactsOrganization(ctx, d.Id(), &externalContactsOrganization)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("failed to update external organization error: %s", err), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to update external organization error: %s", err), response)
 	}
 
 	log.Printf("Updated external contacts organization %s", *externalOrganization.Id)
@@ -140,7 +140,7 @@ func deleteExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 
 	response, err := proxy.deleteExternalContactsOrganization(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceType, fmt.Sprintf("failed to delete external organization %s: %s", d.Id(), err), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external organization %s: %s", d.Id(), err), response)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -151,9 +151,9 @@ func deleteExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 				log.Printf("Deleted external organization %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("error deleting external organization %s: %s", d.Id(), err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting external organization %s: %s", d.Id(), err), response))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceType, fmt.Sprintf("external organization still exists %s:", d.Id()), response))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("external organization still exists %s:", d.Id()), response))
 	})
 }

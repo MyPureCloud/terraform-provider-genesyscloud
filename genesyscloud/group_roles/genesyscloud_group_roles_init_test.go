@@ -27,11 +27,11 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_group_roles"] = ResourceGroupRoles()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
-	providerResources["genesyscloud_group"] = group.ResourceGroup()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceGroupRoles()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[group.ResourceType] = group.ResourceGroup()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // initTestResources initializes all test resources.

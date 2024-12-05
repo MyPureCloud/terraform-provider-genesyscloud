@@ -150,7 +150,7 @@ func ResourceWidgetDeployment() *schema.Resource {
 func readWidgetDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	widgetsAPI := platformclientv2.NewWidgetsApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWidgetDeployment(), constants.DefaultConsistencyChecks, "genesyscloud_widget_deployment")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWidgetDeployment(), constants.ConsistencyChecks(), "genesyscloud_widget_deployment")
 
 	log.Printf("Reading widget deployment %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

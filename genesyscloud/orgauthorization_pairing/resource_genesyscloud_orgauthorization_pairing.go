@@ -33,7 +33,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 
 	pairing, resp, err := proxy.createOrgauthorizationPairing(ctx, &trustRequestCreate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Orgauthorization Pairing | error: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create Orgauthorization Pairing | error: %s", err), resp)
 	}
 
 	d.SetId(*pairing.Id)
@@ -44,7 +44,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgauthorizationPairingProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrgauthorizationPairing(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrgauthorizationPairing(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())
 
@@ -53,9 +53,9 @@ func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, me
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Orgauthorization Pairing %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Orgauthorization Pairing %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Orgauthorization Pairing %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Orgauthorization Pairing %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		schemaUserIds := lists.InterfaceListToStrings(d.Get("user_ids").([]interface{}))

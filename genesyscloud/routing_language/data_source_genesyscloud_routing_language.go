@@ -22,10 +22,10 @@ func dataSourceRoutingLanguageRead(ctx context.Context, d *schema.ResourceData, 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		languageId, resp, retryable, err := proxy.getRoutingLanguageIdByName(ctx, name)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting language %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting language %s | error: %s", name, err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting language %s | error: %s", name, err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting language %s | error: %s", name, err), resp))
 		}
 
 		d.SetId(languageId)

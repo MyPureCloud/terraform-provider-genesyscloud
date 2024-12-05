@@ -36,7 +36,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSupportedContentResource(
-					resourceName,
+					ResourceType,
 					resourceLabel,
 					name,
 					GenerateInboundTypeBlock(inboundType),
@@ -51,7 +51,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 			//Update and add inbound block
 			{
 				Config: GenerateSupportedContentResource(
-					resourceName,
+					ResourceType,
 					resourceLabel,
 					name,
 					GenerateInboundTypeBlock(inboundType2),
@@ -79,7 +79,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 func testVerifySupportedContentDestroyed(state *terraform.State) error {
 	supportContentApi := platformclientv2.NewConversationsApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 

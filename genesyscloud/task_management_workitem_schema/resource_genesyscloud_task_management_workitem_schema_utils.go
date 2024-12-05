@@ -63,7 +63,7 @@ func GenerateWorkitemSchemaResourceBasic(resourceLabel, name, description string
 		name = "%s"
 		description = "%s"
 	}
-	`, resourceName, resourceLabel, name, description)
+	`, ResourceType, resourceLabel, name, description)
 }
 
 func GenerateWorkitemSchemaResource(resourceLabel, name, description, properties, enabledStr string) string {
@@ -73,5 +73,5 @@ func GenerateWorkitemSchemaResource(resourceLabel, name, description, properties
 		properties = %s
 		enabled = %s
 	}
-	`, resourceName, resourceLabel, name, description, properties, enabledStr)
+	`, ResourceType, resourceLabel, name, description, properties, enabledStr)
 }

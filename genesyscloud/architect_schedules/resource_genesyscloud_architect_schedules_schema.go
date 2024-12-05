@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_architect_schedules"
+const ResourceType = "genesyscloud_architect_schedules"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the pakage
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectSchedules())
-	regInstance.RegisterDataSource(resourceName, DataSourceArchitectSchedules())
-	regInstance.RegisterExporter(resourceName, ArchitectSchedulesExporter())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectSchedules())
+	regInstance.RegisterDataSource(ResourceType, DataSourceArchitectSchedules())
+	regInstance.RegisterExporter(ResourceType, ArchitectSchedulesExporter())
 }
 
 // ResourceArchitectSchedules registers the genesyscloud_architect_schedules resource with Terraform

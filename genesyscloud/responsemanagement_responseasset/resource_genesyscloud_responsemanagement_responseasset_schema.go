@@ -17,13 +17,13 @@ resource_genesycloud_responsemanagement_responseasset_schema.go holds four funct
 3.  The datasource schema definitions for the responsemanagement_responseasset datasource.
 4.  The resource exporter configuration for the responsemanagement_responseasset exporter.
 */
-const resourceName = "genesyscloud_responsemanagement_responseasset"
+const ResourceType = "genesyscloud_responsemanagement_responseasset"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceResponseManagementResponseAsset())
-	regInstance.RegisterDataSource(resourceName, DataSourceResponseManagementResponseAsset())
-	regInstance.RegisterExporter(resourceName, ExporterResponseManagementResponseAsset())
+	regInstance.RegisterResource(ResourceType, ResourceResponseManagementResponseAsset())
+	regInstance.RegisterDataSource(ResourceType, DataSourceResponseManagementResponseAsset())
+	regInstance.RegisterExporter(ResourceType, ExporterResponseManagementResponseAsset())
 }
 
 // ResourceResponsemanagementResponseasset registers the genesyscloud_responsemanagement_responseasset resource with Terraform
