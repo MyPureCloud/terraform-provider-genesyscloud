@@ -94,7 +94,11 @@ func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "description", journeyView.Description)
 		resourcedata.SetNillableValue(d, "interval", journeyView.Interval)
 		resourcedata.SetNillableValue(d, "duration", journeyView.Duration)
+		resourcedata.SetNillableValue(d, "version", journeyView.Version)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "elements", journeyView.Elements, flattenElements)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "charts", journeyView.Charts, flattenCharts)
+
+		log.Printf("Retrieved journeyView with viewId: %s with version %d", viewId, journeyView.Version)
 
 		return cc.CheckState(d)
 	})
@@ -136,6 +140,7 @@ func makeJourneyViewFromSchema(d *schema.ResourceData) *platformclientv2.Journey
 	interval := d.Get("interval").(string)
 	duration := d.Get("duration").(string)
 	elements, _ := buildElements(d)
+	charts := buildCharts(d)
 
 	journeyView := &platformclientv2.Journeyview{
 		Name:        &name,
@@ -143,6 +148,7 @@ func makeJourneyViewFromSchema(d *schema.ResourceData) *platformclientv2.Journey
 		Interval:    &interval,
 		Duration:    &duration,
 		Elements:    elements,
+		Charts:      charts,
 	}
 	return journeyView
 }
