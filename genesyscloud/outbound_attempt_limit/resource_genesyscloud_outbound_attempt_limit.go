@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	ResourceType = "genesyscloud_outbound_attemptlimit"
+	ResourceType = "genesyscloud_outbound_attempt_limit"
 )
 
 var (
@@ -182,7 +182,7 @@ func createOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	if resetPeriod != "" {
 		sdkAttemptLimits.ResetPeriod = &resetPeriod
 	}
-	if recallEntries != nil && len(recallEntries) > 0 {
+	if len(recallEntries) > 0 {
 		sdkAttemptLimits.RecallEntries = buildSdkOutboundAttemptLimitRecallEntryMap(recallEntries)
 	}
 
@@ -226,7 +226,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	if resetPeriod != "" {
 		sdkAttemptLimits.ResetPeriod = &resetPeriod
 	}
-	if recallEntries != nil && len(recallEntries) > 0 {
+	if len(recallEntries) > 0 {
 		sdkAttemptLimits.RecallEntries = buildSdkOutboundAttemptLimitRecallEntryMap(recallEntries)
 	}
 
@@ -238,7 +238,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read outbound attempt limit %s error: %s", d.Id(), getErr), resp)
 		}
 		sdkAttemptLimits.Version = outboundAttemptLimit.Version
-		outboundAttemptLimit, resp, updateErr := outboundApi.PutOutboundAttemptlimit(d.Id(), sdkAttemptLimits)
+		_, resp, updateErr := outboundApi.PutOutboundAttemptlimit(d.Id(), sdkAttemptLimits)
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update outbound attempt limit %s error: %s", *sdkAttemptLimits.Name, updateErr), resp)
 		}
