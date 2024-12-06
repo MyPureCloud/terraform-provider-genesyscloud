@@ -1621,7 +1621,7 @@ func validateExportManagedSitesAsData(filename, siteName string) resource.TestCh
 	}
 }
 
-func validatePromptsExported(filename string) resource.TestCheckFunc {
+func validatePromptsExported(filename string, expectedPrompts []string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		_, err := os.Stat(filename + "/genesyscloud.tf.json")
 		if err != nil {
@@ -1643,8 +1643,6 @@ func validatePromptsExported(filename string) resource.TestCheckFunc {
 		if !ok {
 			return fmt.Errorf("no resources exported for genesyscloud_architect_user_prompt")
 		}
-
-		expectedPrompts := []string{"d_user_prompt_test", "h_user_prompt_test", "Z_user_prompt_test"}
 
 		for _, promptID := range expectedPrompts {
 			if promptData, found := prompts[promptID]; found {
@@ -1673,14 +1671,17 @@ func validatePromptsExported(filename string) resource.TestCheckFunc {
 // This will prevent the 10,000 return limit being hit on export and not returning everything
 func TestAccResourceTfExportUserPromptsExported(t *testing.T) {
 	var (
-		exportTestDir     = filepath.Join("..", "..", ".terraform"+uuid.NewString())
-		resourceID        = "export"
-		dPromptResourceId = "d_user_prompt"
-		dPromptName       = "d_user_prompt_test"
-		hPromptResourceId = "h_user_prompt"
-		hPromptName       = "h_user_prompt_test"
-		zPromptResourceId = "Z_user_prompt"
-		zPromptName       = "Z_user_prompt_test"
+		uniqueStr            = strings.Replace(uuid.NewString(), "-", "_", -1)
+		exportTestDir        = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceID           = "export"
+		dPromptResourceLabel = "d_user_prompt"
+		dPromptNameAttr      = "d_user_prompt_test" + uniqueStr
+		hPromptResourceLabel = "h_user_prompt"
+		hPromptNameAttr      = "h_user_prompt_test" + uniqueStr
+		zPromptResourceLabel = "Z_user_prompt"
+		zPromptNameAttr      = "Z_user_prompt_test" + uniqueStr
+
+		allNames = []string{dPromptNameAttr, hPromptNameAttr, zPromptNameAttr}
 	)
 
 	promptConfig := fmt.Sprintf(`
@@ -1713,7 +1714,7 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 		tts_string = "Good day. Thank you for calling."
 	}
 }
-`, dPromptResourceId, dPromptName, hPromptResourceId, hPromptName, zPromptResourceId, zPromptName)
+`, dPromptResourceLabel, dPromptNameAttr, hPromptResourceLabel, hPromptNameAttr, zPromptResourceLabel, zPromptNameAttr)
 
 	defer func(path string) {
 		if err := os.RemoveAll(path); err != nil {
@@ -1726,25 +1727,28 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				Config: promptConfig,
+			},
+			{
 				Config: promptConfig + generateTfExportByIncludeFilterResources(
 					resourceID,
 					exportTestDir,
 					util.TrueValue, // include_state_file
 					[]string{ // include_filter_resources
-						strconv.Quote("genesyscloud_architect_user_prompt::d_user_prompt_test"),
-						strconv.Quote("genesyscloud_architect_user_prompt::h_user_prompt_test"),
-						strconv.Quote("genesyscloud_architect_user_prompt::Z_user_prompt_test"),
+						strconv.Quote("genesyscloud_architect_user_prompt::" + dPromptNameAttr),
+						strconv.Quote("genesyscloud_architect_user_prompt::" + hPromptNameAttr),
+						strconv.Quote("genesyscloud_architect_user_prompt::" + zPromptNameAttr),
 					},
 					util.FalseValue, // export_as_hcl
 					util.FalseValue,
 					[]string{
-						strconv.Quote("genesyscloud_architect_user_prompt." + dPromptResourceId),
-						strconv.Quote("genesyscloud_architect_user_prompt." + hPromptResourceId),
-						strconv.Quote("genesyscloud_architect_user_prompt." + zPromptResourceId),
+						strconv.Quote("genesyscloud_architect_user_prompt." + dPromptResourceLabel),
+						strconv.Quote("genesyscloud_architect_user_prompt." + hPromptResourceLabel),
+						strconv.Quote("genesyscloud_architect_user_prompt." + zPromptResourceLabel),
 					},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validatePromptsExported(exportTestDir),
+					validatePromptsExported(exportTestDir, allNames),
 				),
 			},
 		},
