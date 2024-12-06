@@ -290,6 +290,9 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 		CustomValidateExports: map[string][]string{
 			"rrule": {"edge_auto_update_config.rrule"},
 		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"number_plans": {ResolverFunc: siteNumberPlansExporterResolver},
+		},
 	}
 }
 
