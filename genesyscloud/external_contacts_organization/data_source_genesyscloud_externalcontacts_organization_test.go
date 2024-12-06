@@ -13,11 +13,13 @@ import (
 
 func TestAccDataSourceexternalOrganization(t *testing.T) {
 	var (
-		uniqueStr         = uuid.NewString()
-		resourceLabelData = "data-externalOrganization"
-		resourceLabel     = "resource-externalOrganization"
+		resourceLabelData = "data_external_organization"
+		resourceLabel     = "resource_external_organization"
 
-		name              = "john-" + uniqueStr
+		resourcePath     = ResourceType + "." + resourceLabel
+		dataResourcePath = "data." + ResourceType + "." + resourceLabelData
+
+		name              = "john-" + uuid.NewString()
 		phoneDisplay      = "+1 321-700-1243"
 		countryCode       = "US"
 		address           = "1011 New Hope St"
@@ -53,12 +55,12 @@ func TestAccDataSourceexternalOrganization(t *testing.T) {
 				) + generateExternalOrganizationDataSource(
 					resourceLabelData,
 					name,
-					"genesyscloud_externalcontacts_organization."+resourceLabel,
+					resourcePath,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_externalcontacts_organization."+resourceLabelData, "id",
-						"genesyscloud_externalcontacts_organization."+resourceLabel, "id",
+						dataResourcePath, "id",
+						resourcePath, "id",
 					),
 				),
 			},
@@ -66,10 +68,10 @@ func TestAccDataSourceexternalOrganization(t *testing.T) {
 	})
 }
 
-func generateExternalOrganizationDataSource(resourceID string, name string, dependsOn string) string {
-	return fmt.Sprintf(`data "genesyscloud_externalcontacts_organization" "%s" {
+func generateExternalOrganizationDataSource(resourceLabel, name, dependsOn string) string {
+	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceID, name, dependsOn)
+	`, ResourceType, resourceLabel, name, dependsOn)
 }
