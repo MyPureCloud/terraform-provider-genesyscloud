@@ -26,19 +26,23 @@ The resource_genesyscloud_external_contacts_organization.go contains all of the 
 
 // getAllAuthExternalContactsOrganization retrieves all of the external contacts organization via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthExternalContactsOrganizations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newExternalContactsOrganizationProxy(clientConfig)
-	resources := make(resourceExporter.ResourceIDMetaMap)
+	log.Println(ResourceType + " resources cannot be exported due to an API limitation.")
+	return nil, nil
 
-	externalOrganizations, response, err := proxy.getAllExternalContactsOrganization(ctx, "")
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
-	}
+	// TODO uncomment once DEVTOOLING-977 has been resolved
+	//proxy := newExternalContactsOrganizationProxy(clientConfig)
+	//resources := make(resourceExporter.ResourceIDMetaMap)
 
-	for _, externalOrganization := range *externalOrganizations {
-		resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalOrganization.Id}
-	}
-
-	return resources, nil
+	//externalOrganizations, response, err := proxy.getAllExternalContactsOrganization(ctx, "")
+	//if err != nil {
+	//	return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
+	//}
+	//
+	//for _, externalOrganization := range *externalOrganizations {
+	//	resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalOrganization.Id}
+	//}
+	//
+	//return resources, nil
 }
 
 // createExternalContactsOrganization is used by the external_contacts_organization resource to create Genesys cloud external contacts organization

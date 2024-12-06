@@ -97,7 +97,9 @@ func readConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.R
 			webhookPropsStr := string(webhookProps)
 			webhookPropsPtr = &webhookPropsStr
 		}
-		_ = d.Set("webhook_headers", *webhookPropsPtr)
+		if webhookPropsPtr != nil {
+			_ = d.Set("webhook_headers", *webhookPropsPtr)
+		}
 
 		log.Printf("Read conversations messaging integrations open %s %s", d.Id(), *openIntegrationRequest.Name)
 		return cc.CheckState(d)
