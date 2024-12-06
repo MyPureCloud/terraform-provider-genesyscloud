@@ -48,7 +48,7 @@ func createExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 
 	externalContactsOrganization, err := getExternalContactsOrganizationFromResourceData(d)
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to build external organization error:"), err)
+		return util.BuildDiagnosticError(ResourceType, "failed to build external organization request body", err)
 	}
 
 	log.Printf("Creating external contacts organization %s", *externalContactsOrganization.Name)
@@ -100,12 +100,12 @@ func readExternalContactsOrganization(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("failed to flatten Data Schema for resource %s | error: %s", d.Id(), err))
 		}
-		d.Set("schema", dataSchema)
+		_ = d.Set("schema", dataSchema)
 		cf, err := flattenCustomFields(externalOrganization.CustomFields)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("failed to flatten Custom Schema for resource %s | error: %s", d.Id(), err))
 		}
-		d.Set("custom_fields", cf)
+		_ = d.Set("custom_fields", cf)
 
 		log.Printf("Read external contacts organization %s %s", d.Id(), *externalOrganization.Name)
 		return cc.CheckState(d)
