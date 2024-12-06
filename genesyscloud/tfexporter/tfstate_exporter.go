@@ -52,7 +52,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 			Primary:  resource.State,
 			Provider: "provider.genesyscloud",
 		}
-		tfstate.RootModule().Resources[resource.ResourceType+resource.Type+"."+resource.Name] = resourceState
+		tfstate.RootModule().Resources[resource.ResourceType+resource.Type+"."+resource.BlockLabel] = resourceState
 	}
 
 	data, err := json.MarshalIndent(tfstate, "", "  ")
@@ -68,8 +68,8 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 	// This outputs terraform state v3, and there is currently no public lib to generate v4 which is required for terraform 0.13+.
 	// However, the state can be upgraded automatically by calling the terraform CLI. If this fails, just print a warning indicating
 	// that the state likely needs to be upgraded manually.
-	cliError := `Failed to run the terraform CLI to upgrade the generated state file. 
-	The generated tfstate file will need to be upgraded manually by running the 
+	cliError := `Failed to run the terraform CLI to upgrade the generated state file.
+	The generated tfstate file will need to be upgraded manually by running the
 	following in the state file's directory:
 	'terraform state replace-provider registry.terraform.io/-/genesyscloud registry.terraform.io/mypurecloud/genesyscloud'`
 

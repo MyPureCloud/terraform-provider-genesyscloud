@@ -27,11 +27,11 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 
 	assets, resp, err := proxy.getAllResponseAssets(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get response management response assets | Error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get response management response assets | Error: %s", err), resp)
 	}
 
 	for _, asset := range *assets {
-		resources[*asset.Id] = &resourceExporter.ResourceMeta{Name: *asset.Name}
+		resources[*asset.Id] = &resourceExporter.ResourceMeta{BlockLabel: *asset.Name}
 	}
 
 	return resources, nil
@@ -56,7 +56,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Creating Responsemanagement response asset %s", fileName)
 	postResponseData, resp, err := proxy.createRespManagementRespAsset(ctx, &sdkResponseAsset)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to upload response asset: %s | error: %s", fileName, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to upload response asset: %s | error: %s", fileName, err), resp)
 	}
 
 	headers := *postResponseData.Headers
@@ -83,7 +83,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 
@@ -91,9 +91,9 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 		sdkAsset, resp, getErr := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		_ = d.Set("filename", *sdkAsset.Name)
@@ -124,7 +124,7 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("Updating Responsemanagement response asset %s", d.Id())
 	putResponseData, resp, err := proxy.updateRespManagementRespAsset(ctx, d.Id(), &bodyRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to update response asset: %s | error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to update response asset: %s | error: %s", d.Id(), err), resp)
 	}
 
 	// Adding a sleep with retry logic to determine when the division ID has actually been updated.
@@ -134,14 +134,14 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 		time.Sleep(20 * time.Second)
 		getResponseData, resp, err := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to read response asset: %s | error: %s", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to read response asset: %s | error: %s", d.Id(), err), resp)
 		}
 		if *getResponseData.Division.Id == *putResponseData.Division.Id {
 			log.Printf("Updated Responsemanagement response asset %s", d.Id())
 			return readRespManagementRespAsset(ctx, d, meta)
 		}
 	}
-	return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Responsemanagement response asset %s did not update properly | error: %s", d.Id(), err), resp)
+	return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Responsemanagement response asset %s did not update properly | error: %s", d.Id(), err), resp)
 }
 
 // deleteResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to delete an responsemanagement responseasset from Genesys cloud
@@ -153,7 +153,7 @@ func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("Deleting Responsemanagement response asset")
 		resp, err := proxy.deleteRespManagementRespAsset(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to delete response asset: %s | error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete response asset: %s | error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -170,8 +170,8 @@ func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 				log.Printf("Deleted Responsemanagement response asset %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting response asset %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting response asset %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("response asset %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("response asset %s still exists", d.Id()), resp))
 	})
 }

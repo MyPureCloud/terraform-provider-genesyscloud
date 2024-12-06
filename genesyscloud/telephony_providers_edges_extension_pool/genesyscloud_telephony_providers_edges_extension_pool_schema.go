@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ResourceName = "genesyscloud_telephony_providers_edges_extension_pool"
+	ResourceType = "genesyscloud_telephony_providers_edges_extension_pool"
 )
 
 func ResourceTelephonyExtensionPool() *schema.Resource {
@@ -77,7 +77,7 @@ func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
 }
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(ResourceName, DataSourceExtensionPool())
-	l.RegisterResource(ResourceName, ResourceTelephonyExtensionPool())
-	l.RegisterExporter(ResourceName, TelephonyExtensionPoolExporter())
+	l.RegisterDataSource(ResourceType, DataSourceExtensionPool())
+	l.RegisterResource(ResourceType, ResourceTelephonyExtensionPool())
+	l.RegisterExporter(ResourceType, TelephonyExtensionPoolExporter())
 }

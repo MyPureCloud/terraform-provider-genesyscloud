@@ -41,10 +41,10 @@ func getAllAuthIdpPings(ctx context.Context, clientConfig *platformclientv2.Conf
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP Ping error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP Ping error: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "ping"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "ping"}
 	return resources, nil
 }
 
@@ -62,16 +62,16 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading idp ping")
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpPing(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		pingIdentity, resp, getErr := proxy.getIdpPing(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpPing(ctx, d, meta)
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Ping: %s", getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", pingIdentity.Name)
@@ -113,7 +113,7 @@ func updateIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Updating idp ping")
 	_, resp, err := proxy.updateIdpPing(ctx, d.Id(), &idpPing)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IDP Ping %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update IDP Ping %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated idp ping")
@@ -127,7 +127,7 @@ func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	resp, err := proxy.deleteIdpPing(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IDP Ping %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete IDP Ping %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
@@ -139,9 +139,9 @@ func deleteIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Ping")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP Ping: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting IDP Ping: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP Ping still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("IDP Ping still exists"), resp))
 	})
 }
 

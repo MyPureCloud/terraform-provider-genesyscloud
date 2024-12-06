@@ -32,11 +32,11 @@ func getAllAuthSupportedContents(ctx context.Context, clientConfig *platformclie
 
 	supportedContents, resp, err := proxy.getAllSupportedContent(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get supported content: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get supported content: %s", err), resp)
 	}
 
 	for _, supportedContent := range *supportedContents {
-		resources[*supportedContent.Id] = &resourceExporter.ResourceMeta{Name: *supportedContent.Name}
+		resources[*supportedContent.Id] = &resourceExporter.ResourceMeta{BlockLabel: *supportedContent.Name}
 	}
 
 	return resources, nil
@@ -52,7 +52,7 @@ func createSupportedContent(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating supported content %s", *supportedContentConfig.Name)
 	supportedContent, resp, err := proxy.createSupportedContent(ctx, &supportedContentConfig)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create supported content: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create supported content: %s", err), resp)
 	}
 
 	d.SetId(*supportedContent.Id)
@@ -67,14 +67,14 @@ func readSupportedContent(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading supported content %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSupportedContent(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSupportedContent(), constants.ConsistencyChecks(), ResourceType)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		supportedContent, resp, getErr := proxy.getSupportedContentById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read supported content %s: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read supported content %s: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read supported content %s: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read supported content %s: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", supportedContent.Name)
@@ -94,7 +94,7 @@ func updateSupportedContent(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Updating supported content %s", *supportedContentConfig.Name)
 	supportedContent, resp, err := proxy.updateSupportedContent(ctx, d.Id(), &supportedContentConfig)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update supported content: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update supported content: %s", err), resp)
 	}
 
 	log.Printf("Updated supported content %s", *supportedContent.Id)
@@ -119,9 +119,9 @@ func deleteSupportedContent(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted supported content %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting supported content %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting supported content %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("supported content %s still exists: %s", d.Id(), err), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("supported content %s still exists: %s", d.Id(), err), resp))
 	})
 }

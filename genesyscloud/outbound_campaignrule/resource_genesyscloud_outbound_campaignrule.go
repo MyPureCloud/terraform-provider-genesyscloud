@@ -27,11 +27,11 @@ func getAllAuthCampaignRules(ctx context.Context, clientConfig *platformclientv2
 
 	campaignRules, resp, err := proxy.getAllOutboundCampaignrule(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound campaign rules error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get outbound campaign rules error: %s", err), resp)
 	}
 
 	for _, campaignRule := range *campaignRules {
-		resources[*campaignRule.Id] = &resourceExporter.ResourceMeta{Name: *campaignRule.Name}
+		resources[*campaignRule.Id] = &resourceExporter.ResourceMeta{BlockLabel: *campaignRule.Name}
 	}
 	return resources, nil
 }
@@ -45,7 +45,7 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Creating Outbound Campaign Rule %s", *rule.Name)
 	outboundCampaignRule, resp, err := proxy.createOutboundCampaignrule(ctx, &rule)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Campaign Rule %s error: %s", *rule.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create Outbound Campaign Rule %s error: %s", *rule.Name, err), resp)
 	}
 
 	d.SetId(*outboundCampaignRule.Id)
@@ -76,7 +76,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Updating Outbound Campaign Rule %s", *rule.Name)
 	_, resp, err := proxy.updateOutboundCampaignrule(ctx, d.Id(), &rule)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update campaign rule %s error: %s", *rule.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update campaign rule %s error: %s", *rule.Name, err), resp)
 	}
 
 	log.Printf("Updated Outbound Campaign Rule %s", *rule.Name)
@@ -86,7 +86,7 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignrule(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaignrule(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Campaign Rule %s", d.Id())
 
@@ -94,9 +94,9 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 		campaignRule, resp, getErr := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Campaign Rule %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Campaign Rule %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Campaign Rule %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Campaign Rule %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", campaignRule.Name)
@@ -128,12 +128,12 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		d.Set("enabled", false)
 		rule, resp, err := proxy.getOutboundCampaignruleById(ctx, d.Id())
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get Outbound campaign rule %s error: %s", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Outbound campaign rule %s error: %s", d.Id(), err), resp)
 		}
 		rule.Enabled = platformclientv2.Bool(false)
 		_, resp, err = proxy.updateOutboundCampaignrule(ctx, d.Id(), rule)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to disable outbound campagin rule %s error: %s", d.Id(), err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to disable outbound campagin rule %s error: %s", d.Id(), err), resp)
 		}
 	}
 
@@ -141,7 +141,7 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 		log.Printf("Deleting Outbound Campaign Rule")
 		resp, err := proxy.deleteOutboundCampaignrule(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound campaign rule %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete outbound campaign rule %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -157,8 +157,8 @@ func deleteOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 				log.Printf("Deleted Outbound Campaign Rule %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Outbound Campaign Rule %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting Outbound Campaign Rule %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign Rule %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound Campaign Rule %s still exists", d.Id()), resp))
 	})
 }

@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_routing_language"
+const ResourceType = "genesyscloud_routing_language"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingLanguage())
-	regInstance.RegisterExporter(resourceName, RoutingLanguageExporter())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingLanguage())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingLanguage())
+	regInstance.RegisterExporter(ResourceType, RoutingLanguageExporter())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingLanguage())
 }
 
 func ResourceRoutingLanguage() *schema.Resource {
@@ -61,10 +61,10 @@ func RoutingLanguageExporter() *resourceExporter.ResourceExporter {
 }
 
 func GenerateRoutingLanguageResource(
-	resourceID string,
+	resourceLabel string,
 	name string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_language" "%s" {
 		name = "%s"
 	}
-	`, resourceID, name)
+	`, resourceLabel, name)
 }

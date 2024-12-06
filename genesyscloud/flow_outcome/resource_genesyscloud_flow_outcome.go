@@ -31,11 +31,11 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 
 	flowOutcomes, resp, err := proxy.getAllFlowOutcome(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow outcomes error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get flow outcomes error: %s", err), resp)
 	}
 
 	for _, flowOutcome := range *flowOutcomes {
-		resources[*flowOutcome.Id] = &resourceExporter.ResourceMeta{Name: *flowOutcome.Name}
+		resources[*flowOutcome.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flowOutcome.Name}
 	}
 	return resources, nil
 }
@@ -50,7 +50,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Creating flow outcome %s", *flowOutcome.Name)
 	outcome, resp, err := proxy.createFlowOutcome(ctx, &flowOutcome)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow outcome %s error: %s", *flowOutcome.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create flow outcome %s error: %s", *flowOutcome.Name, err), resp)
 	}
 
 	d.SetId(*outcome.Id)
@@ -62,7 +62,7 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowOutcome(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading flow outcome %s", d.Id())
 
@@ -71,9 +71,9 @@ func readFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow outcome %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read flow outcome %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow outcome %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read flow outcome %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", flowOutcome.Name)
@@ -102,7 +102,7 @@ func updateFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Updating flow outcome %s", *flowOutcome.Name)
 	_, resp, err := proxy.updateFlowOutcome(ctx, d.Id(), &flowOutcome)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow outcome %s error: %s", *flowOutcome.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update flow outcome %s error: %s", *flowOutcome.Name, err), resp)
 	}
 
 	log.Printf("Updated flow outcome %s", d.Id())

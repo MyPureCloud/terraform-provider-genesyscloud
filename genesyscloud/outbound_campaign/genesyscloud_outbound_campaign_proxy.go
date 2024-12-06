@@ -108,7 +108,7 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 	log.Printf("Reading Outbound Campaign %s", campaignId)
 	outboundCampaign, resp, getErr := p.getOutboundCampaignById(ctx, campaignId)
 	if getErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s: %s", campaignId, getErr), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Campaign %s: %s", campaignId, getErr), resp)
 	}
 	log.Printf("Read Outbound Campaign %s", campaignId)
 
@@ -122,12 +122,12 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 		log.Printf("Reading Outbound Campaign %s to ensure campaign_status is 'off'", campaignId)
 		outboundCampaign, resp, getErr := p.getOutboundCampaignById(ctx, campaignId)
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Campaign %s | error: %s", campaignId, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Campaign %s | error: %s", campaignId, getErr), resp))
 		}
 		log.Printf("Read Outbound Campaign %s", campaignId)
 		if *outboundCampaign.CampaignStatus == "on" {
 			time.Sleep(5 * time.Second)
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("campaign %s campaign_status is still %s", campaignId, *outboundCampaign.CampaignStatus), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("campaign %s campaign_status is still %s", campaignId, *outboundCampaign.CampaignStatus), resp))
 		}
 		// Success
 		return nil

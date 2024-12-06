@@ -1,9 +1,10 @@
 package routing_settings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // providerResources holds a map of all registered resources
@@ -18,7 +19,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingSettings()
+	providerResources[ResourceType] = ResourceRoutingSettings()
 }
 
 // initTestResources initializes all test resources and data sources.

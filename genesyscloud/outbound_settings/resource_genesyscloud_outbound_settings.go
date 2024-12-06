@@ -35,9 +35,9 @@ func getAllOutboundSettings(ctx context.Context, clientConfig *platformclientv2.
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "outbound_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "outbound_settings"}
 	return resources, nil
 }
 
@@ -52,7 +52,7 @@ func createOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 	maxLineUtilization := d.Get("max_line_utilization").(float64)
@@ -67,9 +67,9 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 		settings, resp, getErr := proxy.getOutboundSettings(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 
 		}
 
@@ -113,7 +113,7 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		// Get current Outbound settings version
 		setting, resp, getErr := proxy.getOutboundSettings(ctx)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Setting %s error: %s", d.Id(), getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound Setting %s error: %s", d.Id(), getErr), resp)
 		}
 
 		update := platformclientv2.Outboundsettings{
@@ -139,7 +139,7 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 
 		_, resp, err := proxy.updateOutboundSettings(ctx, &update)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound settings %s error: %s", *setting.Name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound settings %s error: %s", *setting.Name, err), resp)
 		}
 		return nil, nil
 	})

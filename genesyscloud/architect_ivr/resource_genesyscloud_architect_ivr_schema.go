@@ -2,23 +2,24 @@ package architect_ivr
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
-	resourceName      = "genesyscloud_architect_ivr"
+	ResourceType      = "genesyscloud_architect_ivr"
 	maxDnisPerRequest = 50
 )
 
 // SetRegistrar registers all resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceArchitectIvr())
-	l.RegisterResource(resourceName, ResourceArchitectIvrConfig())
-	l.RegisterExporter(resourceName, ArchitectIvrExporter())
+	l.RegisterDataSource(ResourceType, DataSourceArchitectIvr())
+	l.RegisterResource(ResourceType, ResourceArchitectIvrConfig())
+	l.RegisterExporter(ResourceType, ArchitectIvrExporter())
 }
 
 // ArchitectIvrExporter returns the resourceExporter object used to hold the genesyscloud_architect_ivr exporter's config

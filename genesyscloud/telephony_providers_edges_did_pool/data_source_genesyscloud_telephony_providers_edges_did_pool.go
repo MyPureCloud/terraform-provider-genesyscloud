@@ -24,10 +24,10 @@ func dataSourceDidPoolRead(ctx context.Context, d *schema.ResourceData, m interf
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		id, retryable, resp, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony DID pool %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get telephony DID pool %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get telephony DID pool %s", err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get telephony DID pool %s", err), resp))
 		}
 		d.SetId(id)
 		return nil

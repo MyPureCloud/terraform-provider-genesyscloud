@@ -30,11 +30,11 @@ func lockFlow(flowName string, flowType string) {
 		for pageNum := 1; ; pageNum++ {
 			flows, resp, getErr := archAPI.GetFlows(nil, pageNum, pageSize, "", "", nil, flowName, "", "", "", "", "", "", "", false, false, "", "", nil)
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
 			}
 
 			if flows.Entities == nil || len(*flows.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no flows found with name %s", flowName), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no flows found with name %s", flowName), resp))
 			}
 
 			for _, entity := range *flows.Entities {
@@ -42,7 +42,7 @@ func lockFlow(flowName string, flowType string) {
 					flow, response, err := archAPI.PostFlowsActionsCheckout(*entity.Id)
 
 					if err != nil || response.Error != nil {
-						return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
+						return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting flow %s | error: %s", flowName, getErr), resp))
 					}
 
 					log.Printf("Flow (%s) with FlowName: %s has been locked Flow resource after checkout: %v\n", *flow.Id, flowName, *flow.LockedClient.Name)
@@ -57,10 +57,10 @@ func lockFlow(flowName string, flowType string) {
 // Tests the force_unlock functionality.
 func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 	var (
-		flowResource = "test_force_unlock_flow1"
-		flowName     = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
-		flowType     = "INBOUNDCALL"
-		filePath     = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		flowResourceLabel = "test_force_unlock_flow1"
+		flowName          = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
+		flowType          = "INBOUNDCALL"
+		filePath          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi again!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
@@ -78,32 +78,32 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResource,
+					flowResourceLabel,
 					filePath,
 					inboundcallConfig1,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource, flowName, "", flowType),
+					validateFlow("genesyscloud_flow."+flowResourceLabel, flowName, "", flowType),
 				),
 			},
 			{
 				//Lock the flow, deploy, and check to make sure the flow is locked
 				PreConfig: flowLocFunc, //This will lock the flow.
 				Config: GenerateFlowResource(
-					flowResource,
+					flowResourceLabel,
 					filePath,
 					inboundcallConfig2,
 					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlowUnlocked("genesyscloud_flow."+flowResource),
-					validateFlow("genesyscloud_flow."+flowResource, flowName, "", flowType),
+					validateFlowUnlocked("genesyscloud_flow."+flowResourceLabel),
+					validateFlow("genesyscloud_flow."+flowResourceLabel, flowName, "", flowType),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResource,
+				ResourceName:            "genesyscloud_flow." + flowResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -115,16 +115,16 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 
 func TestAccResourceArchFlowStandard(t *testing.T) {
 	var (
-		flowResource1    = "test_flow1"
-		flowResource2    = "test_flow2"
-		flowName         = "Terraform Flow Test-" + uuid.NewString()
-		flowDescription1 = "test description 1"
-		flowDescription2 = "test description 2"
-		flowType1        = "INBOUNDCALL"
-		flowType2        = "INBOUNDEMAIL"
-		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
-		filePath2        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		filePath3        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		flowResourceLabel1 = "test_flow1"
+		flowResourceLabel2 = "test_flow2"
+		flowName           = "Terraform Flow Test-" + uuid.NewString()
+		flowDescription1   = "test description 1"
+		flowDescription2   = "test description 2"
+		flowType1          = "INBOUNDCALL"
+		flowType2          = "INBOUNDEMAIL"
+		filePath1          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml" //Have to use an explicit path because the filesha function gets screwy on relative class names
+		filePath2          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
+		filePath3          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription2)
@@ -163,30 +163,30 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResource1,
+					flowResourceLabel1,
 					filePath1,
 					inboundcallConfig1,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription1, flowType1),
+					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription1, flowType1),
 				),
 			},
 			{
 				// Update flow description
 				Config: GenerateFlowResource(
-					flowResource1,
+					flowResourceLabel1,
 					filePath2,
 					inboundcallConfig2,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription2, flowType1),
+					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, flowType1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResource1,
+				ResourceName:            "genesyscloud_flow." + flowResourceLabel1,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -194,18 +194,18 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 			{
 				// Create inboundemail flow
 				Config: GenerateFlowResource(
-					flowResource2,
+					flowResourceLabel2,
 					filePath3,
 					inboundemailConfig1,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource2, flowName, flowDescription1, flowType2),
+					validateFlow("genesyscloud_flow."+flowResourceLabel2, flowName, flowDescription1, flowType2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResource2,
+				ResourceName:            "genesyscloud_flow." + flowResourceLabel2,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -217,11 +217,11 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 
 func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 	var (
-		flowResource1    = "test_flow1"
-		flowName         = "Terraform Flow Test-" + uuid.NewString()
-		flowDescription1 = "description 1"
-		flowDescription2 = "description 2"
-		filePath1        = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		flowResourceLabel1 = "test_flow1"
+		flowName           = "Terraform Flow Test-" + uuid.NewString()
+		flowDescription1   = "description 1"
+		flowDescription2   = "description 2"
+		filePath1          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -231,7 +231,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResource1,
+					flowResourceLabel1,
 					filePath1,
 					"",
 					false,
@@ -244,13 +244,13 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription1, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription1, "INBOUNDCALL"),
 				),
 			},
 			{
 				// Update
 				Config: GenerateFlowResource(
-					flowResource1,
+					flowResourceLabel1,
 					filePath1,
 					"",
 					false,
@@ -263,7 +263,7 @@ func TestAccResourceArchFlowSubstitutions(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription2, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, "INBOUNDCALL"),
 				),
 			},
 		},
@@ -322,12 +322,12 @@ the flow with a substitution.
 */
 func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	var (
-		flowResource1    = "test_flow1"
-		flowName         = "Terraform Flow Test-" + uuid.NewString()
-		flowDescription1 = "description 1"
-		flowDescription2 = "description 2"
-		srcFile          = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
-		destFile         = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
+		flowResourceLabel1 = "test_flow1"
+		flowName           = "Terraform Flow Test-" + uuid.NewString()
+		flowDescription1   = "description 1"
+		flowDescription2   = "description 2"
+		srcFile            = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_substitutions.yaml"
+		destFile           = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example_holder.yaml"
 	)
 
 	//Copy the example substitution file over to a temp file that can be manipulated and modified
@@ -343,7 +343,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 			{
 				// Create flow
 				Config: GenerateFlowResource(
-					flowResource1,
+					flowResourceLabel1,
 					destFile,
 					"",
 					false,
@@ -356,13 +356,13 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription1, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription1, "INBOUNDCALL"),
 				),
 			},
 			{ // Update the flow, but make sure that we touch the YAML file and change something int
 				PreConfig: func() { transformFile(destFile) },
 				Config: GenerateFlowResource(
-					flowResource1,
+					flowResourceLabel1,
 					destFile,
 					"",
 					false,
@@ -375,7 +375,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow("genesyscloud_flow."+flowResource1, flowName, flowDescription2, "INBOUNDCALL"),
+					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, "INBOUNDCALL"),
 				),
 			},
 		},
@@ -384,11 +384,11 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 }
 
 // Check if flow is published, then check if flow name and type are correct
-func validateFlow(flowResourceName, name, description, flowType string) resource.TestCheckFunc {
+func validateFlow(flowResourcePath, name, description, flowType string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		flowResource, ok := state.RootModule().Resources[flowResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowResourcePath)
 		}
 		flowID := flowResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
@@ -426,11 +426,11 @@ func validateFlow(flowResourceName, name, description, flowType string) resource
 
 // Will attempt to determine if a flow is unlocked. I check to see if a flow is locked, by attempting to check the flow again.  If the flow is locked the second checkout
 // will fail with a 409 status code.  If the flow is unlocked, the status code will be a 200
-func validateFlowUnlocked(flowResourceName string) resource.TestCheckFunc {
+func validateFlowUnlocked(flowResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		flowResource, ok := state.RootModule().Resources[flowResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowResourcePath)
 		}
 
 		flowID := flowResource.Primary.ID

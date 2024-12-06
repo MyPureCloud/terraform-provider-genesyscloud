@@ -7,6 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -27,10 +28,10 @@ func getAllOutboundDncLists(ctx context.Context, clientConfig *platformclientv2.
 
 	dnclists, resp, err := proxy.getAllOutboundDnclist(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get dnclists error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get dnclists error: %s", err), resp)
 	}
 	for _, dncListConfig := range *dnclists {
-		resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{Name: *dncListConfig.Name}
+		resources[*dncListConfig.Id] = &resourceExporter.ResourceMeta{BlockLabel: *dncListConfig.Name}
 	}
 	return resources, nil
 }
@@ -38,6 +39,7 @@ func getAllOutboundDncLists(ctx context.Context, clientConfig *platformclientv2.
 func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	contactMethod := d.Get("contact_method").(string)
+	customExclusionColumn, _ := d.Get("custom_exclusion_column").(string)
 	loginId := d.Get("login_id").(string)
 	campaignId := d.Get("campaign_id").(string)
 	licenseId := d.Get("license_id").(string)
@@ -71,11 +73,14 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	if dncSourceType != "" {
 		sdkDncListCreate.DncSourceType = &dncSourceType
 	}
+	if customExclusionColumn != "" {
+		sdkDncListCreate.CustomExclusionColumn = &customExclusionColumn
+	}
 
 	log.Printf("Creating Outbound DNC list %s", name)
 	outboundDncList, resp, err := proxy.createOutboundDnclist(ctx, &sdkDncListCreate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound DNC list %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create Outbound DNC list %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*outboundDncList.Id)
@@ -85,11 +90,11 @@ func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 			for _, entry := range entries {
 				resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 				if err != nil {
-					return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound DNC list %s error: %v", name, err), resp)
+					return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create Outbound DNC list %s error: %v", name, err), resp)
 				}
 			}
 		} else {
-			return util.BuildDiagnosticError(resourceName, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
+			return util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 		}
 	}
 	log.Printf("Created Outbound DNC list %s %s", name, *outboundDncList.Id)
@@ -137,23 +142,23 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		// Get current Outbound DNC list version
 		outboundDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound DNC list %s error: %s", name, getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound DNC list %s error: %s", name, getErr), resp)
 		}
 		sdkDncList.Version = outboundDncList.Version
 		outboundDncList, response, updateErr := proxy.updateOutboundDnclist(ctx, d.Id(), &sdkDncList)
 		if updateErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
 		if len(entries) > 0 {
 			if *sdkDncList.DncSourceType == "rds" {
 				for _, entry := range entries {
 					response, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 					if err != nil {
-						return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), response)
+						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), response)
 					}
 				}
 			} else {
-				return nil, util.BuildDiagnosticError(resourceName, "Phone numbers can only be uploaded to internal DNC lists", fmt.Errorf("phone numbers can only be uploaded to internal DNC lists"))
+				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists", fmt.Errorf("phone numbers can only be uploaded to internal DNC lists"))
 			}
 		}
 		return nil, nil
@@ -169,7 +174,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 
@@ -177,23 +182,11 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		sdkDncList, resp, getErr := proxy.getOutboundDnclistById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound DNC list %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		if sdkDncList.Name != nil {
-			_ = d.Set("name", *sdkDncList.Name)
-		}
-		if sdkDncList.ContactMethod != nil {
-			_ = d.Set("contact_method", *sdkDncList.ContactMethod)
-		}
-		if sdkDncList.LoginId != nil {
-			_ = d.Set("login_id", *sdkDncList.LoginId)
-		}
-		if sdkDncList.CampaignId != nil {
-			_ = d.Set("campaign_id", *sdkDncList.CampaignId)
-		}
 		if sdkDncList.DncCodes != nil {
 			schemaCodes := lists.InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
 			// preserve ordering and avoid a plan not empty error
@@ -203,15 +196,16 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 				_ = d.Set("dnc_codes", lists.StringListToInterfaceList(*sdkDncList.DncCodes))
 			}
 		}
-		if sdkDncList.DncSourceType != nil {
-			_ = d.Set("dnc_source_type", *sdkDncList.DncSourceType)
-		}
-		if sdkDncList.LicenseId != nil {
-			_ = d.Set("license_id", *sdkDncList.LicenseId)
-		}
-		if sdkDncList.Division != nil && sdkDncList.Division.Id != nil {
-			_ = d.Set("division_id", *sdkDncList.Division.Id)
-		}
+
+		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)
+		resourcedata.SetNillableValue(d, "contact_method", sdkDncList.ContactMethod)
+		resourcedata.SetNillableValue(d, "login_id", sdkDncList.LoginId)
+		resourcedata.SetNillableValue(d, "campaign_id", sdkDncList.CampaignId)
+		resourcedata.SetNillableValue(d, "dnc_source_type", sdkDncList.DncSourceType)
+		resourcedata.SetNillableValue(d, "license_id", sdkDncList.LicenseId)
+		resourcedata.SetNillableReference(d, "division_id", sdkDncList.Division)
+		resourcedata.SetNillableValue(d, "custom_exclusion_column", sdkDncList.CustomExclusionColumn)
+
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
 		return cc.CheckState(d)
 	})
@@ -225,7 +219,7 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		log.Printf("Deleting Outbound DNC list")
 		resp, err := proxy.deleteOutboundDnclist(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound DNC list %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Outbound DNC list %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -241,18 +235,18 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 				log.Printf("Deleted Outbound DNC list %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Outbound DNC list %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting Outbound DNC list %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound DNC list %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound DNC list %s still exists", d.Id()), resp))
 	})
 }
 
-func GenerateOutboundDncListBasic(resourceId string, name string) string {
+func GenerateOutboundDncListBasic(resourceLabel string, name string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_dnclist" "%s" {
 	name            = "%s"
-	dnc_source_type = "rds"	
+	dnc_source_type = "rds"
 	contact_method  = "Phone"
 }
-`, resourceId, name)
+`, resourceLabel, name)
 }

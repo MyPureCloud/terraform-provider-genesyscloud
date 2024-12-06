@@ -13,6 +13,8 @@ final def region = REGION
 def credentials = CREDENTIALS_MAP.get(region, 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET')
 def env = ENVIRONMENT_MAP.get(region,'test')
 def triggerUTR = triggerUTR
+final def SERVICE_ID = 'CX-as-Code'
+final def GIT_CREDENTIALS_ID = '211a9bc8-96ae-4b0c-b9bf-ad1d4ff53f79'
 
 pipeline {
     agent {
@@ -37,6 +39,12 @@ pipeline {
         go 'Go 1.23.1'
         terraform 'Terraform 1.0.10'
     }
+     triggers {
+        parameterizedCron('''
+            30 22 * * 0-4 %REGION=tca
+            30 22 * * 0-4 %REGION=us-east-1
+        ''')
+    }   
 
     stages {
       
@@ -54,6 +62,18 @@ pipeline {
                 sh 'go install gotest.tools/gotestsum@latest'
                 sh 'go install github.com/nezorflame/junit-merger@latest'
                 sh 'pip install xmltodict --user'
+                    
+        script {
+          def jenkinsCommon
+          def sourceBuildNumber
+          def description
+          dir('jenkins-deps') {
+            git url: 'git@bitbucket.org:inindca/publicapi-test-common.git', credentialsId: GIT_CREDENTIALS_ID
+            jenkinsCommon = load 'jenkinsfile-libs/test-steps.groovy'
+          }
+            jenkinsCommon.updateDescription(SERVICE_ID, sourceBuildNumber, 'Test Run-' + region)
+        }
+      
             }
         }
 

@@ -49,11 +49,11 @@ func getAllMediaRetentionPolicies(ctx context.Context, clientConfig *platformcli
 
 	retentionPolicies, resp, err := pp.getAllPolicies(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of media retention policies error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of media retention policies error: %s", err), resp)
 	}
 
 	for _, retentionPolicy := range *retentionPolicies {
-		resources[*retentionPolicy.Id] = &resourceExporter.ResourceMeta{Name: *retentionPolicy.Name}
+		resources[*retentionPolicy.Id] = &resourceExporter.ResourceMeta{BlockLabel: *retentionPolicy.Name}
 	}
 	return resources, nil
 }
@@ -70,13 +70,13 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	err, mediaPolicies := buildMediaPolicies(d, pp, ctx)
 
 	if err != nil {
-		util.BuildDiagnosticError(resourceName, "error while calling buildMediaPolicie()in createMediaRetention", err)
+		util.BuildDiagnosticError(ResourceType, "error while calling buildMediaPolicie()in createMediaRetention", err)
 	}
 
 	conditions := buildConditions(d)
 	err, actions := buildPolicyActionsFromResource(d, pp, ctx)
 	if err != nil {
-		util.BuildDiagnosticError(resourceName, "error while calling buildPolicyActionsFromResource()", err)
+		util.BuildDiagnosticError(ResourceType, "error while calling buildPolicyActionsFromResource()", err)
 	}
 
 	policyErrors := buildPolicyErrors(d)
@@ -96,7 +96,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	policy, resp, err := pp.createPolicy(ctx, &reqBody)
 	log.Printf("Media retention policy creation status %#v", resp.Status)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create media retention policy %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create media retention policy %s error: %s", name, err), resp)
 	}
 
 	// Make sure form is properly created
@@ -110,7 +110,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, gcloud.ResourceSurveyForm(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, gcloud.ResourceSurveyForm(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading media retention policy %s", d.Id())
 
@@ -118,9 +118,9 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		retentionPolicy, resp, err := pp.getPolicyById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read media retention policy %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read media retention policy %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read media retention policy %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read media retention policy %s | error: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", retentionPolicy.Name)
@@ -160,14 +160,14 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	enabled := d.Get("enabled").(bool)
 	err, mediaPolicies := buildMediaPolicies(d, pp, ctx)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, "Error while retrieving buildMediaPolicies() function in updateMediaRetentionPolicy() method)", err)
+		return util.BuildDiagnosticError(ResourceType, "Error while retrieving buildMediaPolicies() function in updateMediaRetentionPolicy() method)", err)
 	}
 
 	conditions := buildConditions(d)
 	err, actions := buildPolicyActionsFromResource(d, pp, ctx)
 
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, "Error while retrieving buildPolicyActionsFromResource() function in updateMediaRetentionPolicy() method)", err)
+		return util.BuildDiagnosticError(ResourceType, "Error while retrieving buildPolicyActionsFromResource() function in updateMediaRetentionPolicy() method)", err)
 	}
 
 	policyErrors := buildPolicyErrors(d)
@@ -186,7 +186,7 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Updating media retention policy %s", name)
 	policy, resp, err := pp.updatePolicy(ctx, d.Id(), &reqBody)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update media retention policy %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update media retention policy %s error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated media retention policy %s %s", name, *policy.Id)
@@ -203,7 +203,7 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Deleting media retention policy %s", name)
 	resp, err := pp.deletePolicy(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete media retention policy %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete media retention policy %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -214,8 +214,8 @@ func deleteMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 				log.Printf("Deleted media retention policy %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting media retention policy %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting media retention policy %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("media retention policy %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("media retention policy %s still exists", d.Id()), resp))
 	})
 }

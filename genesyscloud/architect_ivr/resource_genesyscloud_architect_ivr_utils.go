@@ -12,12 +12,12 @@ import (
 )
 
 type IvrConfigStruct struct {
-	ResourceID  string
-	Name        string
-	Description string
-	Dnis        []string
-	DependsOn   string
-	DivisionId  string
+	ResourceLabel string
+	Name          string
+	Description   string
+	Dnis          []string
+	DependsOn     string
+	DivisionId    string
 }
 
 // GenerateIvrConfigResource returns an ivr resource as a string based on the IvrConfigStruct struct
@@ -41,8 +41,8 @@ func GenerateIvrConfigResource(ivrConfig *IvrConfigStruct) string {
 		depends_on  = [%s]
 		division_id = %s
 	}
-	`, resourceName,
-		ivrConfig.ResourceID,
+	`, ResourceType,
+		ivrConfig.ResourceLabel,
 		ivrConfig.Name,
 		ivrConfig.Description,
 		strings.Join(quotedDnsSlice, ","),
@@ -53,14 +53,14 @@ func GenerateIvrConfigResource(ivrConfig *IvrConfigStruct) string {
 
 // GenerateIvrDataSource generate an ivr data source as a string
 func GenerateIvrDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceName, resourceID, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }
 
 func buildArchitectIvrFromResourceData(d *schema.ResourceData) *platformclientv2.Ivr {

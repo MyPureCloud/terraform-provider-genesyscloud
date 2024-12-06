@@ -32,11 +32,11 @@ func getAllAuthConversationsMessagingIntegrationsInstagrams(ctx context.Context,
 
 	instagramIntegrationRequests, resp, err := proxy.getAllConversationsMessagingIntegrationsInstagram(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get conversations messaging integrations instagram: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get conversations messaging integrations instagram: %v", err), resp)
 	}
 
 	for _, instagramIntegrationRequest := range *instagramIntegrationRequests {
-		resources[*instagramIntegrationRequest.Id] = &resourceExporter.ResourceMeta{Name: *instagramIntegrationRequest.Name}
+		resources[*instagramIntegrationRequest.Id] = &resourceExporter.ResourceMeta{BlockLabel: *instagramIntegrationRequest.Name}
 	}
 
 	return resources, nil
@@ -52,7 +52,7 @@ func createConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 	log.Printf("Creating conversations messaging integrations instagram %s", *conversationsMessagingIntegrationsInstagram.Name)
 	instagramIntegrationRequest, resp, err := proxy.createConversationsMessagingIntegrationsInstagram(ctx, &conversationsMessagingIntegrationsInstagram)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create conversations messaging integrations instagram: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create conversations messaging integrations instagram: %s", err), resp)
 	}
 
 	d.SetId(*instagramIntegrationRequest.Id)
@@ -71,12 +71,12 @@ func readConversationsMessagingIntegrationsInstagram(ctx context.Context, d *sch
 		instagramIntegrationRequest, resp, getErr := proxy.getConversationsMessagingIntegrationsInstagramById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsInstagram(), constants.DefaultConsistencyChecks, resourceName)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsInstagram(), constants.ConsistencyChecks(), ResourceType)
 
 		resourcedata.SetNillableValue(d, "name", instagramIntegrationRequest.Name)
 
@@ -106,7 +106,7 @@ func updateConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 	log.Printf("Updating conversations messaging integrations instagram %s", *conversationsMessagingIntegrationsInstagram.Name)
 	instagramIntegrationRequest, resp, err := proxy.updateConversationsMessagingIntegrationsInstagram(ctx, d.Id(), &conversationsMessagingIntegrationsInstagram)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update conversations messaging integrations instagram: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update conversations messaging integrations instagram: %s", err), resp)
 	}
 
 	log.Printf("Updated conversations messaging integrations instagram %s", *instagramIntegrationRequest.Id)
@@ -120,7 +120,7 @@ func deleteConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 
 	resp, err := proxy.deleteConversationsMessagingIntegrationsInstagram(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete conversations messaging integrations instagram %s: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete conversations messaging integrations instagram %s: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -131,9 +131,9 @@ func deleteConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 				log.Printf("Deleted conversations messaging integrations instagram %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting conversations messaging integrations instagram %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting conversations messaging integrations instagram %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("conversations messaging integrations instagram %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("conversations messaging integrations instagram %s still exists", d.Id()), resp))
 	})
 }

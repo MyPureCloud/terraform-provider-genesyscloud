@@ -31,11 +31,11 @@ func getAllAuthEmployeeperformanceExternalmetricsDefinitions(ctx context.Context
 
 	definitions, resp, err := proxy.getAllEmployeeperformanceExternalmetricsDefinition(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get employeeperformance externalmetrics definition error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get employeeperformance externalmetrics definition error: %s", err), resp)
 	}
 
 	for _, definition := range *definitions {
-		resources[*definition.Id] = &resourceExporter.ResourceMeta{Name: *definition.Name}
+		resources[*definition.Id] = &resourceExporter.ResourceMeta{BlockLabel: *definition.Name}
 	}
 
 	return resources, nil
@@ -62,7 +62,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	log.Printf("Creating employeeperformance externalmetrics definition %s", *metricDefinition.Name)
 	definition, resp, err := proxy.createEmployeeperformanceExternalmetricsDefinition(ctx, &metricDefinition)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create employeeperformance externalmetrics definition %s error: %s", *metricDefinition.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create employeeperformance externalmetrics definition %s error: %s", *metricDefinition.Name, err), resp)
 	}
 
 	d.SetId(*definition.Id)
@@ -74,7 +74,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 
@@ -82,9 +82,9 @@ func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *sc
 		definition, resp, getErr := proxy.getEmployeeperformanceExternalmetricsDefinitionById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read employeeperformance externalmetrics definition %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", definition.Name)
@@ -114,7 +114,7 @@ func updateEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 	log.Printf("Updating employeeperformance externalmetrics definition %s: %s", *metricDefinition.Name, d.Id())
 	definition, resp, err := proxy.updateEmployeeperformanceExternalmetricsDefinition(ctx, d.Id(), &metricDefinition)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update employeeperformance externalmetrics definition %s error: %s", *metricDefinition.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update employeeperformance externalmetrics definition %s error: %s", *metricDefinition.Name, err), resp)
 	}
 
 	log.Printf("Updated employeeperformance externalmetrics definition %s", *definition.Id)
@@ -128,7 +128,7 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 
 	resp, err := proxy.deleteEmployeeperformanceExternalmetricsDefinition(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete employeeperformance externalmetrics definition %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete employeeperformance externalmetrics definition %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -139,8 +139,8 @@ func deleteEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 				log.Printf("Deleted employeeperformance externalmetrics definition %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting employeeperformance externalmetrics definition %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting employeeperformance externalmetrics definition %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("employeeperformance externalmetrics definition %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("employeeperformance externalmetrics definition %s still exists", d.Id()), resp))
 	})
 }

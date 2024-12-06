@@ -96,8 +96,23 @@ GENESYSCLOUD_PROXY_HOST
 GENESYSCLOUD_PROXY_PROTOCOL
 GENESYSCLOUD_PROXY_AUTH_USERNAME
 GENESYSCLOUD_PROXY_AUTH_PASSWORD
-
 ```
+
+### Customizing the consistency checker
+The provider uses a consistency checker to help deal with eventual consistency problems that might occur when a GET api does not return up-to-date data after a resource is updated. By default, the consistency checker will throw an error if, after retrying, there is still an unexpected mismatch between states. 
+To change this behaviour and make the consistency checker write errors to a file, you can set the following environment variable:
+```
+BYPASS_CONSISTENCY_CHECKER
+```
+
+When `BYPASS_CONSISTENCY_CHECKER` is set the provider will retry 5 times by default when it encounters a problem before writing the error to a file. You can specifically set how many times you want the consistency checker to run by setting the following environment variable.
+```
+CONSISTENCY_CHECKS=5
+```
+
+_Note_: `CONSISTENCY_CHECKS` can only be used when `BYPASS_CONSISTENCY_CHECKER` is set.
+
+_Note_: Settings `CONSISTENCY_CHECKS=0` will completely disable the consistency checker and stop it from running.
 
 ### Data Sources
 
@@ -165,6 +180,10 @@ provider_installation {
   }
 }
 ```
+
+### Dictionary
+
+A shared [Dictionary](./DICTIONARY.md) of terminology should be referenced as a guide to ensure consistency in variable naming, function parameters, and code comments throughout the provider implementation. The aim is to improve code readability, maintainability, and collaboration among developers working on the provider by adhering to these conventions.
 
 ### Debugging
 

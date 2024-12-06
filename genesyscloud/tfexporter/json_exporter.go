@@ -167,7 +167,7 @@ func createVariablesJsonMap(unresolvedAttrs []unresolvableAttributeInfo) map[str
 		variable[key] = make(util.JsonMap)
 		variable[key]["description"] = attr.Schema.Description
 		if variable[key]["description"] == "" {
-			variable[key]["description"] = fmt.Sprintf("%s value for resource %s of type %s", attr.Name, attr.ResourceName, attr.ResourceType)
+			variable[key]["description"] = fmt.Sprintf("%s value for resource %s of type %s", attr.Name, attr.ResourceLabel, attr.ResourceType)
 		}
 
 		variable[key]["sensitive"] = attr.Schema.Sensitive

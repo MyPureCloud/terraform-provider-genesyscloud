@@ -15,11 +15,11 @@ import (
 
 func TestAccResourceRoutingWrapupcode(t *testing.T) {
 	var (
-		codeResource1 = "routing-wrapupcode1"
-		codeName1     = "Terraform Code-" + uuid.NewString()
-		codeName2     = "Terraform Code-" + uuid.NewString()
-		divResource   = "test-division"
-		divName       = "terraform-" + uuid.NewString()
+		codeResourceLabel1 = "routing-wrapupcode1"
+		codeName1          = "Terraform Code-" + uuid.NewString()
+		codeName2          = "Terraform Code-" + uuid.NewString()
+		divResourceLabel   = "test-division"
+		divName            = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,41 +28,41 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateRoutingWrapupcodeResource(
-					codeResource1,
+					codeResourceLabel1,
 					codeName1,
 					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
 				),
 			},
 			{
 				// Create
-				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
-					codeResource1,
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateRoutingWrapupcodeResource(
+					codeResourceLabel1,
 					codeName1,
-					"genesyscloud_auth_division."+divResource+".id",
+					"genesyscloud_auth_division."+divResourceLabel+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName1),
-					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
 				),
 			},
 			{
 				// Update with a new name
-				Config: authDivision.GenerateAuthDivisionBasic(divResource, divName) + GenerateRoutingWrapupcodeResource(
-					codeResource1,
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateRoutingWrapupcodeResource(
+					codeResourceLabel1,
 					codeName2,
-					"genesyscloud_auth_division."+divResource+".id",
+					"genesyscloud_auth_division."+divResourceLabel+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+codeResource1, "name", codeName2),
-					resource.TestCheckResourceAttrPair(resourceName+"."+codeResource1, "division_id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName2),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + codeResource1,
+				ResourceName:      ResourceType + "." + codeResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -74,7 +74,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 func testVerifyWrapupcodesDestroyed(state *terraform.State) error {
 	routingAPI := platformclientv2.NewRoutingApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 

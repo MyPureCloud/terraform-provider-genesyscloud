@@ -49,7 +49,7 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 
 	actions, resp, err := iap.getAllIntegrationActions(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration actions %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration actions %s", err), resp)
 	}
 
 	for _, action := range *actions {
@@ -57,7 +57,7 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		if strings.HasPrefix(*action.Id, "static") {
 			continue
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
 	}
 	return resources, nil
 }
@@ -89,7 +89,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			Config:        BuildSdkActionConfig(d),
 		})
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
 		}
 		d.SetId(*action.Id)
 
@@ -107,7 +107,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading integration action %s", d.Id())
 
@@ -115,9 +115,9 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		// Retrieve config request/response templates
@@ -127,7 +127,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		successTemp, resp, err := iap.getIntegrationActionTemplate(ctx, d.Id(), successTemplateFileName)
@@ -136,7 +136,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", action.Name)
@@ -198,7 +198,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		// Get the latest action version to send with PATCH
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration action %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration action %s error: %s", d.Id(), err), resp)
 		}
 
 		_, resp, err = iap.updateIntegrationAction(ctx, d.Id(), &platformclientv2.Updateactioninput{
@@ -208,7 +208,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			Config:   BuildSdkActionConfig(d),
 		})
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration action %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
@@ -235,7 +235,7 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 			log.Printf("Integration action already deleted %s", d.Id())
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration action %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Integration action %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -246,8 +246,8 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Integration action %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting integration action %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration action %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("integration action %s still exists", d.Id()), resp))
 	})
 }

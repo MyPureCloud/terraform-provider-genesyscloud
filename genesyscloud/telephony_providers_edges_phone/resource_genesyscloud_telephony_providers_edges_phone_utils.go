@@ -22,7 +22,7 @@ import (
 )
 
 type PhoneConfig struct {
-	PhoneRes            string
+	PhoneResourceLabel  string
 	Name                string
 	State               string
 	SiteId              string
@@ -108,10 +108,10 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, resp, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting stations: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting stations: %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no stations found with userID %v", userId), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no stations found with userID %v", userId), resp))
 		}
 
 		stationId = *station.Id
@@ -127,18 +127,18 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error unassigning user from station %s: %v", stationId, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error unassigning user from station %s: %v", stationId, err), resp)
 			}
 		}
 
 		resp, putErr := pp.assignUserToStation(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr), resp)
 		}
 
 		resp, putErr = pp.assignStationAsDefault(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr), resp)
 		}
 
 		return resp, nil
@@ -425,7 +425,7 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		%s
 		%s
 	}
-	`, config.PhoneRes,
+	`, config.PhoneResourceLabel,
 		config.Name,
 		config.State,
 		config.SiteId,

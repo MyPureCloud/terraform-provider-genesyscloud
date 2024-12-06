@@ -31,23 +31,23 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	// get unmanaged sites
 	unmanagedSites, resp, err := sp.GetAllSites(ctx, false)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
 	}
 	for _, unmanagedSite := range *unmanagedSites {
-		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{Name: *unmanagedSite.Name}
+		resources[*unmanagedSite.Id] = &resourceExporter.ResourceMeta{BlockLabel: *unmanagedSite.Name}
 	}
 
 	// get managed sites
 	managedSites, resp, err := sp.GetAllSites(ctx, true)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
 	}
 	for _, managedSite := range *managedSites {
-		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{Name: *managedSite.Name}
+		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{BlockLabel: *managedSite.Name}
 		// When exporting managed sites, they must automatically be exported as data source
 		// Managed sites are added to the ExportAsData []string in resource_exporter
 		if tfexporter_state.IsExporterActive() {
-			resourceExporter.AddDataSourceItems(resourceName, *managedSite.Name)
+			resourceExporter.AddDataSourceItems(ResourceType, *managedSite.Name)
 		}
 	}
 	return resources, nil
@@ -76,7 +76,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	locationId := d.Get("location_id").(string)
 	location, resp, err := sp.getLocation(ctx, locationId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get location %s error: %s", locationId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get location %s error: %s", locationId, err), resp)
 	}
 
 	err = validateMediaRegions(ctx, sp, mediaRegions)
@@ -100,7 +100,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Creating site %s", *siteReq.Name)
 	site, resp, err := sp.createSite(ctx, siteReq)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create site %s error: %s", *siteReq.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create site %s error: %s", *siteReq.Name, err), resp)
 	}
 
 	d.SetId(*site.Id)
@@ -120,7 +120,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 			diagErr = updateSiteOutboundRoutes(ctx, sp, d)
 			if diagErr != nil {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to create site %s | error: %v", d.Id(), diagErr), nil))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to create site %s | error: %v", d.Id(), diagErr), nil))
 			}
 			return nil
 		})
@@ -138,7 +138,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Setting default site to %s", *site.Id)
 		resp, err := sp.setDefaultSite(ctx, *site.Id)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("unable to set default site to %s error: %s", *site.Id, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("unable to set default site to %s error: %s", *site.Id, err), resp)
 		}
 	}
 
@@ -148,7 +148,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := GetSiteProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.ConsistencyChecks(), ResourceType)
 	utilE164 := util.NewUtilE164Service()
 
 	log.Printf("Reading site %s", d.Id())
@@ -156,9 +156,9 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 		}
 
 		_ = d.Set("name", *currentSite.Name)
@@ -201,7 +201,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 		defaultSiteId, resp, err := sp.getDefaultSiteId(ctx)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get default site id: %v", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get default site id: %v", err), resp))
 		}
 		_ = d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
 
@@ -236,7 +236,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	location, resp, err := sp.getLocation(ctx, locationId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get location %s error: %s", locationId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get location %s error: %s", locationId, err), resp)
 	}
 	site.Location = &platformclientv2.Locationdefinition{
 		Id:              &locationId,
@@ -268,14 +268,14 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		// Get current site version
 		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read site %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read site %s error: %s", d.Id(), err), resp)
 		}
 		site.Version = currentSite.Version
 
 		log.Printf("Updating site %s", *site.Name)
 		site, resp, err = sp.updateSite(ctx, d.Id(), site)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update site %s error: %s", *site.Name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update site %s error: %s", *site.Name, err), resp)
 		}
 
 		return resp, nil
@@ -302,7 +302,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Setting default site to %s", *site.Id)
 		resp, err := sp.setDefaultSite(ctx, *site.Id)
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to to set default site to %s error: %s", *site.Id, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to to set default site to %s error: %s", *site.Id, err), resp)
 		}
 	}
 
@@ -325,7 +325,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Site already deleted %s", d.Id())
 				return resp, nil
 			}
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete site %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete site %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -345,7 +345,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				time.Sleep(8 * time.Second)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting site %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting site %s | error: %s", d.Id(), err), resp))
 		}
 
 		if site.State != nil && *site.State == "deleted" {
@@ -357,6 +357,6 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return nil
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("site %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("site %s still exists", d.Id()), resp))
 	})
 }

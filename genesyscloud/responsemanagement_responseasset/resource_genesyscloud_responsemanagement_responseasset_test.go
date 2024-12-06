@@ -18,7 +18,7 @@ import (
 
 func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 	var (
-		resourceId            = "responseasset"
+		resourceLabel         = "responseasset"
 		testFilesDir          = "test_responseasset_data"
 		fileName1             = "yeti-img.png"
 		fileName2             = "genesys-img.png"
@@ -26,7 +26,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 		fullPath2             = filepath.Join(testFilesDir, fileName2)
 		normalizeFileName1, _ = testrunner.NormalizeFileName(fullPath1)
 		normalizeFileName2, _ = testrunner.NormalizeFileName(fullPath2)
-		divisionResourceId    = "test_div"
+		divisionResourceLabel = "test_div"
 		divisionName          = "test tf divison " + uuid.NewString()
 	)
 
@@ -38,33 +38,33 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath1, util.NullValue),
+				Config: GenerateResponseManagementResponseAssetResource(resourceLabel, fullPath1, util.NullValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", normalizeFileName1),
-					provider.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceLabel, "filename", normalizeFileName1),
+					provider.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceLabel),
 				),
 			},
 			{
-				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "genesyscloud_auth_division."+divisionResourceId+".id") +
-					authDivision.GenerateAuthDivisionBasic(divisionResourceId, divisionName),
+				Config: GenerateResponseManagementResponseAssetResource(resourceLabel, fullPath2, "genesyscloud_auth_division."+divisionResourceLabel+".id") +
+					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel, divisionName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", normalizeFileName2),
-					resource.TestCheckResourceAttrPair("genesyscloud_responsemanagement_responseasset."+resourceId, "division_id",
-						"genesyscloud_auth_division."+divisionResourceId, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceLabel, "filename", normalizeFileName2),
+					resource.TestCheckResourceAttrPair("genesyscloud_responsemanagement_responseasset."+resourceLabel, "division_id",
+						"genesyscloud_auth_division."+divisionResourceLabel, "id"),
 				),
 			},
 			// Update
 			{
-				Config: GenerateResponseManagementResponseAssetResource(resourceId, fullPath2, "data.genesyscloud_auth_division_home.home.id") +
+				Config: GenerateResponseManagementResponseAssetResource(resourceLabel, fullPath2, "data.genesyscloud_auth_division_home.home.id") +
 					fmt.Sprint("\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceId, "filename", normalizeFileName2),
-					provider.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceId),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_responseasset."+resourceLabel, "filename", normalizeFileName2),
+					provider.TestDefaultHomeDivision("genesyscloud_responsemanagement_responseasset."+resourceLabel),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_responsemanagement_responseasset." + resourceId,
+				ResourceName:      "genesyscloud_responsemanagement_responseasset." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

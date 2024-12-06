@@ -18,12 +18,12 @@ resource_genesycloud_idp_salesforce_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_salesforce datasource.
 4.  The resource exporter configuration for the idp_salesforce exporter.
 */
-const resourceName = "genesyscloud_idp_salesforce"
+const ResourceType = "genesyscloud_idp_salesforce"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceIdpSalesforce())
-	regInstance.RegisterExporter(resourceName, IdpSalesforceExporter())
+	regInstance.RegisterResource(ResourceType, ResourceIdpSalesforce())
+	regInstance.RegisterExporter(ResourceType, IdpSalesforceExporter())
 }
 
 // ResourceIdpSalesforce registers the genesyscloud_idp_salesforce resource with Terraform

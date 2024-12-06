@@ -1,10 +1,11 @@
 package architect_grammar_language
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	architectGrammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -27,8 +28,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_architect_grammar_language"] = ResourceArchitectGrammarLanguage()
-	providerResources["genesyscloud_architect_grammar"] = architectGrammar.ResourceArchitectGrammar()
+	providerResources[ResourceType] = ResourceArchitectGrammarLanguage()
+	providerResources[architectGrammar.ResourceType] = architectGrammar.ResourceArchitectGrammar()
 }
 
 // initTestResources initializes all test_data resources and data sources.

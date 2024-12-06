@@ -37,9 +37,9 @@ func getAllOrganizationAuthenticationSettings(ctx context.Context, clientConfig 
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get %s resource due to error: %s", resourceName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s resource due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: resourceName}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: ResourceType}
 	return resources, nil
 }
 
@@ -54,7 +54,7 @@ func createOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading organization authentication settings %s", d.Id())
 
@@ -62,9 +62,9 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 		orgAuthSettings, resp, getErr := proxy.getOrgAuthSettings(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
@@ -88,7 +88,7 @@ func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 
 	orgAuthSettings, resp, err := proxy.updateOrgAuthSettings(ctx, &authSettings)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update organization authentication settings: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update organization authentication settings: %s", err), resp)
 	}
 
 	log.Printf("Updated organization authentication settings %s %s", d.Id(), orgAuthSettings)

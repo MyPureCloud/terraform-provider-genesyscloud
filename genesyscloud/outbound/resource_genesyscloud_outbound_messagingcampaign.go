@@ -27,7 +27,7 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 		const pageSize = 100
 		sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error requesting page of Outbound Messagingcampaign error: %s", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error requesting page of Outbound Messagingcampaign error: %s", getErr), resp)
 		}
 
 		if sdkMessagingcampaignEntityListing.Entities == nil || len(*sdkMessagingcampaignEntityListing.Entities) == 0 {
@@ -35,7 +35,7 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 		}
 
 		for _, entity := range *sdkMessagingcampaignEntityListing.Entities {
-			resources[*entity.Id] = &resourceExporter.ResourceMeta{Name: *entity.Name}
+			resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: *entity.Name}
 		}
 	}
 
@@ -86,7 +86,7 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
 
 	if !valid {
-		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
+		return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
 	}
 
 	log.Printf("Creating Outbound Messagingcampaign %s", name)
@@ -98,12 +98,12 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		} else {
 			extraDetails = fmt.Sprintf("Extra error details: %s", extraDetails)
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create outbound messagingcampaign %s error: %s. %s", name, err, extraDetails), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create outbound messagingcampaign %s error: %s. %s", name, err, extraDetails), resp)
 	}
 
 	if outboundMessagingcampaign.Id == nil {
 		msg := "response body from POST /api/v2/outbound/messagingcampaigns did not contain an ID"
-		return util.BuildDiagnosticError(resourceName, msg, errors.New(msg))
+		return util.BuildDiagnosticError(ResourceType, msg, errors.New(msg))
 	}
 
 	d.SetId(*outboundMessagingcampaign.Id)
@@ -151,7 +151,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 
 	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
 	if !valid {
-		return util.BuildDiagnosticError(resourceName, "Configuration error", errors.New(msg))
+		return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
 	}
 
 	log.Printf("Updating Outbound Messaging Campaign %s", name)
@@ -159,7 +159,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		// Get current Outbound Messagingcampaign version
 		outboundMessagingcampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s error: %s", name, getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s error: %s", name, getErr), resp)
 		}
 		sdkmessagingcampaign.Version = outboundMessagingcampaign.Version
 		_, resp, updateErr := outboundApi.PutOutboundMessagingcampaign(d.Id(), sdkmessagingcampaign)
@@ -170,7 +170,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 			} else {
 				extraDetails = fmt.Sprintf("Extra error details: %s", extraDetails)
 			}
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Messagingcampaign %s error: %s. %s", name, updateErr, extraDetails), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound Messagingcampaign %s error: %s. %s", name, updateErr, extraDetails), resp)
 		}
 		return nil, nil
 	})
@@ -185,7 +185,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.DefaultConsistencyChecks, resourceName)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Messaging Campaign %s", d.Id())
 
@@ -193,9 +193,9 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		sdkMessagingCampaign, resp, getErr := outboundApi.GetOutboundMessagingcampaign(d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Messagingcampaign %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkMessagingCampaign.Name)
@@ -248,7 +248,7 @@ func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 		log.Printf("Deleting Outbound Messagingcampaign")
 		_, resp, err := outboundApi.DeleteOutboundMessagingcampaign(d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound Messagingcampaign %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete outbound Messagingcampaign %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -264,9 +264,9 @@ func deleteOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 				log.Printf("Deleted Outbound Messagingcampaign %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Messagingcampaign %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Outbound Messagingcampaign %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Messagingcampaign %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound Messagingcampaign %s still exists", d.Id()), resp))
 	})
 }

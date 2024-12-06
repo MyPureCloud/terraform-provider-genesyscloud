@@ -30,11 +30,11 @@ func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configurat
 
 	groups, resp, err := groupProxy.getAllGroups(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to retrieve all groups: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve all groups: %s", err), resp)
 	}
 
 	for _, group := range *groups {
-		resources[*group.Id] = &resourceExporter.ResourceMeta{Name: *group.Name}
+		resources[*group.Id] = &resourceExporter.ResourceMeta{BlockLabel: *group.Name}
 	}
 
 	return resources, nil
@@ -53,7 +53,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	addresses, err := buildSdkGroupAddresses(d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error Building SDK group addresses"), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error Building SDK group addresses"), err)
 	}
 
 	createGroup := &platformclientv2.Groupcreate{
@@ -69,7 +69,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	group, resp, err := gp.createGroup(ctx, createGroup)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create group %s: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create group %s: %s", name, err), resp)
 	}
 
 	d.SetId(*group.Id)
@@ -93,7 +93,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.ConsistencyChecks(), ResourceType)
 	gp := getGroupProxy(sdkConfig)
 
 	log.Printf("Reading group %s", d.Id())
@@ -103,9 +103,9 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		group, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", group.Name)
@@ -148,12 +148,12 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		// Get current group version
 		group, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
 		}
 
 		addresses, err := buildSdkGroupAddresses(d)
 		if err != nil {
-			return resp, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error while trying to buildSdkGroupAddresses for group id: %s", d.Id()), err)
+			return resp, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error while trying to buildSdkGroupAddresses for group id: %s", d.Id()), err)
 		}
 
 		log.Printf("Updating group %s", name)
@@ -169,7 +169,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 		_, resp, putErr := gp.updateGroup(ctx, d.Id(), updateGroup)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update group %s: %s", d.Id(), putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group %s: %s", d.Id(), putErr), resp)
 		}
 
 		return resp, nil
@@ -198,7 +198,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		log.Printf("Deleting group %s", name)
 		resp, err := gp.deleteGroup(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete group %s: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete group %s: %s", name, err), resp)
 		}
 		return nil, nil
 	})
@@ -210,7 +210,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Group %s deleted", name)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting group %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting group %s | error: %s", d.Id(), err), resp))
 		}
 
 		if group.State != nil && *group.State == "deleted" {
@@ -232,7 +232,7 @@ func deleteGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				name, resp.CorrelationID)
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Group %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Group %s still exists", d.Id()), resp))
 	})
 }
 
@@ -255,7 +255,7 @@ func updateGroupMembers(ctx context.Context, d *schema.ResourceData, sdkConfig *
 					if diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 						_, resp, err := gp.deleteGroupMembers(ctx, d.Id(), strings.Join(membersToRemove, ","))
 						if err != nil {
-							return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to remove members from group %s: %s", d.Id(), err), resp)
+							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove members from group %s: %s", d.Id(), err), resp)
 						}
 						return resp, nil
 					}); diagErr != nil {
@@ -290,7 +290,7 @@ func readGroupMembers(ctx context.Context, groupID string, sdkConfig *platformcl
 	members, resp, err := gp.getGroupMembers(ctx, groupID)
 
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read members for group %s: %s", groupID, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for group %s: %s", groupID, err), resp)
 	}
 
 	interfaceList := make([]interface{}, len(*members))
@@ -304,7 +304,7 @@ func getGroupMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *p
 	gp := getGroupProxy(sdkConfig)
 	members, resp, err := gp.getGroupMembers(ctx, d.Id())
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
 	}
 	return *members, nil
 }
@@ -315,7 +315,7 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 		// Need the current group version to add members
 		groupInfo, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
 		}
 
 		groupMemberUpdate := &platformclientv2.Groupmembersupdate{
@@ -324,7 +324,7 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 		}
 		_, resp, postErr := gp.addGroupMembers(ctx, d.Id(), groupMemberUpdate)
 		if postErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add group members %s: %s", d.Id(), postErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add group members %s: %s", d.Id(), postErr), resp)
 		}
 		return resp, nil
 	}); diagErr != nil {

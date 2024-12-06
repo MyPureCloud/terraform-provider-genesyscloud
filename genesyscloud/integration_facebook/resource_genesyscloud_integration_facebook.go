@@ -33,11 +33,11 @@ func getAllAuthIntegrationFacebooks(ctx context.Context, clientConfig *platformc
 
 	facebookIntegrationRequests, resp, err := proxy.getAllIntegrationFacebook(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration facebook: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration facebook: %v", err), resp)
 	}
 
 	for _, facebookIntegrationRequest := range *facebookIntegrationRequests {
-		resources[*facebookIntegrationRequest.Id] = &resourceExporter.ResourceMeta{Name: *facebookIntegrationRequest.Name}
+		resources[*facebookIntegrationRequest.Id] = &resourceExporter.ResourceMeta{BlockLabel: *facebookIntegrationRequest.Name}
 	}
 
 	return resources, nil
@@ -52,17 +52,17 @@ func createIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta
 
 	// if PageAccessToken is provided, no need to provide PageId and UserAccessToken
 	if *integrationFacebook.PageAccessToken != "" && (*integrationFacebook.PageId != "" || *integrationFacebook.UserAccessToken != "") {
-		return util.BuildDiagnosticError(resourceName, "Configuration Error", errors.New("the pageId and userAccessToken should not be set if specifying the pageAccessToken"))
+		return util.BuildDiagnosticError(ResourceType, "Configuration Error", errors.New("the pageId and userAccessToken should not be set if specifying the pageAccessToken"))
 	}
 
 	if (*integrationFacebook.AppId == "" && *integrationFacebook.AppSecret != "") || (*integrationFacebook.AppId != "" && *integrationFacebook.AppSecret == "") {
-		return util.BuildDiagnosticError(resourceName, "Configuration Error", errors.New("the appSecret is required when appId is provided"))
+		return util.BuildDiagnosticError(ResourceType, "Configuration Error", errors.New("the appSecret is required when appId is provided"))
 	}
 
 	log.Printf("Creating integration facebook %s", *integrationFacebook.Name)
 	facebookIntegrationRequest, resp, err := proxy.createIntegrationFacebook(ctx, &integrationFacebook)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration facebook: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration facebook: %s", err), resp)
 	}
 
 	d.SetId(*facebookIntegrationRequest.Id)
@@ -77,15 +77,15 @@ func readIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Reading integration facebook ")
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFacebook(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFacebook(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		facebookIntegrationRequest, resp, getErr := proxy.getIntegrationFacebookById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration facebook %s: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration facebook %s: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration facebook %s: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration facebook %s: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", facebookIntegrationRequest.Name)
@@ -127,7 +127,7 @@ func updateIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta
 	log.Printf("Updating integration facebook %s", *integrationFacebook.Name)
 	facebookIntegrationRequest, resp, err := proxy.updateIntegrationFacebook(ctx, d.Id(), &integrationFacebook)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration facebook: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration facebook: %s", err), resp)
 	}
 
 	log.Printf("Updated integration facebook %s", *facebookIntegrationRequest.Id)
@@ -152,9 +152,9 @@ func deleteIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta
 				log.Printf("Deleted integration facebook %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting integration facebook %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting integration facebook %s: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration facebook %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("integration facebook %s still exists", d.Id()), resp))
 	})
 }

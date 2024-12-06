@@ -31,7 +31,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *publishedEntities {
-		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name}
 	}
 
 	unpublishedEntities, err := getAllKnowledgebaseEntities(*knowledgeAPI, false)
@@ -40,7 +40,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 	}
 
 	for _, knowledgeBase := range *unpublishedEntities {
-		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{Name: *knowledgeBase.Name}
+		resources[*knowledgeBase.Id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name}
 	}
 
 	return resources, nil
@@ -49,6 +49,7 @@ func getAllKnowledgeKnowledgebases(_ context.Context, clientConfig *platformclie
 func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, published bool) (*[]platformclientv2.Knowledgebase, diag.Diagnostics) {
 	var (
 		after    string
+		err      error
 		entities []platformclientv2.Knowledgebase
 	)
 
@@ -69,7 +70,7 @@ func getAllKnowledgebaseEntities(knowledgeApi platformclientv2.KnowledgeApi, pub
 			break
 		}
 
-		after, err := util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
+		after, err = util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
 			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("Failed to parse after cursor from knowledge base nextUri"), err)
 		}
@@ -155,7 +156,7 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_knowledgebase")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeKnowledgebase(), constants.ConsistencyChecks(), "genesyscloud_knowledge_knowledgebase")
 
 	log.Printf("Reading knowledge base %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -239,7 +240,7 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 }
 
 func GenerateKnowledgeKnowledgebaseResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string,
 	coreLanguage string) string {
@@ -248,5 +249,5 @@ func GenerateKnowledgeKnowledgebaseResource(
         description = "%s"
         core_language = "%s"
 	}
-	`, resourceID, name, description, coreLanguage)
+	`, resourceLabel, name, description, coreLanguage)
 }

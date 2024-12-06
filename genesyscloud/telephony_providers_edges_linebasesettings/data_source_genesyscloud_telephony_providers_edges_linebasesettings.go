@@ -25,11 +25,11 @@ func dataSourceLineBaseSettingsRead(ctx context.Context, d *schema.ResourceData,
 			const pageSize = 50
 			lineBaseSettings, resp, getErr := edgesAPI.GetTelephonyProvidersEdgesLinebasesettings(pageNum, pageSize, "", "", nil)
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting line base settings %s | error: %s", name, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting line base settings %s | error: %s", name, getErr), resp))
 			}
 
 			if lineBaseSettings.Entities == nil || len(*lineBaseSettings.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No lineBaseSettings found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No lineBaseSettings found with name %s", name), resp))
 			}
 
 			for _, lineBaseSetting := range *lineBaseSettings.Entities {

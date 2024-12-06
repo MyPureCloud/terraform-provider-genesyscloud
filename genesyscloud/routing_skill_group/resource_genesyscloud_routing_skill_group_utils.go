@@ -94,6 +94,7 @@ func createListsForSkillgroupsMembersDivisions(schemaMemberDivisionIds []string,
 	toRemove := make([]string, 0)
 
 	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
+		// member_division_ids should not contain more than one item when the value of an item is "*"
 		toAdd = []string{"*"}
 		return toAdd, nil, nil
 	}

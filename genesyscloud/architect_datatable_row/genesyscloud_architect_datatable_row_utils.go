@@ -32,7 +32,7 @@ func buildSdkRowPropertyMap(propertiesJson string, keyStr string) (map[string]in
 	propMap := map[string]interface{}{}
 	if propertiesJson != "" {
 		if err := json.Unmarshal([]byte(propertiesJson), &propMap); err != nil {
-			return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error parsing properties_json value %s", propertiesJson), err)
+			return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error parsing properties_json value %s", propertiesJson), err)
 		}
 	}
 	// Set the key value

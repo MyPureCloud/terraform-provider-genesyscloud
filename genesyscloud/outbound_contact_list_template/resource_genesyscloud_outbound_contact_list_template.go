@@ -27,11 +27,11 @@ func getAllOutboundContactListTemplates(ctx context.Context, clientConfig *platf
 
 	contactListTemplates, resp, getErr := proxy.getAllOutboundContactlisttemplate(ctx)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get contact list templates error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get contact list templates error: %s", getErr), resp)
 	}
 
 	for _, contactListTemplate := range *contactListTemplates {
-		resources[*contactListTemplate.Id] = &resourceExporter.ResourceMeta{Name: *contactListTemplate.Name}
+		resources[*contactListTemplate.Id] = &resourceExporter.ResourceMeta{BlockLabel: *contactListTemplate.Name}
 	}
 
 	return resources, nil
@@ -71,7 +71,7 @@ func createOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	log.Printf("Creating Outbound Contact List Template %s", name)
 	outboundContactListTemplate, resp, err := proxy.createOutboundContactlisttemplate(ctx, &sdkContactListTemplate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Contact List Template %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create Outbound Contact List Template %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*outboundContactListTemplate.Id)
@@ -116,7 +116,7 @@ func updateOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 
 		_, resp, updateErr := proxy.updateOutboundContactlisttemplate(ctx, d.Id(), &sdkContactListTemplate)
 		if updateErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Contact List Template %s error: %s", name, updateErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound Contact List Template %s error: %s", name, updateErr), resp)
 		}
 		return nil, nil
 	})
@@ -131,7 +131,7 @@ func updateOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlisttemplateProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListTemplate(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListTemplate(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Contact List Template %s", d.Id())
 
@@ -139,9 +139,9 @@ func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData
 		sdkContactListTemplate, resp, getErr := proxy.getOutboundContactlisttemplateById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Contact List Template %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List Template %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read Outbound Contact List Template %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List Template %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if sdkContactListTemplate.Name != nil {
@@ -196,7 +196,7 @@ func deleteOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 		log.Printf("Deleting Outbound Contact List Template")
 		resp, err := proxy.deleteOutboundContactlisttemplate(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Outbound Contact List Template %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Outbound Contact List Template %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -212,9 +212,9 @@ func deleteOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 				log.Printf("Deleted Outbound Contact List Template %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Outbound Contact List Template %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting Outbound Contact List Template %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Contact List Template %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound Contact List Template %s still exists", d.Id()), resp))
 	})
 }

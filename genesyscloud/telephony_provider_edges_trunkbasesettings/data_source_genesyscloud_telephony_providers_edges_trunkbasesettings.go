@@ -22,7 +22,7 @@ func dataSourceTrunkBaseSettingsRead(ctx context.Context, d *schema.ResourceData
 		trunkBaseSettings, resp, getErr := proxy.GetAllTrunkBaseSettingWithName(ctx, name)
 
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting trunk base setting with name %s | error: %s", name, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting trunk base setting with name %s | error: %s", name, getErr), resp))
 		}
 
 		for _, trunkBaseSetting := range *trunkBaseSettings {

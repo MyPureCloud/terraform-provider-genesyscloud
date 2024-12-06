@@ -223,7 +223,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 
 		if queueId, ok := ruleSettings["queue_id"].(string); ok && queueId != "" {
 			if i == 0 {
-				return nil, util.BuildDiagnosticError(resourceName, "For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified", fmt.Errorf("queue id is not nil"))
+				return nil, util.BuildDiagnosticError(ResourceType, "For rule 1, queue_id is always assumed to be the current queue, so queue id should not be specified", fmt.Errorf("queue id is not nil"))
 			}
 			sdkCGRRule.Queue = &platformclientv2.Domainentityref{Id: &queueId}
 		}
@@ -648,7 +648,7 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	codeIds := getWrapupCodeIds(codes)
 
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
 	}
 
 	if codeIds != nil {
@@ -660,16 +660,16 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 
 // Generate Functions
 
-func GenerateRoutingQueueResourceBasic(resourceID string, name string, nestedBlocks ...string) string {
+func GenerateRoutingQueueResourceBasic(resourceLabel string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		name = "%s"
 		%s
 	}
-	`, resourceID, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateRoutingQueueResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	desc string,
 	acwWrapupPrompt string,
@@ -704,7 +704,7 @@ func GenerateRoutingQueueResource(
   		enable_manual_assignment = %s
 		%s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		name,
 		desc,
 		acwWrapupPrompt,
@@ -724,13 +724,13 @@ func GenerateRoutingQueueResource(
 }
 
 // GenerateRoutingQueueResourceBasicWithDepends Used when testing skills group dependencies.
-func GenerateRoutingQueueResourceBasicWithDepends(resourceID string, dependsOn string, name string, nestedBlocks ...string) string {
+func GenerateRoutingQueueResourceBasicWithDepends(resourceLabel string, dependsOn string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		depends_on = [%s]
 		name = "%s"
 		%s
 	}
-	`, resourceID, dependsOn, name, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, dependsOn, name, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateAgentOwnedRouting(attrName string, enableAgentOwnedCallBacks string, maxOwnedCallBackHours string, maxOwnedCallBackDelayHours string) string {

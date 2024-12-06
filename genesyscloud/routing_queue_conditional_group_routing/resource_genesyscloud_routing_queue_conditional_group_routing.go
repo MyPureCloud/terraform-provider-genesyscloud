@@ -28,18 +28,18 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(clientConfig)
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
-		log.Printf("Environment variable %s not set, skipping exporter for %s", featureToggles.CSGToggleName(), resourceName)
+		log.Printf("Environment variable %s not set, skipping exporter for %s", featureToggles.CSGToggleName(), ResourceType)
 		return nil, nil
 	}
 
 	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get conditional group routing rules: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get conditional group routing rules: %s", err), resp)
 	}
 
 	for _, queue := range *queues {
 		if queue.ConditionalGroupRouting != nil && queue.ConditionalGroupRouting.Rules != nil {
-			resources[*queue.Id+"/rules"] = &resourceExporter.ResourceMeta{Name: *queue.Name + "-rules"}
+			resources[*queue.Id+"/rules"] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name + "-rules"}
 		}
 	}
 
@@ -49,7 +49,7 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 // createRoutingQueueConditionalRoutingGroup is used by the routing_queue_conditional_group_routing resource to create Conditional Group Routing Rules
 func createRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.CSGToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", featureToggles.CSGToggleName()))
+		return util.BuildDiagnosticError(ResourceType, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", featureToggles.CSGToggleName()))
 	}
 
 	queueId := d.Get("queue_id").(string)
@@ -62,12 +62,12 @@ func createRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 // readRoutingQueueConditionalRoutingGroup is used by the routing_queue_conditional_group_routing resource to read Conditional Group Routing Rules
 func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.CSGToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", featureToggles.CSGToggleName()))
+		return util.BuildDiagnosticError(ResourceType, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", featureToggles.CSGToggleName()))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(sdkConfig)
-	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.ConsistencyChecks(), ResourceType)
 	queueId := strings.Split(d.Id(), "/")[0]
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -75,9 +75,9 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 		sdkRules, resp, getErr := proxy.getRoutingQueueConditionRouting(ctx, queueId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read conditional group routing for queue %s | error: %s", queueId, getErr), resp))
 		}
 		log.Printf("Read routing queue %s conditional group routing rules", queueId)
 
@@ -91,7 +91,7 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 // updateRoutingQueueConditionalRoutingGroup is used by the routing_queue_conditional_group_routing resource to update Conditional Group Routing Rules
 func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.CSGToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", featureToggles.CSGToggleName()))
+		return util.BuildDiagnosticError(ResourceType, "Environment variable ENABLE_STANDALONE_CGR not set", fmt.Errorf("environment variable %s not set", featureToggles.CSGToggleName()))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -102,13 +102,13 @@ func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 
 	sdkRules, err := buildConditionalGroupRouting(rules)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, "Error building conditional group routing", err)
+		return util.BuildDiagnosticError(ResourceType, "Error building conditional group routing", err)
 	}
 
 	log.Printf("updating conditional group routing rules for queue %s", queueId)
 	_, resp, err := proxy.updateRoutingQueueConditionRouting(ctx, queueId, &sdkRules)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error updating routing queue conditional routing %s | error: %s", queueId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error updating routing queue conditional routing %s | error: %s", queueId, err), resp)
 	}
 	log.Printf("updated conditional group routing rules for queue %s", queueId)
 
@@ -137,13 +137,13 @@ func deleteRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 	log.Printf("Updating routing queue '%s' to have no CGR rules", queueId)
 	var newRules []platformclientv2.Conditionalgrouproutingrule
 	if _, resp, err := proxy.updateRoutingQueueConditionRouting(ctx, queueId, &newRules); err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to remove rules from queue %s: %s", queueId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to remove rules from queue %s: %s", queueId, err), resp)
 	}
 
 	// Verify there are no rules
 	log.Printf("Reading queue '%s' CGR rules to verify that they have been removed", queueId)
 	if rules, resp, err := proxy.getRoutingQueueConditionRouting(ctx, queueId); rules != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("conditional group routing rules still exist for queue %s: %s", queueId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("conditional group routing rules still exist for queue %s: %s", queueId, err), resp)
 	}
 
 	log.Printf("Successfully removed rules from queue %s", queueId)

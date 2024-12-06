@@ -17,13 +17,13 @@ resource_genesycloud_task_management_worktype_status_schema.go holds four functi
 3.  The datasource schema definitions for the task_management_worktype_status datasource.
 4.  The resource exporter configuration for the task_management_worktype_status exporter.
 */
-const resourceName = "genesyscloud_task_management_worktype_status"
+const ResourceType = "genesyscloud_task_management_worktype_status"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementWorktypeStatus())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementWorktypeStatus())
-	regInstance.RegisterExporter(resourceName, TaskManagementWorktypeStatusExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementWorktypeStatus())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementWorktypeStatus())
+	regInstance.RegisterExporter(ResourceType, TaskManagementWorktypeStatusExporter())
 }
 
 // ResourceTaskManagementWorktypeStatus registers the genesyscloud_task_management_worktype_status resource with Terraform

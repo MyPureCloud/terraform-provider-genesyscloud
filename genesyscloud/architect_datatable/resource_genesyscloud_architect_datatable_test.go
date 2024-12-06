@@ -19,11 +19,11 @@ import (
 
 func TestAccResourceArchitectDatatable(t *testing.T) {
 	var (
-		tableResource1 = "arch-table1"
-		tableName1     = "Terraform Table1-" + uuid.NewString()
-		tableName2     = "Terraform Table2-" + uuid.NewString()
-		tableDesc1     = "Terraform test table1"
-		tableDesc2     = "Terraform test table 2"
+		tableResourceLabel1 = "arch-table1"
+		tableName1          = "Terraform Table1-" + uuid.NewString()
+		tableName2          = "Terraform Table2-" + uuid.NewString()
+		tableDesc1          = "Terraform test table1"
+		tableDesc2          = "Terraform test table 2"
 
 		propNameKey = "key"
 		propInt     = "test-int"
@@ -52,25 +52,25 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 			{
 				// Create architect_datatable with a key and one other property
 				Config: generateArchitectDatatableResource(
-					tableResource1,
+					tableResourceLabel1,
 					tableName1,
 					strconv.Quote(tableDesc1),
 					generateArchitectDatatableProperty(propBool, typeBool, util.NullValue, util.NullValue),
 					generateArchitectDatatableProperty(propNameKey, typeString, util.NullValue, util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "name", tableName1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "description", tableDesc1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.0.name", propBool),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.0.type", typeBool),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.1.name", propNameKey),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.1.type", typeString),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "name", tableName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "description", tableDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.0.name", propBool),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.0.type", typeBool),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.1.name", propNameKey),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.1.type", typeString),
 				),
 			},
 			{
 				// Update with a new name, description, and additional properties
 				Config: generateArchitectDatatableResource(
-					tableResource1,
+					tableResourceLabel1,
 					tableName2,
 					strconv.Quote(tableDesc2),
 					generateArchitectDatatableProperty(propNameKey, typeString, strconv.Quote(propTitleKey), util.NullValue),
@@ -79,28 +79,28 @@ func TestAccResourceArchitectDatatable(t *testing.T) {
 					generateArchitectDatatableProperty(propNum, typeNum, strconv.Quote(propTitleNum), strconv.Quote(defNum1)),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "name", tableName2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "description", tableDesc2),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.0.name", propNameKey),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.0.type", typeString),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.0.title", propTitleKey),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.1.name", propInt),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.1.type", typeInt),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.1.title", propTitleInt),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.1.default", defInt1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.2.name", propBool),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.2.type", typeBool),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.2.title", propTitleBool),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.2.default", defBool1),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.3.name", propNum),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.3.type", typeNum),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.3.title", propTitleNum),
-					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResource1, "properties.3.default", defNum1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "name", tableName2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "description", tableDesc2),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.0.name", propNameKey),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.0.type", typeString),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.0.title", propTitleKey),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.1.name", propInt),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.1.type", typeInt),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.1.title", propTitleInt),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.1.default", defInt1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.2.name", propBool),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.2.type", typeBool),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.2.title", propTitleBool),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.2.default", defBool1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.3.name", propNum),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.3.type", typeNum),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.3.title", propTitleNum),
+					resource.TestCheckResourceAttr("genesyscloud_architect_datatable."+tableResourceLabel1, "properties.3.default", defNum1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_architect_datatable." + tableResource1,
+				ResourceName:      "genesyscloud_architect_datatable." + tableResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -132,7 +132,7 @@ func testVerifyDatatablesDestroyed(state *terraform.State) error {
 }
 
 func generateArchitectDatatableResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string,
 	properties ...string) string {
@@ -141,7 +141,7 @@ func generateArchitectDatatableResource(
 		description = %s
 		%s
 	}
-	`, resourceID, name, description, strings.Join(properties, "\n"))
+	`, resourceLabel, name, description, strings.Join(properties, "\n"))
 }
 
 func generateArchitectDatatableProperty(

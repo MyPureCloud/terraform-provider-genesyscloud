@@ -52,7 +52,7 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 
 	for _, knowledgeDocument := range documentEntities {
 		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-		resources[id] = &resourceExporter.ResourceMeta{Name: *knowledgeDocument.Title}
+		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeDocument.Title}
 	}
 
 	return resources, nil
@@ -104,7 +104,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_document")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.ConsistencyChecks(), "genesyscloud_knowledge_document")
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

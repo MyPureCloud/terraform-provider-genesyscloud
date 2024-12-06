@@ -30,10 +30,10 @@ func getAllAuthTeams(ctx context.Context, clientConfig *platformclientv2.Configu
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	teams, resp, err := proxy.getAllTeam(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get team error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get team error: %s", err), resp)
 	}
 	for _, team := range *teams {
-		resources[*team.Id] = &resourceExporter.ResourceMeta{Name: *team.Name}
+		resources[*team.Id] = &resourceExporter.ResourceMeta{BlockLabel: *team.Name}
 	}
 	return resources, nil
 }
@@ -47,7 +47,7 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Creating team %s", *team.Name)
 	teamObj, resp, err := proxy.createTeam(ctx, &team)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create team %s error: %s", *team.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create team %s error: %s", *team.Name, err), resp)
 	}
 	d.SetId(*teamObj.Id)
 
@@ -65,16 +65,16 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading team %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		team, resp, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read team %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", team.Name)
@@ -102,7 +102,7 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Updating team %s", *team.Name)
 	teamObj, resp, err := proxy.updateTeam(ctx, d.Id(), &team)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update team %s error: %s", *team.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update team %s error: %s", *team.Name, err), resp)
 	}
 
 	diagErr := updateTeamMembers(ctx, d, sdkConfig)
@@ -122,7 +122,7 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Deleting team %s", d.Id())
 	resp, err := proxy.deleteTeam(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete team %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete team %s error: %s", d.Id(), err), resp)
 	}
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getTeamById(ctx, d.Id())
@@ -131,8 +131,8 @@ func deleteTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				log.Printf("Deleted team %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting team %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting team %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("team %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("team %s still exists", d.Id()), resp))
 	})
 }

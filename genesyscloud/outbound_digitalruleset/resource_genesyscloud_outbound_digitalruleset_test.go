@@ -26,7 +26,7 @@ tests for outbound_digitalruleset.
 func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId        = "digital-rule-set"
+		resourceLabel     = "digital-rule-set"
 		ruleName          = "RuleWork"
 		name2             = "DigitalRuleSet-" + uuid.NewString()
 		ruleOrder         = "0"
@@ -39,7 +39,7 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 		updatePropertiesWork = "Work"
 		updateOption         = "Set"
 
-		contactListResourceId1    = "contact-list-1"
+		contactListResourceLabel1 = "contact-list-1"
 		contactListName1          = "Test Contact List " + uuid.NewString()
 		previewModeColumnName     = ""
 		previewModeAcceptedValues = []string{}
@@ -52,7 +52,7 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 	)
 
 	contactListResourceGenerate := obContactList.GenerateOutboundContactList(
-		contactListResourceId1,
+		contactListResourceLabel1,
 		contactListName1,
 		util.NullValue,
 		strconv.Quote(previewModeColumnName),
@@ -88,9 +88,9 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 
 				Config: contactListResourceGenerate +
 					GenerateOutboundDigitalRuleSetResource(
-						resourceId,
+						resourceLabel,
 						name2,
-						"genesyscloud_outbound_contact_list."+contactListResourceId1+".id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel1+".id",
 						GenerateDigitalRules(
 							ruleName,
 							ruleOrder,
@@ -138,30 +138,30 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "name", name2),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_digitalruleset."+resourceId, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceId1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.name", ruleName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.order", ruleOrder),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.category", ruleCategory),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.inverted", util.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.column_name", contactColumnName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.operator", columnOperator),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value", columnValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.0.contact_column_condition_settings.0.value_type", columnValueType),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.media_types.0", "Email"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.operator", lastAttemptOverallOperator),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.value", lastAttemptOverallValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.2.last_result_by_column_condition_settings.0.email_column_name", contactColumnName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.2.last_result_by_column_condition_settings.0.email_wrapup_codes.0", outboundMessageSent),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.2.last_result_by_column_condition_settings.0.sms_column_name", ""),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.conditions.3.last_result_overall_condition_settings.0.email_wrapup_codes.0", outboundMessageSent),
-					util.ValidateValueInJsonAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.properties", updatePropertiesWork, updatePropertiesWork),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceId, "rules.0.actions.0.update_contact_column_action_settings.0.update_option", updateOption),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "name", name2),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_digitalruleset."+resourceLabel, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.order", ruleOrder),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.category", ruleCategory),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.0.inverted", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.0.contact_column_condition_settings.0.column_name", contactColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.0.contact_column_condition_settings.0.operator", columnOperator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.0.contact_column_condition_settings.0.value", columnValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.0.contact_column_condition_settings.0.value_type", columnValueType),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.media_types.0", "Email"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.operator", lastAttemptOverallOperator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.1.last_attempt_overall_condition_settings.0.value", lastAttemptOverallValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.2.last_result_by_column_condition_settings.0.email_column_name", contactColumnName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.2.last_result_by_column_condition_settings.0.email_wrapup_codes.0", outboundMessageSent),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.2.last_result_by_column_condition_settings.0.sms_column_name", ""),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.conditions.3.last_result_overall_condition_settings.0.email_wrapup_codes.0", outboundMessageSent),
+					util.ValidateValueInJsonAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.actions.0.update_contact_column_action_settings.0.properties", updatePropertiesWork, updatePropertiesWork),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_digitalruleset."+resourceLabel, "rules.0.actions.0.update_contact_column_action_settings.0.update_option", updateOption),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_digitalruleset." + resourceId,
+				ResourceName:      "genesyscloud_outbound_digitalruleset." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

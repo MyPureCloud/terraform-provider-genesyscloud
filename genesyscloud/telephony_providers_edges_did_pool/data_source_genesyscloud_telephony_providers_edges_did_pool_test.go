@@ -12,10 +12,10 @@ import (
 
 func TestAccDataSourceDidPoolBasic(t *testing.T) {
 	var (
-		didPoolStartPhoneNumber = "+45465550007"
-		didPoolEndPhoneNumber   = "+45465550008"
-		didPoolRes              = "didPool"
-		didPoolDataRes          = "didPoolData"
+		didPoolStartPhoneNumber  = "+45465550007"
+		didPoolEndPhoneNumber    = "+45465550008"
+		didPoolResourceLabel     = "didPool"
+		didPoolDataResourceLabel = "didPoolData"
 	)
 
 	// did pool cleanup
@@ -34,18 +34,18 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 			{
 				// Create
 				Config: GenerateDidPoolResource(&DidPoolStruct{
-					didPoolRes,
+					didPoolResourceLabel,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,
 					util.NullValue, // No description
 					util.NullValue, // No comments
 					util.NullValue, // No provider
-				}) + generateDidPoolDataSource(didPoolDataRes,
+				}) + generateDidPoolDataSource(didPoolDataResourceLabel,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,
-					resourceName+"."+didPoolRes),
+					ResourceType+"."+didPoolResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+didPoolDataRes, "id", "genesyscloud_telephony_providers_edges_did_pool."+didPoolRes, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+didPoolDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_did_pool."+didPoolResourceLabel, "id"),
 				),
 			},
 		},
@@ -53,7 +53,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 }
 
 func generateDidPoolDataSource(
-	resourceID string,
+	resourceLabel string,
 	startPhoneNumber string,
 	endPhoneNumber string,
 	dependsOnResource string) string {
@@ -62,5 +62,5 @@ func generateDidPoolDataSource(
 		end_phone_number   = "%s"
 		depends_on         = [%s]
 	}
-	`, resourceName, resourceID, startPhoneNumber, endPhoneNumber, dependsOnResource)
+	`, ResourceType, resourceLabel, startPhoneNumber, endPhoneNumber, dependsOnResource)
 }

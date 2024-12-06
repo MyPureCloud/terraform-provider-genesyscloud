@@ -92,7 +92,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config error: %s", d.Id(), err), resp), ""
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config error: %s", d.Id(), err), resp), ""
 			}
 
 			name := *integrationConfig.Name
@@ -112,13 +112,13 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 				if properties := configMap["properties"].(string); len(properties) > 0 {
 					if err := json.Unmarshal([]byte(properties), &propJSON); err != nil {
-						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert properties string to JSON for integration %s", d.Id()), err), name
+						return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert properties string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 
 				if advanced := configMap["advanced"].(string); len(advanced) > 0 {
 					if err := json.Unmarshal([]byte(advanced), &advJSON); err != nil {
-						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert advanced property string to JSON for integration %s", d.Id()), err), name
+						return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert advanced property string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 
@@ -130,7 +130,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 				// Get latest config version
 				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config. error: %s", d.Id(), err), resp)
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config. error: %s", d.Id(), err), resp)
 				}
 
 				_, resp, err = p.updateIntegrationConfig(ctx, d.Id(), &platformclientv2.Integrationconfiguration{
@@ -142,7 +142,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 					Credentials: &credential,
 				})
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update config for integration %s error: %s", d.Id(), err), resp)
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update config for integration %s error: %s", d.Id(), err), resp)
 				}
 				return nil, nil
 			})
@@ -168,13 +168,13 @@ func buildConfigCredentials(credentials map[string]interface{}) map[string]platf
 }
 
 // GenerateIntegrationResource builds the terraform string for creating an integration
-func GenerateIntegrationResource(resourceID string, intendedState string, integrationType string, attrs ...string) string {
+func GenerateIntegrationResource(resourceLabel string, intendedState string, integrationType string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_integration" "%s" {
         intended_state = %s
         integration_type = %s
         %s
 	}
-	`, resourceID, intendedState, integrationType, strings.Join(attrs, "\n"))
+	`, resourceLabel, intendedState, integrationType, strings.Join(attrs, "\n"))
 }
 
 func GenerateIntegrationConfig(name string, notes string, cred string, props string, adv string) string {

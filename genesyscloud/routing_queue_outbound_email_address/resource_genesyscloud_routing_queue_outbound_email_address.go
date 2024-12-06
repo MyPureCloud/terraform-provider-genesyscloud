@@ -25,7 +25,7 @@ The resource_genesyscloud_routing_queue_outbound-email_address.go contains all t
 
 func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	if exists := featureToggles.OEAToggleExists(); !exists {
-		log.Printf("Environment variable %s not set, skipping exporter for %s", featureToggles.OEAToggleName(), resourceName)
+		log.Printf("Environment variable %s not set, skipping exporter for %s", featureToggles.OEAToggleName(), ResourceType)
 		return nil, nil
 	}
 
@@ -34,12 +34,12 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 
 	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, "failed to get outbound email addresses for routing queues", resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, "failed to get outbound email addresses for routing queues", resp)
 	}
 
 	for _, queue := range *queues {
 		if queue.OutboundEmailAddress != nil && !isQueueEmailAddressEmpty(*queue.OutboundEmailAddress) {
-			resources[*queue.Id] = &resourceExporter.ResourceMeta{Name: *queue.Name + "-email-address"}
+			resources[*queue.Id] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name + "-email-address"}
 		}
 	}
 
@@ -48,7 +48,7 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 
 func createRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.OEAToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+		return util.BuildDiagnosticError(ResourceType, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
 	}
 
 	queueId := d.Get("queue_id").(string)
@@ -60,12 +60,12 @@ func createRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 
 func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.OEAToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+		return util.BuildDiagnosticError(ResourceType, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueOutboundEmailAddressProxy(sdkConfig)
-	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueOutboundEmailAddress(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueOutboundEmailAddress(), constants.ConsistencyChecks(), ResourceType)
 
 	queueId := d.Id()
 
@@ -94,7 +94,7 @@ func readRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resourc
 
 func updateRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.OEAToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+		return util.BuildDiagnosticError(ResourceType, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -115,7 +115,7 @@ func updateRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 	log.Printf("updating outbound email address for queue %s", queueId)
 	_, resp, err := proxy.updateRoutingQueueOutboundEmailAddress(ctx, queueId, &emailAddress)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to update outbound email address for queue %s", queueId), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to update outbound email address for queue %s", queueId), resp)
 	}
 	log.Printf("updated outbound email address for queue %s", queueId)
 
@@ -124,7 +124,7 @@ func updateRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 
 func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.OEAToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
+		return util.BuildDiagnosticError(ResourceType, "Environment variable ENABLE_STANDALONE_EMAIL_ADDRESS not set", fmt.Errorf("environment variable %s not set", featureToggles.OEAToggleName()))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -141,20 +141,20 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 			return nil
 		}
 
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to remove outbound email address for queue %s", queueId), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to remove outbound email address for queue %s", queueId), resp)
 	}
 
 	// To delete, update the queue with an empty email address
 	var emptyAddress platformclientv2.Queueemailaddress
 	_, _, err = proxy.updateRoutingQueueOutboundEmailAddress(ctx, queueId, &emptyAddress)
 	if err != nil && !strings.Contains(err.Error(), "error updating outbound email address for routing queue") {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to remove outbound email address from queue %s", queueId), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to remove outbound email address from queue %s", queueId), resp)
 	}
 
 	// Verify there is no email address
 	rules, _, _ := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
 	if rules != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("outbound email address still exist for queue %s", queueId), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("outbound email address still exist for queue %s", queueId), resp)
 	}
 
 	log.Printf("Removed outbound email address from queue %s", queueId)

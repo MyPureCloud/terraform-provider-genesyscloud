@@ -1,17 +1,18 @@
 package routing_settings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var resourceName = "genesyscloud_routing_settings"
+var ResourceType = "genesyscloud_routing_settings"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingSettings())
-	regInstance.RegisterExporter(resourceName, RoutingSettingsExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingSettings())
+	regInstance.RegisterExporter(ResourceType, RoutingSettingsExporter())
 }
 
 func ResourceRoutingSettings() *schema.Resource {

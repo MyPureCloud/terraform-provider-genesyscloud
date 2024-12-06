@@ -15,10 +15,10 @@ import (
 
 func TestAccDataSourceAuthDivision(t *testing.T) {
 	var (
-		divResource   = "auth-division"
-		divDataSource = "auth-div-data"
-		divName       = "Terraform Divisions-" + uuid.NewString()
-		divisionID    string
+		divResourceLabel   = "auth-division"
+		divDataSourceLabel = "auth-div-data"
+		divName            = "Terraform Divisions-" + uuid.NewString()
+		divisionID         string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -30,16 +30,16 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 					time.Sleep(30 * time.Second)
 				},
 				Config: GenerateAuthDivisionResource(
-					divResource,
+					divResourceLabel,
 					divName,
 					util.NullValue,
 					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResource]
+						rs, ok := s.RootModule().Resources["genesyscloud_auth_division."+divResourceLabel]
 						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResource)
+							return fmt.Errorf("not found: %s", "genesyscloud_auth_division."+divResourceLabel)
 						}
 						divisionID = rs.Primary.ID
 						log.Printf("Division ID: %s\n", divisionID) // Print ID
@@ -50,22 +50,22 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 			},
 			{
 				Config: GenerateAuthDivisionResource(
-					divResource,
+					divResourceLabel,
 					divName,
 					util.NullValue,
 					util.NullValue,
 				) + generateAuthDivisionDataSource(
-					divDataSource,
-					"genesyscloud_auth_division."+divResource+".name",
-					"genesyscloud_auth_division."+divResource,
+					divDataSourceLabel,
+					"genesyscloud_auth_division."+divResourceLabel+".name",
+					"genesyscloud_auth_division."+divResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSource, "id", "genesyscloud_auth_division."+divResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_auth_division."+divDataSourceLabel, "id", "genesyscloud_auth_division."+divResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_auth_division." + divResource,
+				ResourceName:      "genesyscloud_auth_division." + divResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
@@ -79,7 +79,7 @@ func TestAccDataSourceAuthDivision(t *testing.T) {
 }
 
 func generateAuthDivisionDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -88,5 +88,5 @@ func generateAuthDivisionDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

@@ -17,13 +17,13 @@ resource_genesycloud_outbound_contactlistfilter_schema.go holds four functions w
 3.  The datasource schema definitions for the outbound_contactlistfilter datasource.
 4.  The resource exporter configuration for the outbound_contactlistfilter exporter.
 */
-const resourceName = "genesyscloud_outbound_contactlistfilter"
+const ResourceType = "genesyscloud_outbound_contactlistfilter"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundContactlistfilter())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundContactlistfilter())
-	regInstance.RegisterExporter(resourceName, OutboundContactlistfilterExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundContactlistfilter())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundContactlistfilter())
+	regInstance.RegisterExporter(ResourceType, OutboundContactlistfilterExporter())
 }
 
 var (

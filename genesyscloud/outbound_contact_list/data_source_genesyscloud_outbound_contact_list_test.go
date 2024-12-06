@@ -14,8 +14,8 @@ import (
 func TestAccDataSourceOutboundContactList(t *testing.T) {
 
 	var (
-		resourceId      = "contact_list"
-		dataSourceId    = "contact_list_data"
+		resourceLabel   = "contact_list"
+		dataSourceLabel = "contact_list_data"
 		contactListName = "Contact List " + uuid.NewString()
 	)
 	resource.Test(t, resource.TestCase{
@@ -24,7 +24,7 @@ func TestAccDataSourceOutboundContactList(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateOutboundContactList(
-					resourceId,
+					resourceLabel,
 					contactListName,
 					util.NullValue, // divisionId
 					util.NullValue, // previewModeColumnName
@@ -39,24 +39,24 @@ func TestAccDataSourceOutboundContactList(t *testing.T) {
 						util.NullValue,
 					),
 				) + generateOutboundContactListDataSource(
-					dataSourceId,
+					dataSourceLabel,
 					contactListName,
-					resourceName+"."+resourceId,
+					ResourceType+"."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceId, "id",
-						resourceName+"."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id",
+						ResourceType+"."+resourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundContactListDataSource(id string, name string, dependsOn string) string {
+func generateOutboundContactListDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "%s" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, resourceName, id, name, dependsOn)
+`, ResourceType, dataSourceLabel, name, dependsOn)
 }

@@ -31,11 +31,11 @@ func getAllAuthFlowMilestones(ctx context.Context, clientConfig *platformclientv
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	flowMilestones, resp, err := proxy.getAllFlowMilestone(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get flow milestone error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get flow milestone error: %s", err), resp)
 	}
 
 	for _, flowMilestone := range *flowMilestones {
-		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{Name: *flowMilestone.Name}
+		resources[*flowMilestone.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flowMilestone.Name}
 	}
 	return resources, nil
 }
@@ -50,7 +50,7 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Creating flow milestone %s", *flowMilestone.Name)
 	flowMilestoneSdk, resp, err := proxy.createFlowMilestone(ctx, &flowMilestone)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create flow milestone %s error: %s", *flowMilestone.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create flow milestone %s error: %s", *flowMilestone.Name, err), resp)
 	}
 
 	d.SetId(*flowMilestoneSdk.Id)
@@ -62,7 +62,7 @@ func createFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowMilestoneProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowMilestone(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading flow milestone %s", d.Id())
 
@@ -70,9 +70,9 @@ func readFlowMilestone(ctx context.Context, d *schema.ResourceData, meta interfa
 		flowMilestone, resp, getErr := proxy.getFlowMilestoneById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read flow milestone %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", flowMilestone.Name)
@@ -94,7 +94,7 @@ func updateFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("Updating flow milestone %s", *flowMilestone.Name)
 	flowMilestoneSdk, resp, err := proxy.updateFlowMilestone(ctx, d.Id(), &flowMilestone)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update flow milestone %s error: %s", *flowMilestone.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update flow milestone %s error: %s", *flowMilestone.Name, err), resp)
 	}
 
 	log.Printf("Updated flow milestone %s", *flowMilestoneSdk.Id)
@@ -108,7 +108,7 @@ func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 
 	resp, err := proxy.deleteFlowMilestone(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete flow milestone %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete flow milestone %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -119,8 +119,8 @@ func deleteFlowMilestone(ctx context.Context, d *schema.ResourceData, meta inter
 				log.Printf("Deleted flow milestone %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting flow milestone %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting flow milestone %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("flow milestone %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow milestone %s still exists", d.Id()), resp))
 	})
 }

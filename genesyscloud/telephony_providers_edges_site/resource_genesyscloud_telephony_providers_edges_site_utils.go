@@ -110,10 +110,10 @@ func updatePrimarySecondarySites(ctx context.Context, sp *SiteProxy, d *schema.R
 
 	site, resp, err := sp.getSiteById(ctx, siteId)
 	if resp.StatusCode != 200 {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site error: %s", siteId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site error: %s", siteId, err), resp)
 	}
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary siteerror: %s ", siteId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary siteerror: %s ", siteId, err), resp)
 	}
 
 	if len(primarySites) == 0 && len(secondarySites) > 0 {
@@ -133,10 +133,10 @@ func updatePrimarySecondarySites(ctx context.Context, sp *SiteProxy, d *schema.R
 
 	_, resp, err = sp.updateSite(ctx, siteId, site)
 	if resp.StatusCode != 200 {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site. Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site. Status code %d. RespBody %s", siteId, resp.StatusCode, resp.RawBody), resp)
 	}
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site | error: %s", siteId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Site %s was created, but unable to update the primary or secondary site | error: %s", siteId, err), resp)
 	}
 
 	return nil
@@ -198,7 +198,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.Resourc
 
 	numberPlansFromAPI, resp, err := sp.getSiteNumberPlans(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get number plans for site %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get number plans for site %s error: %s", d.Id(), err), resp)
 	}
 
 	updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
@@ -234,7 +234,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.Resourc
 
 		_, resp, err := sp.updateSiteNumberPlans(ctx, d.Id(), &updatedNumberPlans)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update number plans for site %s | error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update number plans for site %s | error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -295,7 +295,7 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *SiteProxy, d *schema.Reso
 	// Get the current outbound routes
 	outboundRoutesFromAPI, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get outbound routes for site %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get outbound routes for site %s error: %s", d.Id(), err), resp)
 	}
 
 	// Delete unwanted outbound roues first to free up classifications assigned to them
@@ -307,7 +307,7 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *SiteProxy, d *schema.Reso
 				if util.IsStatus404(resp) {
 					return nil
 				}
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound route from site %s error: %s", d.Id(), err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete outbound route from site %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -326,13 +326,13 @@ func updateSiteOutboundRoutes(ctx context.Context, sp *SiteProxy, d *schema.Reso
 
 			_, resp, err := sp.updateSiteOutboundRoute(ctx, d.Id(), *outboundRoute.Id, outboundRoute)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", *outboundRoute.Id, d.Id(), err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", *outboundRoute.Id, d.Id(), err), resp)
 			}
 		} else {
 			// Add the outbound route
 			_, resp, err := sp.createSiteOutboundRoute(ctx, d.Id(), &outboundRouteFromTf)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to add outbound route to site %s error: %s", d.Id(), err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add outbound route to site %s error: %s", d.Id(), err), resp)
 			}
 		}
 	}
@@ -370,7 +370,7 @@ func readSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.ResourceD
 			d.SetId("") // Site doesn't exist
 			return nil
 		}
-		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read number plans for site %s | error: %s", d.Id(), err), resp))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read number plans for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dNumberPlans := make([]interface{}, 0)
@@ -390,7 +390,7 @@ func readSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.ResourceD
 func readSiteOutboundRoutes(ctx context.Context, sp *SiteProxy, d *schema.ResourceData) *retry.RetryError {
 	outboundRoutes, resp, err := sp.getSiteOutboundRoutes(ctx, d.Id())
 	if err != nil {
-		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get outbound routes for site %s | error: %s", d.Id(), err), resp))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get outbound routes for site %s | error: %s", d.Id(), err), resp))
 	}
 
 	dOutboundRoutes := schema.NewSet(schema.HashResource(outboundRouteSchema), []interface{}{})
@@ -511,7 +511,7 @@ func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edg
 }
 
 func GenerateSiteResourceWithCustomAttrs(
-	siteRes,
+	siteResourceLabel,
 	name,
 	description,
 	locationId,
@@ -532,7 +532,7 @@ func GenerateSiteResourceWithCustomAttrs(
 		caller_name = %s
 		%s
 	}
-	`, siteRes, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
+	`, siteResourceLabel, name, description, locationId, mediaModel, mediaRegionsUseLatencyBased, mediaRegions, callerId, callerName, strings.Join(otherAttrs, "\n"))
 
 	return site
 }

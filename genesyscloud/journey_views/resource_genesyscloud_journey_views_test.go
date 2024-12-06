@@ -27,7 +27,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		predicatesValues              = "VOICE"
 		predicatesOperator            = "Matches"
 		predicatesNoValue             = false
-		journeyResource               = "journey_resource1"
+		journeyResourceLabel          = "journey_resource1"
 		chartName                     = "Chart 1"
 		chartName2                    = "Chart 2"
 		chartVersion                  = 1
@@ -48,7 +48,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				//Create
-				Config: generateJourneyView(journeyResource, name, duration, generateElements(
+				Config: generateJourneyView(journeyResourceLabel, name, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
@@ -66,48 +66,48 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 				),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.id", elementsId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.name", elementsName),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.type", attributeType),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.id", attributeId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.source", attributeSource),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.type", "And"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.dimension", predicatesDimension),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.values.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.values.0", predicatesValues),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.operator", predicatesOperator),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.no_value", fmt.Sprintf("%t", predicatesNoValue)),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.#", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.name", chartName),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.version", fmt.Sprintf("%v", chartVersion)),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.id", metricId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.display_label", metricDisplayLabel),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.aggregate", metricAggregate),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.element_id", elementsId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_time", chartGroupByTime),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.var_type", displayAttributesVarType),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.group_by_title", displayAttributesGroupByTitle),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.metrics_title", displayAttributesMetricsTitle),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.show_legend", fmt.Sprintf("%v", displayAttributesShowLegend)),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_attributes.#", "0"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.1.name", chartName2),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.1.group_by_attributes.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.1.group_by_attributes.0.element_id", elementsId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.1.group_by_attributes.0.attribute", groupByAttributesAttribute),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "duration", duration),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.name", elementsName),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.type", attributeType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.id", attributeId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.source", attributeSource),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.type", "And"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.dimension", predicatesDimension),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.values.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.values.0", predicatesValues),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.operator", predicatesOperator),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.no_value", fmt.Sprintf("%t", predicatesNoValue)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.#", "2"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.name", chartName),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.version", fmt.Sprintf("%v", chartVersion)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.id", metricId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.display_label", metricDisplayLabel),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.aggregate", metricAggregate),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.element_id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_time", chartGroupByTime),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.var_type", displayAttributesVarType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.group_by_title", displayAttributesGroupByTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.metrics_title", displayAttributesMetricsTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.show_legend", fmt.Sprintf("%v", displayAttributesShowLegend)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_attributes.#", "0"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.name", chartName2),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.0.element_id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.0.attribute", groupByAttributesAttribute),
 				),
 			},
 			{
 				//update
 				//Remove Chart2
-				Config: generateJourneyView(journeyResource, nameUpdated, duration, generateElements(
+				Config: generateJourneyView(journeyResourceLabel, nameUpdated, duration, generateElements(
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
@@ -118,42 +118,42 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					""),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "duration", duration),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.id", elementsId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.name", elementsName),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.type", attributeType),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.id", attributeId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.attributes.0.source", attributeSource),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.type", "And"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.dimension", predicatesDimension),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.values.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.values.0", predicatesValues),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.operator", predicatesOperator),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "elements.0.filter.0.predicates.0.no_value", fmt.Sprintf("%t", predicatesNoValue)),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.name", chartName),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.version", fmt.Sprintf("%v", chartVersion)),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.id", metricId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.display_label", metricDisplayLabel),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.aggregate", metricAggregate),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.metrics.0.element_id", elementsId),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_time", chartGroupByTime),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.var_type", displayAttributesVarType),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.group_by_title", displayAttributesGroupByTitle),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.metrics_title", displayAttributesMetricsTitle),
-					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResource, "charts.0.display_attributes.0.show_legend", fmt.Sprintf("%v", displayAttributesShowLegend)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "name", nameUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "duration", duration),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.name", elementsName),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.type", attributeType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.id", attributeId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.source", attributeSource),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.type", "And"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.dimension", predicatesDimension),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.values.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.values.0", predicatesValues),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.operator", predicatesOperator),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.0.no_value", fmt.Sprintf("%t", predicatesNoValue)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.name", chartName),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.version", fmt.Sprintf("%v", chartVersion)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.id", metricId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.display_label", metricDisplayLabel),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.aggregate", metricAggregate),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.element_id", elementsId),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_time", chartGroupByTime),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.var_type", displayAttributesVarType),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.group_by_title", displayAttributesGroupByTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.metrics_title", displayAttributesMetricsTitle),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.display_attributes.0.show_legend", fmt.Sprintf("%v", displayAttributesShowLegend)),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_journey_views." + journeyResource,
+				ResourceName:      "genesyscloud_journey_views." + journeyResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -163,23 +163,14 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 
 }
 
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
-		email = "%s"
-		name = "%s"
-		%s
-	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
-}
-
-func generateJourneyView(journeyResource string, name string, duration string, elementsBlock string, chartsBlock string) string {
+func generateJourneyView(journeyResourceLabel string, name string, duration string, elementsBlock string, chartsBlock string) string {
 	return fmt.Sprintf(`resource "genesyscloud_journey_views" "%s" {
     duration = "%s"
     name = "%s"
     %s
 	%s
 	}
-	`, journeyResource, duration, name, func() string {
+	`, journeyResourceLabel, duration, name, func() string {
 		if elementsBlock != "" {
 			return elementsBlock
 		}

@@ -1,9 +1,10 @@
 package telephony_providers_edges_did_pool
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -29,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceTelephonyDidPool()
+	providerResources[ResourceType] = ResourceTelephonyDidPool()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -37,7 +38,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceDidPool()
+	providerDataSources[ResourceType] = DataSourceDidPool()
 }
 
 // initTestResources initializes all test resources and data sources.

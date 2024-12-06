@@ -29,10 +29,10 @@ tests for integrations.
 */
 func TestAccResourceIntegration(t *testing.T) {
 	var (
-		inteResource1 = "test_integration1"
-		inteResource2 = "test_integration2"
-		inteName1     = "Terraform Integration Test-" + uuid.NewString()
-		inteName2     = "Terraform Integration Test-" + uuid.NewString()
+		inteResourceLabel1 = "test_integration1"
+		inteResourceLabel2 = "test_integration2"
+		inteName1          = "Terraform Integration Test-" + uuid.NewString()
+		inteName2          = "Terraform Integration Test-" + uuid.NewString()
 
 		defaultState = "DISABLED"
 		enabledState = "ENABLED"
@@ -42,27 +42,27 @@ func TestAccResourceIntegration(t *testing.T) {
 		typeID  = "embedded-client-app"
 		typeID2 = "custom-smtp-server"
 
-		displayTypeKey  = "displayType"
-		sandboxKey      = "sandbox"
-		urlKey          = "url"
-		groupsKey       = "groups"
-		propDisplayType = "standalone"
-		propSandbox     = "allow-scripts,allow-same-origin,allow-forms,allow-modals"
-		propURL         = "https://mypurecloud.github.io/purecloud-premium-app/wizard/index.html"
-		groupResource1  = "test_group"
-		groupName       = "terraform integration test group-" + uuid.NewString()
-		fakeGroupID     = "123456789"
-		emptyJSON       = "{}"
+		displayTypeKey      = "displayType"
+		sandboxKey          = "sandbox"
+		urlKey              = "url"
+		groupsKey           = "groups"
+		propDisplayType     = "standalone"
+		propSandbox         = "allow-scripts,allow-same-origin,allow-forms,allow-modals"
+		propURL             = "https://mypurecloud.github.io/purecloud-premium-app/wizard/index.html"
+		groupResourceLabel1 = "test_group"
+		groupName           = "terraform integration test group-" + uuid.NewString()
+		fakeGroupID         = "123456789"
+		emptyJSON           = "{}"
 
-		credResource1 = "test_credential"
-		credName1     = "Terraform Credential Test-" + uuid.NewString()
-		credTypeName1 = "basicAuth"
-		key1          = "userName"
-		val1          = "someUserName"
+		credResourceLabel1 = "test_credential"
+		credName1          = "Terraform Credential Test-" + uuid.NewString()
+		credTypeName1      = "basicAuth"
+		key1               = "userName"
+		val1               = "someUserName"
 
-		testUserResource = "user_resource1"
-		testUserName     = "nameUser1" + uuid.NewString()
-		testUserEmail    = uuid.NewString() + "@example.com"
+		testUserResourceLabel = "user_resource1"
+		testUserName          = "nameUser1" + uuid.NewString()
+		testUserEmail         = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -72,24 +72,24 @@ func TestAccResourceIntegration(t *testing.T) {
 			{
 				// Create without config
 				Config: GenerateIntegrationResource(
-					inteResource1,
+					inteResourceLabel1,
 					util.NullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
 					// No config block
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", defaultState), // Default value would be "DISABLED"
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.notes", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.properties", emptyJSON),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.advanced", emptyJSON),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "intended_state", defaultState), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "integration_type", typeID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.notes", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.properties", emptyJSON),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.advanced", emptyJSON),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.credentials.%"),
 				),
 			},
 			{
 				// Update only name
 				Config: GenerateIntegrationResource(
-					inteResource1,
+					inteResourceLabel1,
 					util.NullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
 					GenerateIntegrationConfig(
@@ -101,19 +101,19 @@ func TestAccResourceIntegration(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", defaultState), // Default value would be "DISABLED"
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.name", inteName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.notes", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.properties", emptyJSON),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.advanced", emptyJSON),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "intended_state", defaultState), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "integration_type", typeID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.name", inteName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.notes", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.properties", emptyJSON),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.advanced", emptyJSON),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.credentials.%"),
 				),
 			},
 			{
 				// All nullvalue for config. Nothing should change here.
 				Config: GenerateIntegrationResource(
-					inteResource1,
+					inteResourceLabel1,
 					util.NullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID),
 					GenerateIntegrationConfig(
@@ -125,19 +125,19 @@ func TestAccResourceIntegration(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", defaultState), // Default value would be "DISABLED"
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.name", inteName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.notes", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.properties", emptyJSON),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.advanced", emptyJSON),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "intended_state", defaultState), // Default value would be "DISABLED"
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "integration_type", typeID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.name", inteName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.notes", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.properties", emptyJSON),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.advanced", emptyJSON),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.credentials.%"),
 				),
 			},
 			{
 				// Update intendedState, name, notes, properties
 				Config: GenerateIntegrationResource(
-					inteResource1,
+					inteResourceLabel1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
 					GenerateIntegrationConfig(
@@ -154,28 +154,28 @@ func TestAccResourceIntegration(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", enabledState),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.name", inteName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.notes", configNotes),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.advanced", emptyJSON),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
-					validateIntegrationProperties("genesyscloud_integration."+inteResource1, "", propDisplayType, propSandbox, propURL, fakeGroupID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "intended_state", enabledState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "integration_type", typeID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.name", inteName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.notes", configNotes),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.advanced", emptyJSON),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.credentials.%"),
+					validateIntegrationProperties("genesyscloud_integration."+inteResourceLabel1, "", propDisplayType, propSandbox, propURL, fakeGroupID),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_integration." + inteResource1,
+				ResourceName:      "genesyscloud_integration." + inteResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 			{ // Create a group first and use it as reference for a new integration
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + generateBasicGroupResource(
-					groupResource1,
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + generateBasicGroupResource(
+					groupResourceLabel1,
 					groupName,
-					generateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					generateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				) + GenerateIntegrationResource(
-					inteResource1,
+					inteResourceLabel1,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID),
 					GenerateIntegrationConfig(
@@ -186,19 +186,19 @@ func TestAccResourceIntegration(t *testing.T) {
 							util.GenerateJsonProperty(displayTypeKey, strconv.Quote(propDisplayType)),
 							util.GenerateJsonProperty(urlKey, strconv.Quote(propURL)),
 							util.GenerateJsonProperty(sandboxKey, strconv.Quote(propSandbox)),
-							util.GenerateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, "genesyscloud_group."+groupResource1+".id")),
+							util.GenerateJsonProperty(groupsKey, fmt.Sprintf(`[%s]`, "genesyscloud_group."+groupResourceLabel1+".id")),
 						),
 						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", enabledState),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.name", inteName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.notes", configNotes),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.advanced", emptyJSON),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
-					validateIntegrationProperties("genesyscloud_integration."+inteResource1, "genesyscloud_group."+groupResource1, propDisplayType, propSandbox, propURL, ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "intended_state", enabledState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "integration_type", typeID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.name", inteName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.notes", configNotes),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.advanced", emptyJSON),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.credentials.%"),
+					validateIntegrationProperties("genesyscloud_integration."+inteResourceLabel1, "genesyscloud_group."+groupResourceLabel1, propDisplayType, propSandbox, propURL, ""),
 				),
 				PreConfig: func() {
 					time.Sleep(30 * time.Second)
@@ -206,7 +206,7 @@ func TestAccResourceIntegration(t *testing.T) {
 			},
 			{ // Remove the group reference and update intendedState and notes
 				Config: GenerateIntegrationResource(
-					inteResource1,
+					inteResourceLabel1,
 					util.NullValue, //Change to default value
 					strconv.Quote(typeID),
 					GenerateIntegrationConfig(
@@ -227,18 +227,18 @@ func TestAccResourceIntegration(t *testing.T) {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds
 						return nil
 					},
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", defaultState),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.name", inteName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.notes", configNotes2),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.advanced", emptyJSON),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
-					validateIntegrationProperties("genesyscloud_integration."+inteResource1, "", propDisplayType, propSandbox, propURL, ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "intended_state", defaultState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "integration_type", typeID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.name", inteName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.notes", configNotes2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.advanced", emptyJSON),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.credentials.%"),
+					validateIntegrationProperties("genesyscloud_integration."+inteResourceLabel1, "", propDisplayType, propSandbox, propURL, ""),
 				),
 			},
 			{ // Update integration name and test Raw JSON string
 				Config: GenerateIntegrationResource(
-					inteResource1,
+					inteResourceLabel1,
 					util.NullValue, //Default value
 					strconv.Quote(typeID),
 					GenerateIntegrationConfig(
@@ -251,24 +251,24 @@ func TestAccResourceIntegration(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "intended_state", defaultState),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "integration_type", typeID),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.name", inteName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.notes", configNotes2),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource1, "config.0.advanced", emptyJSON),
-					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResource1, "config.0.credentials.%"),
-					validateIntegrationProperties("genesyscloud_integration."+inteResource1, "", propDisplayType, propSandbox, propURL, ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "intended_state", defaultState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "integration_type", typeID),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.name", inteName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.notes", configNotes2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.advanced", emptyJSON),
+					resource.TestCheckNoResourceAttr("genesyscloud_integration."+inteResourceLabel1, "config.0.credentials.%"),
+					validateIntegrationProperties("genesyscloud_integration."+inteResourceLabel1, "", propDisplayType, propSandbox, propURL, ""),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_integration." + inteResource1,
+				ResourceName:      "genesyscloud_integration." + inteResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 			{ // Create a credential and use it as reference for the new integration
 				Config: integrationCred.GenerateCredentialResource(
-					credResource1,
+					credResourceLabel1,
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					integrationCred.GenerateCredentialFields(
@@ -277,13 +277,13 @@ func TestAccResourceIntegration(t *testing.T) {
 						},
 					),
 				) + GenerateIntegrationResource(
-					inteResource2,
+					inteResourceLabel2,
 					strconv.Quote(enabledState),
 					strconv.Quote(typeID2),
 					GenerateIntegrationConfig(
 						strconv.Quote(inteName1),
 						strconv.Quote(configNotes),
-						util.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						util.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResourceLabel1+".id"), // Reference credential ID
 						util.GenerateJsonEncodedProperties(
 							util.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
@@ -291,17 +291,17 @@ func TestAccResourceIntegration(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "intended_state", enabledState),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "integration_type", typeID2),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.name", inteName1),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.notes", configNotes),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.advanced", emptyJSON),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "intended_state", enabledState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "integration_type", typeID2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "config.0.name", inteName1),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "config.0.notes", configNotes),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "config.0.advanced", emptyJSON),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResourceLabel2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResourceLabel1, "id"),
 				),
 			},
 			{ // Update integration with credential specified
 				Config: integrationCred.GenerateCredentialResource(
-					credResource1,
+					credResourceLabel1,
 					strconv.Quote(credName1),
 					strconv.Quote(credTypeName1),
 					integrationCred.GenerateCredentialFields(
@@ -310,13 +310,13 @@ func TestAccResourceIntegration(t *testing.T) {
 						},
 					),
 				) + GenerateIntegrationResource(
-					inteResource2,
+					inteResourceLabel2,
 					util.NullValue, //Empty intended_state, default value is "DISABLED"
 					strconv.Quote(typeID2),
 					GenerateIntegrationConfig(
 						strconv.Quote(inteName2),
 						util.NullValue, // Empty notes
-						util.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResource1+".id"), // Reference credential ID
+						util.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResourceLabel1+".id"), // Reference credential ID
 						util.GenerateJsonEncodedProperties(
 							util.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
 						),
@@ -324,17 +324,17 @@ func TestAccResourceIntegration(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "intended_state", defaultState),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "integration_type", typeID2),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.name", inteName2),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.notes", ""),
-					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResource2, "config.0.advanced", emptyJSON),
-					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResource2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResource1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "intended_state", defaultState),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "integration_type", typeID2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "config.0.name", inteName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "config.0.notes", ""),
+					resource.TestCheckResourceAttr("genesyscloud_integration."+inteResourceLabel2, "config.0.advanced", emptyJSON),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration."+inteResourceLabel2, "config.0.credentials."+credTypeName1, "genesyscloud_integration_credential."+credResourceLabel1, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_integration." + inteResource2,
+				ResourceName:      "genesyscloud_integration." + inteResourceLabel2,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -343,25 +343,25 @@ func TestAccResourceIntegration(t *testing.T) {
 	})
 }
 
-func validateIntegrationProperties(integrationResourceName string, groupResourceName string, propDisplayType string, propSandbox string, propURL string, groupID string) resource.TestCheckFunc {
+func validateIntegrationProperties(integrationResourcePath string, groupResourcePath string, propDisplayType string, propSandbox string, propURL string, groupID string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		integrationResource, ok := state.RootModule().Resources[integrationResourceName]
+		integrationResource, ok := state.RootModule().Resources[integrationResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find integration %s in state", integrationResourceName)
+			return fmt.Errorf("Failed to find integration %s in state", integrationResourcePath)
 		}
 		integrationID := integrationResource.Primary.ID
 
 		var expectGroupID string
-		if groupResourceName == "" {
+		if groupResourcePath == "" {
 			if groupID == "" {
 				expectGroupID = ""
 			} else {
 				expectGroupID = strconv.Quote(groupID)
 			}
 		} else {
-			groupResource, ok := state.RootModule().Resources[groupResourceName]
+			groupResource, ok := state.RootModule().Resources[groupResourcePath]
 			if !ok {
-				return fmt.Errorf("Failed to find group %s in state", groupResourceName)
+				return fmt.Errorf("Failed to find group %s in state", groupResourcePath)
 			}
 			expectGroupID = strconv.Quote(groupResource.Primary.ID)
 		}
@@ -419,22 +419,22 @@ func testVerifyIntegrationAndUsersDestroyed(state *terraform.State) error {
 }
 
 // TODO: Duplicating this code within the function to not break a cyclic dependency
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }
 
 // TODO: Duplicating this code within the function to not break a cyclic dependency
-func generateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return generateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
+func generateBasicGroupResource(resourceLabel string, name string, nestedBlocks ...string) string {
+	return generateGroupResource(resourceLabel, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
 }
 
 func generateGroupResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	desc string,
 	groupType string,
@@ -449,7 +449,7 @@ func generateGroupResource(
 		rules_visible = %s
         %s
 	}
-	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateGroupOwners(userIDs ...string) string {

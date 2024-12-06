@@ -1,11 +1,12 @@
 package outbound_ruleset
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -16,13 +17,13 @@ resource_genesyscloud_outbound_ruleset_schema.go holds four functions within it:
 3.  The datasource schema definitions for the outbound_ruleset datasource.
 4.  The resource exporter configuration for the outbound_ruleset exporter.
 */
-const resourceName = "genesyscloud_outbound_ruleset"
+const ResourceType = "genesyscloud_outbound_ruleset"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundRuleset())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundRuleset())
-	regInstance.RegisterExporter(resourceName, OutboundRulesetExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundRuleset())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundRuleset())
+	regInstance.RegisterExporter(ResourceType, OutboundRulesetExporter())
 }
 
 // ResourceOutboundRuleset registers the genesyscloud_outbound_ruleset resource with Terraform

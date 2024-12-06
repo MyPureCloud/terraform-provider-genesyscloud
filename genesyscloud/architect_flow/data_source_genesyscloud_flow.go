@@ -42,7 +42,7 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	if diagErr != nil {
 		msg := fmt.Sprintf("error retrieving ID of flow '%s' | error: %v", name, diagErr)
-		return util.BuildAPIDiagnosticError(resourceName, msg, response)
+		return util.BuildAPIDiagnosticError(ResourceType, msg, response)
 	}
 
 	return nil

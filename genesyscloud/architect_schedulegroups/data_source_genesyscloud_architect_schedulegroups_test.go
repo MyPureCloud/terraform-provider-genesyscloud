@@ -14,19 +14,19 @@ import (
 
 func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 	var (
-		schedGroupResource = "arch-sched-group"
-		name               = "Schedule Group x" + uuid.NewString()
-		description        = "Sample Schedule Group by CX as Code"
-		time_zone          = "Asia/Singapore"
+		schedGroupResourceLabel = "arch-sched-group"
+		name                    = "Schedule Group x" + uuid.NewString()
+		description             = "Sample Schedule Group by CX as Code"
+		time_zone               = "Asia/Singapore"
 
-		schedGroupDataSource = "arch-sched-group-ds"
+		schedGroupDataSourceLabel = "arch-sched-group-ds"
 
-		schedResource = "arch-sched"
-		openSched     = "Open Schedule " + uuid.NewString()
-		schedDesc     = "Sample Schedule by CX as Code"
-		start         = "2021-08-04T08:00:00.000000"
-		end           = "2021-08-04T17:00:00.000000"
-		rrule         = "FREQ=DAILY;INTERVAL=1"
+		schedResourceLabel = "arch-sched"
+		openSched          = "Open Schedule " + uuid.NewString()
+		schedDesc          = "Sample Schedule by CX as Code"
+		start              = "2021-08-04T08:00:00.000000"
+		end                = "2021-08-04T17:00:00.000000"
+		rrule              = "FREQ=DAILY;INTERVAL=1"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -36,7 +36,7 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 			{
 				// Create
 				Config: architectSchedules.GenerateArchitectSchedulesResource( // Create Open schedule
-					schedResource,
+					schedResourceLabel,
 					openSched,
 					util.NullValue,
 					schedDesc,
@@ -44,19 +44,19 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 					end,
 					rrule,
 				) + generateArchitectScheduleGroupsResource(
-					schedGroupResource,
+					schedGroupResourceLabel,
 					name,
 					util.NullValue,
 					description,
 					time_zone,
-					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResource+".id"),
+					generateSchedules("open_schedules_id", "genesyscloud_architect_schedules."+schedResourceLabel+".id"),
 				) + generateScheduleGroupDataSource(
-					schedGroupDataSource,
-					"genesyscloud_architect_schedulegroups."+schedGroupResource+".name",
-					"genesyscloud_architect_schedulegroups."+schedGroupResource,
+					schedGroupDataSourceLabel,
+					"genesyscloud_architect_schedulegroups."+schedGroupResourceLabel+".name",
+					"genesyscloud_architect_schedulegroups."+schedGroupResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_schedulegroups."+schedGroupDataSource, "id", "genesyscloud_architect_schedulegroups."+schedGroupResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_schedulegroups."+schedGroupDataSourceLabel, "id", "genesyscloud_architect_schedulegroups."+schedGroupResourceLabel, "id"),
 				),
 			},
 		},
@@ -64,7 +64,7 @@ func TestAccDataSourceArchitectScheduleGroups(t *testing.T) {
 }
 
 func generateScheduleGroupDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -73,5 +73,5 @@ func generateScheduleGroupDataSource(
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

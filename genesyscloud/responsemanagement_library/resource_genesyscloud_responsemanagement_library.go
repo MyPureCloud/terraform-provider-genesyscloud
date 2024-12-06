@@ -32,11 +32,11 @@ func getAllAuthResponsemanagementLibrarys(ctx context.Context, clientConfig *pla
 
 	librarys, resp, err := proxy.getAllResponsemanagementLibrary(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get responsemanagement library error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get responsemanagement library error: %s", err), resp)
 	}
 
 	for _, library := range *librarys {
-		resources[*library.Id] = &resourceExporter.ResourceMeta{Name: *library.Name}
+		resources[*library.Id] = &resourceExporter.ResourceMeta{BlockLabel: *library.Name}
 	}
 	return resources, nil
 }
@@ -52,7 +52,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	log.Printf("Creating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, resp, err := proxy.createResponsemanagementLibrary(ctx, &responsemanagementLibrary)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create responsemanagement library %s error: %s", *responsemanagementLibrary.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create responsemanagement library %s error: %s", *responsemanagementLibrary.Name, err), resp)
 	}
 
 	d.SetId(*library.Id)
@@ -64,7 +64,7 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementLibraryProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementLibrary(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading responsemanagement library %s", d.Id())
 
@@ -72,9 +72,9 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 		library, resp, getErr := proxy.getResponsemanagementLibraryById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read responsemanagement library %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read responsemanagement library %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read responsemanagement library %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read responsemanagement library %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", library.Name)
@@ -95,7 +95,7 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	log.Printf("Updating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, resp, err := proxy.updateResponsemanagementLibrary(ctx, d.Id(), &responsemanagementLibrary)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update responsemanagement library %s error: %s", *responsemanagementLibrary.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update responsemanagement library %s error: %s", *responsemanagementLibrary.Name, err), resp)
 	}
 	log.Printf("Updated responsemanagement library %s", *library.Id)
 	return readResponsemanagementLibrary(ctx, d, meta)
@@ -108,7 +108,7 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 	resp, err := proxy.deleteResponsemanagementLibrary(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete responsemanagement library %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete responsemanagement library %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -119,8 +119,8 @@ func deleteResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 				log.Printf("Deleted responsemanagement library %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting responsemanagement library %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting responsemanagement library %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("responsemanagement library %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("responsemanagement library %s still exists", d.Id()), resp))
 	})
 }

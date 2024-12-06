@@ -25,12 +25,31 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getArchitectUserPromptProxy(clientConfig)
 
-	userPrompts, resp, err := proxy.getAllArchitectUserPrompts(ctx, true, true, "")
+	var (
+		userPrompts *[]platformclientv2.Prompt
+		resp        *platformclientv2.APIResponse
+		err         error
+	)
+
+	pageCount, resp, err := proxy.getArchitectUserPromptPageCount(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get user prompts: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get user prompts: %s", err), resp)
 	}
+
+	if pageCount < 100 {
+		userPrompts, resp, err = proxy.getAllArchitectUserPrompts(ctx, true, true, "")
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get user prompts: %s", err), resp)
+		}
+	} else {
+		userPrompts, resp, err = proxy.getAllArchitectUserPromptsFilterByName(ctx, true, true, "abcdefghijklmnopqrstuvwxyz1234567890")
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get user prompts: %s", err), resp)
+		}
+	}
+
 	for _, userPrompt := range *userPrompts {
-		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{Name: *userPrompt.Name}
+		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{BlockLabel: *userPrompt.Name}
 	}
 
 	return resources, nil
@@ -46,7 +65,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Creating user prompt %s", name)
 	userPrompt, resp, err := proxy.createArchitectUserPrompt(ctx, prompt)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create user prompt %s: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create user prompt %s: %s", name, err), resp)
 	}
 
 	log.Printf("Creating prompt resources. Prompt ID: '%s'", *userPrompt.Id)
@@ -60,9 +79,9 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 		d.SetId("")
 
 		if resp != nil {
-			return util.BuildAPIDiagnosticError(resourceName, err.Error(), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, err.Error(), resp)
 		}
-		return util.BuildDiagnosticError(resourceName, err.Error(), err)
+		return util.BuildDiagnosticError(ResourceType, err.Error(), err)
 	}
 	log.Printf("Updated prompt resources. Prompt ID: '%s'", *userPrompt.Id)
 
@@ -74,7 +93,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading User Prompt %s", d.Id())
 
@@ -82,9 +101,9 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 		userPrompt, resp, getErr := proxy.getArchitectUserPrompt(ctx, d.Id(), true, true, nil, true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read User Prompt %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", userPrompt.Name)
@@ -106,16 +125,16 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Updating user prompt %s", name)
 	_, resp, err := proxy.updateArchitectUserPrompt(ctx, d.Id(), prompt)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update user prompt %s: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update user prompt %s: %s", name, err), resp)
 	}
 
 	log.Printf("Updating prompt resources. Prompt ID: '%s'", d.Id())
 	resp, err = proxy.createOrUpdateArchitectUserPromptResources(ctx, d, d.Id(), false)
 	if err != nil {
 		if resp != nil {
-			return util.BuildAPIDiagnosticError(resourceName, err.Error(), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, err.Error(), resp)
 		}
-		return util.BuildDiagnosticError(resourceName, err.Error(), err)
+		return util.BuildDiagnosticError(ResourceType, err.Error(), err)
 	}
 	log.Printf("Updated prompt resources. Prompt ID: '%s'", d.Id())
 
@@ -131,7 +150,7 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Deleting user prompt %s", name)
 	if resp, err := proxy.deleteArchitectUserPrompt(ctx, d.Id(), true); err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete user prompt %s: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete user prompt %s: %s", name, err), resp)
 	}
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getArchitectUserPrompt(ctx, d.Id(), false, false, nil, false)
@@ -141,8 +160,8 @@ func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted user prompt %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting user prompt %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting user prompt %s | error: %s", name, err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("user prompt %s still exists", name), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("user prompt %s still exists", name), resp))
 	})
 }

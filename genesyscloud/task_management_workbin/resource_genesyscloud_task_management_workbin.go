@@ -32,12 +32,12 @@ func getAllAuthTaskManagementWorkbins(ctx context.Context, clientConfig *platfor
 
 	workbins, resp, err := proxy.getAllTaskManagementWorkbin(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all workbins error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all workbins error: %s", err), resp)
 	}
 
 	for _, workbin := range *workbins {
 		log.Printf("Dealing with task management workbin id: %s", *workbin.Id)
-		resources[*workbin.Id] = &resourceExporter.ResourceMeta{Name: *workbin.Name}
+		resources[*workbin.Id] = &resourceExporter.ResourceMeta{BlockLabel: *workbin.Name}
 	}
 	return resources, nil
 }
@@ -56,7 +56,7 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("Creating task management workbin %s", *taskManagementWorkbin.Name)
 	workbin, resp, err := proxy.createTaskManagementWorkbin(ctx, &taskManagementWorkbin)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management workbin %s error: %s", *taskManagementWorkbin.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management workbin %s error: %s", *taskManagementWorkbin.Name, err), resp)
 	}
 
 	d.SetId(*workbin.Id)
@@ -68,7 +68,7 @@ func createTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorkbinProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorkbin(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading task management workbin %s", d.Id())
 
@@ -76,9 +76,9 @@ func readTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, meta
 		workbin, resp, getErr := proxy.getTaskManagementWorkbinById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workbin %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management workbin %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management workbin %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management workbin %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", workbin.Name)
@@ -103,7 +103,7 @@ func updateTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("Updating task management workbin %s", *taskManagementWorkbin.Name)
 	workbin, resp, err := proxy.updateTaskManagementWorkbin(ctx, d.Id(), &taskManagementWorkbin)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management workbin %s error: %s", *taskManagementWorkbin.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management workbin %s error: %s", *taskManagementWorkbin.Name, err), resp)
 	}
 
 	log.Printf("Updated task management workbin %s", *workbin.Id)
@@ -117,7 +117,7 @@ func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 
 	resp, err := proxy.deleteTaskManagementWorkbin(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management workbin %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management workbin %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -128,8 +128,8 @@ func deleteTaskManagementWorkbin(ctx context.Context, d *schema.ResourceData, me
 				log.Printf("Deleted task management workbin %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management workbin %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting task management workbin %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management workbin %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("task management workbin %s still exists", d.Id()), resp))
 	})
 }

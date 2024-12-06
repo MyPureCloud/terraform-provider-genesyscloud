@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_outbound_messagingcampaign"
+const ResourceType = "genesyscloud_outbound_messagingcampaign"
 
 var (
 	dynamicContactQueueingSettings = &schema.Resource{
@@ -235,7 +235,7 @@ func ResourceOutboundMessagingCampaign() *schema.Resource {
 				Elem:        smsConfigResource,
 			},
 			`dynamic_contact_queueing_settings`: {
-				Description: `Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts. 
+				Description: `Indicates (when true) that the campaign supports dynamic queueing of the contact list at the time of a request for contacts.
 				**Warning**: Updating this field will cause the campaign to be destroyed and re-created.`,
 				Type:     schema.TypeList,
 				MaxItems: 1,

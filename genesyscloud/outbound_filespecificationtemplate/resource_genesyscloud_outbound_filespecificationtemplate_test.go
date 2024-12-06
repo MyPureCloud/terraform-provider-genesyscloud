@@ -18,7 +18,7 @@ import (
 func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceId = "file_specification_template"
+		resourceLabel = "file_specification_template"
 
 		// Create
 		name                        = "tf-fst-" + uuid.NewString()
@@ -75,7 +75,7 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateOutboundFileSpecificationTemplate(
-					resourceId,
+					resourceLabel,
 					name,
 					strconv.Quote(description),
 					format,
@@ -110,33 +110,33 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "name", name),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "description", description),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "format", format),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "number_of_header_lines_skipped", numberOfHeaderLinesSkipped),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "number_of_trailer_lines_skipped", numberOfTrailerLinesSkipped),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "header", header),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "delimiter", delimiter),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "delimiter_value", ""),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.#", "2"),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.0.column_name", column1Name),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.0.column_number", column1Number),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.1.column_name", column2Name),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.1.column_number", column2Number),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.#", "2"),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.find", preprocessingRule1Find),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.replace_with", preprocessingRule1ReplaceWith),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.global", preprocessingRule1Global),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.ignore_case", preprocessingRule1IgnoreCase),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.find", preprocessingRule2Find),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.replace_with", preprocessingRule2ReplaceWith),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.global", util.FalseValue),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.1.ignore_case", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", description),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "format", format),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "number_of_header_lines_skipped", numberOfHeaderLinesSkipped),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "number_of_trailer_lines_skipped", numberOfTrailerLinesSkipped),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "header", header),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "delimiter", delimiter),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "delimiter_value", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.0.column_name", column1Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.0.column_number", column1Number),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.1.column_name", column2Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.1.column_number", column2Number),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.find", preprocessingRule1Find),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.replace_with", preprocessingRule1ReplaceWith),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.global", preprocessingRule1Global),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.ignore_case", preprocessingRule1IgnoreCase),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.1.find", preprocessingRule2Find),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.1.replace_with", preprocessingRule2ReplaceWith),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.1.global", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.1.ignore_case", util.FalseValue),
 				),
 			},
 			{
 				Config: generateOutboundFileSpecificationTemplate(
-					resourceId,
+					resourceLabel,
 					nameUpdated,
 					strconv.Quote(descriptionUpdated),
 					format,
@@ -165,29 +165,29 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "description", descriptionUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "format", format),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "delimiter", delimiterUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "delimiter_value", delimiterValueUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "number_of_header_lines_skipped", numberOfHeaderLinesSkippedUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "number_of_trailer_lines_skipped", numberOfTrailerLinesSkippedUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "header", headerUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.#", "2"),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.0.column_name", column1NameUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.0.column_number", column1NumberUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.1.column_name", column2NameUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.1.column_number", column2NumberUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.#", "1"),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.find", preprocessingRule1FindUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.replace_with", preprocessingRule1ReplaceWithUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.global", preprocessingRule1GlobalUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "preprocessing_rule.0.ignore_case", preprocessingRule1IgnoreCaseUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", nameUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", descriptionUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "format", format),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "delimiter", delimiterUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "delimiter_value", delimiterValueUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "number_of_header_lines_skipped", numberOfHeaderLinesSkippedUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "number_of_trailer_lines_skipped", numberOfTrailerLinesSkippedUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "header", headerUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.0.column_name", column1NameUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.0.column_number", column1NumberUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.1.column_name", column2NameUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.1.column_number", column2NumberUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.#", "1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.find", preprocessingRule1FindUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.replace_with", preprocessingRule1ReplaceWithUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.global", preprocessingRule1GlobalUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preprocessing_rule.0.ignore_case", preprocessingRule1IgnoreCaseUpdated),
 				),
 			},
 			{
 				Config: generateOutboundFileSpecificationTemplate(
-					resourceId,
+					resourceLabel,
 					nameUpdated,
 					strconv.Quote(descriptionUpdated),
 					formatUpdated,
@@ -210,19 +210,19 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "name", nameUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "format", formatUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.#", "2"),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.0.column_name", column1NameUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.0.start_position", column1StartPositionUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.0.length", column1LengthUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.1.column_name", column2NameUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.1.start_position", column2StartPositionUpdated),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceId, "column_information.1.length", column2LengthUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", nameUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "format", formatUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.0.column_name", column1NameUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.0.start_position", column1StartPositionUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.0.length", column1LengthUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.1.column_name", column2NameUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.1.start_position", column2StartPositionUpdated),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_information.1.length", column2LengthUpdated),
 				),
 			},
 			{
-				ResourceName:      resourceName + "." + resourceId,
+				ResourceName:      ResourceType + "." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -232,7 +232,7 @@ func TestAccResourceOutboundFileSpecificationTemplate(t *testing.T) {
 }
 
 func generateOutboundFileSpecificationTemplate(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	description string,
 	format string,
@@ -256,7 +256,7 @@ func generateOutboundFileSpecificationTemplate(
 		%s
 	}
 	`,
-		resourceId,
+		resourceLabel,
 		name,
 		description,
 		format,
@@ -303,7 +303,7 @@ func generateOutboundFileSpecificationTemplatePreprocessingRule(
 func testVerifyOutboundFileSpecificationTemplateDestroyed(state *terraform.State) error {
 	outboundAPI := platformclientv2.NewOutboundApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 

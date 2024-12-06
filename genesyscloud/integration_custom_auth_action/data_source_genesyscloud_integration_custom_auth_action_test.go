@@ -22,13 +22,13 @@ Test Class for the Integration Custom Auth Actions Data Source
 func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 	var (
 		// Integration Credentials
-		credentialResource1      = "test_integration_credential_1"
-		credentialResourceName   = "Terraform Cred-" + uuid.NewString()
-		credKey1                 = "loginUrl"
-		credVal1                 = "https://www.test-login.com"
-		credentialResourceConfig = integrationCred.GenerateCredentialResource(
-			credentialResource1,
-			strconv.Quote(credentialResourceName),
+		credentialResourceLabel1   = "test_integration_credential_1"
+		credentialResourceNameAttr = "Terraform Cred-" + uuid.NewString()
+		credKey1                   = "loginUrl"
+		credVal1                   = "https://www.test-login.com"
+		credentialResourceConfig   = integrationCred.GenerateCredentialResource(
+			credentialResourceLabel1,
+			strconv.Quote(credentialResourceNameAttr),
 			strconv.Quote(customAuthCredentialType),
 			integrationCred.GenerateCredentialFields(
 				map[string]string{credKey1: strconv.Quote(credVal1)},
@@ -36,17 +36,17 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 		)
 
 		// Web Services Data Action Integration
-		integResource1            = "test_integration1"
-		integResourceName1        = "Terraform Integration-" + uuid.NewString()
+		integResourceLabel1       = "test_integration1"
+		integResourceNameAttr1    = "Terraform Integration-" + uuid.NewString()
 		integTypeID               = "custom-rest-actions"
 		integrationResourceConfig = integration.GenerateIntegrationResource(
-			integResource1,
+			integResourceLabel1,
 			util.NullValue,
 			strconv.Quote(integTypeID),
 			integration.GenerateIntegrationConfig(
-				strconv.Quote(integResourceName1),
+				strconv.Quote(integResourceNameAttr1),
 				util.NullValue, // no notes
-				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResource1),
+				fmt.Sprintf("basicAuth = genesyscloud_integration_credential.%s.id", credentialResourceLabel1),
 				util.NullValue, // no properties
 				util.NullValue, // no advanced properties
 			),
@@ -54,7 +54,7 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 
 		// Data Source
 		customAuthSource = "custom-auth-1"
-		dataSourceConfig = generateCustomAuthActionDataSource(customAuthSource, "genesyscloud_integration."+integResource1+".id", "genesyscloud_integration."+integResource1)
+		dataSourceConfig = generateCustomAuthActionDataSource(customAuthSource, "genesyscloud_integration."+integResourceLabel1+".id", "genesyscloud_integration."+integResourceLabel1)
 
 		config = credentialResourceConfig + integrationResourceConfig + dataSourceConfig
 	)
@@ -66,7 +66,7 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testCheckCustomAuthId("data.genesyscloud_integration_custom_auth_action."+customAuthSource, "genesyscloud_integration."+integResource1),
+					testCheckCustomAuthId("data.genesyscloud_integration_custom_auth_action."+customAuthSource, "genesyscloud_integration."+integResourceLabel1),
 					func(s *terraform.State) error {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
 						return nil
@@ -78,30 +78,30 @@ func TestAccDataSourceIntegrationCustomAuthAction(t *testing.T) {
 
 }
 
-func generateCustomAuthActionDataSource(resourceID string, integrationId string, dependsOnResource string) string {
+func generateCustomAuthActionDataSource(dataSourceLabel string, integrationId string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_integration_custom_auth_action" "%s" {
 		parent_integration_id = %s
 		depends_on=[%s]
 	}
-	`, resourceID, integrationId, dependsOnResource)
+	`, dataSourceLabel, integrationId, dependsOnResource)
 }
 
 // testCheckCustomAuthId verified if the ID of the data source matches the expected custom auth id
 // from the specified integration resource
-func testCheckCustomAuthId(authSourceResName string, integrationResName string) resource.TestCheckFunc {
+func testCheckCustomAuthId(authSourceResourcePath string, integrationResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		integrationResource, ok := state.RootModule().Resources[integrationResName]
+		integrationResource, ok := state.RootModule().Resources[integrationResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find integration %s in state", integrationResName)
+			return fmt.Errorf("failed to find integration %s in state", integrationResourcePath)
 		}
-		authDataSource, ok := state.RootModule().Resources[authSourceResName]
+		authDataSource, ok := state.RootModule().Resources[authSourceResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find auth data source %s in state", integrationResName)
+			return fmt.Errorf("failed to find auth data source %s in state", integrationResourcePath)
 		}
 
 		expectedAuthId := getCustomAuthIdFromIntegration(integrationResource.Primary.ID)
 		if authDataSource.Primary.ID != expectedAuthId {
-			return fmt.Errorf("integration %s expected auth id %s does not match actual: %s", integrationResName, expectedAuthId, authDataSource.Primary.ID)
+			return fmt.Errorf("integration %s expected auth id %s does not match actual: %s", integrationResourcePath, expectedAuthId, authDataSource.Primary.ID)
 		}
 
 		return nil

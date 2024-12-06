@@ -16,27 +16,27 @@ import (
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 	var (
-		variationResource1         = "test-variation1"
-		knowledgeBaseResource1     = "test-knowledgebase1"
-		knowledgeBaseName1         = "Terraform Knowledge Base " + uuid.NewString()
-		knowledgeBaseDescription1  = "test-knowledgebase-description1"
-		coreLanguage1              = "en-US"
-		knowledgeDocumentResource1 = "test-knowledge-document1"
-		title                      = "Terraform Knowledge Document"
-		visible                    = true
-		docPublished               = false
-		published                  = true
-		phrase                     = "Terraform Knowledge Document"
-		autocomplete               = true
-		bodyBlockType              = "Paragraph"
-		contentBlockType1          = "Text"
-		contentBlockType2          = "Image"
-		imageUrl                   = "https://example.com/image"
-		hyperlink                  = "https://example.com/hyperlink"
-		videoUrl                   = "https://example.com/video"
-		listType                   = "ListItem"
-		documentText               = "stuff"
-		marks                      = []string{"Bold", "Italic", "Underline"}
+		variationResourceLabel1         = "test-variation1"
+		knowledgeBaseResourceLabel1     = "test-knowledgebase1"
+		knowledgeBaseName1              = "Terraform Knowledge Base " + uuid.NewString()
+		knowledgeBaseDescription1       = "test-knowledgebase-description1"
+		coreLanguage1                   = "en-US"
+		knowledgeDocumentResourceLabel1 = "test-knowledge-document1"
+		title                           = "Terraform Knowledge Document"
+		visible                         = true
+		docPublished                    = false
+		published                       = true
+		phrase                          = "Terraform Knowledge Document"
+		autocomplete                    = true
+		bodyBlockType                   = "Paragraph"
+		contentBlockType1               = "Text"
+		contentBlockType2               = "Image"
+		imageUrl                        = "https://example.com/image"
+		hyperlink                       = "https://example.com/hyperlink"
+		videoUrl                        = "https://example.com/video"
+		listType                        = "ListItem"
+		documentText                    = "stuff"
+		marks                           = []string{"Bold", "Italic", "Underline"}
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -46,14 +46,14 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 			{
 				// Create
 				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResource1,
+					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					coreLanguage1,
 				) +
 					generateKnowledgeDocumentBasic(
-						knowledgeDocumentResource1,
-						knowledgeBaseResource1,
+						knowledgeDocumentResourceLabel1,
+						knowledgeBaseResourceLabel1,
 						title,
 						visible,
 						docPublished,
@@ -61,9 +61,9 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						autocomplete,
 					) +
 					generateKnowledgeDocumentVariation(
-						variationResource1,
-						knowledgeBaseResource1,
-						knowledgeDocumentResource1,
+						variationResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						knowledgeDocumentResourceLabel1,
 						published,
 						bodyBlockType,
 						contentBlockType1,
@@ -76,24 +76,24 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.type", bodyBlockType),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.type", contentBlockType1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.text", documentText),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.marks.#", fmt.Sprintf("%v", len(marks))),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.hyperlink", hyperlink),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.type", bodyBlockType),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.type", contentBlockType1),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.text", documentText),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.marks.#", fmt.Sprintf("%v", len(marks))),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.hyperlink", hyperlink),
 				),
 			},
 			{
 				// Update
 				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
-					knowledgeBaseResource1,
+					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					coreLanguage1,
 				) +
 					generateKnowledgeDocumentBasic(
-						knowledgeDocumentResource1,
-						knowledgeBaseResource1,
+						knowledgeDocumentResourceLabel1,
+						knowledgeBaseResourceLabel1,
 						title,
 						visible,
 						published,
@@ -101,9 +101,9 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						autocomplete,
 					) +
 					generateKnowledgeDocumentVariation(
-						variationResource1,
-						knowledgeBaseResource1,
-						knowledgeDocumentResource1,
+						variationResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						knowledgeDocumentResourceLabel1,
 						published,
 						bodyBlockType,
 						contentBlockType2,
@@ -115,15 +115,15 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						marks,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.type", bodyBlockType),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.type", contentBlockType2),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.image.0.url", imageUrl),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResource1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.image.0.hyperlink", hyperlink),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.type", bodyBlockType),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.type", contentBlockType2),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.image.0.url", imageUrl),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.image.0.hyperlink", hyperlink),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_document_variation." + variationResource1,
+				ResourceName:      "genesyscloud_knowledge_document_variation." + variationResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -132,7 +132,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentVariation(resourceName string, knowledgeBaseResourceName string, knowledgeDocumentResourceName string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
+func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResourceLabel string, knowledgeDocumentResourceLabel string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
 	variation := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document_variation" "%s" {
 			depends_on=[genesyscloud_knowledge_document.%s]
@@ -141,10 +141,10 @@ func generateKnowledgeDocumentVariation(resourceName string, knowledgeBaseResour
 			published = %v
 			%v
         }
-        `, resourceName,
-		knowledgeDocumentResourceName,
-		knowledgeBaseResourceName,
-		knowledgeDocumentResourceName,
+        `, resourceLabel,
+		knowledgeDocumentResourceLabel,
+		knowledgeBaseResourceLabel,
+		knowledgeDocumentResourceLabel,
 		published,
 		generateKnowledgeDocumentVariationBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks),
 	)
@@ -330,15 +330,15 @@ func generateAddressableEntityRef(versionId string) string {
 	return variationBody
 }
 
-func generateKnowledgeDocumentBasic(resourceName string, knowledgeBaseResourceName string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
+func generateKnowledgeDocumentBasic(resourceLabel string, knowledgeBaseResourceLabel string, title string, visible bool, published bool, phrase string, autocomplete bool) string {
 	document := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document" "%s" {
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
             published = %v
             %s
         }
-        `, resourceName,
-		knowledgeBaseResourceName,
+        `, resourceLabel,
+		knowledgeBaseResourceLabel,
 		published,
 		generateKnowledgeDocumentRequestBodyBasic(title, visible, phrase, autocomplete),
 	)

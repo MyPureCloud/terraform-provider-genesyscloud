@@ -41,9 +41,9 @@ func getAllAuthIdpAdfss(ctx context.Context, clientConfig *platformclientv2.Conf
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP ADFS error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP ADFS error: %s", err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "adfs"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "adfs"}
 	return resources, nil
 }
 
@@ -61,16 +61,16 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Reading idp adfs %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpAdfs(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		aDFS, resp, getErr := proxy.getIdpAdfs(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpAdfs(ctx, d, meta)
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP ADFS: %s", getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", aDFS.Name)
@@ -110,7 +110,7 @@ func updateIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Updating idp adfs")
 	resp, err := proxy.updateIdpAdfs(ctx, d.Id(), &idpAdfs)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IDP ADFS %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update IDP ADFS %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated idp adfs")
@@ -124,7 +124,7 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	resp, err := proxy.deleteIdpAdfs(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete idp adfs %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete idp adfs %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -135,9 +135,9 @@ func deleteIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP ADFS")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP ADFS: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting IDP ADFS: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP ADFS still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("IDP ADFS still exists"), resp))
 	})
 }
 

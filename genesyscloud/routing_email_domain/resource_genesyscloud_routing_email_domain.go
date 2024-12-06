@@ -25,7 +25,7 @@ func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclient
 
 	domains, resp, getErr := proxy.getAllRoutingEmailDomains(ctx)
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get routing email domains error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email domains error: %s", getErr), resp)
 	}
 
 	if domains == nil || len(*domains) == 0 {
@@ -33,7 +33,7 @@ func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclient
 	}
 
 	for _, domain := range *domains {
-		resources[*domain.Id] = &resourceExporter.ResourceMeta{Name: *domain.Id}
+		resources[*domain.Id] = &resourceExporter.ResourceMeta{BlockLabel: *domain.Id}
 	}
 	return resources, nil
 }
@@ -58,7 +58,7 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Creating routing email domain %s", domainID)
 	domain, resp, err := proxy.createRoutingEmailDomain(ctx, &sdkDomain)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create routing email domain %s error: %s", domainID, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create routing email domain %s error: %s", domainID, err), resp)
 	}
 
 	d.SetId(*domain.Id)
@@ -76,16 +76,16 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailDomainProxy(sdkConfig)
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading routing email domain %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		domain, resp, getErr := proxy.getRoutingEmailDomainById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing email domain %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "subdomain", domain.SubDomain)
@@ -118,7 +118,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	domainID := d.Get("domain_id").(string)
 
 	if !strings.Contains(mailFromDomain, domainID) || mailFromDomain == domainID {
-		return util.BuildDiagnosticError(resourceName, "domain_id must be a subdomain of mail_from_domain", fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
+		return util.BuildDiagnosticError(ResourceType, "domain_id must be a subdomain of mail_from_domain", fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
 	}
 
 	log.Printf("Updating routing email domain %s", d.Id())
@@ -132,7 +132,7 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 		},
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update routing email domain %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update routing email domain %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated routing email domain %s", d.Id())
@@ -146,7 +146,7 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Deleting routing email domain %s", d.Id())
 	resp, err := proxy.deleteRoutingEmailDomain(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing email domain %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete routing email domain %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 90*time.Second, func() *retry.RetryError {
@@ -156,14 +156,14 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 				log.Printf("Deleted Routing email domain %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Routing email domain %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Routing email domain %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Routing email domain %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Routing email domain %s still exists", d.Id()), resp))
 	})
 }
 
 func GenerateRoutingEmailDomainResource(
-	resourceID string,
+	resourceLabel string,
 	domainID string,
 	subdomain string,
 	fromDomain string) string {
@@ -172,5 +172,5 @@ func GenerateRoutingEmailDomainResource(
 		subdomain = %s
         mail_from_domain = %s
 	}
-	`, resourceID, domainID, subdomain, fromDomain)
+	`, resourceLabel, domainID, subdomain, fromDomain)
 }

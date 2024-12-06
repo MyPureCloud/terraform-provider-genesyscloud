@@ -31,11 +31,11 @@ func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m inter
 		const pageNum = 1
 		roles, proxyResponse, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting role %s | error: %s", name, getErr), proxyResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting role %s | error: %s", name, getErr), proxyResponse))
 		}
 
 		if roles.Entities == nil || len(*roles.Entities) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No authorization roles found with name %s", name), proxyResponse))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No authorization roles found with name %s", name), proxyResponse))
 		}
 		role := (*roles.Entities)[0]
 		d.SetId(*role.Id)

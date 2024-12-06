@@ -41,10 +41,10 @@ func getAllAuthIdpGenerics(ctx context.Context, clientConfig *platformclientv2.C
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP Generic error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP Generic error: %s", getErr), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "generic"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "generic"}
 	return resources, nil
 }
 
@@ -62,16 +62,16 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	log.Printf("Reading idp generic %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGeneric(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		genericSAML, resp, getErr := proxy.getIdpGeneric(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpGeneric(ctx, d, meta)
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Generic: %s", getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", genericSAML.Name)
@@ -117,7 +117,7 @@ func updateIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	_, resp, err := proxy.updateIdpGeneric(ctx, d.Id(), &idpGeneric)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IDP Generic %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update IDP Generic %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated idp generic")
@@ -131,7 +131,7 @@ func deleteIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	resp, err := proxy.deleteIdpGeneric(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IDP Generic %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete IDP Generic %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
@@ -143,9 +143,9 @@ func deleteIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interfac
 				log.Printf("Deleted IDP Generic")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP Generic: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting IDP Generic: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP Generic still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("IDP Generic still exists"), resp))
 	})
 }
 

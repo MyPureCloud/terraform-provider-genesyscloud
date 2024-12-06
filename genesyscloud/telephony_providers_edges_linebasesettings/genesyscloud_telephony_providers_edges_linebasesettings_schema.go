@@ -1,12 +1,13 @@
 package telephony_providers_edges_linebasesettings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_telephony_providers_edges_linebasesettings"
+const ResourceType = "genesyscloud_telephony_providers_edges_linebasesettings"
 
 func DataSourceLineBaseSettings() *schema.Resource {
 	return &schema.Resource{

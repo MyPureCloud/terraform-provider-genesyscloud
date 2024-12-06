@@ -52,20 +52,20 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 
 	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get architect datatables error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect datatables error: %s", err), resp)
 	}
 
 	for _, tableMeta := range *tables {
 		rows, resp, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
 
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get architect Datatable Rows error: %s", err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect Datatable Rows error: %s", err), resp)
 		}
 
 		for _, row := range *rows {
 			if keyVal, ok := row["key"]; ok {
 				keyStr := keyVal.(string) // Keys must be strings
-				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{Name: *tableMeta.Name + "_" + keyStr}
+				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{BlockLabel: *tableMeta.Name + "_" + keyStr}
 			}
 		}
 	}
@@ -91,7 +91,7 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 
 	_, resp, err := archProxy.createArchitectDatatableRow(ctx, tableId, &rowMap)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Datatable Row %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	d.SetId(rowId)
@@ -103,12 +103,12 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tableId, keyStr := splitDatatableRowId(d.Id())
 	if keyStr == "" {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableRowProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatableRow(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Datatable Row %s", d.Id())
 
@@ -116,9 +116,9 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		row, resp, getErr := archProxy.getArchitectDatatableRow(ctx, tableId, keyStr)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		d.Set("datatable_id", tableId)
@@ -155,7 +155,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 
 	_, resp, err := archProxy.updateArchitectDatatableRow(ctx, tableId, keyStr, &rowMap)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Datatable Row %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated Datatable Row %s", d.Id())
@@ -165,7 +165,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tableId, keyStr := splitDatatableRowId(d.Id())
 	if keyStr == "" {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -179,7 +179,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 			log.Printf("Datatable row already deleted %s", d.Id())
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Datatable Row %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -190,8 +190,8 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 				log.Printf("Deleted architect_datatable row %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting architect_datatable row %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting architect_datatable row %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Datatable row %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Datatable row %s still exists", d.Id()), resp))
 	})
 }
