@@ -7,8 +7,10 @@ import (
 	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -280,8 +282,25 @@ func getAllTrunkBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all trunk base settings error: %s", getErr), resp)
 	}
 
+	defaultTbsNames := []string{
+		"Cloud Proxy Tie TrunkBase for EdgeGroup",
+		"Direct Tie TrunkBase for EdgeGroup",
+		"Genesys Cloud - CDM SIP Phone Trunk",
+		"Genesys Cloud - CDM WebRTC Phone Trunk",
+		"Indirect Tie TrunkBase for EdgeGroup",
+		"PureCloud Voice - AWS",
+		"Tie TrunkBase for EdgeGroup",
+	}
+
 	for _, tbs := range *trunkBaseSettings {
 		resources[*tbs.Id] = &resourceExporter.ResourceMeta{BlockLabel: *tbs.Name}
+		// When exporting trunk base settings, they must automatically be exported as data source
+		// Managed sites are added to the ExportAsData []string in resource_exporter
+		if tfexporter_state.IsExporterActive() {
+			if lists.ContainsAnySubStringSlice(*tbs.Name, defaultTbsNames) {
+				resourceExporter.AddDataSourceItems(ResourceType, *tbs.Name)
+			}
+		}
 	}
 
 	return resources, nil
