@@ -22,8 +22,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-const timeFormat = "2006-01-02T15:04:05.000000"
-
 func getAllArchitectSchedules(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getArchitectSchedulesProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -57,6 +55,10 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	schedStart, err := time.Parse(timeFormat, start)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse date %s", start), err)
+	}
+
+	if err := verifyDateTimeIsWeekday(schedStart); err != nil {
+		return util.BuildDiagnosticError(ResourceType, err.Error(), err)
 	}
 
 	schedEnd, err := time.Parse(timeFormat, end)
@@ -159,6 +161,10 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to parse date %s: %s", start, err)
 	}
 
+	if err := verifyDateTimeIsWeekday(schedStart); err != nil {
+		return util.BuildDiagnosticError(ResourceType, err.Error(), err)
+	}
+
 	schedEnd, err := time.Parse(timeFormat, end)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", end, err)
@@ -238,23 +244,4 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Schedule %s still exists", d.Id()), proxyGetResponse))
 	})
-}
-
-func GenerateArchitectSchedulesResource(
-	schedResourceLabel string,
-	name string,
-	divisionId string,
-	description string,
-	start string,
-	end string,
-	rrule string) string {
-	return fmt.Sprintf(`resource "genesyscloud_architect_schedules" "%s" {
-		name = "%s"
-		division_id = %s
-		description = "%s"
-		start = "%s"
-		end = "%s"
-		rrule = "%s"
-	}
-	`, schedResourceLabel, name, divisionId, description, start, end, rrule)
 }
