@@ -49,7 +49,7 @@ func ResourceArchitectSchedules() *schema.Resource {
 				Optional:    true,
 			},
 			"start": {
-				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000. Start date cannot be a Saturday or Sunday.",
+				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000. Cannot be a Saturday or Sunday.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validators.ValidateLocalDateTimes,
