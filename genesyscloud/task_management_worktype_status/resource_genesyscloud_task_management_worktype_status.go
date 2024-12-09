@@ -134,7 +134,7 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktypeStatus(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktypeStatus(), constants.ConsistencyChecks(), ResourceType)
 	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
 
 	log.Printf("Reading task management worktype %s status %s", worktypeId, statusId)

@@ -74,7 +74,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 

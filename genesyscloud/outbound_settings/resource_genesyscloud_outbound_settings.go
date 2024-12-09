@@ -52,7 +52,7 @@ func createOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 	maxLineUtilization := d.Get("max_line_utilization").(float64)

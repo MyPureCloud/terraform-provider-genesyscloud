@@ -69,7 +69,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Responsemanagement Response %s", d.Id())
 

@@ -51,6 +51,7 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	for _, userPrompt := range *userPrompts {
 		resources[*userPrompt.Id] = &resourceExporter.ResourceMeta{BlockLabel: *userPrompt.Name}
 	}
+
 	return resources, nil
 }
 
@@ -92,7 +93,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading User Prompt %s", d.Id())
 

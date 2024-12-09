@@ -44,7 +44,7 @@ func createOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, 
 func readOrgauthorizationPairing(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgauthorizationPairingProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrgauthorizationPairing(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrgauthorizationPairing(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Orgauthorization Pairing %s", d.Id())
 

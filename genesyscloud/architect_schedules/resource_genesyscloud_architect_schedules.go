@@ -100,7 +100,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectSchedulesProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectSchedules(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading schedule %s", d.Id())
 

@@ -185,7 +185,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.DefaultConsistencyChecks, resourceType)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Messaging Campaign %s", d.Id())
 

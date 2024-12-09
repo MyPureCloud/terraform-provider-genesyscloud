@@ -39,7 +39,7 @@ func getAllOrganizationAuthenticationSettings(ctx context.Context, clientConfig 
 		}
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s resource due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "authentication_settings"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: ResourceType}
 	return resources, nil
 }
 
@@ -54,7 +54,7 @@ func createOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOrgAuthSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOrganizationAuthenticationSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading organization authentication settings %s", d.Id())
 

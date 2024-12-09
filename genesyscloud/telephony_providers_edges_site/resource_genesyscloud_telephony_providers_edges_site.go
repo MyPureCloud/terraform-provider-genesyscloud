@@ -148,7 +148,7 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := GetSiteProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSite(), constants.ConsistencyChecks(), ResourceType)
 	utilE164 := util.NewUtilE164Service()
 
 	log.Printf("Reading site %s", d.Id())

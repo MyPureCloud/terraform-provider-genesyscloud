@@ -48,7 +48,7 @@ func createRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta 
 func readRoutingUtilization(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingUtilizationProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilization(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingUtilization(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Routing Utilization")
 

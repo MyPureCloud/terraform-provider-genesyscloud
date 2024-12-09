@@ -26,19 +26,23 @@ The resource_genesyscloud_external_contacts_organization.go contains all of the 
 
 // getAllAuthExternalContactsOrganization retrieves all of the external contacts organization via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthExternalContactsOrganizations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newExternalContactsOrganizationProxy(clientConfig)
-	resources := make(resourceExporter.ResourceIDMetaMap)
+	log.Println(ResourceType + " resources cannot be exported due to an API limitation.")
+	return nil, nil
 
-	externalOrganizations, response, err := proxy.getAllExternalContactsOrganization(ctx, "")
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
-	}
+	// TODO uncomment once DEVTOOLING-977 has been resolved
+	//proxy := newExternalContactsOrganizationProxy(clientConfig)
+	//resources := make(resourceExporter.ResourceIDMetaMap)
 
-	for _, externalOrganization := range *externalOrganizations {
-		resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalOrganization.Id}
-	}
-
-	return resources, nil
+	//externalOrganizations, response, err := proxy.getAllExternalContactsOrganization(ctx, "")
+	//if err != nil {
+	//	return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external organization error: %s", err), response)
+	//}
+	//
+	//for _, externalOrganization := range *externalOrganizations {
+	//	resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalOrganization.Id}
+	//}
+	//
+	//return resources, nil
 }
 
 // createExternalContactsOrganization is used by the external_contacts_organization resource to create Genesys cloud external contacts organization
@@ -48,7 +52,7 @@ func createExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 
 	externalContactsOrganization, err := getExternalContactsOrganizationFromResourceData(d)
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to build external organization error:"), err)
+		return util.BuildDiagnosticError(ResourceType, "failed to build external organization request body", err)
 	}
 
 	log.Printf("Creating external contacts organization %s", *externalContactsOrganization.Name)
@@ -100,12 +104,12 @@ func readExternalContactsOrganization(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("failed to flatten Data Schema for resource %s | error: %s", d.Id(), err))
 		}
-		d.Set("schema", dataSchema)
+		_ = d.Set("schema", dataSchema)
 		cf, err := flattenCustomFields(externalOrganization.CustomFields)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("failed to flatten Custom Schema for resource %s | error: %s", d.Id(), err))
 		}
-		d.Set("custom_fields", cf)
+		_ = d.Set("custom_fields", cf)
 
 		log.Printf("Read external contacts organization %s %s", d.Id(), *externalOrganization.Name)
 		return cc.CheckState(d)

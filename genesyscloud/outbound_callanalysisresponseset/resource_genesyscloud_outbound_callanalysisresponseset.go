@@ -59,7 +59,7 @@ func createOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resour
 func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCallanalysisresponsesetProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallanalysisresponseset(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallanalysisresponseset(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Call Analysis Response Set %s", d.Id())
 

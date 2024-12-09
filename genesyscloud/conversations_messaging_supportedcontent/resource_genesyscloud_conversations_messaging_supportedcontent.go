@@ -67,7 +67,7 @@ func readSupportedContent(ctx context.Context, d *schema.ResourceData, meta inte
 
 	log.Printf("Reading supported content %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSupportedContent(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSupportedContent(), constants.ConsistencyChecks(), ResourceType)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		supportedContent, resp, getErr := proxy.getSupportedContentById(ctx, d.Id())
 		if getErr != nil {

@@ -133,7 +133,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading phone base settings %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

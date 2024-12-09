@@ -182,7 +182,7 @@ func createOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	if resetPeriod != "" {
 		sdkAttemptLimits.ResetPeriod = &resetPeriod
 	}
-	if recallEntries != nil && len(recallEntries) > 0 {
+	if len(recallEntries) > 0 {
 		sdkAttemptLimits.RecallEntries = buildSdkOutboundAttemptLimitRecallEntryMap(recallEntries)
 	}
 
@@ -226,7 +226,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 	if resetPeriod != "" {
 		sdkAttemptLimits.ResetPeriod = &resetPeriod
 	}
-	if recallEntries != nil && len(recallEntries) > 0 {
+	if len(recallEntries) > 0 {
 		sdkAttemptLimits.RecallEntries = buildSdkOutboundAttemptLimitRecallEntryMap(recallEntries)
 	}
 
@@ -238,7 +238,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read outbound attempt limit %s error: %s", d.Id(), getErr), resp)
 		}
 		sdkAttemptLimits.Version = outboundAttemptLimit.Version
-		outboundAttemptLimit, resp, updateErr := outboundApi.PutOutboundAttemptlimit(d.Id(), sdkAttemptLimits)
+		_, resp, updateErr := outboundApi.PutOutboundAttemptlimit(d.Id(), sdkAttemptLimits)
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update outbound attempt limit %s error: %s", *sdkAttemptLimits.Name, updateErr), resp)
 		}
@@ -255,7 +255,7 @@ func updateOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, met
 func readOutboundAttemptLimit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundAttemptLimit(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Attempt Limit %s", d.Id())
 
@@ -396,7 +396,7 @@ func GenerateAttemptLimitResource(
 		resetPeriod = fmt.Sprintf(`reset_period = "%s"`, resetPeriod)
 	}
 	return fmt.Sprintf(`
-resource "%s" "%s" {
+resource "genesyscloud_outbound_attempt_limit" "%s" {
 	name = "%s"
 	%s
 	%s
@@ -404,5 +404,5 @@ resource "%s" "%s" {
 	%s
 	%s
 }
-	`, ResourceType, resourceLabel, name, maxAttemptsPerContact, maxAttemptsPerNumber, timeZoneId, resetPeriod, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, maxAttemptsPerContact, maxAttemptsPerNumber, timeZoneId, resetPeriod, strings.Join(nestedBlocks, "\n"))
 }

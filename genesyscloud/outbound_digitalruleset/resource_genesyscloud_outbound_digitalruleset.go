@@ -76,7 +76,7 @@ func readOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, met
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDigitalruleset(), constants.DefaultConsistencyChecks, ResourceType)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDigitalruleset(), constants.ConsistencyChecks(), ResourceType)
 
 		resourcedata.SetNillableValue(d, "name", digitalRuleSet.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", digitalRuleSet.ContactList)

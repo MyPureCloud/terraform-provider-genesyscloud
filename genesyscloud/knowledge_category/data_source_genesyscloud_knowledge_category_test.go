@@ -1,7 +1,8 @@
-package genesyscloud
+package knowledge_category
 
 import (
 	"fmt"
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -10,17 +11,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
+func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 	var (
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
-		labelResourceLabel1         = "test-label1"
-		labelName                   = "Terraform Test Label 1-" + uuid.NewString()
-		labelColor                  = "#ffffff"
+		categoryResourceLabel1      = "test-category1"
+		categoryName                = "Terraform Test Category 1-" + uuid.NewString()
+		categoryDescription         = "category description"
 		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
 		knowledgeBaseDescription1   = "test-knowledgebase-description1"
 		knowledgeBaseCoreLanguage1  = "en-US"
 
-		labelDataSourceLabel = "test-label-ds"
+		categoryDataSourceLabel = "test-category-ds"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -29,25 +30,25 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateKnowledgeKnowledgebaseResource(
+				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
 					knowledgeBaseCoreLanguage1,
-				) + generateKnowledgeLabelResource(
-					labelResourceLabel1,
+				) + generateKnowledgeCategoryResource(
+					categoryResourceLabel1,
 					knowledgeBaseResourceLabel1,
-					labelName,
-					labelColor,
-				) + generateKnowledgeLabelDataSource(
-					labelDataSourceLabel,
-					labelName,
+					categoryName,
+					categoryDescription,
+				) + generateKnowledgeCategoryDataSource(
+					categoryDataSourceLabel,
+					categoryName,
 					knowledgeBaseName1,
-					"genesyscloud_knowledge_label."+labelResourceLabel1,
+					"genesyscloud_knowledge_category."+categoryResourceLabel1+", genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_label."+labelDataSourceLabel,
-						"id", "genesyscloud_knowledge_label."+labelResourceLabel1, "id",
+					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_category."+categoryDataSourceLabel,
+						"id", "genesyscloud_knowledge_category."+categoryResourceLabel1, "id",
 					),
 				),
 			},
@@ -55,7 +56,7 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeLabelDataSource(
+func generateKnowledgeCategoryDataSource(
 	resourceLabel string,
 	name string,
 	knowledgeBaseName string,
@@ -63,9 +64,9 @@ func generateKnowledgeLabelDataSource(
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOn string,
 ) string {
-	return fmt.Sprintf(`data "genesyscloud_knowledge_label" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_knowledge_category" "%s" {
 		name = "%s"
-		knowledge_base_name = "%s"
+        knowledge_base_name = "%s"
         depends_on=[%s]
 	}
 	`, resourceLabel, name, knowledgeBaseName, dependsOn)

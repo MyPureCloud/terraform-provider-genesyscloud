@@ -140,7 +140,7 @@ func deleteEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 func readEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	edgeGroupProxy := getEdgeGroupProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEdgeGroup(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading edge group %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

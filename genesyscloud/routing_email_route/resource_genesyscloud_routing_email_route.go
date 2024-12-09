@@ -93,7 +93,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailRouteProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute(), constants.ConsistencyChecks(), ResourceType)
 	domainId := d.Get("domain_id").(string)
 
 	log.Printf("Reading routing email route %s", d.Id())
