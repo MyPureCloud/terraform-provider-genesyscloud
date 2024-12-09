@@ -512,77 +512,74 @@ func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edg
 }
 
 func siteNumberPlansExporterResolver(configMap map[string]interface{}, exporter map[string]*resource_exporter.ResourceExporter, _ string) error {
-	var (
-		numberPlans = configMap["number_plans"].([]interface{})
-	)
-	if numberPlans == nil {
-		return nil
-	}
 
-	defaultNumberPlans := []*platformclientv2.Numberplan{
-		{
-			Name:             platformclientv2.String("Suicide Prevention"),
-			MatchType:        platformclientv2.String("regex"),
-			Match:            platformclientv2.String("^988$"),
-			NormalizedFormat: platformclientv2.String("+18002738255"),
-			Classification:   platformclientv2.String("Suicide Prevention"),
-		},
-		{
-			Name:           platformclientv2.String("National"),
-			MatchType:      platformclientv2.String("intraCountryCode"),
-			Classification: platformclientv2.String("National"),
-		},
-		{
-			Name:           platformclientv2.String("Emergency"),
-			MatchType:      platformclientv2.String("numberList"),
-			Match:          platformclientv2.String("112"),
-			Classification: platformclientv2.String("Emergency"),
-		},
-		{
-			Name:             platformclientv2.String("Network"),
-			MatchType:        platformclientv2.String("regex"),
-			Match:            platformclientv2.String("^([^@\\:]+@)([^@ ]+)?$"),
-			NormalizedFormat: platformclientv2.String("sip:$1$2"),
-			Classification:   platformclientv2.String("Network"),
-		},
-	}
+	if numberPlans, ok := configMap["number_plans"].([]interface{}); ok {
 
-	// Check to ensure all of the default classification types are exported
-	for _, numberPlan := range numberPlans {
-		numberPlanMap := numberPlan.(map[string]interface{})
-		classificationType := numberPlanMap["classification"].(string)
-		for _, defaultNumberPlan := range defaultNumberPlans {
-			if *defaultNumberPlan.Classification == classificationType {
-				defaultNumberPlans = lists.Remove(defaultNumberPlans, defaultNumberPlan)
-			}
+		defaultNumberPlans := []*platformclientv2.Numberplan{
+			{
+				Name:             platformclientv2.String("Suicide Prevention"),
+				MatchType:        platformclientv2.String("regex"),
+				Match:            platformclientv2.String("^988$"),
+				NormalizedFormat: platformclientv2.String("+18002738255"),
+				Classification:   platformclientv2.String("Suicide Prevention"),
+			},
+			{
+				Name:           platformclientv2.String("National"),
+				MatchType:      platformclientv2.String("intraCountryCode"),
+				Classification: platformclientv2.String("National"),
+			},
+			{
+				Name:           platformclientv2.String("Emergency"),
+				MatchType:      platformclientv2.String("numberList"),
+				Match:          platformclientv2.String("112"),
+				Classification: platformclientv2.String("Emergency"),
+			},
+			{
+				Name:             platformclientv2.String("Network"),
+				MatchType:        platformclientv2.String("regex"),
+				Match:            platformclientv2.String("^([^@\\:]+@)([^@ ]+)?$"),
+				NormalizedFormat: platformclientv2.String("sip:$1$2"),
+				Classification:   platformclientv2.String("Network"),
+			},
 		}
-	}
 
-	// If not, we need to add them to the list of number plans, otherwise reapplying to a brand new org
-	// can cause issues due to the Default Outbound Route's ClassificationTypes config that is created
-	// with every new Site resource.
-	// This is a hacky way to do this, but it works for now.
-	if len(defaultNumberPlans) > 0 {
-		for _, defaultNumberPlan := range defaultNumberPlans {
-			for _, numberPlan := range numberPlans {
-				numberPlanMap := numberPlan.(map[string]interface{})
-				if numberPlanMap["name"] == *defaultNumberPlan.Name {
-					// Account for an edge case where the number plan has the same name as the
-					// one of the default number plans, but the classification type is different.
-					// This is to ensure that the configured number plans are not overwritten, but
-					// the default number plans are always available, we will rename the default number plan
-					if numberPlanMap["classification"] != *defaultNumberPlan.Classification {
-						numberPlanMap["name"] = fmt.Sprintf("%s (Default)", numberPlanMap["name"])
-						log.Printf("Renaming default number plan %s to %s", numberPlanMap["name"], fmt.Sprintf("%s (Renamed)", numberPlanMap["name"]))
-					}
+		// Check to ensure all of the default classification types are exported
+		for _, numberPlan := range numberPlans {
+			numberPlanMap := numberPlan.(map[string]interface{})
+			classificationType := numberPlanMap["classification"].(string)
+			for _, defaultNumberPlan := range defaultNumberPlans {
+				if *defaultNumberPlan.Classification == classificationType {
+					defaultNumberPlans = lists.Remove(defaultNumberPlans, defaultNumberPlan)
 				}
 			}
-			numberPlans = append(numberPlans, flattenNumberPlan(defaultNumberPlan))
 		}
+
+		// If not, we need to add them to the list of number plans, otherwise reapplying to a brand new org
+		// can cause issues due to the Default Outbound Route's ClassificationTypes config that is created
+		// with every new Site resource.
+		// This is a hacky way to do this, but it works for now.
+		if len(defaultNumberPlans) > 0 {
+			for _, defaultNumberPlan := range defaultNumberPlans {
+				for _, numberPlan := range numberPlans {
+					numberPlanMap := numberPlan.(map[string]interface{})
+					if numberPlanMap["name"] == *defaultNumberPlan.Name {
+						// Account for an edge case where the number plan has the same name as the
+						// one of the default number plans, but the classification type is different.
+						// This is to ensure that the configured number plans are not overwritten, but
+						// the default number plans are always available, we will rename the default number plan
+						if numberPlanMap["classification"] != *defaultNumberPlan.Classification {
+							newDefaultName := fmt.Sprintf("%s (Default)", *defaultNumberPlan.Name)
+							log.Printf("Renaming default number plan %s to %s", *defaultNumberPlan.Name, newDefaultName)
+							*defaultNumberPlan.Name = newDefaultName
+						}
+					}
+				}
+				numberPlans = append(numberPlans, flattenNumberPlan(defaultNumberPlan))
+			}
+		}
+
+		configMap["number_plans"] = numberPlans
 	}
-
-	configMap["number_plans"] = numberPlans
-
 	return nil
 }
 
