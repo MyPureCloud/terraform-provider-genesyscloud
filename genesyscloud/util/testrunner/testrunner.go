@@ -107,3 +107,7 @@ func GenerateTestSteps(testType string, resourceType string, testCaseName string
 
 	return testSteps
 }
+
+func GenerateFullPathId(resourceType string, resourceLabel string) string {
+	return resourceType + "." + resourceLabel + "." + "id"
+}
