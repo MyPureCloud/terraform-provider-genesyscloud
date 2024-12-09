@@ -69,7 +69,20 @@ var (
 			},
 		},
 	}
-
+	subTypeSettingsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"media_type": {
+				Description: "The name of the social media company",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"enable_auto_answer": {
+				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+		},
+	}
 	queueMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
@@ -87,6 +100,12 @@ var (
 				Description: "Auto Dial Delay Seconds.",
 				Type:        schema.TypeInt,
 				Optional:    true,
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
 			},
 			"enable_auto_answer": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
