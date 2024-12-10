@@ -529,9 +529,13 @@ func siteNumberPlansExporterResolver(configMap map[string]interface{}, exporter 
 				Classification: platformclientv2.String("National"),
 			},
 			{
-				Name:           platformclientv2.String("Emergency"),
-				MatchType:      platformclientv2.String("numberList"),
-				Match:          platformclientv2.String("112"),
+				Name:      platformclientv2.String("Emergency"),
+				MatchType: platformclientv2.String("numberList"),
+				Numbers: &[]platformclientv2.Number{
+					{
+						Start: platformclientv2.String("112"),
+					},
+				},
 				Classification: platformclientv2.String("Emergency"),
 			},
 			{
