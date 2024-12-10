@@ -260,7 +260,7 @@ func testVerifyGrammarLanguageDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_architect_grammar_language" {
 			continue
 		}
-		grammarId, languageCode := splitLanguageId(rs.Primary.ID)
+		grammarId, languageCode := splitGrammarLanguageId(rs.Primary.ID)
 		grammar, resp, err := architectAPI.GetArchitectGrammarLanguage(grammarId, languageCode)
 		if grammar != nil {
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)
