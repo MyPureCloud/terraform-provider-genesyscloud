@@ -244,7 +244,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_architect_datatable_row", architect_datatable_row.ArchitectDatatableRowExporter())
 	RegisterExporter("genesyscloud_architect_emergencygroup", emergencyGroup.ArchitectEmergencyGroupExporter())
 	RegisterExporter("genesyscloud_architect_ivr", archIvr.ArchitectIvrExporter())
-	RegisterExporter("genesyscloud_architect_schedules", architectSchedules.ArchitectSchedulesExporter())
+	RegisterExporter(architectSchedules.ResourceType, architectSchedules.ArchitectSchedulesExporter())
 	RegisterExporter("genesyscloud_architect_schedulegroups", architectSchedulegroups.ArchitectSchedulegroupsExporter())
 	RegisterExporter("genesyscloud_architect_user_prompt", userPrompt.ArchitectUserPromptExporter())
 	RegisterExporter("genesyscloud_auth_division", authDivision.AuthDivisionExporter())
