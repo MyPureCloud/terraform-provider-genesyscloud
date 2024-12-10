@@ -212,13 +212,26 @@ func DownloadExportFile(directory, fileName, uri string) error {
 		return err
 	}
 
-	defer resp.Body.Close()
+	log.Println("TODO: see if we can get the file name from this: ")
+	log.Println(resp)
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Println("failed to close response body")
+		}
+	}(resp.Body)
 
 	out, err := os.Create(path.Join(directory, fileName))
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func(out *os.File) {
+		err := out.Close()
+		if err != nil {
+			log.Println("failed to close file")
+		}
+	}(out)
 
 	_, err = io.Copy(out, resp.Body)
 	return err

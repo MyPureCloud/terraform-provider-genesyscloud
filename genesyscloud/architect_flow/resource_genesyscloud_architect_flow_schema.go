@@ -2,6 +2,7 @@ package architect_flow
 
 import (
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -24,16 +25,27 @@ func SetRegistrar(l registrar.Registrar) {
 }
 
 func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
+
+	exporter := &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
-		UnResolvableAttributes: map[string]*schema.Schema{
-			"filepath": ResourceArchitectFlow().Schema["filepath"],
-		},
-		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
-			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
-		},
 	}
+
+	if !feature_toggles.ArchyExportToggleExists() {
+		exporter.UnResolvableAttributes = map[string]*schema.Schema{
+			"filepath": ResourceArchitectFlow().Schema["filepath"],
+		}
+		exporter.CustomFlowResolver = map[string]*resourceExporter.CustomFlowResolver{
+			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
+		}
+	} else {
+		exporter.CustomFileWriter = resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: architectFlowResolver,
+			SubDirectory:              "architect_flows",
+		}
+	}
+
+	return exporter
 }
 
 func ResourceArchitectFlow() *schema.Resource {

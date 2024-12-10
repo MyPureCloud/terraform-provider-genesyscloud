@@ -2181,6 +2181,57 @@ create_duration = "100s"
 	})
 }
 
+func TestAccResourceTfExportArchyExport(t *testing.T) {
+	var (
+		directory           = "../.terraform" + uuid.NewString()
+		exportResourceLabel = "test-export"
+
+		flowResourceLabel = "flow"
+		flowNameAttr      = "a test flow " + uuid.NewString()
+		filePath          = "./test_flow.yml"
+	)
+
+	fullyQualifiedPath, err := testrunner.NormalizePath(filePath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	defer os.RemoveAll(directory)
+
+	exportConfig := fmt.Sprintf(`
+resource "genesyscloud_tf_export" "%s" {
+    include_state_file = true
+	directory          = "%s"
+	include_filter_resources = ["genesyscloud_flow::%s"]
+}
+`, exportResourceLabel, directory, flowNameAttr)
+
+	log.Println(exportConfig)
+
+	flowConfig := fmt.Sprintf(`
+resource "genesyscloud_flow" "%s" {
+	filepath          = "%s"
+	file_content_hash = filesha256("%s")
+	substitutions = {
+		name = "%s"
+	}
+}
+`, flowResourceLabel, filePath, fullyQualifiedPath, flowNameAttr)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: flowConfig,
+			},
+			{
+				Config: flowConfig + exportConfig,
+			},
+		},
+	})
+}
+
 func testUserExport(filePath, resourceType, resourceLabel string, expectedUser *UserExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)

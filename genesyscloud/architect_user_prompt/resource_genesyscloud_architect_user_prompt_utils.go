@@ -172,7 +172,7 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	)
 }
 
-func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) error {
+func architectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) error {
 	fullPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err

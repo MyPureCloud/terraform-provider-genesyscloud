@@ -2,6 +2,8 @@ module terraform-provider-genesyscloud
 
 go 1.23.0
 
+replace github.com/mypurecloud/platform-client-sdk-go/v146 => ../platform-client-sdk-common/output/purecloudgo
+
 require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
