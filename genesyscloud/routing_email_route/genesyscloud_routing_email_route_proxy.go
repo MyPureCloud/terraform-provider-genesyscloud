@@ -98,7 +98,7 @@ func getAllRoutingEmailRouteByDomainIdFn(ctx context.Context, p *routingEmailRou
 		var allDomainRoutes []platformclientv2.Inboundroute
 
 		for pageNum := 1; pageNum <= *domains.PageCount; pageNum++ {
-			routes, resp, err := p.routingApi.GetRoutingEmailDomainRoutes(*domain.Id, 100, pageNum, name)
+			routes, resp, err := p.routingApi.GetRoutingEmailDomainRoutes(*domain.Id, 100, pageNum, name, nil)
 			if err != nil {
 				apiResponse = resp
 				return nil, apiResponse, fmt.Errorf("Failed to get routing email route: %s", err)
@@ -187,7 +187,7 @@ func deleteRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 
 // getRoutingEmailRouteByIdFn is an implementation of the function to get a Genesys Cloud routing email route by Id
 func getRoutingEmailRouteByIdFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
-	inboundRoute, resp, err := p.routingApi.GetRoutingEmailDomainRoute(domainId, id)
+	inboundRoute, resp, err := p.routingApi.GetRoutingEmailDomainRoute(domainId, id, nil)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve routing email route by id %s: %s", id, err)
 	}

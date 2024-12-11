@@ -45,7 +45,7 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 func architectFlowResolver(flowId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) error {
 	var (
 		sdkConfig = meta.(*provider.ProviderMeta).ClientConfig
-		proxy     = getArchitectFlowProxy(sdkConfig)
+		proxy     = newArchitectFlowProxy(sdkConfig)
 	)
 
 	downloadUrl, err := proxy.generateDownloadUrl(flowId)

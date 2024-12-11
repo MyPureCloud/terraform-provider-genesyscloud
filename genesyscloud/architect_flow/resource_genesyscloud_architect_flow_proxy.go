@@ -274,7 +274,7 @@ func getExportJobStatusFn(a *architectFlowProxy, jobId string) (*platformclientv
 func pollExportJobForDownloadUrlFn(a *architectFlowProxy, jobId string) (string, error) {
 	for {
 		log.Printf("Sleeping for 3 seconds before polling job.")
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 
 		exportJob, err := a.getExportJob(jobId)
 		if err != nil {

@@ -105,7 +105,7 @@ func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactli
 	var allContactlistfilters []platformclientv2.Contactlistfilter
 	const pageSize = 100
 
-	contactListFilters, resp, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, 1, true, "", name, "", "", "")
+	contactListFilters, resp, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, 1, true, "", name, "", "", "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get page of contact list filter: %v", err)
 	}
@@ -119,7 +119,7 @@ func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactli
 	}
 
 	for pageNum := 2; pageNum <= *contactListFilters.PageCount; pageNum++ {
-		contactListFilters, resp, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, pageNum, true, "", name, "", "", "")
+		contactListFilters, resp, err := p.outboundApi.GetOutboundContactlistfilters(pageSize, pageNum, true, "", name, "", "", "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page of contact list filter: %v", err)
 		}

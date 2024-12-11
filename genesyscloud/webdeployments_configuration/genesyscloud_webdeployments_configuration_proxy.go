@@ -95,7 +95,7 @@ func (p *webDeploymentsConfigurationProxy) updateWebdeploymentsConfigurationVers
 }
 
 func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error) {
-	configurations, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurations(false)
+	configurations, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurations(fmt.Sprintf("%v", 100), "", "", false)
 
 	if getErr != nil {
 		return nil, resp, fmt.Errorf("Failed to get web deployment configurations: %v", getErr)

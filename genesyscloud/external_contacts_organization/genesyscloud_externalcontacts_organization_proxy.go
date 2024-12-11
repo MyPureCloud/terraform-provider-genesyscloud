@@ -106,7 +106,7 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 	var allExternalOrganizations []platformclientv2.Externalorganization
 	const pageSize = 100
 
-	externalOrganizations, response, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, 1, query, nil, "", nil, true)
+	externalOrganizations, response, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, 1, query, nil, "", nil, true, nil)
 	if err != nil {
 		return nil, response, fmt.Errorf("failed to get external organization: %v", err)
 	}
@@ -116,7 +116,7 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 	allExternalOrganizations = append(allExternalOrganizations, *externalOrganizations.Entities...)
 
 	for pageNum := 2; pageNum <= *externalOrganizations.PageCount; pageNum++ {
-		externalOrganizations, response, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, pageNum, query, nil, "", nil, true)
+		externalOrganizations, response, err := p.externalContactsApi.GetExternalcontactsOrganizations(pageSize, pageNum, query, nil, "", nil, true, nil)
 		if err != nil {
 			return nil, response, fmt.Errorf("failed to get external organization: %v", err)
 		}

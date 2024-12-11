@@ -141,7 +141,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	var allQueues []platformclientv2.Queue
 	const pageSize = 100
 
-	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", false)
+	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", false, nil)
 	if getErr != nil {
 		return nil, resp, fmt.Errorf("failed to get first page of queues: %v", getErr)
 	}
@@ -162,7 +162,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	allQueues = append(allQueues, *queues.Entities...)
 
 	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
+		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false, nil)
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
 		}
@@ -193,7 +193,7 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 			return queue, nil, nil
 		}
 	}
-	return p.routingApi.GetRoutingQueue(queueId)
+	return p.routingApi.GetRoutingQueue(queueId, nil)
 }
 
 func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {

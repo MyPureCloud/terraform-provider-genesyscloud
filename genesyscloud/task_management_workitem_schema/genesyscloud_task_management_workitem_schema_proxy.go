@@ -176,7 +176,7 @@ func updateTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // deleteTaskManagementWorkitemSchemaFn is an implementation function for deleting a Genesys Cloud task management workitem schema
 func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, id string) (resp *platformclientv2.APIResponse, err error) {
-	resp, err = p.taskManagementApi.DeleteTaskmanagementWorkitemsSchema(id)
+	resp, err = p.taskManagementApi.DeleteTaskmanagementWorkitemsSchema(id, false)
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete task management workitem schema: %s", err)
 	}

@@ -78,7 +78,7 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 
 	const pageSize = 100
 
-	emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(1, pageSize, "", "", "")
+	emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(1, pageSize, "", "", "", nil)
 
 	if getErr != nil {
 		return nil, resp, fmt.Errorf("Failed to get page of emergency group configs: %v", getErr)
@@ -91,7 +91,7 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 	totalRecords = append(totalRecords, *emergencyGroupConfigs.Entities...)
 
 	for pageNum := 2; pageNum <= *emergencyGroupConfigs.PageCount; pageNum++ {
-		emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", "")
+		emergencyGroupConfigs, resp, getErr := p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", "", nil)
 
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("Failed to get page of emergency group configs: %v", getErr)
@@ -115,7 +115,7 @@ func getArchitectEmergencyGroupIdByNameFn(ctx context.Context, p *architectEmerg
 	const pageNum = 1
 	const pageSize = 100
 
-	return p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", name)
+	return p.architectApi.GetArchitectEmergencygroups(pageNum, pageSize, "", "", name, nil)
 }
 
 func updateArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGroupProxy, emergencyGroupId string, emergencyGroup platformclientv2.Emergencygroup) (*platformclientv2.Emergencygroup, *platformclientv2.APIResponse, error) {

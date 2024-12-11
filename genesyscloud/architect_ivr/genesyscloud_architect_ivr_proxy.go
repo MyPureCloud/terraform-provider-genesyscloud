@@ -137,7 +137,7 @@ func createArchitectIvrFn(ctx context.Context, a *architectIvrProxy, ivr platfor
 
 // getArchitectIvrFn is an implementation function for retrieving a Genesys Cloud Architect IVR by ID
 func getArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	return a.api.GetArchitectIvr(id)
+	return a.api.GetArchitectIvr(id, nil)
 }
 
 // updateArchitectIvrFn is an implementation function for updating a Genesys Cloud Architect IVR
@@ -170,7 +170,7 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 	)
 	const pageSize = 100
 
-	ivrs, resp, err := a.api.GetArchitectIvrs(1, pageSize, "", "", name, "", "")
+	ivrs, resp, err := a.api.GetArchitectIvrs(1, pageSize, "", "", name, "", "", nil, nil)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error requesting page of architect ivrs: %v", err)
 	}
@@ -185,7 +185,7 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 	}
 
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		ivrs, resp, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")
+		ivrs, resp, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "", nil, nil)
 		if err != nil {
 			return nil, resp, fmt.Errorf("error requesting page of architect ivrs: %v", err)
 		}

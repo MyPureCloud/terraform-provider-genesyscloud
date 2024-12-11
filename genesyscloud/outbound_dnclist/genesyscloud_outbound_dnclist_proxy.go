@@ -99,7 +99,7 @@ func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]p
 	var allDnclists []platformclientv2.Dnclist
 	const pageSize = 100
 
-	dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, 1, true, "", "", "", []string{}, "", "")
+	dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, 1, true, "", "", "", "", []string{}, "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get dnclists: %v", err)
 	}
@@ -112,7 +112,7 @@ func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]p
 
 	var response *platformclientv2.APIResponse
 	for pageNum := 2; pageNum <= *dnclists.PageCount; pageNum++ {
-		dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, pageNum, true, "", "", "", []string{}, "", "")
+		dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, pageNum, true, "", "", "", "", []string{}, "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get dnclists: %v", err)
 		}

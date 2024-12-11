@@ -213,7 +213,7 @@ func verifyOutboundEmailAddressExists(queueResourcePath string) resource.TestChe
 		queueID := queueResource.Primary.ID
 
 		routingApi := platformclientv2.NewRoutingApi()
-		queue, _, err := routingApi.GetRoutingQueue(queueID)
+		queue, _, err := routingApi.GetRoutingQueue(queueID, nil)
 		if err != nil {
 			return err
 		}

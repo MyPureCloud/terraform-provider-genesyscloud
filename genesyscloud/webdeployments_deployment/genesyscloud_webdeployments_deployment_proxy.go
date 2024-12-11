@@ -81,7 +81,7 @@ func (p *webDeploymentsProxy) deleteWebDeployment(ctx context.Context, deploymen
 }
 
 func getAllWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
-	return p.webDeploymentsApi.GetWebdeploymentsDeployments([]string{})
+	return p.webDeploymentsApi.GetWebdeploymentsDeployments("100", "", "", nil)
 }
 
 func getWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
