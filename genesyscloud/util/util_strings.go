@@ -1,11 +1,12 @@
 package util
 
 import (
-	"github.com/google/uuid"
 	"hash/fnv"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
@@ -44,4 +45,11 @@ func GetUniqueString() string {
 	hasher := fnv.New32()
 	hasher.Write([]byte(uuid.NewString()))
 	return strconv.FormatUint(uint64(hasher.Sum32()), 10)
+}
+
+func StringOrNil(s *string) string {
+	if s == nil {
+		return "nil"
+	}
+	return *s
 }
