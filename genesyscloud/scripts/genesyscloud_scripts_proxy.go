@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"log"
 	"net/http"
@@ -149,11 +150,14 @@ func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*plat
 	return resp, err
 }
 
+var allScriptsMap = make(map[string]string)
+
 // getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud instance
-func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	var allPublishedScripts []platformclientv2.Script
+func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	var allScripts []platformclientv2.Script
 	var response *platformclientv2.APIResponse
-	pageSize := 50
+
+	pageSize := 100
 	for pageNum := 1; ; pageNum++ {
 		scripts, resp, err := p.scriptsApi.GetScripts(pageSize, pageNum, "", "", "", "", "", "", "", "")
 		response = resp
@@ -165,35 +169,31 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 			break
 		}
 
-		for _, script := range *scripts.Entities {
-			publishedScript, resp, err := p.scriptsApi.GetScriptsPublishedScriptId(*script.Id, "")
-			response = resp
-			//If the item is not found this indicates it is not published
-			if resp.StatusCode == http.StatusNotFound && err == nil {
-				log.Printf("Script id %s, script %s name is not published and will not be returned for export", *script.Id, *script.Name)
-				continue
-			}
+		allScripts = append(allScripts, *scripts.Entities...)
+	}
 
-			//Some APIs will return an error code even if the response code is a 404.
-			if resp.StatusCode == http.StatusNotFound && err != nil {
-				log.Printf("Script id %s, script %s name is not published and will not be returned for export.  Also an err was returned on call %s", *script.Id, *script.Name, err)
-				continue
-			}
+	for _, script := range allScripts {
+		allScriptsMap[*script.Id] = uuid.NewString()
+	}
 
-			//All other errors should be failed
-			if err != nil {
-				return nil, resp, fmt.Errorf("failed to retrieve publication status for script id %s.  Err: %v", *script.Id, err)
-			}
+	allPublishedScripts, resp, err := p.getAllPublishedWithNewEndpoint(ctx)
+	if err != nil {
+		return nil, resp, err
+	}
+	response = resp
 
-			allPublishedScripts = append(allPublishedScripts, *publishedScript)
+	var allPublishedScriptsExcludingDefault []platformclientv2.Script
+	for _, script := range *allPublishedScripts {
+		if s, ok := allScriptsMap[*script.Id]; ok && s != "" {
+			allPublishedScriptsExcludingDefault = append(allPublishedScriptsExcludingDefault, script)
 		}
 	}
 
-	for _, script := range allPublishedScripts {
+	for _, script := range allPublishedScriptsExcludingDefault {
 		rc.SetCache(p.scriptCache, *script.Id, script)
 	}
 
-	return &allPublishedScripts, response, nil
+	return &allPublishedScriptsExcludingDefault, response, nil
 }
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
@@ -241,6 +241,23 @@ func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (
 	}
 
 	return scripts, response, nil
+}
+
+func (p *scriptsProxy) getAllPublishedWithNewEndpoint(_ context.Context) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	var allPublishedScripts []platformclientv2.Script
+
+	for pageNum := 1; ; pageNum++ {
+		data, resp, err := p.scriptsApi.GetScriptsPublished(100, pageNum, "", "", "", "", "", "")
+		if err != nil {
+			return nil, resp, err
+		}
+		if data.Entities == nil || len(*data.Entities) == 0 {
+			break
+		}
+		allPublishedScripts = append(allPublishedScripts, *data.Entities...)
+	}
+
+	return &allPublishedScripts, nil, nil
 }
 
 // createScriptFormData creates the form data attributes to create a script in Genesys Cloud

@@ -1,6 +1,7 @@
 package scripts
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -24,6 +25,56 @@ func getTestDataPath(elem ...string) string {
 	basePath := filepath.Join("..", "..", "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
+}
+
+func TestUnitPublishedScripts(t *testing.T) {
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	p := newScriptsProxy(sdkConfig)
+
+	allScriptsOgMethod, _, err := p.getAllPublishedScripts(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	allScriptsNewMethod, err := p.getAllPublishedWithNewEndpoint(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("Total from OG method: %d\n", len(*allScriptsOgMethod))
+	fmt.Printf("Total from new method: %d\n", len(*allScriptsNewMethod))
+
+	var longer []platformclientv2.Script
+	var shorter []platformclientv2.Script
+
+	if len(*allScriptsNewMethod) == len(*allScriptsOgMethod) {
+		t.Log("They're the same length\n")
+	} else if len(*allScriptsOgMethod) > len(*allScriptsNewMethod) {
+		t.Log("Og method has more\n")
+		longer = append(longer, *allScriptsOgMethod...)
+		shorter = append(shorter, *allScriptsNewMethod...)
+	} else {
+		t.Log("New method has more\n")
+		longer = append(longer, *allScriptsNewMethod...)
+		shorter = append(shorter, *allScriptsOgMethod...)
+	}
+
+	for _, vl := range longer {
+		found := false
+		for _, vs := range shorter {
+			if *vs.Id == *vl.Id {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Logf("this one is not in the shorter list: %s ID: %s\n", *vl.Name, *vl.Id)
+		}
+	}
 }
 
 func TestAccResourceScriptBasic(t *testing.T) {
