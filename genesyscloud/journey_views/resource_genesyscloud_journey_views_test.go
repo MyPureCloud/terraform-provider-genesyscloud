@@ -163,15 +163,6 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 
 }
 
-func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
-		email = "%s"
-		name = "%s"
-		%s
-	}
-	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
-}
-
 func generateJourneyView(journeyResourceLabel string, name string, duration string, elementsBlock string, chartsBlock string) string {
 	return fmt.Sprintf(`resource "genesyscloud_journey_views" "%s" {
     duration = "%s"
