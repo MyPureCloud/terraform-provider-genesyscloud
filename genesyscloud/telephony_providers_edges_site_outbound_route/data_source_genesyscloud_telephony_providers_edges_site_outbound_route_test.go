@@ -128,7 +128,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 					util.FalseValue) + generateSiteOutboundRouteDataSource(
 					outboundRouteResourceLabel1,
 					"outboundRoute name 1",
-					"",
+					strconv.Quote(""),
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -166,7 +166,7 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 				Config: generateSiteOutboundRouteDataSource(
 					dataResourceLabel,
 					name,
-					siteId,
+					strconv.Quote(siteId),
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -188,7 +188,7 @@ func generateSiteOutboundRouteDataSource(
 ) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_site_outbound_route" "%s" {
 		name = "%s"
-		site_id = "%s"
+		site_id = %s
 		depends_on=[%s]
 	}
 	`, dataSourceLabel, name, siteId, dependsOnResource)
