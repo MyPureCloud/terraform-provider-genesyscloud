@@ -270,7 +270,7 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 				blockLabel := ""
 				if knowledgeDocumentVariation.Name != nil && *knowledgeDocumentVariation.Name != "" {
 					blockLabel = *knowledgeDocumentVariation.Name
-				} else if knowledgeDocumentVariation.Id != nil {
+				} else {
 					blockLabel = *knowledgeDocumentVariation.Id
 				}
 				resources[id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
