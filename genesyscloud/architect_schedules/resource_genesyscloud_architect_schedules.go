@@ -49,7 +49,7 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	description := d.Get("description").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
-	rrule := d.Get("rrule").(string)
+	rrule, _ := d.Get("rrule").(string)
 
 	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
 	schedStart, err := time.Parse(timeFormat, start)
@@ -57,8 +57,10 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse date %s", start), err)
 	}
 
-	if err := verifyDateTimeIsWeekday(schedStart); err != nil {
-		return util.BuildDiagnosticError(ResourceType, err.Error(), err)
+	if rrule != "" {
+		if err := verifyStartDateConformsToRRule(schedStart, rrule, name); err != nil {
+			return util.BuildDiagnosticError(ResourceType, err.Error(), err)
+		}
 	}
 
 	schedEnd, err := time.Parse(timeFormat, end)
@@ -118,7 +120,6 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		start := new(string)
 		if scheduleResponse.Start != nil {
 			*start = timeutil.Strftime(scheduleResponse.Start, "%Y-%m-%dT%H:%M:%S.%f")
-
 		} else {
 			start = nil
 		}
@@ -126,7 +127,6 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		end := new(string)
 		if scheduleResponse.End != nil {
 			*end = timeutil.Strftime(scheduleResponse.End, "%Y-%m-%dT%H:%M:%S.%f")
-
 		} else {
 			end = nil
 		}
@@ -153,7 +153,7 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	description := d.Get("description").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
-	rrule := d.Get("rrule").(string)
+	rrule, _ := d.Get("rrule").(string)
 
 	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
 	schedStart, err := time.Parse(timeFormat, start)
@@ -161,8 +161,10 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("Failed to parse date %s: %s", start, err)
 	}
 
-	if err := verifyDateTimeIsWeekday(schedStart); err != nil {
-		return util.BuildDiagnosticError(ResourceType, err.Error(), err)
+	if rrule != "" {
+		if err := verifyStartDateConformsToRRule(schedStart, rrule, name); err != nil {
+			return util.BuildDiagnosticError(ResourceType, err.Error(), err)
+		}
 	}
 
 	schedEnd, err := time.Parse(timeFormat, end)

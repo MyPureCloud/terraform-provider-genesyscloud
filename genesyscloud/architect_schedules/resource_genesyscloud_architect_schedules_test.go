@@ -14,7 +14,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
 )
 
-const errorMessageToMatch = "schedule start date cannot be a Saturday or Sunday"
+const errorMessageToMatch = "invalid start date."
 
 func TestAccResourceArchitectSchedules(t *testing.T) {
 	var (
@@ -111,14 +111,14 @@ func TestAccResourceArchitectSchedules(t *testing.T) {
 	})
 }
 
-func TestAccResourceArchitectSchedulesCreateFailsWhenStartDateIsNotWeekday(t *testing.T) {
+func TestAccResourceArchitectSchedulesCreateFailsWhenStartDateNotInRRule(t *testing.T) {
 	var (
 		schedResourceLabel = "schedule"
 		name               = "CX as Code Schedule " + uuid.NewString()
 		description        = "Sample Schedule by CX as Code"
 		start              = "2021-08-07T22:00:00.000000" // Saturday
 		end                = "2021-08-08T23:00:00.000000"
-		rrule              = "FREQ=DAILY;INTERVAL=1"
+		rrule              = "FREQ=DAILY;INTERVAL=1;BYDAY=MO,TU,WE,THU,FR,SU"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -143,12 +143,12 @@ func TestAccResourceArchitectSchedulesCreateFailsWhenStartDateIsNotWeekday(t *te
 	})
 }
 
-func TestAccResourceArchitectSchedulesUpdateFailsWhenStartDateIsNotWeekday(t *testing.T) {
+func TestAccResourceArchitectSchedulesUpdateFailsWhenStartDateNotInRRule(t *testing.T) {
 	var (
 		schedResourceLabel = "schedule"
 		name               = "CX as Code Schedule " + uuid.NewString()
 		description        = "Sample Schedule by CX as Code"
-		rrule              = "FREQ=DAILY;INTERVAL=1"
+		rrule              = "FREQ=DAILY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR"
 
 		validStart = "2021-08-06T22:00:00.000000" // Friday
 		validEnd   = "2021-08-06T23:00:00.000000"
