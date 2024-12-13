@@ -46,11 +46,11 @@ type RefAttrSettings struct {
 }
 
 type ResourceInfo struct {
-	State        *terraform.InstanceState
-	BlockLabel   string
-	Type         string
-	CtyType      cty.Type
-	ResourceType string
+	State      *terraform.InstanceState
+	BlockLabel string
+	Type       string
+	CtyType    cty.Type
+	BlockType  string
 }
 
 // RefAttrCustomResolver allows the definition of a custom resolver for an exporter.
@@ -142,6 +142,8 @@ type ResourceExporter struct {
 	CustomFileWriter CustomFileWriterSettings
 
 	CustomFlowResolver map[string]*CustomFlowResolver
+
+	ExportAsDataFunc func(context.Context, *platformclientv2.Configuration, map[string]string) (bool, error)
 
 	//This a placeholder filter out specific resources from a filter.
 	FilterResource func(resourceIdMetaMap ResourceIDMetaMap, resourceType string, filter []string) ResourceIDMetaMap
@@ -304,23 +306,4 @@ func SetRegisterExporter(resources map[string]*ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
 	resourceExporters = resources
-}
-
-var (
-	ExportAsData           []string
-	dsMutex                sync.Mutex
-	resourceLabelSanitizer = NewSanitizerProvider()
-)
-
-// The AddDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
-// The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
-func AddDataSourceItems(resourceType, itemLabel string) {
-	exportLabel := resourceType + "::" + resourceLabelSanitizer.S.SanitizeResourceBlockLabel(itemLabel)
-	addDataSourceItemstoExport(exportLabel)
-}
-
-func addDataSourceItemstoExport(label string) {
-	dsMutex.Lock()
-	defer dsMutex.Unlock()
-	ExportAsData = append(ExportAsData, label)
 }

@@ -1013,13 +1013,13 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 	return err
 }
 
-func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schemaProvider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
 	lenResources := len(exporter.SanitizedResourceMap)
 	errorChan := make(chan diag.Diagnostics, lenResources)
 	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
 	removeChan := make(chan string, lenResources)
 
-	res := provider.ResourcesMap[resType]
+	res := schemaProvider.ResourcesMap[resType]
 
 	if res == nil {
 		return nil, diag.Errorf("Resource type %v not defined", resType)
@@ -1052,11 +1052,24 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 					return nil
 				}
 
-				resourceType := ""
+				// Export the resource as a data resource
+				if exporter.ExportAsDataFunc != nil {
+					sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+					exportAsData, err := exporter.ExportAsDataFunc(g.ctx, sdkConfig, instanceState.Attributes)
+					if err != nil {
+						return fmt.Errorf("An error has occurred while trying to export as a data resource block for %s::%s : %v", resType, resMeta.BlockLabel, err)
+					} else {
+						if exportAsData {
+							g.replaceWithDatasource = append(g.replaceWithDatasource, resType+"::"+resMeta.BlockLabel)
+						}
+					}
+				}
+
+				blockType := ""
 
 				if g.isDataSource(resType, resMeta.BlockLabel) {
 					g.exMutex.Lock()
-					resData := provider.DataSourcesMap[resType]
+					resData := schemaProvider.DataSourcesMap[resType]
 					g.exMutex.Unlock()
 
 					if resData == nil {
@@ -1073,15 +1086,15 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 						}
 					}
 					instanceState.Attributes = attributes
-					resourceType = "data."
+					blockType = "data."
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
-					State:        instanceState,
-					BlockLabel:   resMeta.BlockLabel,
-					Type:         resType,
-					CtyType:      ctyType,
-					ResourceType: resourceType,
+					State:      instanceState,
+					BlockLabel: resMeta.BlockLabel,
+					Type:       resType,
+					CtyType:    ctyType,
+					BlockType:  blockType,
 				}
 
 				return nil
@@ -1644,7 +1657,7 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingRe
 }
 
 func (g *GenesysCloudResourceExporter) isDataSource(resType string, resLabel string) bool {
-	return g.containsElement(resourceExporter.ExportAsData, resType, resLabel) || g.containsElement(g.replaceWithDatasource, resType, resLabel)
+	return g.containsElement(g.replaceWithDatasource, resType, resLabel)
 }
 
 func (g *GenesysCloudResourceExporter) containsElement(elements []string, resType, resLabel string) bool {
