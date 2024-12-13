@@ -195,6 +195,18 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			`skill_columns`: {
+				Description: `The skill columns on the ContactList that this Campaign should take into account when dialing.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			`auto_answer`: {
+				Description: `The option manages the auto-answer callback calls`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeBool,
+			},
 			`division_id`: {
 				Description: `The division this campaign belongs to.`,
 				Optional:    true,
