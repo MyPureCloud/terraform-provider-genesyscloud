@@ -73,6 +73,9 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 				algorithm.Write([]byte(meta.BlockLabel))
 				sanitizedLabel = sanitizedLabel + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			}
+			if meta.OriginalLabel == "" {
+				meta.OriginalLabel = meta.BlockLabel
+			}
 			meta.BlockLabel = sanitizedLabel
 		}
 	}
@@ -108,6 +111,10 @@ func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 				hash := hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 
 				meta.BlockLabel = sanitizedLabel + "_" + hash
+				if meta.OriginalLabel == "" {
+					meta.OriginalLabel = meta.BlockLabel
+				}
+
 			} else {
 				sanitizedLabels[sanitizedLabel] = 1
 				meta.BlockLabel = sanitizedLabel
