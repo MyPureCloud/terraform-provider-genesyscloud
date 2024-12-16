@@ -74,7 +74,8 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 			"line_meta_base_id": {
 				Description: "lineMetaBaseId is computed by the provider based on the phoneBaseSettings using the phoneBaseSetting's template",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Optional:    false,
+				Required:    false,
 				Computed:    true,
 			},
 			"station_persistent_enabled": {
