@@ -71,7 +71,7 @@ resource "genesyscloud_telephony_providers_edges_phonebasesettings" "examplePhon
 
 - `capabilities` (Block List, Max: 1) Phone Capabilities. (see [below for nested schema](#nestedblock--capabilities))
 - `description` (String) The resource's description.
-- `line_base_settings_id` (String) Computed line base settings id
+- `line_base` (Block List, Max: 1) Line Base Settings for the phonebasesettings (see [below for nested schema](#nestedblock--line_base))
 - `properties` (String) phone base settings properties
 
 ### Read-Only
@@ -92,4 +92,14 @@ Optional:
 - `no_rebalance` (Boolean) No Rebalance
 - `provisions` (Boolean) Provisions
 - `registers` (Boolean) Registers
+
+
+<a id="nestedblock--line_base"></a>
+### Nested Schema for `line_base`
+
+Optional:
+
+- `line_meta_base_id` (String) lineMetaBaseId is computed by the provider based on the phoneBaseSettings using the phoneBaseSetting's template
+- `station_persistent_enabled` (Boolean) The station_persistent_enabled attribute in the line's property
+- `station_persistent_timeout` (Number) The station_persistent_timeout attribute in the line's property
 
