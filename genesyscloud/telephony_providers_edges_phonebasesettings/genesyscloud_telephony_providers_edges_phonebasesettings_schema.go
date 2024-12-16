@@ -14,8 +14,8 @@ const (
 	ResourceType = "genesyscloud_telephony_providers_edges_phonebasesettings"
 )
 
-var (
-	phoneCapabilities = &schema.Resource{
+func ResourcePhoneBaseSettings() *schema.Resource {
+	phoneCapabilities := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"provisions": {
 				Description: "Provisions",
@@ -68,9 +68,28 @@ var (
 			},
 		},
 	}
-)
 
-func ResourcePhoneBaseSettings() *schema.Resource {
+	lineBase := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"line_meta_base_id": {
+				Description: "lineMetaBaseId is computed by the provider based on the phoneBaseSettings using the phoneBaseSetting's template",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"station_persistent_enabled": {
+				Description: "The station_persistent_enabled attribute in the line's property",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"station_persistent_timeout": {
+				Description: "The station_persistent_timeout attribute in the line's property",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+		},
+	}
+
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone Base Settings",
 
@@ -114,11 +133,12 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Computed:    true,
 				Elem:        phoneCapabilities,
 			},
-			"line_base_settings_id": {
-				Description: "Computed line base settings id",
-				Type:        schema.TypeString,
+			"line_base": {
+				Description: "Line Base Settings for the phonebasesettings",
+				Type:        schema.TypeList,
 				Optional:    true,
-				Computed:    true,
+				MaxItems:    1,
+				Elem:        lineBase,
 			},
 		},
 		CustomizeDiff: customizePhoneBaseSettingsPropertiesDiff,

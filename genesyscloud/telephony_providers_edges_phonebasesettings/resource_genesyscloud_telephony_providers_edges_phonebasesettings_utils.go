@@ -130,3 +130,52 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 
 	return util.ApplyPropertyDefaults(diff, phoneBaseSetting.Properties)
 }
+
+func BuildTelephonyLineBaseProperties(d *schema.ResourceData) *map[string]interface{} {
+
+	if lineBase := d.Get("line_base").([]interface{}); len(lineBase) > 0 {
+
+		lineBaseMap := lineBase[0].(map[string]interface{})
+
+		properties := map[string]interface{}{
+			"station_persistent_enabled": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": lineBaseMap["station_persistent_enabled"].(bool),
+				},
+			},
+			"station_persistent_timeout": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": lineBaseMap["station_persistent_timeout"].(int),
+				},
+			},
+		}
+		return &properties
+	}
+	return nil
+}
+
+func flattenTelephonyLineBaseProperties(lineBase *[]platformclientv2.Linebase) []interface{} {
+	if lineBase == nil || len(*lineBase) == 0 {
+		return nil
+	}
+
+	lineBaseMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(lineBaseMap, "line_meta_base_id", (*lineBase)[0].LineMetaBase.Id)
+	propertiesObject := (*lineBase)[0].Properties
+	if propertiesObject == nil {
+		return []interface{}{lineBaseMap}
+	}
+	if enabledKey := (*propertiesObject)["station_persistent_enabled"]; enabledKey != nil {
+		enabledValue := enabledKey.(map[string]interface{})["value"].(map[string]interface{})["instance"]
+		if enabledValue != nil {
+			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_enabled", &enabledValue)
+		}
+	}
+	if timeOutKey := (*propertiesObject)["station_persistent_timeout"]; timeOutKey != nil {
+		timeOutKey := timeOutKey.(map[string]interface{})["value"].(map[string]interface{})["instance"]
+		if timeOutKey != nil {
+			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_timeout", &timeOutKey)
+		}
+	}
+	return []interface{}{lineBaseMap}
+}
