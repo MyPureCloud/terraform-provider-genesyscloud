@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
@@ -382,12 +382,12 @@ func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error
 		knowledgeDocumentVariationId := id[0]
 		knowledgeBaseId := id[1]
 		knowledgeDocumentId := id[2]
-		publishedKnowledgeDocumentVariation, publishedResp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published")
+		publishedKnowledgeDocumentVariation, publishedResp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published", nil)
 		// check both published and draft variations
 		if publishedKnowledgeDocumentVariation != nil {
 			return fmt.Errorf("Knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
 		} else if util.IsStatus404(publishedResp) || util.IsStatus400(publishedResp) {
-			draftKnowledgeDocumentVariation, draftResp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
+			draftKnowledgeDocumentVariation, draftResp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
 
 			if draftKnowledgeDocumentVariation != nil {
 				return fmt.Errorf("Knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
