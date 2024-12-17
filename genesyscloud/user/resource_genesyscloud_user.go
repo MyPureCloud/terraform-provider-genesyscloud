@@ -41,6 +41,9 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 
 	// Add resources to metamap
 	for _, user := range *users {
+		if user.Id == nil || user.Email == nil {
+			continue
+		}
 		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email}
 	}
 
