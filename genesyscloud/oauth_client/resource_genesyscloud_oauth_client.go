@@ -32,12 +32,23 @@ func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Conf
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of oauth clients error: %s", getErr), resp)
 	}
 
+	clientNames := make(map[string]bool, len(*clients))
 	for _, client := range *clients {
 		if client.State != nil && *client.State == "disabled" {
 			// Don't include clients disabled by support
 			continue
 		}
-		resources[*client.Id] = &resourceExporter.ResourceMeta{BlockLabel: *client.Name}
+		// Oauth client names can be reused by the API. This ensures that each client has a unique label
+		clientName := *client.Name
+		if _, exists := clientNames[clientName]; exists {
+			// Random string
+			hash := fmt.Sprintf("%06x", time.Now().UnixNano()%0xffffff)
+			clientName = clientName + "_" + hash
+			clientNames[clientName] = true
+		} else {
+			clientNames[clientName] = true
+		}
+		resources[*client.Id] = &resourceExporter.ResourceMeta{BlockLabel: clientName}
 	}
 	return resources, nil
 }
