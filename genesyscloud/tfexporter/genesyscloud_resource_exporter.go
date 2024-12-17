@@ -1168,14 +1168,20 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		return nil, nil
 	}
 
-	if !exportComputed {
-		// Remove any computed attributes from being exported
-		for resType, resSchema := range resource.Schema {
-			if resSchema.Computed {
-				delete(state.Attributes, resType)
-			}
+	for resAttribute, resSchema := range resource.Schema {
+		// Remove any computed attributes if export computed exporter config not set
+		if resSchema.Computed == true && !exportComputed {
+			delete(state.Attributes, resAttribute)
+			continue
+		}
+		// Remove any computed read-only attributes from being exported regardless of exporter config
+		// because they cannot be set by a user when reapplying the configuration in a different org
+		if resSchema.Computed == true && resSchema.Optional == false {
+			delete(state.Attributes, resAttribute)
+			continue
 		}
 	}
+
 	return state, nil
 }
 

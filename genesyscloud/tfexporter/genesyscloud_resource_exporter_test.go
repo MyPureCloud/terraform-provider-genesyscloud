@@ -668,3 +668,152 @@ func TestContainsElement(t *testing.T) {
 		})
 	}
 }
+
+func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
+	ctx := context.Background()
+
+	testCases := []struct {
+		name           string
+		resourceID     string
+		schema         map[string]*schema.Schema
+		initialState   map[string]string
+		exportComputed bool
+		expectedState  map[string]string
+		expectError    bool
+	}{
+		{
+			name:       "Basic resource state with computed attributes disabled",
+			resourceID: "test-resource-1",
+			schema: map[string]*schema.Schema{
+				"computed_attr": {
+					Type:     schema.TypeString,
+					Computed: true,
+				},
+				"normal_attr": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			initialState: map[string]string{
+				"computed_attr": "computed_value",
+				"normal_attr":   "normal_value",
+			},
+			exportComputed: false,
+			expectedState: map[string]string{
+				"normal_attr": "normal_value",
+				"id":          "test-resource-1",
+			},
+			expectError: false,
+		},
+		{
+			name:       "Resource state with computed attributes enabled",
+			resourceID: "test-resource-2",
+			schema: map[string]*schema.Schema{
+				"computed_attr": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"normal_attr": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			initialState: map[string]string{
+				"computed_attr": "computed_value",
+				"normal_attr":   "normal_value",
+			},
+			exportComputed: true,
+			expectedState: map[string]string{
+				"computed_attr": "computed_value",
+				"normal_attr":   "normal_value",
+				"id":            "test-resource-2",
+			},
+			expectError: false,
+		},
+		{
+			name:       "Always remove read-only computed attributes",
+			resourceID: "test-resource-3",
+			schema: map[string]*schema.Schema{
+				"readonly_computed": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: false,
+					Required: false,
+				},
+				"normal_attr": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			initialState: map[string]string{
+				"readonly_computed": "computed_value",
+				"normal_attr":       "normal_value",
+			},
+			exportComputed: true,
+			expectedState: map[string]string{
+				"normal_attr": "normal_value",
+				"id":          "test-resource-3",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a mock mockResource
+			mockResource := &schema.Resource{
+				Schema: tc.schema,
+				// Mock the refresh functionality
+				Read: func(d *schema.ResourceData, m interface{}) error {
+					// Simulate reading the resource by setting the test case's initial state
+					for k, v := range tc.initialState {
+						d.Set(k, v)
+					}
+					d.SetId(tc.resourceID)
+					return nil
+				},
+			}
+
+			// Create mock resource metadata
+			resMeta := &resourceExporter.ResourceMeta{
+				IdPrefix: "",
+			}
+
+			// Call the function being tested
+			state, diags := getResourceState(ctx, mockResource, tc.resourceID, resMeta, nil, tc.exportComputed)
+
+			// Check for expected errors
+			if tc.expectError {
+				if diags == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+
+			if diags != nil {
+				t.Errorf("Unexpected error: %v", diags)
+				return
+			}
+
+			if state == nil {
+				t.Fatal("Expected state but got nil")
+			}
+
+			// Verify the state attributes
+			for key, expectedValue := range tc.expectedState {
+				if actualValue, ok := state.Attributes[key]; !ok {
+					t.Errorf("Expected attribute %s not found in state", key)
+				} else if actualValue != expectedValue {
+					t.Errorf("Attribute %s: expected %s, got %s", key, expectedValue, actualValue)
+				}
+			}
+
+			// Verify no unexpected attributes exist
+			for key := range state.Attributes {
+				if _, ok := tc.expectedState[key]; !ok {
+					t.Errorf("Unexpected attribute %s found in state", key)
+				}
+			}
+		})
+	}
+}
