@@ -670,20 +670,20 @@ func TestContainsElement(t *testing.T) {
 }
 
 func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
-	ctx := context.Background()
 
 	testCases := []struct {
-		name           string
-		resourceID     string
-		schema         map[string]*schema.Schema
-		initialState   map[string]string
-		exportComputed bool
-		expectedState  map[string]string
-		expectError    bool
+		name            string
+		resourceId      string
+		schema          map[string]*schema.Schema
+		resourceMetaMap resourceExporter.ResourceIDMetaMap
+		initialState    map[string]string
+		exportComputed  bool
+		expectedState   map[string]string
+		expectError     bool
 	}{
 		{
 			name:       "Basic resource state with computed attributes disabled",
-			resourceID: "test-resource-1",
+			resourceId: "test-resource-1",
 			schema: map[string]*schema.Schema{
 				"computed_attr": {
 					Type:     schema.TypeString,
@@ -692,6 +692,11 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 				"normal_attr": {
 					Type:     schema.TypeString,
 					Required: true,
+				},
+			},
+			resourceMetaMap: resourceExporter.ResourceIDMetaMap{
+				"test-resource-1": &resourceExporter.ResourceMeta{
+					BlockLabel: "test-resource-1",
 				},
 			},
 			initialState: map[string]string{
@@ -707,7 +712,7 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 		},
 		{
 			name:       "Resource state with computed attributes enabled",
-			resourceID: "test-resource-2",
+			resourceId: "test-resource-2",
 			schema: map[string]*schema.Schema{
 				"computed_attr": {
 					Type:     schema.TypeString,
@@ -717,6 +722,11 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 				"normal_attr": {
 					Type:     schema.TypeString,
 					Required: true,
+				},
+			},
+			resourceMetaMap: resourceExporter.ResourceIDMetaMap{
+				"test-resource-2": &resourceExporter.ResourceMeta{
+					BlockLabel: "test-resource-2",
 				},
 			},
 			initialState: map[string]string{
@@ -733,7 +743,7 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 		},
 		{
 			name:       "Always remove read-only computed attributes",
-			resourceID: "test-resource-3",
+			resourceId: "test-resource-3",
 			schema: map[string]*schema.Schema{
 				"readonly_computed": {
 					Type:     schema.TypeString,
@@ -744,6 +754,11 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 				"normal_attr": {
 					Type:     schema.TypeString,
 					Required: true,
+				},
+			},
+			resourceMetaMap: resourceExporter.ResourceIDMetaMap{
+				"test-resource-3": &resourceExporter.ResourceMeta{
+					BlockLabel: "test-resource-3",
 				},
 			},
 			initialState: map[string]string{
@@ -760,6 +775,9 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+
+			mockResourceType := "test_resource"
+
 			// Create a mock mockResource
 			mockResource := &schema.Resource{
 				Schema: tc.schema,
@@ -769,18 +787,42 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 					for k, v := range tc.initialState {
 						d.Set(k, v)
 					}
-					d.SetId(tc.resourceID)
+					d.SetId(tc.resourceId)
 					return nil
 				},
 			}
 
-			// Create mock resource metadata
-			resMeta := &resourceExporter.ResourceMeta{
-				IdPrefix: "",
+			// Create mock provider
+			mockProvider := &schema.Provider{
+				ResourcesMap: map[string]*schema.Resource{
+					mockResourceType: mockResource,
+				},
+			}
+
+			// Create mock exporter
+			mockExporter := &resourceExporter.ResourceExporter{
+				SanitizedResourceMap: tc.resourceMetaMap,
+			}
+
+			// Create provider meta
+			providerMeta := &provider.ProviderMeta{
+				ClientConfig: &platformclientv2.Configuration{},
+			}
+
+			// Create GenesysCloudResourceExporter instance
+			exporter := &GenesysCloudResourceExporter{
+				exportComputed: tc.exportComputed,
+				meta:           providerMeta,
+				ctx:            context.Background(),
 			}
 
 			// Call the function being tested
-			state, diags := getResourceState(ctx, mockResource, tc.resourceID, resMeta, nil, tc.exportComputed)
+			resources, diags := exporter.getResourcesForType(
+				mockResourceType,
+				mockProvider,
+				mockExporter,
+				providerMeta,
+			)
 
 			// Check for expected errors
 			if tc.expectError {
@@ -795,13 +837,13 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 				return
 			}
 
-			if state == nil {
-				t.Fatal("Expected state but got nil")
+			if resources == nil {
+				t.Fatal("Expected resources but got nil")
 			}
 
 			// Verify the state attributes
 			for key, expectedValue := range tc.expectedState {
-				if actualValue, ok := state.Attributes[key]; !ok {
+				if actualValue, ok := resources[0].State.Attributes[key]; !ok {
 					t.Errorf("Expected attribute %s not found in state", key)
 				} else if actualValue != expectedValue {
 					t.Errorf("Attribute %s: expected %s, got %s", key, expectedValue, actualValue)
@@ -809,7 +851,7 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 			}
 
 			// Verify no unexpected attributes exist
-			for key := range state.Attributes {
+			for key := range resources[0].State.Attributes {
 				if _, ok := tc.expectedState[key]; !ok {
 					t.Errorf("Unexpected attribute %s found in state", key)
 				}

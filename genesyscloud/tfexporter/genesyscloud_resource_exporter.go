@@ -1083,6 +1083,20 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					blockType = "data."
 				}
 
+				for resAttribute, resSchema := range res.Schema {
+					// Remove any computed attributes if export computed exporter config not set
+					if resSchema.Computed == true && !exportComputed {
+						delete(instanceState.Attributes, resAttribute)
+						continue
+					}
+					// Remove any computed read-only attributes from being exported regardless of exporter config
+					// because they cannot be set by a user when reapplying the configuration in a different org
+					if resSchema.Computed == true && resSchema.Optional == false {
+						delete(instanceState.Attributes, resAttribute)
+						continue
+					}
+				}
+
 				resourceChan <- resourceExporter.ResourceInfo{
 					State:         instanceState,
 					BlockLabel:    resMeta.BlockLabel,
@@ -1166,20 +1180,6 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		// Resource no longer exists
 		log.Printf("Empty State for resource %s, %v", resID, state)
 		return nil, nil
-	}
-
-	for resAttribute, resSchema := range resource.Schema {
-		// Remove any computed attributes if export computed exporter config not set
-		if resSchema.Computed == true && !exportComputed {
-			delete(state.Attributes, resAttribute)
-			continue
-		}
-		// Remove any computed read-only attributes from being exported regardless of exporter config
-		// because they cannot be set by a user when reapplying the configuration in a different org
-		if resSchema.Computed == true && resSchema.Optional == false {
-			delete(state.Attributes, resAttribute)
-			continue
-		}
 	}
 
 	return state, nil
