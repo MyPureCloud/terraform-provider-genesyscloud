@@ -205,8 +205,10 @@ func buildCannedResponseLibraries(d *schema.ResourceData) *platformclientv2.Cann
 			libraryIdList := lists.InterfaceListToStrings(libraryIds)
 			cannedResponseSdk.LibraryIds = &libraryIdList
 		}
+		return &cannedResponseSdk
+
 	}
-	return &cannedResponseSdk
+	return nil
 }
 
 func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrule {
