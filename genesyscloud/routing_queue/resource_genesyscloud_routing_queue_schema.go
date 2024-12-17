@@ -42,7 +42,7 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"All", "SelectedOnly", "None"}, false),
 			},
 			"library_ids": {
-				Description: "Set of canned response library IDs associated with the queue only when mode is SelectedOnly.",
+				Description: "Set of canned response library IDs associated with the queue. Populate this field only when mode is SelectedOnly.",
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
