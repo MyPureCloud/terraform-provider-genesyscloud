@@ -12,7 +12,7 @@ require (
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/mozillazg/go-unidecode v0.2.0
-	github.com/mypurecloud/platform-client-sdk-go/v146 v146.0.0
+	github.com/mypurecloud/platform-client-sdk-go/v149 v149.0.0
 	github.com/nyaruka/phonenumbers v1.4.3
 	github.com/rjNemo/underscore v0.7.0
 	github.com/zclconf/go-cty v1.15.1
@@ -29,7 +29,6 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/hashicorp/cli v1.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
-	github.com/mypurecloud/platform-client-sdk-go/v149 v149.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
