@@ -117,7 +117,10 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	mailFromDomain := d.Get("mail_from_domain").(string)
 	domainID := d.Get("domain_id").(string)
 
-	if !strings.Contains(mailFromDomain, domainID) || mailFromDomain == domainID {
+	if mailFromDomain == domainID {
+		return util.BuildDiagnosticError(ResourceType, "domain_id must be a subdomain of mail_from_domain", fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
+	}
+	if mailFromDomain != "" && !strings.Contains(mailFromDomain, domainID) {
 		return util.BuildDiagnosticError(ResourceType, "domain_id must be a subdomain of mail_from_domain", fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
 	}
 

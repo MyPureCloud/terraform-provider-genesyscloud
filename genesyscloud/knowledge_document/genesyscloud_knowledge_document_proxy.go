@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"net/url"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
