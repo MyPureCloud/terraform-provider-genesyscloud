@@ -99,7 +99,10 @@ Optional:
 
 Optional:
 
-- `line_meta_base_id` (String) lineMetaBaseId is computed by the provider based on the phoneBaseSettings using the phoneBaseSetting's template
 - `station_persistent_enabled` (Boolean) The station_persistent_enabled attribute in the line's property
 - `station_persistent_timeout` (Number) The station_persistent_timeout attribute in the line's property
+
+Read-Only:
+
+- `line_meta_base_id` (String) lineMetaBaseId is computed by the provider based on the phoneBaseSettings using the phoneBaseSetting's template
 
