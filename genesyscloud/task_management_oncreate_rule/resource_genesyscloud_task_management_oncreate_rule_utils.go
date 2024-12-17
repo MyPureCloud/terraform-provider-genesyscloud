@@ -24,8 +24,8 @@ func GenerateOnCreateRuleResource(
 		worktype_id = %s
 		name = "%s"
 		%s
-	}
-`, resourceLabel, worktypeId, name, strings.Join(attrs, "\n"))
+		}
+		`, resourceLabel, worktypeId, name, strings.Join(attrs, "\n"))
 }
 
 // getWorkitemoncreaterulecreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Workitemoncreaterulecreate
@@ -46,7 +46,7 @@ func getWorkitemoncreateruleupdateFromResourceData(d *schema.ResourceData) platf
 	return onCreateRuleUpdate
 }
 
-// splitOnCreateRuleTerraformId will split the status resource id which is in the form
+// splitOnCreateRuleTerraformId will split the rule resource id which is in the form
 // <worktypeId>/<ruleId> into just the worktypeId and ruleId string
 func splitOnCreateRuleTerraformId(id string) (worktypeId string, ruleId string) {
 	return strings.Split(id, "/")[0], strings.Split(id, "/")[1]

@@ -50,25 +50,6 @@ func ResourceTaskManagementOnCreateRule() *schema.Resource {
 				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
-			// "condition": {
-			// 	Description: "Conditions for this Rule.",
-			// 	Type:        schema.TypeSet,
-			// 	Required:    true,
-			// 	Elem: &schema.Resource{
-			// 		Schema: map[string]*schema.Schema{
-			// 			"attribute": {
-			// 				Description: "The name of the workitem date attribute.",
-			// 				Type:        schema.TypeString,
-			// 				Required:    true,
-			// 			},
-			// 			"relative_minutes_to_invocation": {
-			// 				Description: "The time in minutes before or after the date attribute.",
-			// 				Type:        schema.TypeInt,
-			// 				Required:    true,
-			// 			},
-			// 		},
-			// 	},
-			// },
 		},
 	}
 }
@@ -77,7 +58,9 @@ func ResourceTaskManagementOnCreateRule() *schema.Resource {
 func TaskManagementOnCreateRuleExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementOnCreateRule),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No reference
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
+			"worktype_id":            {RefType: "genesyscloud_task_management_worktype"},
+		},
 	}
 }
 
