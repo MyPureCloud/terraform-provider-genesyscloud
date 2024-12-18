@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+const SystemDefaultLabelName = "System Default Label"
+
 func GenerateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
 	dependsOn := ""
 

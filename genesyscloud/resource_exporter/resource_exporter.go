@@ -359,10 +359,10 @@ var (
 // The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
 func AddDataSourceItems(resourceType, itemLabel string) {
 	exportLabel := resourceType + "::" + resourceLabelSanitizer.S.SanitizeResourceBlockLabel(itemLabel)
-	addDataSourceItemstoExport(exportLabel)
+	addDataSourceItemsToExport(exportLabel)
 }
 
-func addDataSourceItemstoExport(label string) {
+func addDataSourceItemsToExport(label string) {
 	dsMutex.Lock()
 	defer dsMutex.Unlock()
 	ExportAsData = append(ExportAsData, label)

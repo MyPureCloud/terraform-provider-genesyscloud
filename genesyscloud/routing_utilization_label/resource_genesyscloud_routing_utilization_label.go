@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	tfexporterState "terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
@@ -31,6 +32,10 @@ func getAllRoutingUtilizationLabels(ctx context.Context, clientConfig *platformc
 
 	for _, label := range *labels {
 		resources[*label.Id] = &resourceExporter.ResourceMeta{BlockLabel: *label.Name}
+		// System Default Label should be exported as a data source
+		if tfexporterState.IsExporterActive() && *label.Name == SystemDefaultLabelName {
+			resourceExporter.AddDataSourceItems(ResourceType, *label.Name)
+		}
 	}
 	return resources, nil
 }
