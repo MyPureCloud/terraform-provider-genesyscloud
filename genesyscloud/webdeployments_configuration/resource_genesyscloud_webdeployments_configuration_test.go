@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -184,6 +184,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						util.TrueValue,
 						util.TrueValue,
 						util.TrueValue,
+						util.TrueValue,
 						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
@@ -253,6 +254,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_control", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_navigation", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_draw", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.channels.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.mask_selectors.#", "1"),
@@ -316,6 +318,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						util.FalseValue,
 						util.FalseValue,
 						util.FalseValue,
+						util.FalseValue,
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
@@ -345,6 +348,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.enabled", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_control", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_navigation", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_draw", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.channels.#", "2"),
 					util.ValidateStringInArray(resourcePath, "cobrowse.0.channels", "Webmessaging"),
 					util.ValidateStringInArray(resourcePath, "cobrowse.0.channels", "Voice"),
@@ -1048,19 +1052,20 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, pauseCriteriaBlocks ...string) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbAllowDraw string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, pauseCriteriaBlocks ...string) string {
 
 	return fmt.Sprintf(`
 	cobrowse {
 		enabled = %s
 		allow_agent_control = %s
 		allow_agent_navigation = %s
+		allow_draw = %s
 		channels = [ %s ]
 		mask_selectors = [ %s ]
 		readonly_selectors = [ %s ]
 		%s
 	}
-`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "), strings.Join(pauseCriteriaBlocks, "\n"))
+`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, cbAllowDraw, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "), strings.Join(pauseCriteriaBlocks, "\n"))
 }
 
 func generatePauseCriteria(urlFragment, condition string) string {

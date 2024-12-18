@@ -166,7 +166,7 @@ Required:
 
 Optional:
 
-- `library_ids` (List of String) Set of canned response library IDs associated with the queue only when mode is SelectedOnly.
+- `library_ids` (List of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
 - `mode` (String) The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.
 
 

@@ -12,7 +12,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team

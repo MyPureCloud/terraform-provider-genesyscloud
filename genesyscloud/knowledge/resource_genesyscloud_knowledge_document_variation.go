@@ -23,7 +23,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 var (
@@ -257,7 +257,7 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 			}
 
 			// get the variations for each document
-			knowledgeDocumentVariations, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState)
+			knowledgeDocumentVariations, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState, nil)
 			if getErr != nil {
 				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to get page of knowledge document variations error: %v", err), resp)
 			}
@@ -395,13 +395,13 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		 * If the published flag were required, it would cause consistency issues for the import state.
 		 */
 		if documentState == "" {
-			publishedVariation, resp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published")
+			publishedVariation, resp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published", nil)
 
 			if publishedErr != nil {
 				// Published version may or may not exist, so if status is 404, sleep and retry once and then move on to retrieve draft variation.
 				if util.IsStatus404(resp) {
 					time.Sleep(2 * time.Second)
-					retryVariation, retryResp, retryErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published")
+					retryVariation, retryResp, retryErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published", nil)
 
 					if retryErr != nil {
 						if !util.IsStatus404(retryResp) {
@@ -418,7 +418,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 				}
 			}
 
-			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
+			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
 			if draftErr != nil {
 				if util.IsStatus404(resp) {
 					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
@@ -433,7 +433,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 				knowledgeDocumentVariation = draftVariation
 			}
 		} else {
-			variation, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState)
+			variation, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState, nil)
 			if getErr != nil {
 				if util.IsStatus404(resp) {
 					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
@@ -481,7 +481,7 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Updating knowledge document variation %s", documentVariationId)
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge document variation version
-		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
+		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
 		if getErr != nil {
 			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s error: %s", id, getErr), resp)
 		}
@@ -539,7 +539,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		 * A new document version can only be published if there are other variations than the one being removed
 		 */
 		pageSize := 3
-		variations, resp, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Draft")
+		variations, resp, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Draft", nil)
 
 		if variationErr != nil {
 			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to retrieve knowledge document variations error: %s", err), resp)
@@ -556,7 +556,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		// The DELETE resource for knowledge document variations only removes draft variations. So set the documentState param to "Draft" for the check
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft")
+		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Knowledge base deleted
