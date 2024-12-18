@@ -172,8 +172,9 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			d.Set("capabilities", flattenPhoneCapabilities(phoneBaseSettings.Capabilities))
 		}
 
-		if phoneBaseSettings.Lines != nil {
+		if phoneBaseSettings.Lines != nil && len(*phoneBaseSettings.Lines) > 0 {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "line_base", phoneBaseSettings.Lines, flattenTelephonyLineBaseProperties)
+			resourcedata.SetNillableValue(d, "line_base_settings_id", (*phoneBaseSettings.Lines)[0].Id)
 		}
 
 		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)

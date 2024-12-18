@@ -71,16 +71,10 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 
 	lineBase := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"line_meta_base_id": {
-				Description: "lineMetaBaseId is computed by the provider based on the phoneBaseSettings using the phoneBaseSetting's template",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
 			"station_persistent_enabled": {
 				Description: "The station_persistent_enabled attribute in the line's property",
 				Type:        schema.TypeBool,
-				Optional:    true,
+				Required:    true,
 			},
 			"station_persistent_timeout": {
 				Description: "The station_persistent_timeout attribute in the line's property",
@@ -139,6 +133,12 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Optional:    true,
 				MaxItems:    1,
 				Elem:        lineBase,
+			},
+			"line_base_settings_id": {
+				Description: "This field is computed when a line base is created.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 		CustomizeDiff: customizePhoneBaseSettingsPropertiesDiff,

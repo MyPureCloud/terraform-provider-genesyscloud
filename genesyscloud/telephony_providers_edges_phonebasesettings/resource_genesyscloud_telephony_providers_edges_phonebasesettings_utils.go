@@ -160,19 +160,18 @@ func flattenTelephonyLineBaseProperties(lineBase *[]platformclientv2.Linebase) [
 	}
 
 	lineBaseMap := make(map[string]interface{})
-	resourcedata.SetMapValueIfNotNil(lineBaseMap, "line_meta_base_id", (*lineBase)[0].LineMetaBase.Id)
 	propertiesObject := (*lineBase)[0].Properties
 	if propertiesObject == nil {
 		return []interface{}{lineBaseMap}
 	}
-	if enabledKey := (*propertiesObject)["station_persistent_enabled"]; enabledKey != nil {
-		enabledValue := enabledKey.(map[string]interface{})["value"].(map[string]interface{})["instance"]
+	if enabledKey, ok := (*propertiesObject)["station_persistent_enabled"].(map[string]interface{}); ok && enabledKey != nil {
+		enabledValue := enabledKey["value"].(map[string]interface{})["instance"]
 		if enabledValue != nil {
 			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_enabled", &enabledValue)
 		}
 	}
-	if timeOutKey := (*propertiesObject)["station_persistent_timeout"]; timeOutKey != nil {
-		timeOutKey := timeOutKey.(map[string]interface{})["value"].(map[string]interface{})["instance"]
+	if timeOutKey, ok := (*propertiesObject)["station_persistent_timeout"].(map[string]interface{}); ok && timeOutKey != nil {
+		timeOutKey := timeOutKey["value"].(map[string]interface{})["instance"]
 		if timeOutKey != nil {
 			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_timeout", &timeOutKey)
 		}
