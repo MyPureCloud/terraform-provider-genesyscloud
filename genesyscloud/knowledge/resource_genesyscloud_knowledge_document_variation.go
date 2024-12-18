@@ -267,11 +267,11 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 
 			for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
 				id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
-				blockLabel := ""
+				blockLabel := *knowledgeBase.Name + "_" + *knowledgeDocument.Title
 				if knowledgeDocumentVariation.Name != nil && *knowledgeDocumentVariation.Name != "" {
-					blockLabel = *knowledgeDocumentVariation.Name
+					blockLabel = blockLabel + "_" + *knowledgeDocumentVariation.Name
 				} else {
-					blockLabel = *knowledgeDocumentVariation.Id
+					blockLabel = blockLabel + "_" + *knowledgeDocumentVariation.Id
 				}
 				resources[id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 			}
