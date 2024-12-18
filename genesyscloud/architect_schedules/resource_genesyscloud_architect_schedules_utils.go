@@ -10,6 +10,17 @@ import (
 
 const timeFormat = "2006-01-02T15:04:05.000000"
 
+// Mapping rrule day abbreviations to full day names
+var rruleDayMap = map[string]string{
+	"MO": time.Monday.String(),
+	"TU": time.Tuesday.String(),
+	"WE": time.Wednesday.String(),
+	"TH": time.Thursday.String(),
+	"FR": time.Friday.String(),
+	"SA": time.Saturday.String(),
+	"SU": time.Sunday.String(),
+}
+
 func verifyStartDateConformsToRRule(dateTime time.Time, rrule string, scheduleName string) error {
 	scheduleDays := getDaysFromRRule(rrule)
 	if len(scheduleDays) == 0 {
@@ -35,21 +46,10 @@ func getDaysFromRRule(rrule string) []string {
 	// Split the matched days on commas
 	days := strings.Split(matches[1], ",")
 
-	// Map the abbreviations to full day names
-	abbreviationMap := map[string]string{
-		"MO": time.Monday.String(),
-		"TU": time.Tuesday.String(),
-		"WE": time.Wednesday.String(),
-		"TH": time.Thursday.String(),
-		"FR": time.Friday.String(),
-		"SA": time.Saturday.String(),
-		"SU": time.Sunday.String(),
-	}
-
 	// Convert abbreviations to full day names
 	fullDays := make([]string, 0, len(days))
 	for _, day := range days {
-		if fullDay, ok := abbreviationMap[day]; ok {
+		if fullDay, ok := rruleDayMap[day]; ok {
 			fullDays = append(fullDays, fullDay)
 		}
 	}
