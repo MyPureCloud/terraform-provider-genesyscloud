@@ -383,7 +383,7 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 		})
 
 		if patchErr != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Faild to restored deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
+			return proxyPatchResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Faild to restored deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
 		}
 
 		return nil, updateUser(ctx, d, meta)
