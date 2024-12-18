@@ -52,7 +52,7 @@ func getAllKnowledgeLabels(ctx context.Context, clientConfig *platformclientv2.C
 
 		for _, knowledgeLabel := range *partialEntities {
 			id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
-			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeLabel.Name}
+			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeLabel.Name}
 		}
 	}
 
