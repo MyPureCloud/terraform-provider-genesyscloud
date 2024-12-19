@@ -6,7 +6,7 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*
@@ -23,7 +23,7 @@ type getAllSiteOutboundRoutesFunc func(ctx context.Context, p *siteOutboundRoute
 type getSiteByIdFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
 type createSiteOutboundRouteFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
 type getSiteOutboundRouteByIdFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRoute string) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
-type getSiteOutboundRouteByNameFunc func(ctx context.Context, p *siteOutboundRouteProxy, outboundRouteName string, siteId string) (string, string, bool, *platformclientv2.APIResponse, error)
+type getSiteOutboundRouteByNameFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteIdOrEmpty string, outboundRouteName string) (siteId string, outboundRouteId string, retryable bool, response *platformclientv2.APIResponse, err error)
 type updateSiteOutboundRouteFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
 type deleteSiteOutboundRouteFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string) (*platformclientv2.APIResponse, error)
 
@@ -93,8 +93,8 @@ func (p *siteOutboundRouteProxy) getSiteOutboundRouteById(ctx context.Context, s
 }
 
 // getSiteByNameFunc returns the outbound route id
-func (p *siteOutboundRouteProxy) getSiteOutboundRouteByName(ctx context.Context, outboundRouteName string, siteId string) (string, string, bool, *platformclientv2.APIResponse, error) {
-	return p.getSiteOutboundRouteByNameAttr(ctx, p, outboundRouteName, siteId)
+func (p *siteOutboundRouteProxy) getSiteOutboundRouteByName(ctx context.Context, siteIdOrEmpty string, outboundRouteName string) (siteId string, outboundRouteId string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	return p.getSiteOutboundRouteByNameAttr(ctx, p, siteIdOrEmpty, outboundRouteName)
 }
 
 // updateSiteFunc updates a Genesys Cloud Outbound Route for a Genesys Cloud Site
@@ -174,7 +174,7 @@ func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, 
 	return outboundRoute, resp, nil
 }
 
-func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy, outboundRouteName string, siteIdOrEmpty string) (siteId string, outboundRouteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy, siteIdOrEmpty string, outboundRouteName string) (siteId string, outboundRouteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	var allSites []platformclientv2.Site
 	unmanagedSites, resp, err := p.siteProxy.GetAllSites(ctx, false)
 	if err != nil {

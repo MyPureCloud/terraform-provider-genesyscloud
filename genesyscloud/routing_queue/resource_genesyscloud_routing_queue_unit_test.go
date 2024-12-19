@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,7 +57,8 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.WhisperPrompt, routingQueue.WhisperPrompt, "Whisper Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
-
+		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+		assert.Equal(t, testRoutingQueue.CannedResponseLibraries, routingQueue.CannedResponseLibraries, "Canned Response Libraries not equal")
 		return queue, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
@@ -191,6 +192,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	assert.Equal(t, testRoutingQueue.WhisperPrompt, routingQueue.WhisperPrompt, "Whisper Prompt Not Equal")
 	assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 	assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
+	assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
 }
 
 func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
@@ -237,6 +239,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.WhisperPrompt, routingQueue.WhisperPrompt, "Whisper Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
+		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
 
 		return nil, nil, nil
 	}
@@ -373,6 +376,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"whisper_prompt_id":                              *testRoutingQueue.WhisperPrompt.Id,
 		"on_hold_prompt_id":                              *testRoutingQueue.OnHoldPrompt.Id,
 		"default_script_ids":                             flattenDefaultScripts(*testRoutingQueue.DefaultScripts),
+		"canned_response_libraries":                      flattenCannedResponse(*&testRoutingQueue.CannedResponseLibraries),
 	}
 	return resourceDataMap
 }
@@ -449,7 +453,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		callback = generateCallbackMediaSettings()
 		chat     = generateMediaSettings()
 		email    = generateMediaEmailSettings()
-		message  = generateMediaSettings()
+		message  = GenerateMediaSettingsWithSubType()
 
 		mediaSettings = platformclientv2.Queuemediasettings{
 			Call:     &call,
@@ -468,6 +472,11 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 
 		defaultScripts = map[string]platformclientv2.Script{
 			"script1": script,
+		}
+		libraryIds              = []string{"ABC", "XYZ"}
+		cannedResponseLibraries = platformclientv2.Cannedresponselibraries{
+			Mode:       platformclientv2.String("SelectedOnly"),
+			LibraryIds: &libraryIds,
 		}
 	)
 
@@ -498,6 +507,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		OnHoldPrompt:                 &onHoldPrompt,
 		DefaultScripts:               &defaultScripts,
 		OutboundMessagingAddresses:   &messagingAddress,
+		CannedResponseLibraries:      &cannedResponseLibraries,
 	}
 }
 
@@ -528,6 +538,7 @@ func convertCreateQueuetoQueue(req platformclientv2.Createqueuerequest) *platfor
 		WhisperPrompt:                req.WhisperPrompt,
 		OnHoldPrompt:                 req.OnHoldPrompt,
 		DefaultScripts:               req.DefaultScripts,
+		CannedResponseLibraries:      req.CannedResponseLibraries,
 	}
 }
 
@@ -539,6 +550,23 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 			Percentage: platformclientv2.Float64(0.7),
 			DurationMs: platformclientv2.Int(10000),
 		},
+	}
+}
+
+func GenerateMediaSettingsWithSubType() platformclientv2.Mediasettings {
+	subTypeMap := make(map[string]platformclientv2.Basemediasettings)
+	baseMediaSettings := platformclientv2.Basemediasettings{
+		EnableAutoAnswer: platformclientv2.Bool(true),
+	}
+	subTypeMap["instagram"] = baseMediaSettings
+	return platformclientv2.Mediasettings{
+		EnableAutoAnswer:       platformclientv2.Bool(true),
+		AlertingTimeoutSeconds: platformclientv2.Int(20),
+		ServiceLevel: &platformclientv2.Servicelevel{
+			Percentage: platformclientv2.Float64(0.7),
+			DurationMs: platformclientv2.Int(10000),
+		},
+		SubTypeSettings: &subTypeMap,
 	}
 }
 

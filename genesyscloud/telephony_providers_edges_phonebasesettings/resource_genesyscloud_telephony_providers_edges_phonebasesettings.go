@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -56,6 +56,9 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			Name:         &name,
 			LineMetaBase: phoneBaseSettingTemplateLines[0].LineMetaBase,
 		},
+	}
+	if lineProperties := BuildTelephonyLineBaseProperties(d); lineProperties != nil {
+		(*phoneBase.Lines)[0].Properties = lineProperties
 	}
 
 	log.Printf("Creating phone base settings %s for %s", name, phoneMetaBase)
@@ -118,6 +121,9 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			State:        (*phoneBaseSettings.Lines)[0].State,
 		},
 	}
+	if lineProperties := BuildTelephonyLineBaseProperties(d); lineProperties != nil {
+		(*phoneBase.Lines)[0].Properties = lineProperties
+	}
 
 	log.Printf("Updating phone base settings %s", name)
 	_, resp, err = phoneBaseProxy.putPhoneBaseSetting(ctx, d.Id(), phoneBase)
@@ -166,8 +172,9 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			d.Set("capabilities", flattenPhoneCapabilities(phoneBaseSettings.Capabilities))
 		}
 
-		if len(*phoneBaseSettings.Lines) > 0 {
-			d.Set("line_base_settings_id", (*phoneBaseSettings.Lines)[0].Id)
+		if phoneBaseSettings.Lines != nil && len(*phoneBaseSettings.Lines) > 0 {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "line_base", phoneBaseSettings.Lines, flattenTelephonyLineBaseProperties)
+			resourcedata.SetNillableValue(d, "line_base_settings_id", (*phoneBaseSettings.Lines)[0].Id)
 		}
 
 		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)

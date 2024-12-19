@@ -9,7 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -613,4 +613,58 @@ func getMockCampaignConfig(originalValueOfScriptId string) map[string]any {
 	config["script_id"] = originalValueOfScriptId
 
 	return config
+}
+
+func TestContainsElement(t *testing.T) {
+	// set up
+	exporter := setupGenesysCloudResourceExporter(t)
+
+	tests := []struct {
+		name           string
+		elements       []string
+		resType        string
+		resLabel       string
+		originalLabel  string
+		expectedResult bool
+	}{
+		{
+			name:           "Exact match",
+			elements:       []string{"resourceType::resourceLabel"},
+			resType:        "resourceType",
+			resLabel:       "resourceLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+		{
+			name:           "Regex match",
+			elements:       []string{"resourceType::.*Label"},
+			resType:        "resourceType",
+			resLabel:       "resourceLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+		{
+			name:           "No match",
+			elements:       []string{"resourceType::unrelatedLabel"},
+			resType:        "resourceType",
+			resLabel:       "resourceLabel",
+			originalLabel:  "",
+			expectedResult: false,
+		},
+		{
+			name:           "Sanitized label match",
+			elements:       []string{"resourceType::sanitized resourceLabel"},
+			resType:        "resourceType",
+			resLabel:       "sanitized resourceLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := exporter.containsElement(tt.elements, tt.resType, tt.resLabel, tt.originalLabel)
+			assert.Equal(t, tt.expectedResult, result)
+		})
+	}
 }

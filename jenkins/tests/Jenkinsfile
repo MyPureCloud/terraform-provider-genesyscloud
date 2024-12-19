@@ -41,8 +41,8 @@ pipeline {
     }
      triggers {
         parameterizedCron('''
-            30 22 * * 0-4 %REGION=tca
-            30 22 * * 0-4 %REGION=us-east-1
+            H 20 * * 0-4 %REGION=tca
+            H 23 * * 0-4 %REGION=us-east-1
         ''')
     }   
 

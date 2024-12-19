@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -25,6 +25,8 @@ type ResourceMeta struct {
 
 	// Prefix to add to the ID when reading state
 	IdPrefix string
+
+	OriginalLabel string
 }
 
 // ResourceIDMetaMap is a map of IDs to ResourceMeta
@@ -46,11 +48,17 @@ type RefAttrSettings struct {
 }
 
 type ResourceInfo struct {
-	State        *terraform.InstanceState
-	BlockLabel   string
-	Type         string
-	CtyType      cty.Type
-	ResourceType string
+	State         *terraform.InstanceState
+	BlockLabel    string
+	OriginalLabel string
+	Type          string
+	CtyType       cty.Type
+	ResourceType  string
+}
+
+// DataSourceResolver allows the definition of a custom resolver for an exporter.
+type DataSourceResolver struct {
+	ResolverFunc func(map[string]interface{}, string) error
 }
 
 // RefAttrCustomResolver allows the definition of a custom resolver for an exporter.
@@ -82,6 +90,14 @@ type JsonEncodeRefAttr struct {
 
 	// The RefAttr nested inside the json data
 	NestedAttr string
+}
+
+type DataAttr struct {
+	Attr string
+}
+
+type ResourceAttr struct {
+	Attr string
 }
 
 type DependencyResource struct {
@@ -143,6 +159,8 @@ type ResourceExporter struct {
 
 	CustomFlowResolver map[string]*CustomFlowResolver
 
+	DataSourceResolver map[*DataAttr]*ResourceAttr
+
 	//This a placeholder filter out specific resources from a filter.
 	FilterResource func(resourceIdMetaMap ResourceIDMetaMap, resourceType string, filter []string) ResourceIDMetaMap
 	// Attributes that are mentioned with custom exports like e164 numbers,rrule  should be ensured to export in the correct format (remove hyphens, whitespace, etc.)
@@ -195,6 +213,31 @@ func (r *ResourceExporter) ContainsNestedRefAttrs(attribute string) ([]string, b
 		}
 	}
 	return nestedAttributes, len(nestedAttributes) > 0
+}
+
+func (r *ResourceExporter) DataResolver(instanceState *terraform.InstanceState, attr string) (string, string) {
+	for key, val := range r.DataSourceResolver {
+		if key.Attr == attr {
+			value := r.fetchFromInstanceState(instanceState, val.Attr)
+			if value != "" {
+				return attr, value
+			}
+		}
+	}
+	if value, ok := instanceState.Attributes[attr]; ok {
+		return attr, value
+	}
+	return "", ""
+}
+
+func (r *ResourceExporter) fetchFromInstanceState(instanceState *terraform.InstanceState, pattern string) string {
+	re := regexp.MustCompile(pattern)
+	for key, val := range instanceState.Attributes {
+		if re.MatchString(key) {
+			return val
+		}
+	}
+	return ""
 }
 
 func (r *ResourceExporter) AllowForZeroValues(attribute string) bool {

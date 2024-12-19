@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*
@@ -54,7 +54,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	}
 
 	for _, cred := range *credentials {
-		log.Printf("Dealing with credential id : %s", *cred.Id)
+		log.Printf("Dealing with credential id : %s, credential name : %s", *cred.Id, util.StringOrNil(cred.Name))
 		if cred.Name != nil { // Credential is possible to have no name
 
 			// Export integration credential only if it matches the expected format: DEVTOOLING-310

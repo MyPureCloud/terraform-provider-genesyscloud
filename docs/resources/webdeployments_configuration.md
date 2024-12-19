@@ -97,6 +97,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     enabled                = true
     allow_agent_control    = true
     allow_agent_navigation = true
+    allow_draw             = true
     channels               = ["Webmessaging", "Voice"]
     mask_selectors         = [".my-class", "#my-id"]
     readonly_selectors     = [".my-class", "#my-id"]
@@ -214,6 +215,7 @@ Optional:
 
 - `allow_agent_control` (Boolean) Whether agent can take control over customer's screen or not
 - `allow_agent_navigation` (Boolean) Whether agent can use navigation feature over customer's screen or not
+- `allow_draw` (Boolean) Whether drawing is enabled or not
 - `channels` (List of String) List of channels through which cobrowse is available (for now only Webmessaging and Voice)
 - `enabled` (Boolean) Whether or not cobrowse is enabled
 - `mask_selectors` (List of String) List of CSS selectors which should be masked when screen sharing is active

@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -89,6 +89,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -189,7 +190,6 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaEmailSetting)
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSetting)
 		}
-
 		_ = d.Set("outbound_messaging_sms_address_id", nil)
 		_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)
 		_ = d.Set("outbound_messaging_open_messaging_recipient_id", nil)
@@ -212,6 +212,9 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		if currentQueue.Bullseye != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
+		}
+		if currentQueue.CannedResponseLibraries != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -316,6 +319,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)

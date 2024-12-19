@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*
@@ -50,7 +50,7 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 	}
 
 	for _, integration := range *integrations {
-		log.Printf("Dealing with integration id : %s", *integration.Id)
+		log.Printf("Dealing with integration id : %s, integration Name : %s", *integration.Id, *integration.Name)
 		resources[*integration.Id] = &resourceExporter.ResourceMeta{BlockLabel: *integration.Name}
 	}
 	return resources, nil
@@ -122,7 +122,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read config of integration %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		d.Set("config", flattenIntegrationConfig(integrationConfig))
+		d.Set("config", flattenIntegrationConfig(integrationConfig, d.Id(), *currentIntegration.Name))
 		log.Printf("Read integration %s %s", d.Id(), *currentIntegration.Name)
 		return nil
 	})

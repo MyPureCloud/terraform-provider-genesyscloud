@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"

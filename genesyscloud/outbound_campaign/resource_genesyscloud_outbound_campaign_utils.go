@@ -13,12 +13,13 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*
@@ -36,7 +37,8 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
 	priority := d.Get("priority").(int)
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
-
+	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
+	autoAnswer := d.Get("auto_answer").(bool)
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
 		DialingMode:                    platformclientv2.String(d.Get("dialing_mode").(string)),
@@ -62,6 +64,12 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		DynamicLineBalancingSettings:   buildLineBalancingSettings(d.Get("dynamic_line_balancing_settings").([]interface{})),
 	}
 
+	if len(skillColumns) > 0 {
+		campaign.SkillColumns = &skillColumns
+	}
+	if autoAnswer {
+		campaign.CallbackAutoAnswer = &autoAnswer
+	}
 	if abandonRate != 0 {
 		campaign.AbandonRate = &abandonRate
 	}

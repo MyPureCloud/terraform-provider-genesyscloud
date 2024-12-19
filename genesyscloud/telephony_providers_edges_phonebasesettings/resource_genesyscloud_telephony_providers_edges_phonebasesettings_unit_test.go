@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,20 +29,19 @@ func TestUnitResourceTelephonyProvidersEdgesPhoneBaseSettingsCreate(t *testing.T
 
 	pbsProxy := &phoneBaseProxy{}
 
+	tlineMetaBase := platformclientv2.Domainentityref{
+		Id:   &tTemplateLineMetaBaseId,
+		Name: &tTemplateLineMetaBaseName,
+	}
 	pbsProxy.getPhoneBaseSettingTemplateAttr = func(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
 		functionCalls = append(functionCalls, "getPhoneBaseSettingTemplateAttr")
 		apiResponse := platformclientv2.APIResponse{
 			StatusCode: http.StatusOK,
 		}
 
-		lineMetaBase := platformclientv2.Domainentityref{
-			Id:   &tTemplateLineMetaBaseId,
-			Name: &tTemplateLineMetaBaseName,
-		}
-
 		lineBase := []platformclientv2.Linebase{
 			{
-				LineMetaBase: &lineMetaBase,
+				LineMetaBase: &tlineMetaBase,
 			},
 		}
 
@@ -66,8 +65,9 @@ func TestUnitResourceTelephonyProvidersEdgesPhoneBaseSettingsCreate(t *testing.T
 
 		lineBase := []platformclientv2.Linebase{
 			{
-				Id:    &tLineId,
-				State: &tSettingsState,
+				Id:           &tLineId,
+				State:        &tSettingsState,
+				LineMetaBase: &tlineMetaBase,
 			},
 		}
 
@@ -140,7 +140,10 @@ func TestUnitResourceTelephonyProvidersEdgesPhoneBaseSettingsUpdate(t *testing.T
 
 	tTemplateLineMetaBaseId := "polycom_vvx.json"
 	tTemplateLineMetaBaseName := "Polycom VVX line appearances"
-
+	tlineMetaBase := platformclientv2.Domainentityref{
+		Id:   &tTemplateLineMetaBaseId,
+		Name: &tTemplateLineMetaBaseName,
+	}
 	functionCalls := make([]string, 0)
 
 	pbsProxy := &phoneBaseProxy{}
@@ -151,14 +154,9 @@ func TestUnitResourceTelephonyProvidersEdgesPhoneBaseSettingsUpdate(t *testing.T
 			StatusCode: http.StatusOK,
 		}
 
-		lineMetaBase := platformclientv2.Domainentityref{
-			Id:   &tTemplateLineMetaBaseId,
-			Name: &tTemplateLineMetaBaseName,
-		}
-
 		lineBase := []platformclientv2.Linebase{
 			{
-				LineMetaBase: &lineMetaBase,
+				LineMetaBase: &tlineMetaBase,
 			},
 		}
 
@@ -182,8 +180,9 @@ func TestUnitResourceTelephonyProvidersEdgesPhoneBaseSettingsUpdate(t *testing.T
 
 		lineBase := []platformclientv2.Linebase{
 			{
-				Id:    &tLineId,
-				State: &tSettingsState,
+				Id:           &tLineId,
+				State:        &tSettingsState,
+				LineMetaBase: &tlineMetaBase,
 			},
 		}
 

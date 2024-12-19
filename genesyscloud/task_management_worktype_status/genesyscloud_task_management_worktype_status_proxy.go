@@ -5,7 +5,7 @@ import (
 	"fmt"
 	taskManagementWorktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*

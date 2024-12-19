@@ -33,7 +33,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*
@@ -373,7 +373,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 
 	for _, resource := range g.resources {
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
-		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel)
+		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
 		if diagErr != nil {
 			return diagErr
 		}
@@ -393,10 +393,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
 		if len(unresolved) > 0 {
 			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
-		}
-
-		if isDataSource {
-			g.sanitizeDataConfigMap(jsonResult)
 		}
 
 		g.customWriteAttributes(jsonResult, resource)
@@ -453,6 +449,7 @@ func (g *GenesysCloudResourceExporter) updateSanitizeMap(exporters map[string]*r
 		if idMetaMap := exporters[resource.Type].SanitizedResourceMap; idMetaMap != nil {
 			if meta := idMetaMap[resource.State.ID]; meta != nil && meta.BlockLabel != "" {
 				meta.BlockLabel = resource.BlockLabel
+				meta.OriginalLabel = resource.OriginalLabel
 			}
 		}
 	}
@@ -1027,7 +1024,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 
 	exportComputed := g.exportComputed
 
-	ctyType := res.CoreConfigSchema().ImpliedType()
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
 	for id, resMeta := range exporter.SanitizedResourceMap {
@@ -1038,6 +1034,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 				defer cancel()
 				// This calls into the resource's ReadContext method which
 				// will block until it can acquire a pooled client config object.
+				ctyType := res.CoreConfigSchema().ImpliedType()
 				instanceState, err := getResourceState(ctx, res, id, resMeta, meta, exportComputed)
 
 				if err != nil {
@@ -1054,7 +1051,8 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 
 				resourceType := ""
 
-				if g.isDataSource(resType, resMeta.BlockLabel) {
+				if g.isDataSource(resType, resMeta.BlockLabel, resMeta.OriginalLabel) {
+					attributes := make(map[string]string)
 					g.exMutex.Lock()
 					resData := provider.DataSourcesMap[resType]
 					g.exMutex.Unlock()
@@ -1063,25 +1061,22 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, provi
 						return fmt.Errorf("DataSource type %v not defined", resType)
 					}
 
-					schemaMap := resData.SchemaMap()
-
-					attributes := make(map[string]string)
-
-					for attr, _ := range schemaMap {
-						if value, ok := instanceState.Attributes[attr]; ok {
-							attributes[attr] = value
-						}
+					ctyType = resData.CoreConfigSchema().ImpliedType()
+					for attr, _ := range resData.SchemaMap() {
+						key, val := exporter.DataResolver(instanceState, attr)
+						attributes[key] = val
 					}
 					instanceState.Attributes = attributes
 					resourceType = "data."
 				}
 
 				resourceChan <- resourceExporter.ResourceInfo{
-					State:        instanceState,
-					BlockLabel:   resMeta.BlockLabel,
-					Type:         resType,
-					CtyType:      ctyType,
-					ResourceType: resourceType,
+					State:         instanceState,
+					BlockLabel:    resMeta.BlockLabel,
+					Type:          resType,
+					CtyType:       ctyType,
+					ResourceType:  resourceType,
+					OriginalLabel: resMeta.OriginalLabel,
 				}
 
 				return nil
@@ -1587,7 +1582,7 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
 			if meta := idMetaMap[refID]; meta != nil && meta.BlockLabel != "" {
 
-				if g.isDataSource(refSettings.RefType, meta.BlockLabel) && g.resourceIdExists(refID, nil) {
+				if g.isDataSource(refSettings.RefType, meta.BlockLabel, meta.OriginalLabel) && g.resourceIdExists(refID, nil) {
 					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.BlockLabel)
 				}
 				if g.resourceIdExists(refID, nil) {
@@ -1643,28 +1638,49 @@ func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingRe
 	return true
 }
 
-func (g *GenesysCloudResourceExporter) isDataSource(resType string, resLabel string) bool {
-	return g.containsElement(resourceExporter.ExportAsData, resType, resLabel) || g.containsElement(g.replaceWithDatasource, resType, resLabel)
+func (g *GenesysCloudResourceExporter) isDataSource(resType string, resLabel, originalLabel string) bool {
+	return g.containsElement(resourceExporter.ExportAsData, resType, resLabel, originalLabel) || g.containsElement(g.replaceWithDatasource, resType, resLabel, originalLabel)
 }
 
-func (g *GenesysCloudResourceExporter) containsElement(elements []string, resType, resLabel string) bool {
+func (g *GenesysCloudResourceExporter) containsElement(elements []string, resType, resLabel, originalLabel string) bool {
 
 	for _, element := range elements {
-		if element == resType+"::"+resLabel || fetchByRegex(element, resType, resLabel) {
+		if element == resType+"::"+resLabel || fetchByRegex(element, resType, resLabel, originalLabel) {
 			return true
 		}
 	}
 	return false
 }
 
-func fetchByRegex(fullString string, resType string, resLabel string) bool {
+func fetchByRegex(fullString string, resType string, resLabel, originalLabel string) bool {
 	if strings.Contains(fullString, "::") && strings.Split(fullString, "::")[0] == resType {
 		i := strings.Index(fullString, "::")
 		regexStr := fullString[i+2:]
-		match, _ := regexp.MatchString(regexStr, resLabel)
-		return match
+
+		match := matchRegex(regexStr, resLabel)
+		// If filter label matches original label
+		if match {
+			return match
+		}
+
+		if originalLabel != "" {
+			// If filter label matches original label
+			match := matchRegex(regexStr, originalLabel)
+			return match
+		}
 	}
 	return false
+}
+
+func matchRegex(regexStr string,
+	label string) bool {
+	sanitizer := resourceExporter.NewSanitizerProvider()
+	match, _ := regexp.MatchString(regexStr, label)
+	if match {
+		return match
+	}
+	sanitizedMatch, _ := regexp.MatchString(regexStr, sanitizer.S.SanitizeResourceBlockLabel(label))
+	return sanitizedMatch
 }
 
 func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {

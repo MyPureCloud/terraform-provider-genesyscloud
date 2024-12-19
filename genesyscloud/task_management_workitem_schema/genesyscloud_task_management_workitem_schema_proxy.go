@@ -10,7 +10,7 @@ import (
 
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*

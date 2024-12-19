@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 // Type definitions for each func on our proxy so we can easily mock them out later
