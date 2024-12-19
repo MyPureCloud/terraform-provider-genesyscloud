@@ -291,7 +291,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
-					[]string{"LANGUAGE_CODE"},
+					[]string{"en-us"},
 					strconv.Quote("false"),
 					generatePhoneColumnNoTypeBlock("Cell"),
 					outbound.GenerateOutboundMessagingCampaignContactSort(
