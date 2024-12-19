@@ -152,7 +152,7 @@ func (p *SiteProxy) deleteSite(ctx context.Context, siteId string) (*platformcli
 }
 
 // getSiteByIdFunc returns a single Genesys Cloud Site by Id
-func (p *SiteProxy) getSiteById(ctx context.Context, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error) {
+func (p *SiteProxy) GetSiteById(ctx context.Context, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error) {
 	return p.getSiteByIdAttr(ctx, p, siteId)
 }
 

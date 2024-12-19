@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -108,7 +109,7 @@ func updatePrimarySecondarySites(ctx context.Context, sp *SiteProxy, d *schema.R
 	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
 	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
 
-	site, resp, err := sp.getSiteById(ctx, siteId)
+	site, resp, err := sp.GetSiteById(ctx, siteId)
 	if resp.StatusCode != 200 {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site error: %s", siteId, err), resp)
 	}
@@ -672,4 +673,17 @@ func GetOrganizationDefaultSiteId(config *platformclientv2.Configuration) (siteI
 	}
 
 	return *org.DefaultSiteId, nil
+}
+
+func shouldExportManagedSitesAsData(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (exportAsData bool, err error) {
+	managedValue, ok := configMap["managed"]
+	if !ok {
+		return false, fmt.Errorf("'managed' key not found in configMap")
+	}
+	managed, err := strconv.ParseBool(managedValue)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse 'managed' value as boolean: %v", err)
+	}
+
+	return managed, nil
 }
