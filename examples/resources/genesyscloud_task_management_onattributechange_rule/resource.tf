@@ -3,7 +3,7 @@ resource "genesyscloud_task_management_onattributechange_rule" "onattributechang
   name        = "OnAttributeChange Rule"
   condition {
     attribute = "statusId"
-    new_value = genesyscloud_task_management_worktype_status.example_new_status.id
-    old_value = genesyscloud_task_management_worktype_status.example_old_status.id
+    new_value = genesyscloud_task_management_worktype_status.example_status_1.id
+    old_value = genesyscloud_task_management_worktype_status.example_status_2.id
   }
 }
