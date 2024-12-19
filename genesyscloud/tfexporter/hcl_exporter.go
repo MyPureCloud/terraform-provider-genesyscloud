@@ -19,8 +19,6 @@ import (
 
 const resourceHCLFileExt = "tf"
 
-type resourceHCLBlock [][]byte
-
 type HCLExporter struct {
 	resourceTypesJSONMaps map[string]resourceJSONMaps
 	dataSourceTypesMaps   map[string]resourceJSONMaps

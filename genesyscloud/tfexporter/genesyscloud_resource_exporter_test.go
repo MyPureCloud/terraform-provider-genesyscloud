@@ -550,20 +550,11 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 		t.Errorf("expected data source name to be '%s', got '%s'", defaultOutboundScriptName, nameInDataSource)
 	}
 
-	hclBlocks, ok := g.resourceTypesHCLBlocks[scriptResourceType]
-	if !ok {
-		t.Errorf("expected resourceTypesHCLBlocks to contain key '%s'", scriptResourceType)
-	}
-	if len(hclBlocks) == 0 {
-		t.Errorf("expected length of resourceTypesHCLBlocks to not be zero")
-	}
-
 	// set up
 	resolverFunc = func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
 		return "", "", nil, false
 	}
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
 	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
 	exporter = &resourceExporter.ResourceExporter{
 		CustomAttributeResolver: attrCustomResolver,
@@ -574,10 +565,6 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 
 	if _, ok := g.dataSourceTypesMaps[scriptResourceType]; ok {
 		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceType)
-	}
-
-	if _, ok := g.resourceTypesHCLBlocks[scriptResourceType]; ok {
-		t.Errorf("expected key '%s' to not exist in resourceTypesHCLBlocks map", scriptResourceType)
 	}
 }
 
@@ -601,7 +588,6 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 		t.Errorf("%v", diagErr)
 	}
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
 	g.exportAsHCL = true
 	return g
 }
