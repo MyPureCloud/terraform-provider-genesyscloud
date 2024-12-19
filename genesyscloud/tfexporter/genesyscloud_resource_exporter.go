@@ -64,36 +64,35 @@ type unresolvableAttributeInfo struct {
 }
 
 type GenesysCloudResourceExporter struct {
-	configExporter         Exporter
-	filterType             ExporterFilterType
-	resourceTypeFilter     ExporterResourceTypeFilter
-	resourceFilter         ExporterResourceFilter
-	filterList             *[]string
-	exportAsHCL            bool
-	splitFilesByResource   bool
-	logPermissionErrors    bool
-	addDependsOn           bool
-	replaceWithDatasource  []string
-	includeStateFile       bool
-	version                string
-	provider               *schema.Provider
-	exportDirPath          string
-	exporters              *map[string]*resourceExporter.ResourceExporter
-	resources              []resourceExporter.ResourceInfo
-	resourceTypesHCLBlocks map[string]resourceHCLBlock
-	resourceTypesMaps      map[string]resourceJSONMaps
-	dataSourceTypesMaps    map[string]resourceJSONMaps
-	unresolvedAttrs        []unresolvableAttributeInfo
-	d                      *schema.ResourceData
-	ctx                    context.Context
-	meta                   interface{}
-	dependsList            map[string][]string
-	buildSecondDeps        map[string][]string
-	exMutex                sync.RWMutex
-	cyclicDependsList      []string
-	ignoreCyclicDeps       bool
-	flowResourcesList      []string
-	exportComputed         bool
+	configExporter        Exporter
+	filterType            ExporterFilterType
+	resourceTypeFilter    ExporterResourceTypeFilter
+	resourceFilter        ExporterResourceFilter
+	filterList            *[]string
+	exportAsHCL           bool
+	splitFilesByResource  bool
+	logPermissionErrors   bool
+	addDependsOn          bool
+	replaceWithDatasource []string
+	includeStateFile      bool
+	version               string
+	provider              *schema.Provider
+	exportDirPath         string
+	exporters             *map[string]*resourceExporter.ResourceExporter
+	resources             []resourceExporter.ResourceInfo
+	resourceTypesMaps     map[string]resourceJSONMaps
+	dataSourceTypesMaps   map[string]resourceJSONMaps
+	unresolvedAttrs       []unresolvableAttributeInfo
+	d                     *schema.ResourceData
+	ctx                   context.Context
+	meta                  interface{}
+	dependsList           map[string][]string
+	buildSecondDeps       map[string][]string
+	exMutex               sync.RWMutex
+	cyclicDependsList     []string
+	ignoreCyclicDeps      bool
+	flowResourcesList     []string
+	exportComputed        bool
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -368,7 +367,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 	log.Printf("Build Genesys Cloud Resources Map")
 	g.resourceTypesMaps = make(map[string]resourceJSONMaps)
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock, 0)
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
 	for _, resource := range g.resources {
@@ -396,13 +394,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		}
 
 		g.customWriteAttributes(jsonResult, resource)
-
-		if g.exportAsHCL {
-			if _, ok := g.resourceTypesHCLBlocks[resource.Type]; !ok {
-				g.resourceTypesHCLBlocks[resource.Type] = make(resourceHCLBlock, 0)
-			}
-			g.resourceTypesHCLBlocks[resource.Type] = append(g.resourceTypesHCLBlocks[resource.Type], instanceStateToHCLBlock(resource.Type, resource.BlockLabel, jsonResult, isDataSource))
-		}
 
 		if isDataSource {
 			if g.dataSourceTypesMaps[resource.Type] == nil {
@@ -481,7 +472,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 
 	var err diag.Diagnostics
 	if g.exportAsHCL {
-		hclExporter := NewHClExporter(g.resourceTypesHCLBlocks, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
+		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
 		err = hclExporter.exportHCLConfig()
 	} else {
 		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, providerSource, g.version, g.exportDirPath, g.splitFilesByResource)
@@ -1430,12 +1421,6 @@ func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resour
 		return
 	}
 	g.dataSourceTypesMaps[dataSourceType][dataSourceLabel] = dataSourceConfig
-	if g.exportAsHCL {
-		if _, ok := g.resourceTypesHCLBlocks[dataSourceType]; !ok {
-			g.resourceTypesHCLBlocks[dataSourceType] = make(resourceHCLBlock, 0)
-		}
-		g.resourceTypesHCLBlocks[dataSourceType] = append(g.resourceTypesHCLBlocks[dataSourceType], instanceStateToHCLBlock(dataSourceType, dataSourceLabel, dataSourceConfig, true))
-	}
 }
 
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {

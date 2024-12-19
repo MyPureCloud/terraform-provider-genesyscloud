@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -18,25 +19,25 @@ import (
 
 const resourceHCLFileExt = "tf"
 
-type resourceHCLBlock [][]byte
-
 type HCLExporter struct {
-	resourceTypesHCLBlocks map[string]resourceHCLBlock
-	unresolvedAttrs        []unresolvableAttributeInfo
-	providerSource         string
-	version                string
-	dirPath                string
-	splitFilesByResource   bool
+	resourceTypesJSONMaps map[string]resourceJSONMaps
+	dataSourceTypesMaps   map[string]resourceJSONMaps
+	unresolvedAttrs       []unresolvableAttributeInfo
+	providerSource        string
+	version               string
+	dirPath               string
+	splitFilesByResource  bool
 }
 
-func NewHClExporter(resourceTypesHCLBlocks map[string]resourceHCLBlock, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
+func NewHClExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
 	hclExporter := &HCLExporter{
-		resourceTypesHCLBlocks: resourceTypesHCLBlocks,
-		unresolvedAttrs:        unresolvedAttrs,
-		providerSource:         providerSource,
-		version:                version,
-		dirPath:                dirPath,
-		splitFilesByResource:   splitFilesByResource,
+		resourceTypesJSONMaps: resourceTypesJSONMaps,
+		dataSourceTypesMaps:   dataSourceTypesMaps,
+		unresolvedAttrs:       unresolvedAttrs,
+		providerSource:        providerSource,
+		version:               version,
+		dirPath:               dirPath,
+		splitFilesByResource:  splitFilesByResource,
 	}
 	return hclExporter
 }
@@ -44,6 +45,40 @@ func NewHClExporter(resourceTypesHCLBlocks map[string]resourceHCLBlock, unresolv
 func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 	providerBlock := createHCLProviderBlock(h.providerSource, h.version)
 	variablesBlock := createHCLVariablesBlock(h.unresolvedAttrs)
+
+	hclBlocks := make(map[string][][]byte, 0)
+
+	// Data resources
+	for resDataType, dataJSONMap := range h.dataSourceTypesMaps {
+
+		// Output the data resources in a sorted fashion
+		blockLabels := make([]string, 0)
+		for resDataLabel, _ := range dataJSONMap {
+			blockLabels = append(blockLabels, resDataLabel)
+		}
+		sort.Strings(blockLabels)
+		for _, blockLabel := range blockLabels {
+			resDataJson := dataJSONMap[blockLabel]
+			hclBlock := instanceStateToHCLBlock(resDataType, blockLabel, resDataJson, true)
+			hclBlocks[resDataType] = append(hclBlocks[resDataType], hclBlock)
+		}
+	}
+
+	// Resources
+	for resType, resJSONMap := range h.resourceTypesJSONMaps {
+
+		// Output the resources in a sorted fashion
+		blockLabels := make([]string, 0)
+		for resLabel, _ := range resJSONMap {
+			blockLabels = append(blockLabels, resLabel)
+		}
+		sort.Strings(blockLabels)
+		for _, resLabel := range blockLabels {
+			resJson := resJSONMap[resLabel]
+			hclBlock := instanceStateToHCLBlock(resType, resLabel, resJson, false)
+			hclBlocks[resType] = append(hclBlocks[resType], hclBlock)
+		}
+	}
 
 	if h.splitFilesByResource {
 		// Provider file
@@ -64,24 +99,33 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 			return diagErr
 		}
 
-		// Resource files
-		for resType, resBlock := range h.resourceTypesHCLBlocks {
+		// Resources files
+		for resType, hclContent := range hclBlocks {
 			resourceHCLFilePath := filepath.Join(h.dirPath, fmt.Sprintf("%s.%s", resType, resourceHCLFileExt))
 			if resourceHCLFilePath == "" {
 				return diag.Errorf("Failed to create file path %s", resourceHCLFilePath)
 			}
-			if diagErr := writeHCLToFile(resBlock, resourceHCLFilePath); diagErr != nil {
+			if diagErr := writeHCLToFile(hclContent, resourceHCLFilePath); diagErr != nil {
 				return diagErr
 			}
 		}
+
 	} else {
 		// Single file export
 		allBlockSlice := make([][]byte, 0)
 		allBlockSlice = append(allBlockSlice, providerBlock)
 
-		for _, resBlock := range h.resourceTypesHCLBlocks {
-			allBlockSlice = append(allBlockSlice, resBlock...)
+		// Sort resource types
+		resourceTypes := make([]string, 0)
+		for resType, _ := range hclBlocks {
+			resourceTypes = append(resourceTypes, resType)
 		}
+		sort.Strings(resourceTypes)
+		for _, resType := range resourceTypes {
+			hclContent := hclBlocks[resType]
+			allBlockSlice = append(allBlockSlice, hclContent...)
+		}
+
 		allBlockSlice = append(allBlockSlice, variablesBlock)
 
 		hclFilePath := filepath.Join(h.dirPath, defaultTfHCLFile)
@@ -140,6 +184,11 @@ func createHCLProviderBlock(providerSource string, version string) []byte {
 func createHCLVariablesBlock(unresolvedAttrs []unresolvableAttributeInfo) []byte {
 	mFile := hclwrite.NewEmptyFile()
 	keys := make(map[string]string)
+	sort.Slice(unresolvedAttrs, func(i, j int) bool {
+		return unresolvedAttrs[i].ResourceType < unresolvedAttrs[j].ResourceType ||
+			(unresolvedAttrs[i].ResourceType == unresolvedAttrs[j].ResourceType &&
+				unresolvedAttrs[i].ResourceLabel < unresolvedAttrs[j].ResourceLabel)
+	})
 	for _, attr := range unresolvedAttrs {
 		mBody := mFile.Body()
 		key := createUnresolvedAttrKey(attr)
@@ -211,7 +260,8 @@ func instanceStateToHCLBlock(resType, resLabel string, json util.JsonMap, isData
 
 	body := block.Body()
 
-	addBody(body, json)
+	sortedJson := sortJSONMap(json)
+	addBody(body, sortedJson)
 
 	newCopy := strings.Replace(string(f.Bytes()), "$${", "${", -1)
 	return []byte(newCopy)
