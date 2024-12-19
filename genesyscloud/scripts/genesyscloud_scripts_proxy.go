@@ -25,7 +25,7 @@ var internalProxy *scriptsProxy
 
 type createScriptFunc func(ctx context.Context, filePath, scriptName string, substitutions map[string]interface{}, p *scriptsProxy) (scriptId string, err error)
 type updateScriptFunc func(ctx context.Context, filePath, scriptName, scriptId string, substitutions map[string]interface{}, p *scriptsProxy) (id string, err error)
-type getAllPublishedScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
+type getAllPublishedScriptsExcludingDefaultsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
 type publishScriptFunc func(ctx context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error)
 type getScriptsByNameFunc func(ctx context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error)
 type getScriptIdByNameFunc func(ctx context.Context, p *scriptsProxy, name string) (scriptId string, retryable bool, resp *platformclientv2.APIResponse, err error)
@@ -35,26 +35,30 @@ type getScriptExportUrlFunc func(ctx context.Context, p *scriptsProxy, scriptId 
 type deleteScriptFunc func(ctx context.Context, p *scriptsProxy, scriptId string) error
 type getScriptByIdFunc func(ctx context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, resp *platformclientv2.APIResponse, err error)
 type getPublishedScriptsByNameFunc func(ctx context.Context, p *scriptsProxy, name string) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
+type getAllPublishedScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
+type getAllScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
 
 // scriptsProxy contains all of the method used to interact with the Genesys Scripts SDK
 type scriptsProxy struct {
-	clientConfig                      *platformclientv2.Configuration
-	scriptsApi                        *platformclientv2.ScriptsApi
-	basePath                          string
-	accessToken                       string
-	createScriptAttr                  createScriptFunc
-	updateScriptAttr                  updateScriptFunc
-	getAllScriptsAttr                 getAllPublishedScriptsFunc
-	publishScriptAttr                 publishScriptFunc
-	getScriptIdByNameAttr             getScriptIdByNameFunc
-	getScriptsByNameAttr              getScriptsByNameFunc
-	verifyScriptUploadSuccessAttr     verifyScriptUploadSuccessFunc
-	scriptWasUploadedSuccessfullyAttr scriptWasUploadedSuccessfullyFunc
-	getScriptExportUrlAttr            getScriptExportUrlFunc
-	deleteScriptAttr                  deleteScriptFunc
-	getScriptByIdAttr                 getScriptByIdFunc
-	getPublishedScriptsByNameAttr     getPublishedScriptsByNameFunc
-	scriptCache                       rc.CacheInterface[platformclientv2.Script]
+	clientConfig                                *platformclientv2.Configuration
+	scriptsApi                                  *platformclientv2.ScriptsApi
+	basePath                                    string
+	accessToken                                 string
+	createScriptAttr                            createScriptFunc
+	updateScriptAttr                            updateScriptFunc
+	getAllPublishedScriptsExcludingDefaultsAttr getAllPublishedScriptsExcludingDefaultsFunc
+	publishScriptAttr                           publishScriptFunc
+	getScriptIdByNameAttr                       getScriptIdByNameFunc
+	getScriptsByNameAttr                        getScriptsByNameFunc
+	verifyScriptUploadSuccessAttr               verifyScriptUploadSuccessFunc
+	scriptWasUploadedSuccessfullyAttr           scriptWasUploadedSuccessfullyFunc
+	getScriptExportUrlAttr                      getScriptExportUrlFunc
+	deleteScriptAttr                            deleteScriptFunc
+	getScriptByIdAttr                           getScriptByIdFunc
+	getPublishedScriptsByNameAttr               getPublishedScriptsByNameFunc
+	getAllPublishedScriptsAttr                  getAllPublishedScriptsFunc
+	getAllScriptsAttr                           getAllScriptsFunc
+	scriptCache                                 rc.CacheInterface[platformclientv2.Script]
 }
 
 // getScriptsProxy acts as a singleton to for the internalProxy.  It also ensures
@@ -77,7 +81,6 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 		accessToken:                       scriptsAPI.Configuration.AccessToken,
 		createScriptAttr:                  createScriptFn,
 		updateScriptAttr:                  updateScriptFn,
-		getAllScriptsAttr:                 getAllPublishedScriptsFn,
 		publishScriptAttr:                 publishScriptFn,
 		getScriptIdByNameAttr:             getScriptIdByNameFn,
 		getScriptsByNameAttr:              getScriptsByNameFn,
@@ -87,7 +90,11 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 		deleteScriptAttr:                  deleteScriptFn,
 		getScriptByIdAttr:                 getScriptByIdFn,
 		getPublishedScriptsByNameAttr:     getPublishedScriptsByNameFn,
+		getAllPublishedScriptsAttr:        getAllPublishedScriptsFn,
+		getAllScriptsAttr:                 getAllScriptsFn,
 		scriptCache:                       scriptCache,
+
+		getAllPublishedScriptsExcludingDefaultsAttr: getAllPublishedScriptsExcludingDefaultsFn,
 	}
 }
 
@@ -101,8 +108,8 @@ func (p *scriptsProxy) updateScript(ctx context.Context, filePath, scriptName, s
 	return p.updateScriptAttr(ctx, filePath, scriptName, scriptId, substitutions, p)
 }
 
-func (p *scriptsProxy) getAllPublishedScripts(ctx context.Context) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	return p.getAllScriptsAttr(ctx, p)
+func (p *scriptsProxy) getAllPublishedScriptsExcludingDefaults(ctx context.Context) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	return p.getAllPublishedScriptsExcludingDefaultsAttr(ctx, p)
 }
 
 func (p *scriptsProxy) publishScript(ctx context.Context, scriptId string) (*platformclientv2.APIResponse, error) {
@@ -141,6 +148,14 @@ func (p *scriptsProxy) getPublishedScriptsByName(ctx context.Context, name strin
 	return p.getPublishedScriptsByNameAttr(ctx, p, name)
 }
 
+func (p *scriptsProxy) getAllPublishedScripts(ctx context.Context) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	return p.getAllPublishedScriptsAttr(ctx, p)
+}
+
+func (p *scriptsProxy) getAllScripts(ctx context.Context) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	return p.getAllScriptsAttr(ctx, p)
+}
+
 // publishScriptFn will publish the script after it has been successfully upload
 func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error) {
 	publishScriptBody := &platformclientv2.Publishscriptrequestdata{
@@ -150,41 +165,27 @@ func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*plat
 	return resp, err
 }
 
-var allScriptsMap = make(map[string]string)
+// getAllPublishedScriptsExcludingDefaultsFn returns all published scripts excluding scripts that are default to each org
+func getAllPublishedScriptsExcludingDefaultsFn(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	var allScriptsExcludingDefaultsMap = make(map[string]string)
 
-// getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud instance
-func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	var allScripts []platformclientv2.Script
-	var response *platformclientv2.APIResponse
-
-	pageSize := 100
-	for pageNum := 1; ; pageNum++ {
-		scripts, resp, err := p.scriptsApi.GetScripts(pageSize, pageNum, "", "", "", "", "", "", "", "")
-		response = resp
-		if err != nil {
-			return nil, resp, err
-		}
-
-		if scripts.Entities == nil || len(*scripts.Entities) == 0 {
-			break
-		}
-
-		allScripts = append(allScripts, *scripts.Entities...)
-	}
-
-	for _, script := range allScripts {
-		allScriptsMap[*script.Id] = uuid.NewString()
-	}
-
-	allPublishedScripts, resp, err := p.getAllPublishedWithNewEndpoint(ctx)
+	allScriptsExcludingDefaults, resp, err := p.getAllScripts(ctx)
 	if err != nil {
 		return nil, resp, err
 	}
-	response = resp
+
+	for _, script := range *allScriptsExcludingDefaults {
+		allScriptsExcludingDefaultsMap[*script.Id] = uuid.NewString()
+	}
+
+	allPublishedScripts, resp, err := p.getAllPublishedScripts(ctx)
+	if err != nil {
+		return nil, resp, err
+	}
 
 	var allPublishedScriptsExcludingDefault []platformclientv2.Script
 	for _, script := range *allPublishedScripts {
-		if s, ok := allScriptsMap[*script.Id]; ok && s != "" {
+		if s, ok := allScriptsExcludingDefaultsMap[*script.Id]; ok && s != "" {
 			allPublishedScriptsExcludingDefault = append(allPublishedScriptsExcludingDefault, script)
 		}
 	}
@@ -193,7 +194,7 @@ func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platform
 		rc.SetCache(p.scriptCache, *script.Id, script)
 	}
 
-	return &allPublishedScriptsExcludingDefault, response, nil
+	return &allPublishedScriptsExcludingDefault, resp, nil
 }
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
@@ -243,11 +244,25 @@ func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (
 	return scripts, response, nil
 }
 
-func (p *scriptsProxy) getAllPublishedWithNewEndpoint(_ context.Context) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
 	var allPublishedScripts []platformclientv2.Script
+	const pageSize = 100
 
-	for pageNum := 1; ; pageNum++ {
-		data, resp, err := p.scriptsApi.GetScriptsPublished(100, pageNum, "", "", "", "", "", "")
+	data, resp, err := p.scriptsApi.GetScriptsPublished(pageSize, 1, "", "", "", "", "", "")
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if data.Entities == nil || len(*data.Entities) == 0 {
+		return &allPublishedScripts, resp, nil
+	}
+
+	allPublishedScripts = append(allPublishedScripts, *data.Entities...)
+
+	pageCount := *data.PageCount
+
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
+		data, resp, err := p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", "", "", "", "", "")
 		if err != nil {
 			return nil, resp, err
 		}
@@ -258,6 +273,39 @@ func (p *scriptsProxy) getAllPublishedWithNewEndpoint(_ context.Context) (*[]pla
 	}
 
 	return &allPublishedScripts, nil, nil
+}
+
+func getAllScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
+	var allScripts []platformclientv2.Script
+
+	scripts, resp, err := p.scriptsApi.GetScripts(pageSize, 1, "", "", "", "", "", "", "", "")
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if scripts.Entities == nil || len(*scripts.Entities) == 0 {
+		return nil, resp, nil
+	}
+
+	allScripts = append(allScripts, *scripts.Entities...)
+
+	pageCount := *scripts.PageCount
+
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
+		scripts, resp, err = p.scriptsApi.GetScripts(pageSize, pageNum, "", "", "", "", "", "", "", "")
+		if err != nil {
+			return nil, resp, err
+		}
+
+		if scripts.Entities == nil || len(*scripts.Entities) == 0 {
+			break
+		}
+
+		allScripts = append(allScripts, *scripts.Entities...)
+	}
+
+	return &allScripts, resp, nil
 }
 
 // createScriptFormData creates the form data attributes to create a script in Genesys Cloud

@@ -35,12 +35,12 @@ func TestUnitPublishedScripts(t *testing.T) {
 
 	p := newScriptsProxy(sdkConfig)
 
-	allScriptsOgMethod, _, err := p.getAllPublishedScripts(context.Background())
+	allScriptsOgMethod, _, err := p.getAllPublishedScriptsExcludingDefaults(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	allScriptsNewMethod, err := p.getAllPublishedWithNewEndpoint(context.Background())
+	allScriptsNewMethod, err := p.getAllPublishedScripts(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
