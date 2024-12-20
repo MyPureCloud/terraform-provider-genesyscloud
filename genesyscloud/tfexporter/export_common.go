@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -322,4 +323,27 @@ func isDirEmpty(path string) (bool, diag.Diagnostics) {
 
 func createUnresolvedAttrKey(attr unresolvableAttributeInfo) string {
 	return fmt.Sprintf("%s_%s_%s", attr.ResourceType, attr.ResourceLabel, attr.Name)
+}
+
+func sortJSONMap(m map[string]interface{}) map[string]interface{} {
+	// Create new map to store sorted data
+	orderedMap := make(map[string]interface{})
+
+	// Get and sort the keys
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Add keys in sorted order and recursively sort nested maps
+	for _, k := range keys {
+		if nestedMap, isMap := m[k].(map[string]interface{}); isMap {
+			orderedMap[k] = sortJSONMap(nestedMap)
+		} else {
+			orderedMap[k] = m[k]
+		}
+	}
+
+	return orderedMap
 }

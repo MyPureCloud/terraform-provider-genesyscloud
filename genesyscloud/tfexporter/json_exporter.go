@@ -277,7 +277,8 @@ func determineVarType(s *schema.Schema) string {
 }
 
 func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
-	dataJSONBytes, err := json.MarshalIndent(jsonMap, "", "  ")
+	sortedJsonMap := sortJSONMap(jsonMap)
+	dataJSONBytes, err := json.MarshalIndent(sortedJsonMap, "", "  ")
 	if err != nil {
 		return diag.FromErr(err)
 	}
