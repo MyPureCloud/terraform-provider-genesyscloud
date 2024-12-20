@@ -36,7 +36,7 @@ resource "genesyscloud_architect_schedules" "sample_schedule" {
 
 - `end` (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
 - `name` (String) Name of the schedule.
-- `start` (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.
+- `start` (String) Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000. The start date should be applicable to the schedule's recurrence rule.
 
 ### Optional
 
