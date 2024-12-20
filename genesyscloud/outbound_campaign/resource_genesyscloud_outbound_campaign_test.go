@@ -25,7 +25,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -220,6 +220,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+					[]string{""},
+					strconv.Quote("false"),
 					generatePhoneColumnNoTypeBlock("Cell"),
 					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
@@ -289,6 +291,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+					[]string{"en-us"},
+					strconv.Quote("false"),
 					generatePhoneColumnNoTypeBlock("Cell"),
 					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
@@ -358,6 +362,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+					[]string{},
+					strconv.Quote("false"),
 					generatePhoneColumnNoTypeBlock("Cell"),
 					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
@@ -807,6 +813,8 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{},
 						[]string{},
 						[]string{},
+						[]string{},
+						strconv.Quote("false"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -850,6 +858,8 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 						[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+						[]string{strconv.Quote("language")},
+						strconv.Quote("false"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						outbound.GenerateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
@@ -874,6 +884,8 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "no_answer_timeout", "3"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "priority", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "script_id", scriptId),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "skill_columns.0", "language"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "auto_answer", "false"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceLabel, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "dnc_list_ids.0",
@@ -977,6 +989,8 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						[]string{},
 						[]string{},
 						[]string{},
+						[]string{},
+						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.FalseValue, "0"),
 					),
@@ -1026,6 +1040,8 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						[]string{},
 						[]string{},
 						[]string{},
+						[]string{},
+						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.TrueValue, "15"),
 					),
@@ -1140,6 +1156,8 @@ func generateOutboundCampaign(
 	dncListIds []string,
 	ruleSetIds []string,
 	contactListFilterIds []string,
+	skillColumns []string,
+	autoAnswer string,
 	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`
@@ -1167,11 +1185,13 @@ resource "genesyscloud_outbound_campaign" "%s" {
 	dnc_list_ids                  = [%s]
 	rule_set_ids 			      = [%s]
 	contact_list_filter_ids       = [%s]
+	skill_columns				  = [%s]
+	auto_answer                   = %s
 	%s
 }
 `, resourceLabel, name, dialingMode, callerName, callerAddress, contactListId, campaignStatus, divisionId, scriptId, queueId, siteId, abandonRate, maxCallsPerAgent, callableTimeSetId,
 		callAnalysisResponseSetId, outboundLineCount, skipPreviewDisabled, previewTimeOutSeconds, alwaysRunning, noAnswerTimeout,
-		priority, strings.Join(dncListIds, ", "), strings.Join(ruleSetIds, ", "), strings.Join(contactListFilterIds, ", "),
+		priority, strings.Join(dncListIds, ", "), strings.Join(ruleSetIds, ", "), strings.Join(contactListFilterIds, ", "), strings.Join(skillColumns, ", "), autoAnswer,
 		strings.Join(nestedBlocks, "\n"))
 }
 

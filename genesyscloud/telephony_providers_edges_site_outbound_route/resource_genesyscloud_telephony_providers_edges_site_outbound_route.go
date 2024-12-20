@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -53,7 +53,7 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 		if routes != nil && len(*routes) > 0 {
 			for _, route := range *routes {
 				outboundRouteId := buildSiteAndOutboundRouteId(*site.Id, *route.Id)
-				resources[outboundRouteId] = &resourceExporter.ResourceMeta{BlockLabel: *route.Name}
+				resources[outboundRouteId] = &resourceExporter.ResourceMeta{BlockLabel: *site.Name + "_" + *route.Name}
 			}
 		}
 	}

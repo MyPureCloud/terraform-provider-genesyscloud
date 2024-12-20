@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 // Build Functions
@@ -205,8 +205,10 @@ func buildCannedResponseLibraries(d *schema.ResourceData) *platformclientv2.Cann
 			libraryIdList := lists.InterfaceListToStrings(libraryIds)
 			cannedResponseSdk.LibraryIds = &libraryIdList
 		}
+		return &cannedResponseSdk
+
 	}
-	return &cannedResponseSdk
+	return nil
 }
 
 func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrule {

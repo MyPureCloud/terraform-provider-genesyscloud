@@ -9,7 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 func generatePhoneBaseSettingsDataSource(
@@ -129,4 +129,52 @@ func customizePhoneBaseSettingsPropertiesDiff(ctx context.Context, diff *schema.
 	}
 
 	return util.ApplyPropertyDefaults(diff, phoneBaseSetting.Properties)
+}
+
+func BuildTelephonyLineBaseProperties(d *schema.ResourceData) *map[string]interface{} {
+
+	if lineBase := d.Get("line_base").([]interface{}); len(lineBase) > 0 {
+
+		lineBaseMap := lineBase[0].(map[string]interface{})
+
+		properties := map[string]interface{}{
+			"station_persistent_enabled": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": lineBaseMap["station_persistent_enabled"].(bool),
+				},
+			},
+			"station_persistent_timeout": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": lineBaseMap["station_persistent_timeout"].(int),
+				},
+			},
+		}
+		return &properties
+	}
+	return nil
+}
+
+func flattenTelephonyLineBaseProperties(lineBase *[]platformclientv2.Linebase) []interface{} {
+	if lineBase == nil || len(*lineBase) == 0 {
+		return nil
+	}
+
+	lineBaseMap := make(map[string]interface{})
+	propertiesObject := (*lineBase)[0].Properties
+	if propertiesObject == nil {
+		return []interface{}{lineBaseMap}
+	}
+	if enabledKey, ok := (*propertiesObject)["station_persistent_enabled"].(map[string]interface{}); ok && enabledKey != nil {
+		enabledValue := enabledKey["value"].(map[string]interface{})["instance"]
+		if enabledValue != nil {
+			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_enabled", &enabledValue)
+		}
+	}
+	if timeOutKey, ok := (*propertiesObject)["station_persistent_timeout"].(map[string]interface{}); ok && timeOutKey != nil {
+		timeOutKey := timeOutKey["value"].(map[string]interface{})["instance"]
+		if timeOutKey != nil {
+			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_timeout", &timeOutKey)
+		}
+	}
+	return []interface{}{lineBaseMap}
 }

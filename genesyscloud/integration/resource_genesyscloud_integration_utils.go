@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
 )
 
 /*
@@ -21,7 +21,7 @@ Note:  Look for opportunities to minimize boilerplate code using functions and G
 */
 
 // flattenIntegrationConfig converts a platformclientv2.Integrationconfiguration into a map and then into single-element array for consumption by Terraform
-func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration) []interface{} {
+func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration, integrationId string, integrationName string) []interface{} {
 	if config == nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 		}
 	}
 	if config.Credentials != nil {
-		configCredentials = flattenConfigCredentials(*config.Credentials)
+		configCredentials = flattenConfigCredentials(*config.Credentials, integrationId, integrationName)
 	}
 
 	return []interface{}{map[string]interface{}{
@@ -72,13 +72,14 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 }
 
 // flattenConfigCredentials converts a map of platformclientv2.Credentialinfo into a map of only the credential IDs for consumption by Terraform
-func flattenConfigCredentials(credentials map[string]platformclientv2.Credentialinfo) map[string]interface{} {
+func flattenConfigCredentials(credentials map[string]platformclientv2.Credentialinfo, integrationId string, integrationName string) map[string]interface{} {
 	if len(credentials) == 0 {
 		return nil
 	}
 
 	results := make(map[string]interface{})
 	for k, v := range credentials {
+		log.Printf("Credentials details : integration ID: %s, integration Name: %s, credential ID: %s, credential Type: %s", integrationId, integrationName, *v.Id, k)
 		results[k] = *v.Id
 	}
 	return results
