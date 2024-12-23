@@ -81,6 +81,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	externalSource "terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
@@ -287,6 +288,7 @@ func registerResources() {
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
 	externalOrganization.SetRegistrar(regInstance)                         //Registering external organization
+	externalSource.SetRegistrar(regInstance)                               //Registering external source
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
