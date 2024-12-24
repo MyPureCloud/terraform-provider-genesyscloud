@@ -18,6 +18,7 @@ resource_genesycloud_outbound_campaign_schema.go holds four functions within it:
 3.  The datasource schema definitions for the outbound_campaign datasource.
 4.  The resource exporter configuration for the outbound_campaign exporter.
 */
+
 const ResourceType = "genesyscloud_outbound_campaign"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
@@ -117,7 +118,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 			`dnc_list_ids`: {
 				Description: `DncLists for this Campaign to check before placing a call.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`callable_time_set_id`: {
