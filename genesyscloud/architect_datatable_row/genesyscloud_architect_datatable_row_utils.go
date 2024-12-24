@@ -51,7 +51,7 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 	if !diff.NewValueKnown("datatable_id") {
 		// datatable_id not yet in final state, but properties_json is marked as known.
 		// There may be computed defaults to set on properties_json that we do not know yet.
-		diff.SetNewComputed("properties_json")
+		_ = diff.SetNewComputed("properties_json")
 		return nil
 	}
 
@@ -109,7 +109,7 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 		return fmt.Errorf("Failure to marshal properties for %s: %s", id, err)
 	}
 
-	diff.SetNew("properties_json", string(result))
+	_ = diff.SetNew("properties_json", string(result))
 	return nil
 }
 
