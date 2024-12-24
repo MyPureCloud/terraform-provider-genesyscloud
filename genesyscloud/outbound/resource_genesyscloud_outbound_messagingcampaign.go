@@ -231,7 +231,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		if sdkMessagingCampaign.DncLists != nil {
-			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*sdkMessagingCampaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*sdkMessagingCampaign.DncLists))
 		}
 
 		log.Printf("Read Outbound Messaging Campaign %s", d.Id())
