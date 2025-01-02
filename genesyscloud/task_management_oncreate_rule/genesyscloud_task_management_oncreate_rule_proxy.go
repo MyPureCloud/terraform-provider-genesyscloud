@@ -19,11 +19,11 @@ out during testing.
 var internalProxy *TaskManagementOnCreateRuleProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createTaskManagementOnCreateRuleFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, worktype *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error)
+type createTaskManagementOnCreateRuleFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, onCreateRuleCreate *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error)
 type getAllTaskManagementOnCreateRuleFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string) (*[]platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error)
 type getTaskManagementOnCreateRuleIdByNameFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error)
 type getTaskManagementOnCreateRuleByIdFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, id string) (worktype *platformclientv2.Workitemoncreaterule, response *platformclientv2.APIResponse, err error)
-type updateTaskManagementOnCreateRuleFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, id string, worktype *platformclientv2.Workitemoncreateruleupdate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error)
+type updateTaskManagementOnCreateRuleFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, id string, onCreateRuleUpdate *platformclientv2.Workitemoncreateruleupdate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error)
 type deleteTaskManagementOnCreateRuleFunc func(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, id string) (response *platformclientv2.APIResponse, err error)
 
 // TaskManagementOnCreateRuleProxy contains all the methods that call genesys cloud APIs.
@@ -69,8 +69,8 @@ func GetTaskManagementOnCreateRuleProxy(clientConfig *platformclientv2.Configura
 }
 
 // createTaskManagementOnCreateRule creates a Genesys Cloud task management oncreate rule
-func (p *TaskManagementOnCreateRuleProxy) createTaskManagementOnCreateRule(ctx context.Context, worktypeId string, taskManagementOnCreateRule *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error) {
-	return p.createTaskManagementOnCreateRuleAttr(ctx, p, worktypeId, taskManagementOnCreateRule)
+func (p *TaskManagementOnCreateRuleProxy) createTaskManagementOnCreateRule(ctx context.Context, worktypeId string, onCreateRuleCreate *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error) {
+	return p.createTaskManagementOnCreateRuleAttr(ctx, p, worktypeId, onCreateRuleCreate)
 }
 
 // GetAllTaskManagementOnCreateRule retrieves all Genesys Cloud task management oncreate rule
@@ -99,8 +99,8 @@ func (p *TaskManagementOnCreateRuleProxy) deleteTaskManagementOnCreateRule(ctx c
 }
 
 // createTaskManagementOnCreateRuleFn is an implementation function for creating a Genesys Cloud task management oncreate rule
-func createTaskManagementOnCreateRuleFn(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, taskManagementOnCreateRule *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error) {
-	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsOncreateRules(worktypeId, *taskManagementOnCreateRule)
+func createTaskManagementOnCreateRuleFn(ctx context.Context, p *TaskManagementOnCreateRuleProxy, worktypeId string, onCreateRuleCreate *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error) {
+	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsOncreateRules(worktypeId, *onCreateRuleCreate)
 }
 
 // getAllTaskManagementOnCreateRuleFn is the implementation for retrieving all task management oncreate rules in Genesys Cloud

@@ -93,14 +93,14 @@ func getWorkitemonattributechangeruleupdateFromResourceData(d *schema.ResourceDa
 		ruleCondition.SetField("OldValue", nil)
 	}
 	
-	onCreateRuleUpdate := platformclientv2.Workitemonattributechangeruleupdate{}
+	onAttributeChangeRuleUpdate := platformclientv2.Workitemonattributechangeruleupdate{}
 	if d.HasChange("name") {
-		onCreateRuleUpdate.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+		onAttributeChangeRuleUpdate.SetField("Name", platformclientv2.String(d.Get("name").(string)))
 	}
 	if d.HasChange("condition") {
-		onCreateRuleUpdate.SetField("Condition", &ruleCondition)
+		onAttributeChangeRuleUpdate.SetField("Condition", &ruleCondition)
 	}
-	return onCreateRuleUpdate
+	return onAttributeChangeRuleUpdate
 }
 
 // splitWorktypeBasedTerraformId will split the rule resource id which is in the form

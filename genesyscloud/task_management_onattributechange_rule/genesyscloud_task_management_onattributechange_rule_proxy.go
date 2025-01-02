@@ -19,11 +19,11 @@ out during testing.
 var internalProxy *TaskManagementOnAttributeChangeRuleProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createTaskManagementOnAttributeChangeRuleFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, worktype *platformclientv2.Workitemonattributechangerulecreate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error)
+type createTaskManagementOnAttributeChangeRuleFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, onAttributeChangeRuleCreate *platformclientv2.Workitemonattributechangerulecreate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error)
 type getAllTaskManagementOnAttributeChangeRuleFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string) (*[]platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error)
 type getTaskManagementOnAttributeChangeRuleIdByNameFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error)
 type getTaskManagementOnAttributeChangeRuleByIdFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, id string) (worktype *platformclientv2.Workitemonattributechangerule, response *platformclientv2.APIResponse, err error)
-type updateTaskManagementOnAttributeChangeRuleFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, id string, worktype *platformclientv2.Workitemonattributechangeruleupdate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error)
+type updateTaskManagementOnAttributeChangeRuleFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, id string, onAttributeChangeRuleUpdate *platformclientv2.Workitemonattributechangeruleupdate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error)
 type deleteTaskManagementOnAttributeChangeRuleFunc func(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, id string) (response *platformclientv2.APIResponse, err error)
 
 // TaskManagementOnAttributeChangeRuleProxy contains all the methods that call genesys cloud APIs.
@@ -69,8 +69,8 @@ func GetTaskManagementOnAttributeChangeRuleProxy(clientConfig *platformclientv2.
 }
 
 // createTaskManagementOnAttributeChangeRule creates a Genesys Cloud task management onattributechange rule
-func (p *TaskManagementOnAttributeChangeRuleProxy) createTaskManagementOnAttributeChangeRule(ctx context.Context, worktypeId string, taskManagementOnAttributeChangeRule *platformclientv2.Workitemonattributechangerulecreate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error) {
-	return p.createTaskManagementOnAttributeChangeRuleAttr(ctx, p, worktypeId, taskManagementOnAttributeChangeRule)
+func (p *TaskManagementOnAttributeChangeRuleProxy) createTaskManagementOnAttributeChangeRule(ctx context.Context, worktypeId string, onAttributeChangeRuleCreate *platformclientv2.Workitemonattributechangerulecreate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error) {
+	return p.createTaskManagementOnAttributeChangeRuleAttr(ctx, p, worktypeId, onAttributeChangeRuleCreate)
 }
 
 // GetAllTaskManagementOnAttributeChangeRule retrieves all Genesys Cloud task management onattributechange rule
@@ -99,8 +99,8 @@ func (p *TaskManagementOnAttributeChangeRuleProxy) deleteTaskManagementOnAttribu
 }
 
 // createTaskManagementOnAttributeChangeRuleFn is an implementation function for creating a Genesys Cloud task management onattributechange rule
-func createTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, taskManagementOnAttributeChangeRule *platformclientv2.Workitemonattributechangerulecreate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error) {
-	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsOnattributechangeRules(worktypeId, *taskManagementOnAttributeChangeRule)
+func createTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *TaskManagementOnAttributeChangeRuleProxy, worktypeId string, onAttributeChangeRuleCreate *platformclientv2.Workitemonattributechangerulecreate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error) {
+	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsOnattributechangeRules(worktypeId, *onAttributeChangeRuleCreate)
 }
 
 // getAllTaskManagementOnAttributeChangeRuleFn is the implementation for retrieving all task management onattributechange rules in Genesys Cloud
