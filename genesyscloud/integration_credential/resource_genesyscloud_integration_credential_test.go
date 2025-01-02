@@ -282,7 +282,7 @@ func generateGenesysOauthCredentialResource(resourceLabel string, name string) s
 
 	return fmt.Sprintf(`
       data "genesyscloud_auth_role" "admin" {
-		name = "Admin"
+		name = "admin"
 	  }
 
       resource "genesyscloud_oauth_client" "%s" {
