@@ -6,7 +6,7 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
