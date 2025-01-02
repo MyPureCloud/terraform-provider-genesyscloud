@@ -235,7 +235,7 @@ func (a *architectIvrProxy) uploadArchitectIvrWithChunkingLogic(ctx context.Cont
 	if !post {
 		// Get copy of ivr before this update
 		log.Printf("Reading IVR %s to save copy of the configuration before attempting an update", id)
-		ivrBeforeUpdate, resp, err = a.getArchitectIvr(ctx, id)
+		ivrBeforeUpdate, _, err = a.getArchitectIvr(ctx, id)
 		if err != nil {
 			log.Printf("Failed to save a copy of IVR %s before starting chunking logic: %v", id, err)
 		}

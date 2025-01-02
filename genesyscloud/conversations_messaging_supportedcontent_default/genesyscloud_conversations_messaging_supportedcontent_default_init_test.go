@@ -14,15 +14,11 @@ import (
    used in testing the conversations_messaging_supportedcontent_default resource.
 */
 
-// providerDataSources holds a map of all registered datasources
-var providerDataSources map[string]*schema.Resource
-
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -36,7 +32,6 @@ func (r *registerTestInstance) registerTestResources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}

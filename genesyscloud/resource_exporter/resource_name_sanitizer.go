@@ -7,7 +7,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	feature_toggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	unidecode "github.com/mozillazg/go-unidecode"
 )
@@ -29,7 +29,7 @@ type sanitizerOptimized struct{}
 func NewSanitizerProvider() *SanitizerProvider {
 
 	// Check if the environment variable is set
-	optimizedExists := feature_toggles.ExporterSanitizerOptimizedToggleExists()
+	optimizedExists := featureToggles.ExporterSanitizerOptimizedToggleExists()
 
 	//If the GENESYS_SANITIZER_TIME_OPTIMIZED is set use the updated time optimized sanitizer
 	if optimizedExists {
