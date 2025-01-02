@@ -103,6 +103,7 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `managed` (Boolean) Is this site managed by Genesys Cloud
 
 <a id="nestedblock--edge_auto_update_config"></a>
 ### Nested Schema for `edge_auto_update_config`
