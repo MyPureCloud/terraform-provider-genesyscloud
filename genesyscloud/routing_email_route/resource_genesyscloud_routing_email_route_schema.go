@@ -1,6 +1,7 @@
 package routing_email_route
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -101,6 +102,18 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 			"flow_id": {
 				Description: "The flow to use for processing the email. This should not be set if a queue_id is specified.",
 				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"history_inclusion": {
+				Description:  "The configuration to indicate how the history of a conversation has to be included in a draft.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "Optional",
+				ValidateFunc: validation.StringInSlice([]string{"Include", "Exclude", "Optional"}, true),
+			},
+			"allow_multiple_actions": {
+				Description: "Control if multiple actions are allowed on this route. When true the disconnect has to be done manually. When false a conversation will be disconnected by the system after every action.",
+				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"reply_email_address": {
