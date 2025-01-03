@@ -34,8 +34,6 @@ func getRoutingEmailRouteFromResourceData(d *schema.ResourceData) platformclient
 	}
 
 	if d.Get("history_inclusion") != "" {
-		fmt.Println("reached")
-		fmt.Printf("%v ", platformclientv2.String(d.Get("history_inclusion").(string)))
 		inboundRoute.HistoryInclusion = platformclientv2.String(d.Get("history_inclusion").(string))
 	}
 	if d.Get("allow_multiple_actions") != "" {
