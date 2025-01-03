@@ -3,7 +3,7 @@ package telephony_providers_edges_phonebasesettings
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var internalProxy *phoneBaseProxy
