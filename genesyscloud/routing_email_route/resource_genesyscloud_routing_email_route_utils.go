@@ -19,7 +19,7 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 // getRoutingEmailRouteFromResourceData maps data from schema ResourceData object to a platformclientv2.Inboundroute
 func getRoutingEmailRouteFromResourceData(d *schema.ResourceData) platformclientv2.Inboundroute {
 	id := d.Id()
-	return platformclientv2.Inboundroute{
+	inboundRoute := platformclientv2.Inboundroute{
 		Id:        &id,
 		Pattern:   platformclientv2.String(d.Get("pattern").(string)),
 		Queue:     util.BuildSdkDomainEntityRef(d, "queue_id"),
@@ -32,6 +32,16 @@ func getRoutingEmailRouteFromResourceData(d *schema.ResourceData) platformclient
 		AutoBcc:   buildAutoBccEmailAddresses(d),
 		SpamFlow:  util.BuildSdkDomainEntityRef(d, "spam_flow_id"),
 	}
+
+	if d.Get("history_inclusion") != "" {
+		fmt.Println("reached")
+		fmt.Printf("%v ", platformclientv2.String(d.Get("history_inclusion").(string)))
+		inboundRoute.HistoryInclusion = platformclientv2.String(d.Get("history_inclusion").(string))
+	}
+	if d.Get("allow_multiple_actions") != "" {
+		inboundRoute.AllowMultipleActions = platformclientv2.Bool(d.Get("allow_multiple_actions").(bool))
+	}
+	return inboundRoute
 }
 
 // Build Functions
@@ -166,11 +176,14 @@ func GenerateRoutingEmailRouteResource(
 	pattern string,
 	fromName string,
 	otherAttrs ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
+	hh := fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
             domain_id = %s
             pattern = "%s"
             from_name = "%s"
             %s
         }
         `, resourceLabel, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
+
+	fmt.Println(hh)
+	return hh
 }
