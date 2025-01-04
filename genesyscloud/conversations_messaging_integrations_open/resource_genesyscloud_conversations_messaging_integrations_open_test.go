@@ -3,6 +3,7 @@ package conversations_messaging_integrations_open
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -87,7 +88,10 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"outbound_notification_webhook_signature_secret_token"},
 			},
 		},
-		CheckDestroy: testVerifyConversationsMessagingIntegrationsOpenDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyConversationsMessagingIntegrationsOpenDestroyed(state)
+		},
 	})
 }
 
