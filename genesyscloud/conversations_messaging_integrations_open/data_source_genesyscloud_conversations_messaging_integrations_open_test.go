@@ -20,7 +20,6 @@ Test Class for the conversations messaging integrations open Data Source
 */
 
 func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
-	t.Parallel()
 	var (
 		dataSourceLabel                                 = "data_test_messaging_open"
 		resourceLabel                                   = "test_messaging_open"

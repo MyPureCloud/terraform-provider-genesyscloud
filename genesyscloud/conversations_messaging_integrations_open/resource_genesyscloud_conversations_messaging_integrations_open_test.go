@@ -24,7 +24,6 @@ tests for conversations_messaging_integrations_open.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
-	t.Parallel()
 	var (
 		resourceLabel                                   = "test_messaging_open"
 		name                                            = "Terraform Integrations Messaging Open " + uuid.NewString()
