@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -32,13 +32,13 @@ func getAllAuthTaskManagementOnAttributeChangeRule(ctx context.Context, clientCo
 
 	worktypes, resp, err := proxy.worktypeProxy.GetAllTaskManagementWorktype(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
 	}
 
 	for _, worktype := range *worktypes {
 		onAttributeChangeRules, resp, err := proxy.getAllTaskManagementOnAttributeChangeRule(ctx, *worktype.Id)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management onattributechange rules error: %s", err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management onattributechange rules error: %s", err), resp)
 		}
 
 		for _, onAttributeChangeRule := range *onAttributeChangeRules {
@@ -59,7 +59,7 @@ func createTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 	log.Printf("Creating task management onattributechange rule %s for worktype %s", *onAttributeChangeRuleCreate.Name, worktypeId)
 	onAttributeChangeRule, resp, err := proxy.createTaskManagementOnAttributeChangeRule(ctx, worktypeId, &onAttributeChangeRuleCreate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management onattributechange rule %s error: %s", *onAttributeChangeRuleCreate.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management onattributechange rule %s error: %s", *onAttributeChangeRuleCreate.Name, err), resp)
 	}
 	log.Printf("Created the base task management onattributechange rule %s for worktype %s", *onAttributeChangeRule.Id, worktypeId)
 	
@@ -72,7 +72,7 @@ func createTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnAttributeChangeRule(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnAttributeChangeRule(), constants.ConsistencyChecks(), ResourceType)
 	
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
@@ -80,7 +80,7 @@ func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Reso
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		onAttributeChangeRule, resp, getErr := proxy.getTaskManagementOnAttributeChangeRuleById(ctx, worktypeId, id)
 		if getErr != nil {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", onAttributeChangeRule.Name)
@@ -103,7 +103,7 @@ func updateTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 	log.Printf("Updating onattributechange rule %s for worktype %s", id, worktypeId)
 	_, resp, err := proxy.updateTaskManagementOnAttributeChangeRule(ctx, worktypeId, id, &onAttributeChangeRuleUpdate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management onattributechange rule %s for worktype %s error: %s", id, worktypeId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management onattributechange rule %s for worktype %s error: %s", id, worktypeId, err), resp)
 	}
 
 	log.Printf("Updated onattributechange rule %s for worktype %s", id, worktypeId)
@@ -120,7 +120,7 @@ func deleteTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 
 	resp, err := proxy.deleteTaskManagementOnAttributeChangeRule(ctx, worktypeId, id)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management onattributechange rule %s for worktype %s error: %s", id, worktypeId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management onattributechange rule %s for worktype %s error: %s", id, worktypeId, err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -131,8 +131,8 @@ func deleteTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 				log.Printf("Deleted task management onattributechange rule %s for worktype %s", id, worktypeId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management onattributechange rule %s still exists", id), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("task management onattributechange rule %s still exists", id), resp))
 	})
 }

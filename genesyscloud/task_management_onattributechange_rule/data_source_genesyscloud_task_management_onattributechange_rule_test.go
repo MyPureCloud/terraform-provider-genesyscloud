@@ -77,10 +77,10 @@ func TestAccDataSourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 						onAttributeChangeRuleDataSourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						onAttributeChangeRuleName,
-						resourceName+"."+onAttributeChangeRuleResourceLabel,
+						ResourceType+"."+onAttributeChangeRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+onAttributeChangeRuleDataSourceLabel, "id", resourceName+"."+onAttributeChangeRuleResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+onAttributeChangeRuleDataSourceLabel, "id", ResourceType+"."+onAttributeChangeRuleResourceLabel, "id"),
 				),
 			},
 		},
@@ -93,5 +93,5 @@ func generateOnAttributeChangeRuleDataSource(dataSourceLabel string, worktypeId 
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceLabel, worktypeId, name, dependsOnResource)
+	`, ResourceType, dataSourceLabel, worktypeId, name, dependsOnResource)
 }

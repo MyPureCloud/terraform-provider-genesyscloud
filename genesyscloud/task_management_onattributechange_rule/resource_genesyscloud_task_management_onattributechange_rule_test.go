@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -83,9 +83,9 @@ func TestAccResourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 						"", "",
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+onAttributeChangeRuleResourceLabel, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+onAttributeChangeRuleResourceLabel, "name", onAttributeChangeRuleName),
-					resource.TestCheckResourceAttrPair(resourceName+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value", 
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+onAttributeChangeRuleResourceLabel, "name", onAttributeChangeRuleName),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value", 
 													   fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusInProgressResourceLabel), "id"),
 				),
 			},
@@ -130,10 +130,10 @@ func TestAccResourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+onAttributeChangeRuleResourceLabel, "name", onAttributeChangeRuleName2),
-					resource.TestCheckResourceAttrPair(resourceName+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value", 
+					resource.TestCheckResourceAttr(ResourceType+"."+onAttributeChangeRuleResourceLabel, "name", onAttributeChangeRuleName2),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value", 
 													   fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusClosedResourceLabel), "id"),
-					resource.TestCheckResourceAttrPair(resourceName+"."+onAttributeChangeRuleResourceLabel, "condition.0.old_value", 
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.old_value", 
 													   fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusOpenResourceLabel), "id"),
 				),
 			},
@@ -145,7 +145,7 @@ func TestAccResourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 func testVerifyTaskManagementOnAttributeChangeRuleDestroyed(state *terraform.State) error {
 	taskManagementApi := platformclientv2.NewTaskManagementApi()
 	for _, res := range state.RootModule().Resources {
-		if res.Type != resourceName {
+		if res.Type != ResourceType {
 			continue
 		}
 

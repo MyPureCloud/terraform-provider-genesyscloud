@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -65,10 +65,10 @@ func TestAccResourceTaskManagementDateBasedRule(t *testing.T) {
 						relativeMinutesToInvocation,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+dateBasedRuleResourceLabel, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+dateBasedRuleResourceLabel, "name", dateBasedRuleName),
-					resource.TestCheckResourceAttr(resourceName+"."+dateBasedRuleResourceLabel, "condition.0.attribute", dateBasedRuleAttribute),
-					resource.TestCheckResourceAttr(resourceName+"."+dateBasedRuleResourceLabel, "condition.0.relative_minutes_to_invocation", fmt.Sprintf("%s", relativeMinutesToInvocation)),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+dateBasedRuleResourceLabel, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "name", dateBasedRuleName),
+					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "condition.0.attribute", dateBasedRuleAttribute),
+					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "condition.0.relative_minutes_to_invocation", fmt.Sprintf("%d", relativeMinutesToInvocation)),
 				),
 			},
 			{
@@ -89,8 +89,8 @@ func TestAccResourceTaskManagementDateBasedRule(t *testing.T) {
 					relativeMinutesToInvocation2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+dateBasedRuleResourceLabel, "name", dateBasedRuleName2),
-					resource.TestCheckResourceAttr(resourceName+"."+dateBasedRuleResourceLabel, "condition.0.relative_minutes_to_invocation", fmt.Sprintf("%s", relativeMinutesToInvocation2)),
+					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "name", dateBasedRuleName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "condition.0.relative_minutes_to_invocation", fmt.Sprintf("%d", relativeMinutesToInvocation2)),
 				),
 			},
 		},
@@ -101,7 +101,7 @@ func TestAccResourceTaskManagementDateBasedRule(t *testing.T) {
 func testVerifyTaskManagementDateBasedRuleDestroyed(state *terraform.State) error {
 	taskManagementApi := platformclientv2.NewTaskManagementApi()
 	for _, res := range state.RootModule().Resources {
-		if res.Type != resourceName {
+		if res.Type != ResourceType {
 			continue
 		}
 

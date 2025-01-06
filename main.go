@@ -96,6 +96,7 @@ import (
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/station"
+	workitemDateBasedRule "terraform-provider-genesyscloud/genesyscloud/task_management_datebased_rule"
 	workitemOnAttributeChangeRule "terraform-provider-genesyscloud/genesyscloud/task_management_onattributechange_rule"
 	workitemOnCreateRule "terraform-provider-genesyscloud/genesyscloud/task_management_oncreate_rule"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -250,6 +251,7 @@ func registerResources() {
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	workitemOnCreateRule.SetRegistrar(regInstance)                         //Registering task management oncreate rule
 	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule
+	workitemDateBasedRule.SetRegistrar(regInstance)                        //Registering task management datebased rule
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	team.SetRegistrar(regInstance)                                         //Registering team
 	telephony_provider_edges_trunkbasesettings.SetRegistrar(regInstance)   //Registering telephony_provider_edges_trunkbasesettings package

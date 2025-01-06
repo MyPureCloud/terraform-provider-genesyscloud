@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -27,7 +27,7 @@ func GenerateDateBasedRuleResource(
 		name = "%s"
 		condition {
 			attribute = "%s"
-			relative_minutes_to_invocation = %s
+			relative_minutes_to_invocation = %d
 		}
 	}
 	`, resourceLabel, worktypeId, name, attribute, relativeMinutesToInvocation)

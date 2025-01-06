@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceTaskManagementDateBasedRule()
+	providerResources[ResourceType] = ResourceTaskManagementDateBasedRule()
 	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
 	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
 }
@@ -40,7 +40,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceTaskManagementDateBasedRule()
+	providerDataSources[ResourceType] = DataSourceTaskManagementDateBasedRule()
 }
 
 // initTestResources initializes all test resources and data sources.

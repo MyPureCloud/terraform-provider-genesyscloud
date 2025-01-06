@@ -30,11 +30,11 @@ func dataSourceTaskManagementOnCreateRuleRead(ctx context.Context, d *schema.Res
 		onCreateRuleId, retryable, resp, err := proxy.getTaskManagementOnCreateRuleIdByName(ctx, typeId, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error searching task management oncreate rule %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management oncreate rule %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no task management oncreate rule found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management oncreate rule found with name %s", name), resp))
 		}
 
 		d.SetId(typeId + "/" + onCreateRuleId)

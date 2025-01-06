@@ -36,7 +36,6 @@ func TestAccDataSourceTaskManagementWorktype(t *testing.T) {
 			name:             "tf_worktype_" + uuid.NewString(),
 			description:      "worktype created for CX as Code test case",
 			defaultWorkbinId: fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-			schemaId:         fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 		}
 
 		dataSourceLabel = "data_worktype_1"

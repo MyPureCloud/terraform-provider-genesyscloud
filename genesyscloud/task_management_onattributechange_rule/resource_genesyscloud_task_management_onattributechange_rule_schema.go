@@ -16,13 +16,13 @@ resource_genesycloud_task_management_onattributechange_rule_schema.go holds four
 3.  The datasource schema definitions for the task_management_onattributechange_rule datasource.
 4.  The resource exporter configuration for the task_management_onattributechange_rule exporter.
 */
-const resourceName = "genesyscloud_task_management_onattributechange_rule"
+const ResourceType = "genesyscloud_task_management_onattributechange_rule"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementOnAttributeChangeRule())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementOnAttributeChangeRule())
-	regInstance.RegisterExporter(resourceName, TaskManagementOnAttributeChangeRuleExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementOnAttributeChangeRule())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementOnAttributeChangeRule())
+	regInstance.RegisterExporter(ResourceType, TaskManagementOnAttributeChangeRuleExporter())
 }
 
 // ResourceTaskManagementOnAttributeChangeRule registers the genesyscloud_task_management_onattributechange_rule resource with Terraform

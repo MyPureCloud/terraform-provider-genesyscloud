@@ -64,10 +64,10 @@ func TestAccDataSourceTaskManagementDateBasedRule(t *testing.T) {
 						dateBasedRuleDataSourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						dateBasedRuleName,
-						resourceName+"."+dateBasedRuleResourceLabel,
+						ResourceType+"."+dateBasedRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dateBasedRuleDataSourceLabel, "id", resourceName+"."+dateBasedRuleResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dateBasedRuleDataSourceLabel, "id", ResourceType+"."+dateBasedRuleResourceLabel, "id"),
 				),
 			},
 		},
@@ -80,5 +80,5 @@ func generateDateBasedRuleDataSource(dataSourceLabel string, worktypeId string, 
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceLabel, worktypeId, name, dependsOnResource)
+	`, ResourceType, dataSourceLabel, worktypeId, name, dependsOnResource)
 }

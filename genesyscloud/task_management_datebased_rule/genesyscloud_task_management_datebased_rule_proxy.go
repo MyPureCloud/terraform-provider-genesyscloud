@@ -6,7 +6,7 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	taskManagementWorktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -100,7 +100,7 @@ func (p *TaskManagementDateBasedRuleProxy) deleteTaskManagementDateBasedRule(ctx
 
 // createTaskManagementDateBasedRuleFn is an implementation function for creating a Genesys Cloud task management datebased rule
 func createTaskManagementDateBasedRuleFn(ctx context.Context, p *TaskManagementDateBasedRuleProxy, worktypeId string, dateBasedRuleCreate *platformclientv2.Workitemdatebasedrulecreate) (*platformclientv2.Workitemdatebasedrule, *platformclientv2.APIResponse, error) {
-	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsOnattributechangeRules(worktypeId, *dateBasedRuleCreate)
+	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsDatebasedRules(worktypeId, *dateBasedRuleCreate)
 }
 
 // getAllTaskManagementDateBasedRuleFn is the implementation for retrieving all task management datebased rules in Genesys Cloud

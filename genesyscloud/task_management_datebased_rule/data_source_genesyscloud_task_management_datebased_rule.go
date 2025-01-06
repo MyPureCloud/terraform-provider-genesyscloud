@@ -30,11 +30,11 @@ func dataSourceTaskManagementDateBasedRuleRead(ctx context.Context, d *schema.Re
 		dateBasedRuleId, retryable, resp, err := proxy.getTaskManagementDateBasedRuleIdByName(ctx, typeId, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error searching task management datebased rule %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management datebased rule %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no task management datebased rule found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management datebased rule found with name %s", name), resp))
 		}
 
 		d.SetId(typeId + "/" + dateBasedRuleId)

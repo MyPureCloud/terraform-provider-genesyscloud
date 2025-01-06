@@ -16,13 +16,13 @@ resource_genesycloud_task_management_datebased_rule_schema.go holds four functio
 3.  The datasource schema definitions for the task_management_datebased_rule datasource.
 4.  The resource exporter configuration for the task_management_datebased_rule exporter.
 */
-const resourceName = "genesyscloud_task_management_datebased_rule"
+const ResourceType = "genesyscloud_task_management_datebased_rule"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementDateBasedRule())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementDateBasedRule())
-	regInstance.RegisterExporter(resourceName, TaskManagementDateBasedRuleExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementDateBasedRule())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementDateBasedRule())
+	regInstance.RegisterExporter(ResourceType, TaskManagementDateBasedRuleExporter())
 }
 
 // ResourceTaskManagementDateBasedRule registers the genesyscloud_task_management_datebased_rule resource with Terraform

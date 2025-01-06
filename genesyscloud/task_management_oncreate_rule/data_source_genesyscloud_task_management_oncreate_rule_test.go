@@ -61,10 +61,10 @@ func TestAccDataSourceTaskManagementOnCreateRule(t *testing.T) {
 						onCreateRuleDataSourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						onCreateRuleName,
-						resourceName+"."+onCreateRuleResourceLabel,
+						ResourceType+"."+onCreateRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+onCreateRuleDataSourceLabel, "id", resourceName+"."+onCreateRuleResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+onCreateRuleDataSourceLabel, "id", ResourceType+"."+onCreateRuleResourceLabel, "id"),
 				),
 			},
 		},
@@ -77,5 +77,5 @@ func generateOnCreateRuleDataSource(dataSourceLabel string, worktypeId string, n
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceLabel, worktypeId, name, dependsOnResource)
+	`, ResourceType, dataSourceLabel, worktypeId, name, dependsOnResource)
 }

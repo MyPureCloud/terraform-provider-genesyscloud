@@ -16,13 +16,13 @@ resource_genesycloud_task_management_oncreate_rule_schema.go holds four function
 3.  The datasource schema definitions for the task_management_oncreate_rule datasource.
 4.  The resource exporter configuration for the task_management_oncreate_rule exporter.
 */
-const resourceName = "genesyscloud_task_management_oncreate_rule"
+const ResourceType = "genesyscloud_task_management_oncreate_rule"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementOnCreateRule())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementOnCreateRule())
-	regInstance.RegisterExporter(resourceName, TaskManagementOnCreateRuleExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementOnCreateRule())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementOnCreateRule())
+	regInstance.RegisterExporter(ResourceType, TaskManagementOnCreateRuleExporter())
 }
 
 // ResourceTaskManagementOnCreateRule registers the genesyscloud_task_management_oncreate_rule resource with Terraform

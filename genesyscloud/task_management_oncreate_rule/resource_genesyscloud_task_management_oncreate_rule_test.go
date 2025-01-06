@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -61,8 +61,8 @@ func TestAccResourceTaskManagementOnCreateRule(t *testing.T) {
 						"",
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+onCreateRuleResourceLabel, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+onCreateRuleResourceLabel, "name", onCreateRuleName),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onCreateRuleResourceLabel, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+onCreateRuleResourceLabel, "name", onCreateRuleName),
 				),
 			},
 			{
@@ -82,7 +82,7 @@ func TestAccResourceTaskManagementOnCreateRule(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+onCreateRuleResourceLabel, "name", onCreateRuleName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+onCreateRuleResourceLabel, "name", onCreateRuleName2),
 				),
 			},
 		},
@@ -93,7 +93,7 @@ func TestAccResourceTaskManagementOnCreateRule(t *testing.T) {
 func testVerifyTaskManagementOnCreateRuleDestroyed(state *terraform.State) error {
 	taskManagementApi := platformclientv2.NewTaskManagementApi()
 	for _, res := range state.RootModule().Resources {
-		if res.Type != resourceName {
+		if res.Type != ResourceType {
 			continue
 		}
 

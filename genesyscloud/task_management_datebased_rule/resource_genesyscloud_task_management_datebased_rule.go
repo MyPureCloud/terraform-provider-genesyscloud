@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -32,13 +32,13 @@ func getAllAuthTaskManagementDateBasedRule(ctx context.Context, clientConfig *pl
 
 	worktypes, resp, err := proxy.worktypeProxy.GetAllTaskManagementWorktype(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
 	}
 
 	for _, worktype := range *worktypes {
 		dateBasedRules, resp, err := proxy.getAllTaskManagementDateBasedRule(ctx, *worktype.Id)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get task management datebased rules error: %s", err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management datebased rules error: %s", err), resp)
 		}
 
 		for _, dateBasedRule := range *dateBasedRules {
@@ -59,7 +59,7 @@ func createTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 	log.Printf("Creating task management datebased rule %s for worktype %s", *dateBasedRuleCreate.Name, worktypeId)
 	dateBasedRule, resp, err := proxy.createTaskManagementDateBasedRule(ctx, worktypeId, &dateBasedRuleCreate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create task management datebased rule %s error: %s", *dateBasedRuleCreate.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management datebased rule %s error: %s", *dateBasedRuleCreate.Name, err), resp)
 	}
 	log.Printf("Created the base task management datebased rule %s for worktype %s", *dateBasedRule.Id, worktypeId)
 	
@@ -72,7 +72,7 @@ func createTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 func readTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetTaskManagementDateBasedRuleProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementDateBasedRule(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementDateBasedRule(), constants.ConsistencyChecks(), ResourceType)
 	
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
@@ -80,7 +80,7 @@ func readTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		dateBasedRule, resp, getErr := proxy.getTaskManagementDateBasedRuleById(ctx, worktypeId, id)
 		if getErr != nil {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read task management datebased rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management datebased rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", dateBasedRule.Name)
@@ -103,7 +103,7 @@ func updateTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 	log.Printf("Updating datebased rule %s for worktype %s", id, worktypeId)
 	_, resp, err := proxy.updateTaskManagementDateBasedRule(ctx, worktypeId, id, &dateBasedRuleUpdate)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update task management datebased rule %s for worktype %s error: %s", id, worktypeId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management datebased rule %s for worktype %s error: %s", id, worktypeId, err), resp)
 	}
 
 	log.Printf("Updated datebased rule %s for worktype %s", id, worktypeId)
@@ -120,7 +120,7 @@ func deleteTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 
 	resp, err := proxy.deleteTaskManagementDateBasedRule(ctx, worktypeId, id)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete task management datebased rule %s for worktype %s error: %s", id, worktypeId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management datebased rule %s for worktype %s error: %s", id, worktypeId, err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -131,8 +131,8 @@ func deleteTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 				log.Printf("Deleted task management datebased rule %s for worktype %s", id, worktypeId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting task management datebased rule %s for worktype %s | error: %s", id, worktypeId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting task management datebased rule %s for worktype %s | error: %s", id, worktypeId, err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("task management datebased rule %s still exists", id), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("task management datebased rule %s still exists", id), resp))
 	})
 }
