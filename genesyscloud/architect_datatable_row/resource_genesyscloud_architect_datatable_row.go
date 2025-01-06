@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -121,8 +121,8 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Datatable Row %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		d.Set("datatable_id", tableId)
-		d.Set("key_value", keyStr)
+		_ = d.Set("datatable_id", tableId)
+		_ = d.Set("key_value", keyStr)
 
 		// The key value is exposed through a separate attribute, so it should be removed from the value map
 		delete(*row, "key")
@@ -131,7 +131,7 @@ func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("Failed to marshal row map %v: %v", *row, err))
 		}
-		d.Set("properties_json", string(valueBytes))
+		_ = d.Set("properties_json", string(valueBytes))
 
 		log.Printf("Read Datatable Row %s", d.Id())
 		return cc.CheckState(d)

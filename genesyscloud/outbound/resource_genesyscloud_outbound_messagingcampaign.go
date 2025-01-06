@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -231,7 +231,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		if sdkMessagingCampaign.DncLists != nil {
-			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*sdkMessagingCampaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*sdkMessagingCampaign.DncLists))
 		}
 
 		log.Printf("Read Outbound Messaging Campaign %s", d.Id())

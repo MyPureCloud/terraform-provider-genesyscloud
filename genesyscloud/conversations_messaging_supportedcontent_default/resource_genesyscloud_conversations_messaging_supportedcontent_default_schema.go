@@ -16,6 +16,7 @@ resource_genesycloud_conversations_messaging_supportedcontent_default_schema.go 
 3.  The datasource schema definitions for the conversations_messaging_supportedcontent_default datasource.
 4.  The resource exporter configuration for the conversations_messaging_supportedcontent_default exporter.
 */
+
 const ResourceType = "genesyscloud_conversations_messaging_supportedcontent_default"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
