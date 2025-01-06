@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -18,27 +18,35 @@ import (
    for the resource.
 */
 
-// dataSourceAuthRoleRead retrieves by name the id in question
+// DataSourceAuthRoleRead retrieves by name the id in question
 func DataSourceAuthRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
+	var (
+		sdkConfig = m.(*provider.ProviderMeta).ClientConfig
+		proxy     = getAuthRoleProxy(sdkConfig)
 
-	name := d.Get("name").(string)
+		name = d.Get("name").(string)
 
-	// Query role by name. Retry in case search has not yet indexed the role.
-	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		const pageSize = 100
-		const pageNum = 1
-		roles, proxyResponse, getErr := authAPI.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
-		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting role %s | error: %s", name, getErr), proxyResponse))
+		response *platformclientv2.APIResponse
+		id       string
+	)
+
+	diagErr := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		roleId, retryable, resp, err := proxy.getAuthRoleIdByName(ctx, name)
+		if err != nil {
+			response = resp
+			if retryable {
+				return retry.RetryableError(err)
+			}
+			return retry.NonRetryableError(err)
 		}
-
-		if roles.Entities == nil || len(*roles.Entities) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No authorization roles found with name %s", name), proxyResponse))
-		}
-		role := (*roles.Entities)[0]
-		d.SetId(*role.Id)
+		id = roleId
 		return nil
 	})
+
+	if diagErr != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("%v", diagErr), response)
+	}
+
+	d.SetId(id)
+	return nil
 }

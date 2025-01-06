@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
@@ -454,7 +454,9 @@ func SetupJourneyActionMap(t *testing.T, testCaseName string, sdkConfig *platfor
 	testCasePrefix := testrunner.TestObjectIdPrefix + testCaseName
 	cleanupJourneySegments(testCasePrefix, sdkConfig)
 	cleanupArchitectScheduleGroups(testCasePrefix)
-	cleanupArchitectSchedules(testCasePrefix)
+	if err := cleanupArchitectSchedules(testCasePrefix); err != nil {
+		t.Log(err)
+	}
 	cleanupFlows(testCasePrefix, sdkConfig)
 	cleanupJourneyActionMaps(testCasePrefix, sdkConfig)
 }
@@ -513,14 +515,14 @@ func cleanupArchitectScheduleGroups(idPrefix string) {
 	}
 }
 
-func cleanupArchitectSchedules(idPrefix string) {
+func cleanupArchitectSchedules(idPrefix string) error {
 	architectApi := platformclientv2.NewArchitectApi()
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		architectSchedules, _, getErr := architectApi.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
 		if getErr != nil {
-			return
+			return getErr
 		}
 
 		if architectSchedules.Entities == nil || len(*architectSchedules.Entities) == 0 {
@@ -529,15 +531,15 @@ func cleanupArchitectSchedules(idPrefix string) {
 
 		for _, schedule := range *architectSchedules.Entities {
 			if schedule.Name != nil && strings.HasPrefix(*schedule.Name, idPrefix) {
-				resp, delErr := architectApi.DeleteArchitectSchedule(*schedule.Id)
+				_, delErr := architectApi.DeleteArchitectSchedule(*schedule.Id)
 				if delErr != nil {
-					util.BuildAPIDiagnosticError("genesyscloud_architect_schedules", fmt.Sprintf("failed to delete architect schedule %s (%s): %s", *schedule.Id, *schedule.Name, delErr), resp)
-					return
+					return fmt.Errorf("failed to delete architect schedule %s (%s): %s", *schedule.Id, *schedule.Name, delErr)
 				}
 				log.Printf("Deleted architect schedule %s (%s)", *schedule.Id, *schedule.Name)
 			}
 		}
 	}
+	return nil
 }
 
 func cleanupJourneySegments(idPrefix string, sdkConfig *platformclientv2.Configuration) {

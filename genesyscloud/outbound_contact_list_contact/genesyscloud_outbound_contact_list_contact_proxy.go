@@ -6,16 +6,20 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var contactCache = rc.NewResourceCache[platformclientv2.Dialercontact]()
 
+type ContactEntry struct {
+	ContactList *platformclientv2.Contactlist
+	Contact     *[]platformclientv2.Dialercontact
+}
 type createContactFunc func(ctx context.Context, p *contactProxy, contactListId string, contact platformclientv2.Writabledialercontact, priority, clearSystemData, doNotQueue bool) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)
 type readContactByIdFunc func(ctx context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)
 type updateContactFunc func(ctx context.Context, p *contactProxy, contactListId string, contactId string, contact platformclientv2.Dialercontact) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)
 type deleteContactFunc func(ctx context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.APIResponse, error)
-type getAllContactsFunc func(ctx context.Context, p *contactProxy) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error)
+type getAllContactsFunc func(ctx context.Context, p *contactProxy) ([]ContactEntry, *platformclientv2.APIResponse, error)
 
 type contactProxy struct {
 	clientConfig        *platformclientv2.Configuration
@@ -62,7 +66,7 @@ func (p *contactProxy) deleteContact(ctx context.Context, contactListId, contact
 	return p.deleteContactAttr(ctx, p, contactListId, contactId)
 }
 
-func (p *contactProxy) getAllContacts(ctx context.Context) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+func (p *contactProxy) getAllContacts(ctx context.Context) ([]ContactEntry, *platformclientv2.APIResponse, error) {
 	return p.getAllContactsAttr(ctx, p)
 }
 
@@ -71,7 +75,7 @@ func createContactFn(_ context.Context, p *contactProxy, contactListId string, c
 }
 
 func readContactByIdFn(_ context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	if contact := rc.GetCacheItem(p.contactCache, createComplexContact(contactListId, contactId)); contact != nil {
+	if contact := rc.GetCacheItem(p.contactCache, buildComplexContactId(contactListId, contactId)); contact != nil {
 		return contact, nil, nil
 	}
 	if tfexporter_state.IsExporterActive() {
@@ -89,31 +93,30 @@ func deleteContactFn(_ context.Context, p *contactProxy, contactListId, contactI
 	if err != nil {
 		return resp, err
 	}
-	rc.DeleteCacheItem(p.contactCache, createComplexContact(contactListId, contactId))
+	rc.DeleteCacheItem(p.contactCache, buildComplexContactId(contactListId, contactId))
 	return resp, nil
 }
 
-func getAllContactsFn(ctx context.Context, p *contactProxy) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	var allContacts []platformclientv2.Dialercontact
-	contactMatrix := make(map[string][]platformclientv2.Dialercontact)
+func getAllContactsFn(ctx context.Context, p *contactProxy) ([]ContactEntry, *platformclientv2.APIResponse, error) {
+	var allContacts []ContactEntry
 
-	contactListIds, resp, err := p.getAllContactListIds(ctx)
+	contactLists, resp, err := p.getAllContactLists(ctx)
 	if err != nil {
 		return allContacts, resp, err
 	}
 
-	for _, contactListId := range contactListIds {
-		contacts, resp, err := p.getContactsByContactListId(ctx, contactListId)
+	for _, contactList := range contactLists {
+		contacts, resp, err := p.getContactsByContactListId(ctx, *contactList.Id)
 		if err != nil {
 			return nil, resp, err
 		}
-		allContacts = append(allContacts, contacts...)
-		contactMatrix[contactListId] = contacts
-	}
-
-	for contactListId, contactListContacts := range contactMatrix {
-		for _, contact := range contactListContacts {
-			rc.SetCache(p.contactCache, createComplexContact(contactListId, *contact.Id), contact)
+		contactEntry := ContactEntry{
+			ContactList: &contactList,
+			Contact:     &contacts,
+		}
+		allContacts = append(allContacts, contactEntry)
+		for _, contact := range contacts {
+			rc.SetCache(p.contactCache, buildComplexContactId(*contactList.Id, *contact.Id), contact)
 		}
 	}
 
@@ -160,10 +163,10 @@ func (p *contactProxy) getContactsByContactListId(_ context.Context, contactList
 	return allContacts, nil, nil
 }
 
-func (p *contactProxy) getAllContactListIds(_ context.Context) ([]string, *platformclientv2.APIResponse, error) {
+func (p *contactProxy) getAllContactLists(_ context.Context) ([]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var pageNum = 1
-	var allContactListIds []string
+	var allContactLists []platformclientv2.Contactlist
 
 	contactListConfigs, resp, getErr := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
 	if getErr != nil {
@@ -173,7 +176,7 @@ func (p *contactProxy) getAllContactListIds(_ context.Context) ([]string, *platf
 		return nil, nil, nil
 	}
 	for _, cl := range *contactListConfigs.Entities {
-		allContactListIds = append(allContactListIds, *cl.Id)
+		allContactLists = append(allContactLists, cl)
 	}
 
 	for pageNum := 2; pageNum <= *contactListConfigs.PageCount; pageNum++ {
@@ -185,9 +188,9 @@ func (p *contactProxy) getAllContactListIds(_ context.Context) ([]string, *platf
 			break
 		}
 		for _, cl := range *contactListConfigs.Entities {
-			allContactListIds = append(allContactListIds, *cl.Id)
+			allContactLists = append(allContactLists, cl)
 		}
 	}
 
-	return allContactListIds, nil, nil
+	return allContactLists, nil, nil
 }

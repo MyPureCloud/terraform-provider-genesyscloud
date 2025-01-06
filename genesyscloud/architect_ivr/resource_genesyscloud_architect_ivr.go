@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 // getAllIvrConfigs retrieves all architect IVRs and is used for the exporter
@@ -32,7 +32,13 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 	}
 
 	for _, entity := range *allIvrs {
-		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: *entity.Name}
+		var blockLabel string
+		if entity.OpenHoursFlow != nil && entity.OpenHoursFlow.Name != nil {
+			blockLabel = *entity.OpenHoursFlow.Name + "_" + *entity.Name
+		} else {
+			blockLabel = *entity.Name
+		}
+		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 	return resources, nil
 }

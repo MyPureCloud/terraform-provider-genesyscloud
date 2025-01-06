@@ -19,6 +19,9 @@ func TestAccDataSourceArchitectSchedule(t *testing.T) {
 		start              = "2021-08-04T08:00:00.000000"
 		end                = "2021-08-04T17:00:00.000000"
 		rrule              = "FREQ=DAILY;INTERVAL=1"
+
+		resourcePath     = ResourceType + "." + schedResourceLabel
+		dataResourcePath = "data." + ResourceType + "." + schedDataLabel
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -37,9 +40,9 @@ func TestAccDataSourceArchitectSchedule(t *testing.T) {
 				) + generateScheduleDataSource(
 					schedDataLabel,
 					name,
-					"genesyscloud_architect_schedules."+schedResourceLabel),
+					resourcePath),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_architect_schedules."+schedDataLabel, "id", "genesyscloud_architect_schedules."+schedResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(dataResourcePath, "id", resourcePath, "id"),
 				),
 			},
 		},
@@ -47,14 +50,12 @@ func TestAccDataSourceArchitectSchedule(t *testing.T) {
 }
 
 func generateScheduleDataSource(
-	resourceLabel string,
-	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	resourceLabel,
+	name,
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_architect_schedules" "%s" {
+	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }

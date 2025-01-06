@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -107,20 +107,20 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read role %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
 
-		d.Set("name", *role.Name)
+		_ = d.Set("name", *role.Name)
 		resourcedata.SetNillableValue(d, "description", role.Description)
 		resourcedata.SetNillableValue(d, "default_role_id", role.DefaultRoleId)
 
 		if role.Permissions != nil {
-			d.Set("permissions", lists.StringListToSet(*role.Permissions))
+			_ = d.Set("permissions", lists.StringListToSet(*role.Permissions))
 		} else {
-			d.Set("permissions", nil)
+			_ = d.Set("permissions", nil)
 		}
 
 		if role.PermissionPolicies != nil {
-			d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
+			_ = d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
 		} else {
-			d.Set("permission_policies", nil)
+			_ = d.Set("permission_policies", nil)
 		}
 
 		log.Printf("Read role %s %s", d.Id(), *role.Name)

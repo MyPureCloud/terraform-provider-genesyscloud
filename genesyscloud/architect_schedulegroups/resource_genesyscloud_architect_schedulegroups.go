@@ -10,12 +10,13 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -79,34 +80,27 @@ func readArchitectSchedulegroups(ctx context.Context, d *schema.ResourceData, me
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read schedule group %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
 
-		d.Set("name", *scheduleGroup.Name)
-		d.Set("division_id", *scheduleGroup.Division.Id)
-		d.Set("description", nil)
-		if scheduleGroup.Description != nil {
-			d.Set("description", *scheduleGroup.Description)
-		}
-
-		d.Set("time_zone", nil)
-		if scheduleGroup.TimeZone != nil {
-			d.Set("time_zone", *scheduleGroup.TimeZone)
-		}
+		resourcedata.SetNillableValue(d, "name", scheduleGroup.Name)
+		resourcedata.SetNillableValue(d, "description", scheduleGroup.Description)
+		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", scheduleGroup.Division)
+		resourcedata.SetNillableValue(d, "time_zone", scheduleGroup.TimeZone)
 
 		if scheduleGroup.OpenSchedules != nil {
-			d.Set("open_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.OpenSchedules))
+			_ = d.Set("open_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.OpenSchedules))
 		} else {
-			d.Set("open_schedules_id", nil)
+			_ = d.Set("open_schedules_id", nil)
 		}
 
 		if scheduleGroup.ClosedSchedules != nil {
-			d.Set("closed_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.ClosedSchedules))
+			_ = d.Set("closed_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.ClosedSchedules))
 		} else {
-			d.Set("closed_schedules_id", nil)
+			_ = d.Set("closed_schedules_id", nil)
 		}
 
 		if scheduleGroup.HolidaySchedules != nil {
-			d.Set("holiday_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.HolidaySchedules))
+			_ = d.Set("holiday_schedules_id", util.SdkDomainEntityRefArrToSet(*scheduleGroup.HolidaySchedules))
 		} else {
-			d.Set("holiday_schedules_id", nil)
+			_ = d.Set("holiday_schedules_id", nil)
 		}
 
 		log.Printf("Read schedule group %s %s", d.Id(), *scheduleGroup.Name)

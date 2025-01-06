@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -107,28 +107,24 @@ func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 
 	scheduleGroups, apiResponse, err := p.architectApi.GetArchitectSchedulegroups(1, pageSize, "", "", "", "", nil)
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("Failed to get schedule group: %v", err)
+		return nil, apiResponse, fmt.Errorf("failed to get schedule group: %v", err)
 	}
 	if scheduleGroups.Entities == nil || len(*scheduleGroups.Entities) == 0 {
 		return &allScheduleGroups, apiResponse, nil
 	}
-	for _, scheduleGroup := range *scheduleGroups.Entities {
-		allScheduleGroups = append(allScheduleGroups, scheduleGroup)
-	}
+	allScheduleGroups = append(allScheduleGroups, *scheduleGroups.Entities...)
 
 	for pageNum := 2; pageNum <= *scheduleGroups.PageCount; pageNum++ {
 		scheduleGroups, apiResponse, err := p.architectApi.GetArchitectSchedulegroups(pageNum, pageSize, "", "", "", "", nil)
 		if err != nil {
-			return nil, apiResponse, fmt.Errorf("Failed to get schedule group: %v", err)
+			return nil, apiResponse, fmt.Errorf("failed to get schedule group: %v", err)
 		}
 
 		if scheduleGroups.Entities == nil || len(*scheduleGroups.Entities) == 0 {
 			break
 		}
 
-		for _, scheduleGroup := range *scheduleGroups.Entities {
-			allScheduleGroups = append(allScheduleGroups, scheduleGroup)
-		}
+		allScheduleGroups = append(allScheduleGroups, *scheduleGroups.Entities...)
 	}
 	return &allScheduleGroups, apiResponse, nil
 }

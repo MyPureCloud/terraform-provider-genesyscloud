@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -16,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -34,8 +33,9 @@ func getAllAuthArchitectGrammarLanguage(ctx context.Context, clientConfig *platf
 	}
 
 	for _, language := range *languages {
-		languageId := *language.GrammarId + ":" + *language.Language
-		resources[languageId] = &resourceExporter.ResourceMeta{BlockLabel: *language.Language}
+		languageId := buildGrammarLanguageId(*language.Grammar.Id, *language.GrammarLanguage.Language)
+
+		resources[languageId] = &resourceExporter.ResourceMeta{BlockLabel: *language.Grammar.Name + "_" + *language.GrammarLanguage.Language}
 	}
 
 	return resources, nil
@@ -54,8 +54,7 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create grammar language: %s error %s", d.Id(), err), resp)
 	}
 
-	// Language id is always in format <grammar-id>:<language-code>
-	languageId := fmt.Sprintf("%s:%s", *language.GrammarId, *language.Language)
+	languageId := buildGrammarLanguageId(*language.GrammarId, *language.Language)
 	d.SetId(languageId)
 	log.Printf("Created Architect Grammar Language %s", languageId)
 	return readArchitectGrammarLanguage(ctx, d, meta)
@@ -70,7 +69,7 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Reading Architect Grammar Language %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		grammarId, languageCode := splitLanguageId(d.Id())
+		grammarId, languageCode := splitGrammarLanguageId(d.Id())
 		language, resp, getErr := proxy.getArchitectGrammarLanguageById(ctx, grammarId, languageCode)
 
 		if getErr != nil {
@@ -94,14 +93,6 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 	})
 }
 
-func splitLanguageId(languageId string) (string, string) {
-	split := strings.SplitN(languageId, ":", 2)
-	if len(split) == 2 {
-		return split[0], split[1]
-	}
-	return "", ""
-}
-
 // updateArchitectGrammarLanguage is used by the architect_grammar_language resource to update an architect grammar language in Genesys Cloud
 func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -110,7 +101,8 @@ func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	architectGrammarLanguage := getArchitectGrammarLanguageFromResourceData(d)
 
 	log.Printf("Updating Architect Grammar Language %s", d.Id())
-	_, resp, err := proxy.updateArchitectGrammarLanguage(ctx, *architectGrammarLanguage.GrammarId, *architectGrammarLanguage.Language, &architectGrammarLanguage)
+	grammarId, languageCode := splitGrammarLanguageId(d.Id())
+	_, resp, err := proxy.updateArchitectGrammarLanguage(ctx, grammarId, languageCode, &architectGrammarLanguage)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update grammar language: %s error: %s", d.Id(), err), resp)
 	}
@@ -124,7 +116,7 @@ func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
-	grammarId, languageCode := splitLanguageId(d.Id())
+	grammarId, languageCode := splitGrammarLanguageId(d.Id())
 	resp, err := proxy.deleteArchitectGrammarLanguage(ctx, grammarId, languageCode)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete grammar language %s: %s", d.Id(), err), resp)

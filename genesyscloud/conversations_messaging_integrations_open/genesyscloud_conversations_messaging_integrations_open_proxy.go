@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -98,34 +98,31 @@ func createConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 }
 
 // getAllConversationsMessagingIntegrationsOpenFn is the implementation for retrieving all conversations messaging integrations open in Genesys Cloud
-func getAllConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
+func getAllConversationsMessagingIntegrationsOpenFn(_ context.Context, p *conversationsMessagingIntegrationsOpenProxy) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	var allOpenIntegrationRequests []platformclientv2.Openintegration
 	const pageSize = 100
 
 	openIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsOpen(pageSize, 1, "", "", "")
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get open integration request: %v", err)
+		return nil, resp, fmt.Errorf("failed to get open integration request: %v", err)
 	}
 	if openIntegrationRequests.Entities == nil || len(*openIntegrationRequests.Entities) == 0 {
 		return &allOpenIntegrationRequests, resp, nil
 	}
-	for _, openIntegrationRequest := range *openIntegrationRequests.Entities {
-		allOpenIntegrationRequests = append(allOpenIntegrationRequests, openIntegrationRequest)
-	}
+
+	allOpenIntegrationRequests = append(allOpenIntegrationRequests, *openIntegrationRequests.Entities...)
 
 	for pageNum := 2; pageNum <= *openIntegrationRequests.PageCount; pageNum++ {
 		openIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsOpen(pageSize, pageNum, "", "", "")
 		if err != nil {
-			return nil, resp, fmt.Errorf("Failed to get open integration request: %v", err)
+			return nil, resp, fmt.Errorf("failed to get open integration request: %v", err)
 		}
 
 		if openIntegrationRequests.Entities == nil || len(*openIntegrationRequests.Entities) == 0 {
 			break
 		}
 
-		for _, openIntegrationRequest := range *openIntegrationRequests.Entities {
-			allOpenIntegrationRequests = append(allOpenIntegrationRequests, openIntegrationRequest)
-		}
+		allOpenIntegrationRequests = append(allOpenIntegrationRequests, *openIntegrationRequests.Entities...)
 	}
 
 	return &allOpenIntegrationRequests, resp, nil

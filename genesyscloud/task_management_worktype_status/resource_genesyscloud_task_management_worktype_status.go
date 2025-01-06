@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -49,7 +49,7 @@ func getAllAuthTaskManagementWorktypeStatuss(ctx context.Context, clientConfig *
 		}
 
 		for _, status := range *worktypeStatuses {
-			resources[*worktype.Id+"/"+*status.Id] = &resourceExporter.ResourceMeta{BlockLabel: *status.Name}
+			resources[*worktype.Id+"/"+*status.Id] = &resourceExporter.ResourceMeta{BlockLabel: *worktype.Name + "_" + *status.Name}
 		}
 	}
 

@@ -3,10 +3,9 @@ package auth_role
 import (
 	"context"
 	"fmt"
-
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -169,8 +168,25 @@ func getAllAuthRoleFn(ctx context.Context, p *authRoleProxy) (*[]platformclientv
 }
 
 // getAuthRoleIdByNameFn is an implementation of the function to get a Genesys Cloud auth role by name
-func getAuthRoleIdByNameFn(ctx context.Context, p *authRoleProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	return "", false, nil, nil
+func getAuthRoleIdByNameFn(_ context.Context, p *authRoleProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	const pageSize = 100
+	const pageNum = 1
+	roles, resp, getErr := p.authorizationApi.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
+	if getErr != nil {
+		return "", false, resp, getErr
+	}
+
+	if roles.Entities == nil || len(*roles.Entities) == 0 {
+		return "", true, resp, fmt.Errorf("no authorization roles found with name %s", name)
+	}
+
+	for _, role := range *roles.Entities {
+		if *role.Name == name {
+			return *role.Id, false, resp, nil
+		}
+	}
+
+	return "", true, resp, fmt.Errorf("no authorization roles found with name %s", name)
 }
 
 // getAuthRoleByIdFn is an implementation of the function to get a Genesys Cloud auth role by Id

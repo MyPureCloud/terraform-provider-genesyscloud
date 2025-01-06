@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -120,7 +120,7 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 		return err
 	}
 
-	grammarId, languageCode := splitLanguageId(languageId)
+	grammarId, languageCode := splitGrammarLanguageId(languageId)
 	language, _, err := proxy.getArchitectGrammarLanguageById(context.Background(), grammarId, languageCode)
 	if err != nil {
 		return err
@@ -243,4 +243,18 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 			}
 		}
 	}
+}
+
+// Language id is always in format <grammar-id>:<language-code>
+func buildGrammarLanguageId(grammarId string, languageCode string) (grammarLanguageId string) {
+	return fmt.Sprintf("%s:%s", grammarId, languageCode)
+}
+
+// Language id is always in format <grammar-id>:<language-code>
+func splitGrammarLanguageId(languageId string) (grammarId string, languageCode string) {
+	split := strings.SplitN(languageId, ":", 2)
+	if len(split) == 2 {
+		return split[0], split[1]
+	}
+	return "", ""
 }
