@@ -19,7 +19,7 @@ func TestAccDataSourceScript(t *testing.T) {
 		scriptDataSourceLabel = "script-data"
 		resourceLabel         = "script"
 		name                  = "tfscript" + uuid.NewString()
-		filePath              = getTestDataPath("resource", resourceName, "test_script.json")
+		filePath              = getTestDataPath("resource", ResourceType, "test_script.json")
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -38,8 +38,8 @@ func TestAccDataSourceScript(t *testing.T) {
 					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(fmt.Sprintf("data.%s.%s", resourceName, scriptDataSourceLabel), "id",
-						resourceName+"."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(fmt.Sprintf("data.%s.%s", ResourceType, scriptDataSourceLabel), "id",
+						ResourceType+"."+resourceLabel, "id"),
 				),
 			},
 		},
@@ -70,7 +70,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, callbackDataSourceLabel), "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", ResourceType, callbackDataSourceLabel), "id",
 						defaultCallbackScriptId,
 					),
 				),
@@ -82,7 +82,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, inboundDataSourceLabel), "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", ResourceType, inboundDataSourceLabel), "id",
 						defaultInboundScriptId,
 					),
 				),
@@ -94,7 +94,7 @@ func TestAccDataSourceScriptPublishedDefaults(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", resourceName, outboundDataSourceLabel), "id",
+					resource.TestCheckResourceAttr(fmt.Sprintf("data.%s.%s", ResourceType, outboundDataSourceLabel), "id",
 						defaultOutboundScriptId,
 					),
 				),
@@ -109,11 +109,11 @@ func generateScriptDataSource(dataSourceLabel, name, resourceLabel string) strin
 		name = "%s"
 		depends_on = [%s.%s]
 	}
-	`, resourceName, dataSourceLabel, name, resourceName, resourceLabel)
+	`, ResourceType, dataSourceLabel, name, ResourceType, resourceLabel)
 	} else {
 		return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 	}
-	`, resourceName, dataSourceLabel, name)
+	`, ResourceType, dataSourceLabel, name)
 	}
 }

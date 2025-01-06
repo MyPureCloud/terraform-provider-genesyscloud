@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -20,7 +20,7 @@ resource_genesyscloud_telephony_providers_edges_site_schema.go should hold four 
 3.  The datasource schema definitions for the telephony_providers_edges_site datasource.
 4.  The resource exporter configuration for the telephony_providers_edges_site exporter.
 */
-const resourceName = "genesyscloud_telephony_providers_edges_site"
+const ResourceType = "genesyscloud_telephony_providers_edges_site"
 
 // used in sdk authorization for tests
 var (
@@ -73,9 +73,9 @@ var (
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceSite())
-	l.RegisterResource(resourceName, ResourceSite())
-	l.RegisterExporter(resourceName, SiteExporter())
+	l.RegisterDataSource(ResourceType, DataSourceSite())
+	l.RegisterResource(ResourceType, ResourceSite())
+	l.RegisterExporter(ResourceType, SiteExporter())
 }
 
 // ResourceSite registers the genesyscloud_telephony_providers_edges_site resource with Terraform
@@ -250,7 +250,7 @@ func ResourceSite() *schema.Resource {
 				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        outboundRouteSchema,
-				Deprecated:  fmt.Sprintf("The outbound routes property is deprecated in %s, please use independent outbound routes resource instead, genesyscloud_telephony_providers_edges_site_outbound_route", resourceName),
+				Deprecated:  fmt.Sprintf("The outbound routes property is deprecated in %s, please use independent outbound routes resource instead, genesyscloud_telephony_providers_edges_site_outbound_route", ResourceType),
 			},
 			"primary_sites": {
 				Description: `Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.`,
@@ -289,6 +289,9 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 		},
 		CustomValidateExports: map[string][]string{
 			"rrule": {"edge_auto_update_config.rrule"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"number_plans": {ResolverFunc: siteNumberPlansExporterResolver},
 		},
 	}
 }

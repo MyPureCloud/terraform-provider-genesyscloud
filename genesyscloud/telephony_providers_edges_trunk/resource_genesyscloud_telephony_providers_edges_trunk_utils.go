@@ -12,7 +12,7 @@ func generateTrunkDataSource(
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }
 func generateTrunk(
 	trunkRes,
@@ -22,5 +22,5 @@ func generateTrunk(
 		trunk_base_settings_id = %s
 		edge_group_id = %s
 	}
-	`, resourceName, trunkRes, trunkBaseSettingsId, edgeGroupId)
+	`, ResourceType, trunkRes, trunkBaseSettingsId, edgeGroupId)
 }

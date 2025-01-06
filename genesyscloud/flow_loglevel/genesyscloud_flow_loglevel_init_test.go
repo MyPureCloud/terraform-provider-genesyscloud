@@ -1,10 +1,11 @@
 package flow_loglevel
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -29,15 +30,15 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_flow_loglevel"] = ResourceFlowLoglevel()
+	providerResources[ResourceType] = ResourceFlowLoglevel()
+	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
+	providerDataSources[architect_flow.ResourceType] = architect_flow.DataSourceArchitectFlow()
 }
 
 // initTestResources initializes all test resources and data sources.

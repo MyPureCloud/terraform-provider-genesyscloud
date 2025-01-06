@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceJourneySegment(t *testing.T) {
@@ -28,13 +28,13 @@ func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
 }
 
 func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
-	const resourceName = "genesyscloud_journey_segment"
+	const resourceType = "genesyscloud_journey_segment"
 	setupJourneySegment(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(resourceName, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(resourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }

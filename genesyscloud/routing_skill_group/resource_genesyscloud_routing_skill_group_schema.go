@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_routing_skill_group"
+const ResourceType = "genesyscloud_routing_skill_group"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingSkillGroup())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingSkillGroup())
-	regInstance.RegisterExporter(resourceName, ResourceSkillGroupExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingSkillGroup())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingSkillGroup())
+	regInstance.RegisterExporter(ResourceType, ResourceSkillGroupExporter())
 }
 
 func ResourceRoutingSkillGroup() *schema.Resource {

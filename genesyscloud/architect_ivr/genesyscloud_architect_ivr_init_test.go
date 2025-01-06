@@ -32,9 +32,9 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceArchitectIvrConfig()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
-	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
+	providerResources[ResourceType] = ResourceArchitectIvrConfig()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[didPool.ResourceType] = didPool.ResourceTelephonyDidPool()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -42,7 +42,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceArchitectIvr()
+	providerDataSources[ResourceType] = DataSourceArchitectIvr()
 }
 
 // initTestResources initializes all test resources and data sources.

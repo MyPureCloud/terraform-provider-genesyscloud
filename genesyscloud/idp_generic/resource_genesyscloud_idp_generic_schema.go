@@ -19,12 +19,12 @@ resource_genesycloud_idp_generic_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_generic datasource.
 4.  The resource exporter configuration for the idp_generic exporter.
 */
-const resourceName = "genesyscloud_idp_generic"
+const ResourceType = "genesyscloud_idp_generic"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceIdpGeneric())
-	regInstance.RegisterExporter(resourceName, IdpGenericExporter())
+	regInstance.RegisterResource(ResourceType, ResourceIdpGeneric())
+	regInstance.RegisterExporter(ResourceType, IdpGenericExporter())
 }
 
 // ResourceIdpGeneric registers the genesyscloud_idp_generic resource with Terraform

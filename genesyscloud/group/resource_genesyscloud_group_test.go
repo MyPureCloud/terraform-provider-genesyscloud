@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -406,17 +406,17 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateGroupMember(groupResourceName string, userResourceName string, attrName string) resource.TestCheckFunc {
+func validateGroupMember(groupResourcePath string, userResourcePath string, attrName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		groupResource, ok := state.RootModule().Resources[groupResourceName]
+		groupResource, ok := state.RootModule().Resources[groupResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find group %s in state", groupResourceName)
+			return fmt.Errorf("Failed to find group %s in state", groupResourcePath)
 		}
 		groupID := groupResource.Primary.ID
 
-		userResource, ok := state.RootModule().Resources[userResourceName]
+		userResource, ok := state.RootModule().Resources[userResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find user %s in state", userResourceName)
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
 		}
 		userID := userResource.Primary.ID
 

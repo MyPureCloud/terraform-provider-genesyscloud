@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
@@ -204,11 +204,11 @@ func TestAccResourceRoutingQueueOutboundEmailAddressExists(t *testing.T) {
 	})
 }
 
-func verifyOutboundEmailAddressExists(queueResourceName string) resource.TestCheckFunc {
+func verifyOutboundEmailAddressExists(queueResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		queueResource, ok := state.RootModule().Resources[queueResourceName]
+		queueResource, ok := state.RootModule().Resources[queueResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find queue %s in state", queueResourceName)
+			return fmt.Errorf("Failed to find queue %s in state", queueResourcePath)
 		}
 		queueID := queueResource.Primary.ID
 

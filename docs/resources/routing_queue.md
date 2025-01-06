@@ -90,6 +90,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
+- `canned_response_libraries` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--canned_response_libraries))
 - `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
@@ -160,6 +161,15 @@ Required:
 
 
 
+<a id="nestedblock--canned_response_libraries"></a>
+### Nested Schema for `canned_response_libraries`
+
+Optional:
+
+- `library_ids` (List of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
+- `mode` (String) The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.
+
+
 <a id="nestedblock--conditional_group_routing_rules"></a>
 ### Nested Schema for `conditional_group_routing_rules`
 
@@ -210,6 +220,16 @@ Optional:
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_call--sub_type_settings))
+
+<a id="nestedblock--media_settings_call--sub_type_settings"></a>
+### Nested Schema for `media_settings_call.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_callback"></a>
@@ -224,6 +244,16 @@ Optional:
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_callback--sub_type_settings))
+
+<a id="nestedblock--media_settings_callback--sub_type_settings"></a>
+### Nested Schema for `media_settings_callback.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_chat"></a>
@@ -238,6 +268,16 @@ Optional:
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_chat--sub_type_settings))
+
+<a id="nestedblock--media_settings_chat--sub_type_settings"></a>
+### Nested Schema for `media_settings_chat.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_email"></a>
@@ -252,6 +292,16 @@ Optional:
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_email--sub_type_settings))
+
+<a id="nestedblock--media_settings_email--sub_type_settings"></a>
+### Nested Schema for `media_settings_email.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_message"></a>
@@ -266,6 +316,16 @@ Optional:
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
+
+<a id="nestedblock--media_settings_message--sub_type_settings"></a>
+### Nested Schema for `media_settings_message.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedatt--members"></a>

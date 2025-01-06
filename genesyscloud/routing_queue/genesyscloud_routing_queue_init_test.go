@@ -37,15 +37,15 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingQueue()
-	providerResources["genesyscloud_user"] = user.ResourceUser()
-	providerResources["genesyscloud_routing_skill"] = routingSkill.ResourceRoutingSkill()
-	providerResources["genesyscloud_group"] = group.ResourceGroup()
-	providerResources["genesyscloud_routing_wrapupcode"] = routingWrapupcode.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = architectFlow.ResourceArchitectFlow()
-	providerResources["genesyscloud_routing_skill_group"] = routingSkillGroup.ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_architect_user_prompt"] = architect_user_prompt.ResourceArchitectUserPrompt()
-	providerResources["genesyscloud_auth_division"] = authDivision.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceRoutingQueue()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
+	providerResources[group.ResourceType] = group.ResourceGroup()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[architectFlow.ResourceType] = architectFlow.ResourceArchitectFlow()
+	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
+	providerResources[architect_user_prompt.ResourceType] = architect_user_prompt.ResourceArchitectUserPrompt()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -53,7 +53,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingQueue()
+	providerDataSources[ResourceType] = DataSourceRoutingQueue()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 

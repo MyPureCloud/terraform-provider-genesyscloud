@@ -1,11 +1,12 @@
 package external_contacts
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -16,13 +17,13 @@ resource_genesyscloud_externalcontacts_contacts_schema.go should hold four types
 3.  The datasource schema definitions for the externalcontacts_contacts datasource.
 4.  The resource exporter configuration for the externalcontacts_contacts exporter.
 */
-const resourceName = "genesyscloud_externalcontacts_contact"
+const ResourceType = "genesyscloud_externalcontacts_contact"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceExternalContactsContact())
-	l.RegisterResource(resourceName, ResourceExternalContact())
-	l.RegisterExporter(resourceName, ExternalContactExporter())
+	l.RegisterDataSource(ResourceType, DataSourceExternalContactsContact())
+	l.RegisterResource(ResourceType, ResourceExternalContact())
+	l.RegisterExporter(ResourceType, ExternalContactExporter())
 }
 
 // ResourceExternalContact registers the genesyscloud_externalcontacts_contact resource with Terraform

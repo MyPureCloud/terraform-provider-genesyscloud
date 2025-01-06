@@ -17,7 +17,7 @@ resource_genesycloud_routing_email_route_schema.go holds four functions within i
 3.  The datasource schema definitions for the routing_email_route datasource.
 4.  The resource exporter configuration for the routing_email_route exporter.
 */
-const resourceName = "genesyscloud_routing_email_route"
+const ResourceType = "genesyscloud_routing_email_route"
 
 var (
 	bccEmailResource = &schema.Resource{
@@ -38,9 +38,9 @@ var (
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingEmailRoute())
-	regInstance.RegisterExporter(resourceName, RoutingEmailRouteExporter())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingEmailRoute())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingEmailRoute())
+	regInstance.RegisterExporter(ResourceType, RoutingEmailRouteExporter())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingEmailRoute())
 }
 
 func ResourceRoutingEmailRoute() *schema.Resource {

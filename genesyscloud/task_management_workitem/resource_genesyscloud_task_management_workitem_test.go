@@ -29,7 +29,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -554,11 +554,11 @@ func TestAccResourceTaskManagementWorkitemCustomFields(t *testing.T) {
 }
 
 // validateWorkitemCustomFields validates the custom fields of the workitem
-func validateWorkitemCustomFields(resourceName string, jsonFields string) resource.TestCheckFunc {
+func validateWorkitemCustomFields(resourcePath string, jsonFields string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resource %s in state", resourceName)
+			return fmt.Errorf("Failed to find resource %s in state", resourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 

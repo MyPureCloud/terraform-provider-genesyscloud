@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 type DependentConsumerProxy struct {
@@ -71,10 +71,10 @@ func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExport
 
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
 	resourceKey := resourceKeys.State.ID
-	resourceName := resourceKeys.BlockLabel
+	resourceLabel := resourceKeys.BlockLabel
 	dependsMap := make(map[string][]string)
 	architectDependencies := make(map[string][]string)
-	dependentResources, dependsMap, cyclicDependsList, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceName, make(resourceExporter.ResourceIDMetaMap), dependsMap, architectDependencies, make([]string, 0))
+	dependentResources, dependsMap, cyclicDependsList, err := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceLabel, make(resourceExporter.ResourceIDMetaMap), dependsMap, architectDependencies, make([]string, 0))
 
 	if err != nil {
 		return nil, nil, err
@@ -89,7 +89,7 @@ func fetchDepConsumers(ctx context.Context,
 	p *DependentConsumerProxy,
 	resType string,
 	resourceKey string,
-	resourceName string,
+	resourceLabel string,
 	resources resourceExporter.ResourceIDMetaMap,
 	dependsMap map[string][]string,
 	architectDependencies map[string][]string,
@@ -122,7 +122,7 @@ func fetchDepConsumers(ctx context.Context,
 
 				// iterate dependencies
 				if pageCount < 2 {
-					resources, dependsMap, cyclicDependsList, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceName)
+					resources, dependsMap, cyclicDependsList, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel)
 					if err != nil {
 						return nil, nil, nil, err
 					}
@@ -138,7 +138,7 @@ func fetchDepConsumers(ctx context.Context,
 					if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
 						break
 					}
-					resources, dependsMap, cyclicDependsList, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceName)
+					resources, dependsMap, cyclicDependsList, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel)
 					if err != nil {
 						return nil, nil, nil, err
 					}
@@ -171,7 +171,7 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 	key string,
 	architectDependencies map[string][]string,
 	cyclicDependsList []string,
-	resourceName string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, error) {
+	resourceLabel string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, error) {
 	var err error
 	dependentConsumerMap := SetDependentObjectMaps()
 	for _, consumer := range *dependencies.Entities {
@@ -185,7 +185,7 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 						return nil, nil, nil, err
 					}
 				} else {
-					cyclicDependsList = append(cyclicDependsList, gflow+"."+*consumer.Name+" , "+gflow+"."+resourceName)
+					cyclicDependsList = append(cyclicDependsList, gflow+"."+*consumer.Name+" , "+gflow+"."+resourceLabel)
 					log.Printf("cyclic Dependencies Identified %v for %v", cyclicDependsList, *consumer.Name)
 					continue
 				}

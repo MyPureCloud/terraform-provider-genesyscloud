@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
@@ -39,11 +39,11 @@ func TestAccDataSourceArchitectIvr(t *testing.T) {
 					Dnis:          nil,
 					DependsOn:     "",
 				}) + GenerateIvrDataSource(ivrDataSourceLabel,
-					resourceName+"."+ivrResourceLabel+".name",
-					resourceName+"."+ivrResourceLabel,
+					ResourceType+"."+ivrResourceLabel+".name",
+					ResourceType+"."+ivrResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+ivrDataSourceLabel, "id", resourceName+"."+ivrResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+ivrDataSourceLabel, "id", ResourceType+"."+ivrResourceLabel, "id"),
 				),
 			},
 		},

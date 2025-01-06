@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var (
@@ -27,7 +27,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingUtilizationLabel()
+	providerResources[ResourceType] = ResourceRoutingUtilizationLabel()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -35,7 +35,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingUtilizationLabel()
+	providerDataSources[ResourceType] = DataSourceRoutingUtilizationLabel()
 }
 
 // initTestResources initializes all test resources and data sources.

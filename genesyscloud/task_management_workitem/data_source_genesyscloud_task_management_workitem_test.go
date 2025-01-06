@@ -105,7 +105,7 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 						fmt.Sprintf("genesyscloud_task_management_workitem.%s", workitemResourceLabel),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workitemDataSrc, "id", resourceName+"."+workitemResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+workitemDataSrc, "id", ResourceType+"."+workitemResourceLabel, "id"),
 				),
 			},
 			// Test with using worktype id filter. API requires either or both workbin and worktype id filters.
@@ -120,7 +120,7 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 						fmt.Sprintf("genesyscloud_task_management_workitem.%s", workitemResourceLabel),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+workitemDataSrc, "id", resourceName+"."+workitemResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+workitemDataSrc, "id", ResourceType+"."+workitemResourceLabel, "id"),
 				),
 			},
 		},
@@ -142,5 +142,5 @@ func generateWorkitemDataSource(dataSourceLabel, name, workbinId, worktypeId, de
 		%s
 		depends_on=[%s]
 	}
-	`, resourceName, dataSourceLabel, name, additionalProps, dependsOnResource)
+	`, ResourceType, dataSourceLabel, name, additionalProps, dependsOnResource)
 }

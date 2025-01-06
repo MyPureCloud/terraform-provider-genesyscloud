@@ -1,20 +1,21 @@
 package webdeployments_deployment
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_webdeployments_deployment"
+const ResourceType = "genesyscloud_webdeployments_deployment"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceWebDeploymentsDeployment())
-	l.RegisterResource(resourceName, ResourceWebDeployment())
-	l.RegisterExporter(resourceName, WebDeploymentExporter())
+	l.RegisterDataSource(ResourceType, DataSourceWebDeploymentsDeployment())
+	l.RegisterResource(ResourceType, ResourceWebDeployment())
+	l.RegisterExporter(ResourceType, WebDeploymentExporter())
 }
 func ResourceWebDeployment() *schema.Resource {
 	return &schema.Resource{

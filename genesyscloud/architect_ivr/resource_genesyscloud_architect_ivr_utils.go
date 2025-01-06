@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 type IvrConfigStruct struct {
@@ -41,7 +41,7 @@ func GenerateIvrConfigResource(ivrConfig *IvrConfigStruct) string {
 		depends_on  = [%s]
 		division_id = %s
 	}
-	`, resourceName,
+	`, ResourceType,
 		ivrConfig.ResourceLabel,
 		ivrConfig.Name,
 		ivrConfig.Description,
@@ -60,7 +60,7 @@ func GenerateIvrDataSource(
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }
 
 func buildArchitectIvrFromResourceData(d *schema.ResourceData) *platformclientv2.Ivr {

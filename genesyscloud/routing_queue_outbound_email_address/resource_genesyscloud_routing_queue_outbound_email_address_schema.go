@@ -8,12 +8,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_routing_queue_outbound_email_address"
+const ResourceType = "genesyscloud_routing_queue_outbound_email_address"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingQueueOutboundEmailAddress())
-	regInstance.RegisterExporter(resourceName, OutboundRoutingQueueOutboundEmailAddressExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingQueueOutboundEmailAddress())
+	regInstance.RegisterExporter(ResourceType, OutboundRoutingQueueOutboundEmailAddressExporter())
 }
 
 func ResourceRoutingQueueOutboundEmailAddress() *schema.Resource {

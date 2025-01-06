@@ -12,7 +12,7 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -42,9 +42,9 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 				Config: GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, nullValue) +
 					"\n data \"genesyscloud_auth_division_home\" \"home\" {}",
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResourceLabel, "name", workbinName),
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResourceLabel, "description", workDescription),
-					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResourceLabel, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "name", workbinName),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "description", workDescription),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+workbinResourceLabel, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
 				),
 			},
 			// Change division
@@ -53,9 +53,9 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel2, divisionName2) +
 					GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, "genesyscloud_auth_division."+divisionResourceLabel1+".id"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResourceLabel, "name", workbinName),
-					resource.TestCheckResourceAttr(resourceName+"."+workbinResourceLabel, "description", workDescription),
-					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResourceLabel, "division_id", "genesyscloud_auth_division."+divisionResourceLabel1, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "name", workbinName),
+					resource.TestCheckResourceAttr(ResourceType+"."+workbinResourceLabel, "description", workDescription),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+workbinResourceLabel, "division_id", "genesyscloud_auth_division."+divisionResourceLabel1, "id"),
 				),
 			},
 			{
@@ -63,7 +63,7 @@ func TestAccResourceTaskManagementWorkbin(t *testing.T) {
 					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel2, divisionName2) +
 					GenerateWorkbinResource(workbinResourceLabel, workbinName, workDescription, "genesyscloud_auth_division."+divisionResourceLabel2+".id"),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+workbinResourceLabel, "division_id", "genesyscloud_auth_division."+divisionResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+workbinResourceLabel, "division_id", "genesyscloud_auth_division."+divisionResourceLabel2, "id"),
 				),
 			},
 		},

@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_architect_schedules"
+const ResourceType = "genesyscloud_architect_schedules"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the pakage
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectSchedules())
-	regInstance.RegisterDataSource(resourceName, DataSourceArchitectSchedules())
-	regInstance.RegisterExporter(resourceName, ArchitectSchedulesExporter())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectSchedules())
+	regInstance.RegisterDataSource(ResourceType, DataSourceArchitectSchedules())
+	regInstance.RegisterExporter(ResourceType, ArchitectSchedulesExporter())
 }
 
 // ResourceArchitectSchedules registers the genesyscloud_architect_schedules resource with Terraform
@@ -49,7 +49,7 @@ func ResourceArchitectSchedules() *schema.Resource {
 				Optional:    true,
 			},
 			"start": {
-				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
+				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000. The start date should be applicable to the schedule's recurrence rule.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validators.ValidateLocalDateTimes,

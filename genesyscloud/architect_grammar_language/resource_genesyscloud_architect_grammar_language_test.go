@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
@@ -178,18 +178,18 @@ func generateFileDtmfFileDataBlock(
 	`, fileName, fileType, fullyQualifiedPath)
 }
 
-func verifyFileUpload(grammarResourceName string, language string, fileType FileType, filename string) resource.TestCheckFunc {
+func verifyFileUpload(grammarResourcePath string, language string, fileType FileType, filename string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		grammarResource, ok := state.RootModule().Resources[grammarResourceName]
+		grammarResource, ok := state.RootModule().Resources[grammarResourcePath]
 		if !ok {
-			return fmt.Errorf("failed to find grammar %s in state", grammarResourceName)
+			return fmt.Errorf("failed to find grammar %s in state", grammarResourcePath)
 		}
 		grammarId := grammarResource.Primary.ID
 		architectAPI := platformclientv2.NewArchitectApi()
 
 		grammarLanguage, _, err := architectAPI.GetArchitectGrammarLanguage(grammarId, language)
 		if err != nil {
-			return fmt.Errorf("failed to find language %s for resource %s", language, grammarResourceName)
+			return fmt.Errorf("failed to find language %s for resource %s", language, grammarResourcePath)
 		}
 
 		if fileType == Dtmf {
@@ -260,7 +260,7 @@ func testVerifyGrammarLanguageDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_architect_grammar_language" {
 			continue
 		}
-		grammarId, languageCode := splitLanguageId(rs.Primary.ID)
+		grammarId, languageCode := splitGrammarLanguageId(rs.Primary.ID)
 		grammar, resp, err := architectAPI.GetArchitectGrammarLanguage(grammarId, languageCode)
 		if grammar != nil {
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)

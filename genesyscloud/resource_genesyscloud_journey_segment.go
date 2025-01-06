@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var (
@@ -287,7 +287,7 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneySegment(), constants.DefaultConsistencyChecks, "genesyscloud_journey_segment")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneySegment(), constants.ConsistencyChecks(), "genesyscloud_journey_segment")
 
 	log.Printf("Reading journey segment %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

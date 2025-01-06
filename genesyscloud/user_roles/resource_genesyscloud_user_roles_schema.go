@@ -9,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_user_roles"
+const ResourceType = "genesyscloud_user_roles"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceUserRoles())
-	l.RegisterExporter(resourceName, UserRolesExporter())
+	l.RegisterResource(ResourceType, ResourceUserRoles())
+	l.RegisterExporter(ResourceType, UserRolesExporter())
 }
 
 var (

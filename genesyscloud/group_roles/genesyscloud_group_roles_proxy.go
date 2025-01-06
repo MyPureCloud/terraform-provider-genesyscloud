@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var internalProxy *groupRolesProxy
@@ -111,7 +111,7 @@ func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, ro
 		diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			resp, err := p.authorizationApi.PostAuthorizationSubjectBulkadd(roleId, roleDivPairsToGrants(grantsToAdd), subjectType)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to add role grants for subject %s: %s", roleId, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to add role grants for subject %s: %s", roleId, err), resp)
 			}
 			return nil, nil
 		})

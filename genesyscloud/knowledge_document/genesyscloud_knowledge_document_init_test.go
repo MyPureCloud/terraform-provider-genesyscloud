@@ -3,6 +3,8 @@ package knowledge_document
 import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
+	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -26,10 +28,10 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_knowledge_category"] = gcloud.ResourceKnowledgeCategory()
+	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_label"] = gcloud.ResourceKnowledgeLabel()
-	providerResources[resourceName] = ResourceKnowledgeDocument()
+	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
+	providerResources[ResourceType] = ResourceKnowledgeDocument()
 }
 
 // initTestResources initializes all test resources and data sources.

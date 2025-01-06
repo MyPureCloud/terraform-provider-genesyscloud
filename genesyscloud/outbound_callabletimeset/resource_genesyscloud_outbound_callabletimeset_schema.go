@@ -1,21 +1,22 @@
 package outbound_callabletimeset
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_outbound_callabletimeset"
+const ResourceType = "genesyscloud_outbound_callabletimeset"
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceOutboundCallabletimeset())
-	l.RegisterResource(resourceName, ResourceOutboundCallabletimeset())
-	l.RegisterExporter(resourceName, OutboundCallableTimesetExporter())
+	l.RegisterDataSource(ResourceType, DataSourceOutboundCallabletimeset())
+	l.RegisterResource(ResourceType, ResourceOutboundCallabletimeset())
+	l.RegisterExporter(ResourceType, OutboundCallableTimesetExporter())
 }
 
 var campaignTimeslotResource = &schema.Resource{

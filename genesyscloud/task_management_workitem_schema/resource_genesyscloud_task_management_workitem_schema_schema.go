@@ -1,11 +1,12 @@
 package task_management_workitem_schema
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -18,13 +19,13 @@ resource_genesyscloud_task_management_workitem_schema_schema.go holds four funct
 3.  The datasource schema definitions for the task_management_workitem_schema datasource.
 4.  The resource exporter configuration for the task_management_workitem_schema exporter.
 */
-const resourceName = "genesyscloud_task_management_workitem_schema"
+const ResourceType = "genesyscloud_task_management_workitem_schema"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceTaskManagementWorkitemSchema())
-	regInstance.RegisterDataSource(resourceName, DataSourceTaskManagementWorkitemSchema())
-	regInstance.RegisterExporter(resourceName, TaskManagementWorkitemSchemaExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementWorkitemSchema())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementWorkitemSchema())
+	regInstance.RegisterExporter(ResourceType, TaskManagementWorkitemSchemaExporter())
 }
 
 // ResourceTaskManagementWorkitemSchema registers the genesyscloud_task_management_workitem_schema resource with Terraform

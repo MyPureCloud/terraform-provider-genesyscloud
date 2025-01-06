@@ -19,15 +19,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
-func testAccCheckSkillConditions(resourceName string, targetSkillConditionJson string) resource.TestCheckFunc {
+func testAccCheckSkillConditions(resourcePath string, targetSkillConditionJson string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
+		rs, ok := s.RootModule().Resources[resourcePath]
 
 		if !ok {
-			return fmt.Errorf("Resource Not found: %s", resourceName)
+			return fmt.Errorf("Resource Not found: %s", resourcePath)
 		}
 
 		if rs.Primary.ID == "" {
@@ -534,7 +534,7 @@ resource "genesyscloud_routing_skill_group" "%s" {
 
 func generateRoutingSkillGroupResource(
 	resourceLabel string,
-	divisionResourceName string,
+	divisionResourcePath string,
 	name string,
 	description string,
 	divisionID string,
@@ -548,10 +548,10 @@ func generateRoutingSkillGroupResource(
 		skill_conditions = jsonencode(%s)
 		member_division_ids = %s
 	}
-	`, resourceLabel, divisionResourceName, name, description, divisionID, skillCondition, memberDivisionIds)
+	`, resourceLabel, divisionResourcePath, name, description, divisionID, skillCondition, memberDivisionIds)
 }
 
-func testVerifySkillGroupMemberCount(resourceName string, count int) resource.TestCheckFunc {
+func testVerifySkillGroupMemberCount(resourcePath string, count int) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		// Authorize client credentials
 		config, err := provider.AuthorizeSdk()
@@ -560,9 +560,9 @@ func testVerifySkillGroupMemberCount(resourceName string, count int) resource.Te
 		}
 		routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
 
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 
@@ -582,11 +582,11 @@ func testVerifySkillGroupMemberCount(resourceName string, count int) resource.Te
 	}
 }
 
-func testVerifyMemberDivisionsCleared(resourceName string) resource.TestCheckFunc {
+func testVerifyMemberDivisionsCleared(resourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
 		}
 		resourceLabel := resourceState.Primary.ID
 
@@ -621,11 +621,11 @@ func testVerifyMemberDivisionsCleared(resourceName string) resource.TestCheckFun
 	}
 }
 
-func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resource.TestCheckFunc {
+func testVerifyAllDivisionsAssigned(resourcePath string, attrName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourceName)
+			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
 		}
 
 		resourceLabel := resourceState.Primary.ID
@@ -663,24 +663,15 @@ func testVerifyAllDivisionsAssigned(resourceName string, attrName string) resour
 			allAuthDivisionIds = append(allAuthDivisionIds, id)
 		}
 
-		// Preventing a large n² comparison equation from executing
-		maxLengthForListItemComparision := 20
-		if len(allAuthDivisionIds) < maxLengthForListItemComparision {
-			// member_division_ids should not contain more than one item when the value of an item is "*"
-			if lists.ItemInSlice("*", skillGroupMemberDivisionIds) {
-				return nil
-			} else if lists.AreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
-				return nil
-			} else {
-				return fmt.Errorf("Expected %s to equal the list of all auth divisions", attrName)
-			}
-		}
-
-		if len(allAuthDivisionIds) == len(skillGroupMemberDivisionIds) {
+		// member_division_ids should not contain more than one item when the value of an item is "*"
+		if lists.ItemInSlice("*", skillGroupMemberDivisionIds) {
 			return nil
+		} else if lists.AreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
+			return nil
+		} else {
+			return fmt.Errorf("Expected %s to equal the list of all auth divisions", attrName)
 		}
 
-		return fmt.Errorf("Expected %s length to equal the number of all auth divisions", attrName)
 	}
 }
 

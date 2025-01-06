@@ -33,15 +33,15 @@ func dataSourceIntegrationActionRead(ctx context.Context, d *schema.ResourceData
 		actions, resp, err := iap.getIntegrationActionsByName(ctx, actionName)
 
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting data action %s | error: %s", actionName, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting data action %s | error: %s", actionName, err), resp))
 		}
 
 		if len(*actions) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no data actions found with name %s", actionName), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no data actions found with name %s", actionName), resp))
 		}
 
 		if len(*actions) > 1 {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("ambiguous data action name: %s", actionName), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("ambiguous data action name: %s", actionName), resp))
 		}
 		action := (*actions)[0]
 		d.SetId(*action.Id)

@@ -30,8 +30,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOutboundDigitalruleset()
-	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
+	providerResources[ResourceType] = ResourceOutboundDigitalruleset()
+	providerResources[obContactList.ResourceType] = obContactList.ResourceOutboundContactList()
 
 }
 
@@ -40,7 +40,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOutboundDigitalruleset()
+	providerDataSources[ResourceType] = DataSourceOutboundDigitalruleset()
 }
 
 // initTestResources initializes all test resources and data sources.

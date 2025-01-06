@@ -7,19 +7,19 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const resourceName = "genesyscloud_group_roles"
+const ResourceType = "genesyscloud_group_roles"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceGroupRoles())
-	l.RegisterExporter(resourceName, GroupRolesExporter())
+	l.RegisterResource(ResourceType, ResourceGroupRoles())
+	l.RegisterExporter(ResourceType, GroupRolesExporter())
 }
 
 var (
@@ -94,7 +94,7 @@ func getAllGroups(_ context.Context, clientConfig *platformclientv2.Configuratio
 		const pageSize = 100
 		groups, resp, getErr := groupsAPI.GetGroups(pageSize, pageNum, nil, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of groups error: %s", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of groups error: %s", getErr), resp)
 		}
 
 		if groups.Entities == nil || len(*groups.Entities) == 0 {

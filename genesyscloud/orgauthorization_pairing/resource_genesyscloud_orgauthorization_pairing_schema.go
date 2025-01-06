@@ -1,15 +1,16 @@
 package orgauthorization_pairing
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_orgauthorization_pairing"
+const ResourceType = "genesyscloud_orgauthorization_pairing"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOrgauthorizationPairing())
+	regInstance.RegisterResource(ResourceType, ResourceOrgauthorizationPairing())
 }
 
 func ResourceOrgauthorizationPairing() *schema.Resource {

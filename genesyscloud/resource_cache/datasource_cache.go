@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 // Cache for Data Sources
@@ -91,7 +91,7 @@ func (c *DataSourceCache) Get(key string) (val string, isFound bool) {
 }
 
 func RetrieveId(cache *DataSourceCache,
-	resourceName, key string, ctx context.Context) (string, diag.Diagnostics) {
+	resourceType, key string, ctx context.Context) (string, diag.Diagnostics) {
 
 	if err := cache.HydrateCacheIfEmpty(ctx); err != nil {
 		return "", diag.FromErr(err)
@@ -108,7 +108,7 @@ func RetrieveId(cache *DataSourceCache,
 		}
 
 		if err := cache.UpdateCacheEntry(key, idFromApi); err != nil {
-			return "", util.BuildDiagnosticError(resourceName, fmt.Sprintf("error updating cache"), err)
+			return "", util.BuildDiagnosticError(resourceType, fmt.Sprintf("error updating cache"), err)
 		}
 		// id gets reset to empty string at the updateCacheEntry method.
 		id = idFromApi

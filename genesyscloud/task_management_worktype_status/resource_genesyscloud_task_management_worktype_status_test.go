@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -80,11 +80,11 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"default = true",
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+statusResourceLabel1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "name", status1Name1),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "category", status1Category),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "status_transition_delay_seconds", "0"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "default", util.TrueValue),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+statusResourceLabel1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "name", status1Name1),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "category", status1Category),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "status_transition_delay_seconds", "0"),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "default", util.TrueValue),
 				),
 			},
 			{
@@ -122,16 +122,16 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						"default = true",
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName+"."+statusResourceLabel1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "name", status1Name2),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "category", status1Category),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "description", status1Description),
-					ValidateStatusIds(resourceName+"."+statusResourceLabel1, "destination_status_ids.0", fmt.Sprintf("%s.%s", resourceName, statusResourceLabel2), "id"),
-					ValidateStatusIds(resourceName+"."+statusResourceLabel1, "default_destination_status_id", fmt.Sprintf("%s.%s", resourceName, statusResourceLabel2), "id"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "status_transition_delay_seconds", "90000"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "status_transition_time", "12:04:21"),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel1, "default", util.FalseValue),
-					resource.TestCheckResourceAttr(resourceName+"."+statusResourceLabel2, "default", util.TrueValue),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+statusResourceLabel1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "name", status1Name2),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "category", status1Category),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "description", status1Description),
+					ValidateStatusIds(ResourceType+"."+statusResourceLabel1, "destination_status_ids.0", fmt.Sprintf("%s.%s", ResourceType, statusResourceLabel2), "id"),
+					ValidateStatusIds(ResourceType+"."+statusResourceLabel1, "default_destination_status_id", fmt.Sprintf("%s.%s", ResourceType, statusResourceLabel2), "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "status_transition_delay_seconds", "90000"),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "status_transition_time", "12:04:21"),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "default", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel2, "default", util.TrueValue),
 				),
 			},
 			{
@@ -148,7 +148,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 func testVerifyTaskManagementWorktypeStatusDestroyed(state *terraform.State) error {
 	taskManagementApi := platformclientv2.NewTaskManagementApi()
 	for _, res := range state.RootModule().Resources {
-		if res.Type != resourceName {
+		if res.Type != ResourceType {
 			continue
 		}
 

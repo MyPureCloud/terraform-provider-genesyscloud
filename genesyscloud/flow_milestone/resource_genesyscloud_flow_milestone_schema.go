@@ -1,10 +1,11 @@
 package flow_milestone
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -15,13 +16,13 @@ resource_genesycloud_flow_milestone_schema.go holds four functions within it:
 3.  The datasource schema definitions for the flow_milestone datasource.
 4.  The resource exporter configuration for the flow_milestone exporter.
 */
-const resourceName = "genesyscloud_flow_milestone"
+const ResourceType = "genesyscloud_flow_milestone"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceFlowMilestone())
-	regInstance.RegisterDataSource(resourceName, DataSourceFlowMilestone())
-	regInstance.RegisterExporter(resourceName, FlowMilestoneExporter())
+	regInstance.RegisterResource(ResourceType, ResourceFlowMilestone())
+	regInstance.RegisterDataSource(ResourceType, DataSourceFlowMilestone())
+	regInstance.RegisterExporter(ResourceType, FlowMilestoneExporter())
 }
 
 // ResourceFlowMilestone registers the genesyscloud_flow_milestone resource with Terraform

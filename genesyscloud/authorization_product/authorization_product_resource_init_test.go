@@ -26,7 +26,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_authorization_product"] = DataSourceAuthorizationProduct()
+	providerDataSources[ResourceType] = DataSourceAuthorizationProduct()
 }
 
 func TestMain(m *testing.M) {

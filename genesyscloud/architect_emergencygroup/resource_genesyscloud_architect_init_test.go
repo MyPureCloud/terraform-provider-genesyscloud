@@ -1,11 +1,12 @@
 package architect_emergencygroup
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // providerDataSources holds a map of all registered datasources
@@ -23,18 +24,18 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_architect_ivr"] = architect_ivr.ResourceArchitectIvrConfig()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_architect_emergencygroup"] = ResourceArchitectEmergencyGroup()
+	providerResources[architect_ivr.ResourceType] = architect_ivr.ResourceArchitectIvrConfig()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[ResourceType] = ResourceArchitectEmergencyGroup()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_architect_ivr"] = architect_ivr.DataSourceArchitectIvr()
-	providerDataSources["genesyscloud_flow"] = flow.DataSourceArchitectFlow()
-	providerDataSources["genesyscloud_architect_emergencygroup"] = DataSourceArchitectEmergencyGroup()
+	providerDataSources[architect_ivr.ResourceType] = architect_ivr.DataSourceArchitectIvr()
+	providerDataSources[flow.ResourceType] = flow.DataSourceArchitectFlow()
+	providerDataSources[ResourceType] = DataSourceArchitectEmergencyGroup()
 }
 
 // initTestResources initializes all test_data resources and data sources.

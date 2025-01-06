@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -140,5 +140,5 @@ func GenerateWorktypeResourceBasic(resourceLabel, name, description, workbinReso
 		default_workbin_id = %s
 		%s
 	}
-	`, resourceName, resourceLabel, name, description, workbinResourceId, attrs)
+	`, ResourceType, resourceLabel, name, description, workbinResourceId, attrs)
 }

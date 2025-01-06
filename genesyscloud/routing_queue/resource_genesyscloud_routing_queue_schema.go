@@ -9,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_routing_queue"
+const ResourceType = "genesyscloud_routing_queue"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingQueue())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingQueue())
-	regInstance.RegisterExporter(resourceName, RoutingQueueExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingQueue())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingQueue())
+	regInstance.RegisterExporter(ResourceType, RoutingQueueExporter())
 }
 
 var (
@@ -30,6 +30,22 @@ var (
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"TEAM", "GROUP", "SKILLGROUP"}, false),
+			},
+		},
+	}
+	cannedResponseLibrariesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description:  "The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"All", "SelectedOnly", "None"}, false),
+			},
+			"library_ids": {
+				Description: "Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.",
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -53,7 +69,20 @@ var (
 			},
 		},
 	}
-
+	subTypeSettingsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"media_type": {
+				Description: "The name of the social media company",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"enable_auto_answer": {
+				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+		},
+	}
 	queueMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
@@ -71,6 +100,12 @@ var (
 				Description: "Auto Dial Delay Seconds.",
 				Type:        schema.TypeInt,
 				Optional:    true,
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
 			},
 			"enable_auto_answer": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
@@ -202,6 +237,13 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Elem:        agentOwnedRoutingResource,
+			},
+			"canned_response_libraries": {
+				Description: "Agent Owned Routing.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        cannedResponseLibrariesResource,
 			},
 			"media_settings_callback": {
 				Description: "Callback media settings.",

@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceProcessAutomationTrigger(t *testing.T) {
@@ -499,15 +499,15 @@ func testVerifyProcessAutomationTriggerDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func validateTargetFlowId(flowResourceName string, triggerResourceName string) resource.TestCheckFunc {
+func validateTargetFlowId(flowResourcePath string, triggerResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		flowResource, ok := state.RootModule().Resources[flowResourceName]
+		flowResource, ok := state.RootModule().Resources[flowResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find flow %s in state", flowResourceName)
+			return fmt.Errorf("Failed to find flow %s in state", flowResourcePath)
 		}
-		triggerResource, ok := state.RootModule().Resources[triggerResourceName]
+		triggerResource, ok := state.RootModule().Resources[triggerResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourcePath)
 		}
 
 		flowID := flowResource.Primary.ID
@@ -520,11 +520,11 @@ func validateTargetFlowId(flowResourceName string, triggerResourceName string) r
 	}
 }
 
-func validateTargetType(triggerResourceName string, typeVal string) resource.TestCheckFunc {
+func validateTargetType(triggerResourcePath string, typeVal string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		triggerResource, ok := state.RootModule().Resources[triggerResourceName]
+		triggerResource, ok := state.RootModule().Resources[triggerResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find trigger %s in state", triggerResourceName)
+			return fmt.Errorf("Failed to find trigger %s in state", triggerResourcePath)
 		}
 
 		if typeVal != triggerResource.Primary.Attributes["target."+strconv.Itoa(0)+".type"] {
@@ -535,12 +535,12 @@ func validateTargetType(triggerResourceName string, typeVal string) resource.Tes
 	}
 }
 
-func testAccCheckMatchCriteria(resourceName string, targetMatchCriteriaJson string) resource.TestCheckFunc {
+func testAccCheckMatchCriteria(resourcePath string, targetMatchCriteriaJson string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[resourceName]
+		rs, ok := s.RootModule().Resources[resourcePath]
 
 		if !ok {
-			return fmt.Errorf("Resource Not found: %s", resourceName)
+			return fmt.Errorf("Resource Not found: %s", resourcePath)
 		}
 
 		if rs.Primary.ID == "" {

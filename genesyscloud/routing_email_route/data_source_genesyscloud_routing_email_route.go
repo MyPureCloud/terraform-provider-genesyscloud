@@ -30,10 +30,10 @@ func dataSourceRoutingEmailRouteRead(ctx context.Context, d *schema.ResourceData
 		responseId, retryable, resp, err := proxy.getRoutingEmailRouteIdByPattern(ctx, pattern, domainId)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error requesting routing email route %s | error: %s", pattern, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting routing email route %s | error: %s", pattern, err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No routing email route found with pattern %s", pattern), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No routing email route found with pattern %s", pattern), resp))
 		}
 
 		d.SetId(responseId)

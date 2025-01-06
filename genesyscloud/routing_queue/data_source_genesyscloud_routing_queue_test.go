@@ -68,9 +68,9 @@ func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
 		queue3ResourceLabel = "queue3"
 		queueName3          = "terraform test queue " + uuid.NewString()
 
-		dataSource1Id = "data-1"
-		dataSource2Id = "data-2"
-		dataSource3Id = "data-3"
+		dataSourceLabel1 = "data-1"
+		dataSourceLabel2 = "data-2"
+		dataSourceLabel3 = "data-3"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -91,25 +91,25 @@ func TestAccDataSourceRoutingQueueCaching(t *testing.T) {
 					queue3ResourceLabel,
 					queueName3,
 				) + generateRoutingQueueDataSource( // queue data source
-					dataSource1Id,
+					dataSourceLabel1,
 					strconv.Quote(queueName1),
 					"genesyscloud_routing_queue."+queue1ResourceLabel,
 				) + generateRoutingQueueDataSource( // queue data source
-					dataSource2Id,
+					dataSourceLabel2,
 					strconv.Quote(queueName2),
 					"genesyscloud_routing_queue."+queue2ResourceLabel,
 				) + generateRoutingQueueDataSource( // queue data source
-					dataSource3Id,
+					dataSourceLabel3,
 					strconv.Quote(queueName3),
 					"genesyscloud_routing_queue."+queue3ResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue1ResourceLabel, "id",
-						"data.genesyscloud_routing_queue."+dataSource1Id, "id"),
+						"data.genesyscloud_routing_queue."+dataSourceLabel1, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue2ResourceLabel, "id",
-						"data.genesyscloud_routing_queue."+dataSource2Id, "id"),
+						"data.genesyscloud_routing_queue."+dataSourceLabel2, "id"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queue3ResourceLabel, "id",
-						"data.genesyscloud_routing_queue."+dataSource3Id, "id"),
+						"data.genesyscloud_routing_queue."+dataSourceLabel3, "id"),
 				),
 			},
 		},

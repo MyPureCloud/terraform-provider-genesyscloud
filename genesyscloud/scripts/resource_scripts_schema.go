@@ -1,23 +1,24 @@
 package scripts
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
 Defines the resource schema, the datasource, and the exporters for the scripts package
 */
-const resourceName = "genesyscloud_script"
+const ResourceType = "genesyscloud_script"
 
 // SetRegistrar registers all the resources, data sources and exporters in the packages
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceScript())
-	l.RegisterResource(resourceName, ResourceScript())
-	l.RegisterExporter(resourceName, ExporterScript())
+	l.RegisterDataSource(ResourceType, DataSourceScript())
+	l.RegisterResource(ResourceType, ResourceScript())
+	l.RegisterExporter(ResourceType, ExporterScript())
 }
 
 // DataSourceScript returns the data source schema definition

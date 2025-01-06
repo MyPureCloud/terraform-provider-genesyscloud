@@ -43,9 +43,9 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 				}) + generateDidPoolDataSource(didPoolDataResourceLabel,
 					didPoolStartPhoneNumber,
 					didPoolEndPhoneNumber,
-					resourceName+"."+didPoolResourceLabel),
+					ResourceType+"."+didPoolResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+didPoolDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_did_pool."+didPoolResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+didPoolDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_did_pool."+didPoolResourceLabel, "id"),
 				),
 			},
 		},
@@ -62,5 +62,5 @@ func generateDidPoolDataSource(
 		end_phone_number   = "%s"
 		depends_on         = [%s]
 	}
-	`, resourceName, resourceLabel, startPhoneNumber, endPhoneNumber, dependsOnResource)
+	`, ResourceType, resourceLabel, startPhoneNumber, endPhoneNumber, dependsOnResource)
 }

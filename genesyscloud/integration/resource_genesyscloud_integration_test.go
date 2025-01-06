@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var (
@@ -343,25 +343,25 @@ func TestAccResourceIntegration(t *testing.T) {
 	})
 }
 
-func validateIntegrationProperties(integrationResourceName string, groupResourceName string, propDisplayType string, propSandbox string, propURL string, groupID string) resource.TestCheckFunc {
+func validateIntegrationProperties(integrationResourcePath string, groupResourcePath string, propDisplayType string, propSandbox string, propURL string, groupID string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		integrationResource, ok := state.RootModule().Resources[integrationResourceName]
+		integrationResource, ok := state.RootModule().Resources[integrationResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find integration %s in state", integrationResourceName)
+			return fmt.Errorf("Failed to find integration %s in state", integrationResourcePath)
 		}
 		integrationID := integrationResource.Primary.ID
 
 		var expectGroupID string
-		if groupResourceName == "" {
+		if groupResourcePath == "" {
 			if groupID == "" {
 				expectGroupID = ""
 			} else {
 				expectGroupID = strconv.Quote(groupID)
 			}
 		} else {
-			groupResource, ok := state.RootModule().Resources[groupResourceName]
+			groupResource, ok := state.RootModule().Resources[groupResourcePath]
 			if !ok {
-				return fmt.Errorf("Failed to find group %s in state", groupResourceName)
+				return fmt.Errorf("Failed to find group %s in state", groupResourcePath)
 			}
 			expectGroupID = strconv.Quote(groupResource.Primary.ID)
 		}

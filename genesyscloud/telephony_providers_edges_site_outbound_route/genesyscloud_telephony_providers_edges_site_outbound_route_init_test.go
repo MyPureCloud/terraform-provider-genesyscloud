@@ -12,7 +12,7 @@ import (
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -44,10 +44,10 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceSiteOutboundRoute()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony_provider_edges_trunkbasesettings.ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_location"] = location.ResourceLocation()
-	providerResources["genesyscloud_telephony_providers_edges_site"] = telephony_providers_edges_site.ResourceSite()
+	providerResources[ResourceType] = ResourceSiteOutboundRoute()
+	providerResources[telephony_provider_edges_trunkbasesettings.ResourceType] = telephony_provider_edges_trunkbasesettings.ResourceTrunkBaseSettings()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[telephony_providers_edges_site.ResourceType] = telephony_providers_edges_site.ResourceSite()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -55,7 +55,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceSiteOutboundRoute()
+	providerDataSources[ResourceType] = DataSourceSiteOutboundRoute()
 	providerDataSources["genesyscloud_organizations_me"] = gcloud.DataSourceOrganizationsMe()
 }
 

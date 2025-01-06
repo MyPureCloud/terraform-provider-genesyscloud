@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	resourceName = "genesyscloud_telephony_providers_edges_trunkbasesettings"
+	ResourceType = "genesyscloud_telephony_providers_edges_trunkbasesettings"
 )
 
 func SetRegistrar(l registrar.Registrar) {

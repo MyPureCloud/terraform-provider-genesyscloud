@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceDidPoolBasic(t *testing.T) {
@@ -31,7 +31,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolComments1 := "Test comments"
 	didPoolProvider1 := "PURE_CLOUD"
 
-	fullResourceName := resourceName + "." + didPoolResourceLabel1
+	resourcePath := ResourceType + "." + didPoolResourceLabel1
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -48,10 +48,10 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					util.NullValue, // No provider
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "start_phone_number", didPoolStartPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceName, "end_phone_number", didPoolEndPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceName, "description", ""),
-					resource.TestCheckResourceAttr(fullResourceName, "comments", ""),
+					resource.TestCheckResourceAttr(resourcePath, "start_phone_number", didPoolStartPhoneNumber1),
+					resource.TestCheckResourceAttr(resourcePath, "end_phone_number", didPoolEndPhoneNumber1),
+					resource.TestCheckResourceAttr(resourcePath, "description", ""),
+					resource.TestCheckResourceAttr(resourcePath, "comments", ""),
 				),
 			},
 			{
@@ -65,16 +65,16 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 					strconv.Quote(didPoolProvider1),
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "start_phone_number", didPoolStartPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceName, "end_phone_number", didPoolEndPhoneNumber1),
-					resource.TestCheckResourceAttr(fullResourceName, "description", didPoolDescription1),
-					resource.TestCheckResourceAttr(fullResourceName, "comments", didPoolComments1),
-					resource.TestCheckResourceAttr(fullResourceName, "pool_provider", didPoolProvider1),
+					resource.TestCheckResourceAttr(resourcePath, "start_phone_number", didPoolStartPhoneNumber1),
+					resource.TestCheckResourceAttr(resourcePath, "end_phone_number", didPoolEndPhoneNumber1),
+					resource.TestCheckResourceAttr(resourcePath, "description", didPoolDescription1),
+					resource.TestCheckResourceAttr(resourcePath, "comments", didPoolComments1),
+					resource.TestCheckResourceAttr(resourcePath, "pool_provider", didPoolProvider1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + didPoolResourceLabel1,
+				ResourceName:      ResourceType + "." + didPoolResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -86,7 +86,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 func testVerifyDidPoolsDestroyed(state *terraform.State) error {
 	telephonyAPI := platformclientv2.NewTelephonyProvidersEdgeApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 

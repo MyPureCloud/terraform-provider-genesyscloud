@@ -1,11 +1,12 @@
 package integration
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -18,13 +19,13 @@ resource_genesyscloud_integration_schema.go should hold four types of functions 
 3.  The datasource schema definitions for the integration datasource.
 4.  The resource exporter configuration for the integration exporter.
 */
-const resourceName = "genesyscloud_integration"
+const ResourceType = "genesyscloud_integration"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceIntegration())
-	l.RegisterResource(resourceName, ResourceIntegration())
-	l.RegisterExporter(resourceName, IntegrationExporter())
+	l.RegisterDataSource(ResourceType, DataSourceIntegration())
+	l.RegisterResource(ResourceType, ResourceIntegration())
+	l.RegisterExporter(ResourceType, IntegrationExporter())
 }
 
 // ResourceIntegration registers the genesyscloud_integration resource with Terraform
@@ -111,6 +112,9 @@ func IntegrationExporter() *resourceExporter.ResourceExporter {
 		JsonEncodeAttributes: []string{"config.properties", "config.advanced"},
 		EncodedRefAttrs: map[*resourceExporter.JsonEncodeRefAttr]*resourceExporter.RefAttrSettings{
 			{Attr: "config.properties", NestedAttr: "groups"}: {RefType: "genesyscloud_group"},
+		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "name"}: {Attr: "^config\\.\\d+\\.name$"},
 		},
 	}
 }

@@ -12,10 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
-
-const NullValue = "null"
 
 func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 
@@ -37,13 +35,14 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					NullValue,
-					NullValue,
-					NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
 					[]string{},
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353747474747")},
-						NullValue,
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -60,13 +59,14 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					NullValue,
-					NullValue,
-					NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
 					[]string{},
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353221111111")},
-						NullValue,
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -83,21 +83,22 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					NullValue,
-					NullValue,
-					NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
 					[]string{},
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353221111111")},
-						NullValue,
+						util.NullValue,
 					),
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353112222222"), strconv.Quote("+353808080808")},
-						NullValue,
+						util.NullValue,
 					),
 					generateOutboundDncListEntriesBlock(
 						[]string{strconv.Quote("+353232323232")},
-						NullValue,
+						util.NullValue,
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -154,9 +155,10 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					name,
 					dncSourceType,
 					strconv.Quote(contactMethod),
-					NullValue,
-					NullValue,
-					NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
 					[]string{},
 					"",
 				),
@@ -173,10 +175,11 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					resourceLabel,
 					nameUpdated,
 					dncSourceTypeUpdate,
-					NullValue,
+					util.NullValue,
 					strconv.Quote(dncLoginId),
 					strconv.Quote(campaignId),
-					NullValue,
+					util.NullValue,
+					util.NullValue,
 					dncCodes,
 					"",
 				),
@@ -197,10 +200,11 @@ func TestAccResourceOutboundDncListDncListType(t *testing.T) {
 					resourceLabel,
 					nameUpdated,
 					dncSourceTypeUpdate,
-					NullValue,
+					util.NullValue,
 					strconv.Quote(dncLoginId),
 					strconv.Quote(campaignId),
-					NullValue,
+					util.NullValue,
+					util.NullValue,
 					dncCodesUpdated,
 					"",
 				),
@@ -257,10 +261,11 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 					resourceLabel,
 					name,
 					dncSourceType,
-					NullValue,
-					NullValue,
-					NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
 					strconv.Quote(gryphonLicense),
+					util.NullValue,
 					[]string{},
 					"",
 				),
@@ -276,6 +281,73 @@ func TestAccResourceOutboundDncListGryphonListType(t *testing.T) {
 				ResourceName:      "genesyscloud_outbound_dnclist." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyDncListDestroyed,
+	})
+}
+
+func TestAccResourceOutboundDncListCustomExclusionColumn(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel             = "dnc_list_cec"
+		nameAttr                  = "tf test dnc list " + uuid.NewString()
+		dncSourceTypeAttr         = "rds_custom"
+		customExclusionColumnAttr = "test"
+
+		customExclusionColumnAttrUpdated = "test update"
+
+		resourcePath = ResourceType + "." + resourceLabel
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateOutboundDncList(
+					resourceLabel,
+					nameAttr,
+					dncSourceTypeAttr,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					strconv.Quote(customExclusionColumnAttr),
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", nameAttr),
+					resource.TestCheckResourceAttr(resourcePath, "dnc_source_type", dncSourceTypeAttr),
+					resource.TestCheckResourceAttr(resourcePath, "custom_exclusion_column", customExclusionColumnAttr),
+					provider.TestDefaultHomeDivision(resourcePath),
+				),
+			},
+			{
+				Config: generateOutboundDncList(
+					resourceLabel,
+					nameAttr,
+					dncSourceTypeAttr,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					util.NullValue,
+					strconv.Quote(customExclusionColumnAttrUpdated),
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", nameAttr),
+					resource.TestCheckResourceAttr(resourcePath, "dnc_source_type", dncSourceTypeAttr),
+					resource.TestCheckResourceAttr(resourcePath, "custom_exclusion_column", customExclusionColumnAttrUpdated),
+					provider.TestDefaultHomeDivision(resourcePath),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            resourcePath,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"entries"},
 			},
 		},
 		CheckDestroy: testVerifyDncListDestroyed,
@@ -332,25 +404,27 @@ func testVerifyDncListDestroyed(state *terraform.State) error {
 }
 
 func generateOutboundDncList(
-	resourceLabel string,
-	name string,
-	dncSourceType string,
-	contactMethod string,
-	loginId string,
-	campaignId string,
-	licenseId string,
+	resourceLabel,
+	name,
+	dncSourceType,
+	contactMethod,
+	loginId,
+	campaignId,
+	licenseId,
+	customExclusionColumn string,
 	dncCodes []string,
 	nestedBlocks ...string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_dnclist" "%s" {
-	name            = "%s"
-	dnc_source_type = "%s"
-	contact_method  = %s
-	login_id        = %s
-	license_id      = %s
-	campaign_id     = %s
-	dnc_codes = [%s]
+	name                    = "%s"
+	dnc_source_type         = "%s"
+	contact_method          = %s
+	login_id                = %s
+	license_id              = %s
+	campaign_id             = %s
+	custom_exclusion_column = %s
+	dnc_codes               = [%s]
     %s
 }
-`, resourceLabel, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
+`, resourceLabel, name, dncSourceType, contactMethod, loginId, licenseId, campaignId, customExclusionColumn, strings.Join(dncCodes, ", "), strings.Join(nestedBlocks, "\n"))
 }

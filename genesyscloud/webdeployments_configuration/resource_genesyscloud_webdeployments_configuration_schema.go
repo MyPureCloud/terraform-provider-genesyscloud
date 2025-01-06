@@ -11,13 +11,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_webdeployments_configuration"
+const ResourceType = "genesyscloud_webdeployments_configuration"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceWebDeploymentsConfiguration())
-	l.RegisterResource(resourceName, ResourceWebDeploymentConfiguration())
-	l.RegisterExporter(resourceName, WebDeploymentConfigurationExporter())
+	l.RegisterDataSource(ResourceType, DataSourceWebDeploymentsConfiguration())
+	l.RegisterResource(ResourceType, ResourceWebDeploymentConfiguration())
+	l.RegisterExporter(ResourceType, WebDeploymentConfigurationExporter())
 }
 
 var (
@@ -331,6 +331,12 @@ var (
 			},
 			"allow_agent_navigation": {
 				Description: "Whether agent can use navigation feature over customer's screen or not",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_draw": {
+				Description: "Whether drawing is enabled or not",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,

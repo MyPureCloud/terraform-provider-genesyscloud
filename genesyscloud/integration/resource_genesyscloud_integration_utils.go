@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -21,7 +21,7 @@ Note:  Look for opportunities to minimize boilerplate code using functions and G
 */
 
 // flattenIntegrationConfig converts a platformclientv2.Integrationconfiguration into a map and then into single-element array for consumption by Terraform
-func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration) []interface{} {
+func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration, integrationId string, integrationName string) []interface{} {
 	if config == nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 		}
 	}
 	if config.Credentials != nil {
-		configCredentials = flattenConfigCredentials(*config.Credentials)
+		configCredentials = flattenConfigCredentials(*config.Credentials, integrationId, integrationName)
 	}
 
 	return []interface{}{map[string]interface{}{
@@ -72,13 +72,14 @@ func flattenIntegrationConfig(config *platformclientv2.Integrationconfiguration)
 }
 
 // flattenConfigCredentials converts a map of platformclientv2.Credentialinfo into a map of only the credential IDs for consumption by Terraform
-func flattenConfigCredentials(credentials map[string]platformclientv2.Credentialinfo) map[string]interface{} {
+func flattenConfigCredentials(credentials map[string]platformclientv2.Credentialinfo, integrationId string, integrationName string) map[string]interface{} {
 	if len(credentials) == 0 {
 		return nil
 	}
 
 	results := make(map[string]interface{})
 	for k, v := range credentials {
+		log.Printf("Credentials details : integration ID: %s, integration Name: %s, credential ID: %s, credential Type: %s", integrationId, integrationName, *v.Id, k)
 		results[k] = *v.Id
 	}
 	return results
@@ -92,7 +93,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config error: %s", d.Id(), err), resp), ""
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config error: %s", d.Id(), err), resp), ""
 			}
 
 			name := *integrationConfig.Name
@@ -112,13 +113,13 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 				if properties := configMap["properties"].(string); len(properties) > 0 {
 					if err := json.Unmarshal([]byte(properties), &propJSON); err != nil {
-						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert properties string to JSON for integration %s", d.Id()), err), name
+						return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert properties string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 
 				if advanced := configMap["advanced"].(string); len(advanced) > 0 {
 					if err := json.Unmarshal([]byte(advanced), &advJSON); err != nil {
-						return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Failed to convert advanced property string to JSON for integration %s", d.Id()), err), name
+						return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert advanced property string to JSON for integration %s", d.Id()), err), name
 					}
 				}
 
@@ -130,7 +131,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 				// Get latest config version
 				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config. error: %s", d.Id(), err), resp)
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config. error: %s", d.Id(), err), resp)
 				}
 
 				_, resp, err = p.updateIntegrationConfig(ctx, d.Id(), &platformclientv2.Integrationconfiguration{
@@ -142,7 +143,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 					Credentials: &credential,
 				})
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update config for integration %s error: %s", d.Id(), err), resp)
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update config for integration %s error: %s", d.Id(), err), resp)
 				}
 				return nil, nil
 			})

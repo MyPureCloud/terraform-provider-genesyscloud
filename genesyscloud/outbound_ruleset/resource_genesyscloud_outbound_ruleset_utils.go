@@ -10,7 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -322,10 +322,10 @@ func doesRuleConditionsRefDeletedSkill(rule platformclientv2.Dialerrule, skillMa
 }
 
 func GenerateOutboundRuleSetResourceAndLabel(resourceLabel, name string) (string, string) {
-	reference := resourceName + "." + resourceLabel
+	reference := ResourceType + "." + resourceLabel
 	return fmt.Sprintf(`
 resource "%s" "%s" {
 	name = "%s"
 }
-	`, resourceName, resourceLabel, name), reference
+	`, ResourceType, resourceLabel, name), reference
 }

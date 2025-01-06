@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
@@ -168,7 +168,7 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integAPI)
 
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)
 		}
 
 		if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {

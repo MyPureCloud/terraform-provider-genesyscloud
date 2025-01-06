@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*
@@ -37,7 +37,7 @@ func getAllIdpSalesforce(ctx context.Context, clientConfig *platformclientv2.Con
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP Salesforce error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP Salesforce error: %s", getErr), resp)
 	}
 
 	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "salesforce"}
@@ -53,7 +53,7 @@ func createIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIdpSalesforceProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading IDP Salesforce")
 
@@ -128,7 +128,7 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 
 	_, resp, err := proxy.updateIdpSalesforce(ctx, &update)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IDP Salesforce %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update IDP Salesforce %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated IDP Salesforce")
@@ -142,7 +142,7 @@ func deleteIdpSalesforce(ctx context.Context, _ *schema.ResourceData, meta inter
 	log.Printf("Deleting IDP Salesforce")
 	resp, err := proxy.deleteIdpSalesforce(ctx)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IDP Salesforce error: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete IDP Salesforce error: %s", err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {

@@ -17,12 +17,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
-	documentEntities := make([]platformclientv2.Knowledgedocumentresponse, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetKnowledgeDocumentProxy(clientConfig)
 	//knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
@@ -47,12 +46,11 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
 		}
-		documentEntities = append(documentEntities, *partialEntities...)
-	}
+		for _, knowledgeDocument := range *partialEntities {
+			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeDocument.Title}
+		}
 
-	for _, knowledgeDocument := range documentEntities {
-		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
-		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeDocument.Title}
 	}
 
 	return resources, nil
@@ -104,7 +102,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.DefaultConsistencyChecks, "genesyscloud_knowledge_document")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.ConsistencyChecks(), "genesyscloud_knowledge_document")
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +36,7 @@ func TestUnitTestAPIResponseDiagWithGoodApiResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"method\":\"POST\",\"path\":\"/api/v2/tfexporter?test=123\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"method\":\"POST\",\"path\":\"/api/v2/tfexporter?test=123\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
 	diag := BuildAPIDiagnosticError(resourceType, sumErrMsg, apiResponse)
 
@@ -47,7 +47,7 @@ func TestUnitTestAPIResponseDiagWithGoodApiResponse(t *testing.T) {
 	assert.Equal(t, targetDiag.Method, actualDiag.Method)
 	assert.Equal(t, targetDiag.StatusCode, actualDiag.StatusCode)
 	assert.Equal(t, targetDiag.ErrorMessage, actualDiag.ErrorMessage)
-	assert.Equal(t, targetDiag.ResourceName, actualDiag.ResourceName)
+	assert.Equal(t, targetDiag.ResourceType, actualDiag.ResourceType)
 }
 
 func TestUnitTestAPIResponseDiagWithBadApiResponse(t *testing.T) {
@@ -63,14 +63,14 @@ func TestUnitTestAPIResponseDiagWithBadApiResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
 	json.Unmarshal([]byte(targetResponse), targetDiag)
 
 	diag := BuildAPIDiagnosticError(resourceType, sumErrMsg, apiResponse)
 	actualDiag := &detailedDiagnosticInfo{}
 	_ = json.Unmarshal([]byte(diag[0].Detail), actualDiag)
 
-	assert.Equal(t, targetDiag.ResourceName, actualDiag.ResourceName)
+	assert.Equal(t, targetDiag.ResourceType, actualDiag.ResourceType)
 	assert.Equal(t, diag[0].Summary, sumErrMsg)
 	assert.Equal(t, targetResponse, diag[0].Detail)
 }
@@ -100,7 +100,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithGoodAPIResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"method\":\"POST\",\"path\":\"/api/v2/tfexporter?test=123\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"method\":\"POST\",\"path\":\"/api/v2/tfexporter?test=123\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
 
 	diag := BuildWithRetriesApiDiagnosticError(resourceType, sumErrMsg, apiResponse)
@@ -113,7 +113,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithGoodAPIResponse(t *testing.T) {
 	assert.Equal(t, targetDiag.Method, actualDiag.Method)
 	assert.Equal(t, targetDiag.StatusCode, actualDiag.StatusCode)
 	assert.Equal(t, targetDiag.ErrorMessage, actualDiag.ErrorMessage)
-	assert.Equal(t, targetDiag.ResourceName, actualDiag.ResourceName)
+	assert.Equal(t, targetDiag.ResourceType, actualDiag.ResourceType)
 }
 
 func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
@@ -129,7 +129,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceName\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
 
 	diag := BuildWithRetriesApiDiagnosticError(resourceType, sumErrMsg, apiResponse)
@@ -138,7 +138,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
 	lines := strings.Split(diag.Error(), "\n")
 	_ = json.Unmarshal([]byte(lines[1]), actualDiag)
 
-	assert.Equal(t, targetDiag.ResourceName, actualDiag.ResourceName)
+	assert.Equal(t, targetDiag.ResourceType, actualDiag.ResourceType)
 	assert.Equal(t, sumErrMsg, lines[0])
 	assert.Equal(t, targetResponse, lines[1])
 }

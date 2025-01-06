@@ -19,12 +19,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
-		log.Printf("cannot export %s because environment variable %s is not set", resourceName, featureToggles.OutboundRoutesToggleName())
+		log.Printf("cannot export %s because environment variable %s is not set", ResourceType, featureToggles.OutboundRoutesToggleName())
 		return nil, nil
 	}
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -34,26 +34,26 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 	// get unmanaged sites
 	unmanagedSites, resp, err := proxy.siteProxy.GetAllSites(ctx, false)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get unmanaged sites error: %s", err), resp)
 	}
 	allSites = append(allSites, *unmanagedSites...)
 
 	// get managed sites
 	managedSites, resp, err := proxy.siteProxy.GetAllSites(ctx, true)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get managed sites error: %s", err), resp)
 	}
 	allSites = append(allSites, *managedSites...)
 
 	for _, site := range allSites {
 		routes, resp, err := proxy.getAllSiteOutboundRoutes(ctx, *site.Id)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to check site %s outbound routes: %s", *site.Id, err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to check site %s outbound routes: %s", *site.Id, err), resp)
 		}
 		if routes != nil && len(*routes) > 0 {
 			for _, route := range *routes {
 				outboundRouteId := buildSiteAndOutboundRouteId(*site.Id, *route.Id)
-				resources[outboundRouteId] = &resourceExporter.ResourceMeta{BlockLabel: *route.Name}
+				resources[outboundRouteId] = &resourceExporter.ResourceMeta{BlockLabel: *site.Name + "_" + *route.Name}
 			}
 		}
 	}
@@ -63,18 +63,37 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 
 func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
 	}
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 
 	siteId := d.Get("site_id").(string)
 
+	if outboundRouteName, ok := d.GetOk("name"); ok {
+		if outboundRouteName.(string) == "Default Outbound Route" {
+			site, resp, err := proxy.siteProxy.GetSiteById(ctx, siteId)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get site %s: %s", siteId, err), resp)
+			}
+			// Default Outbound Routes are created automatically when a Cloud based site resource is created,
+			// so instead of trying to create a new outbound route, we will just update the existing one
+			if *site.MediaModel == "Cloud" {
+				siteId, outboundRouteId, _, _, err := proxy.getSiteOutboundRouteByName(ctx, siteId, "Default Outbound Route")
+				if err != nil {
+					return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get outbound route %s for site %s: %s", outboundRouteName, siteId, err), nil)
+				}
+				d.SetId(buildSiteAndOutboundRouteId(siteId, outboundRouteId))
+				return updateSiteOutboundRoute(ctx, d, meta)
+			}
+		}
+	}
+
 	outboundRoute := buildOutboundRoutes(d)
 
 	newOutboundRoute, resp, err := proxy.createSiteOutboundRoute(ctx, siteId, outboundRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
 	}
 
 	outboundRouteId := buildSiteAndOutboundRouteId(siteId, *newOutboundRoute.Id)
@@ -86,11 +105,11 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
 	}
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSiteOutboundRoute(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSiteOutboundRoute(), constants.ConsistencyChecks(), ResourceType)
 
 	siteId, outboundRouteId := splitSiteAndOutboundRoute(d.Id())
 
@@ -99,9 +118,9 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 		outboundRoute, resp, err := proxy.getSiteOutboundRouteById(ctx, siteId, outboundRouteId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read outbound route %s for site %s | error: %s", d.Id(), siteId, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read outbound route %s for site %s | error: %s", d.Id(), siteId, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read outbound route %s for site %s | error: %s", d.Id(), siteId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read outbound route %s for site %s | error: %s", d.Id(), siteId, err), resp))
 		}
 
 		_ = d.Set("site_id", siteId)
@@ -133,7 +152,7 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 
 func updateSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
 	}
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
@@ -143,7 +162,7 @@ func updateSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	_, resp, err := proxy.updateSiteOutboundRoute(ctx, siteId, outboundRouteId, outboundRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", outboundRoute, siteId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update outbound route with id %s for site %s error: %s", outboundRoute, siteId, err), resp)
 	}
 	// Wait for the update before reading
 	time.Sleep(5 * time.Second)
@@ -165,7 +184,7 @@ func deleteSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 			return nil
 		}
 
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete outbound route %s for site %s due to error: %s", outboundRouteId, siteId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete outbound route %s for site %s due to error: %s", outboundRouteId, siteId, err), resp)
 	}
 
 	log.Printf("Deleting outbound route %s for site %s", outboundRouteId, siteId)
@@ -185,13 +204,13 @@ func deleteSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted outbound route %s for site %s", outboundRouteId, siteId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to verify delete of outbound routes for site %s error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to verify delete of outbound routes for site %s error: %s", d.Id(), err), resp))
 		}
 
 		if outboundRoute == nil {
 			log.Printf("Deleted outbound route %s for site %s", outboundRouteId, siteId)
 			return nil
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("outbound route %s for site %s still exists", outboundRouteId, siteId), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("outbound route %s for site %s still exists", outboundRouteId, siteId), resp))
 	})
 }

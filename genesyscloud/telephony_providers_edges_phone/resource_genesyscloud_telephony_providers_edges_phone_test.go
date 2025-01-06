@@ -19,7 +19,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {
@@ -334,7 +334,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	stateActive := "active"
 	phoneBaseSettingsResourceLabel := "phoneBaseSettings1234"
 	phoneBaseSettingsName := "phoneBaseSettings " + uuid.NewString()
-	fullResourceName := "genesyscloud_telephony_providers_edges_did_pool" + "." + didPoolResourceLabel1
+	resourcePath := "genesyscloud_telephony_providers_edges_did_pool" + "." + didPoolResourceLabel1
 	locationResourceLabel := "test-location"
 
 	emergencyNumber := "+13173114121"
@@ -403,7 +403,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
 						return nil
 					},
-					resource.TestCheckResourceAttr(fullResourceName, "start_phone_number", lineAddresses)),
+					resource.TestCheckResourceAttr(resourcePath, "start_phone_number", lineAddresses)),
 			},
 			{
 				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{

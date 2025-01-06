@@ -1,19 +1,20 @@
 package architect_emergencygroup
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_architect_emergencygroup"
+const ResourceType = "genesyscloud_architect_emergencygroup"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectEmergencyGroup())
-	regInstance.RegisterDataSource(resourceName, DataSourceArchitectEmergencyGroup())
-	regInstance.RegisterExporter(resourceName, ArchitectEmergencyGroupExporter())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectEmergencyGroup())
+	regInstance.RegisterDataSource(ResourceType, DataSourceArchitectEmergencyGroup())
+	regInstance.RegisterExporter(ResourceType, ArchitectEmergencyGroupExporter())
 }
 
 func ResourceArchitectEmergencyGroup() *schema.Resource {

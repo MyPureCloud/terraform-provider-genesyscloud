@@ -10,12 +10,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 	var (
-		resourceName     = "test-label"
+		resourceLabel    = "test-label"
 		labelName        = "Terraform Label " + uuid.NewString()
 		updatedLabelName = "Updated " + labelName
 	)
@@ -27,28 +27,28 @@ func TestAccResourceRoutingUtilizationLabelBasic(t *testing.T) {
 			{
 				// Create
 				Config: generateRoutingUtilizationLabelResource(
-					resourceName,
+					resourceLabel,
 					labelName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceName, "name", labelName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceLabel, "name", labelName),
 				),
 			},
 			{
 				// Update
 				Config: generateRoutingUtilizationLabelResource(
-					resourceName,
+					resourceLabel,
 					updatedLabelName,
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceName, "name", updatedLabelName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization_label."+resourceLabel, "name", updatedLabelName),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_utilization_label." + resourceName,
+				ResourceName:      "genesyscloud_routing_utilization_label." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,

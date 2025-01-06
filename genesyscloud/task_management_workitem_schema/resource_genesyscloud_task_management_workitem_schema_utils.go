@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 const (
@@ -63,7 +63,7 @@ func GenerateWorkitemSchemaResourceBasic(resourceLabel, name, description string
 		name = "%s"
 		description = "%s"
 	}
-	`, resourceName, resourceLabel, name, description)
+	`, ResourceType, resourceLabel, name, description)
 }
 
 func GenerateWorkitemSchemaResource(resourceLabel, name, description, properties, enabledStr string) string {
@@ -73,5 +73,5 @@ func GenerateWorkitemSchemaResource(resourceLabel, name, description, properties
 		properties = %s
 		enabled = %s
 	}
-	`, resourceName, resourceLabel, name, description, properties, enabledStr)
+	`, ResourceType, resourceLabel, name, description, properties, enabledStr)
 }

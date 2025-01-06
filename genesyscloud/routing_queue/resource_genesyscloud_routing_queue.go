@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -36,7 +36,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 
 	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to get routing queues: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
 
 	if queues == nil || len(*queues) == 0 {
@@ -89,6 +89,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -124,10 +125,10 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	queue, resp, err := proxy.createRoutingQueue(ctx, &createQueue)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s | error: %s", *createQueue.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create queue %s | error: %s", *createQueue.Name, err), resp)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create queue %s with error: %s, status code %v", *createQueue.Name, err, resp.StatusCode), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create queue %s with error: %s, status code %v", *createQueue.Name, err, resp.StatusCode), resp)
 	}
 
 	d.SetId(*queue.Id)
@@ -149,7 +150,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading queue %s", d.Id())
 
@@ -157,9 +158,9 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", currentQueue.Name)
@@ -189,7 +190,6 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaEmailSetting)
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSetting)
 		}
-
 		_ = d.Set("outbound_messaging_sms_address_id", nil)
 		_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)
 		_ = d.Set("outbound_messaging_open_messaging_recipient_id", nil)
@@ -212,6 +212,9 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		if currentQueue.Bullseye != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
+		}
+		if currentQueue.CannedResponseLibraries != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -316,6 +319,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
@@ -334,7 +338,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
 	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
@@ -364,7 +368,7 @@ If the independent resources are enabled, pass in the current OEA and/or CGR to 
 func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get queue %s for update, error: %s", *queue.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get queue %s for update, error: %s", *queue.Name, err), resp)
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -404,7 +408,7 @@ func deleteRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	log.Printf("Deleting queue %s", name)
 	resp, err := proxy.deleteRoutingQueue(ctx, d.Id(), true)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete queue %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete queue %s error: %s", name, err), resp)
 	}
 
 	// Queue deletes are not immediate. Query until queue is no longer found
@@ -421,9 +425,9 @@ func deleteRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 				log.Printf("Queue %s deleted", name)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting queue %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting queue %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Queue %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Queue %s still exists", d.Id()), resp))
 	})
 }
 
@@ -436,7 +440,7 @@ func createRoutingQueueWrapupCodes(queueID string, codesToAdd []string, sdkConfi
 		chunkProcessor := func(chunk []platformclientv2.Wrapupcodereference) diag.Diagnostics {
 			_, resp, err := proxy.createRoutingQueueWrapupCode(ctx, queueID, chunk)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update wrapup codes for queue %s error: %s", queueID, err), resp)
 			}
 			return nil
 		}
@@ -456,7 +460,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 			// Get existing codes
 			codes, resp, err := proxy.getAllRoutingQueueWrapupCodes(ctx, d.Id())
 			if err != nil {
-				return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", d.Id(), err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query wrapup codes for queue %s error: %s", d.Id(), err), resp)
 			}
 
 			existingCodes := getWrapupCodeIds(codes)
@@ -472,7 +476,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 							// Ignore missing queue or wrapup code
 							continue
 						}
-						return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to remove wrapup codes for queue %s error: %s", d.Id(), err), resp)
+						return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove wrapup codes for queue %s error: %s", d.Id(), err), resp)
 					}
 				}
 			}
@@ -509,7 +513,7 @@ func validateMapCommTypes(val interface{}, _ cty.Path) diag.Diagnostics {
 	m := val.(map[string]interface{})
 	for k := range m {
 		if !lists.ItemInSlice(k, commTypes) {
-			return util.BuildDiagnosticError(resourceName, fmt.Sprintf("%s is an invalid communication type key.", k), fmt.Errorf("invalid communication type key"))
+			return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("%s is an invalid communication type key.", k), fmt.Errorf("invalid communication type key"))
 		}
 	}
 	return nil

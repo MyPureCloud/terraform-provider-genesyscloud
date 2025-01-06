@@ -1,9 +1,10 @@
 package organization_authentication_settings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -16,12 +17,12 @@ resource_genesycloud_organization_authentication_settings_schema.go holds four f
 3.  The datasource schema definitions for the organization_authentication_settings datasource.
 4.  The resource exporter configuration for the organization_authentication_settings exporter.
 */
-const resourceName = "genesyscloud_organization_authentication_settings"
+const ResourceType = "genesyscloud_organization_authentication_settings"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceOrganizationAuthenticationSettings())
-	l.RegisterExporter(resourceName, OrganizationAuthenticationSettingsExporter())
+	l.RegisterResource(ResourceType, ResourceOrganizationAuthenticationSettings())
+	l.RegisterExporter(ResourceType, OrganizationAuthenticationSettingsExporter())
 }
 
 var passwordRequirements = &schema.Resource{

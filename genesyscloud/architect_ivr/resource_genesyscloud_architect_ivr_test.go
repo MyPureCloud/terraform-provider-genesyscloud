@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceIvrConfigBasic(t *testing.T) {
@@ -49,9 +49,9 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 					DependsOn:     "",  // No depends_on
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+ivrConfigResourceLabel, "name", ivrConfigName),
-					resource.TestCheckResourceAttr(resourceName+"."+ivrConfigResourceLabel, "description", ivrConfigDescription),
-					hasEmptyDnis(resourceName+"."+ivrConfigResourceLabel),
+					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "name", ivrConfigName),
+					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "description", ivrConfigDescription),
+					hasEmptyDnis(ResourceType+"."+ivrConfigResourceLabel),
 				),
 			},
 			{
@@ -101,7 +101,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	ivrConfigDnis := []string{number1, number2}
 	didPoolResourceLabel1 := "test-didpool1"
 
-	fullResourceLabel := resourceName + "." + ivrConfigResourceLabel1
+	fullResourceLabel := ResourceType + "." + ivrConfigResourceLabel1
 
 	// did pool cleanup
 	defer func() {
@@ -135,7 +135,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceLabel, "name", ivrConfigName),
 					resource.TestCheckResourceAttr(fullResourceLabel, "description", ivrConfigDescription),
 					resource.TestCheckResourceAttrPair(fullResourceLabel, "division_id", "genesyscloud_auth_division."+divResourceLabel1, "id"),
-					hasEmptyDnis(resourceName+"."+ivrConfigResourceLabel1),
+					hasEmptyDnis(ResourceType+"."+ivrConfigResourceLabel1),
 				),
 			},
 			{
@@ -243,7 +243,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, startNumberStr, endNumberStr)
 	}()
 
-	fullResourceName := resourceName + "." + resourceLabel
+	resourcePath := ResourceType + "." + resourceLabel
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -259,8 +259,8 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", "20"),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", "20"),
 				),
 			},
 			{
@@ -273,8 +273,8 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", "48"),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", "48"),
 				),
 			},
 			{
@@ -287,8 +287,8 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", "12"),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", "12"),
 				),
 			},
 			{
@@ -301,13 +301,13 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 					DivisionId:    "",
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", name),
-					resource.TestCheckResourceAttr(fullResourceName, "dnis.#", fmt.Sprintf("%v", len(allNumbers))),
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dnis.#", fmt.Sprintf("%v", len(allNumbers))),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      fullResourceName,
+				ResourceName:      resourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -322,7 +322,7 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 	architectApi := platformclientv2.NewArchitectApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceType {
 			continue
 		}
 
@@ -347,11 +347,11 @@ func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 	return nil
 }
 
-func hasEmptyDnis(ivrResourceName string) resource.TestCheckFunc {
+func hasEmptyDnis(ivrResourcePath string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		ivrResource, ok := state.RootModule().Resources[ivrResourceName]
+		ivrResource, ok := state.RootModule().Resources[ivrResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find ivr config %s in state", ivrResourceName)
+			return fmt.Errorf("Failed to find ivr config %s in state", ivrResourcePath)
 		}
 		ivrID := ivrResource.Primary.ID
 

@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -27,7 +27,7 @@ func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Con
 
 	divisions, resp, getErr := proxy.getAllAuthDivision(ctx, "")
 	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get divisions | error: %s", getErr), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get divisions | error: %s", getErr), resp)
 	}
 
 	for _, division := range *divisions {
@@ -62,7 +62,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		Description: &description,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create division %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create division %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*division.Id)
@@ -73,7 +73,7 @@ func createAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAuthDivisionProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAuthDivision(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading division %s", d.Id())
 
@@ -81,9 +81,9 @@ func readAuthDivision(ctx context.Context, d *schema.ResourceData, meta interfac
 		division, resp, getErr := proxy.getAuthDivisionById(ctx, d.Id(), false, true)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read division %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read division %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read division %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read division %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		_ = d.Set("name", *division.Name)
@@ -109,7 +109,7 @@ func updateAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		Description: &description,
 	})
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update division %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update division %s error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated division %s", name)
@@ -135,7 +135,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		log.Printf("Deleting division %s", name)
 		resp, err := proxy.deleteAuthDivision(ctx, d.Id(), false)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
 	})
@@ -151,9 +151,9 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 				log.Printf("Deleted division %s", name)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting division %s | error:: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting division %s | error:: %s", name, err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Division %s still exists", name), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Division %s still exists", name), resp))
 	})
 }
 
