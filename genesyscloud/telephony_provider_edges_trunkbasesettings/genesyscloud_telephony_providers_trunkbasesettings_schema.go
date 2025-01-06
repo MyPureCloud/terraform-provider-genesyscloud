@@ -111,5 +111,6 @@ func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 			//"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"}, TODO: decide how/if this will be included after DEVTOOLING-676 is resolved
 		},
 		JsonEncodeAttributes: []string{"properties"},
+		ExportAsDataFunc:     shouldExportTrunkBaseSettingsAsDataSource,
 	}
 }
