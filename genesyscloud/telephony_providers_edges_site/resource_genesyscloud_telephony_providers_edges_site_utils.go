@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var (
@@ -109,7 +109,7 @@ func updatePrimarySecondarySites(ctx context.Context, sp *SiteProxy, d *schema.R
 	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
 	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
 
-	site, resp, err := sp.getSiteById(ctx, siteId)
+	site, resp, err := sp.GetSiteById(ctx, siteId)
 	if resp.StatusCode != 200 {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site error: %s", siteId, err), resp)
 	}
