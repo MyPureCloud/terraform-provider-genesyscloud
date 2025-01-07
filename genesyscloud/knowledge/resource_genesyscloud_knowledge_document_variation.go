@@ -43,6 +43,17 @@ var (
 				Elem:        addressableEntityRef,
 				Computed:    true,
 			},
+			"name": {
+				Description: "The name of the variation",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"contexts": {
+				Description: "The context values associated with the variation",
+				Optional: true,
+				Type: schema.TypeList,
+				
+			},
 		},
 	}
 
@@ -734,15 +745,20 @@ func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documen
 }
 
 func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
+	name := variationIn["name"].(string)
 	variationOut := platformclientv2.Documentvariationrequest{
 		Body: buildVariationBody(variationIn),
+		Name: &name,
 	}
 	return &variationOut
 }
 
 func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
+	name := variationIn["name"].(string)
+
 	variationOut := platformclientv2.Documentvariationrequest{
 		Body: buildVariationBody(variationIn),
+		Name: &name,
 	}
 
 	return &variationOut
@@ -937,6 +953,9 @@ func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvari
 	}
 	if variationIn.DocumentVersion != nil {
 		variationOut["document_version"] = flattenDocumentVersion(*variationIn.DocumentVersion)
+	}
+	if variationIn.Name != nil {
+		variationOut["name"] = *variationIn.Name
 	}
 
 	return []interface{}{variationOut}

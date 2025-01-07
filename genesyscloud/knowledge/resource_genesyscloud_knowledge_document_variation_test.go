@@ -37,6 +37,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 		listType                        = "ListItem"
 		documentText                    = "stuff"
 		marks                           = []string{"Bold", "Italic", "Underline"}
+		name                            = "Terraform Test Knowledge Document Variation"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -73,6 +74,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						listType,
 						documentText,
 						marks,
+						name,
 					),
 
 				Check: resource.ComposeTestCheckFunc(
@@ -81,6 +83,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.text", documentText),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.marks.#", fmt.Sprintf("%v", len(marks))),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.text.0.hyperlink", hyperlink),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.name", name),
 				),
 			},
 			{
@@ -113,12 +116,14 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						listType,
 						documentText,
 						marks,
+						name,
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.type", bodyBlockType),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.type", contentBlockType2),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.image.0.url", imageUrl),
 					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.paragraph.0.blocks.0.image.0.hyperlink", hyperlink),
+					resource.TestCheckResourceAttr("genesyscloud_knowledge_document_variation."+variationResourceLabel1, "knowledge_document_variation.0.name", name),
 				),
 			},
 			{
@@ -132,7 +137,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResourceLabel string, knowledgeDocumentResourceLabel string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
+func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResourceLabel string, knowledgeDocumentResourceLabel string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string, name string) string {
 	variation := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document_variation" "%s" {
 			depends_on=[genesyscloud_knowledge_document.%s]
@@ -146,17 +151,18 @@ func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResou
 		knowledgeBaseResourceLabel,
 		knowledgeDocumentResourceLabel,
 		published,
-		generateKnowledgeDocumentVariationBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks),
+		generateKnowledgeDocumentVariationBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks, name),
 	)
 	return variation
 }
 
-func generateKnowledgeDocumentVariationBody(bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string) string {
+func generateKnowledgeDocumentVariationBody(bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string, name string) string {
 	variationBody := fmt.Sprintf(`
         knowledge_document_variation {
+		name = "%s"
 			%v
 		}
-        `, generateDocumentBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks),
+        `, name, generateDocumentBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks),
 	)
 	return variationBody
 }
