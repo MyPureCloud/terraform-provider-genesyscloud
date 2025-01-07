@@ -98,6 +98,7 @@ func SiteExporterOutboundRoute() *resourceExporter.ResourceExporter {
 			"site_id":                 {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
 		},
+		ExportAsDataFunc: shouldExportRoutesWithManagedSitesAsData,
 	}
 }
 

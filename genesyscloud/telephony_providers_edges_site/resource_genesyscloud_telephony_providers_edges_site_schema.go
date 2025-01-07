@@ -272,6 +272,13 @@ func ResourceSite() *schema.Resource {
 				Default:     false,
 				Type:        schema.TypeBool,
 			},
+			"managed": {
+				Description: "Is this site managed by Genesys Cloud",
+				Type:        schema.TypeBool,
+				Optional:    false,
+				Required:    false,
+				Computed:    true,
+			},
 		},
 		CustomizeDiff: customizeSiteDiff,
 	}
@@ -290,6 +297,7 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 		CustomValidateExports: map[string][]string{
 			"rrule": {"edge_auto_update_config.rrule"},
 		},
+		ExportAsDataFunc: shouldExportManagedSitesAsData,
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"number_plans": {ResolverFunc: siteNumberPlansExporterResolver},
 		},
