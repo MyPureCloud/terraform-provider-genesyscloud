@@ -175,7 +175,7 @@ func ResourceOutboundMessagingCampaign() *schema.Resource {
 			`dnc_list_ids`: {
 				Description: `The dnc lists to check before sending a message for this messaging campaign.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`campaign_status`: {

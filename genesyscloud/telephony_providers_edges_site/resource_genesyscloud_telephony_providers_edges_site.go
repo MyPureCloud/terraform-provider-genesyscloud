@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -44,11 +43,6 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{BlockLabel: *managedSite.Name}
-		// When exporting managed sites, they must automatically be exported as data source
-		// Managed sites are added to the ExportAsData []string in resource_exporter
-		if tfexporter_state.IsExporterActive() {
-			resourceExporter.AddDataSourceItems(ResourceType, *managedSite.Name)
-		}
 	}
 	return resources, nil
 }
@@ -186,6 +180,8 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		if currentSite.SecondarySites != nil {
 			_ = d.Set("secondary_sites", util.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
 		}
+
+		resourcedata.SetNillableValue(d, "managed", currentSite.Managed)
 
 		if retryErr := readSiteNumberPlans(ctx, sp, d); retryErr != nil {
 			return retryErr
