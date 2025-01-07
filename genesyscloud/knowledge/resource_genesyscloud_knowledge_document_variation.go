@@ -50,9 +50,46 @@ var (
 			},
 			"contexts": {
 				Description: "The context values associated with the variation",
-				Optional: true,
-				Type: schema.TypeList,
-				
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        documentVariationContexts,
+			},
+		},
+	}
+
+	documentVariationContexts = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"context": {
+				Description: "The knowledge context associated with the variation",
+				Required:    true,
+				Type:        schema.TypeList,
+				Elem:        contextBody,
+			},
+			"values": {
+				Description: "The list of knowledge context values associated with the variation",
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        valuesBody,
+			},
+		},
+	}
+
+	contextBody = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The globally unique identifier for the knowledge context",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+
+	valuesBody = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The globally unique identifier for the knowledge context value",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -747,10 +784,57 @@ func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documen
 func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
 	name := variationIn["name"].(string)
 	variationOut := platformclientv2.Documentvariationrequest{
-		Body: buildVariationBody(variationIn),
-		Name: &name,
+		Body:     buildVariationBody(variationIn),
+		Name:     &name,
+		Contexts: buildVariationContexts(variationIn),
 	}
 	return &variationOut
+}
+
+func buildVariationContexts(variationIn map[string]interface{}) *[]platformclientv2.Documentvariationcontext {
+	if contextsList := variationIn["contexts"].([]interface{}); contextsList != nil && len(contextsList) > 0 {
+		contexts := contextsList[0].(map[string]interface{})
+		context := buildVariationContext(contexts)
+		values := buildVariationContextValue(contexts)
+
+		return &[]platformclientv2.Documentvariationcontext{
+			{
+				Context: context,
+				Values:  values,
+			},
+		}
+	}
+	return nil
+}
+
+func flattenVariationContexts() {
+
+}
+
+func buildVariationContext(context map[string]interface{}) *platformclientv2.Knowledgecontextreference {
+	if contextId := context["context_id"].(string); contextId != "" {
+		contextOut := platformclientv2.Knowledgecontextreference{
+			Id: &contextId,
+		}
+		return &contextOut
+	}
+	return nil
+}
+
+func flattenVariationContext() {
+
+}
+
+func buildVariationContextValue(contexts map[string]interface{}) *[]platformclientv2.Knowledgecontextvaluereference {
+	if contextId := contexts["context_id"].(string)
+	contextOut := platformclientv2.Knowledgecontextvaluereference{
+		Id: &contextId,
+	}
+	return &[]==platformclientv2.Knowledgecontextvaluereference{contextOut}
+}
+
+func flattenVariationContextValue() {
+
 }
 
 func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
