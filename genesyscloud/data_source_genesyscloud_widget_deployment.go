@@ -16,8 +16,9 @@ import (
 
 func dataSourceWidgetDeployments() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Widget Deployment. Select a widget deployment.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceWidgetDeploymentRead),
+		Description:        "Data source for Genesys Cloud Widget Deployment. Select a widget deployment.",
+		DeprecationMessage: "The CX as Code team will be removing the genesyscloud_widget_deployment resource and data source from the CX as Code Terraform provider in mid-April. If you are using these resources you must upgrade your CX as Code provider version after mid-April and before mid-June, you will experience errors in your CI/CD pipelines and CX as Code exports with the removal of /api/v2/widgets/deployments APIs.",
+		ReadContext:        provider.ReadWithPooledClient(dataSourceWidgetDeploymentRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Widget Deployment Name.",
