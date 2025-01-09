@@ -44,7 +44,7 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		DisableDefaultStatusCreation: platformclientv2.Bool(false),
 		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
-		SchemaId:                     platformclientv2.String(d.Get("schema_id").(string)),
+		SchemaId:                     resourcedata.GetNillableValue[string](d, "schema_id"),
 		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),
 
 		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
@@ -133,13 +133,12 @@ func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Ro
 }
 
 // GenerateWorktypeResourceBasic generates a terraform config string for a basic worktype
-func GenerateWorktypeResourceBasic(resourceLabel, name, description, workbinResourceId, schemaResourceId, attrs string) string {
+func GenerateWorktypeResourceBasic(resourceLabel, name, description, workbinResourceId, attrs string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description = "%s"
 		default_workbin_id = %s
-		schema_id = %s
 		%s
 	}
-	`, ResourceType, resourceLabel, name, description, workbinResourceId, schemaResourceId, attrs)
+	`, ResourceType, resourceLabel, name, description, workbinResourceId, attrs)
 }

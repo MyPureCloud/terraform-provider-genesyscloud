@@ -40,7 +40,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 		wtResourceLabel = "worktype_id"
 		wtName          = "wt_" + uuid.NewString()
 		wtDescription   = "test worktype description"
-
+		
 		// Status 1
 		statusResourceLabel1 = "status1"
 		status1Name1         = "status1-" + uuid.NewString()
@@ -67,7 +67,6 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						wtName,
 						wtDescription,
 						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-						fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 						"",
 					) +
 					GenerateWorktypeStatusResource(
@@ -97,7 +96,6 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 						wtName,
 						wtDescription,
 						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-						fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
 						"",
 					) +
 					GenerateWorktypeStatusResource(

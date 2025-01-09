@@ -1,11 +1,11 @@
-package task_management_worktype_status
+package task_management_onattributechange_rule
 
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	workType "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -15,10 +15,10 @@ import (
 )
 
 /*
-Test Class for the task management worktype status Data Source
+Test Class for the task management onattributechange rule Data Source
 */
 
-func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
+func TestAccDataSourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 	t.Parallel()
 	var (
 		// Workbin
@@ -26,23 +26,23 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 		wbName          = "wb_" + uuid.NewString()
 		wbDescription   = "workbin created for CX as Code test case"
 
-		// Schema
-		wsResourceLabel = "schema_1"
-		wsName          = "ws_" + uuid.NewString()
-		wsDescription   = "workitem schema created for CX as Code test case"
-
 		// Worktype
-		wtResourceLabel = "worktype_id"
+		wtResourceLabel = "worktype_1"
 		wtName          = "wt_" + uuid.NewString()
 		wtDescription   = "test worktype description"
 
-		// Status Resource
-		statusResourceLabel = "status_resource"
+		// Status
+		statusResourceLabel = "status_1"
 		statusName          = "status-" + uuid.NewString()
-		statusCategory      = "Open"
+		statusCategory      = "InProgress"
 
-		// Status Data Source
-		statusDataSourceLabel = "status_data"
+		// OnAttributeChange Rule Resource
+		onAttributeChangeRuleResourceLabel = "onattributechange_rule_resource"
+		onAttributeChangeRuleName = "onattributechange-" + uuid.NewString()
+		onAttributeChangeRuleAttribute = "statusId"
+		
+		// OnAttributeChange Data Source
+		onAttributeChangeRuleDataSourceLabel = "onattributechange_rule_data"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -51,7 +51,6 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
-					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
 					workType.GenerateWorktypeResourceBasic(
 						wtResourceLabel,
 						wtName,
@@ -59,32 +58,36 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
 						"",
 					) +
-					GenerateWorktypeStatusResource(
+					worktypeStatus.GenerateWorktypeStatusResource(
 						statusResourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						statusName,
 						statusCategory,
-						"",
-						util.NullValue,
-						"",
+						"", util.NullValue, "",
 					) +
-					generateWorktypeStatusDataSource(
-						statusDataSourceLabel,
+					GenerateOnAttributeChangeRuleResource(
+						onAttributeChangeRuleResourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						statusName,
-						ResourceType+"."+statusResourceLabel,
+						onAttributeChangeRuleName,
+						onAttributeChangeRuleAttribute,
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel),
+						"",	"",
+					) +
+					generateOnAttributeChangeRuleDataSource(
+						onAttributeChangeRuleDataSourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						onAttributeChangeRuleName,
+						ResourceType+"."+onAttributeChangeRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStatusIds(
-						fmt.Sprintf("data.%s.%s", ResourceType, statusDataSourceLabel), "id", fmt.Sprintf("%s.%s", ResourceType, statusResourceLabel), "id",
-					),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+onAttributeChangeRuleDataSourceLabel, "id", ResourceType+"."+onAttributeChangeRuleResourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateWorktypeStatusDataSource(dataSourceLabel string, worktypeId string, name string, dependsOnResource string) string {
+func generateOnAttributeChangeRuleDataSource(dataSourceLabel string, worktypeId string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		worktype_id = %s
 		name = "%s"
