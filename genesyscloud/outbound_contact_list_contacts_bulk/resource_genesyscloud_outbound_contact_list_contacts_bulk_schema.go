@@ -8,11 +8,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const ResourceType = "genesyscloud_outbound_contact_list_contact"
+const ResourceType = "genesyscloud_outbound_contact_list_contacts_bulk"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceOutboundContactListContactsBulk())
-	regInstance.RegisterExporter(ResourceType, ContactExporter())
+	regInstance.RegisterExporter(ResourceType, BulkContactsExporter())
 }
 
 var (
@@ -66,7 +66,7 @@ var (
 	}
 )
 
-func ContactExporter() *resourceExporter.ResourceExporter {
+func BulkContactsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllContacts),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
