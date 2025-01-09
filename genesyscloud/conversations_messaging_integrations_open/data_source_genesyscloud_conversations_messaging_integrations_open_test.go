@@ -75,7 +75,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {
-			time.Sleep(45 * time.Second)
+			time.Sleep(60 * time.Second)
 			return testVerifyConversationsMessagingIntegrationsOpenDestroyed(state)
 		},
 	})

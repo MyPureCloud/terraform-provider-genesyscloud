@@ -9,13 +9,13 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourcePhone(t *testing.T) {
-	t.Parallel()
 	var (
 		phoneResourceLabel     = "phone1234"
 		phoneDataResourceLabel = "phoneData"
@@ -43,6 +43,9 @@ func TestAccDataSourcePhone(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: user.GenerateUserResource(
 					userResourceLabel1,
 					userEmail1,
