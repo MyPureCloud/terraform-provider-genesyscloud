@@ -57,7 +57,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 		webRtcUserId := d.Get("web_rtc_user_id")
 		if webRtcUserId != "" {
-			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string))
+			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string), *phone.Id)
 			if diagErr != nil {
 				return resp, diagErr
 			}
@@ -147,9 +147,11 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	webRtcUserId := d.Get("web_rtc_user_id")
 	if webRtcUserId != "" {
-		diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string))
-		if diagErr != nil {
-			return diagErr
+		if d.HasChange("web_rtc_user_id") {
+			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string), *phone.Id)
+			if diagErr != nil {
+				return diagErr
+			}
 		}
 	}
 
