@@ -101,11 +101,26 @@ func getLineBaseSettingsID(ctx context.Context, pp *phoneProxy, phoneBaseSetting
 	return *(*phoneBase.Lines)[0].Id, nil
 }
 
-func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string) diag.Diagnostics {
+func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string, phoneId string) diag.Diagnostics {
 	stationId := ""
 	stationIsAssociated := false
 
-	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		_, resp, getErr := pp.getPhoneById(ctx, phoneId)
+		if getErr != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone %s | error: %s", phoneId, getErr), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone %s | error: %s", phoneId, getErr), resp))
+		}
+		return nil
+	})
+
+	if retryErr != nil {
+		return retryErr
+	}
+
+	retryErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, resp, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting stations: %s", err), resp))
