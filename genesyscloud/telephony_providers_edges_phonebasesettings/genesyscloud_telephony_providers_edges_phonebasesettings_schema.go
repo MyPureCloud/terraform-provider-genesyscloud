@@ -135,7 +135,6 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				MaxItems:    1,
-				Computed:    true,
 				Elem:        lineBase,
 			},
 			"line_base_settings_id": {
