@@ -98,11 +98,8 @@ Optional:
 <a id="nestedblock--line_base"></a>
 ### Nested Schema for `line_base`
 
-Required:
-
-- `station_persistent_enabled` (Boolean) The station_persistent_enabled attribute in the line's property
-
 Optional:
 
-- `station_persistent_timeout` (Number) The station_persistent_timeout attribute in the line's property
+- `station_persistent_enabled` (Boolean) The station_persistent_enabled attribute in the line's property Defaults to `false`.
+- `station_persistent_timeout` (Number) The station_persistent_timeout attribute in the line's property Defaults to `600`.
 

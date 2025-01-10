@@ -74,12 +74,14 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 			"station_persistent_enabled": {
 				Description: "The station_persistent_enabled attribute in the line's property",
 				Type:        schema.TypeBool,
-				Required:    true,
+				Optional:    true,
+				Default:     false,
 			},
 			"station_persistent_timeout": {
 				Description: "The station_persistent_timeout attribute in the line's property",
 				Type:        schema.TypeInt,
 				Optional:    true,
+				Default:     600,
 			},
 		},
 	}
@@ -132,6 +134,7 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
+				Computed:    true,
 				Elem:        lineBase,
 			},
 			"line_base_settings_id": {

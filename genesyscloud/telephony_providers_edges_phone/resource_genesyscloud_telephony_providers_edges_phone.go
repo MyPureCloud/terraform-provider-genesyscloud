@@ -152,7 +152,6 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			if diagErr != nil {
 				return diagErr
 			}
-		}
 	}
 
 	return readPhone(ctx, d, meta)
