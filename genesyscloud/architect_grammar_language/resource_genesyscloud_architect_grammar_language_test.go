@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
@@ -260,7 +260,7 @@ func testVerifyGrammarLanguageDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_architect_grammar_language" {
 			continue
 		}
-		grammarId, languageCode := splitLanguageId(rs.Primary.ID)
+		grammarId, languageCode := splitGrammarLanguageId(rs.Primary.ID)
 		grammar, resp, err := architectAPI.GetArchitectGrammarLanguage(grammarId, languageCode)
 		if grammar != nil {
 			return fmt.Errorf("Language (%s) still exists", rs.Primary.ID)

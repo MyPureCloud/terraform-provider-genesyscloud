@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -53,7 +53,7 @@ type ResourceInfo struct {
 	OriginalLabel string
 	Type          string
 	CtyType       cty.Type
-	ResourceType  string
+	BlockType     string
 }
 
 // DataSourceResolver allows the definition of a custom resolver for an exporter.
@@ -159,6 +159,7 @@ type ResourceExporter struct {
 
 	CustomFlowResolver map[string]*CustomFlowResolver
 
+	ExportAsDataFunc   func(context.Context, *platformclientv2.Configuration, map[string]string) (bool, error)
 	DataSourceResolver map[*DataAttr]*ResourceAttr
 
 	//This a placeholder filter out specific resources from a filter.
@@ -347,23 +348,4 @@ func SetRegisterExporter(resources map[string]*ResourceExporter) {
 	resourceExporterMapMutex.Lock()
 	defer resourceExporterMapMutex.Unlock()
 	resourceExporters = resources
-}
-
-var (
-	ExportAsData           []string
-	dsMutex                sync.Mutex
-	resourceLabelSanitizer = NewSanitizerProvider()
-)
-
-// The AddDataSourceItems function adds resources to the ExportAsData []string and are formatted correctly
-// The ExportAsData will be checked in the genesyscloud_resource_exporter to determine resources to be exported as data source
-func AddDataSourceItems(resourceType, itemLabel string) {
-	exportLabel := resourceType + "::" + resourceLabelSanitizer.S.SanitizeResourceBlockLabel(itemLabel)
-	addDataSourceItemstoExport(exportLabel)
-}
-
-func addDataSourceItemstoExport(label string) {
-	dsMutex.Lock()
-	defer dsMutex.Unlock()
-	ExportAsData = append(ExportAsData, label)
 }

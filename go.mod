@@ -12,10 +12,10 @@ require (
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/mozillazg/go-unidecode v0.2.0
-	github.com/mypurecloud/platform-client-sdk-go/v149 v149.0.0
-	github.com/nyaruka/phonenumbers v1.4.3
+	github.com/mypurecloud/platform-client-sdk-go/v150 v150.0.0
+	github.com/nyaruka/phonenumbers v1.4.4
 	github.com/rjNemo/underscore v0.7.0
-	github.com/zclconf/go-cty v1.15.1
+	github.com/zclconf/go-cty v1.16.0
 	gonum.org/v1/gonum v0.15.0
 )
 
@@ -98,10 +98,10 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
-	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.33.0
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/net v0.34.0
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/grpc v1.68.0 // indirect

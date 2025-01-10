@@ -12,7 +12,7 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 /*

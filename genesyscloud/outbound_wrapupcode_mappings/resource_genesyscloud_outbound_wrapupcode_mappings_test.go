@@ -84,6 +84,10 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 }
 `, resourceLabel, wrapupCode1ResourceLabel, wrapupCode2ResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds to get proper response
+						return nil
+					},
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Contact_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Right_Party_Contact"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Business_Success"),
@@ -95,6 +99,9 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 			},
 			// Update
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceLabel, wrapupCode1Name, "genesyscloud_auth_division."+divResourceLabel+".id") +
 					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceLabel, wrapupCode2Name, "genesyscloud_auth_division."+divResourceLabel+".id") +
@@ -117,6 +124,10 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 }
 `, resourceLabel, wrapupCode1ResourceLabel, wrapupCode2ResourceLabel, wrapupCode3ResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds to get proper response
+						return nil
+					},
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Contact_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Number_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Right_Party_Contact"),

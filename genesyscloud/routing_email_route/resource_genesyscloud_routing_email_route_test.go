@@ -18,31 +18,33 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
 	var (
-		domainResourceLabel = "routing-domain1"
-		domainId            = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
-		queueResourceLabel  = "email-queue"
-		queueName           = "Terraform Email Queue-" + uuid.NewString()
-		langResourceLabel   = "email-lang"
-		langName            = "tflang" + uuid.NewString()
-		skillResourceLabel  = "test-skill1"
-		skillName           = "Terraform Skill" + uuid.NewString()
-		routeResourceLabel1 = "email-route1"
-		routeResourceLabel2 = "email-route2"
-		routePattern1       = "terraform1"
-		routePattern2       = "terraform2"
-		routePattern3       = "terraform3"
-		fromEmail1          = "terraform1@test.com"
-		fromEmail2          = "terraform2@test.com"
-		fromName1           = "John Terraform"
-		fromName2           = "Jane Terraform"
-		priority1           = "1"
-		bccEmail1           = "test1@" + domainId
-		bccEmail2           = "test2@" + domainId
+		domainResourceLabel  = "routing-domain1"
+		domainId             = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		queueResourceLabel   = "email-queue"
+		queueName            = "Terraform Email Queue-" + uuid.NewString()
+		langResourceLabel    = "email-lang"
+		langName             = "tflang" + uuid.NewString()
+		skillResourceLabel   = "test-skill1"
+		skillName            = "Terraform Skill" + uuid.NewString()
+		routeResourceLabel1  = "email-route1"
+		routeResourceLabel2  = "email-route2"
+		routePattern1        = "terraform1"
+		routePattern2        = "terraform2"
+		routePattern3        = "terraform3"
+		fromEmail1           = "terraform1@test.com"
+		fromEmail2           = "terraform2@test.com"
+		fromName1            = "John Terraform"
+		fromName2            = "Jane Terraform"
+		priority1            = "1"
+		bccEmail1            = "test1@" + domainId
+		bccEmail2            = "test2@" + domainId
+		allowMultipleActions = "true"
+		historyInclusion     = "Include"
 	)
 
 	CleanupRoutingEmailDomains()
@@ -65,6 +67,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					routePattern1,
 					fromName1,
 					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
+					fmt.Sprintf("allow_multiple_actions = \"%s\"", allowMultipleActions),
+					fmt.Sprintf("history_inclusion = \"%s\"", historyInclusion),
 					generateRoutingAutoBcc(fromName1, bccEmail1),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -74,6 +78,8 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_email", fromEmail1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.name", fromName1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.email", bccEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "allow_multiple_actions", allowMultipleActions),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "history_inclusion", historyInclusion),
 				),
 			},
 			{

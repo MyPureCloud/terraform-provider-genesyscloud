@@ -18,12 +18,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func getAllKnowledgeCategories(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
-	categoryEntities := make([]platformclientv2.Categoryresponse, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetKnowledgeCategoryProxy(clientConfig)
 
@@ -47,12 +46,10 @@ func getAllKnowledgeCategories(ctx context.Context, clientConfig *platformclient
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_categories", fmt.Sprintf("failed to get all knowledgebase categories: %s", err), resp)
 		}
-		categoryEntities = append(categoryEntities, *partialEntities...)
-	}
-
-	for _, knowledgeCategory := range categoryEntities {
-		id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
-		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeCategory.Name}
+		for _, knowledgeCategory := range *partialEntities {
+			id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeCategory.Name}
+		}
 	}
 
 	return resources, nil

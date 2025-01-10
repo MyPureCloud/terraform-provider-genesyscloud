@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -127,12 +127,14 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "pattern", route.Pattern)
 		resourcedata.SetNillableReference(d, "queue_id", route.Queue)
 		resourcedata.SetNillableValue(d, "priority", route.Priority)
+		resourcedata.SetNillableValue(d, "history_inclusion", route.HistoryInclusion)
 		resourcedata.SetNillableReference(d, "language_id", route.Language)
 		resourcedata.SetNillableValue(d, "from_name", route.FromName)
 		resourcedata.SetNillableValue(d, "from_email", route.FromEmail)
 		resourcedata.SetNillableReference(d, "flow_id", route.Flow)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "auto_bcc", route.AutoBcc, flattenAutoBccEmailAddress)
 		resourcedata.SetNillableReference(d, "spam_flow_id", route.SpamFlow)
+		resourcedata.SetNillableValue(d, "allow_multiple_actions", route.AllowMultipleActions)
 
 		if route.Skills != nil {
 			_ = d.Set("skill_ids", util.SdkDomainEntityRefArrToSet(*route.Skills))

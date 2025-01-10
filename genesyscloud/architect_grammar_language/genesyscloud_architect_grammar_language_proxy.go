@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 type FileType int
@@ -28,11 +28,15 @@ out during testing.
 var internalProxy *architectGrammarLanguageProxy
 
 // Type definitions for each func on our proxy so that we can easily mock them out later
+type GrammarLanguageEntry struct {
+	Grammar         *platformclientv2.Grammar
+	GrammarLanguage *platformclientv2.Grammarlanguage
+}
 type createArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
 type getArchitectGrammarLanguageByIdFunc func(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
 type updateArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
 type deleteArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.APIResponse, error)
-type getAllArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy) (*[]platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error)
+type getAllArchitectGrammarLanguageFunc func(ctx context.Context, p *architectGrammarLanguageProxy) (*[]GrammarLanguageEntry, *platformclientv2.APIResponse, error)
 
 // architectGrammarLanguageProxy contains all the methods that call genesys cloud APIs.
 type architectGrammarLanguageProxy struct {
@@ -93,7 +97,7 @@ func (p *architectGrammarLanguageProxy) deleteArchitectGrammarLanguage(ctx conte
 }
 
 // getAllArchitectGrammarLanguage retrieves all Genesys Cloud Architect Grammar Languages
-func (p *architectGrammarLanguageProxy) getAllArchitectGrammarLanguage(ctx context.Context) (*[]platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+func (p *architectGrammarLanguageProxy) getAllArchitectGrammarLanguage(ctx context.Context) (*[]GrammarLanguageEntry, *platformclientv2.APIResponse, error) {
 	return p.getAllArchitectGrammarLanguageAttr(ctx, p)
 }
 
@@ -123,7 +127,7 @@ func createArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 // getArchitectGrammarLanguageByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar Language by ID
 func getArchitectGrammarLanguageByIdFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
-	language := rc.GetCacheItem(p.grammarLanguageCache, fmt.Sprintf("%s:%s", grammarId, languageCode))
+	language := rc.GetCacheItem(p.grammarLanguageCache, buildGrammarLanguageId(grammarId, languageCode))
 	if language != nil {
 		return language, nil, nil
 	}
@@ -202,8 +206,9 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platf
 }
 
 // getAllArchitectGrammarLanguageFn is the implementation for retrieving all Architect Grammars in Genesys Cloud
-func getAllArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy) (*[]platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
-	var allLanguages []platformclientv2.Grammarlanguage
+func getAllArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy) (*[]GrammarLanguageEntry, *platformclientv2.APIResponse, error) {
+
+	var allLanguages []GrammarLanguageEntry
 
 	grammars, resp, err := p.architectApi.GetArchitectGrammars(1, 100, "", "", []string{}, "", "", "", true)
 	if err != nil {
@@ -215,7 +220,12 @@ func getAllArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 	for _, grammar := range *grammars.Entities {
 		if grammar.Languages != nil {
-			allLanguages = append(allLanguages, *grammar.Languages...)
+			for _, language := range *grammar.Languages {
+				allLanguages = append(allLanguages, GrammarLanguageEntry{
+					Grammar:         &grammar,
+					GrammarLanguage: &language,
+				})
+			}
 		}
 	}
 
@@ -233,13 +243,18 @@ func getAllArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 		for _, grammar := range *grammars.Entities {
 			if grammar.Languages != nil {
-				allLanguages = append(allLanguages, *grammar.Languages...)
+				for _, language := range *grammar.Languages {
+					allLanguages = append(allLanguages, GrammarLanguageEntry{
+						Grammar:         &grammar,
+						GrammarLanguage: &language,
+					})
+				}
 			}
 		}
 	}
 
 	for _, language := range allLanguages {
-		rc.SetCache(p.grammarLanguageCache, fmt.Sprintf("%s:%s", *language.GrammarId, *language.Language), language)
+		rc.SetCache(p.grammarLanguageCache, buildGrammarLanguageId(*language.Grammar.Id, *language.GrammarLanguage.Language), *language.GrammarLanguage)
 	}
 
 	return &allLanguages, resp, nil

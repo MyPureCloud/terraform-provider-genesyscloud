@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func TestAccResourceAuthRoleDefault(t *testing.T) {
@@ -270,11 +270,9 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 						generateRolePermPolicyCondTerm(
 							varNameQueue,
 							opEq,
-							fmt.Sprintf(`
-							operands {
+							`operands {
 								type  = "USER"
-							}
-							`),
+							}`,
 						),
 					),
 				),
@@ -304,11 +302,9 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 						generateRolePermPolicyCondTerm(
 							varNameQueue,
 							opEq,
-							fmt.Sprintf(`
-							operands {
+							`operands {
 								type  = "VARIABLE"
-							}
-							`),
+							}`,
 						),
 					),
 				),
@@ -398,10 +394,10 @@ func validateRolePermissions(roleResourcePath string, permissions ...string) res
 	return func(state *terraform.State) error {
 		roleResource, ok := state.RootModule().Resources[roleResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", roleResourcePath)
+			return fmt.Errorf("failed to find role %s in state", roleResourcePath)
 		}
 
-		numPermsAttr, _ := roleResource.Primary.Attributes["permissions.#"]
+		numPermsAttr := roleResource.Primary.Attributes["permissions.#"]
 		numPerms, _ := strconv.Atoi(numPermsAttr)
 		configPerms := make([]string, numPerms)
 		for i := 0; i < numPerms; i++ {
@@ -431,13 +427,13 @@ func validatePermissionPolicyTest(roleResourcePath string, domain string, entity
 		}
 
 		roleAttrs := roleResource.Primary.Attributes
-		numPermsAttr, _ := roleAttrs["permission_policies.#"]
+		numPermsAttr := roleAttrs["permission_policies.#"]
 		numPerms, _ := strconv.Atoi(numPermsAttr)
 		for i := 0; i < numPerms; i++ {
 			if roleAttrs["permission_policies."+strconv.Itoa(i)+".domain"] == domain &&
 				roleAttrs["permission_policies."+strconv.Itoa(i)+".entity_name"] == entityName {
 
-				numActionsAttr, _ := roleAttrs["permission_policies."+strconv.Itoa(i)+".action_set.#"]
+				numActionsAttr := roleAttrs["permission_policies."+strconv.Itoa(i)+".action_set.#"]
 				numActions, _ := strconv.Atoi(numActionsAttr)
 				stateActions := make([]string, numActions)
 				for j := 0; j < numActions; j++ {
@@ -479,7 +475,7 @@ func validatePermPolicyCondition(
 		}
 
 		roleAttrs := roleResource.Primary.Attributes
-		numPermsAttr, _ := roleAttrs["permission_policies.#"]
+		numPermsAttr := roleAttrs["permission_policies.#"]
 		numPerms, _ := strconv.Atoi(numPermsAttr)
 		for i := 0; i < numPerms; i++ {
 			strNum := strconv.Itoa(i)
@@ -487,7 +483,7 @@ func validatePermPolicyCondition(
 				roleAttrs["permission_policies."+strNum+".entity_name"] == entityName {
 
 				// Check condition exists and matches
-				numCondAttr, _ := roleAttrs["permission_policies."+strNum+".conditions.#"]
+				numCondAttr := roleAttrs["permission_policies."+strNum+".conditions.#"]
 				numCond, _ := strconv.Atoi(numCondAttr)
 
 				if numCond == 0 {

@@ -9,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -320,4 +321,23 @@ func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 	}
 	`, trunkBaseSettingsResourceLabel, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 	return resource
+}
+
+func shouldExportTrunkBaseSettingsAsDataSource(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (exportAsData bool, err error) {
+	defaultTbsNames := []string{
+		"Cloud Proxy Tie TrunkBase for EdgeGroup",
+		"Direct Tie TrunkBase for EdgeGroup",
+		"Genesys Cloud - CDM SIP Phone Trunk",
+		"Genesys Cloud - CDM WebRTC Phone Trunk",
+		"Indirect Tie TrunkBase for EdgeGroup",
+		"PureCloud Voice - AWS",
+		"Tie TrunkBase for EdgeGroup",
+	}
+	tbsName, ok := configMap["name"]
+	if ok {
+		if lists.ContainsAnySubStringSlice(tbsName, defaultTbsNames) {
+			return true, nil
+		}
+	}
+	return false, nil
 }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
@@ -17,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var (
@@ -108,7 +110,7 @@ func updatePrimarySecondarySites(ctx context.Context, sp *SiteProxy, d *schema.R
 	primarySites := lists.InterfaceListToStrings(d.Get("primary_sites").([]interface{}))
 	secondarySites := lists.InterfaceListToStrings(d.Get("secondary_sites").([]interface{}))
 
-	site, resp, err := sp.getSiteById(ctx, siteId)
+	site, resp, err := sp.GetSiteById(ctx, siteId)
 	if resp.StatusCode != 200 {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve site record after site %s was created, but unable to update the primary or secondary site error: %s", siteId, err), resp)
 	}
@@ -202,7 +204,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.Resourc
 	}
 
 	updatedNumberPlans := make([]platformclientv2.Numberplan, 0)
-	namesOfOverridenDefaults := []string{}
+	namesOfOverriddenDefaults := []string{}
 
 	for _, numberPlanFromTf := range numberPlansFromTf {
 		if plan, ok := nameInPlans(*numberPlanFromTf.Name, *numberPlansFromAPI); ok {
@@ -214,7 +216,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.Resourc
 			plan.MatchType = numberPlanFromTf.MatchType
 			plan.NormalizedFormat = numberPlanFromTf.NormalizedFormat
 
-			namesOfOverridenDefaults = append(namesOfOverridenDefaults, *numberPlanFromTf.Name)
+			namesOfOverriddenDefaults = append(namesOfOverriddenDefaults, *numberPlanFromTf.Name)
 			updatedNumberPlans = append(updatedNumberPlans, *plan)
 		} else {
 			// Add the plan
@@ -224,7 +226,7 @@ func updateSiteNumberPlans(ctx context.Context, sp *SiteProxy, d *schema.Resourc
 
 	for _, numberPlanFromAPI := range *numberPlansFromAPI {
 		// Keep the default plans which are not overriden.
-		if isDefaultPlan(*numberPlanFromAPI.Name) && !lists.ItemInSlice(*numberPlanFromAPI.Name, namesOfOverridenDefaults) {
+		if isDefaultPlan(*numberPlanFromAPI.Name) && !lists.ItemInSlice(*numberPlanFromAPI.Name, namesOfOverriddenDefaults) {
 			updatedNumberPlans = append(updatedNumberPlans, numberPlanFromAPI)
 		}
 	}
@@ -510,6 +512,82 @@ func buildSdkEdgeAutoUpdateConfig(d *schema.ResourceData) (*platformclientv2.Edg
 	return nil, nil
 }
 
+func siteNumberPlansExporterResolver(configMap map[string]interface{}, exporter map[string]*resource_exporter.ResourceExporter, _ string) error {
+
+	if numberPlans, ok := configMap["number_plans"].([]interface{}); ok {
+
+		defaultNumberPlans := []*platformclientv2.Numberplan{
+			{
+				Name:             platformclientv2.String("Suicide Prevention"),
+				MatchType:        platformclientv2.String("regex"),
+				Match:            platformclientv2.String("^988$"),
+				NormalizedFormat: platformclientv2.String("+18002738255"),
+				Classification:   platformclientv2.String("Suicide Prevention"),
+			},
+			{
+				Name:           platformclientv2.String("National"),
+				MatchType:      platformclientv2.String("intraCountryCode"),
+				Classification: platformclientv2.String("National"),
+			},
+			{
+				Name:      platformclientv2.String("Emergency"),
+				MatchType: platformclientv2.String("numberList"),
+				Numbers: &[]platformclientv2.Number{
+					{
+						Start: platformclientv2.String("112"),
+					},
+				},
+				Classification: platformclientv2.String("Emergency"),
+			},
+			{
+				Name:             platformclientv2.String("Network"),
+				MatchType:        platformclientv2.String("regex"),
+				Match:            platformclientv2.String("^([^@\\:]+@)([^@ ]+)?$"),
+				NormalizedFormat: platformclientv2.String("sip:$1$2"),
+				Classification:   platformclientv2.String("Network"),
+			},
+		}
+
+		// Check to ensure all of the default classification types are exported
+		for _, numberPlan := range numberPlans {
+			numberPlanMap := numberPlan.(map[string]interface{})
+			classificationType := numberPlanMap["classification"].(string)
+			for _, defaultNumberPlan := range defaultNumberPlans {
+				if *defaultNumberPlan.Classification == classificationType {
+					defaultNumberPlans = lists.Remove(defaultNumberPlans, defaultNumberPlan)
+				}
+			}
+		}
+
+		// If not, we need to add them to the list of number plans, otherwise reapplying to a brand new org
+		// can cause issues due to the Default Outbound Route's ClassificationTypes config that is created
+		// with every new Site resource.
+		// This is a hacky way to do this, but it works for now.
+		if len(defaultNumberPlans) > 0 {
+			for _, defaultNumberPlan := range defaultNumberPlans {
+				for _, numberPlan := range numberPlans {
+					numberPlanMap := numberPlan.(map[string]interface{})
+					if numberPlanMap["name"] == *defaultNumberPlan.Name {
+						// Account for an edge case where the number plan has the same name as the
+						// one of the default number plans, but the classification type is different.
+						// This is to ensure that the configured number plans are not overwritten, but
+						// the default number plans are always available, we will rename the default number plan
+						if numberPlanMap["classification"] != *defaultNumberPlan.Classification {
+							newDefaultName := fmt.Sprintf("%s (Default)", *defaultNumberPlan.Name)
+							log.Printf("Renaming default number plan %s to %s", *defaultNumberPlan.Name, newDefaultName)
+							*defaultNumberPlan.Name = newDefaultName
+						}
+					}
+				}
+				numberPlans = append(numberPlans, flattenNumberPlan(defaultNumberPlan))
+			}
+		}
+
+		configMap["number_plans"] = numberPlans
+	}
+	return nil
+}
+
 func GenerateSiteResourceWithCustomAttrs(
 	siteResourceLabel,
 	name,
@@ -672,4 +750,17 @@ func GetOrganizationDefaultSiteId(config *platformclientv2.Configuration) (siteI
 	}
 
 	return *org.DefaultSiteId, nil
+}
+
+func shouldExportManagedSitesAsData(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (exportAsData bool, err error) {
+	managedValue, ok := configMap["managed"]
+	if !ok {
+		return false, fmt.Errorf("'managed' key not found in configMap")
+	}
+	managed, err := strconv.ParseBool(managedValue)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse 'managed' value as boolean: %v", err)
+	}
+
+	return managed, nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -21,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -44,11 +43,6 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{BlockLabel: *managedSite.Name}
-		// When exporting managed sites, they must automatically be exported as data source
-		// Managed sites are added to the ExportAsData []string in resource_exporter
-		if tfexporter_state.IsExporterActive() {
-			resourceExporter.AddDataSourceItems(ResourceType, *managedSite.Name)
-		}
 	}
 	return resources, nil
 }
@@ -153,7 +147,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 	log.Printf("Reading site %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
+		currentSite, resp, err := sp.GetSiteById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
@@ -186,6 +180,8 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		if currentSite.SecondarySites != nil {
 			_ = d.Set("secondary_sites", util.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
 		}
+
+		resourcedata.SetNillableValue(d, "managed", currentSite.Managed)
 
 		if retryErr := readSiteNumberPlans(ctx, sp, d); retryErr != nil {
 			return retryErr
@@ -266,7 +262,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current site version
-		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
+		currentSite, resp, err := sp.GetSiteById(ctx, d.Id())
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read site %s error: %s", d.Id(), err), resp)
 		}
@@ -335,7 +331,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		site, resp, err := sp.getSiteById(ctx, d.Id())
+		site, resp, err := sp.GetSiteById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Site deleted

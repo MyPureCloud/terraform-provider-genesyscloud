@@ -15,7 +15,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -23,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var (
@@ -268,7 +267,13 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 
 			for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations.Entities {
 				id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocument.KnowledgeBase.Id, *knowledgeDocument.Id)
-				resources[id] = &resourceExporter.ResourceMeta{BlockLabel: "variation " + uuid.NewString()}
+				blockLabel := *knowledgeBase.Name + "_" + *knowledgeDocument.Title
+				if knowledgeDocumentVariation.Name != nil && *knowledgeDocumentVariation.Name != "" {
+					blockLabel = blockLabel + "_" + *knowledgeDocumentVariation.Name
+				} else {
+					blockLabel = blockLabel + "_" + *knowledgeDocumentVariation.Id
+				}
+				resources[id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 			}
 		}
 	}

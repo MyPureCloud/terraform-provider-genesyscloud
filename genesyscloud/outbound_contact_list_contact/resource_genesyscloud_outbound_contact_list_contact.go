@@ -15,14 +15,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	cp := getContactProxy(clientConfig)
 
-	contacts, resp, err := cp.getAllContacts(ctx)
+	contactEntries, resp, err := cp.getAllContacts(ctx)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to read all contact list contacts. Error: %v", err)
 		if resp != nil {
@@ -31,11 +31,12 @@ func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configur
 		return nil, util.BuildDiagnosticError(ResourceType, msg, err)
 	}
 
-	for _, contact := range contacts {
-		id := createComplexContact(*contact.ContactListId, *contact.Id)
-		// We construct this to adhere to Terraform's Block Label requirements
-		name := "_" + createComplexContactWithDelimiter(*contact.ContactListId, *contact.Id, "_")
-		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: name}
+	for _, contactEntry := range contactEntries {
+		for _, contact := range *contactEntry.Contact {
+			id := buildComplexContactId(*contactEntry.ContactList.Id, *contact.Id)
+			name := *contactEntry.ContactList.Name + "_" + *contact.Id
+			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: name}
+		}
 	}
 
 	return resources, nil
@@ -64,7 +65,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	}
 	contactId := *contactResponseBody[0].Id
 	_ = d.Set("contact_id", contactId)
-	id := createComplexContact(contactListId, contactId)
+	id := buildComplexContactId(contactListId, contactId)
 	d.SetId(id)
 	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
@@ -79,7 +80,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		cp        = getContactProxy(sdkConfig)
 	)
 
-	contactListId, contactId := splitComplexContact(d.Id())
+	contactListId, contactId := splitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}
@@ -122,7 +123,7 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	cp := getContactProxy(sdkConfig)
 
 	contactRequestBody := buildDialerContactFromResourceData(d)
-	contactListId, contactId := splitComplexContact(d.Id())
+	contactListId, contactId := splitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}
@@ -145,7 +146,7 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getContactProxy(sdkConfig)
 
-	contactListId, contactId := splitComplexContact(d.Id())
+	contactListId, contactId := splitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}

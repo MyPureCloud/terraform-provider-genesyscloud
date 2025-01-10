@@ -19,10 +19,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
-
-const timeFormat = "2006-01-02T15:04:05.000000"
 
 func getAllArchitectSchedules(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getArchitectSchedulesProxy(clientConfig)
@@ -51,12 +49,18 @@ func createArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	description := d.Get("description").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
-	rrule := d.Get("rrule").(string)
+	rrule, _ := d.Get("rrule").(string)
 
 	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
 	schedStart, err := time.Parse(timeFormat, start)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse date %s", start), err)
+	}
+
+	if rrule != "" {
+		if err := verifyStartDateConformsToRRule(schedStart, rrule, name); err != nil {
+			return util.BuildDiagnosticError(ResourceType, err.Error(), err)
+		}
 	}
 
 	schedEnd, err := time.Parse(timeFormat, end)
@@ -116,7 +120,6 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		start := new(string)
 		if scheduleResponse.Start != nil {
 			*start = timeutil.Strftime(scheduleResponse.Start, "%Y-%m-%dT%H:%M:%S.%f")
-
 		} else {
 			start = nil
 		}
@@ -124,7 +127,6 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 		end := new(string)
 		if scheduleResponse.End != nil {
 			*end = timeutil.Strftime(scheduleResponse.End, "%Y-%m-%dT%H:%M:%S.%f")
-
 		} else {
 			end = nil
 		}
@@ -151,12 +153,18 @@ func updateArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 	description := d.Get("description").(string)
 	start := d.Get("start").(string)
 	end := d.Get("end").(string)
-	rrule := d.Get("rrule").(string)
+	rrule, _ := d.Get("rrule").(string)
 
 	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
 	schedStart, err := time.Parse(timeFormat, start)
 	if err != nil {
 		return diag.Errorf("Failed to parse date %s: %s", start, err)
+	}
+
+	if rrule != "" {
+		if err := verifyStartDateConformsToRRule(schedStart, rrule, name); err != nil {
+			return util.BuildDiagnosticError(ResourceType, err.Error(), err)
+		}
 	}
 
 	schedEnd, err := time.Parse(timeFormat, end)
@@ -238,23 +246,4 @@ func deleteArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta 
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Schedule %s still exists", d.Id()), proxyGetResponse))
 	})
-}
-
-func GenerateArchitectSchedulesResource(
-	schedResourceLabel string,
-	name string,
-	divisionId string,
-	description string,
-	start string,
-	end string,
-	rrule string) string {
-	return fmt.Sprintf(`resource "genesyscloud_architect_schedules" "%s" {
-		name = "%s"
-		division_id = %s
-		description = "%s"
-		start = "%s"
-		end = "%s"
-		rrule = "%s"
-	}
-	`, schedResourceLabel, name, divisionId, description, start, end, rrule)
 }

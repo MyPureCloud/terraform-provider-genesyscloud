@@ -1,11 +1,12 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v149/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 func buildOutboundRoutes(d *schema.ResourceData) *platformclientv2.Outboundroutebase {
@@ -54,4 +55,22 @@ func splitSiteAndOutboundRoute(dId string) (string, string) {
 		return split[0], split[1]
 	}
 	return "", ""
+}
+
+// Any routes that are associated with managed site resources should be exported as data
+func shouldExportRoutesWithManagedSitesAsData(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (exportAsData bool, err error) {
+
+	// Check if the site exists
+	siteId := configMap["site_id"]
+	if siteId == "" {
+		return false, fmt.Errorf("site_id is not set")
+	}
+
+	proxy := getSiteOutboundRouteProxy(sdkConfig)
+	site, _, err := proxy.siteProxy.GetSiteById(ctx, siteId)
+	if err != nil {
+		return false, err
+	}
+
+	return *site.Managed, nil
 }
