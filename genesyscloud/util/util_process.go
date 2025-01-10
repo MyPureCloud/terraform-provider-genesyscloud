@@ -12,8 +12,7 @@ import (
 )
 
 // detectExecutingBinary returns the path of the currently executing binary by finding
-// the parent process and determining its executable path. This is particularly useful
-// for identifying if the code is running under a debug environment.
+// the parent process and determining its executable path (either `terraform“ or `tofu`)
 //
 // Returns:
 //   - string: The path to the executing binary
@@ -36,8 +35,9 @@ func detectExecutingBinary() (string, error) {
 	return exe, nil
 }
 
-// ExecutePlatformCommand executes a command against the platform binary with the provided arguments
-// within the given context. It captures both stdout and stderr output from the command execution.
+// ExecutePlatformCommand executes a command against the platform binary (`terraform` or `tofu`) with
+// the provided arguments within the given context. It captures both stdout and stderr output from the
+// command execution.
 //
 // Parameters:
 //   - ctx: Context for command execution and timeout control
