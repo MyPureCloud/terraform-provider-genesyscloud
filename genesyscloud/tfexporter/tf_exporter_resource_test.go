@@ -352,6 +352,9 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[scripts.ResourceType] = scripts.DataSourceScript()
 	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
+	providerDataSources[tbs.ResourceType] = tbs.DataSourceTrunkBaseSettings()
+	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
+	providerDataSources[outboundRoute.ResourceType] = outboundRoute.DataSourceSiteOutboundRoute()
 }
 
 func RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter) {
