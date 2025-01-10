@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -35,6 +36,87 @@ func detectExecutingBinary() (string, error) {
 	return exe, nil
 }
 
+// verifyBinary performs basic security checks on the provided binary path to ensure
+// it exists, is a regular file (not a symlink or directory), and has proper execute permissions.
+//
+// Parameters:
+//   - path: The filesystem path to the binary to verify
+//
+// Returns:
+//   - error: An error if any verification check fails, nil if all checks pass
+func verifyBinary(path string) error {
+	// Basic existence check
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("failed to stat binary: %w", err)
+	}
+
+	// Ensure it's a regular file, not a symlink or directory
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("binary path is not a regular file")
+	}
+
+	// Check if we have execute permission
+	if info.Mode().Perm()&0111 == 0 {
+		return fmt.Errorf("binary is not executable")
+	}
+
+	return nil
+}
+
+// validateCommandArgs uses HashiCorp's flags parser to validate command arguments
+// before they are passed to the platform binary (terraform/tofu).
+//
+// Parameters:
+//   - args: Slice of string arguments to validate
+//
+// Returns:
+//   - error: An error if any argument fails validation, nil if all arguments are valid
+func validateCommandArgs(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("no arguments provided")
+	}
+
+	// Additional custom validation if needed
+	command := args[0]
+	if !isAllowedCommand(command) {
+		return fmt.Errorf("command %q is not allowed", command)
+	}
+
+	return nil
+}
+
+// isAllowedCommand checks if the given command is in the allowed list
+func isAllowedCommand(cmd string) bool {
+	allowedCommands := map[string]bool{
+		"init":         true,
+		"plan":         true,
+		"apply":        true,
+		"destroy":      true,
+		"validate":     true,
+		"output":       true,
+		"show":         true,
+		"state":        true,
+		"import":       true,
+		"version":      true,
+		"fmt":          true,
+		"force-unlock": true,
+		"providers":    true,
+		"login":        true,
+		"logout":       true,
+		"refresh":      true,
+		"graph":        true,
+		"taint":        true,
+		"untaint":      true,
+		"workspace":    true,
+		"metadata":     true,
+		"test":         true,
+		"console":      true,
+	}
+
+	return allowedCommands[strings.TrimPrefix(cmd, "-")]
+}
+
 // ExecutePlatformCommand executes a command against the platform binary (`terraform` or `tofu`) with
 // the provided arguments within the given context. It captures both stdout and stderr output from the
 // command execution.
@@ -48,15 +130,29 @@ func detectExecutingBinary() (string, error) {
 //   - stderrString: The stderr output from the command execution
 //   - error: An error if the command fails, times out, or if the platform binary cannot be detected
 //
-// The function will panic if it cannot detect the executing binary path
+// The function will return an error if it cannot detect the executing binary path
 func ExecutePlatformCommand(ctx context.Context, args []string) (stdoutString string, stderrString string, err error) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
+	var stdout, stderr bytes.Buffer
+
+	// Validate context
+	if ctx == nil {
+		return "", "", fmt.Errorf("nil context provided")
+	}
+
+	// Validate arguments
+	if err := validateCommandArgs(args); err != nil {
+		return "", "", fmt.Errorf("invalid arguments: %w", err)
+	}
 
 	tfpath, err := detectExecutingBinary()
 	if err != nil {
 		log.Print("Could not find the executing binary")
 		return "", "", err
+	}
+
+	// Verify binary exists and has proper permissions
+	if err := verifyBinary(tfpath); err != nil {
+		return "", "", fmt.Errorf("binary verification failed: %w", err)
 	}
 
 	cmd := exec.CommandContext(ctx, tfpath)

@@ -71,7 +71,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 
 	if util.IsDebugServerExecution() {
 		cliError = `The current process is running via a debug server (debug binary detected), and so it is unable to run the proper command to replace the state. Please run this command outside of a debug session.` + cliError
-		log.Println(cliError)
+		log.Print(cliError)
 		return nil
 	}
 
@@ -86,7 +86,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 
 	if err != nil {
 		cliError = fmt.Sprintf(`Failed to run the terraform CLI to upgrade the generated state file: \n%s\n\n%s`, err, cliError)
-		log.Println(cliError)
+		log.Print(cliError)
 		// Don't fail everything even if this errors.
 		return nil
 	}

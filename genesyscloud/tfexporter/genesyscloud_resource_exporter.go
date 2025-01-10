@@ -462,7 +462,7 @@ func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.Insta
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
 func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
-	providerRegistry, err := g.registryForProvider(g.version)
+	providerRegistry, err := g.registryForProvider()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -845,7 +845,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) registryForProvider(version string) (string, error) {
+func (g *GenesysCloudResourceExporter) registryForProvider() (string, error) {
 
 	// We can't use ExecutePlatformCommand against Debug Execution Server, so just return the local dev version
 	if util.IsDebugServerExecution() || g.version == "0.1.0" {
