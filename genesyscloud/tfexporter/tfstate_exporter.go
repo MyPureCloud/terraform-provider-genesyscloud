@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -22,18 +20,18 @@ This files contains all of the code used to create an export's Terraform state f
 The other functions in this file deal with how to generate the TFVars we create during the export.
 */
 type TFStateFileWriter struct {
-	ctx            context.Context
-	resources      []resourceExporter.ResourceInfo
-	d              *schema.ResourceData
-	providerSource string
+	ctx              context.Context
+	resources        []resourceExporter.ResourceInfo
+	d                *schema.ResourceData
+	providerRegistry string
 }
 
-func NewTFStateWriter(ctx context.Context, resources []resourceExporter.ResourceInfo, d *schema.ResourceData, providerSource string) *TFStateFileWriter {
+func NewTFStateWriter(ctx context.Context, resources []resourceExporter.ResourceInfo, d *schema.ResourceData, providerRegistry string) *TFStateFileWriter {
 	tfwriter := &TFStateFileWriter{
-		ctx:            ctx,
-		resources:      resources,
-		d:              d,
-		providerSource: providerSource,
+		ctx:              ctx,
+		resources:        resources,
+		d:                d,
+		providerRegistry: providerRegistry,
 	}
 
 	return tfwriter
@@ -68,48 +66,28 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 	// This outputs terraform state v3, and there is currently no public lib to generate v4 which is required for terraform 0.13+.
 	// However, the state can be upgraded automatically by calling the terraform CLI. If this fails, just print a warning indicating
 	// that the state likely needs to be upgraded manually.
-	cliError := `Failed to run the terraform CLI to upgrade the generated state file.
-	The generated tfstate file will need to be upgraded manually by running the
-	following in the state file's directory:
+	cliError := `The generated tfstate file will need to be upgraded manually by running the following in the state file's directory:
 	'terraform state replace-provider registry.terraform.io/-/genesyscloud registry.terraform.io/mypurecloud/genesyscloud'`
 
-	tfpath, err := exec.LookPath("terraform")
-	if err != nil {
-		log.Println("Failed to find terraform path:", err)
+	if util.IsDebugServerExecution() {
+		cliError = `The current process is running via a debug server (debug binary detected), and so it is unable to run the proper command to replace the state. Please run this command outside of a debug session.` + cliError
 		log.Println(cliError)
 		return nil
 	}
 
-	// exec.CommandContext does not auto-resolve symlinks
-	fileInfo, err := os.Lstat(tfpath)
-	if err != nil {
-		log.Println("Failed to Lstat terraform path:", err)
-		log.Println(cliError)
-		return nil
-	}
-	if fileInfo.Mode()&os.ModeSymlink != 0 {
-		tfpath, err = filepath.EvalSymlinks(tfpath)
-		if err != nil {
-			log.Println("Failed to resolve terraform path symlink:", err)
-			log.Println(cliError)
-			return nil
-		}
-	}
-
-	cmd := exec.CommandContext(t.ctx, tfpath)
-	cmd.Args = append(cmd.Args, []string{
+	_, _, err = util.ExecutePlatformCommand(t.ctx, []string{
 		"state",
 		"replace-provider",
 		"-auto-approve",
 		"-state=" + stateFilePath,
-		"registry.terraform.io/-/genesyscloud",
-		t.providerSource,
-	}...)
+		fmt.Sprintf("%s/-/genesyscloud", t.providerRegistry),
+		fmt.Sprintf("%s/mypurecloud/genesyscloud", t.providerRegistry),
+	})
 
-	log.Printf("Running 'terraform state replace-provider' on %s", stateFilePath)
-	if err = cmd.Run(); err != nil {
-		log.Println("Failed to run command:", err)
+	if err != nil {
+		cliError = fmt.Sprintf(`Failed to run the terraform CLI to upgrade the generated state file: \n%s\n\n%s`, err, cliError)
 		log.Println(cliError)
+		// Don't fail everything even if this errors.
 		return nil
 	}
 	return nil
