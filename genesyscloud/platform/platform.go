@@ -1,4 +1,4 @@
-package util
+package platform
 
 import (
 	"bytes"
@@ -8,9 +8,134 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/shirou/gopsutil/process"
 )
+
+// The Platform package provides information as to which platform is executing the provider, namely, Terraform, OpenTofu, or a Debug Server.
+// It also provides a mechanism to validate and execute a command against the appropriate binary for the platform
+
+type Platform int
+
+var (
+	platform     Platform
+	binaryPath   string
+	providerAddr string
+)
+
+const (
+	PlatformTerraform Platform = iota
+	PlatformOpenTofu
+	PlatformDebugServer
+)
+
+func (p Platform) String() string {
+	switch p {
+	case PlatformTerraform:
+		return "terraform"
+	case PlatformOpenTofu:
+		return "tofu"
+	case PlatformDebugServer:
+		return "debug-server"
+	default:
+		return "unknown"
+	}
+}
+
+func (p Platform) BinaryPath() string {
+	return binaryPath
+}
+
+func (p Platform) Binary() string {
+	pathSegments := strings.Split(binaryPath, string(os.PathSeparator))
+	return pathSegments[len(pathSegments)-1]
+}
+
+func (p Platform) IsDebugServer() bool {
+	return p == PlatformDebugServer
+}
+
+func (p Platform) GetProviderRegistry() string {
+	switch p {
+	case PlatformTerraform:
+		return "registry.terraform.io"
+	case PlatformOpenTofu:
+		return "registry.opentofu.org"
+	default:
+		return ""
+	}
+}
+
+func (p Platform) ExecuteCommand(ctx context.Context, args ...string) (commandOutput *CommandOutput, err error) {
+	// Validate platform
+	if p == PlatformDebugServer {
+		return nil, fmt.Errorf("cannot execute platform command against debug server")
+	}
+	// Validate binary path
+	if binaryPath == "" {
+		return nil, fmt.Errorf("binary path is empty")
+	}
+	return executePlatformCommand(ctx, binaryPath, args)
+}
+
+func (p Platform) Validate() error {
+	if p.String() == "unknown" {
+		return fmt.Errorf("invalid platform state")
+	}
+	if binaryPath == "" {
+		return fmt.Errorf("binary path not set")
+	}
+	return nil
+}
+
+func GetPlatform() Platform {
+	return platform
+}
+
+func init() {
+	path, err := detectExecutingBinary()
+	if err != nil {
+		log.Printf(`Error detecting binary: %v`, err)
+		return
+	}
+
+	binaryPath = path
+	defer detectedPlatformLog()
+
+	debugPatterns := []string{
+		"__debug_bin",
+		"dlv", // Delve debugger
+		"debug-server",
+	}
+
+	for _, pattern := range debugPatterns {
+		if strings.Contains(binaryPath, pattern) {
+			platform = PlatformDebugServer
+			return
+		}
+	}
+
+	// Verify binary exists and has proper permissions
+	if err := verifyBinary(binaryPath); err != nil {
+		log.Printf("binary verification failed: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	versionOutput, err := executePlatformCommand(ctx, binaryPath, []string{"version"})
+
+	if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
+		platform = PlatformOpenTofu
+	} else {
+		platform = PlatformTerraform
+	}
+
+}
+
+func detectedPlatformLog() {
+	platform := GetPlatform()
+	log.Printf("Detected executing platform is: %v", platform.String())
+}
 
 // detectExecutingBinary returns the path of the currently executing binary by finding
 // the parent process and determining its executable path (either `terraform“ or `tofu`)
@@ -117,6 +242,12 @@ func isAllowedCommand(cmd string) bool {
 	return allowedCommands[strings.TrimPrefix(cmd, "-")]
 }
 
+type CommandOutput struct {
+	Stdout   string
+	Stderr   string
+	ExitCode int
+}
+
 // ExecutePlatformCommand executes a command against the platform binary (`terraform` or `tofu`) with
 // the provided arguments within the given context. It captures both stdout and stderr output from the
 // command execution.
@@ -131,31 +262,25 @@ func isAllowedCommand(cmd string) bool {
 //   - error: An error if the command fails, times out, or if the platform binary cannot be detected
 //
 // The function will return an error if it cannot detect the executing binary path
-func ExecutePlatformCommand(ctx context.Context, args []string) (stdoutString string, stderrString string, err error) {
+func executePlatformCommand(ctx context.Context, binaryPath string, args []string) (commandOutput *CommandOutput, err error) {
 	var stdout, stderr bytes.Buffer
 
 	// Validate context
 	if ctx == nil {
-		return "", "", fmt.Errorf("nil context provided")
+		return nil, fmt.Errorf("nil context provided")
 	}
 
 	// Validate arguments
 	if err := validateCommandArgs(args); err != nil {
-		return "", "", fmt.Errorf("invalid arguments: %w", err)
-	}
-
-	tfpath, err := detectExecutingBinary()
-	if err != nil {
-		log.Print("Could not find the executing binary")
-		return "", "", err
+		return nil, fmt.Errorf("invalid arguments: %w", err)
 	}
 
 	// Verify binary exists and has proper permissions
-	if err := verifyBinary(tfpath); err != nil {
-		return "", "", fmt.Errorf("binary verification failed: %w", err)
+	if err := verifyBinary(binaryPath); err != nil {
+		return nil, fmt.Errorf("binary verification failed: %w", err)
 	}
 
-	cmd := exec.CommandContext(ctx, tfpath)
+	cmd := exec.CommandContext(ctx, binaryPath)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	cmd.Args = append(cmd.Args, args...)
@@ -163,42 +288,23 @@ func ExecutePlatformCommand(ctx context.Context, args []string) (stdoutString st
 	log.Printf("Running command against platform binary: %s", cmd.String())
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
-			return "", stderr.String(), ctx.Err()
+			return &CommandOutput{
+				Stdout:   stdout.String(),
+				Stderr:   stderr.String(),
+				ExitCode: -1,
+			}, ctx.Err()
 		}
-		return "", stderr.String(), err
+		return &CommandOutput{
+			Stdout:   stdout.String(),
+			Stderr:   stderr.String(),
+			ExitCode: cmd.ProcessState.ExitCode(),
+		}, err
 	}
 
-	return stdout.String(), stderr.String(), nil
+	return &CommandOutput{
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
+		ExitCode: cmd.ProcessState.ExitCode(),
+	}, nil
 
-}
-
-// IsDebugServerExecution determines if the current process is running under a debug server
-// by examining the executable path for common debug binary patterns.
-//
-// Returns:
-//   - bool: true if running under a debug server (e.g., delve, debug binary), false otherwise
-//
-// Debug patterns checked:
-//   - "__debug_bin"
-//   - "dlv" (Delve debugger)
-//   - "debug-server"
-func IsDebugServerExecution() bool {
-	exe, err := detectExecutingBinary()
-	if err != nil {
-		return false
-	}
-
-	debugPatterns := []string{
-		"__debug_bin",
-		"dlv", // Delve debugger
-		"debug-server",
-	}
-
-	for _, pattern := range debugPatterns {
-		if strings.Contains(exe, pattern) {
-			return true
-		}
-	}
-
-	return false
 }

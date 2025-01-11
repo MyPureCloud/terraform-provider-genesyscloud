@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/platform"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -238,6 +240,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 
 type ProviderMeta struct {
 	Version      string
+	Registry     string
 	ClientConfig *platformclientv2.Configuration
 	Domain       string
 	Organization *platformclientv2.Organization
@@ -245,6 +248,15 @@ type ProviderMeta struct {
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+
+		platform := platform.GetPlatform()
+		platformValidationErr := platform.Validate()
+		if platformValidationErr != nil {
+			return nil, diag.FromErr(platformValidationErr)
+		}
+
+		providerSourceRegistry := getRegistry(&platform, version)
+
 		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
 		if err != nil {
 			return nil, err
@@ -260,11 +272,28 @@ func configure(version string) schema.ConfigureContextFunc {
 
 		return &ProviderMeta{
 			Version:      version,
+			Registry:     providerSourceRegistry,
 			ClientConfig: defaultConfig,
 			Domain:       getRegionDomain(data.Get("aws_region").(string)),
 			Organization: currentOrg,
 		}, nil
 	}
+}
+
+func getRegistry(platform *platform.Platform, version string) string {
+
+	// Accounting for custom builds, we return this convention
+	if version == "0.1.0" {
+		return "genesys.com"
+	}
+
+	// Otherwise allow the platform to determine the registry as the registry is directly
+	// tied to the specific platform (i.e., terraform vs opentofu)
+	registry := platform.GetProviderRegistry()
+	if registry == "" {
+		registry = "registry.terraform.io"
+	}
+	return registry
 }
 
 func getOrganizationMe(defaultConfig *platformclientv2.Configuration) (*platformclientv2.Organization, diag.Diagnostics) {

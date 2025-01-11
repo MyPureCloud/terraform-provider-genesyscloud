@@ -76,6 +76,7 @@ type GenesysCloudResourceExporter struct {
 	replaceWithDatasource []string
 	includeStateFile      bool
 	version               string
+	providerRegistry      string
 	provider              *schema.Provider
 	exportDirPath         string
 	exporters             *map[string]*resourceExporter.ResourceExporter
@@ -146,6 +147,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		includeStateFile:     d.Get("include_state_file").(bool),
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
 		version:              meta.(*provider.ProviderMeta).Version,
+		providerRegistry:     meta.(*provider.ProviderMeta).Registry,
 		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                    d,
 		ctx:                  ctx,
@@ -462,12 +464,8 @@ func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.Insta
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
 func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
-	providerRegistry, err := g.registryForProvider()
-	if err != nil {
-		return diag.FromErr(err)
-	}
 	if g.includeStateFile {
-		t := NewTFStateWriter(g.ctx, g.resources, g.d, providerRegistry)
+		t := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry)
 		if err := t.writeTfState(); err != nil {
 			return err
 		}
@@ -475,10 +473,10 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 
 	var errDiag diag.Diagnostics
 	if g.exportAsHCL {
-		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
+		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
 		errDiag = hclExporter.exportHCLConfig()
 	} else {
-		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
+		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
 		errDiag = jsonExporter.exportJSONConfig()
 	}
 
@@ -843,34 +841,6 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		return g.chainDependencies(existingResources, existingExporters)
 	}
 	return nil
-}
-
-func (g *GenesysCloudResourceExporter) registryForProvider() (string, error) {
-
-	// We can't use ExecutePlatformCommand against Debug Execution Server, so just return the local dev version
-	if util.IsDebugServerExecution() || g.version == "0.1.0" {
-		// Force using local dev version by providing a unique repo URL
-		return "genesys.com", nil
-	}
-
-	// Create a context with 5 second timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	platformVersion, _, err := util.ExecutePlatformCommand(ctx, []string{"version"})
-
-	if err != nil {
-		return "", err
-	}
-
-	// Default to "terraform" provider
-	providerRegistry := "registry.terraform.io"
-
-	if strings.Contains(strings.ToLower(platformVersion), "tofu") {
-		providerRegistry = "registry.opentofu.org"
-	}
-
-	return providerRegistry, nil
 }
 
 func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resourceExporter.ResourceInfo) {

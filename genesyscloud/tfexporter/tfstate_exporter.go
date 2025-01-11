@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/platform"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -63,26 +63,34 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 		return err
 	}
 
+	platform := platform.GetPlatform()
+	platformErr := platform.Validate()
+	if platformErr != nil {
+		return diag.Errorf("Failed to validate platform: %v", platformErr)
+	}
+
 	// This outputs terraform state v3, and there is currently no public lib to generate v4 which is required for terraform 0.13+.
 	// However, the state can be upgraded automatically by calling the terraform CLI. If this fails, just print a warning indicating
 	// that the state likely needs to be upgraded manually.
-	cliError := `The generated tfstate file will need to be upgraded manually by running the following in the state file's directory:
-	'terraform state replace-provider registry.terraform.io/-/genesyscloud registry.terraform.io/mypurecloud/genesyscloud'`
+	cliError := fmt.Sprintf(`The generated tfstate file will need to be upgraded manually by running the following in the state file's directory:
+	'%s state replace-provider %s/-/genesyscloud %s/mypurecloud/genesyscloud'`, platform.Binary(), platform.GetProviderRegistry(), t.providerRegistry)
 
-	if util.IsDebugServerExecution() {
+	if platform.IsDebugServer() {
 		cliError = `The current process is running via a debug server (debug binary detected), and so it is unable to run the proper command to replace the state. Please run this command outside of a debug session.` + cliError
 		log.Print(cliError)
 		return nil
 	}
 
-	_, _, err = util.ExecutePlatformCommand(t.ctx, []string{
+	_, err = platform.ExecuteCommand(t.ctx, []string{
 		"state",
 		"replace-provider",
 		"-auto-approve",
 		"-state=" + stateFilePath,
-		fmt.Sprintf("%s/-/genesyscloud", t.providerRegistry),
+		// This is the provider determined by the platform (terraform vs tofu)
+		fmt.Sprintf("%s/-/genesyscloud", platform.GetProviderRegistry()),
+		// This is the platform that accounts for custom builds
 		fmt.Sprintf("%s/mypurecloud/genesyscloud", t.providerRegistry),
-	})
+	}...)
 
 	if err != nil {
 		cliError = fmt.Sprintf(`Failed to run the terraform CLI to upgrade the generated state file: \n%s\n\n%s`, err, cliError)
