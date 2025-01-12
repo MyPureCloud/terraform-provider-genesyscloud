@@ -239,18 +239,31 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 }
 
 func getLineProperties(d *schema.ResourceData) (*[]interface{}, *[]interface{}) {
+	if d == nil {
+		return nil, nil
+	}
+
 	lineAddress := make([]interface{}, 0)
 	remoteAddress := make([]interface{}, 0)
 	linePropertiesMap := make(map[string]interface{})
-	if linePropertiesObject, ok := d.Get("line_properties").([]interface{}); ok && len(linePropertiesObject) > 0 {
-		linePropertiesMap = linePropertiesObject[0].(map[string]interface{})
+
+	// Safely get and check line properties
+	if lineProps, ok := d.Get("line_properties").([]interface{}); ok && len(lineProps) > 0 {
+		if propsMap, ok := lineProps[0].(map[string]interface{}); ok {
+			linePropertiesMap = propsMap
+
+			// Safely handle line_address
+			if lineAddr, ok := linePropertiesMap["line_address"].([]interface{}); ok {
+				lineAddress = lineAddr
+			}
+
+			// Safely handle remote_address
+			if remoteAddr, ok := linePropertiesMap["remote_address"].([]interface{}); ok {
+				remoteAddress = remoteAddr
+			}
+		}
 	}
-	if lineAddressObject, ok := linePropertiesMap["line_address"].([]interface{}); ok {
-		lineAddress = lineAddressObject
-	}
-	if remoteAddressObject, ok := linePropertiesMap["remote_address"].([]interface{}); ok {
-		remoteAddress = remoteAddressObject
-	}
+
 	return &lineAddress, &remoteAddress
 }
 
