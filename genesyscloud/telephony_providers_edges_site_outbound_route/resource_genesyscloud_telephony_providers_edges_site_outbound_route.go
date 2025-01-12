@@ -80,11 +80,10 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 			// so instead of trying to create a new outbound route, we will just update the existing one
 			if *site.MediaModel == "Cloud" {
 				siteId, outboundRouteId, _, _, err := proxy.getSiteOutboundRouteByName(ctx, siteId, "Default Outbound Route")
-				if err != nil {
-					return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get outbound route %s for site %s: %s", outboundRouteName, siteId, err), nil)
+				if siteId != "" && outboundRouteId != "" && err == nil {
+					d.SetId(buildSiteAndOutboundRouteId(siteId, outboundRouteId))
+					return updateSiteOutboundRoute(ctx, d, meta)
 				}
-				d.SetId(buildSiteAndOutboundRouteId(siteId, outboundRouteId))
-				return updateSiteOutboundRoute(ctx, d, meta)
 			}
 		}
 	}
