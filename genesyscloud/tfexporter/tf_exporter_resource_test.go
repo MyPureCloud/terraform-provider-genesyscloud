@@ -8,6 +8,7 @@ import (
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	knowledge "terraform-provider-genesyscloud/genesyscloud/knowledge"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
@@ -224,13 +225,13 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
+	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
-	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
@@ -270,7 +271,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_instagram", integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
 	RegisterExporter("genesyscloud_journey_action_map", journeyActionMap.JourneyActionMapExporter())
 	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplate.JourneyActionTemplateExporter())
-	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
+	RegisterExporter("genesyscloud_journey_outcome", journeyOutcome.JourneyOutcomeExporter())
 	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
 	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
 	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())

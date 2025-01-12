@@ -1,4 +1,4 @@
-package genesyscloud
+package journey_outcome
 
 import (
 	"fmt"
@@ -20,13 +20,12 @@ func TestAccResourceJourneyOutcome(t *testing.T) {
 }
 
 func runResourceJourneyOutcomeTestCase(t *testing.T, testCaseName string) {
-	const resourceType = "genesyscloud_journey_outcome"
 	setupJourneyOutcome(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(resourceType, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(ResourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyOutcomesDestroyed,
 	})
 }
@@ -74,7 +73,7 @@ func cleanupJourneyOutcomes(idPrefix string) {
 func testVerifyJourneyOutcomesDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_journey_outcome" {
+		if rs.Type != ResourceType {
 			continue
 		}
 

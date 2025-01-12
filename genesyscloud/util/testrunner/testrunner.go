@@ -75,7 +75,7 @@ func GenerateTestSteps(testType string, resourceType string, testCaseName string
 	var testSteps []resource.TestStep
 	var testCasePath string
 	testCasePath = GetTestDataPath(testType, resourceType, testCaseName)
-	if resourceType == "genesyscloud_journey_action_map" || resourceType == "genesyscloud_journey_action_template" {
+	if resourceType == "genesyscloud_journey_action_map" || resourceType == "genesyscloud_journey_action_template" || resourceType == "genesyscloud_journey_outcome" {
 		testCasePath = path.Join("../", testCasePath)
 	}
 	testCaseDirEntries, _ := os.ReadDir(testCasePath)
