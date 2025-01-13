@@ -1,0 +1,310 @@
+package platform
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/shirou/gopsutil/process"
+)
+
+// The Platform package provides information as to which platform is executing the provider, namely, Terraform, OpenTofu, or a Debug Server.
+// It also provides a mechanism to validate and execute a command against the appropriate binary for the platform
+
+type Platform int
+
+var (
+	platform     Platform
+	binaryPath   string
+	providerAddr string
+)
+
+const (
+	PlatformTerraform Platform = iota
+	PlatformOpenTofu
+	PlatformDebugServer
+)
+
+func (p Platform) String() string {
+	switch p {
+	case PlatformTerraform:
+		return "terraform"
+	case PlatformOpenTofu:
+		return "tofu"
+	case PlatformDebugServer:
+		return "debug-server"
+	default:
+		return "unknown"
+	}
+}
+
+func (p Platform) BinaryPath() string {
+	return binaryPath
+}
+
+func (p Platform) Binary() string {
+	pathSegments := strings.Split(binaryPath, string(os.PathSeparator))
+	return pathSegments[len(pathSegments)-1]
+}
+
+func (p Platform) IsDebugServer() bool {
+	return p == PlatformDebugServer
+}
+
+func (p Platform) GetProviderRegistry() string {
+	switch p {
+	case PlatformTerraform:
+		return "registry.terraform.io"
+	case PlatformOpenTofu:
+		return "registry.opentofu.org"
+	default:
+		return ""
+	}
+}
+
+func (p Platform) ExecuteCommand(ctx context.Context, args ...string) (commandOutput *CommandOutput, err error) {
+	// Validate platform
+	if p == PlatformDebugServer {
+		return nil, fmt.Errorf("cannot execute platform command against debug server")
+	}
+	// Validate binary path
+	if binaryPath == "" {
+		return nil, fmt.Errorf("binary path is empty")
+	}
+	return executePlatformCommand(ctx, binaryPath, args)
+}
+
+func (p Platform) Validate() error {
+	if p.String() == "unknown" {
+		return fmt.Errorf("invalid platform state")
+	}
+	if binaryPath == "" {
+		return fmt.Errorf("binary path not set")
+	}
+	return nil
+}
+
+func GetPlatform() Platform {
+	return platform
+}
+
+func init() {
+	path, err := detectExecutingBinary()
+	if err != nil {
+		log.Printf(`Error detecting binary: %v`, err)
+		return
+	}
+
+	binaryPath = path
+	defer detectedPlatformLog()
+
+	debugPatterns := []string{
+		"__debug_bin",
+		"dlv", // Delve debugger
+		"debug-server",
+	}
+
+	for _, pattern := range debugPatterns {
+		if strings.Contains(binaryPath, pattern) {
+			platform = PlatformDebugServer
+			return
+		}
+	}
+
+	// Verify binary exists and has proper permissions
+	if err := verifyBinary(binaryPath); err != nil {
+		log.Printf("binary verification failed: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	versionOutput, err := executePlatformCommand(ctx, binaryPath, []string{"version"})
+
+	if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
+		platform = PlatformOpenTofu
+	} else {
+		platform = PlatformTerraform
+	}
+
+}
+
+func detectedPlatformLog() {
+	platform := GetPlatform()
+	log.Printf("Detected executing platform is: %v", platform.String())
+}
+
+// detectExecutingBinary returns the path of the currently executing binary by finding
+// the parent process and determining its executable path (either `terraform“ or `tofu`)
+//
+// Returns:
+//   - string: The path to the executing binary
+//   - error: An error if the process cannot be found or if the executable path cannot be determined
+func detectExecutingBinary() (string, error) {
+	ppid, err := os.FindProcess(os.Getppid())
+	if err != nil {
+		return "", err
+	}
+	tfProcess, err := process.NewProcess(int32(ppid.Pid))
+	if err != nil {
+		return "", err
+	}
+
+	exe, err := tfProcess.Exe()
+	if err != nil {
+		return "", err
+	}
+
+	return exe, nil
+}
+
+// verifyBinary performs basic security checks on the provided binary path to ensure
+// it exists, is a regular file (not a symlink or directory), and has proper execute permissions.
+//
+// Parameters:
+//   - path: The filesystem path to the binary to verify
+//
+// Returns:
+//   - error: An error if any verification check fails, nil if all checks pass
+func verifyBinary(path string) error {
+	// Basic existence check
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("failed to stat binary: %w", err)
+	}
+
+	// Ensure it's a regular file, not a symlink or directory
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("binary path is not a regular file")
+	}
+
+	// Check if we have execute permission
+	if info.Mode().Perm()&0111 == 0 {
+		return fmt.Errorf("binary is not executable")
+	}
+
+	return nil
+}
+
+// validateCommandArgs uses HashiCorp's flags parser to validate command arguments
+// before they are passed to the platform binary (terraform/tofu).
+//
+// Parameters:
+//   - args: Slice of string arguments to validate
+//
+// Returns:
+//   - error: An error if any argument fails validation, nil if all arguments are valid
+func validateCommandArgs(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("no arguments provided")
+	}
+
+	// Additional custom validation if needed
+	command := args[0]
+	if !isAllowedCommand(command) {
+		return fmt.Errorf("command %q is not allowed", command)
+	}
+
+	return nil
+}
+
+// isAllowedCommand checks if the given command is in the allowed list
+func isAllowedCommand(cmd string) bool {
+	allowedCommands := map[string]bool{
+		"init":         true,
+		"plan":         true,
+		"apply":        true,
+		"destroy":      true,
+		"validate":     true,
+		"output":       true,
+		"show":         true,
+		"state":        true,
+		"import":       true,
+		"version":      true,
+		"fmt":          true,
+		"force-unlock": true,
+		"providers":    true,
+		"login":        true,
+		"logout":       true,
+		"refresh":      true,
+		"graph":        true,
+		"taint":        true,
+		"untaint":      true,
+		"workspace":    true,
+		"metadata":     true,
+		"test":         true,
+		"console":      true,
+	}
+
+	return allowedCommands[strings.TrimPrefix(cmd, "-")]
+}
+
+type CommandOutput struct {
+	Stdout   string
+	Stderr   string
+	ExitCode int
+}
+
+// ExecutePlatformCommand executes a command against the platform binary (`terraform` or `tofu`) with
+// the provided arguments within the given context. It captures both stdout and stderr output from the
+// command execution.
+//
+// Parameters:
+//   - ctx: Context for command execution and timeout control
+//   - args: Slice of string arguments to pass to the command
+//
+// Returns:
+//   - stdoutString: The stdout output from the command execution
+//   - stderrString: The stderr output from the command execution
+//   - error: An error if the command fails, times out, or if the platform binary cannot be detected
+//
+// The function will return an error if it cannot detect the executing binary path
+func executePlatformCommand(ctx context.Context, binaryPath string, args []string) (commandOutput *CommandOutput, err error) {
+	var stdout, stderr bytes.Buffer
+
+	// Validate context
+	if ctx == nil {
+		return nil, fmt.Errorf("nil context provided")
+	}
+
+	// Validate arguments
+	if err := validateCommandArgs(args); err != nil {
+		return nil, fmt.Errorf("invalid arguments: %w", err)
+	}
+
+	// Verify binary exists and has proper permissions
+	if err := verifyBinary(binaryPath); err != nil {
+		return nil, fmt.Errorf("binary verification failed: %w", err)
+	}
+
+	cmd := exec.CommandContext(ctx, binaryPath)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	cmd.Args = append(cmd.Args, args...)
+
+	log.Printf("Running command against platform binary: %s", cmd.String())
+	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return &CommandOutput{
+				Stdout:   stdout.String(),
+				Stderr:   stderr.String(),
+				ExitCode: -1,
+			}, ctx.Err()
+		}
+		return &CommandOutput{
+			Stdout:   stdout.String(),
+			Stderr:   stderr.String(),
+			ExitCode: cmd.ProcessState.ExitCode(),
+		}, err
+	}
+
+	return &CommandOutput{
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
+		ExitCode: cmd.ProcessState.ExitCode(),
+	}, nil
+
+}
