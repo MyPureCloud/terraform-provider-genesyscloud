@@ -239,12 +239,13 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 }
 
 func getLineProperties(d *schema.ResourceData) (*[]interface{}, *[]interface{}) {
-	if d == nil {
-		return nil, nil
-	}
 
 	lineAddress := make([]interface{}, 0)
 	remoteAddress := make([]interface{}, 0)
+	if d == nil {
+		return &lineAddress, &remoteAddress
+	}
+
 	linePropertiesMap := make(map[string]interface{})
 
 	// Safely get and check line properties
@@ -362,29 +363,20 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	return nil
 }
 
-func generateLineProperties(lineAddress string, remoteAddress string) string {
-	if lineAddress == "" {
-		return fmt.Sprintf(`
+func generateLinePropertiesRemoteAddress(remoteAddress string) string {
+	return fmt.Sprintf(`
 		line_properties {
 			remote_address = [%s]
 		}
 	`, remoteAddress)
-	}
+}
 
-	if remoteAddress == "" {
-		return fmt.Sprintf(`
+func generateLinePropertiesLineAddress(lineAddress string) string {
+	return fmt.Sprintf(`
 		line_properties {
 			line_address = [%s]
 		}
 	`, lineAddress)
-	}
-
-	return fmt.Sprintf(`
-	line_properties {
-		line_address = [%s]
-		remote_address = [%s]
-	}
-`, lineAddress, remoteAddress)
 }
 
 func getLineIdByPhoneId(ctx context.Context, pp *phoneProxy, phoneId string) (string, error) {

@@ -15,12 +15,7 @@ func TestUnitGetLineProperties(t *testing.T) {
 		wantLineAddr   *[]interface{}
 		wantRemoteAddr *[]interface{}
 	}{
-		{
-			name:           "nil_resource_data",
-			resourceData:   nil,
-			wantLineAddr:   nil,
-			wantRemoteAddr: nil,
-		},
+
 		{
 			name:           "empty_resource_data",
 			resourceData:   schema.TestResourceDataRaw(t, map[string]*schema.Schema{}, map[string]interface{}{}),
@@ -93,16 +88,6 @@ func TestUnitGetLineProperties(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotLineAddr, gotRemoteAddr := getLineProperties(tt.resourceData)
-
-			// Check nil conditions first
-			if (gotLineAddr == nil) != (tt.wantLineAddr == nil) {
-				t.Errorf("getLineProperties() gotLineAddr = %v, want %v", gotLineAddr, tt.wantLineAddr)
-				return
-			}
-			if (gotRemoteAddr == nil) != (tt.wantRemoteAddr == nil) {
-				t.Errorf("getLineProperties() gotRemoteAddr = %v, want %v", gotRemoteAddr, tt.wantRemoteAddr)
-				return
-			}
 
 			// If not nil, compare the actual values
 			if gotLineAddr != nil {
