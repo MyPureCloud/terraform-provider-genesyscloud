@@ -239,18 +239,32 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 }
 
 func getLineProperties(d *schema.ResourceData) (*[]interface{}, *[]interface{}) {
+
 	lineAddress := make([]interface{}, 0)
 	remoteAddress := make([]interface{}, 0)
+	if d == nil {
+		return &lineAddress, &remoteAddress
+	}
+
 	linePropertiesMap := make(map[string]interface{})
-	if linePropertiesObject, ok := d.Get("line_properties").([]interface{}); ok && len(linePropertiesObject) > 0 {
-		linePropertiesMap = linePropertiesObject[0].(map[string]interface{})
+
+	// Safely get and check line properties
+	if lineProps, ok := d.Get("line_properties").([]interface{}); ok && len(lineProps) > 0 {
+		if propsMap, ok := lineProps[0].(map[string]interface{}); ok {
+			linePropertiesMap = propsMap
+
+			// Safely handle line_address
+			if lineAddr, ok := linePropertiesMap["line_address"].([]interface{}); ok {
+				lineAddress = lineAddr
+			}
+
+			// Safely handle remote_address
+			if remoteAddr, ok := linePropertiesMap["remote_address"].([]interface{}); ok {
+				remoteAddress = remoteAddr
+			}
+		}
 	}
-	if lineAddressObject, ok := linePropertiesMap["line_address"].([]interface{}); ok {
-		lineAddress = lineAddressObject
-	}
-	if remoteAddressObject, ok := linePropertiesMap["remote_address"].([]interface{}); ok {
-		remoteAddress = remoteAddressObject
-	}
+
 	return &lineAddress, &remoteAddress
 }
 
@@ -349,29 +363,20 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	return nil
 }
 
-func generateLineProperties(lineAddress string, remoteAddress string) string {
-	if lineAddress == "" {
-		return fmt.Sprintf(`
+func generateLinePropertiesRemoteAddress(remoteAddress string) string {
+	return fmt.Sprintf(`
 		line_properties {
 			remote_address = [%s]
 		}
 	`, remoteAddress)
-	}
+}
 
-	if remoteAddress == "" {
-		return fmt.Sprintf(`
+func generateLinePropertiesLineAddress(lineAddress string) string {
+	return fmt.Sprintf(`
 		line_properties {
 			line_address = [%s]
 		}
 	`, lineAddress)
-	}
-
-	return fmt.Sprintf(`
-	line_properties {
-		line_address = [%s]
-		remote_address = [%s]
-	}
-`, lineAddress, remoteAddress)
 }
 
 func getLineIdByPhoneId(ctx context.Context, pp *phoneProxy, phoneId string) (string, error) {
