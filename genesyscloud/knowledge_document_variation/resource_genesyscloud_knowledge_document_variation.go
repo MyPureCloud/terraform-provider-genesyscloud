@@ -1,4 +1,4 @@
-package knowledge
+package knowledgedocumentvariation
 
 import (
 	"context"
@@ -15,255 +15,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
-)
-
-var (
-	knowledgeDocumentVariation = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"body": {
-				Description: "The content for the variation.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        documentBody,
-			},
-			"document_version": {
-				Description: "The version of the document.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        addressableEntityRef,
-				Computed:    true,
-			},
-			"name": {
-				Description: "The name of the variation",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"contexts": {
-				Description: "The context values associated with the variation",
-				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        documentVariationContexts,
-			},
-		},
-	}
-
-	documentVariationContexts = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"context": {
-				Description: "The knowledge context associated with the variation",
-				Required:    true,
-				Type:        schema.TypeList,
-				Elem:        contextBody,
-			},
-			"values": {
-				Description: "The list of knowledge context values associated with the variation",
-				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        valuesBody,
-			},
-		},
-	}
-
-	contextBody = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "The globally unique identifier for the knowledge context",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-
-	valuesBody = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "The globally unique identifier for the knowledge context value",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-
-	documentBody = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"blocks": {
-				Description: "The content for the variation.",
-				Type:        schema.TypeList,
-				Required:    true,
-				Elem:        documentBodyBlock,
-			},
-		},
-	}
-
-	documentBodyBlock = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"type": {
-				Description:  "The type of the block for the body. This determines which body block object (paragraph, list, video or image) would have a value.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Paragraph", "Image", "Video", "OrderedList", "UnorderedList"}, false),
-			},
-			"paragraph": {
-				Description: "Paragraph. It must contain a value if the type of the block is Paragraph.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Elem:        documentBodyParagraph,
-			},
-			"image": {
-				Description: "Image. It must contain a value if the type of the block is Image.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Elem:        documentBodyImage,
-			},
-			"video": {
-				Description: "Video. It must contain a value if the type of the block is Video.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Elem:        documentBodyVideo,
-			},
-			"list": {
-				Description: "List. It must contain a value if the type of the block is UnorderedList or OrderedList.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Elem:        documentBodyList,
-			},
-		},
-	}
-
-	documentBodyParagraph = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"blocks": {
-				Description: "The content for the variation.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        documentContentBlock,
-			},
-		},
-	}
-
-	addressableEntityRef = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "Id",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-		},
-	}
-
-	documentBodyImage = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"url": {
-				Description: "The URL for the image.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"hyperlink": {
-				Description: "The URL of the page that the hyperlink goes to.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
-	documentBodyVideo = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"url": {
-				Description: "The URL for the video.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-
-	documentBodyList = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"blocks": {
-				Description: "The list of items for an OrderedList or an UnorderedList.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        documentBodyListBlock,
-			},
-		},
-	}
-
-	documentBodyListBlock = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"type": {
-				Description:  "The type of the list block.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"ListItem"}, false),
-			},
-			"blocks": {
-				Description: "The list of items for an OrderedList or an UnorderedList.",
-				Type:        schema.TypeList,
-				Required:    true,
-				Elem:        documentContentBlock,
-			},
-		},
-	}
-
-	documentContentBlock = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"type": {
-				Description:  "The type of the content block.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Text", "Image"}, false),
-			},
-			"text": {
-				Description: "Text. It must contain a value if the type of the block is Text.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        documentText,
-			},
-			"image": {
-				Description: "Image. It must contain a value if the type of the block is Image.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem:        documentBodyImage,
-			},
-		},
-	}
-
-	documentText = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"text": {
-				Description: "Text.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"marks": {
-				Description: "The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"hyperlink": {
-				Description: "The URL of the page that the hyperlink goes to.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
 )
 
 func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -275,21 +32,21 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 	// get published knowledge bases
 	publishedEntities, response, err := knowledgeProxy.GetAllKnowledgebaseEntities(ctx, true)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("%v", err), response)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("%v", err), response)
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
 
 	// get unpublished knowledge bases
 	unpublishedEntities, response, err := knowledgeProxy.GetAllKnowledgebaseEntities(ctx, true)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("%v", err), response)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("%v", err), response)
 	}
 	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
 
 	for _, knowledgeBase := range knowledgeBaseList {
 		variationEntities, response, err := knowledgeProxy.GetAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("%v", err), response)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("%v", err), response)
 		}
 
 		// retrieve the documents for each knowledge base
@@ -306,7 +63,7 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 			// get the variations for each document
 			knowledgeDocumentVariations, resp, getErr := knowledgeApi.GetKnowledgeKnowledgebaseDocumentVariations(*knowledgeBase.Id, *knowledgeDocument.Id, "", "", fmt.Sprintf("%v", pageSize), documentState, nil)
 			if getErr != nil {
-				return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to get page of knowledge document variations error: %v", err), resp)
+				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of knowledge document variations error: %v", err), resp)
 			}
 
 			if knowledgeDocumentVariations.Entities == nil || len(*knowledgeDocumentVariations.Entities) == 0 {
@@ -329,82 +86,33 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 	return resources, nil
 }
 
-func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocumentVariations),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"knowledge_base_id":     {RefType: "genesyscloud_knowledge_knowledgebase"},
-			"knowledge_document_id": {RefType: "genesyscloud_knowledge_document"},
-		},
-	}
-}
-
-func ResourceKnowledgeDocumentVariation() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Knowledge Document Variation",
-
-		CreateContext: provider.CreateWithPooledClient(createKnowledgeDocumentVariation),
-		ReadContext:   provider.ReadWithPooledClient(readKnowledgeDocumentVariation),
-		UpdateContext: provider.UpdateWithPooledClient(updateKnowledgeDocumentVariation),
-		DeleteContext: provider.DeleteWithPooledClient(deleteKnowledgeDocumentVariation),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"knowledge_base_id": {
-				Description: "Knowledge base id of the label",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"knowledge_document_id": {
-				Description: "Knowledge base id of the label",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"published": {
-				Description: "If true, the document will be published with the new variation. If false, the updated document will be in a draft state.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-			},
-			"knowledge_document_variation": {
-				Description: "Knowledge document variation",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Required:    true,
-				Elem:        knowledgeDocumentVariation,
-			},
-		},
-	}
-}
-
 func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	knowledgeProxy := getVariationRequestProxy(sdkConfig)
+
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	documentResourceId := d.Get("knowledge_document_id").(string)
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 	knowledgeDocumentVariation := d.Get("knowledge_document_variation").([]interface{})[0].(map[string]interface{})
+
 	published := false
 	if publishedIn, ok := d.GetOk("published"); ok {
 		published = publishedIn.(bool)
 	}
 
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-
 	knowledgeDocumentVariationRequest := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
 
 	log.Printf("Creating knowledge document variation for document %s", knowledgeDocumentId)
 
-	knowledgeDocumentVariationResponse, resp, err := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, *knowledgeDocumentVariationRequest)
+	knowledgeDocumentVariationResponse, resp, err := knowledgeProxy.CreateVariation(ctx, knowledgeDocumentVariationRequest, knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to create variation for knowledge document %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create variation for knowledge document %s error: %s", d.Id(), err), resp)
 	}
 
 	if published == true {
-		_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
-
+		_, resp, versionErr := knowledgeProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, knowledgeDocumentId, knowledgeBaseId, &platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
 		}
 	}
 
@@ -412,7 +120,6 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	d.SetId(id)
 
 	log.Printf("Created knowledge document variation %s", *knowledgeDocumentVariationResponse.Id)
-
 	return readKnowledgeDocumentVariation(ctx, d, meta)
 }
 
@@ -425,7 +132,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.ConsistencyChecks(), "genesyscloud_knowledge_document_variation")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.ConsistencyChecks(), ResourceType)
 
 	documentState := ""
 
@@ -459,7 +166,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 					if retryErr != nil {
 						if !util.IsStatus404(retryResp) {
 							log.Printf("%s", retryErr)
-							return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr), retryResp))
+							return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr), retryResp))
 						}
 					} else {
 						publishedVariation = retryVariation
@@ -467,17 +174,17 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 				} else {
 					log.Printf("%s", publishedErr)
-					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr), resp))
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr), resp))
 				}
 			}
 
 			draftVariation, resp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
 			if draftErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
 				}
 				log.Printf("%s", draftErr)
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
 			}
 
 			if publishedVariation != nil && publishedVariation.DateModified != nil && publishedVariation.DateModified.After(*draftVariation.DateModified) {
@@ -489,10 +196,10 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			variation, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState, nil)
 			if getErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
 				}
 				log.Printf("%s", getErr)
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
 			}
 
 			knowledgeDocumentVariation = variation
@@ -536,7 +243,7 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		// Get current knowledge document variation version
 		_, resp, getErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to read knowledge document variation %s error: %s", id, getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s error: %s", id, getErr), resp)
 		}
 
 		knowledgeDocumentVariationUpdate := buildKnowledgeDocumentVariationUpdate(knowledgeDocumentVariation)
@@ -544,13 +251,13 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		log.Printf("Updating knowledge document variation %s", documentVariationId)
 		_, resp, putErr := knowledgeAPI.PatchKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, *knowledgeDocumentVariationUpdate)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to update knowledge document variation %s error: %s", documentVariationId, putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update knowledge document variation %s error: %s", documentVariationId, putErr), resp)
 		}
 		if published == true {
 			_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
-				return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document %s error: %s", id, versionErr), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document %s error: %s", id, versionErr), resp)
 			}
 		}
 
@@ -565,14 +272,14 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 }
 
 func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	knowledgeProxy := getVariationRequestProxy(sdkConfig)
+
 	id := strings.Split(d.Id(), " ")
 	documentVariationId := id[0]
 	knowledgeBaseId := id[1]
 	documentResourceId := id[2]
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
-
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
 
 	published := false
 	if publishedIn, ok := d.GetOk("published"); ok {
@@ -580,9 +287,10 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	}
 
 	log.Printf("Deleting knowledge document variation %s", id)
-	resp, err := knowledgeAPI.DeleteKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId)
+
+	resp, err := knowledgeProxy.deleteVariationRequest(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", id, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", id, err), resp)
 	}
 
 	if published == true {
@@ -592,36 +300,38 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		 * A new document version can only be published if there are other variations than the one being removed
 		 */
 		pageSize := 3
-		variations, resp, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Draft", nil)
 
+		//variations, resp, variationErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, "", "", fmt.Sprintf("%v", pageSize), "Draft", nil)
+		variations, resp, variationErr := knowledgeProxy.getAllVariations(ctx)
 		if variationErr != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to retrieve knowledge document variations error: %s", err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve knowledge document variations error: %s", err), resp)
 		}
 
 		if len(*variations.Entities) > 0 {
 			_, resp, versionErr := knowledgeAPI.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
 			}
 		}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		// The DELETE resource for knowledge document variations only removes draft variations. So set the documentState param to "Draft" for the check
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
+		_, resp, err := knowledgeProxy.getVariationRequestById(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				// Knowledge base deleted
 				log.Printf("Deleted knowledge document variation %s", documentVariationId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Error deleting knowledge document variation %s | error: %s", documentVariationId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting knowledge document variation %s | error: %s", documentVariationId, err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document_variation", fmt.Sprintf("Knowledge document variation %s still exists", documentVariationId), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document variation %s still exists", documentVariationId), resp))
 	})
 }
+
+// UTILS
 
 func buildDocumentContentListBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentlistcontentblock {
 	if documentContentBlocks := blocksIn["blocks"].([]interface{}); documentContentBlocks != nil && len(documentContentBlocks) > 0 {
@@ -784,58 +494,56 @@ func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documen
 func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
 	name := variationIn["name"].(string)
 	variationOut := platformclientv2.Documentvariationrequest{
-		Body:     buildVariationBody(variationIn),
-		Name:     &name,
-		Contexts: buildVariationContexts(variationIn),
+		Body: buildVariationBody(variationIn),
+		Name: &name,
+		//Contexts: buildVariationContexts(variationIn),
 	}
 	return &variationOut
 }
 
-func buildVariationContexts(variationIn map[string]interface{}) *[]platformclientv2.Documentvariationcontext {
-	if contextsList := variationIn["contexts"].([]interface{}); contextsList != nil && len(contextsList) > 0 {
-		contexts := contextsList[0].(map[string]interface{})
-		context := buildVariationContext(contexts)
-		values := buildVariationContextValue(contexts)
+// func buildVariationContexts(variationIn map[string]interface{}) *[]platformclientv2.Documentvariationcontext {
+// 	if contextsList := variationIn["contexts"].([]interface{}); contextsList != nil && len(contextsList) > 0 {
+// 		contexts := contextsList[0].(map[string]interface{})
 
-		return &[]platformclientv2.Documentvariationcontext{
-			{
-				Context: context,
-				Values:  values,
-			},
-		}
-	}
-	return nil
-}
+// 		return &[]platformclientv2.Documentvariationcontext{
+// 			{
+// 				Context: buildVariationContext(contexts),
+// 				Values:  buildVariationContextValue(contexts),
+// 			},
+// 		}
+// 	}
+// 	return nil
+// }
 
-func flattenVariationContexts() {
+// func buildVariationContext(contexts map[string]interface{}) *platformclientv2.Knowledgecontextreference {
+// 	if context := contexts["context"].(string); context != nil && len(context) > 0{
 
-}
+// 		return &platformclientv2.Knowledgecontextreference{
+// 			Id: &context,
+// 		}
+// 	}
+// 	return nil
+// }
 
-func buildVariationContext(context map[string]interface{}) *platformclientv2.Knowledgecontextreference {
-	if contextId := context["context_id"].(string); contextId != "" {
-		contextOut := platformclientv2.Knowledgecontextreference{
-			Id: &contextId,
-		}
-		return &contextOut
-	}
-	return nil
-}
+// func buildVariationContextValue(contexts map[string]interface{}) *[]platformclientv2.Knowledgecontextvaluereference {
+// 	if contextId := contexts["context_id"].(string)
+// 	contextOut := platformclientv2.Knowledgecontextvaluereference{
+// 		Id: &contextId,
+// 	}
+// 	return &[]platformclientv2.Knowledgecontextvaluereference{contextOut}
+// }
 
-func flattenVariationContext() {
+// func flattenVariationContexts() {
 
-}
+// }
 
-func buildVariationContextValue(contexts map[string]interface{}) *[]platformclientv2.Knowledgecontextvaluereference {
-	if contextId := contexts["context_id"].(string)
-	contextOut := platformclientv2.Knowledgecontextvaluereference{
-		Id: &contextId,
-	}
-	return &[]==platformclientv2.Knowledgecontextvaluereference{contextOut}
-}
+// func flattenVariationContext() {
 
-func flattenVariationContextValue() {
+// }
 
-}
+// func flattenVariationContextValue() {
+
+// }
 
 func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
 	name := variationIn["name"].(string)
