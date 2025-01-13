@@ -32,6 +32,11 @@ func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyvieweleme
 			element.Attributes = &attributes
 		}
 
+		if displayAttributesSlice, ok := elemMap["display_attributes"].([]interface{}); ok {
+			displayAttributes := buildJourneyViewElementDisplayAttributes(displayAttributesSlice)
+			element.DisplayAttributes = displayAttributes
+		}
+
 		if filterSlice, ok := elemMap["filter"].([]interface{}); ok {
 			filter := buildJourneyViewElementFilter(filterSlice)
 			element.Filter = filter
@@ -64,6 +69,22 @@ func buildJourneyViewElementAttributes(attributesSlice []interface{}) platformcl
 		}
 	}
 	return attributes
+}
+
+func buildJourneyViewElementDisplayAttributes(displayAttributesSlice []interface{}) *platformclientv2.Journeyviewelementdisplayattributes {
+	var displayAttributes platformclientv2.Journeyviewelementdisplayattributes
+	if len(displayAttributesSlice) == 0 {
+		return nil
+	}
+
+	for _, elem := range displayAttributesSlice {
+		if displayAttributesMap, ok := elem.(map[string]interface{}); ok {
+			displayAttributes.X = getIntPointerFromInterface(displayAttributesMap["x"])
+			displayAttributes.Y = getIntPointerFromInterface(displayAttributesMap["y"])
+			displayAttributes.Col = getIntPointerFromInterface(displayAttributesMap["col"])
+		}
+	}
+	return &displayAttributes
 }
 
 func buildJourneyViewElementFilter(filterSlice []interface{}) *platformclientv2.Journeyviewelementfilter {
@@ -289,6 +310,7 @@ func flattenElements(elements *[]platformclientv2.Journeyviewelement) []interfac
 		resourcedata.SetMapValueIfNotNil(elementsMap, "id", element.Id)
 		resourcedata.SetMapValueIfNotNil(elementsMap, "name", element.Name)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "attributes", element.Attributes, flattenAttributes)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "display_attributes", element.DisplayAttributes, flattenElementDisplayAttributes)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "filter", element.Filter, flattenFilters)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "followed_by", element.FollowedBy, flattenJourneyViewLink)
 		elementsList = append(elementsList, elementsMap)
@@ -307,6 +329,19 @@ func flattenAttributes(attribute *platformclientv2.Journeyviewelementattributes)
 	resourcedata.SetMapValueIfNotNil(attributesMap, "source", attribute.Source)
 	attributesList = append(attributesList, attributesMap)
 	return attributesList
+}
+
+func flattenElementDisplayAttributes(displayAttributes *platformclientv2.Journeyviewelementdisplayattributes) []interface{} {
+	if displayAttributes == nil {
+		return nil
+	}
+	var displayAttributesList []interface{}
+	displayAttributesMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "x", displayAttributes.X)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "y", displayAttributes.Y)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "col", displayAttributes.Col)
+	displayAttributesList = append(displayAttributesList, displayAttributesMap)
+	return displayAttributesList
 }
 
 func flattenFilters(filter *platformclientv2.Journeyviewelementfilter) []interface{} {
