@@ -65,7 +65,7 @@ func RetryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc, additionalCod
 			if resp != nil && shouldRetry(resp, additionalCodes...) {
 				// Wait a second and try again
 				lastErr = sdkErr
-				time.Sleep(time.Second)
+				time.Sleep(2 * time.Second)
 				continue
 			} else {
 				return sdkErr

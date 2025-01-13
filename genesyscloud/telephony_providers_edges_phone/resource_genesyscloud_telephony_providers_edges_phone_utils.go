@@ -157,7 +157,7 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string,
 		}
 
 		return resp, nil
-	})
+	}, 409)
 	if diagErr != nil {
 		return diagErr
 	}
