@@ -22,6 +22,9 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		attributeType                 = "Event"
 		attributeId                   = "a416328b-167c-0365-d0e1-f072cd5d4ded"
 		attributeSource               = "Voice"
+		elementDisplayAttributesX     = 601
+		elementDisplayAttributesY     = 240
+		elementDisplayAttributesCol   = 1
 		filterType                    = "And"
 		predicatesDimension           = "mediaType"
 		predicatesValues              = "VOICE"
@@ -52,6 +55,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
+					generateElementDisplayAttributes(elementDisplayAttributesX, elementDisplayAttributesY, elementDisplayAttributesCol),
 					generateFilter(filterType, generatePredicates(predicatesDimension, predicatesValues, predicatesOperator, predicatesNoValue)),
 				), generateChartsList([]string{
 					generateCharts(chartName, chartVersion,
@@ -74,6 +78,10 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.type", attributeType),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.id", attributeId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.source", attributeSource),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.0.x", fmt.Sprintf("%d", elementDisplayAttributesX)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.0.y", fmt.Sprintf("%d", elementDisplayAttributesY)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.0.col", fmt.Sprintf("%d", elementDisplayAttributesCol)),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.type", "And"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.#", "1"),
@@ -111,6 +119,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					elementsId,
 					elementsName,
 					generateAttributes(attributeType, attributeId, attributeSource),
+					generateElementDisplayAttributes(elementDisplayAttributesX, elementDisplayAttributesY, elementDisplayAttributesCol),
 					generateFilter(filterType, generatePredicates(predicatesDimension, predicatesValues, predicatesOperator, predicatesNoValue)),
 				), generateCharts(chartName, chartVersion,
 					generateMetrics(metricId, elementsId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
@@ -126,6 +135,10 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.type", attributeType),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.id", attributeId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.attributes.0.source", attributeSource),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.0.x", fmt.Sprintf("%d", elementDisplayAttributesX)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.0.y", fmt.Sprintf("%d", elementDisplayAttributesY)),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.display_attributes.0.col", fmt.Sprintf("%d", elementDisplayAttributesCol)),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.type", "And"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "elements.0.filter.0.predicates.#", "1"),
@@ -184,15 +197,16 @@ func generateJourneyView(journeyResourceLabel string, name string, duration stri
 		}())
 }
 
-func generateElements(id string, name string, attributesBlock string, filter string) string {
+func generateElements(id string, name string, attributesBlock string, displayAttributesBlock, filter string) string {
 	return fmt.Sprintf(`
     elements {
         id = "%s"
         name = "%s"
         %s
+		%s
         %s
     }
-    `, id, name, attributesBlock, filter)
+    `, id, name, attributesBlock, displayAttributesBlock, filter)
 }
 
 func generateFilter(filterType string, nestedBlocks ...string) string {
@@ -202,6 +216,16 @@ func generateFilter(filterType string, nestedBlocks ...string) string {
             %s
         }
         `, filterType, strings.Join(nestedBlocks, "\n"))
+}
+
+func generateElementDisplayAttributes(attributeX int, attributeY int, attributeCol int) string {
+	return fmt.Sprintf(`
+        display_attributes {
+            x   = %d
+            y   = %d
+            col = %d
+        }
+        `, attributeX, attributeY, attributeCol)
 }
 
 func generateAttributes(attributeType string, attributeId string, attributeSource string) string {
