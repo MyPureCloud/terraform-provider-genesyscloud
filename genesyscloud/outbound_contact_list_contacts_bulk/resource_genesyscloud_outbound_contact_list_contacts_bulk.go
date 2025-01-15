@@ -22,7 +22,7 @@ func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configur
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	cp := getBulkContactsProxy(clientConfig)
 
-	contactEntries, resp, err := cp.getAllBulkContacts(ctx)
+	_, resp, err := cp.getAllBulkContacts(ctx)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to read all contact list contacts. Error: %v", err)
 		if resp != nil {
@@ -31,13 +31,13 @@ func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configur
 		return nil, util.BuildDiagnosticError(ResourceType, msg, err)
 	}
 
-	for _, contactEntry := range contactEntries {
-		for _, contact := range *contactEntry.Contact {
-			id := buildComplexContactId(*contactEntry.ContactList.Id, *contact.Id)
-			name := *contactEntry.ContactList.Name + "_" + *contact.Id
-			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: name}
-		}
-	}
+	// for _, contactEntry := range contactEntries {
+	// 	for _, contact := range *contactEntry.Contact {
+	// 		id := buildComplexContactId(*contactEntry.ContactList.Id, *contact.Id)
+	// 		name := *contactEntry.ContactList.Name + "_" + *contact.Id
+	// 		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: name}
+	// 	}
+	// }
 
 	return resources, nil
 }
@@ -54,7 +54,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	contactRequestBody := buildWritableContactFromResourceData(d)
 
 	log.Printf("Creating contact in contact list '%s'", contactListId)
-	contactResponseBody, resp, err := cp.createBulkContact(ctx, contactListId, contactRequestBody, priority, clearSystemData, doNotQueue)
+	contactResponseBody, resp, err := cp.createBulkContacts(ctx, contactListId, contactRequestBody, priority, clearSystemData, doNotQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create contact for contact list '%s': %v", contactListId, err), resp)
 	}
@@ -94,7 +94,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		var contactResponseBody *platformclientv2.Dialercontact
 
 		log.Printf("Reading contact '%s' in contact list '%s'", contactId, contactListId)
-		contactResponseBody, resp, err = cp.readBulkContactById(ctx, contactListId, contactId)
+		contactResponseBody, resp, err = cp.readBulkContactsById(ctx, contactListId, contactId)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(err)
@@ -106,8 +106,8 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		_ = d.Set("contact_id", *contactResponseBody.Id)
 		resourcedata.SetNillableValue(d, "callable", contactResponseBody.Callable)
 		resourcedata.SetNillableValue(d, "data", contactResponseBody.Data)
-		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
-		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "contactable_status", contactResponseBody.ContactableStatus, flattenContactableStatus)
+		// resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
+		// resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "contactable_status", contactResponseBody.ContactableStatus, flattenContactableStatus)
 
 		return cc.CheckState(d)
 	})
@@ -132,7 +132,7 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	}
 
 	log.Printf("Updating contact '%s' in contact list '%s'", contactId, contactListId)
-	_, resp, err := cp.updateBulkContact(ctx, contactListId, contactId, contactRequestBody)
+	_, resp, err := cp.updateBulkContacts(ctx, contactListId, contactId, contactRequestBody)
 	if err != nil {
 		msg := fmt.Sprintf("failed to update contact '%s' for contact list '%s'. Error: %v", contactId, contactListId, err)
 		return util.BuildAPIDiagnosticError(ResourceType, msg, resp)
@@ -155,7 +155,7 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	}
 
 	log.Printf("Deleting contact '%s' from contact list '%s'", contactId, contactListId)
-	resp, err := cp.deleteBulkContact(ctx, contactListId, contactId)
+	resp, err := cp.deleteBulkContacts(ctx, contactListId, contactId)
 	if err != nil {
 		msg := fmt.Sprintf("failed to delete contact '%s' from contact list '%s'. Error: %v", contactId, contactListId, err)
 		return util.BuildAPIDiagnosticError(ResourceType, msg, resp)
@@ -163,7 +163,7 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		log.Printf("Reading contact '%s'", d.Id())
-		_, resp, err := cp.readBulkContactById(ctx, contactListId, contactId)
+		_, resp, err := cp.readBulkContactsById(ctx, contactListId, contactId)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Contact '%s' deleted", contactId)

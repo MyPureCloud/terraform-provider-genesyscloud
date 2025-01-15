@@ -61,19 +61,19 @@ func getBulkContactsProxy(clientConfig *platformclientv2.Configuration) *contact
 	return newBulkContactProxy(clientConfig)
 }
 
-func (p *contactProxy) createBulkContact(ctx context.Context, contactListId string, contact platformclientv2.Writabledialercontact, priority, clearSystemData, doNotQueue bool) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+func (p *contactProxy) createBulkContacts(ctx context.Context, contactListId string, contact platformclientv2.Writabledialercontact, priority, clearSystemData, doNotQueue bool) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	return p.createBulkContactAttr(ctx, p, contactListId, contact, priority, clearSystemData, doNotQueue)
 }
 
-func (p *contactProxy) readBulkContactById(ctx context.Context, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+func (p *contactProxy) readBulkContactsById(ctx context.Context, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	return p.readBulkContactByIdAttr(ctx, p, contactListId, contactId)
 }
 
-func (p *contactProxy) updateBulkContact(ctx context.Context, contactListId, contactId string, contact platformclientv2.Dialercontact) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
+func (p *contactProxy) updateBulkContacts(ctx context.Context, contactListId, contactId string, contact platformclientv2.Dialercontact) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	return p.updateBulkContactAttr(ctx, p, contactListId, contactId, contact)
 }
 
-func (p *contactProxy) deleteBulkContact(ctx context.Context, contactListId, contactId string) (*platformclientv2.APIResponse, error) {
+func (p *contactProxy) deleteBulkContacts(ctx context.Context, contactListId, contactId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteBulkContactAttr(ctx, p, contactListId, contactId)
 }
 

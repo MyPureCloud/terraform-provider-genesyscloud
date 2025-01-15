@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
@@ -116,44 +115,44 @@ func buildPhoneNumberStatus(d *schema.ResourceData) *map[string]platformclientv2
 	return &phoneNumberStatusMap
 }
 
-func flattenPhoneNumberStatus(phoneNumberStatus *map[string]platformclientv2.Phonenumberstatus) *schema.Set {
-	pnsSet := schema.NewSet(schema.HashResource(phoneNumberStatusResource), []interface{}{})
-	for k, v := range *phoneNumberStatus {
-		pns := make(map[string]any)
-		pns["key"] = k
-		resourcedata.SetMapValueIfNotNil(pns, "callable", v.Callable)
-		pnsSet.Add(pns)
-	}
-	return pnsSet
-}
+// func flattenPhoneNumberStatus(phoneNumberStatus *map[string]platformclientv2.Phonenumberstatus) *schema.Set {
+// 	pnsSet := schema.NewSet(schema.HashResource(phoneNumberStatusResource), []interface{}{})
+// 	for k, v := range *phoneNumberStatus {
+// 		pns := make(map[string]any)
+// 		pns["key"] = k
+// 		resourcedata.SetMapValueIfNotNil(pns, "callable", v.Callable)
+// 		pnsSet.Add(pns)
+// 	}
+// 	return pnsSet
+// }
 
-func flattenContactableStatus(contactableStatus *map[string]platformclientv2.Contactablestatus) *schema.Set {
-	csSet := schema.NewSet(schema.HashResource(contactableStatusResource), []interface{}{})
-	for k, v := range *contactableStatus {
-		cs := make(map[string]any)
-		cs["media_type"] = k
-		cs["contactable"] = *v.Contactable
-		if v.ColumnStatus != nil {
-			cs["column_status"] = flattenColumnStatus(v.ColumnStatus)
-		}
-		csSet.Add(cs)
-	}
-	return csSet
-}
+// func flattenContactableStatus(contactableStatus *map[string]platformclientv2.Contactablestatus) *schema.Set {
+// 	csSet := schema.NewSet(schema.HashResource(contactableStatusResource), []interface{}{})
+// 	for k, v := range *contactableStatus {
+// 		cs := make(map[string]any)
+// 		cs["media_type"] = k
+// 		cs["contactable"] = *v.Contactable
+// 		if v.ColumnStatus != nil {
+// 			cs["column_status"] = flattenColumnStatus(v.ColumnStatus)
+// 		}
+// 		csSet.Add(cs)
+// 	}
+// 	return csSet
+// }
 
-func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus) *schema.Set {
-	if columnStatus == nil {
-		return nil
-	}
-	csSet := schema.NewSet(schema.HashResource(columnStatusResource), []interface{}{})
-	for k, v := range *columnStatus {
-		cs := make(map[string]any)
-		cs["column"] = k
-		cs["contactable"] = *v.Contactable
-		csSet.Add(cs)
-	}
-	return csSet
-}
+// func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus) *schema.Set {
+// 	if columnStatus == nil {
+// 		return nil
+// 	}
+// 	csSet := schema.NewSet(schema.HashResource(columnStatusResource), []interface{}{})
+// 	for k, v := range *columnStatus {
+// 		cs := make(map[string]any)
+// 		cs["column"] = k
+// 		cs["contactable"] = *v.Contactable
+// 		csSet.Add(cs)
+// 	}
+// 	return csSet
+// }
 
 func GenerateOutboundContactListContact(
 	resourceLabel,

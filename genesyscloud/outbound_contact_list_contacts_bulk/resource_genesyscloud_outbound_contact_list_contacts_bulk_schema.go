@@ -4,6 +4,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -15,70 +16,25 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(ResourceType, BulkContactsExporter())
 }
 
-var (
-	contactableStatusResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"media_type": {
-				Description: `The key which identifies the media type (Voice, SMS and Email).`,
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"contactable": {
-				Description: `Indicates whether or not the entire contact is contactable for the associated media type.`,
-				Type:        schema.TypeBool,
-				Required:    true,
-			},
-			"column_status": {
-				Description: `A map of individual contact method columns to whether the individual column is contactable for the associated media type.`,
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        columnStatusResource,
-			},
-		},
-	}
-	columnStatusResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"column": {
-				Description: `The key which identifies the contact method column.`,
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"contactable": {
-				Description: `Indicates whether or not an individual contact method column is contactable.`,
-				Type:        schema.TypeBool,
-				Required:    true,
-			},
-		},
-	}
-	phoneNumberStatusResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"key": {
-				Description: `Phone number column identifier.`,
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"callable": {
-				Description: `Indicates whether or not a phone number is callable.`,
-				Type:        schema.TypeBool,
-				Required:    true,
-			},
-		},
-	}
-)
-
 func BulkContactsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllContacts),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
+			"contact_list_id":          {RefType: "genesyscloud_outbound_contact_list"},
+			"contact_list_template_id": {RefType: "genesyscloud_outbound_contact_list_template"},
 		},
-		AllowZeroValuesInMap: []string{"data"},
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"filepath": ResourceOutboundContactListContactsBulk().Schema["filepath"],
+		},
+		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
+			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
+		},
 	}
 }
 
 func ResourceOutboundContactListContactsBulk() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Outbound Contact List Contact`,
+		Description: `Genesys Cloud Outbound Contact List Bulk Contacts Handling`,
 
 		CreateContext: provider.CreateWithPooledClient(createOutboundContactListContact),
 		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListContact),
@@ -89,66 +45,52 @@ func ResourceOutboundContactListContactsBulk() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"filepath": {
+				Description:  `The path to the CSV file containing the contacts to be added to the contact list.`,
+				ForceNew:     true,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validators.ValidatePath,
+			},
+			"file_content_hash": {
+				Description: "Hash value of the CSV file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"contact_id_name": {
+				Description: `The name of the column in the CSV file that contains the contact's unique contact id.`,
+				ForceNew:    true,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
 			"contact_list_id": {
-				Description: `The identifier of the contact list containing this contact.`,
+				Description:  `The identifier of the contact list. Either this or the "contact_list_template_id" attribute are required to be set.`,
+				ForceNew:     true,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ExactlyOneOf: []string{"contact_list_id", "contact_list_template_id"},
+			},
+			"contact_list_template_id": {
+				Description:  `The identifier of the contact list template. Either this or the "contact_list_id" attribute are required to be set.`,
+				ForceNew:     true,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ExactlyOneOf: []string{"contact_list_id", "contact_list_template_id"},
+				RequiredWith: []string{"list_name_prefix"},
+			},
+			"list_name_prefix": {
+				Description: `String that will replace %N in the "list_name_format" attribute specified on the import template.`,
 				ForceNew:    true,
-				Required:    true,
 				Type:        schema.TypeString,
+				RequiredWith: []string{
+					"contact_list_template_id",
+				},
 			},
-			"contact_id": {
-				Description: `The identifier of the contact list. This is usually a generated guid and not modifiable.`,
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+			"division_id_for_target_contact_lists": {
+				Description: `The identifier of the division to be used for the creation of the target contact lists. If not provided, Home division will be used.`,
 				ForceNew:    true,
-			},
-			"priority": {
-				Description: `Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue.
-Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
-				ForceNew: true,
-				Optional: true,
-				Type:     schema.TypeBool,
-			},
-			"clear_system_data": {
-				Description: `Clear system data. True means the system columns (attempts, callable status, etc) stored on the contact will be cleared if the contact already exists; false means they won't.
-Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
-				ForceNew: true,
-				Optional: true,
-				Type:     schema.TypeBool,
-			},
-			"do_not_queue": {
-				Description: `Do not queue. True means that updated contacts will not have their positions in the queue altered, so contacts that have already been dialed will not be redialed.
-For new contacts, this parameter has no effect; False means that updated contacts will be re-queued, according to the 'priority' parameter.
-Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
-				ForceNew: true,
-				Optional: true,
-				Type:     schema.TypeBool,
-			},
-			"callable": {
-				Description: `Indicates whether or not the contact can be called.`,
-				Type:        schema.TypeBool,
-				Default:     false,
 				Optional:    true,
-			},
-			"data": {
-				Description: `An ordered map of the contact's columns and corresponding values.`,
-				Type:        schema.TypeMap,
-				Required:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"phone_number_status": {
-				Description: `A map of phone number columns to PhoneNumberStatuses, which indicate if the phone number is callable or not.`,
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        phoneNumberStatusResource,
-			},
-			"contactable_status": {
-				Description: `A map of media types (Voice, SMS and Email) to ContactableStatus, which indicates if the contact can be contacted using the specified media type.`,
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        contactableStatusResource,
+				Type:        schema.TypeString,
 			},
 		},
 	}
