@@ -63,7 +63,7 @@ func TestUnitTestAPIResponseDiagWithBadApiResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
 	json.Unmarshal([]byte(targetResponse), targetDiag)
 
 	diag := BuildAPIDiagnosticError(resourceType, sumErrMsg, apiResponse)
@@ -129,7 +129,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
 
 	diag := BuildWithRetriesApiDiagnosticError(resourceType, sumErrMsg, apiResponse)
