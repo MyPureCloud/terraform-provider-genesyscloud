@@ -282,18 +282,41 @@ func configure(version string) schema.ConfigureContextFunc {
 	}
 }
 
+// getRegistry determines the appropriate registry URL based on the platform and version.
+// It handles special cases for developer versions (0.1.0) and platform-specific registries.
+//
+// Parameters:
+//
+//	platform: *platform.Platform - The platform configuration (must not be nil)
+//	version: string - The version string in semver format (e.g., "1.2.3")
+//
+// Returns:
+//
+//	string: The determined registry URL
+//	error: Any error encountered during processing
+//
+// Special cases:
+//   - Version "0.1.0" (development version) always returns "genesys.com"
+//   - If platform.GetProviderRegistry() returns empty, falls back to "registry.terraform.io"
 func getRegistry(platform *platform.Platform, version string) string {
+
+	defaultRegistry := "registry.terraform.io"
+	devRegistry := "genesys.com"
+
+	if platform == nil {
+		return defaultRegistry // Default fallback
+	}
 
 	// Accounting for custom builds, we return this convention
 	if version == "0.1.0" {
-		return "genesys.com"
+		return devRegistry
 	}
 
 	// Otherwise allow the platform to determine the registry as the registry is directly
 	// tied to the specific platform (i.e., terraform vs opentofu)
 	registry := platform.GetProviderRegistry()
 	if registry == "" {
-		registry = "registry.terraform.io"
+		registry = defaultRegistry
 	}
 	return registry
 }

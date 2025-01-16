@@ -18,14 +18,17 @@ import (
 
 type Platform int
 
-var (
+type platformConfig struct {
 	platform     Platform
 	binaryPath   string
 	providerAddr string
-)
+}
+
+var platformConfigSingleton *platformConfig
 
 const (
-	PlatformTerraform Platform = iota
+	PlatformUnknown Platform = iota
+	PlatformTerraform
 	PlatformOpenTofu
 	PlatformDebugServer
 )
@@ -44,11 +47,14 @@ func (p Platform) String() string {
 }
 
 func (p Platform) BinaryPath() string {
-	return binaryPath
+	return platformConfigSingleton.binaryPath
 }
 
 func (p Platform) Binary() string {
-	pathSegments := strings.Split(binaryPath, string(os.PathSeparator))
+	if platformConfigSingleton.binaryPath == "" {
+		return ""
+	}
+	pathSegments := strings.Split(platformConfigSingleton.binaryPath, string(os.PathSeparator))
 	return pathSegments[len(pathSegments)-1]
 }
 
@@ -73,35 +79,57 @@ func (p Platform) ExecuteCommand(ctx context.Context, args ...string) (commandOu
 		return nil, fmt.Errorf("cannot execute platform command against debug server")
 	}
 	// Validate binary path
-	if binaryPath == "" {
+	if platformConfigSingleton.binaryPath == "" {
 		return nil, fmt.Errorf("binary path is empty")
 	}
-	return executePlatformCommand(ctx, binaryPath, args)
+	return executePlatformCommand(ctx, platformConfigSingleton.binaryPath, args)
+}
+
+func IsValidPlatform(p Platform) bool {
+	switch p {
+	case PlatformTerraform, PlatformOpenTofu, PlatformDebugServer:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p Platform) Validate() error {
-	if p.String() == "unknown" {
-		return fmt.Errorf("invalid platform state")
+	if !IsValidPlatform(p) {
+		return fmt.Errorf("invalid platform value: %d", p)
 	}
-	if binaryPath == "" {
+	if platformConfigSingleton == nil {
+		return fmt.Errorf("platform configuration not initialized")
+	}
+	if platformConfigSingleton.binaryPath == "" {
 		return fmt.Errorf("binary path not set")
 	}
 	return nil
 }
 
 func GetPlatform() Platform {
-	return platform
+	return platformConfigSingleton.platform
 }
 
 func init() {
+	// Initialize the config once
+	platformConfigSingleton = &platformConfig{}
+
 	path, err := detectExecutingBinary()
 	if err != nil {
 		log.Printf(`Error detecting binary: %v`, err)
+		platformConfigSingleton.platform = PlatformUnknown
 		return
 	}
 
-	binaryPath = path
+	platformConfigSingleton.binaryPath = path
 	defer detectedPlatformLog()
+
+	// Verify binary exists and has proper permissions
+	if err := verifyBinary(platformConfigSingleton.binaryPath); err != nil {
+		log.Printf("binary verification failed: %v", err)
+		return
+	}
 
 	debugPatterns := []string{
 		"__debug_bin",
@@ -110,24 +138,24 @@ func init() {
 	}
 
 	for _, pattern := range debugPatterns {
-		if strings.Contains(binaryPath, pattern) {
-			platform = PlatformDebugServer
+		if strings.Contains(platformConfigSingleton.binaryPath, pattern) {
+			platformConfigSingleton.platform = PlatformDebugServer
 			return
 		}
 	}
 
-	// Verify binary exists and has proper permissions
-	if err := verifyBinary(binaryPath); err != nil {
-		log.Printf("binary verification failed: %v", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	versionOutput, err := executePlatformCommand(ctx, binaryPath, []string{"version"})
+	versionOutput, err := executePlatformCommand(ctx, platformConfigSingleton.binaryPath, []string{"version"})
+	if err != nil {
+		log.Printf("Failed to execute version command: %v", err)
+		return
+	}
 
 	if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
-		platform = PlatformOpenTofu
+		platformConfigSingleton.platform = PlatformOpenTofu
 	} else {
-		platform = PlatformTerraform
+		platformConfigSingleton.platform = PlatformTerraform
 	}
 
 }
@@ -208,6 +236,8 @@ func validateCommandArgs(args []string) error {
 		return fmt.Errorf("command %q is not allowed", command)
 	}
 
+	// TODO: If sub commands are intended to be used, consider
+	// adding extra validation for these commands.
 	return nil
 }
 
@@ -286,25 +316,25 @@ func executePlatformCommand(ctx context.Context, binaryPath string, args []strin
 	cmd.Args = append(cmd.Args, args...)
 
 	log.Printf("Running command against platform binary: %s", cmd.String())
-	if err := cmd.Run(); err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			return &CommandOutput{
-				Stdout:   stdout.String(),
-				Stderr:   stderr.String(),
-				ExitCode: -1,
-			}, ctx.Err()
-		}
-		return &CommandOutput{
-			Stdout:   stdout.String(),
-			Stderr:   stderr.String(),
-			ExitCode: cmd.ProcessState.ExitCode(),
-		}, err
+	err = cmd.Run()
+	output := &CommandOutput{
+		Stdout: stdout.String(),
+		Stderr: stderr.String(),
 	}
 
-	return &CommandOutput{
-		Stdout:   stdout.String(),
-		Stderr:   stderr.String(),
-		ExitCode: cmd.ProcessState.ExitCode(),
-	}, nil
+	if cmd.ProcessState != nil {
+		output.ExitCode = cmd.ProcessState.ExitCode()
+	} else {
+		output.ExitCode = -1
+	}
+
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return output, ctx.Err()
+		}
+		return output, err
+	}
+
+	return output, nil
 
 }

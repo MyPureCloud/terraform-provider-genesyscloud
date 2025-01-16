@@ -26,7 +26,16 @@ type TFStateFileWriter struct {
 	providerRegistry string
 }
 
-func NewTFStateWriter(ctx context.Context, resources []resourceExporter.ResourceInfo, d *schema.ResourceData, providerRegistry string) *TFStateFileWriter {
+func NewTFStateWriter(ctx context.Context, resources []resourceExporter.ResourceInfo, d *schema.ResourceData, providerRegistry string) (*TFStateFileWriter, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("context cannot be nil")
+	}
+	if d == nil {
+		return nil, fmt.Errorf("schema.ResourceData cannot be nil")
+	}
+	if len(resources) == 0 {
+		return nil, fmt.Errorf("resources cannot be empty")
+	}
 	tfwriter := &TFStateFileWriter{
 		ctx:              ctx,
 		resources:        resources,
@@ -34,23 +43,52 @@ func NewTFStateWriter(ctx context.Context, resources []resourceExporter.Resource
 		providerRegistry: providerRegistry,
 	}
 
-	return tfwriter
+	return tfwriter, nil
 }
 
 func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
+
+	platform := platform.GetPlatform()
+	platformErr := platform.Validate()
+	if platformErr != nil {
+		return diag.Errorf("Failed to validate platform: %v", platformErr)
+	}
+
 	stateFilePath, diagErr := getFilePath(t.d, defaultTfStateFile)
 	if diagErr != nil {
 		return diagErr
 	}
 
 	tfstate := terraform.NewState()
+	if tfstate == nil {
+		return diag.Errorf("failed to create new terraform state")
+	}
+
+	// Ensure the root module and resources map are initialized
+	rootModule := tfstate.RootModule()
+	if rootModule == nil {
+		return diag.Errorf("failed to get root module")
+	}
+	if rootModule.Resources == nil {
+		rootModule.Resources = make(map[string]*terraform.ResourceState)
+	}
+
 	for _, resource := range t.resources {
+		resourceKey := ""
+		if resource.BlockType != "" {
+			resourceKey = resource.BlockType + "."
+		}
+		resourceKey = resource.Type + "." + resource.BlockLabel
+		if resourceKey == ".." || resourceKey == "." { // This would catch the worst case of all empty strings
+			return diag.Errorf("invalid resource key generated for resource: %+v", resource)
+		}
+
 		resourceState := &terraform.ResourceState{
 			Type:     resource.Type,
 			Primary:  resource.State,
 			Provider: "provider.genesyscloud",
 		}
-		tfstate.RootModule().Resources[resource.BlockType+resource.Type+"."+resource.BlockLabel] = resourceState
+		rootModule.Resources[resourceKey] = resourceState
 	}
 
 	data, err := json.MarshalIndent(tfstate, "", "  ")
@@ -59,29 +97,23 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 	}
 
 	log.Printf("Writing export state file to %s", stateFilePath)
-	if err := files.WriteToFile(data, stateFilePath); err != nil {
-		return err
-	}
-
-	platform := platform.GetPlatform()
-	platformErr := platform.Validate()
-	if platformErr != nil {
-		return diag.Errorf("Failed to validate platform: %v", platformErr)
+	if diagErr := files.WriteToFile(data, stateFilePath); diagErr != nil {
+		return diagErr
 	}
 
 	// This outputs terraform state v3, and there is currently no public lib to generate v4 which is required for terraform 0.13+.
 	// However, the state can be upgraded automatically by calling the terraform CLI. If this fails, just print a warning indicating
 	// that the state likely needs to be upgraded manually.
-	cliError := fmt.Sprintf(`The generated tfstate file will need to be upgraded manually by running the following in the state file's directory:
+	cliErrorPostscript := fmt.Sprintf(`The generated tfstate file will need to be upgraded manually by running the following in the state file's directory:
 	'%s state replace-provider %s/-/genesyscloud %s/mypurecloud/genesyscloud'`, platform.Binary(), platform.GetProviderRegistry(), t.providerRegistry)
 
 	if platform.IsDebugServer() {
-		cliError = `The current process is running via a debug server (debug binary detected), and so it is unable to run the proper command to replace the state. Please run this command outside of a debug session.` + cliError
-		log.Print(cliError)
+		cliErrorPostscript = `The current process is running via a debug server (debug binary detected), and so it is unable to run the proper command to replace the state. Please run this command outside of a debug session.` + cliErrorPostscript
+		log.Print(cliErrorPostscript)
 		return nil
 	}
 
-	_, err = platform.ExecuteCommand(t.ctx, []string{
+	replaceProviderOutput, err := platform.ExecuteCommand(t.ctx, []string{
 		"state",
 		"replace-provider",
 		"-auto-approve",
@@ -91,10 +123,14 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 		// This is the platform that accounts for custom builds
 		fmt.Sprintf("%s/mypurecloud/genesyscloud", t.providerRegistry),
 	}...)
+	log.Print(replaceProviderOutput.Stdout)
 
 	if err != nil {
-		cliError = fmt.Sprintf(`Failed to run the terraform CLI to upgrade the generated state file: \n%s\n\n%s`, err, cliError)
-		log.Print(cliError)
+		cliErrorPostscript = fmt.Sprintf(`Failed to run the terraform CLI to upgrade the generated state file:
+			Error: %v
+
+			%s`, err, cliErrorPostscript)
+		log.Print(cliErrorPostscript)
 		// Don't fail everything even if this errors.
 		return nil
 	}

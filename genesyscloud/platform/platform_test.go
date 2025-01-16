@@ -78,13 +78,13 @@ func TestPlatformValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Save original and restore after test
-			origPath := binaryPath
-			defer func() { binaryPath = origPath }()
+			origPath := platformConfigSingleton.binaryPath
+			defer func() { platformConfigSingleton.binaryPath = origPath }()
 
-			binaryPath = tt.setBinPath
-			platform = tt.platform
+			platformConfigSingleton.binaryPath = tt.setBinPath
+			platformConfigSingleton.platform = tt.platform
 
-			err := platform.Validate()
+			err := platformConfigSingleton.platform.Validate()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Platform.Validate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -181,12 +181,12 @@ exit 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Save original and restore after test
-			origPath := binaryPath
-			defer func() { binaryPath = origPath }()
+			origPath := platformConfigSingleton.binaryPath
+			defer func() { platformConfigSingleton.binaryPath = origPath }()
 
-			binaryPath = testBinary
+			platformConfigSingleton.binaryPath = testBinary
 
-			output, err := executePlatformCommand(tt.ctx, binaryPath, tt.args)
+			output, err := executePlatformCommand(tt.ctx, platformConfigSingleton.binaryPath, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ExecuteCommand() error = %v, wantErr %v", err, tt.wantErr)
 				return

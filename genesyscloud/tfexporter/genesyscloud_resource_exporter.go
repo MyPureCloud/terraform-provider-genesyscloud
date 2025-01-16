@@ -464,10 +464,23 @@ func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.Insta
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
 func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
+
+	if g.resourceTypesMaps == nil || g.dataSourceTypesMaps == nil {
+		return diag.Errorf("required fields resourceTypesMaps or dataSourceTypesMaps are nil")
+	}
+
+	// Ensure export directory exists and is writable
+	if err := os.MkdirAll(g.exportDirPath, 0755); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if g.includeStateFile {
-		t := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry)
-		if err := t.writeTfState(); err != nil {
-			return err
+		t, err := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if diagErr := t.writeTfState(); diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -1063,7 +1076,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 						attributes[key] = val
 					}
 					instanceState.Attributes = attributes
-					blockType = "data."
+					blockType = "data"
 				}
 
 				for resAttribute, resSchema := range res.Schema {
