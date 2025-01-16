@@ -76,6 +76,7 @@ func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *
 		getArchitectUserPromptIdByNameAttr:             getArchitectUserPromptIdByNameFn,
 		uploadPromptFileAttr:                           uploadPromptFileFn,
 		getArchitectUserPromptResourcesAttr:            getArchitectUserPromptResourcesFn,
+		deleteArchitectUserPromptResourceAttr:          deleteArchitectUserPromptResourceFn,
 		promptCache:                                    promptCache,
 	}
 }
@@ -422,6 +423,11 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 	)
 
 	resources, ok := d.Get("resources").(*schema.Set)
+
+	if checkEmptyResource(resources) {
+		resources = nil
+	}
+
 	if (!ok || resources == nil) && create {
 		return toCreate, toUpdate, toDelete, nil, nil
 	}
@@ -494,6 +500,23 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 	}
 
 	return toCreate, toUpdate, toDelete, nil, nil
+}
+
+func checkEmptyResource(resources *schema.Set) bool {
+	if resources != nil && len(resources.List()) == 1 {
+		for _, promptResource := range resources.List() {
+			promptResourceMap, ok := promptResource.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			resourceLanguage := promptResourceMap["language"].(string)
+			if resourceLanguage == "" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // getArchitectUserPromptIdByNameFn will query user prompt by name and retry if search has not yet indexed the user prompt.
