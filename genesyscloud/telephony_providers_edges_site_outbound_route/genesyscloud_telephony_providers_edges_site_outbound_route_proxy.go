@@ -126,15 +126,6 @@ func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, 
 
 	allOutboundRoutes = append(allOutboundRoutes, *outboundRoutes.Entities...)
 
-	// Check if the site cache is populated with all the data, if it is, return that instead
-	// If the size of the cache is the same as the total number of sites, the cache is up-to-date
-	if rc.GetCacheSize(p.siteOutboundRouteCache) == *outboundRoutes.Total && rc.GetCacheSize(p.siteOutboundRouteCache) != 0 {
-		return rc.GetCache(p.siteOutboundRouteCache), nil, nil
-	} else if rc.GetCacheSize(p.siteOutboundRouteCache) != *outboundRoutes.Total && rc.GetCacheSize(p.siteOutboundRouteCache) != 0 {
-		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.siteOutboundRouteCache = rc.NewResourceCache[platformclientv2.Outboundroutebase]()
-	}
-
 	for pageNum := 2; pageNum <= *outboundRoutes.PageCount; pageNum++ {
 		outboundRoutes, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSiteOutboundroutes(siteId, pageSize, pageNum, "", "", "")
 		if err != nil {
@@ -149,7 +140,7 @@ func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, 
 
 	// Populate the site cache
 	for _, outboundRoute := range allOutboundRoutes {
-		rc.SetCache(p.siteOutboundRouteCache, *outboundRoute.Id, outboundRoute)
+		rc.SetCache(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, *outboundRoute.Id), outboundRoute)
 	}
 
 	return &allOutboundRoutes, resp, nil
@@ -159,7 +150,7 @@ func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, 
 // getSiteOutboundRouteByIdFn is an implementation function for getting an outbound route for a Genesys Cloud Site
 func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	// Check if site's outbound route exist in cache
-	route := rc.GetCacheItem(p.siteOutboundRouteCache, outboundRouteId)
+	route := rc.GetCacheItem(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, outboundRouteId))
 	if route != nil {
 		return route, nil, nil
 	}
@@ -169,7 +160,7 @@ func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, 
 		return nil, resp, err
 	}
 
-	rc.SetCache(p.siteOutboundRouteCache, outboundRouteId, *outboundRoute)
+	rc.SetCache(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, outboundRouteId), *outboundRoute)
 
 	return outboundRoute, resp, nil
 }
@@ -218,6 +209,6 @@ func deleteSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, s
 		return resp, err
 	}
 
-	rc.DeleteCacheItem(p.siteOutboundRouteCache, outboundRouteId)
+	rc.DeleteCacheItem(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, outboundRouteId))
 	return resp, nil
 }

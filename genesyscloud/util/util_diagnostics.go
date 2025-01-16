@@ -19,19 +19,24 @@ type detailedDiagnosticInfo struct {
 }
 
 func convertResponseToWrapper(resourceType string, apiResponse *platformclientv2.APIResponse) *detailedDiagnosticInfo {
-	return &detailedDiagnosticInfo{
+	detailedDiagnosticInfo := &detailedDiagnosticInfo{
 		ResourceType:  resourceType,
-		Method:        apiResponse.Response.Request.Method,
-		Path:          apiResponse.Response.Request.URL.Path,
 		StatusCode:    apiResponse.StatusCode,
 		ErrorMessage:  apiResponse.ErrorMessage,
 		CorrelationID: apiResponse.CorrelationID,
 	}
+	if apiResponse.Response != nil && apiResponse.Response.Request != nil {
+		detailedDiagnosticInfo.Method = apiResponse.Response.Request.Method
+		if apiResponse.Response.Request.URL != nil {
+			detailedDiagnosticInfo.Path = apiResponse.Response.Request.URL.Path
+		}
+	}
+	return detailedDiagnosticInfo
 }
 
 func BuildAPIDiagnosticError(resourceType string, summary string, apiResponse *platformclientv2.APIResponse) diag.Diagnostics {
 	//Checking to make sure we have properly formed response
-	if apiResponse == nil || apiResponse.Response == nil || apiResponse.Response.Request == nil || apiResponse.Response.Request.URL == nil {
+	if apiResponse == nil {
 		error := fmt.Errorf("Unable to build a message from the response because the APIResponse does not contain the appropriate data.%s", "")
 		return BuildDiagnosticError(resourceType, summary, error)
 	}
