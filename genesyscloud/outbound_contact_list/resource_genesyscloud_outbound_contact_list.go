@@ -23,9 +23,9 @@ import (
 
 func getAllOutboundContactLists(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	proxy := getOutboundContactlistProxy(clientConfig)
+	proxy := GetOutboundContactlistProxy(clientConfig)
 
-	contactLists, resp, getErr := proxy.getAllOutboundContactlist(ctx)
+	contactLists, resp, getErr := proxy.GetAllOutboundContactlist(ctx)
 	if getErr != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get contact lists error: %s", getErr), resp)
 	}
@@ -46,7 +46,7 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
@@ -90,7 +90,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
@@ -132,7 +132,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 
 func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
@@ -187,7 +187,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 
 func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Contact List")
