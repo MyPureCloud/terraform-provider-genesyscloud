@@ -133,8 +133,8 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Description: "Line Base Settings for the phonebasesettings",
 				Type:        schema.TypeList,
 				Optional:    true,
-				MaxItems:    1,
 				Computed:    true,
+				MaxItems:    1,
 				Elem:        lineBase,
 			},
 			"line_base_settings_id": {

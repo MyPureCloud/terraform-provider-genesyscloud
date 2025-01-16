@@ -129,6 +129,7 @@ Required:
 
 Optional:
 
+- `display_attributes` (Block List, Max: 1) Display Attributes on an element in a journey view. (see [below for nested schema](#nestedblock--elements--display_attributes))
 - `filter` (Block List, Max: 1) A set of filters on an element within a journey view. (see [below for nested schema](#nestedblock--elements--filter))
 - `followed_by` (Block List) A list of JourneyViewLink objects, listing the elements downstream of this element. (see [below for nested schema](#nestedblock--elements--followed_by))
 
@@ -143,6 +144,16 @@ Optional:
 
 - `id` (String) The identifier for the element based on its type.
 - `source` (String) The source for the element (e.g. IVR, Voice, Chat). Used for informational purposes only.
+
+
+<a id="nestedblock--elements--display_attributes"></a>
+### Nested Schema for `elements.display_attributes`
+
+Required:
+
+- `col` (Number) The column position for the element in the journey view canvas.
+- `x` (Number) The horizontal position (x-coordinate) of the element on the journey view canvas.
+- `y` (Number) The vertical position (y-coordinate) of the element on the journey view canvas.
 
 
 <a id="nestedblock--elements--filter"></a>

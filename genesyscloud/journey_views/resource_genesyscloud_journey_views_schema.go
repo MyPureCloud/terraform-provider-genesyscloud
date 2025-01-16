@@ -109,6 +109,25 @@ var (
 			},
 		},
 	}
+	elementDisplayAttributesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"x": {
+				Description: "The horizontal position (x-coordinate) of the element on the journey view canvas.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"y": {
+				Description: "The vertical position (y-coordinate) of the element on the journey view canvas.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"col": {
+				Description: "The column position for the element in the journey view canvas.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+		},
+	}
 	filtersResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"type": {
@@ -142,6 +161,13 @@ var (
 				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        attributesResource,
+				MaxItems:    1,
+			},
+			"display_attributes": {
+				Description: "Display Attributes on an element in a journey view.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        elementDisplayAttributesResource,
 				MaxItems:    1,
 			},
 			"filter": {
