@@ -85,6 +85,12 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"outbound_notification_webhook_signature_secret_token"},
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
+				),
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {
