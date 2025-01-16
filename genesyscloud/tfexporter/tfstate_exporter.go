@@ -78,7 +78,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 		if resource.BlockType != "" {
 			resourceKey = resource.BlockType + "."
 		}
-		resourceKey = resource.Type + "." + resource.BlockLabel
+		resourceKey += resource.Type + "." + resource.BlockLabel
 		if resourceKey == ".." || resourceKey == "." { // This would catch the worst case of all empty strings
 			return diag.Errorf("invalid resource key generated for resource: %+v", resource)
 		}
