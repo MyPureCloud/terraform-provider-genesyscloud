@@ -35,17 +35,17 @@ func getAllContactLists(ctx context.Context, clientConfig *platformclientv2.Conf
 	return resources, nil
 }
 
-func createOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	contactListId, contactsCount, diagErr := uploadOutboundContactListContacts(ctx, d, meta)
+func createOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	contactListId, contactsCount, diagErr := uploadOutboundContactListBulkContacts(ctx, d, meta)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	log.Printf("Finished creating %s bulk contacts in contact list '%s'", contactsCount, contactListId)
-	return readOutboundContactListContact(ctx, d, meta)
+	log.Printf("Finished creating %d bulk contacts in contact list '%s'", contactsCount, contactListId)
+	return readOutboundContactListBulkContacts(ctx, d, meta)
 }
 
-func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func readOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getBulkContactsProxy(sdkConfig)
 	contactListId := d.Get("contact_list_id").(string)
@@ -55,22 +55,22 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 	}
 	d.Set("contact_list_contacts_count", contactListContactsCount)
 
-	log.Printf("Read %s bulk contact records in contact list '%s'", contactListContactsCount, contactListId)
+	log.Printf("Read %d bulk contact records in contact list '%s'", contactListContactsCount, contactListId)
 	return nil
 }
 
-func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func updateOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 
-	contactListId, contactsCount, diagErr := uploadOutboundContactListContacts(ctx, d, meta)
+	contactListId, contactsCount, diagErr := uploadOutboundContactListBulkContacts(ctx, d, meta)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	log.Printf("Finished updating %s bulk contacts in contact list '%s'", contactsCount, contactListId)
-	return readOutboundContactListContact(ctx, d, meta)
+	log.Printf("Finished updating %d bulk contacts in contact list '%s'", contactsCount, contactListId)
+	return readOutboundContactListBulkContacts(ctx, d, meta)
 }
 
-func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func deleteOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getBulkContactsProxy(sdkConfig)
 	contactListId := d.Get("contact_list_id").(string)
@@ -98,7 +98,7 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	})
 }
 
-func uploadOutboundContactListContacts(ctx context.Context, d *schema.ResourceData, meta any) (string, int, diag.Diagnostics) {
+func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) (string, int, diag.Diagnostics) {
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getBulkContactsProxy(sdkConfig)
@@ -146,7 +146,7 @@ func uploadOutboundContactListContacts(ctx context.Context, d *schema.ResourceDa
 				return retry.NonRetryableError(err)
 			}
 			if csvRecordsCount != contactListContactsCount {
-				return retry.RetryableError(fmt.Errorf("Number of records in the CSV file (%s) does not match the number of records in the contact list via the API (%s). Retrying.", csvRecordsCount, contactListContactsCount))
+				return retry.RetryableError(fmt.Errorf("Number of records in the CSV file (%d) does not match the number of records in the contact list via the API (%d). Retrying.", csvRecordsCount, contactListContactsCount))
 			}
 			return nil
 		})

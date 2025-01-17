@@ -21,14 +21,11 @@ func BulkContactsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllContactLists),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"contact_list_id":          {RefType: "genesyscloud_outbound_contact_list"},
-			"contact_list_template_id": {RefType: "genesyscloud_outbound_contact_list_template"},
+			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
+			// "contact_list_template_id": {RefType: "genesyscloud_outbound_contact_list_template"},
 		},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": ResourceOutboundContactListContactsBulk().Schema["filepath"],
-		},
-		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
-			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
 		},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: BulkContactsExporterResolver,
@@ -41,10 +38,10 @@ func ResourceOutboundContactListContactsBulk() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud Outbound Contact List Bulk Contacts Handling`,
 
-		CreateContext: provider.CreateWithPooledClient(createOutboundContactListContact),
-		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListContact),
-		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListContact),
-		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListContact),
+		CreateContext: provider.CreateWithPooledClient(createOutboundContactListBulkContacts),
+		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListBulkContacts),
+		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListBulkContacts),
+		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListBulkContacts),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
