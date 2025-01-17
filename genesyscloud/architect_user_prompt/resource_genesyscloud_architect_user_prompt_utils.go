@@ -40,10 +40,11 @@ type UserPromptResourceStruct struct {
 }
 
 func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformclientv2.Promptasset) *schema.Set {
-	if promptResources == nil || len(*promptResources) == 0 {
-		return nil
-	}
 	resourceSet := schema.NewSet(schema.HashResource(userPromptResource), []interface{}{})
+	if promptResources == nil || len(*promptResources) == 0 {
+		return resourceSet
+	}
+
 	for _, sdkPromptAsset := range *promptResources {
 		promptResource := make(map[string]interface{})
 
@@ -350,4 +351,49 @@ func buildUserPromptResourceForUpdate(resourceMap map[string]any) *platformclien
 	}
 
 	return &promptResource
+}
+
+//func customizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+//	// Defaults must be set on missing properties
+//	if !diff.NewValueKnown("properties") {
+//		// properties value not yet in final state. Nothing to do.
+//		return nil
+//	}
+//	id := diff.Id()
+//	if id == "" {
+//		return nil
+//	}
+//	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+//	phoneProxy := getPhoneProxy(sdkConfig)
+//
+//	// Retrieve defaults from the settings
+//	phone, resp, getErr := phoneProxy.getPhoneById(ctx, id)
+//	if getErr != nil {
+//		if util.IsStatus404(resp) {
+//			return nil
+//		}
+//		return fmt.Errorf("failed to read phone %s: %s", id, getErr)
+//	}
+//	return util.ApplyPropertyDefaults(diff, phone.Properties)
+//}
+
+func customizeResourceDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Defaults must be set on missing properties
+
+	fmt.Println("diff called")
+	fmt.Println(diff.HasChange("resources"))
+	fmt.Println(diff.Get("resources"))
+	if !diff.NewValueKnown("resources") {
+		//		// properties value not yet in final state. Nothing to do.
+		//		return nil
+		//	}
+		diff.SetNew("resources", []interface{}{})
+	}
+	if diff.HasChange("resources") {
+		new1 := diff.Get("resources")
+		if new1 == nil {
+			diff.SetNew("resources", []interface{}{})
+		}
+	}
+	return nil
 }
