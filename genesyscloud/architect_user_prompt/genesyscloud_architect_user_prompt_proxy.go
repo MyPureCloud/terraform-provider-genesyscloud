@@ -458,6 +458,10 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 
 			resourceLanguage := promptResourceMap["language"].(string)
 
+			if resourceLanguage == "" {
+				continue
+			}
+
 			if existingResources != nil {
 				// Check if language resource already exists
 				for _, r := range *existingResources {
@@ -502,6 +506,8 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 	return toCreate, toUpdate, toDelete, nil, nil
 }
 
+// the resources section of the schema is modified , to nil resources usecase.
+// this particular method will make sure identify an emptyResource section and accordingly creation and updation will happen.
 func checkEmptyResource(resources *schema.Set) bool {
 	if resources != nil && len(resources.List()) == 1 {
 		for _, promptResource := range resources.List() {
