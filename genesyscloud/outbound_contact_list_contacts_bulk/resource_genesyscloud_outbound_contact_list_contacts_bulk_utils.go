@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -28,6 +32,40 @@ func GenerateOutboundContactListContactsBulk(
     %s
     %s
 }`, ResourceType, resourceLabel, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
+}
+
+func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	cp := getBulkContactsProxy(sdkConfig)
+
+	contactListId := configMap["contact_list_id"].(string)
+	exportFileName := fmt.Sprintf("contacts_%s.csv", contactListId)
+
+	directoryPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(directoryPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	url, _, err := cp.getContactListContactsExportUrl(ctx, contactListId)
+	if err != nil {
+		return err
+	}
+
+	if err := files.DownloadExportFile(directoryPath, exportFileName, url); err != nil {
+		return err
+	}
+
+	fullPath := path.Join(directoryPath, exportFileName)
+	configMap["filepath"] = fullPath
+	hash, err := fileContentHashReader(fullPath)
+	if err != nil {
+		log.Printf("Error calculating file content hash: %v", err)
+		return err
+	}
+	resource.State.Attributes["file_content_hash"] = hash
+
+	return nil
 }
 
 func fileContentHashChanged(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {

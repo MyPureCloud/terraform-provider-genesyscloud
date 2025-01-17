@@ -30,6 +30,10 @@ func BulkContactsExporter() *resourceExporter.ResourceExporter {
 		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
 			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
 		},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: BulkContactsExporterResolver,
+			SubDirectory:              "bulkContacts",
+		},
 	}
 }
 
