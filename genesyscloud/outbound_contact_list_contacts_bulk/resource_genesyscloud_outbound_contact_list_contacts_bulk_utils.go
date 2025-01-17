@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -16,22 +15,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// TODO: FIX
-func GenerateOutboundContactListContactsBulk(
+func GenerateOutboundContactListBulkContacts(
 	resourceLabel,
 	contactListId,
-	contactId,
-	callable,
-	data string,
-	nestedBlocks ...string,
+	filepath,
+	contactIdName string,
 ) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
-		contact_list_id = %s
-		contact_id = "%s"
-    callable        = %s
-    %s
-    %s
-}`, ResourceType, resourceLabel, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
+	contact_list_id = %s
+	filepath = "%s"
+    contact_id_name = "%s"
+}`, ResourceType, resourceLabel, contactListId, filepath, contactIdName)
 }
 
 func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {

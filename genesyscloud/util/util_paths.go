@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"net/url"
+	"path/filepath"
 )
 
 // GetQueryParamValueFromUri takes a url and a query parameter key, and returns the value assigned to that parameter.
@@ -21,4 +22,10 @@ func GetQueryParamValueFromUri(uri, param string) (string, error) {
 		value = paramSlice[0]
 	}
 	return value, nil
+}
+
+func GetTestDataPath(elem ...string) string {
+	basePath := filepath.Join("..", "..", "test", "data")
+	subPath := filepath.Join(elem...)
+	return filepath.Join(basePath, subPath)
 }

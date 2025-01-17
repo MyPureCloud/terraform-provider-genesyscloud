@@ -13,6 +13,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
+var internalProxy *contactProxy
+
 type uploadContactListBulkContactsFunc func(ctx context.Context, p *contactProxy, contactListId, filepath, contactIdName string) (respBytes []byte, err error)
 type uploadContactListTemplateBulkContactsFunc func(ctx context.Context, p *contactProxy, contactListTemplateId, filepath, contactIdName, listNamePrefix, divisionIdForTargetContactLists string) (respBytes []byte, err error)
 type readContactListAndRecordLengthByIdFunc func(ctx context.Context, p *contactProxy, contactListId string) (contactList *platformclientv2.Contactlist, recordLength int, response *platformclientv2.APIResponse, err error)
@@ -52,7 +54,10 @@ func newBulkContactProxy(clientConfig *platformclientv2.Configuration) *contactP
 }
 
 func getBulkContactsProxy(clientConfig *platformclientv2.Configuration) *contactProxy {
-	return newBulkContactProxy(clientConfig)
+	if internalProxy == nil {
+		internalProxy = newBulkContactProxy(clientConfig)
+	}
+	return internalProxy
 }
 
 func (p *contactProxy) uploadContactListBulkContacts(ctx context.Context, contactListId, filepath, contactIdName string) (respBytes []byte, err error) {

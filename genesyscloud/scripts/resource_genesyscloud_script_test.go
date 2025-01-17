@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -20,18 +19,12 @@ import (
    Testcases for the resources schema
 */
 
-func getTestDataPath(elem ...string) string {
-	basePath := filepath.Join("..", "..", "test", "data")
-	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
-}
-
 func TestAccResourceScriptBasic(t *testing.T) {
 	var (
 		resourceLabel = "script"
 		name          = "testscriptname" + uuid.NewString()
 		nameUpdated   = "testscriptname" + uuid.NewString()
-		filePath      = getTestDataPath("resource", ResourceType, "test_script.json")
+		filePath      = util.GetTestDataPath("resource", ResourceType, "test_script.json")
 		substitutions = make(map[string]string)
 	)
 
@@ -86,7 +79,7 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 	var (
 		resourceLabel       = "script-subs"
 		name                = "testscriptname" + uuid.NewString()
-		filePath            = getTestDataPath("resource", ResourceType, "test_script.json")
+		filePath            = util.GetTestDataPath("resource", ResourceType, "test_script.json")
 		substitutions       = make(map[string]string)
 		substitutionsUpdate = make(map[string]string)
 

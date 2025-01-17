@@ -19,7 +19,7 @@ func TestAccDataSourceScript(t *testing.T) {
 		scriptDataSourceLabel = "script-data"
 		resourceLabel         = "script"
 		name                  = "tfscript" + uuid.NewString()
-		filePath              = getTestDataPath("resource", ResourceType, "test_script.json")
+		filePath              = GetTestDataPath("resource", ResourceType, "test_script.json")
 	)
 
 	resource.Test(t, resource.TestCase{
