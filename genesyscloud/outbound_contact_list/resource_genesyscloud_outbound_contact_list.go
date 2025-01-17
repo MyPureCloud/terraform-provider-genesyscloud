@@ -138,7 +138,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Reading Outbound Contact List %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		sdkContactList, resp, getErr := proxy.getOutboundContactlistById(ctx, d.Id())
+		sdkContactList, resp, getErr := proxy.GetOutboundContactlistById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List %s | error: %s", d.Id(), getErr), resp))
@@ -202,7 +202,7 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getOutboundContactlistById(ctx, d.Id())
+		_, resp, err := proxy.GetOutboundContactlistById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Outbound Contact List deleted

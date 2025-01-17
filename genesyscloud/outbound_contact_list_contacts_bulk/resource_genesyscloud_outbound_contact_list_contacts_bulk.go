@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -18,161 +15,147 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
-func getAllContacts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllContactLists(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	cp := getBulkContactsProxy(clientConfig)
 
-	_, resp, err := cp.getAllBulkContacts(ctx)
+	contactLists, resp, err := cp.getAllContactLists(ctx)
 	if err != nil {
-		msg := fmt.Sprintf("Failed to read all contact list contacts. Error: %v", err)
+		msg := fmt.Sprintf("Failed to read all contact lists. Error: %v", err)
 		if resp != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, msg, resp)
 		}
 		return nil, util.BuildDiagnosticError(ResourceType, msg, err)
 	}
 
-	// for _, contactEntry := range contactEntries {
-	// 	for _, contact := range *contactEntry.Contact {
-	// 		id := buildComplexContactId(*contactEntry.ContactList.Id, *contact.Id)
-	// 		name := *contactEntry.ContactList.Name + "_" + *contact.Id
-	// 		resources[id] = &resourceExporter.ResourceMeta{BlockLabel: name}
-	// 	}
-	// }
+	for _, contactList := range *contactLists {
+		resources[buildBulkContactId(*contactList.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *contactList.Name + "_contacts_bulk"}
+	}
 
 	return resources, nil
 }
 
 func createOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	cp := getBulkContactsProxy(sdkConfig)
-
-	contactListId := d.Get("contact_list_id").(string)
-	priority := d.Get("priority").(bool)
-	clearSystemData := d.Get("clear_system_data").(bool)
-	doNotQueue := d.Get("do_not_queue").(bool)
-
-	contactRequestBody := buildWritableContactFromResourceData(d)
-
-	log.Printf("Creating contact in contact list '%s'", contactListId)
-	contactResponseBody, resp, err := cp.createBulkContacts(ctx, contactListId, contactRequestBody, priority, clearSystemData, doNotQueue)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create contact for contact list '%s': %v", contactListId, err), resp)
+	contactListId, contactsCount, diagErr := uploadOutboundContactListContacts(ctx, d, meta)
+	if diagErr != nil {
+		return diagErr
 	}
 
-	if len(contactResponseBody) != 1 {
-		msg := fmt.Sprintf("expected to receive one dialer contact object in contact creation response. Received %v", len(contactResponseBody))
-		return util.BuildDiagnosticError(ResourceType, msg, fmt.Errorf("%v", msg))
-	}
-	contactId := *contactResponseBody[0].Id
-	_ = d.Set("contact_id", contactId)
-	id := buildComplexContactId(contactListId, contactId)
-	d.SetId(id)
-	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)
+	log.Printf("Finished creating %s bulk contacts in contact list '%s'", contactsCount, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
 }
 
 func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	var (
-		resp *platformclientv2.APIResponse
-		err  error
-
-		sdkConfig = meta.(*provider.ProviderMeta).ClientConfig
-		cp        = getBulkContactsProxy(sdkConfig)
-	)
-
-	contactListId, contactId := splitComplexContactId(d.Id())
-	if contactListId == "" {
-		contactListId = d.Get("contact_list_id").(string)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	cp := getBulkContactsProxy(sdkConfig)
+	contactListId := d.Get("contact_list_id").(string)
+	_, contactListContactsCount, _, err := cp.readContactListAndRecordLengthById(ctx, contactListId)
+	if err != nil {
+		return diag.Errorf("Failed to read contact list and record length by ID: %v", err)
 	}
-	if contactId == "" {
-		contactId = d.Get("contact_id").(string)
-	}
+	d.Set("contact_list_contacts_count", contactListContactsCount)
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactListContactsBulk(), constants.ConsistencyChecks(), ResourceType)
-
-	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		var contactResponseBody *platformclientv2.Dialercontact
-
-		log.Printf("Reading contact '%s' in contact list '%s'", contactId, contactListId)
-		contactResponseBody, resp, err = cp.readBulkContactsById(ctx, contactListId, contactId)
-		if err != nil {
-			if util.IsStatus404(resp) {
-				return retry.RetryableError(err)
-			}
-			return retry.NonRetryableError(err)
-		}
-
-		_ = d.Set("contact_list_id", *contactResponseBody.ContactListId)
-		_ = d.Set("contact_id", *contactResponseBody.Id)
-		resourcedata.SetNillableValue(d, "callable", contactResponseBody.Callable)
-		resourcedata.SetNillableValue(d, "data", contactResponseBody.Data)
-		// resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
-		// resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "contactable_status", contactResponseBody.ContactableStatus, flattenContactableStatus)
-
-		return cc.CheckState(d)
-	})
-	if retryErr != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to read contact by ID '%s' from contact list '%s'. Error: %v", contactId, contactListId, retryErr), resp)
-	}
-	log.Printf("Done reading contact '%s' in contact list '%s'", contactId, contactListId)
+	log.Printf("Read %s bulk contact records in contact list '%s'", contactListContactsCount, contactListId)
 	return nil
 }
 
 func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	cp := getBulkContactsProxy(sdkConfig)
 
-	contactRequestBody := buildDialerContactFromResourceData(d)
-	contactListId, contactId := splitComplexContactId(d.Id())
-	if contactListId == "" {
-		contactListId = d.Get("contact_list_id").(string)
-	}
-	if contactId == "" {
-		contactId = d.Get("contact_id").(string)
+	contactListId, contactsCount, diagErr := uploadOutboundContactListContacts(ctx, d, meta)
+	if diagErr != nil {
+		return diagErr
 	}
 
-	log.Printf("Updating contact '%s' in contact list '%s'", contactId, contactListId)
-	_, resp, err := cp.updateBulkContacts(ctx, contactListId, contactId, contactRequestBody)
-	if err != nil {
-		msg := fmt.Sprintf("failed to update contact '%s' for contact list '%s'. Error: %v", contactId, contactListId, err)
-		return util.BuildAPIDiagnosticError(ResourceType, msg, resp)
-	}
-
-	log.Printf("Finished updating contact '%s' in contact list '%s'", contactId, contactListId)
+	log.Printf("Finished updating %s bulk contacts in contact list '%s'", contactsCount, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
 }
 
 func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getBulkContactsProxy(sdkConfig)
+	contactListId := d.Get("contact_list_id").(string)
 
-	contactListId, contactId := splitComplexContactId(d.Id())
-	if contactListId == "" {
-		contactListId = d.Get("contact_list_id").(string)
-	}
-	if contactId == "" {
-		contactId = d.Get("contact_id").(string)
-	}
+	log.Printf("Clearing all bulk contacts from contact list '%s'", contactListId)
 
-	log.Printf("Deleting contact '%s' from contact list '%s'", contactId, contactListId)
-	resp, err := cp.deleteBulkContacts(ctx, contactListId, contactId)
-	if err != nil {
-		msg := fmt.Sprintf("failed to delete contact '%s' from contact list '%s'. Error: %v", contactId, contactListId, err)
-		return util.BuildAPIDiagnosticError(ResourceType, msg, resp)
-	}
+	cp.clearContactListBulkContacts(ctx, contactListId)
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		log.Printf("Reading contact '%s'", d.Id())
-		_, resp, err := cp.readBulkContactsById(ctx, contactListId, contactId)
+		log.Printf("Reading contacts for contact list '%s'", contactListId)
+		_, contactListContactsCount, resp, err := cp.readContactListAndRecordLengthById(ctx, contactListId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("Contact '%s' deleted", contactId)
+				log.Printf("Contact list '%s' no longer exists", contactListId)
 				return nil
 			}
-			msg := fmt.Sprintf("failed to delete contact '%s'. Error: %v", contactId, err)
+			msg := fmt.Sprintf("failed to read contact list '%s'. Error: %v", contactListId, err)
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, msg, resp))
 		}
-		msg := fmt.Sprintf("contact '%s' still exists in contact list '%s'", contactId, contactListId)
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, msg, resp))
+		if contactListContactsCount > 0 {
+			msg := fmt.Sprintf("contact list '%s' still has %d contacts", contactListId, contactListContactsCount)
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, msg, resp))
+		}
+		return nil
 	})
+}
+
+func uploadOutboundContactListContacts(ctx context.Context, d *schema.ResourceData, meta any) (string, int, diag.Diagnostics) {
+
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	cp := getBulkContactsProxy(sdkConfig)
+	contactListContactsCount := 0
+
+	filePath := d.Get("file_path").(string)
+	filePathHash, err := fileContentHashReader(filePath)
+	if err != nil {
+		return "", 0, diag.Errorf("Failed to read file content hash: %v", err)
+	}
+
+	contactListId := d.Get("contact_list_id").(string)
+	// contactListTemplateId := d.Get("contact_list_template_id").(string)
+	contactIdName := d.Get("contact_id_name").(string)
+	// listNamePrefix := d.Get("list_name_prefix").(string)
+	// divisionIdForTargetContactLists := d.Get("division_id_for_target_contact_lists").(string)
+
+	if filePath == "" {
+		// Shouldn't happen because Terraform should detect this in the schema first
+		return "", 0, diag.Errorf("File path is required")
+	}
+
+	if d.HasChange("file_content_hash") {
+		csvRecordsCount, err := cp.getCSVRecordCount(filePath)
+
+		if contactListId != "" {
+			_, err := cp.uploadContactListBulkContacts(ctx, contactListId, filePath, contactIdName)
+			if err != nil {
+				return "", 0, diag.Errorf("Failed to upload contact list bulk contacts: %v", err)
+			}
+		}
+		// if contactListTemplateId != "" {
+		// 	_, err := cp.uploadContactListTemplateBulkContacts(ctx, contactListTemplateId, filePath, contactIdName, listNamePrefix, divisionIdForTargetContactLists)
+		// 	if err != nil {
+		// 		return diag.Errorf("Failed to upload contact list template bulk contacts: %v", err)
+		// 	}
+		// }
+		// Validate number of records
+		diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+			// Sleep for 5 seconds before (re)trying
+			time.Sleep(5 * time.Second)
+
+			_, contactListContactsCount, _, err = cp.readContactListAndRecordLengthById(ctx, contactListId)
+			if err != nil {
+				return retry.NonRetryableError(err)
+			}
+			if csvRecordsCount != contactListContactsCount {
+				return retry.RetryableError(fmt.Errorf("Number of records in the CSV file (%s) does not match the number of records in the contact list via the API (%s). Retrying.", csvRecordsCount, contactListContactsCount))
+			}
+			return nil
+		})
+		if diagErr != nil {
+			return contactListId, contactListContactsCount, diag.Errorf("Failed to validate number of records in the CSV file: %v", diagErr)
+		}
+
+		d.Set("file_content_hash", filePathHash)
+		d.SetId(buildBulkContactId(contactListId))
+	}
+	return contactListId, contactListContactsCount, nil
 }

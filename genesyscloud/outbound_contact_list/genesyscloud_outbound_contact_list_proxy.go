@@ -74,8 +74,8 @@ func (p *OutboundContactlistProxy) getOutboundContactlistIdByName(ctx context.Co
 	return p.getOutboundContactlistIdByNameAttr(ctx, p, name)
 }
 
-// getOutboundContactlistById returns a single Genesys Cloud outbound contactlist by Id
-func (p *OutboundContactlistProxy) getOutboundContactlistById(ctx context.Context, id string) (outboundContactlist *platformclientv2.Contactlist, response *platformclientv2.APIResponse, err error) {
+// GetOutboundContactlistById returns a single Genesys Cloud outbound contactlist by Id
+func (p *OutboundContactlistProxy) GetOutboundContactlistById(ctx context.Context, id string) (outboundContactlist *platformclientv2.Contactlist, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundContactlistByIdAttr(ctx, p, id)
 }
 

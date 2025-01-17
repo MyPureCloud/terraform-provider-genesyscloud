@@ -1,160 +1,19 @@
 package outbound_contact_list_contacts_bulk
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"log"
+	"os"
 	"strings"
-	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
-// buildWritableContactFromResourceData used to build the request body for contact creation
-func buildWritableContactFromResourceData(d *schema.ResourceData) platformclientv2.Writabledialercontact {
-	contactId, _ := d.Get("contact_id").(string)
-	contactListId := d.Get("contact_list_id").(string)
-	callable := d.Get("callable").(bool)
-
-	var contactRequest = platformclientv2.Writabledialercontact{
-		ContactListId: &contactListId,
-		Callable:      &callable,
-	}
-
-	if contactId != "" {
-		contactRequest.Id = &contactId
-	}
-
-	if dataMap, ok := d.Get("data").(map[string]any); ok {
-		stringMap := utillists.ConvertMapStringAnyToMapStringString(dataMap)
-		contactRequest.Data = &stringMap
-	}
-
-	if phoneNumberStatus := buildPhoneNumberStatus(d); phoneNumberStatus != nil {
-		contactRequest.PhoneNumberStatus = phoneNumberStatus
-	}
-	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
-		contactRequest.ContactableStatus = contactableStatus
-	}
-	return contactRequest
-}
-
-// buildDialerContactFromResourceData used to build the request body for contact updates
-func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2.Dialercontact {
-	contactListId := d.Get("contact_list_id").(string)
-	callable := d.Get("callable").(bool)
-	var contactRequest = platformclientv2.Dialercontact{
-		ContactListId: &contactListId,
-		Callable:      &callable,
-	}
-	if dataMap, ok := d.Get("data").(map[string]any); ok {
-		stringMap := utillists.ConvertMapStringAnyToMapStringString(dataMap)
-		contactRequest.Data = &stringMap
-	}
-	if phoneNumberStatus := buildPhoneNumberStatus(d); phoneNumberStatus != nil {
-		contactRequest.PhoneNumberStatus = phoneNumberStatus
-	}
-	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
-		contactRequest.ContactableStatus = contactableStatus
-	}
-	return contactRequest
-}
-
-func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2.Contactablestatus {
-	contactableStatus, ok := d.Get("contactable_status").(*schema.Set)
-	if !ok || len(contactableStatus.List()) == 0 {
-		return nil
-	}
-
-	contactableStatusMap := make(map[string]platformclientv2.Contactablestatus)
-
-	contactableStatusList := contactableStatus.List()
-	for _, status := range contactableStatusList {
-		currentStatusMap := status.(map[string]any)
-		mediaType := currentStatusMap["media_type"].(string)
-		contactable := currentStatusMap["contactable"].(bool)
-
-		columnStatusMap := make(map[string]platformclientv2.Columnstatus)
-		if columnStatus, ok := currentStatusMap["column_status"].(*schema.Set); ok {
-			columnStatusList := columnStatus.List()
-			for _, status := range columnStatusList {
-				currentColumnStatusMap := status.(map[string]any)
-				column := currentColumnStatusMap["column"].(string)
-				columnContactable := currentColumnStatusMap["contactable"].(bool)
-				columnStatusMap[column] = platformclientv2.Columnstatus{
-					Contactable: &columnContactable,
-				}
-			}
-		}
-		contactableStatusMap[mediaType] = platformclientv2.Contactablestatus{
-			Contactable:  &contactable,
-			ColumnStatus: &columnStatusMap,
-		}
-	}
-
-	return &contactableStatusMap
-}
-
-func buildPhoneNumberStatus(d *schema.ResourceData) *map[string]platformclientv2.Phonenumberstatus {
-	phoneNumberStatus, ok := d.Get("phone_number_status").(*schema.Set)
-	if !ok || len(phoneNumberStatus.List()) == 0 {
-		return nil
-	}
-
-	phoneNumberStatusMap := make(map[string]platformclientv2.Phonenumberstatus)
-
-	phoneNumberStatusList := phoneNumberStatus.List()
-	for _, status := range phoneNumberStatusList {
-		statusMap := status.(map[string]any)
-		key := statusMap["key"].(string)
-		callable, _ := statusMap["callable"].(bool)
-		phoneNumberStatusMap[key] = platformclientv2.Phonenumberstatus{
-			Callable: &callable,
-		}
-	}
-
-	return &phoneNumberStatusMap
-}
-
-// func flattenPhoneNumberStatus(phoneNumberStatus *map[string]platformclientv2.Phonenumberstatus) *schema.Set {
-// 	pnsSet := schema.NewSet(schema.HashResource(phoneNumberStatusResource), []interface{}{})
-// 	for k, v := range *phoneNumberStatus {
-// 		pns := make(map[string]any)
-// 		pns["key"] = k
-// 		resourcedata.SetMapValueIfNotNil(pns, "callable", v.Callable)
-// 		pnsSet.Add(pns)
-// 	}
-// 	return pnsSet
-// }
-
-// func flattenContactableStatus(contactableStatus *map[string]platformclientv2.Contactablestatus) *schema.Set {
-// 	csSet := schema.NewSet(schema.HashResource(contactableStatusResource), []interface{}{})
-// 	for k, v := range *contactableStatus {
-// 		cs := make(map[string]any)
-// 		cs["media_type"] = k
-// 		cs["contactable"] = *v.Contactable
-// 		if v.ColumnStatus != nil {
-// 			cs["column_status"] = flattenColumnStatus(v.ColumnStatus)
-// 		}
-// 		csSet.Add(cs)
-// 	}
-// 	return csSet
-// }
-
-// func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus) *schema.Set {
-// 	if columnStatus == nil {
-// 		return nil
-// 	}
-// 	csSet := schema.NewSet(schema.HashResource(columnStatusResource), []interface{}{})
-// 	for k, v := range *columnStatus {
-// 		cs := make(map[string]any)
-// 		cs["column"] = k
-// 		cs["contactable"] = *v.Contactable
-// 		csSet.Add(cs)
-// 	}
-// 	return csSet
-// }
-
-func GenerateOutboundContactListContact(
+// TODO: FIX
+func GenerateOutboundContactListContactsBulk(
 	resourceLabel,
 	contactListId,
 	contactId,
@@ -171,39 +30,69 @@ func GenerateOutboundContactListContact(
 }`, ResourceType, resourceLabel, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
 }
 
-func GeneratePhoneNumberStatus(key, callable string) string {
-	return fmt.Sprintf(`
-	phone_number_status {
-		key      = "%s"
-        callable = %s
-	}`, key, callable)
-}
+func fileContentHashChanged(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+	filepath := d.Get("filepath").(string)
 
-func GenerateContactableStatus(mediaType, contactable string, nestedBlocks ...string) string {
-	return fmt.Sprintf(`
-	contactable_status {
-		media_type  = "%s"
-		contactable = %s
-		%s
-	}`, mediaType, contactable, strings.Join(nestedBlocks, "\n"))
-}
-
-func GenerateColumnStatus(column, contactable string) string {
-	return fmt.Sprintf(`
-		column_status {
-			column      = "%s"
-			contactable = %s
-		}`, column, contactable)
-}
-
-func buildComplexContactId(contactListId string, contactId string) string {
-	return fmt.Sprintf("%s:%s", contactListId, contactId)
-}
-
-func splitComplexContactId(complexContactId string) (string, string) {
-	if strings.Contains(complexContactId, ":") {
-		split := strings.SplitN(complexContactId, ":", 2)
-		return split[0], split[1]
+	newHash, err := fileContentHashReader(filepath)
+	if err != nil {
+		log.Printf("Error calculating file content hash: %v", err)
+		return false
 	}
-	return "", complexContactId
+
+	// Get the current hash value
+	oldHash := d.Get("file_content_hash").(string)
+
+	// Return true if the hashes are different
+	return oldHash != newHash
+}
+
+func fileContentHashReader(filepath string) (string, error) {
+	// Read file content
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		log.Printf("Error reading file content: %v", err)
+		return "", err
+	}
+
+	// Calculate SHA256 hash of file content
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := hex.EncodeToString(hasher.Sum(nil))
+
+	return hash, nil
+}
+
+// func importTemplateAttributesSchemaLogic() schema.CustomizeDiffFunc {
+// 	return func(ctx context.Context, diff *schema.ResourceDiff, i interface{}) error {
+// 		templateID := diff.Get("contact_list_template_id").(string)
+// 		contactListID := diff.Get("contact_list_id").(string)
+// 		listNamePrefix := diff.Get("list_name_prefix").(string)
+// 		divisionID := diff.Get("division_id_for_target_contact_lists").(string)
+
+// 		if templateID != "" {
+// 			// If template ID is set, list_name_prefix must be set
+// 			if listNamePrefix == "" {
+// 				return fmt.Errorf("list_name_prefix is required when contact_list_template_id is set")
+// 			}
+// 			// contact_list_id should not be set
+// 			if contactListID != "" {
+// 				return fmt.Errorf("contact_list_id cannot be set when using contact_list_template_id")
+// 			}
+// 		} else if contactListID != "" {
+// 			// If contact_list_id is set, template-related attributes should not be set
+// 			if listNamePrefix != "" {
+// 				return fmt.Errorf("list_name_prefix cannot be set when using contact_list_id")
+// 			}
+// 			if divisionID != "" {
+// 				return fmt.Errorf("division_id_for_target_contact_lists cannot be set when using contact_list_id")
+// 			}
+// 		}
+
+// 		return nil
+// 	}
+// }
+
+// We add the extra suffix to the id in order to prevent conflicts with actual contact lists
+func buildBulkContactId(contactListId string) string {
+	return fmt.Sprintf("%s_contacts_bulk", contactListId)
 }
