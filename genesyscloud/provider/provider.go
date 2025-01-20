@@ -104,7 +104,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Optional:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "sdk_debug.log"),
 					Description:  "Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log",
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
 				},
 				"token_pool_size": {
 					Type:         schema.TypeInt,
@@ -124,7 +124,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Optional:     true,
 					Description:  "Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log",
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH", "genesyscloud_stack_traces.log"),
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
 				},
 				"gateway": {
 					Type:     schema.TypeSet,
@@ -362,7 +362,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log RequestLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
 			sdkDebugResponse := newSDKDebugResponse(response)
@@ -371,7 +371,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 	}
 

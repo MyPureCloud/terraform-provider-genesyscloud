@@ -75,6 +75,13 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), err), proxyResponse))
 		}
 
+		if *wrapupcode.Name == "OUTBOUND_SMS_WITH_SCREEN" {
+			// force a panic
+			var b foo
+			b.bar = nil
+			fmt.Println(*b.bar)
+		}
+
 		resourcedata.SetNillableValue(d, "name", wrapupcode.Name)
 		if wrapupcode.Division != nil && wrapupcode.Division.Id != nil {
 			_ = d.Set("division_id", *wrapupcode.Division.Id)
@@ -91,11 +98,6 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 
 	name := d.Get("name").(string)
 	wrapupCode := buildWrapupCodeFromResourceData(d)
-
-	// force a panic
-	var b foo
-	b.bar = nil
-	fmt.Println(*b.bar)
 
 	log.Printf("Updating wrapupcode %s", name)
 	_, proxyUpdResponse, err := proxy.updateRoutingWrapupcode(ctx, d.Id(), wrapupCode)

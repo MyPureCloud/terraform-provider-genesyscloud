@@ -1026,7 +1026,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				// This calls into the resource's ReadContext method which
 				// will block until it can acquire a pooled client config object.
 				ctyType := res.CoreConfigSchema().ImpliedType()
-				instanceState, err := getResourceState(ctx, res, id, resMeta, meta, exportComputed)
+				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				if err != nil {
 					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, err)
@@ -1144,7 +1144,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}, exportComputed bool) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
@@ -1158,8 +1158,11 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		}
 	}
 
-	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
+	log.Println("This Is Important 1")
+	refreshFunc := wrapRefreshWithoutUpgradeWithRecover(resource.RefreshWithoutUpgrade)
+	state, err := refreshFunc(ctx, instanceState, meta)
 	if err != nil {
+		log.Println("This Is Important 2")
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
 			return nil, nil
@@ -1167,6 +1170,7 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		log.Printf("Error during RefreshWithoutUpgrade for resource  %s, %v", resID, err)
 		return nil, err
 	}
+	log.Println("This Is Important 3")
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
 		log.Printf("Empty State for resource %s, %v", resID, state)
@@ -1174,6 +1178,24 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	}
 
 	return state, nil
+}
+
+type refreshWithoutUpgradeFunc func(context.Context, *terraform.InstanceState, any) (*terraform.InstanceState, diag.Diagnostics)
+
+// wrapRefreshWithoutUpgradeWithRecover will wrap the function RefreshWithoutUpgrade and add a recover if log_stack_traces is true
+func wrapRefreshWithoutUpgradeWithRecover(method refreshWithoutUpgradeFunc) refreshWithoutUpgradeFunc {
+	return func(ctx context.Context, state *terraform.InstanceState, meta any) (*terraform.InstanceState, diag.Diagnostics) {
+		defer func() {
+			providerMeta, ok := meta.(*provider.ProviderMeta)
+			if !ok || !providerMeta.LogStackTraces {
+				return
+			}
+			if r := recover(); r != nil {
+				log.Printf("wrapRefreshWithoutUpgradeWithRecover: Recovered from panic while refreshing resource state: %v", r)
+			}
+		}()
+		return method(ctx, state, meta)
+	}
 }
 
 func correctCustomFunctions(config string) string {

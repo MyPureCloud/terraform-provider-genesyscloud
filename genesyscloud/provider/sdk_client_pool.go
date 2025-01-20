@@ -102,11 +102,13 @@ type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (re
 type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
-	return schema.CreateContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method, "CreateWithPooledClient")
+	return schema.CreateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func ReadWithPooledClient(method resContextFunc) schema.ReadContextFunc {
-	return schema.ReadContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method, "ReadWithPooledClient")
+	return schema.ReadContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
@@ -120,11 +122,11 @@ func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 
 // wrapWithRecover will wrap the resource context function with a recover if log_stack_traces is set to true in the provider config
 func wrapWithRecover(method resContextFunc, recoveringFunctionName string) resContextFunc {
-	return func(ctx context.Context, r *schema.ResourceData, i interface{}) diag.Diagnostics {
-		providerMeta := i.(*ProviderMeta)
+	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
+		providerMeta, ok := meta.(*ProviderMeta)
 
-		if !providerMeta.LogStackTraces {
-			return method(ctx, r, i)
+		if !ok || !providerMeta.LogStackTraces {
+			return method(ctx, r, meta)
 		}
 
 		defer func() {
@@ -137,14 +139,14 @@ func wrapWithRecover(method resContextFunc, recoveringFunctionName string) resCo
 			}
 		}()
 
-		return method(ctx, r, i)
+		return method(ctx, r, meta)
 	}
 }
 
 func writeStackTracesToFile(r any, recoveringFunction, stackTraceLogsFilePath string) (err error) {
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("error caught inside writeStackTracesToFile: %w", err)
+			err = fmt.Errorf("in writeStackTracesToFile: %w", err)
 		}
 	}()
 
@@ -161,7 +163,7 @@ func writeStackTracesToFile(r any, recoveringFunction, stackTraceLogsFilePath st
 	}
 
 	_ = f.Close()
-	return nil
+	return err
 }
 
 // Inject a pooled SDK client connection into a resource method's meta argument
