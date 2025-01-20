@@ -166,8 +166,9 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     }
   }
   authentication_settings {
-    enabled        = true
-    integration_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    enabled               = true
+    integration_id        = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    allow_session_upgrade = true
   }
 }
 ```
@@ -206,6 +207,10 @@ Required:
 
 - `enabled` (Boolean) Indicate if these auth is required for this deployment. If, for example, this flag is set to true then webmessaging sessions can not send messages unless the end-user is authenticated.
 - `integration_id` (String) The integration identifier which contains the auth settings required on the deployment.
+
+Optional:
+
+- `allow_session_upgrade` (Boolean) Allow end-users to upgrade an anonymous session to authenticated conversation.
 
 
 <a id="nestedblock--cobrowse"></a>
