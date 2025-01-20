@@ -113,6 +113,19 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 					ValidateFunc: validation.IntBetween(1, 20),
 				},
+				"log_stack_traces": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES", false),
+					Description: "If set to true the provider will log stack traces to a file instead of crashing, where possible. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES` environment variable.",
+				},
+				"log_stack_traces_file_path": {
+					Type:         schema.TypeString,
+					Optional:     true,
+					Description:  "Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log",
+					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH", "genesyscloud_stack_traces.log"),
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+				},
 				"gateway": {
 					Type:     schema.TypeSet,
 					Optional: true,
@@ -237,10 +250,12 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 }
 
 type ProviderMeta struct {
-	Version      string
-	ClientConfig *platformclientv2.Configuration
-	Domain       string
-	Organization *platformclientv2.Organization
+	Version               string
+	ClientConfig          *platformclientv2.Configuration
+	Domain                string
+	Organization          *platformclientv2.Organization
+	LogStackTraces        bool
+	StackTraceLogFilePath string
 }
 
 func configure(version string) schema.ConfigureContextFunc {
@@ -258,11 +273,15 @@ func configure(version string) schema.ConfigureContextFunc {
 		}
 		orgDefaultCountryCode = *currentOrg.DefaultCountryCode
 
+		stackTraceLogsFilePath, _ := data.Get("log_stack_traces_file_path").(string)
+
 		return &ProviderMeta{
-			Version:      version,
-			ClientConfig: defaultConfig,
-			Domain:       getRegionDomain(data.Get("aws_region").(string)),
-			Organization: currentOrg,
+			Version:               version,
+			ClientConfig:          defaultConfig,
+			Domain:                getRegionDomain(data.Get("aws_region").(string)),
+			Organization:          currentOrg,
+			LogStackTraces:        data.Get("log_stack_traces").(bool),
+			StackTraceLogFilePath: stackTraceLogsFilePath,
 		}, nil
 	}
 }

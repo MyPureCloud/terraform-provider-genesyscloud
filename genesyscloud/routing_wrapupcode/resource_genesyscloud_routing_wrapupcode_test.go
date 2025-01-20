@@ -13,6 +13,39 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
+func TestAccResourceRoutingWrapupcodeABC(t *testing.T) {
+	var (
+		codeResourceLabel1 = "routing-wrapupcode1"
+		codeName1          = "Terraform Code-" + uuid.NewString()
+
+		fullPath = ResourceType + "." + codeResourceLabel1
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateRoutingWrapupcodeResource(
+					codeResourceLabel1,
+					codeName1,
+					util.NullValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullPath, "name", codeName1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      fullPath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyWrapupcodesDestroyed,
+	})
+}
+
 func TestAccResourceRoutingWrapupcode(t *testing.T) {
 	var (
 		codeResourceLabel1 = "routing-wrapupcode1"

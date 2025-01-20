@@ -36,6 +36,10 @@ func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv
 	return resources, nil
 }
 
+type foo struct {
+	bar *string
+}
+
 func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingWrapupcodeProxy(sdkConfig)
@@ -87,6 +91,11 @@ func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 
 	name := d.Get("name").(string)
 	wrapupCode := buildWrapupCodeFromResourceData(d)
+
+	// force a panic
+	var b foo
+	b.bar = nil
+	fmt.Println(*b.bar)
 
 	log.Printf("Updating wrapupcode %s", name)
 	_, proxyUpdResponse, err := proxy.updateRoutingWrapupcode(ctx, d.Id(), wrapupCode)

@@ -2,7 +2,10 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"runtime/debug"
 	"sync"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -107,11 +110,58 @@ func ReadWithPooledClient(method resContextFunc) schema.ReadContextFunc {
 }
 
 func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
-	return schema.UpdateContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method, "UpdateWithPooledClient")
+	return schema.UpdateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 	return schema.DeleteContextFunc(runWithPooledClient(method))
+}
+
+// wrapWithRecover will wrap the resource context function with a recover if log_stack_traces is set to true in the provider config
+func wrapWithRecover(method resContextFunc, recoveringFunctionName string) resContextFunc {
+	return func(ctx context.Context, r *schema.ResourceData, i interface{}) diag.Diagnostics {
+		providerMeta := i.(*ProviderMeta)
+
+		if !providerMeta.LogStackTraces {
+			return method(ctx, r, i)
+		}
+
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("%s: Writing stack traces to file", recoveringFunctionName)
+				err := writeStackTracesToFile(r, recoveringFunctionName, providerMeta.StackTraceLogFilePath)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}()
+
+		return method(ctx, r, i)
+	}
+}
+
+func writeStackTracesToFile(r any, recoveringFunction, stackTraceLogsFilePath string) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("error caught inside writeStackTracesToFile: %w", err)
+		}
+	}()
+
+	traces := fmt.Sprintf("Recovered in %s: %v. Stacktrace: %s", recoveringFunction, r, string(debug.Stack()))
+	f, err := os.Create(stackTraceLogsFilePath)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.WriteString(traces)
+	if err != nil {
+		_ = f.Close()
+		return err
+	}
+
+	_ = f.Close()
+	return nil
 }
 
 // Inject a pooled SDK client connection into a resource method's meta argument
