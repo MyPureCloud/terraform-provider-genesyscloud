@@ -1,6 +1,7 @@
 package knowledgedocumentvariation
 
 import (
+	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -13,7 +14,7 @@ import (
 
 const ResourceType = "genesyscloud_knowledge_document_variation"
 
-// SetRegistrar registers all of the resources and exporters in the package
+// SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(ResourceType, ResourceKnowledgeDocumentVariation())
 	l.RegisterExporter(ResourceType, KnowledgeDocumentVariationExporter())
@@ -70,7 +71,7 @@ var (
 
 	contextBody = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"id": {
+			"context_id": {
 				Description: "The globally unique identifier for the knowledge context",
 				Type:        schema.TypeString,
 				Required:    true,
@@ -80,7 +81,7 @@ var (
 
 	valuesBody = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"id": {
+			"value_id": {
 				Description: "The globally unique identifier for the knowledge context value",
 				Type:        schema.TypeString,
 				Required:    true,
@@ -146,6 +147,12 @@ var (
 				Optional:    true,
 				Elem:        documentContentBlock,
 			},
+			"properties": {
+				Description: "The properties for the paragraph",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        paragraphProperties,
+			},
 		},
 	}
 
@@ -172,6 +179,12 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"properties": {
+				Description: "The properties for the image",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        videoImageProperties,
+			},
 		},
 	}
 
@@ -182,11 +195,23 @@ var (
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"properties": {
+				Description: "The properties for the video",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        videoImageProperties,
+			},
 		},
 	}
 
 	documentBodyList = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"properties": {
+				Description: "Properties for the UnorderedList or OrderedList",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        listProperties,
+			},
 			"blocks": {
 				Description: "The list of items for an OrderedList or an UnorderedList.",
 				Type:        schema.TypeList,
@@ -209,6 +234,12 @@ var (
 				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        documentContentBlock,
+			},
+			"properties": {
+				Description: "The properties for the list block",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        listBlockProperties,
 			},
 		},
 	}
@@ -235,13 +266,20 @@ var (
 				Optional:    true,
 				Elem:        documentBodyImage,
 			},
+			"video": {
+				Description: "Video. It must contain a value if the type of the block is Video.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        documentBodyVideo,
+			},
 		},
 	}
 
 	documentText = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"text": {
-				Description: "Text.",
+				Description: "Text",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -255,6 +293,174 @@ var (
 				Description: "The URL of the page that the hyperlink goes to.",
 				Type:        schema.TypeString,
 				Optional:    true,
+			},
+			"properties": {
+				Description: "The properties for the text",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        textProperties,
+			},
+		},
+	}
+
+	textProperties = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"font_size": {
+				Description:  "The font size for the text. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"XxSmall", "XSmall", "Small", "Medium", "Large", "XLarge", "XxLarge", "XxxLarge"}, true),
+			},
+			"text_color": {
+				Description: "The text color for the text. The valid values in hex color code representation. For example black color - #000000",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"background_color": {
+				Description: "The background color for the text. The valid values in hex color code representation. For example black color - #000000",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	videoImageProperties = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"background_color": {
+				Description: "The background color for the property. The valid values in hex color code representation. For example black color - #000000",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"align": {
+				Description:  "The align type for the property. Valid values: Center, Left, Right, Justify",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Center", "Left", "Right", "Justify"}, true),
+			},
+			"indentation": {
+				Description: "The indentation for the property. The valid values in 'em'",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					oldFloat, _ := strconv.ParseFloat(old, 32)
+					newFloat, _ := strconv.ParseFloat(new, 32)
+					return float32(oldFloat) == float32(newFloat)
+				},
+			},
+		},
+	}
+
+	listProperties = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"unordered_type": {
+				Description:  "The type of icon for the unordered list.Valid values: Normal, Square, Circle, None",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Normal", "Square", "Circle", "None"}, false),
+			},
+			"ordered_type": {
+				Description:  "The type of icon for the ordered list.Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Number", "LowerAlpha", "LowerGreek", "LowerRoman", "UpperAlpha", "UpperRoman", "None"}, false),
+			},
+		},
+	}
+
+	listBlockProperties = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"font_size": {
+				Description:  "The font size for the list item. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"XxSmall", "XSmall", "Small", "Medium", "Large", "XLarge", "XxLarge", "XxxLarge"}, true),
+			},
+			"font_type": {
+				Description:  "The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Paragraph", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Preformatted"}, true),
+			},
+			"text_color": {
+				Description: "The text color for the list item. The valid values in hex color code representation. For example black color - #000000",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"background_color": {
+				Description: "The background color for the list item. The valid values in hex color code representation. For example black color - #000000",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"align": {
+				Description:  "The align type for the list item.Valid values: Center, Left, Right, Justify",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Center", "Left", "Right", "Justify"}, true),
+			},
+			"indentation": {
+				Description: "The indentation property for the list item. The valid values in 'em'",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					oldFloat, _ := strconv.ParseFloat(old, 32)
+					newFloat, _ := strconv.ParseFloat(new, 32)
+					return float32(oldFloat) == float32(newFloat)
+				},
+			},
+			"unordered_type": {
+				Description:  "The type of icon for the unordered list.Valid values: Normal, Square, Circle, None",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Normal", "Square", "Circle", "None"}, false),
+			},
+			"ordered_type": {
+				Description:  "The type of icon for the ordered list.Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Number", "LowerAlpha", "LowerGreek", "LowerRoman", "UpperAlpha", "UpperRoman", "None"}, false),
+			},
+		},
+	}
+
+	paragraphProperties = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"font_size": {
+				Description:  "The font size for the paragraph. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"XxSmall", "XSmall", "Small", "Medium", "Large", "XLarge", "XxLarge", "XxxLarge"}, true),
+			},
+			"font_type": {
+				Description:  "The font type for the paragraph.Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Paragraph", "Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Preformatted"}, true),
+			},
+			"text_color": {
+				Description: "The text color for the paragraph. The valid values in hex color code representation. For example black color - #000000",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"background_color": {
+				Description: "The background color for the paragraph. The valid values in hex color code representation. For example black color - #000000",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"align": {
+				Description:  "The align type for the paragraph.Valid values: Center, Left, Right, Justify",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Center", "Left", "Right", "Justify"}, true),
+			},
+			"indentation": {
+				Description: "The indentation color for the paragraph. The valid values in 'em'",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					oldFloat, _ := strconv.ParseFloat(old, 32)
+					newFloat, _ := strconv.ParseFloat(new, 32)
+					return float32(oldFloat) == float32(newFloat)
+				},
 			},
 		},
 	}

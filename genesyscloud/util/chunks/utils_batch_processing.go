@@ -37,7 +37,6 @@ func ChunkItems[T, P any](items []T, mapBuilder func(T) P, chunkSize int) (chunk
 
 // Generic function that takes array of Chunks and then Processes each Chunk with the defined Funcion.
 // Typically Processor Function would be a REST API call
-
 func ProcessChunks[T any](chunks []T, chunkProcessor func(T) diag.Diagnostics) diag.Diagnostics {
 	var err diag.Diagnostics
 	u.Map(chunks, func(chunk T) diag.Diagnostics {

@@ -46,7 +46,6 @@ import (
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
-	"terraform-provider-genesyscloud/genesyscloud/knowledge"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -287,7 +286,6 @@ func registerResources() {
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledgeDocumentVariation.SetRegistrar(regInstance)                   //Registering knowledge document variation
-	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
 	externalOrganization.SetRegistrar(regInstance)                         //Registering external organization
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
