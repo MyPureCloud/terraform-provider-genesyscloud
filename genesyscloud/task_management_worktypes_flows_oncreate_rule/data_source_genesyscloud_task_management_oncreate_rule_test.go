@@ -1,4 +1,4 @@
-package task_management_oncreate_rule
+package task_management_worktypes_flows_oncreate_rule
 
 import (
 	"fmt"
@@ -64,8 +64,15 @@ func TestAccDataSourceTaskManagementOnCreateRule(t *testing.T) {
 						ResourceType+"."+onCreateRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+onCreateRuleDataSourceLabel, "id", ResourceType+"."+onCreateRuleResourceLabel, "id"),
+					validateRuleIds(
+						"data."+ResourceType+"."+onCreateRuleDataSourceLabel, "id", ResourceType+"."+onCreateRuleResourceLabel, "id",
+					),
 				),
+			},
+			{
+				ResourceName:      ResourceType + "." + onCreateRuleResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

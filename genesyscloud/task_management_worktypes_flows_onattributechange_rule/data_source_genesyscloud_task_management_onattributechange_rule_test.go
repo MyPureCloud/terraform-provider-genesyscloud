@@ -1,4 +1,4 @@
-package task_management_onattributechange_rule
+package task_management_worktypes_flows_onattributechange_rule
 
 import (
 	"fmt"
@@ -80,8 +80,15 @@ func TestAccDataSourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 						ResourceType+"."+onAttributeChangeRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+onAttributeChangeRuleDataSourceLabel, "id", ResourceType+"."+onAttributeChangeRuleResourceLabel, "id"),
+					validateRuleIds(
+						"data."+ResourceType+"."+onAttributeChangeRuleDataSourceLabel, "id", ResourceType+"."+onAttributeChangeRuleResourceLabel, "id",
+					),
 				),
+			},
+			{
+				ResourceName:      ResourceType + "." + onAttributeChangeRuleResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

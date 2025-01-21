@@ -1,4 +1,4 @@
-package task_management_oncreate_rule
+package task_management_worktypes_flows_oncreate_rule
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 
 /*
 The resource_genesyscloud_task_management_oncreate_rule_test.go contains all of the test cases for running the resource
-tests for task_management_oncreate_rule.
+tests for task_management_worktypes_flows_oncreate_rule.
 */
 
 func TestAccResourceTaskManagementOnCreateRule(t *testing.T) {
@@ -85,6 +85,11 @@ func TestAccResourceTaskManagementOnCreateRule(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+onCreateRuleResourceLabel, "name", onCreateRuleName2),
 				),
 			},
+			{
+				ResourceName:      ResourceType + "." + onCreateRuleResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 		CheckDestroy: testVerifyTaskManagementOnCreateRuleDestroyed,
 	})
@@ -97,7 +102,7 @@ func testVerifyTaskManagementOnCreateRuleDestroyed(state *terraform.State) error
 			continue
 		}
 
-		worktypeId, onCreateRuleId := splitOnCreateRuleTerraformId(res.Primary.ID)
+		worktypeId, onCreateRuleId := splitWorktypeBasedTerraformId(res.Primary.ID)
 		onCreateRule, resp, err := taskManagementApi.GetTaskmanagementWorktypeFlowsOncreateRule(worktypeId, onCreateRuleId)
 		if onCreateRule != nil {
 			return fmt.Errorf("task management oncreate rule (%s) still exists", res.Primary.ID)

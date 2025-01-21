@@ -1,4 +1,4 @@
-package task_management_datebased_rule
+package task_management_worktypes_flows_datebased_rule
 
 import (
 	"context"
@@ -27,12 +27,15 @@ The resource_genesyscloud_task_management_datebased_rule.go contains all of the 
 
 // getAllAuthTaskManagementDateBasedRule retrieves all of the task management datebased Rules via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTaskManagementDateBasedRule(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := GetTaskManagementDateBasedRuleProxy(clientConfig)
+	proxy := getTaskManagementDateBasedRuleProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	worktypes, resp, err := proxy.worktypeProxy.GetAllTaskManagementWorktype(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
+	}
+	if worktypes == nil {
+		return resources, nil
 	}
 
 	for _, worktype := range *worktypes {
@@ -40,9 +43,12 @@ func getAllAuthTaskManagementDateBasedRule(ctx context.Context, clientConfig *pl
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management datebased rules error: %s", err), resp)
 		}
+		if dateBasedRules == nil {
+			continue
+		}
 
 		for _, dateBasedRule := range *dateBasedRules {
-			resources[*worktype.Id+"/"+*dateBasedRule.Id] = &resourceExporter.ResourceMeta{BlockLabel: *dateBasedRule.Name}
+			resources[composeWorktypeBasedTerraformId(*worktype.Id, *dateBasedRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *dateBasedRule.Name}
 		}
 	}
 	return resources, nil
@@ -51,7 +57,7 @@ func getAllAuthTaskManagementDateBasedRule(ctx context.Context, clientConfig *pl
 // createTaskManagementDateBasedRule is used by the task_management_datebased_rule resource to create Genesys cloud task management datebased rule
 func createTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementDateBasedRuleProxy(sdkConfig)
+	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 
 	worktypeId := d.Get("worktype_id").(string)
 	dateBasedRuleCreate := getWorkitemdatebasedrulecreateFromResourceData(d)
@@ -63,7 +69,7 @@ func createTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 	}
 	log.Printf("Created the base task management datebased rule %s for worktype %s", *dateBasedRule.Id, worktypeId)
 	
-	d.SetId(worktypeId + "/" + *dateBasedRule.Id)
+	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *dateBasedRule.Id))
 
 	return readTaskManagementDateBasedRule(ctx, d, meta)
 }
@@ -71,7 +77,7 @@ func createTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 // readTaskManagementDateBasedRule is used by the task_management_datebased_rule resource to read a task management datebased rule from genesys cloud
 func readTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementDateBasedRuleProxy(sdkConfig)
+	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementDateBasedRule(), constants.ConsistencyChecks(), ResourceType)
 	
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
@@ -80,7 +86,10 @@ func readTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		dateBasedRule, resp, getErr := proxy.getTaskManagementDateBasedRuleById(ctx, worktypeId, id)
 		if getErr != nil {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management datebased rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management datebased rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management datebased rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", dateBasedRule.Name)
@@ -95,7 +104,7 @@ func readTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData
 // updateTaskManagementDateBasedRule is used by the task_management_datebased_rule resource to update a task management datebased rule in Genesys Cloud
 func updateTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementDateBasedRuleProxy(sdkConfig)
+	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 
 	dateBasedRuleUpdate := getWorkitemdatebasedruleupdateFromResourceData(d)
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
@@ -114,7 +123,7 @@ func updateTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 // deleteTaskManagementDateBasedRule is used by the task_management_datebased_rule resource to delete a task management datebased rule from Genesys cloud
 func deleteTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementDateBasedRuleProxy(sdkConfig)
+	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 

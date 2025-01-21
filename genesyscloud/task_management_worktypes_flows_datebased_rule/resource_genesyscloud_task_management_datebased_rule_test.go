@@ -1,4 +1,4 @@
-package task_management_datebased_rule
+package task_management_worktypes_flows_datebased_rule
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 
 /*
 The resource_genesyscloud_task_management_datebased_rule_test.go contains all of the test cases for running the resource
-tests for task_management_datebased_rule.
+tests for task_management_worktypes_flows_datebased_rule.
 */
 
 func TestAccResourceTaskManagementDateBasedRule(t *testing.T) {
@@ -92,6 +92,11 @@ func TestAccResourceTaskManagementDateBasedRule(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "name", dateBasedRuleName2),
 					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "condition.0.relative_minutes_to_invocation", fmt.Sprintf("%d", relativeMinutesToInvocation2)),
 				),
+			},
+			{
+				ResourceName:      ResourceType + "." + dateBasedRuleResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyTaskManagementDateBasedRuleDestroyed,

@@ -1,4 +1,4 @@
-package task_management_oncreate_rule
+package task_management_worktypes_flows_oncreate_rule
 
 import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -12,11 +12,11 @@ import (
 resource_genesycloud_task_management_oncreate_rule_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the task_management_oncreate_rule resource.
-3.  The datasource schema definitions for the task_management_oncreate_rule datasource.
-4.  The resource exporter configuration for the task_management_oncreate_rule exporter.
+2.  The resource schema definitions for the task_management_worktypes_flows_oncreate_rule resource.
+3.  The datasource schema definitions for the task_management_worktypes_flows_oncreate_rule datasource.
+4.  The resource exporter configuration for the task_management_worktypes_flows_oncreate_rule exporter.
 */
-const ResourceType = "genesyscloud_task_management_oncreate_rule"
+const ResourceType = "genesyscloud_task_management_worktypes_flows_oncreate_rule"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -25,7 +25,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(ResourceType, TaskManagementOnCreateRuleExporter())
 }
 
-// ResourceTaskManagementOnCreateRule registers the genesyscloud_task_management_oncreate_rule resource with Terraform
+// ResourceTaskManagementOnCreateRule registers the genesyscloud_task_management_worktypes_flows_oncreate_rule resource with Terraform
 func ResourceTaskManagementOnCreateRule() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management oncreate Rule`,
@@ -81,7 +81,6 @@ func DataSourceTaskManagementOnCreateRule() *schema.Resource {
 			`worktype_id`: {
 				Description: `The Worktype ID of the Rule.`,
 				Required:    true,
-				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
 		},

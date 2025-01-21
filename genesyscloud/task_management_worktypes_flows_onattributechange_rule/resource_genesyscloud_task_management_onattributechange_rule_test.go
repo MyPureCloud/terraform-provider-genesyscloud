@@ -1,4 +1,4 @@
-package task_management_onattributechange_rule
+package task_management_worktypes_flows_onattributechange_rule
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ import (
 
 /*
 The resource_genesyscloud_task_management_onattributechange_rule_test.go contains all of the test cases for running the resource
-tests for task_management_onattributechange_rule.
+tests for task_management_worktypes_flows_onattributechange_rule.
 */
 
 func TestAccResourceTaskManagementOnAttributeChangeRule(t *testing.T) {
@@ -136,6 +136,11 @@ func TestAccResourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.old_value", 
 													   fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusOpenResourceLabel), "id"),
 				),
+			},
+			{
+				ResourceName:      ResourceType + "." + onAttributeChangeRuleResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyTaskManagementOnAttributeChangeRuleDestroyed,

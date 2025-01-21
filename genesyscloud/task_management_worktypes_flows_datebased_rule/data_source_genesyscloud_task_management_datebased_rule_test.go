@@ -1,4 +1,4 @@
-package task_management_datebased_rule
+package task_management_worktypes_flows_datebased_rule
 
 import (
 	"fmt"
@@ -67,8 +67,15 @@ func TestAccDataSourceTaskManagementDateBasedRule(t *testing.T) {
 						ResourceType+"."+dateBasedRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dateBasedRuleDataSourceLabel, "id", ResourceType+"."+dateBasedRuleResourceLabel, "id"),
+					validateRuleIds(
+						"data."+ResourceType+"."+dateBasedRuleDataSourceLabel, "id", ResourceType+"."+dateBasedRuleResourceLabel, "id",
+					),
 				),
+			},
+			{
+				ResourceName:      ResourceType + "." + dateBasedRuleResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

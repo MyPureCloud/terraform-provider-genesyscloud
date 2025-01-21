@@ -1,4 +1,4 @@
-package task_management_datebased_rule
+package task_management_worktypes_flows_datebased_rule
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 // dataSourceTaskManagementDateBasedRuleRead retrieves by name the id in question
 func dataSourceTaskManagementDateBasedRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementDateBasedRuleProxy(sdkConfig)
+	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 	typeId := d.Get("worktype_id").(string)
@@ -29,15 +29,15 @@ func dataSourceTaskManagementDateBasedRuleRead(ctx context.Context, d *schema.Re
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		dateBasedRuleId, retryable, resp, err := proxy.getTaskManagementDateBasedRuleIdByName(ctx, typeId, name)
 
-		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management datebased rule %s | error: %s", name, err), resp))
+		if err != nil {
+			if retryable {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management datebased rule found with name %s", name), resp))
+			} else {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management datebased rule %s | error: %s", name, err), resp))
+			}
 		}
 
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management datebased rule found with name %s", name), resp))
-		}
-
-		d.SetId(typeId + "/" + dateBasedRuleId)
+		d.SetId(dateBasedRuleId)
 		return nil
 	})
 }

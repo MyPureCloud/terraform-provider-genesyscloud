@@ -1,4 +1,4 @@
-package task_management_oncreate_rule
+package task_management_worktypes_flows_oncreate_rule
 
 import (
 	"context"
@@ -27,12 +27,15 @@ The resource_genesyscloud_task_management_oncreate_rule.go contains all of the m
 
 // getAllAuthTaskManagementOnCreateRule retrieves all of the task management oncreate Rules via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTaskManagementOnCreateRule(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := GetTaskManagementOnCreateRuleProxy(clientConfig)
+	proxy := getTaskManagementOnCreateRuleProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	worktypes, resp, err := proxy.worktypeProxy.GetAllTaskManagementWorktype(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
+	}
+	if worktypes == nil {
+		return resources, nil
 	}
 
 	for _, worktype := range *worktypes {
@@ -40,9 +43,12 @@ func getAllAuthTaskManagementOnCreateRule(ctx context.Context, clientConfig *pla
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management oncreate rules error: %s", err), resp)
 		}
+		if onCreateRules == nil {
+			continue
+		}
 
 		for _, onCreateRule := range *onCreateRules {
-			resources[*worktype.Id+"/"+*onCreateRule.Id] = &resourceExporter.ResourceMeta{BlockLabel: *onCreateRule.Name}
+			resources[composeWorktypeBasedTerraformId(*worktype.Id, *onCreateRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *onCreateRule.Name}
 		}
 	}
 	return resources, nil
@@ -51,7 +57,7 @@ func getAllAuthTaskManagementOnCreateRule(ctx context.Context, clientConfig *pla
 // createTaskManagementOnCreateRule is used by the task_management_oncreate_rule resource to create Genesys cloud task management oncreate rule
 func createTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnCreateRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 
 	worktypeId := d.Get("worktype_id").(string)
 	workitemOnCreateRuleCreate := getWorkitemoncreaterulecreateFromResourceData(d)
@@ -63,7 +69,7 @@ func createTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceDat
 	}
 	log.Printf("Created the base task management oncreate rule %s for worktype %s", *onCreateRule.Id, worktypeId)
 	
-	d.SetId(worktypeId + "/" + *onCreateRule.Id)
+	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *onCreateRule.Id))
 
 	return readTaskManagementOnCreateRule(ctx, d, meta)
 }
@@ -71,16 +77,19 @@ func createTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceDat
 // readTaskManagementOnCreateRule is used by the task_management_oncreate_rule resource to read a task management oncreate rule from genesys cloud
 func readTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnCreateRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnCreateRule(), constants.ConsistencyChecks(), ResourceType)
 	
-	worktypeId, id := splitOnCreateRuleTerraformId(d.Id())
+	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Reading task management oncreate rule %s for worktype %s", id, worktypeId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		onCreateRule, resp, getErr := proxy.getTaskManagementOnCreateRuleById(ctx, worktypeId, id)
 		if getErr != nil {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management oncreate rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management oncreate rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management oncreate rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", onCreateRule.Name)
@@ -94,10 +103,10 @@ func readTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceData,
 // updateTaskManagementOnCreateRule is used by the task_management_oncreate_rule resource to update a task management oncreate rule in Genesys Cloud
 func updateTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnCreateRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 
 	onCreateRuleUpdate := getWorkitemoncreateruleupdateFromResourceData(d)
-	worktypeId, id := splitOnCreateRuleTerraformId(d.Id())
+	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Updating oncreate rule %s for worktype %s", id, worktypeId)
 	_, resp, err := proxy.updateTaskManagementOnCreateRule(ctx, worktypeId, id, &onCreateRuleUpdate)
@@ -113,9 +122,9 @@ func updateTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceDat
 // deleteTaskManagementOnCreateRule is used by the task_management_oncreate_rule resource to delete a task management oncreate rule from Genesys cloud
 func deleteTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnCreateRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 
-	worktypeId, id := splitOnCreateRuleTerraformId(d.Id())
+	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
 	resp, err := proxy.deleteTaskManagementOnCreateRule(ctx, worktypeId, id)
 	if err != nil {

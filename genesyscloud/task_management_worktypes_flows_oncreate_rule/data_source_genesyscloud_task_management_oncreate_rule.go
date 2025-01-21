@@ -1,4 +1,4 @@
-package task_management_oncreate_rule
+package task_management_worktypes_flows_oncreate_rule
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 // dataSourceTaskManagementOnCreateRuleRead retrieves by name the id in question
 func dataSourceTaskManagementOnCreateRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnCreateRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 	typeId := d.Get("worktype_id").(string)
@@ -29,15 +29,15 @@ func dataSourceTaskManagementOnCreateRuleRead(ctx context.Context, d *schema.Res
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		onCreateRuleId, retryable, resp, err := proxy.getTaskManagementOnCreateRuleIdByName(ctx, typeId, name)
 
-		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management oncreate rule %s | error: %s", name, err), resp))
+		if err != nil {
+			if retryable {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management oncreate rule found with name %s", name), resp))
+			} else {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management oncreate rule %s | error: %s", name, err), resp))
+			}
 		}
 
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management oncreate rule found with name %s", name), resp))
-		}
-
-		d.SetId(typeId + "/" + onCreateRuleId)
+		d.SetId(onCreateRuleId)
 		return nil
 	})
 }

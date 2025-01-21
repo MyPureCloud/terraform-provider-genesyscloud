@@ -1,4 +1,4 @@
-package task_management_onattributechange_rule
+package task_management_worktypes_flows_onattributechange_rule
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 // dataSourceTaskManagementOnAttributeChangeRuleRead retrieves by name the id in question
 func dataSourceTaskManagementOnAttributeChangeRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 	typeId := d.Get("worktype_id").(string)
@@ -29,15 +29,15 @@ func dataSourceTaskManagementOnAttributeChangeRuleRead(ctx context.Context, d *s
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		onAttributeChangeRuleId, retryable, resp, err := proxy.getTaskManagementOnAttributeChangeRuleIdByName(ctx, typeId, name)
 
-		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management onattributechange rule %s | error: %s", name, err), resp))
+		if err != nil {
+			if retryable {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management onattributechange rule found with name %s", name), resp))
+			} else {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error searching task management onattributechange rule %s | error: %s", name, err), resp))
+			}
 		}
 
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no task management onattributechange rule found with name %s", name), resp))
-		}
-
-		d.SetId(typeId + "/" + onAttributeChangeRuleId)
+		d.SetId(onAttributeChangeRuleId)
 		return nil
 	})
 }

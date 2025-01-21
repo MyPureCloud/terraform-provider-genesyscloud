@@ -1,4 +1,4 @@
-package task_management_onattributechange_rule
+package task_management_worktypes_flows_onattributechange_rule
 
 import (
 	"sync"
@@ -12,7 +12,7 @@ import (
 
 /*
    The genesyscloud_task_management_onattributechange_rule_init_test.go file is used to initialize the data sources and resources
-   used in testing the task_management_onattributechange_rule resource.
+   used in testing the task_management_worktypes_flows_onattributechange_rule resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -32,9 +32,9 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceTaskManagementOnAttributeChangeRule()
-	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
-	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
-	providerResources["genesyscloud_task_management_worktype_status"] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
+	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
+	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
+	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

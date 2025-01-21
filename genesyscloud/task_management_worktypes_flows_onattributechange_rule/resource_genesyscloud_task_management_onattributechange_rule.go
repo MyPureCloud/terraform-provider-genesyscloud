@@ -1,4 +1,4 @@
-package task_management_onattributechange_rule
+package task_management_worktypes_flows_onattributechange_rule
 
 import (
 	"context"
@@ -27,12 +27,15 @@ The resource_genesyscloud_task_management_onattributechange_rule.go contains all
 
 // getAllAuthTaskManagementOnAttributeChangeRule retrieves all of the task management onattributechange Rules via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTaskManagementOnAttributeChangeRule(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := GetTaskManagementOnAttributeChangeRuleProxy(clientConfig)
+	proxy := getTaskManagementOnAttributeChangeRuleProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	worktypes, resp, err := proxy.worktypeProxy.GetAllTaskManagementWorktype(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management worktypes: %v", err), resp)
+	}
+	if worktypes == nil {
+		return resources, nil
 	}
 
 	for _, worktype := range *worktypes {
@@ -40,9 +43,12 @@ func getAllAuthTaskManagementOnAttributeChangeRule(ctx context.Context, clientCo
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get task management onattributechange rules error: %s", err), resp)
 		}
+		if onAttributeChangeRules == nil {
+			continue
+		}
 
 		for _, onAttributeChangeRule := range *onAttributeChangeRules {
-			resources[*worktype.Id+"/"+*onAttributeChangeRule.Id] = &resourceExporter.ResourceMeta{BlockLabel: *onAttributeChangeRule.Name}
+			resources[composeWorktypeBasedTerraformId(*worktype.Id, *onAttributeChangeRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *onAttributeChangeRule.Name}
 		}
 	}
 	return resources, nil
@@ -51,7 +57,7 @@ func getAllAuthTaskManagementOnAttributeChangeRule(ctx context.Context, clientCo
 // createTaskManagementOnAttributeChangeRule is used by the task_management_onattributechange_rule resource to create Genesys cloud task management onattributechange rule
 func createTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 
 	worktypeId := d.Get("worktype_id").(string)
 	onAttributeChangeRuleCreate := getWorkitemonattributechangerulecreateFromResourceData(d)
@@ -63,7 +69,7 @@ func createTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 	}
 	log.Printf("Created the base task management onattributechange rule %s for worktype %s", *onAttributeChangeRule.Id, worktypeId)
 	
-	d.SetId(worktypeId + "/" + *onAttributeChangeRule.Id)
+	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *onAttributeChangeRule.Id))
 
 	return readTaskManagementOnAttributeChangeRule(ctx, d, meta)
 }
@@ -71,7 +77,7 @@ func createTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 // readTaskManagementOnAttributeChangeRule is used by the task_management_onattributechange_rule resource to read a task management onattributechange rule from genesys cloud
 func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnAttributeChangeRule(), constants.ConsistencyChecks(), ResourceType)
 	
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
@@ -80,7 +86,10 @@ func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Reso
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		onAttributeChangeRule, resp, getErr := proxy.getTaskManagementOnAttributeChangeRuleById(ctx, worktypeId, id)
 		if getErr != nil {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", onAttributeChangeRule.Name)
@@ -95,7 +104,7 @@ func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Reso
 // updateTaskManagementOnAttributeChangeRule is used by the task_management_onattributechange_rule resource to update a task management onattributechange rule in Genesys Cloud
 func updateTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 
 	onAttributeChangeRuleUpdate := getWorkitemonattributechangeruleupdateFromResourceData(d)
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
@@ -114,7 +123,7 @@ func updateTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 // deleteTaskManagementOnAttributeChangeRule is used by the task_management_onattributechange_rule resource to delete a task management onattributechange rule from Genesys cloud
 func deleteTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
+	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 

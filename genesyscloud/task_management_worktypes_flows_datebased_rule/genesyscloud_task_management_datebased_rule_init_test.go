@@ -1,4 +1,4 @@
-package task_management_datebased_rule
+package task_management_worktypes_flows_datebased_rule
 
 import (
 	"sync"
@@ -11,7 +11,7 @@ import (
 
 /*
    The genesyscloud_task_management_datebased_rule_init_test.go file is used to initialize the data sources and resources
-   used in testing the task_management_datebased_rule resource.
+   used in testing the task_management_worktypes_flows_datebased_rule resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -31,8 +31,8 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceTaskManagementDateBasedRule()
-	providerResources["genesyscloud_task_management_worktype"] = worktype.ResourceTaskManagementWorktype()
-	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
+	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
+	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

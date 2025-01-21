@@ -1,11 +1,14 @@
-package task_management_datebased_rule
+package task_management_worktypes_flows_datebased_rule
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
@@ -22,7 +25,7 @@ func GenerateDateBasedRuleResource(
 	relativeMinutesToInvocation int,
 ) string {
 	return fmt.Sprintf(
-		`resource "genesyscloud_task_management_datebased_rule" "%s" {
+		`resource "genesyscloud_task_management_worktypes_flows_datebased_rule" "%s" {
 		worktype_id = %s
 		name = "%s"
 		condition {
@@ -44,12 +47,12 @@ func getWorkitemdatebasedrulecreateFromResourceData(d *schema.ResourceData) plat
 	ruleCondition.SetField("Attribute", platformclientv2.String(attribute))
 	ruleCondition.SetField("RelativeMinutesToInvocation", platformclientv2.Int(relativeMinutesToInvocation))
 	
-	datebased_rule := platformclientv2.Workitemdatebasedrulecreate{
+	datebasedRule := platformclientv2.Workitemdatebasedrulecreate{
 		Name: platformclientv2.String(d.Get("name").(string)),
 		Condition: &ruleCondition,
 	}
 
-	return datebased_rule
+	return datebasedRule
 }
 
 // getWorkitemdatebasedruleupdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Workitemdatebasedruleupdate
@@ -76,7 +79,17 @@ func getWorkitemdatebasedruleupdateFromResourceData(d *schema.ResourceData) plat
 // splitWorktypeBasedTerraformId will split the rule resource id which is in the form
 // <worktypeId>/<id> into just the worktypeId and id string
 func splitWorktypeBasedTerraformId(composedId string) (worktypeId string, id string) {
-	return strings.Split(composedId, "/")[0], strings.Split(composedId, "/")[1]
+	if len(strings.Split(composedId, "/")) > 1 {
+		return strings.Split(composedId, "/")[0], strings.Split(composedId, "/")[1]
+	} else {
+		log.Printf("Invalid composedId %s", composedId)
+		return "", ""
+	}
+}
+
+// composeWorktypeBasedTerraformId will compose the rule resource id in the form <worktypeId>/<id>
+func composeWorktypeBasedTerraformId(worktypeId string, id string) (composedId string) {
+	return worktypeId + "/" + id
 }
 
 // flattenSdkCondition converts a *platformclientv2.Workitemdatebasedrule into a map and then into array for consumption by Terraform
@@ -87,4 +100,38 @@ func flattenSdkCondition(rule *platformclientv2.Workitemdatebasedrule) []interfa
 	resourcedata.SetMapValueIfNotNil(conditionInterface, "relative_minutes_to_invocation", rule.Condition.RelativeMinutesToInvocation)
 	
 	return []interface{}{conditionInterface}
+}
+
+// ValidateRuleIds will check that two status ids are the same
+// The id could be in the format <worktypeId>/<id>
+func validateRuleIds(ruleResource1 string, key1 string, ruleResource2 string, key2 string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		rule1, ok := state.RootModule().Resources[ruleResource1]
+		if !ok {
+			return fmt.Errorf("failed to find rule %s", ruleResource1)
+		}
+
+		rule2, ok := state.RootModule().Resources[ruleResource2]
+		if !ok {
+			return fmt.Errorf("failed to find rule %s", ruleResource2)
+		}
+
+		status1Id := rule1.Primary.Attributes[key1]
+		if strings.Contains(status1Id, "/") {
+			_, status1Id = splitWorktypeBasedTerraformId(status1Id)
+		}
+
+		status2Id := rule2.Primary.Attributes[key2]
+		if strings.Contains(status2Id, "/") {
+			_, status2Id = splitWorktypeBasedTerraformId(status2Id)
+		}
+
+		if status1Id != status2Id {
+			attr1 := ruleResource1 + "." + key1
+			attr2 := ruleResource2 + "." + key2
+			return fmt.Errorf("%s not equal to %s\n %s = %s\n %s = %s", attr1, attr2, attr1, status1Id, attr2, status2Id)
+		}
+
+		return nil
+	}
 }
