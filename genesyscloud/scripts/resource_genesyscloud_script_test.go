@@ -24,7 +24,7 @@ func TestAccResourceScriptBasic(t *testing.T) {
 		resourceLabel = "script"
 		name          = "testscriptname" + uuid.NewString()
 		nameUpdated   = "testscriptname" + uuid.NewString()
-		filePath      = util.GetTestDataPath("resource", ResourceType, "test_script.json")
+		filePath      = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
 		substitutions = make(map[string]string)
 	)
 
@@ -79,7 +79,7 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 	var (
 		resourceLabel       = "script-subs"
 		name                = "testscriptname" + uuid.NewString()
-		filePath            = util.GetTestDataPath("resource", ResourceType, "test_script.json")
+		filePath            = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
 		substitutions       = make(map[string]string)
 		substitutionsUpdate = make(map[string]string)
 

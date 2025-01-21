@@ -40,7 +40,7 @@ func ResourceOutboundContactListContactsBulk() *schema.Resource {
 
 		CreateContext: provider.CreateWithPooledClient(createOutboundContactListBulkContacts),
 		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListBulkContacts),
-		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListBulkContacts),
+		// UpdateContext: provider.UpdateWithPooledClient(createOutboundContactListBulkContacts),
 		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListBulkContacts),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -104,12 +104,14 @@ func ResourceOutboundContactListContactsBulk() *schema.Resource {
 				Computed:    true,
 				Required:    false,
 				Optional:    false,
+				ForceNew:    true,
 			},
 			"record_count": {
 				Description: `The number of contacts in the contact list. This is a read-only identifying attribute.`,
 				Optional:    false,
 				Required:    false,
 				Computed:    true,
+				ForceNew:    true,
 				Type:        schema.TypeInt,
 			},
 		},

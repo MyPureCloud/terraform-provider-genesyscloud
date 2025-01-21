@@ -53,21 +53,10 @@ func readOutboundContactListBulkContacts(ctx context.Context, d *schema.Resource
 	if err != nil {
 		return diag.Errorf("Failed to read contact list and record length by ID: %v", err)
 	}
-	d.Set("contact_list_contacts_count", contactListContactsCount)
+	d.Set("record_count", contactListContactsCount)
 
 	log.Printf("Read %d bulk contact records in contact list '%s'", contactListContactsCount, contactListId)
 	return nil
-}
-
-func updateOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-
-	contactListId, contactsCount, diagErr := uploadOutboundContactListBulkContacts(ctx, d, meta)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	log.Printf("Finished updating %d bulk contacts in contact list '%s'", contactsCount, contactListId)
-	return readOutboundContactListBulkContacts(ctx, d, meta)
 }
 
 func deleteOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -104,8 +93,8 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 	cp := getBulkContactsProxy(sdkConfig)
 	contactListContactsCount := 0
 
-	filePath := d.Get("file_path").(string)
-	filePathHash, err := fileContentHashReader(filePath)
+	filePath := d.Get("filepath").(string)
+	filePathHash, err := getFileContentHash(filePath)
 	if err != nil {
 		return "", 0, diag.Errorf("Failed to read file content hash: %v", err)
 	}
@@ -121,7 +110,7 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 		return "", 0, diag.Errorf("File path is required")
 	}
 
-	if d.HasChange("file_content_hash") {
+	if d.Get("file_content_hash") != filePathHash {
 		csvRecordsCount, err := cp.getCSVRecordCount(filePath)
 
 		if contactListId != "" {

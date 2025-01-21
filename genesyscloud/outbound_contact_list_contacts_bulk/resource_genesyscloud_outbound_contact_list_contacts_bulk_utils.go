@@ -52,7 +52,7 @@ func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory stri
 
 	fullPath := path.Join(directoryPath, exportFileName)
 	configMap["filepath"] = fullPath
-	hash, err := fileContentHashReader(fullPath)
+	hash, err := getFileContentHash(fullPath)
 	if err != nil {
 		log.Printf("Error calculating file content hash: %v", err)
 		return err
@@ -65,7 +65,7 @@ func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory stri
 func fileContentHashChanged(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
 	filepath := d.Get("filepath").(string)
 
-	newHash, err := fileContentHashReader(filepath)
+	newHash, err := getFileContentHash(filepath)
 	if err != nil {
 		log.Printf("Error calculating file content hash: %v", err)
 		return false
@@ -78,7 +78,7 @@ func fileContentHashChanged(ctx context.Context, d *schema.ResourceDiff, meta in
 	return oldHash != newHash
 }
 
-func fileContentHashReader(filepath string) (string, error) {
+func getFileContentHash(filepath string) (string, error) {
 	// Read file content
 	content, err := os.ReadFile(filepath)
 	if err != nil {

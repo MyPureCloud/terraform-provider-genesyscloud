@@ -1,6 +1,7 @@
 package testrunner
 
 import (
+	"context"
 	"log"
 	"os"
 	"path"
@@ -9,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 const (
@@ -110,4 +113,35 @@ func GenerateTestSteps(testType string, resourceType string, testCaseName string
 
 func GenerateFullPathId(resourceType string, resourceLabel string) string {
 	return resourceType + "." + resourceLabel + "." + "id"
+}
+
+// Helper function to create test provider
+func GenerateTestProvider(resourceName string, schemas map[string]*schema.Schema, diff schema.CustomizeDiffFunc) *schema.Provider {
+	return &schema.Provider{
+		Schema: schemas,
+		ResourcesMap: map[string]*schema.Resource{
+			resourceName: {
+				Schema:        schemas,
+				CustomizeDiff: diff,
+			},
+		},
+	}
+}
+
+func GenerateTestDiff(provider *schema.Provider, resourceName string, oldValue, newValue map[string]string) (*terraform.InstanceDiff, error) {
+	newI := make(map[string]interface{}, len(newValue))
+	for k, v := range newValue {
+		newI[k] = v
+	}
+
+	return provider.ResourcesMap[resourceName].Diff(
+		context.Background(),
+		&terraform.InstanceState{
+			Attributes: oldValue,
+		},
+		&terraform.ResourceConfig{
+			Config: newI,
+		},
+		provider.Meta(),
+	)
 }

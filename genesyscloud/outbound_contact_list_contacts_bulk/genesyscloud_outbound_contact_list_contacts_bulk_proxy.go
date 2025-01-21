@@ -13,15 +13,15 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
-var internalProxy *contactProxy
+var internalProxy *contactsBulkProxy
 
-type uploadContactListBulkContactsFunc func(ctx context.Context, p *contactProxy, contactListId, filepath, contactIdName string) (respBytes []byte, err error)
-type uploadContactListTemplateBulkContactsFunc func(ctx context.Context, p *contactProxy, contactListTemplateId, filepath, contactIdName, listNamePrefix, divisionIdForTargetContactLists string) (respBytes []byte, err error)
-type readContactListAndRecordLengthByIdFunc func(ctx context.Context, p *contactProxy, contactListId string) (contactList *platformclientv2.Contactlist, recordLength int, response *platformclientv2.APIResponse, err error)
-type clearContactListBulkContactsFunc func(ctx context.Context, p *contactProxy, contactListId string) (*platformclientv2.APIResponse, error)
-type getAllContactListsFunc func(ctx context.Context, p *contactProxy) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error)
-type getContactListContactsExportUrlFunc func(ctx context.Context, p *contactProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, error error)
-type contactProxy struct {
+type uploadContactListBulkContactsFunc func(ctx context.Context, p *contactsBulkProxy, contactListId, filepath, contactIdName string) (respBytes []byte, err error)
+type uploadContactListTemplateBulkContactsFunc func(ctx context.Context, p *contactsBulkProxy, contactListTemplateId, filepath, contactIdName, listNamePrefix, divisionIdForTargetContactLists string) (respBytes []byte, err error)
+type readContactListAndRecordLengthByIdFunc func(ctx context.Context, p *contactsBulkProxy, contactListId string) (contactList *platformclientv2.Contactlist, recordLength int, response *platformclientv2.APIResponse, err error)
+type clearContactListBulkContactsFunc func(ctx context.Context, p *contactsBulkProxy, contactListId string) (*platformclientv2.APIResponse, error)
+type getAllContactListsFunc func(ctx context.Context, p *contactsBulkProxy) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error)
+type getContactListContactsExportUrlFunc func(ctx context.Context, p *contactsBulkProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, error error)
+type contactsBulkProxy struct {
 	clientConfig                             *platformclientv2.Configuration
 	outboundApi                              *platformclientv2.OutboundApi
 	uploadContactListBulkContactsAttr        uploadContactListBulkContactsFunc
@@ -35,10 +35,10 @@ type contactProxy struct {
 	contactListProxy                         contactList.OutboundContactlistProxy
 }
 
-func newBulkContactProxy(clientConfig *platformclientv2.Configuration) *contactProxy {
+func newBulkContactProxy(clientConfig *platformclientv2.Configuration) *contactsBulkProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 	outboundContactListProxy := contactList.GetOutboundContactlistProxy(clientConfig)
-	return &contactProxy{
+	return &contactsBulkProxy{
 		clientConfig:                             clientConfig,
 		outboundApi:                              api,
 		uploadContactListBulkContactsAttr:        uploadContactListBulkContactsFn,
@@ -53,38 +53,38 @@ func newBulkContactProxy(clientConfig *platformclientv2.Configuration) *contactP
 	}
 }
 
-func getBulkContactsProxy(clientConfig *platformclientv2.Configuration) *contactProxy {
+func getBulkContactsProxy(clientConfig *platformclientv2.Configuration) *contactsBulkProxy {
 	if internalProxy == nil {
 		internalProxy = newBulkContactProxy(clientConfig)
 	}
 	return internalProxy
 }
 
-func (p *contactProxy) uploadContactListBulkContacts(ctx context.Context, contactListId, filepath, contactIdName string) (respBytes []byte, err error) {
+func (p *contactsBulkProxy) uploadContactListBulkContacts(ctx context.Context, contactListId, filepath, contactIdName string) (respBytes []byte, err error) {
 	return p.uploadContactListBulkContactsAttr(ctx, p, contactListId, filepath, contactIdName)
 }
 
-func (p *contactProxy) uploadContactListTemplateBulkContacts(ctx context.Context, contactListTemplateId, filepath, contactIdName, listNamePrefix, divisionIdForTargetContactLists string) (respBytes []byte, err error) {
+func (p *contactsBulkProxy) uploadContactListTemplateBulkContacts(ctx context.Context, contactListTemplateId, filepath, contactIdName, listNamePrefix, divisionIdForTargetContactLists string) (respBytes []byte, err error) {
 	return p.uploadContactListTemplateBulkContactAttr(ctx, p, contactListTemplateId, filepath, contactIdName, listNamePrefix, divisionIdForTargetContactLists)
 }
 
-func (p *contactProxy) readContactListAndRecordLengthById(ctx context.Context, contactListId string) (contactList *platformclientv2.Contactlist, recordsCount int, response *platformclientv2.APIResponse, err error) {
+func (p *contactsBulkProxy) readContactListAndRecordLengthById(ctx context.Context, contactListId string) (contactList *platformclientv2.Contactlist, recordsCount int, response *platformclientv2.APIResponse, err error) {
 	return p.readContactListAndRecordLengthByIdAttr(ctx, p, contactListId)
 }
 
-func (p *contactProxy) clearContactListBulkContacts(ctx context.Context, contactListId string) (*platformclientv2.APIResponse, error) {
+func (p *contactsBulkProxy) clearContactListBulkContacts(ctx context.Context, contactListId string) (*platformclientv2.APIResponse, error) {
 	return p.clearContactListBulkContactsAttr(ctx, p, contactListId)
 }
 
-func (p *contactProxy) getAllContactLists(ctx context.Context) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
+func (p *contactsBulkProxy) getAllContactLists(ctx context.Context) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
 	return p.getAllContactListsAttr(ctx, p)
 }
 
-func (p *contactProxy) getContactListContactsExportUrl(ctx context.Context, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
+func (p *contactsBulkProxy) getContactListContactsExportUrl(ctx context.Context, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
 	return p.getContactListContactsExportUrlAttr(ctx, p, contactListId)
 }
 
-func (p contactProxy) getCSVRecordCount(filepath string) (int, error) {
+func (p contactsBulkProxy) getCSVRecordCount(filepath string) (int, error) {
 	// Open file up and read the record count
 	reader, file, err := files.DownloadOrOpenFile(filepath)
 	if err != nil {
@@ -115,7 +115,7 @@ func (p contactProxy) getCSVRecordCount(filepath string) (int, error) {
 }
 
 // getContactListContactsExportUrlFn retrieves the export URL for a contact list's contacts
-func getContactListContactsExportUrlFn(_ context.Context, p *contactProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
+func getContactListContactsExportUrlFn(_ context.Context, p *contactsBulkProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
 	var (
 		body platformclientv2.Contactsexportrequest
 	)
@@ -160,7 +160,7 @@ func createBulkOutboundContactsFormData(filePath, contactListId, contactIdColumn
 }
 
 // uploadContactListBulkContactsFn uploads a CSV file to S3 of contacts
-func uploadContactListBulkContactsFn(ctx context.Context, p *contactProxy, filePath, contactListId, contactIdColumnName string) ([]byte, error) {
+func uploadContactListBulkContactsFn(ctx context.Context, p *contactsBulkProxy, contactListId, filePath, contactIdColumnName string) ([]byte, error) {
 	formData, err := createBulkOutboundContactsFormData(filePath, contactListId, contactIdColumnName)
 	if err != nil {
 		return nil, err
@@ -193,7 +193,7 @@ func createBulkOutboundContactsTemplateFormData(filePath, contactListTemplateId,
 }
 
 // uploadContactListTemplateBulkContactFn uploads a CSV file to S3 of contacts based on a contact list template
-func uploadContactListTemplateBulkContactFn(ctx context.Context, p *contactProxy, filepath, contactListTemplateId, contactIdColumnName, listNamePrefix, divisionIdForTargetContactLists string) ([]byte, error) {
+func uploadContactListTemplateBulkContactFn(ctx context.Context, p *contactsBulkProxy, filepath, contactListTemplateId, contactIdColumnName, listNamePrefix, divisionIdForTargetContactLists string) ([]byte, error) {
 	formData, err := createBulkOutboundContactsTemplateFormData(filepath, contactListTemplateId, contactIdColumnName, listNamePrefix, divisionIdForTargetContactLists)
 	if err != nil {
 		return nil, err
@@ -207,7 +207,7 @@ func uploadContactListTemplateBulkContactFn(ctx context.Context, p *contactProxy
 	return respBytes, err
 }
 
-func readContactListAndRecordLengthByIdFn(ctx context.Context, p *contactProxy, contactListId string) (contactList *platformclientv2.Contactlist, record_count int, response *platformclientv2.APIResponse, err error) {
+func readContactListAndRecordLengthByIdFn(ctx context.Context, p *contactsBulkProxy, contactListId string) (contactList *platformclientv2.Contactlist, record_count int, response *platformclientv2.APIResponse, err error) {
 	contactList, resp, err := p.contactListProxy.GetOutboundContactlistById(ctx, contactListId)
 	if err != nil {
 		return nil, 0, resp, err
@@ -220,7 +220,7 @@ func readContactListAndRecordLengthByIdFn(ctx context.Context, p *contactProxy, 
 	return contactList, *contactListing.ContactsCount, resp, err
 }
 
-func clearContactListBulkContactFn(_ context.Context, p *contactProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+func clearContactListBulkContactFn(_ context.Context, p *contactsBulkProxy, contactListId string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.outboundApi.PostOutboundContactlistClear(contactListId)
 	if err != nil {
 		return resp, err
@@ -228,7 +228,7 @@ func clearContactListBulkContactFn(_ context.Context, p *contactProxy, contactLi
 	return resp, nil
 }
 
-func getAllBulkContactListsFn(ctx context.Context, p *contactProxy) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
+func getAllBulkContactListsFn(ctx context.Context, p *contactsBulkProxy) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
 	contactLists, resp, err := p.contactListProxy.GetAllOutboundContactlist(ctx)
 	if err != nil {
 		return nil, resp, err

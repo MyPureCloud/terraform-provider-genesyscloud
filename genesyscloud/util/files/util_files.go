@@ -205,8 +205,13 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	return reader, file, nil
 }
 
-// DownloadExportFile Download file from uri to directory/fileName
-func DownloadExportFile(directory, fileName, uri string) error {
+// DownloadExportFile is a variable that holds the function for downloading export files.
+// By default it points to downloadExportFile, but can be replaced with a mock implementation
+// during testing. This pattern enables unit testing of code that depends on file downloads
+// without actually downloading files.
+var DownloadExportFile = downloadExportFile
+
+func downloadExportFile(directory, fileName, uri string) error {
 	resp, err := http.Get(uri)
 	if err != nil {
 		return err

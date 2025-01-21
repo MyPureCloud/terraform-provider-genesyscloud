@@ -5,6 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ func TestAccDataSourceScript(t *testing.T) {
 		scriptDataSourceLabel = "script-data"
 		resourceLabel         = "script"
 		name                  = "tfscript" + uuid.NewString()
-		filePath              = GetTestDataPath("resource", ResourceType, "test_script.json")
+		filePath              = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
 	)
 
 	resource.Test(t, resource.TestCase{

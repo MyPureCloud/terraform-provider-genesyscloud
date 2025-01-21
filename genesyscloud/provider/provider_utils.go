@@ -44,6 +44,25 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	}
 }
 
+// Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially
+// within acceptance testing
+var providerMeta *ProviderMeta
+
+func GetProviderMeta() *ProviderMeta {
+	return providerMeta
+}
+
+func setProviderMeta(p *ProviderMeta) {
+	providerMeta = p
+}
+
+// Ensure Org Default Country Code is accessible throughout the provider
+var orgDefaultCountryCode string
+
 func GetOrgDefaultCountryCode() string {
 	return orgDefaultCountryCode
+}
+
+func setOrgDefaultCountryCode(code string) {
+	orgDefaultCountryCode = code
 }
