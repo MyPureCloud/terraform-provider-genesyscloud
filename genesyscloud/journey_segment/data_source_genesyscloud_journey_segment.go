@@ -1,4 +1,4 @@
-package genesyscloud
+package journey_segment
 
 import (
 	"context"
@@ -14,20 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
-func dataSourceJourneySegment() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Journey Segment. Select a journey segment by name",
-		ReadContext: provider.ReadWithPooledClient(dataSourceJourneySegmentRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Journey Segment name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
-
 func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
@@ -41,13 +27,13 @@ func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m
 			const pageSize = 100
 			journeySegments, resp, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to get page of journey segments: %v", getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of journey segments: %v", getErr), resp))
 			}
 
 			response = resp
 
 			if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("no journey segment found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey segment found with name %s", name), resp))
 			}
 
 			for _, journeySegment := range *journeySegments.Entities {
@@ -59,6 +45,6 @@ func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m
 
 			pageCount = *journeySegments.PageCount
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("no journey segment found with name %s", name), response))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey segment found with name %s", name), response))
 	})
 }

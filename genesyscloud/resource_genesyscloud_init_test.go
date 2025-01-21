@@ -51,12 +51,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
-	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
-	providerResources["genesyscloud_journey_segment"] = ResourceJourneySegment()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
@@ -70,6 +64,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
 	providerResources[cMessagingSettings.ResourceType] = cMessagingSettings.ResourceConversationsMessagingSettings()
 	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
+	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
+	providerResources["genesyscloud_knowledge_knowledgebase"] = ResourceKnowledgeKnowledgebase()
+	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
+	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
+	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
@@ -90,7 +89,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources["genesyscloud_journey_outcome"] = dataSourceJourneyOutcome()
-	providerDataSources["genesyscloud_journey_segment"] = dataSourceJourneySegment()
 	providerDataSources["genesyscloud_knowledge_knowledgebase"] = dataSourceKnowledgeKnowledgebase()
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()

@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	"terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -46,7 +47,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[architect_schedules.ResourceType] = architect_schedules.ResourceArchitectSchedules()
 	providerResources[architect_schedulegroups.ResourceType] = architect_schedulegroups.ResourceArchitectSchedulegroups()
 	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
+	providerResources[journey_segment.ResourceType] = journey_segment.ResourceJourneySegment()
 	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
 }
 

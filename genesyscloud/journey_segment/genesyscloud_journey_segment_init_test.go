@@ -1,10 +1,8 @@
-package journey_action_template
+package journey_segment
 
 import (
 	"log"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/journey_action_map"
-	"terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -18,8 +16,8 @@ var (
 )
 
 /*
-   The genesyscloud_journey_action_template_init_test.go file is used to initialize the data sources and resources
-   used in testing the journey_action_template resource.
+   The genesyscloud_journey_segment_init_test.go file is used to initialize the data sources and resources
+   used in testing the journey_segment resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -38,9 +36,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceJourneyActionTemplate()
-	providerResources[journey_action_map.ResourceType] = journey_action_map.ResourceJourneyActionMap()
-	providerResources[journey_segment.ResourceType] = journey_segment.ResourceJourneySegment()
+	providerResources[ResourceType] = ResourceJourneySegment()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -48,7 +44,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceJourneyActionTemplate()
+	providerDataSources[ResourceType] = DataSourceJourneySegment()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -67,9 +63,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the journey_action_template package
+	// Run setup function before starting the test suite for the journey_segment package
 	initTestResources()
 
-	// Run the test suite for the journey_action_template package
+	// Run the test suite for the journey_segment package
 	m.Run()
 }

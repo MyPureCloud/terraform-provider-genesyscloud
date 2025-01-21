@@ -8,6 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -88,6 +89,143 @@ var (
 					r, _ := regexp.Compile("^attributes\\..+\\.value$")
 					return r
 				}(), ""),
+			},
+		},
+	}
+
+	contextResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"patterns": {
+				Description: "A list of one or more patterns to match.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        contextPatternResource,
+			},
+		},
+	}
+
+	contextPatternResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"criteria": {
+				Description: "A list of one or more criteria to satisfy.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        entityTypeCriteriaResource,
+			},
+		},
+	}
+
+	entityTypeCriteriaResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Description:  "The criteria key.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"device.category", "device.type", "device.osFamily", "browser.family", "browser.lang", "browser.version", "mktCampaign.source", "mktCampaign.medium", "mktCampaign.name", "mktCampaign.term", "mktCampaign.content", "mktCampaign.clickId", "mktCampaign.network", "geolocation.countryName", "geolocation.locality", "geolocation.region", "geolocation.postalCode", "geolocation.country", "ipOrganization", "referrer.url", "referrer.medium", "referrer.hostname", "authenticated"}, false),
+			},
+			"values": {
+				Description: "The criteria values.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"should_ignore_case": {
+				Description: "Should criteria be case insensitive.",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"operator": {
+				Description:  "The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "equal",
+				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
+			},
+			"entity_type": {
+				Description:  "The entity to match the pattern against.Valid values: visit.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"visit"}, false),
+			},
+		},
+	}
+
+	journeyResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"patterns": {
+				Description: "A list of zero or more patterns to match.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        journeyPatternResource,
+			},
+		},
+	}
+
+	journeyPatternResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"criteria": {
+				Description: "A list of one or more criteria to satisfy.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        criteriaResource,
+			},
+			"count": {
+				Description: "The number of times the pattern must match.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"stream_type": {
+				Description:  "The stream type for which this pattern can be matched on. Valid values: Web, App.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Web", "App" /*, "Custom", "Conversation"*/}, false), // Custom and Conversation seem not to be supported by the API despite the documentation (DEVENGSD-607)
+			},
+			"session_type": {
+				Description:  "The session type for which this pattern can be matched on. Valid values: web, app.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"web", "app"}, false), // custom value seems not to be supported by the API despite the documentation
+			},
+			"event_name": {
+				Description: "The name of the event for which this pattern can be matched on.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     nil,
+			},
+		},
+	}
+
+	criteriaResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"key": {
+				Description: "The criteria key.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ValidateFunc: validation.Any(
+					validation.StringInSlice([]string{"eventName", "page.url", "page.title", "page.hostname", "page.domain", "page.fragment", "page.keywords", "page.pathname", "searchQuery", "page.queryString"}, false),
+					validation.StringMatch(func() *regexp.Regexp {
+						r, _ := regexp.Compile("attributes\\..*\\.value")
+						return r
+					}(), ""),
+				),
+			},
+			"values": {
+				Description: "The criteria values.",
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"should_ignore_case": {
+				Description: "Should criteria be case insensitive.",
+				Type:        schema.TypeBool,
+				Required:    true,
+			},
+			"operator": {
+				Description:  "The comparison operator.Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "equal",
+				ValidateFunc: validation.StringInSlice([]string{"containsAll", "containsAny", "notContainsAll", "notContainsAny", "equal", "notEqual", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "startsWith", "endsWith"}, false),
 			},
 		},
 	}
@@ -244,6 +382,59 @@ func flattenJourneyOutcome(d *schema.ResourceData, journeyOutcome *platformclien
 	resourcedata.SetNillableValue(d, "associated_value_field", lists.FlattenAsList(journeyOutcome.AssociatedValueField, flattenAssociatedValueField))
 }
 
+func flattenContext(context *platformclientv2.Context) map[string]interface{} {
+	if len(*context.Patterns) == 0 {
+		return nil
+	}
+	contextMap := make(map[string]interface{})
+	contextMap["patterns"] = *lists.FlattenList(context.Patterns, flattenContextPattern)
+	return contextMap
+}
+
+func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
+	if len(*journey.Patterns) == 0 {
+		return nil
+	}
+	journeyMap := make(map[string]interface{})
+	journeyMap["patterns"] = *lists.FlattenList(journey.Patterns, flattenJourneyPattern)
+	return journeyMap
+}
+
+func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
+	journeyPatternMap := make(map[string]interface{})
+	journeyPatternMap["criteria"] = *lists.FlattenList(journeyPattern.Criteria, flattenCriteria)
+	journeyPatternMap["count"] = *journeyPattern.Count
+	journeyPatternMap["stream_type"] = *journeyPattern.StreamType
+	journeyPatternMap["session_type"] = *journeyPattern.SessionType
+	stringmap.SetValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
+	return journeyPatternMap
+}
+
+func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
+	criteriaMap := make(map[string]interface{})
+	criteriaMap["key"] = *criteria.Key
+	criteriaMap["values"] = lists.StringListToSet(*criteria.Values)
+	criteriaMap["should_ignore_case"] = *criteria.ShouldIgnoreCase
+	criteriaMap["operator"] = *criteria.Operator
+	return criteriaMap
+}
+
+func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[string]interface{} {
+	contextPatternMap := make(map[string]interface{})
+	contextPatternMap["criteria"] = *lists.FlattenList(contextPattern.Criteria, flattenEntityTypeCriteria)
+	return contextPatternMap
+}
+
+func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
+	entityTypeCriteriaMap := make(map[string]interface{})
+	entityTypeCriteriaMap["key"] = *entityTypeCriteria.Key
+	entityTypeCriteriaMap["values"] = lists.StringListToSet(*entityTypeCriteria.Values)
+	entityTypeCriteriaMap["should_ignore_case"] = *entityTypeCriteria.ShouldIgnoreCase
+	entityTypeCriteriaMap["operator"] = *entityTypeCriteria.Operator
+	entityTypeCriteriaMap["entity_type"] = *entityTypeCriteria.EntityType
+	return entityTypeCriteriaMap
+}
+
 func flattenAssociatedValueField(associatedValueField *platformclientv2.Associatedvaluefield) map[string]interface{} {
 	associatedValueFieldMap := make(map[string]interface{})
 	associatedValueFieldMap["data_type"] = associatedValueField.DataType
@@ -271,6 +462,78 @@ func buildSdkJourneyOutcome(journeyOutcome *schema.ResourceData) *platformclient
 	}
 }
 
+func buildSdkRequestContext(context map[string]interface{}) *platformclientv2.Requestcontext {
+	patterns := &[]platformclientv2.Requestcontextpattern{}
+	if context != nil {
+		patterns = stringmap.BuildSdkList(context, "patterns", buildSdkRequestContextPattern)
+	}
+	return &platformclientv2.Requestcontext{
+		Patterns: patterns,
+	}
+}
+
+func buildSdkRequestContextPattern(contextPattern map[string]interface{}) *platformclientv2.Requestcontextpattern {
+	return &platformclientv2.Requestcontextpattern{
+		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkRequestEntityTypeCriteria),
+	}
+}
+
+func buildSdkRequestEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Requestentitytypecriteria {
+	key := entityTypeCriteria["key"].(string)
+	values := stringmap.BuildSdkStringList(entityTypeCriteria, "values")
+	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].(bool)
+	operator := entityTypeCriteria["operator"].(string)
+	entityType := entityTypeCriteria["entity_type"].(string)
+
+	return &platformclientv2.Requestentitytypecriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
+		EntityType:       &entityType,
+	}
+}
+
+func buildSdkRequestCriteria(criteria map[string]interface{}) *platformclientv2.Requestcriteria {
+	key := criteria["key"].(string)
+	values := stringmap.BuildSdkStringList(criteria, "values")
+	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
+	operator := criteria["operator"].(string)
+
+	return &platformclientv2.Requestcriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
+	}
+}
+
+func buildSdkRequestJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Requestjourneypattern {
+	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkRequestCriteria)
+	count := journeyPattern["count"].(int)
+	streamType := journeyPattern["stream_type"].(string)
+	sessionType := journeyPattern["session_type"].(string)
+	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
+
+	return &platformclientv2.Requestjourneypattern{
+		Criteria:    criteria,
+		Count:       &count,
+		StreamType:  &streamType,
+		SessionType: &sessionType,
+		EventName:   eventName,
+	}
+}
+
+func buildSdkRequestJourney(journey map[string]interface{}) *platformclientv2.Requestjourney {
+	patterns := &[]platformclientv2.Requestjourneypattern{}
+	if journey != nil {
+		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkRequestJourneyPattern)
+	}
+	return &platformclientv2.Requestjourney{
+		Patterns: patterns,
+	}
+}
+
 func buildSdkPatchOutcome(journeyOutcome *schema.ResourceData) *platformclientv2.Patchoutcome {
 	isActive := journeyOutcome.Get("is_active").(bool)
 	displayName := journeyOutcome.Get("display_name").(string)
@@ -286,6 +549,78 @@ func buildSdkPatchOutcome(journeyOutcome *schema.ResourceData) *platformclientv2
 		IsPositive:  isPositive,
 		Context:     sdkContext,
 		Journey:     journey,
+	}
+}
+
+func buildSdkPatchContext(context map[string]interface{}) *platformclientv2.Patchcontext {
+	patterns := &[]platformclientv2.Patchcontextpattern{}
+	if context != nil {
+		patterns = stringmap.BuildSdkList(context, "patterns", buildSdkPatchContextPattern)
+	}
+	return &platformclientv2.Patchcontext{
+		Patterns: patterns,
+	}
+}
+
+func buildSdkPatchContextPattern(contextPattern map[string]interface{}) *platformclientv2.Patchcontextpattern {
+	return &platformclientv2.Patchcontextpattern{
+		Criteria: stringmap.BuildSdkList(contextPattern, "criteria", buildSdkPatchEntityTypeCriteria),
+	}
+}
+
+func buildSdkPatchEntityTypeCriteria(entityTypeCriteria map[string]interface{}) *platformclientv2.Patchentitytypecriteria {
+	key := entityTypeCriteria["key"].(string)
+	values := stringmap.BuildSdkStringList(entityTypeCriteria, "values")
+	shouldIgnoreCase := entityTypeCriteria["should_ignore_case"].(bool)
+	operator := entityTypeCriteria["operator"].(string)
+	entityType := entityTypeCriteria["entity_type"].(string)
+
+	return &platformclientv2.Patchentitytypecriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
+		EntityType:       &entityType,
+	}
+}
+
+func buildSdkPatchJourney(journey map[string]interface{}) *platformclientv2.Patchjourney {
+	patterns := &[]platformclientv2.Patchjourneypattern{}
+	if journey != nil {
+		patterns = stringmap.BuildSdkList(journey, "patterns", buildSdkPatchJourneyPattern)
+	}
+	return &platformclientv2.Patchjourney{
+		Patterns: patterns,
+	}
+}
+
+func buildSdkPatchJourneyPattern(journeyPattern map[string]interface{}) *platformclientv2.Patchjourneypattern {
+	criteria := stringmap.BuildSdkList(journeyPattern, "criteria", buildSdkPatchCriteria)
+	count := journeyPattern["count"].(int)
+	streamType := journeyPattern["stream_type"].(string)
+	sessionType := journeyPattern["session_type"].(string)
+	eventName := stringmap.GetNonDefaultValue[string](journeyPattern, "event_name")
+
+	return &platformclientv2.Patchjourneypattern{
+		Criteria:    criteria,
+		Count:       &count,
+		StreamType:  &streamType,
+		SessionType: &sessionType,
+		EventName:   eventName,
+	}
+}
+
+func buildSdkPatchCriteria(criteria map[string]interface{}) *platformclientv2.Patchcriteria {
+	key := criteria["key"].(string)
+	values := stringmap.BuildSdkStringList(criteria, "values")
+	shouldIgnoreCase := criteria["should_ignore_case"].(bool)
+	operator := criteria["operator"].(string)
+
+	return &platformclientv2.Patchcriteria{
+		Key:              &key,
+		Values:           values,
+		ShouldIgnoreCase: &shouldIgnoreCase,
+		Operator:         &operator,
 	}
 }
 
