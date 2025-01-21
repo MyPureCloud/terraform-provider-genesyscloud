@@ -1,10 +1,10 @@
 ---
-page_title: "genesyscloud_task_management_onattributechange_rule Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_task_management_worktypes_flows_onattributechange_rule Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud task management onattributeChange Rule
 ---
-# genesyscloud_task_management_onattributechange_rule (Resource)
+# genesyscloud_task_management_worktypes_flows_onattributechange_rule (Resource)
 
 Genesys Cloud task management onattributeChange Rule
 
@@ -22,7 +22,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_task_management_onattributechange_rule" "onattributechange_rule_data" {
+resource "genesyscloud_task_management_worktypes_flows_onattributechange_rule" "onattributechange_rule_data" {
   worktype_id = genesyscloud_task_management_worktype.example.id
   name        = "OnAttributeChange Rule"
   condition {
