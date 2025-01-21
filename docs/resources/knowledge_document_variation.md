@@ -88,12 +88,11 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
 ### Required
 
 - `knowledge_base_id` (String) Knowledge base id of the label
-- `knowledge_document_id` (String) Knowledge base id of the label
+- `knowledge_document_id` (String) Knowledge document id of the label
 - `knowledge_document_variation` (Block List, Min: 1, Max: 1) Knowledge document variation (see [below for nested schema](#nestedblock--knowledge_document_variation))
 
 ### Optional
 
-- `contexts` (Block List) The context values associated with the variation (see [below for nested schema](#nestedblock--contexts))
 - `published` (Boolean) If true, the document will be published with the new variation. If false, the updated document will be in a draft state.
 
 ### Read-Only
@@ -215,7 +214,7 @@ Optional:
 
 Required:
 
-- `text` (String) Text.
+- `text` (String) Text
 
 Optional:
 
@@ -332,7 +331,7 @@ Optional:
 
 Required:
 
-- `text` (String) Text.
+- `text` (String) Text
 
 Optional:
 
@@ -428,7 +427,7 @@ Optional:
 
 Required:
 
-- `id` (String) The globally unique identifier for the knowledge context
+- `context_id` (String) The globally unique identifier for the knowledge context
 
 
 <a id="nestedblock--knowledge_document_variation--contexts--values"></a>
@@ -436,7 +435,7 @@ Required:
 
 Required:
 
-- `id` (String) The globally unique identifier for the knowledge context value
+- `value_id` (String) The globally unique identifier for the knowledge context value
 
 
 
@@ -446,32 +445,4 @@ Required:
 Optional:
 
 - `id` (String) Id
-
-
-
-<a id="nestedblock--contexts"></a>
-### Nested Schema for `contexts`
-
-Required:
-
-- `context` (Block List, Min: 1) The knowledge context associated with the variation (see [below for nested schema](#nestedblock--contexts--context))
-
-Optional:
-
-- `values` (Block List) The list of knowledge context values associated with the variation (see [below for nested schema](#nestedblock--contexts--values))
-
-<a id="nestedblock--contexts--context"></a>
-### Nested Schema for `contexts.context`
-
-Required:
-
-- `context_id` (String) The globally unique identifier for the knowledge context
-
-
-<a id="nestedblock--contexts--values"></a>
-### Nested Schema for `contexts.values`
-
-Required:
-
-- `value_id` (String) The globally unique identifier for the knowledge context value
 

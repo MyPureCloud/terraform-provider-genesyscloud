@@ -1,7 +1,9 @@
 package knowledgedocumentvariation
 
 import (
+	"fmt"
 	"log"
+	"strings"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -577,7 +579,6 @@ func flattenDocumentListProperties(blocksIn []platformclientv2.Documentbodylistb
 	blocksOut := make([]interface{}, 0)
 	for _, property := range blocksIn {
 		blockOutMap := make(map[string]interface{})
-		log.Println("HERE", property.UnorderedType, property.OrderedType)
 		if property.OrderedType != nil && *property.OrderedType != "" {
 			blockOutMap["ordered_type"] = *property.OrderedType
 		}
@@ -803,4 +804,20 @@ func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvari
 		variationOut["contexts"] = flattenVariationContexts(*variationIn.Contexts)
 	}
 	return []interface{}{variationOut}
+}
+
+// Utils
+
+func parseResourceIDs(id string) (*resourceIDs, error) {
+	parts := strings.Split(id, " ")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid resource ID: %s", id)
+	}
+
+	return &resourceIDs{
+		variationID:         parts[0],
+		knowledgeBaseID:     parts[1],
+		documentID:          parts[2],
+		knowledgeDocumentID: strings.Split(parts[2], ",")[0],
+	}, nil
 }

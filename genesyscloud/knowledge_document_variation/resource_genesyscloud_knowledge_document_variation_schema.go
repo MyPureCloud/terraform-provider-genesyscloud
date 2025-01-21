@@ -485,7 +485,7 @@ func ResourceKnowledgeDocumentVariation() *schema.Resource {
 				Required:    true,
 			},
 			"knowledge_document_id": {
-				Description: "Knowledge base id of the label",
+				Description: "Knowledge document id of the label",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -500,6 +500,30 @@ func ResourceKnowledgeDocumentVariation() *schema.Resource {
 				MaxItems:    1,
 				Required:    true,
 				Elem:        knowledgeDocumentVariation,
+			},
+		},
+	}
+}
+
+func dataSourceKnowledgeDocumentVariation() *schema.Resource {
+	return &schema.Resource{
+		Description: "Data source for Genesys Cloud Knowledge Document Variation. Select a knowledge document variation by knowledge document id and variation id",
+		ReadContext: provider.ReadWithPooledClient(dataSourceKnowledgeDocumentVariationRead),
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "The name of the variation",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"knowledge_base_id": {
+				Description: "Knowledge base id of the label",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"knowledge_document_id": {
+				Description: "Knowledge document id",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

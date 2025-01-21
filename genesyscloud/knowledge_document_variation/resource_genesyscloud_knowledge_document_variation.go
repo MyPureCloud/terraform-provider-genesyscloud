@@ -22,6 +22,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
+type resourceIDs struct {
+	variationID         string
+	knowledgeBaseID     string
+	documentID          string
+	knowledgeDocumentID string
+}
+
 func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	variationProxy := getVariationRequestProxy(clientConfig)
@@ -43,15 +50,18 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 		for _, knowledgeDoc := range *variationEntities {
 			// parse document state
 			var documentState string
-			isValidState := strings.EqualFold(*knowledgeDoc.State, "Published") || strings.EqualFold(*knowledgeDoc.State, "Draft")
-			if isValidState {
-				documentState = *knowledgeDoc.State
+
+			if knowledgeDoc.State != nil && *knowledgeDoc.State != "" {
+				isValidState := strings.EqualFold(*knowledgeDoc.State, "Published") || strings.EqualFold(*knowledgeDoc.State, "Draft")
+				if isValidState {
+					documentState = *knowledgeDoc.State
+				}
 			}
 
 			// get the variations for each document
 			knowledgeDocumentVariations, resp, getErr := variationProxy.getAllVariations(ctx, *knowledgeBase.Id, *knowledgeDoc.Id, documentState, nil)
 			if getErr != nil {
-				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of knowledge document variations error: %v", err), resp)
+				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of knowledge document variations error: %v", getErr), resp)
 			}
 
 			if knowledgeDocumentVariations == nil || len(*knowledgeDocumentVariations) == 0 {
@@ -82,14 +92,19 @@ func getAllKnowledgeBases(ctx context.Context, proxy *variationRequestProxy) ([]
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("%v", err), response)
 	}
-	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+	if publishedEntities != nil {
+		knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+	}
 
 	// get unpublished knowledge bases
 	unpublishedEntities, response, err := proxy.GetAllKnowledgebaseEntities(ctx, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("%v", err), response)
 	}
-	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+
+	if unpublishedEntities != nil {
+		knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+	}
 
 	return knowledgeBaseList, nil
 }
@@ -98,7 +113,7 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	variationProxy := getVariationRequestProxy(sdkConfig)
 
-	knowledgeBaseId := d.Get("knowledge_base_id").(string)
+	knowledgeBaseID := d.Get("knowledge_base_id").(string)
 	documentResourceId := d.Get("knowledge_document_id").(string)
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 	knowledgeDocumentVariation := d.Get("knowledge_document_variation").([]interface{})[0].(map[string]interface{})
@@ -112,19 +127,19 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("Creating knowledge document variation for document %s", knowledgeDocumentId)
 
-	knowledgeDocumentVariationResponse, resp, err := variationProxy.CreateVariation(ctx, knowledgeDocumentVariationRequest, knowledgeDocumentId, knowledgeBaseId)
+	knowledgeDocumentVariationResponse, resp, err := variationProxy.CreateVariation(ctx, knowledgeDocumentVariationRequest, knowledgeDocumentId, knowledgeBaseID)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create variation for knowledge document %s error: %s", d.Id(), err), resp)
 	}
 
 	if published == true {
-		_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, knowledgeDocumentId, knowledgeBaseId, &platformclientv2.Knowledgedocumentversion{})
+		_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, knowledgeDocumentId, knowledgeBaseID, &platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
 		}
 	}
 
-	id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariationResponse.Id, knowledgeBaseId, documentResourceId)
+	id := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariationResponse.Id, knowledgeBaseID, documentResourceId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document variation %s", *knowledgeDocumentVariationResponse.Id)
@@ -135,11 +150,10 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	variationProxy := getVariationRequestProxy(sdkConfig)
 
-	id := strings.Split(d.Id(), " ")
-	documentVariationId := id[0]
-	knowledgeBaseId := id[1]
-	documentResourceId := id[2]
-	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
+	ids, err := parseResourceIDs(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.ConsistencyChecks(), ResourceType)
 
@@ -154,7 +168,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	log.Printf("Reading knowledge document variation %s", documentVariationId)
+	log.Printf("Reading knowledge document variation %s", ids.variationID)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var knowledgeDocumentVariation *platformclientv2.Documentvariationresponse
 		/*
@@ -164,18 +178,18 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		 * If the published flag were required, it would cause consistency issues for the import state.
 		 */
 		if documentState == "" {
-			publishedVariation, resp, publishedErr := variationProxy.getVariationRequestById(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published", nil)
+			publishedVariation, resp, publishedErr := variationProxy.getVariationRequestById(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, "Published", nil)
 
 			if publishedErr != nil {
 				// Published version may or may not exist, so if status is 404, sleep and retry once and then move on to retrieve draft variation.
 				if util.IsStatus404(resp) {
 					time.Sleep(2 * time.Second)
-					retryVariation, retryResp, retryErr := variationProxy.getVariationRequestById(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published", nil)
+					retryVariation, retryResp, retryErr := variationProxy.getVariationRequestById(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, "Published", nil)
 
 					if retryErr != nil {
 						if !util.IsStatus404(retryResp) {
 							log.Printf("%s", retryErr)
-							return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, retryErr), retryResp))
+							return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", ids.variationID, retryErr), retryResp))
 						}
 					} else {
 						publishedVariation = retryVariation
@@ -183,17 +197,17 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 				} else {
 					log.Printf("%s", publishedErr)
-					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, publishedErr), resp))
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", ids.variationID, publishedErr), resp))
 				}
 			}
 
-			draftVariation, resp, draftErr := variationProxy.getVariationRequestById(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
+			draftVariation, resp, draftErr := variationProxy.getVariationRequestById(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, "Draft", nil)
 			if draftErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", ids.variationID, draftErr), resp))
 				}
 				log.Printf("%s", draftErr)
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", documentVariationId, draftErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %s", ids.variationID, draftErr), resp))
 			}
 
 			if publishedVariation != nil && publishedVariation.DateModified != nil && publishedVariation.DateModified.After(*draftVariation.DateModified) {
@@ -202,22 +216,22 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 				knowledgeDocumentVariation = draftVariation
 			}
 		} else {
-			variation, resp, getErr := variationProxy.getVariationRequestById(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, documentState, nil)
+			variation, resp, getErr := variationProxy.getVariationRequestById(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, documentState, nil)
 			if getErr != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", ids.variationID, getErr), resp))
 				}
 				log.Printf("%s", getErr)
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", documentVariationId, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s | error: %s", ids.variationID, getErr), resp))
 			}
 
 			knowledgeDocumentVariation = variation
 		}
 
-		newId := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocumentVariation.Document.KnowledgeBase.Id, documentResourceId)
+		newId := fmt.Sprintf("%s %s %s", *knowledgeDocumentVariation.Id, *knowledgeDocumentVariation.Document.KnowledgeBase.Id, ids.documentID)
 		d.SetId(newId)
 		_ = d.Set("knowledge_base_id", *knowledgeDocumentVariation.Document.KnowledgeBase.Id)
-		_ = d.Set("knowledge_document_id", documentResourceId)
+		_ = d.Set("knowledge_document_id", ids.documentID)
 		_ = d.Set("knowledge_document_variation", flattenKnowledgeDocumentVariation(*knowledgeDocumentVariation))
 
 		if knowledgeDocumentVariation.DocumentVersion != nil && knowledgeDocumentVariation.DocumentVersion.Id != nil && len(*knowledgeDocumentVariation.DocumentVersion.Id) > 0 {
@@ -226,7 +240,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			_ = d.Set("published", false)
 		}
 
-		log.Printf("Read knowledge document variation %s", documentVariationId)
+		log.Printf("Read knowledge document variation %s", ids.variationID)
 		return cc.CheckState(d)
 	})
 }
@@ -235,11 +249,10 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	variationProxy := getVariationRequestProxy(sdkConfig)
 
-	id := strings.Split(d.Id(), " ")
-	documentVariationId := id[0]
-	knowledgeBaseId := id[1]
-	documentResourceId := id[2]
-	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
+	ids, err := parseResourceIDs(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 	knowledgeDocumentVariation := d.Get("knowledge_document_variation").([]interface{})[0].(map[string]interface{})
 
 	published := false
@@ -247,25 +260,25 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		published = publishedIn.(bool)
 	}
 
-	log.Printf("Updating knowledge document variation %s", documentVariationId)
+	log.Printf("Updating knowledge document variation %s", ids.variationID)
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current knowledge document variation version
-		_, resp, getErr := variationProxy.getVariationRequestById(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
+		_, resp, getErr := variationProxy.getVariationRequestById(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, "Draft", nil)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s error: %s", id, getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s error: %s", ids.variationID, getErr), resp)
 		}
 
 		knowledgeDocumentVariationUpdate := buildKnowledgeDocumentVariationUpdate(knowledgeDocumentVariation)
 
-		_, resp, putErr := variationProxy.updateVariationRequest(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, *knowledgeDocumentVariationUpdate)
+		_, resp, putErr := variationProxy.updateVariationRequest(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, *knowledgeDocumentVariationUpdate)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update knowledge document variation %s error: %s", documentVariationId, putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update knowledge document variation %s error: %s", ids.variationID, putErr), resp)
 		}
 		if published == true {
-			_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, knowledgeDocumentId, knowledgeBaseId, &platformclientv2.Knowledgedocumentversion{})
+			_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeDocumentID, ids.knowledgeBaseID, &platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document %s error: %s", id, versionErr), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document %s error: %s", ids.knowledgeDocumentID, versionErr), resp)
 			}
 		}
 
@@ -275,7 +288,7 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		return diagErr
 	}
 
-	log.Printf("Updated knowledge document variation %s", documentVariationId)
+	log.Printf("Updated knowledge document variation %s", ids.variationID)
 	return readKnowledgeDocumentVariation(ctx, d, meta)
 }
 
@@ -283,22 +296,21 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	variationProxy := getVariationRequestProxy(sdkConfig)
 
-	id := strings.Split(d.Id(), " ")
-	documentVariationId := id[0]
-	knowledgeBaseId := id[1]
-	documentResourceId := id[2]
-	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
+	ids, err := parseResourceIDs(d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	published := false
 	if publishedIn, ok := d.GetOk("published"); ok {
 		published = publishedIn.(bool)
 	}
 
-	log.Printf("Deleting knowledge document variation %s", id)
+	log.Printf("Deleting knowledge document variation %s", ids.variationID)
 
-	resp, err := variationProxy.deleteVariationRequest(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId)
+	resp, err := variationProxy.deleteVariationRequest(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", id, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.variationID, err), resp)
 	}
 
 	if published == true {
@@ -308,13 +320,13 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		 * A new document version can only be published if there are other variations than the one being removed
 		 */
 
-		variations, resp, variationErr := variationProxy.getAllVariations(ctx, knowledgeBaseId, knowledgeDocumentId, "Draft", nil)
+		variations, resp, variationErr := variationProxy.getAllVariations(ctx, ids.knowledgeBaseID, ids.knowledgeDocumentID, "Draft", nil)
 		if variationErr != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve knowledge document variations error: %s", err), resp)
 		}
 
 		if len(*variations) > 0 {
-			_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, knowledgeBaseId, knowledgeDocumentId, &platformclientv2.Knowledgedocumentversion{})
+			_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeBaseID, ids.knowledgeDocumentID, &platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
 				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
@@ -324,14 +336,14 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		// The DELETE resource for knowledge document variations only removes draft variations. So set the documentState param to "Draft" for the check
-		_, resp, err := variationProxy.getVariationRequestById(ctx, documentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
+		_, resp, err := variationProxy.getVariationRequestById(ctx, ids.variationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, "Draft", nil)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("Deleted knowledge document variation %s", documentVariationId)
+				log.Printf("Deleted knowledge document variation %s", ids.variationID)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting knowledge document variation %s | error: %s", documentVariationId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting knowledge document variation %s | error: %s", ids.variationID, err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document variation %s still exists", documentVariationId), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document variation %s still exists", ids.variationID), resp))
 	})
 }

@@ -3,6 +3,7 @@ package knowledgedocumentvariation
 import (
 	"context"
 	"fmt"
+	"log"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -16,9 +17,8 @@ type getAllVariationsFunc func(ctx context.Context, p *variationRequestProxy, kn
 type getVariationRequestByIdFunc func(ctx context.Context, p *variationRequestProxy, documentVariationId string, documentId string, knowledgeBaseId string, documentState string, expand []string) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error)
 type updateVariationRequestFunc func(ctx context.Context, p *variationRequestProxy, documentVariationId string, documentId string, knowledgeBaseId string, body platformclientv2.Documentvariationrequest) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error)
 type deleteVariationRequestFunc func(ctx context.Context, p *variationRequestProxy, variationId, documentId, baseId string) (*platformclientv2.APIResponse, error)
-
+type getVariationRequestIdByNameFunc func(ctx context.Context, p *variationRequestProxy, name, knowledgeBaseID, knowledgeDocumentID string) (string, *platformclientv2.APIResponse, bool, error)
 type createKnowledgeKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *variationRequestProxy, knowledgeDocumentId, knowledgeBaseId string, version *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
-
 type GetAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *variationRequestProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 
 // variationRequestProxy contains all of the methods that call genesys cloud APIs.
@@ -28,6 +28,7 @@ type variationRequestProxy struct {
 	createVariationAttr                              createVariationFunc
 	getAllVariationsAttr                             getAllVariationsFunc
 	getVariationRequestByIdAttr                      getVariationRequestByIdFunc
+	getVariationRequestIdByNameAttr                  getVariationRequestIdByNameFunc
 	updateVariationRequestAttr                       updateVariationRequestFunc
 	deleteVariationRequestAttr                       deleteVariationRequestFunc
 	createKnowledgeKnowledgebaseDocumentVersionsAttr createKnowledgeKnowledgebaseDocumentVersionsFunc
@@ -40,14 +41,14 @@ func newVariationRequestProxy(clientConfig *platformclientv2.Configuration) *var
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 	variationCache := rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
 	return &variationRequestProxy{
-		clientConfig:                clientConfig,
-		knowledgeApi:                api,
-		createVariationAttr:         createVariationFn,
-		getAllVariationsAttr:        getAllVariationsFn,
-		getVariationRequestByIdAttr: getVariationRequestByIdFn,
-		updateVariationRequestAttr:  updateVariationRequestFn,
-		deleteVariationRequestAttr:  deleteVariationRequestFn,
-
+		clientConfig:                                     clientConfig,
+		knowledgeApi:                                     api,
+		createVariationAttr:                              createVariationFn,
+		getAllVariationsAttr:                             getAllVariationsFn,
+		getVariationRequestByIdAttr:                      getVariationRequestByIdFn,
+		updateVariationRequestAttr:                       updateVariationRequestFn,
+		deleteVariationRequestAttr:                       deleteVariationRequestFn,
+		getVariationRequestIdByNameAttr:                  getVariationRequestIdByNameFn,
 		createKnowledgeKnowledgebaseDocumentVersionsAttr: createKnowledgeKnowledgebaseDocumentVersionsFn,
 		GetAllKnowledgebaseEntitiesAttr:                  GetAllKnowledgebaseEntitiesFn,
 		variationCache:                                   variationCache,
@@ -58,7 +59,6 @@ func getVariationRequestProxy(clientConfig *platformclientv2.Configuration) *var
 	if internalProxy == nil {
 		internalProxy = newVariationRequestProxy(clientConfig)
 	}
-
 	return internalProxy
 }
 
@@ -75,6 +75,11 @@ func (p *variationRequestProxy) getAllVariations(ctx context.Context, knowledgeB
 // getVariationRequestById returns a single Genesys Cloud variation request by Id
 func (p *variationRequestProxy) getVariationRequestById(ctx context.Context, documentVariationId string, documentId string, knowledgeBaseId string, documentState string, expand []string) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
 	return p.getVariationRequestByIdAttr(ctx, p, documentVariationId, documentId, knowledgeBaseId, documentState, expand)
+}
+
+// getVariationRequestIdByName returns a single Genesys Cloud variation request by a name
+func (p *variationRequestProxy) getVariationRequestIdByName(ctx context.Context, name, knowledgeBaseID, knowledgeDocumentID string) (string, *platformclientv2.APIResponse, bool, error) {
+	return p.getVariationRequestIdByNameAttr(ctx, p, name, knowledgeBaseID, knowledgeDocumentID)
 }
 
 // updateVariationRequest updates a Genesys Cloud variation request
@@ -149,6 +154,36 @@ func getVariationRequestByIdFn(ctx context.Context, p *variationRequestProxy, do
 		return variation, nil, nil
 	}
 	return p.knowledgeApi.GetKnowledgeKnowledgebaseDocumentVariation(documentVariationId, documentId, knowledgeBaseId, documentState, expand)
+}
+
+// getVariationRequestIdByNameFn is an implementation of the function to get a Genesys Cloud variation request by name
+func getVariationRequestIdByNameFn(ctx context.Context, p *variationRequestProxy, name, knowledgeBaseID, knowledgeDocumentID string) (string, *platformclientv2.APIResponse, bool, error) {
+
+	// Check first for published versions, if 404
+	allVariations, resp, err := getAllVariationsFn(ctx, p, knowledgeBaseID, knowledgeDocumentID, "Published", []string{})
+	if err != nil {
+		if util.IsStatus404(resp) {
+			allVariations, resp, err = getAllVariationsFn(ctx, p, knowledgeBaseID, knowledgeDocumentID, "Draft", []string{})
+			if err != nil {
+				return "", resp, false, err
+			}
+		} else {
+			return "", resp, false, err
+		}
+	}
+
+	if allVariations == nil || len(*allVariations) == 0 {
+		return "", resp, true, err
+	}
+
+	for _, variation := range *allVariations {
+		if *variation.Name == name {
+			log.Printf("Retrieved the variation request id %s by name %s", *variation.Id, name)
+			return *variation.Id, resp, false, nil
+		}
+	}
+
+	return "", resp, true, fmt.Errorf("unable to find variation request with name %s", name)
 }
 
 // updateVariationRequestFn is an implementation of the function to update a Genesys Cloud variation request
