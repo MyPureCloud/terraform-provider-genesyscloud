@@ -120,7 +120,10 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 
 		allExternalOrganizations = append(allExternalOrganizations, *externalContactsOrganization.Entities...)
 
-		if externalContactsOrganization.Cursors == nil || externalContactsOrganization.Cursors.After == nil {
+		if externalContactsOrganization.Cursors == nil {
+			break
+		}
+		if externalContactsOrganization.Cursors.After == nil || (*externalContactsOrganization.Cursors.After) == "" {
 			break
 		}
 		cursor = *externalContactsOrganization.Cursors.After
