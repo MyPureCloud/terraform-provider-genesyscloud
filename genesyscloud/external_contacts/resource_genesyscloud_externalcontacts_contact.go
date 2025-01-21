@@ -66,6 +66,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Creating external contact")
 	externalContact := getExternalContactFromResourceData(d)
+	fmt.Println(externalContact.String())
 	contact, resp, err := ep.createExternalContact(ctx, externalContact)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create external contact error: %s", err), resp)
@@ -117,6 +118,9 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "facebook_id", externalContact.FacebookId, flattenSdkFacebookId)
 		resourcedata.SetNillableValue(d, "survey_opt_out", externalContact.SurveyOptOut)
 		resourcedata.SetNillableValue(d, "external_system_url", externalContact.ExternalSystemUrl)
+		if externalContact.ExternalOrganization != nil && externalContact.ExternalOrganization.Id != nil {
+			resourcedata.SetNillableValue(d, "external_organization_id", externalContact.ExternalOrganization.Id)
+		}
 
 		log.Printf("Read external contact %s", d.Id())
 		return cc.CheckState(d)

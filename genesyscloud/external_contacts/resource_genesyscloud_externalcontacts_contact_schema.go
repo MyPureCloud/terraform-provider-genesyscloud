@@ -320,6 +320,11 @@ func ResourceExternalContact() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"external_organization_id": {
+				Description: "External organization for this external contact",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 }
@@ -329,7 +334,7 @@ func ExternalContactExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthExternalContacts),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"external_organization": {}, //Need to add this when we external orgs implemented
+			"external_organization_id": {RefType: "genesyscloud_contacts_organization"},
 		},
 	}
 }

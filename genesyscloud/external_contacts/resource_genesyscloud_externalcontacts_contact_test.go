@@ -2,6 +2,9 @@ package external_contacts
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"strconv"
+	externalContactOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -159,6 +162,70 @@ func TestAccResourceExternalContacts(t *testing.T) {
 			},
 		},
 		CheckDestroy: testVerifyContactDestroyed,
+	})
+}
+
+func TestResourceExternalContactsOrganizationRef(t *testing.T) {
+	var (
+		organizationResourceLabel = "external_organization_test"
+		organizationResourcePath  = "genesyscloud_externalcontacts_organization." + organizationResourceLabel
+		name                      = "ABCCorp-" + uuid.NewString()
+		phoneDisplay              = "+1 321-700-1243"
+		countryCode               = "US"
+		address                   = "1011 New Hope St"
+		city                      = "Norristown"
+		state                     = "PA"
+		postalCode                = "19401"
+		twitterId                 = "twitterId"
+		twitterName               = "twitterName"
+		twitterScreenName         = "twitterScreenname"
+		symbol                    = "ABC"
+		exchange                  = "NYSE"
+		tags                      = []string{
+			strconv.Quote("news"),
+			strconv.Quote("channel"),
+		}
+	)
+	var (
+		contactResourceLabel                = "externalcontact-contact"
+		title                               = "testing team"
+		externalContactOrganizationResource = externalContactOrganization.GenerateBasicExternalOrganizationResource(
+			organizationResourceLabel,
+			name,
+			phoneDisplay, countryCode,
+			address, city, state, postalCode, countryCode,
+			twitterId, twitterName, twitterScreenName,
+			symbol, exchange,
+			tags,
+			"",
+		)
+	)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				//Create
+				Config: externalContactOrganizationResource + GenerateBasicExternalContactResource(
+					contactResourceLabel,
+					title,
+					"external_organization_id = genesyscloud_externalcontacts_organization."+organizationResourceLabel+".id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+contactResourceLabel, "title", title),
+					resource.TestCheckResourceAttrPair(
+						organizationResourcePath, "id",
+						ResourceType+"."+contactResourceLabel, "external_organization_id",
+					),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_externalcontacts_contact." + contactResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
 	})
 }
 

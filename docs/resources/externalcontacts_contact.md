@@ -92,8 +92,9 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
     }
     display_name = "facebookName"
   }
-  survey_opt_out      = false
-  external_system_url = "https://systemUrl.com"
+  survey_opt_out           = false
+  external_system_url      = "https://systemUrl.com"
+  external_organization_id = genesyscloud_externalcontacts_organization.example.id
 }
 ```
 
@@ -104,6 +105,7 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
 
 - `address` (Block List, Max: 1) Contact address. (see [below for nested schema](#nestedblock--address))
 - `cell_phone` (Block List, Max: 1) Contact call phone settings. (see [below for nested schema](#nestedblock--cell_phone))
+- `external_organization_id` (String) External organization for this external contact
 - `external_system_url` (String) Contact external system url.
 - `facebook_id` (Block List, Max: 1) Contact facebook account informations. (see [below for nested schema](#nestedblock--facebook_id))
 - `first_name` (String) The first name of the contact.
