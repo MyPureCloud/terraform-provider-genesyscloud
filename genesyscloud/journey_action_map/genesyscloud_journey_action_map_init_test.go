@@ -4,11 +4,11 @@ import (
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
-	"terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -44,11 +44,11 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceJourneyActionMap()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
-	providerResources[architect_schedules.ResourceType] = architect_schedules.ResourceArchitectSchedules()
-	providerResources[architect_schedulegroups.ResourceType] = architect_schedulegroups.ResourceArchitectSchedulegroups()
-	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
+	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
+	providerResources[architectSchedulegroups.ResourceType] = architectSchedulegroups.ResourceArchitectSchedulegroups()
+	providerResources[architectFlow.ResourceType] = architectFlow.ResourceArchitectFlow()
+	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
-	providerResources["genesyscloud_journey_outcome"] = journey_outcome.ResourceJourneyOutcome()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

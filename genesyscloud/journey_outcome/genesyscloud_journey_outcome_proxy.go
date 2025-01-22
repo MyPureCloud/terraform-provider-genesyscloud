@@ -121,7 +121,7 @@ func (p *journeyOutcomeProxy) deleteJourneyOutcome(ctx context.Context, id strin
 func createJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, outcome *platformclientv2.Outcomerequest) (*platformclientv2.Outcome, *platformclientv2.APIResponse, error) {
 	outcomeRes, resp, err := p.journeyApi.PostJourneyOutcomes(*outcome)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to create journey outcome: %s", err)
+		return nil, resp, err
 	}
 	return outcomeRes, resp, nil
 }
@@ -133,7 +133,7 @@ func getAllJourneyOutcomesFn(ctx context.Context, p *journeyOutcomeProxy) (*[]pl
 
 	outcomes, resp, err := p.journeyApi.GetJourneyOutcomes(1, pageSize, "", nil, nil, "")
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get journey outcomes: %s", err)
+		return nil, resp, err
 	}
 
 	if outcomes == nil || outcomes.Entities == nil || len(*outcomes.Entities) == 0 {
@@ -145,7 +145,7 @@ func getAllJourneyOutcomesFn(ctx context.Context, p *journeyOutcomeProxy) (*[]pl
 	for pageNum := 2; pageNum <= *outcomes.PageCount; pageNum++ {
 		outcomes, resp, err := p.journeyApi.GetJourneyOutcomes(pageNum, pageSize, "", nil, nil, "")
 		if err != nil {
-			return nil, resp, fmt.Errorf("Failed to get journey outcomes page %d: %s", pageNum, err)
+			return nil, resp, err
 		}
 		if outcomes == nil || outcomes.Entities == nil || len(*outcomes.Entities) == 0 {
 			break
@@ -186,7 +186,7 @@ func getJourneyOutcomeIdByNameFn(ctx context.Context, p *journeyOutcomeProxy, na
 func getJourneyOutcomeByIdFn(ctx context.Context, p *journeyOutcomeProxy, id string) (outcome *platformclientv2.Outcome, response *platformclientv2.APIResponse, err error) {
 	outcome, resp, err := p.journeyApi.GetJourneyOutcome(id)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get journey outcome by id %s: %s", id, err)
+		return nil, resp, err
 	}
 	return outcome, resp, nil
 }
@@ -195,7 +195,7 @@ func getJourneyOutcomeByIdFn(ctx context.Context, p *journeyOutcomeProxy, id str
 func updateJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, id string, outcome *platformclientv2.Patchoutcome) (*platformclientv2.Outcome, *platformclientv2.APIResponse, error) {
 	outcomeRes, resp, err := p.journeyApi.PatchJourneyOutcome(id, *outcome)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to update journey outcome: %s", err)
+		return nil, resp, err
 	}
 	return outcomeRes, resp, nil
 }
@@ -204,7 +204,8 @@ func updateJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, id stri
 func deleteJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, id string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.journeyApi.DeleteJourneyOutcome(id)
 	if err != nil {
-		return resp, fmt.Errorf("Failed to delete journey outcome: %s", err)
+		return resp, err
 	}
+	rc.DeleteCacheItem(p.outcomeCache, id)
 	return resp, nil
 }

@@ -271,3 +271,10 @@ func buildSdkAssociatedValueField(associatedValueField map[string]interface{}) *
 		Name:     &name,
 	}
 }
+
+func GetStringValue(s *string, defaultValue string) string {
+	if s != nil {
+		return *s
+	}
+	return defaultValue
+}
