@@ -96,13 +96,13 @@ func IsValidPlatform(p Platform) bool {
 
 func (p Platform) Validate() error {
 	if !IsValidPlatform(p) {
-		return fmt.Errorf("invalid platform value: %d", p)
+		return fmt.Errorf("Invalid platform value: %d. We can't detect what platform is running this provider.", p)
 	}
 	if platformConfigSingleton == nil {
-		return fmt.Errorf("platform configuration not initialized")
+		return fmt.Errorf("Platform configuration not initialized inside this provider.")
 	}
 	if platformConfigSingleton.binaryPath == "" {
-		return fmt.Errorf("binary path not set")
+		return fmt.Errorf("Binary path was not set. We can't detect what platform is running this provider.")
 	}
 	return nil
 }
