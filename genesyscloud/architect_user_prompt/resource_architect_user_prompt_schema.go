@@ -49,7 +49,7 @@ var userPromptResource = &schema.Resource{
 		"language": {
 			Description:  "Language for the prompt resource. (eg. en-us)",
 			Type:         schema.TypeString,
-			Required:     true,
+			Optional:     true,
 			ValidateFunc: validation.StringInSlice(architectlanguages.Languages, false),
 		},
 		"tts_string": {

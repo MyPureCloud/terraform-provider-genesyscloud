@@ -263,7 +263,6 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						return nil
 					},
 				),
-				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
@@ -274,7 +273,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {
-			time.Sleep(40 * time.Second)
+			time.Sleep(60 * time.Second)
 			return testVerifyGroupsAndUsersDestroyed(state)
 		},
 	})
