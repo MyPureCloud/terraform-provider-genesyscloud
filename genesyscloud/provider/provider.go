@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -274,6 +275,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		orgDefaultCountryCode = *currentOrg.DefaultCountryCode
 
 		stackTraceLogsFilePath, _ := data.Get("log_stack_traces_file_path").(string)
+		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), stackTraceLogsFilePath)
 
 		return &ProviderMeta{
 			Version:               version,

@@ -23,6 +23,7 @@ import (
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
@@ -1158,11 +1159,9 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		}
 	}
 
-	log.Println("This Is Important 1")
-	refreshFunc := wrapRefreshWithoutUpgradeWithRecover(resource.RefreshWithoutUpgrade)
-	state, err := refreshFunc(ctx, instanceState, meta)
+	refreshWithoutUpgrade := wrapRefreshWithoutUpgradeWithRecover(resource.RefreshWithoutUpgrade)
+	state, err := refreshWithoutUpgrade(ctx, instanceState, meta)
 	if err != nil {
-		log.Println("This Is Important 2")
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
 			return nil, nil
@@ -1170,7 +1169,6 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		log.Printf("Error during RefreshWithoutUpgrade for resource  %s, %v", resID, err)
 		return nil, err
 	}
-	log.Println("This Is Important 3")
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
 		log.Printf("Empty State for resource %s, %v", resID, state)
@@ -1186,12 +1184,16 @@ type refreshWithoutUpgradeFunc func(context.Context, *terraform.InstanceState, a
 func wrapRefreshWithoutUpgradeWithRecover(method refreshWithoutUpgradeFunc) refreshWithoutUpgradeFunc {
 	return func(ctx context.Context, state *terraform.InstanceState, meta any) (*terraform.InstanceState, diag.Diagnostics) {
 		defer func() {
-			providerMeta, ok := meta.(*provider.ProviderMeta)
-			if !ok || !providerMeta.LogStackTraces {
+			panicRecoveryLogger := panic_recovery_logger.GetPanicRecoveryLoggerInstance()
+			if !panicRecoveryLogger.LoggerEnabled {
 				return
 			}
 			if r := recover(); r != nil {
 				log.Printf("wrapRefreshWithoutUpgradeWithRecover: Recovered from panic while refreshing resource state: %v", r)
+				err := panicRecoveryLogger.WriteStackTracesToFile(r)
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}()
 		return method(ctx, state, meta)

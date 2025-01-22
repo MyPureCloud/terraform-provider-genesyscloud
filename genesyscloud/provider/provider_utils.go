@@ -21,7 +21,7 @@ func GetProviderFactories(providerResources map[string]*schema.Resource, provide
 	}
 }
 
-// Verify default division is home division
+// TestDefaultHomeDivision Verify default division is home division
 func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		homeDivID, err := getHomeDivisionID()

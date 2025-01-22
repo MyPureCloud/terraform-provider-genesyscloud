@@ -2,12 +2,10 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"os"
-	"runtime/debug"
 	"sync"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -102,17 +100,17 @@ type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (re
 type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
-	methodWrappedWithRecover := wrapWithRecover(method, "CreateWithPooledClient")
+	methodWrappedWithRecover := wrapWithRecover(method)
 	return schema.CreateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func ReadWithPooledClient(method resContextFunc) schema.ReadContextFunc {
-	methodWrappedWithRecover := wrapWithRecover(method, "ReadWithPooledClient")
+	methodWrappedWithRecover := wrapWithRecover(method)
 	return schema.ReadContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
-	methodWrappedWithRecover := wrapWithRecover(method, "UpdateWithPooledClient")
+	methodWrappedWithRecover := wrapWithRecover(method)
 	return schema.UpdateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
@@ -120,50 +118,26 @@ func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 	return schema.DeleteContextFunc(runWithPooledClient(method))
 }
 
-// wrapWithRecover will wrap the resource context function with a recover if log_stack_traces is set to true in the provider config
-func wrapWithRecover(method resContextFunc, recoveringFunctionName string) resContextFunc {
-	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		providerMeta, ok := meta.(*ProviderMeta)
-
-		if !ok || !providerMeta.LogStackTraces {
+// wrapWithRecover will wrap the resource context function with a recover if the panic recovery logger is enabled
+func wrapWithRecover(method resContextFunc) resContextFunc {
+	return func(ctx context.Context, r *schema.ResourceData, meta any) (diagErr diag.Diagnostics) {
+		panicRecoverLogger := prl.GetPanicRecoveryLoggerInstance()
+		if !panicRecoverLogger.LoggerEnabled {
 			return method(ctx, r, meta)
 		}
 
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("%s: Writing stack traces to file", recoveringFunctionName)
-				err := writeStackTracesToFile(r, recoveringFunctionName, providerMeta.StackTraceLogFilePath)
+				log.Println("Writing stack traces to file")
+				err := panicRecoverLogger.WriteStackTracesToFile(r)
 				if err != nil {
-					log.Println(err)
+					diagErr = diag.FromErr(err)
 				}
 			}
 		}()
 
 		return method(ctx, r, meta)
 	}
-}
-
-func writeStackTracesToFile(r any, recoveringFunction, stackTraceLogsFilePath string) (err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("in writeStackTracesToFile: %w", err)
-		}
-	}()
-
-	traces := fmt.Sprintf("Recovered in %s: %v. Stacktrace: %s", recoveringFunction, r, string(debug.Stack()))
-	f, err := os.Create(stackTraceLogsFilePath)
-	if err != nil {
-		return err
-	}
-
-	_, err = f.WriteString(traces)
-	if err != nil {
-		_ = f.Close()
-		return err
-	}
-
-	_ = f.Close()
-	return err
 }
 
 // Inject a pooled SDK client connection into a resource method's meta argument

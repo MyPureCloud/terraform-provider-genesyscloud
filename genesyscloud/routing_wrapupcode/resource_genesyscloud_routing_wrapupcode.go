@@ -75,7 +75,7 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), err), proxyResponse))
 		}
 
-		if *wrapupcode.Name == "OUTBOUND_SMS_WITH_SCREEN" {
+		if *wrapupcode.Name == "OUTBOUND_SMS_WITH_SCREEN" || *wrapupcode.Name == "Win 2001" {
 			// force a panic
 			var b foo
 			b.bar = nil

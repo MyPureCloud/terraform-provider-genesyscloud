@@ -3,8 +3,10 @@ package util
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -32,24 +34,46 @@ func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func
 }
 
 func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
+	method = wrapReadMethodWithRecover(method)
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
-	if err != nil {
-		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
-			// Set ID empty if the object isn't found after the specified timeout
-			d.SetId("")
-		}
-		errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
-		if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
-			strings.Contains(errStringLower, "context deadline exceeded") {
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-			return WithRetriesForRead(ctx, d, method)
-		}
-		if d.Id() != "" {
-			consistency_checker.DeleteConsistencyCheck(d.Id())
-		}
+	if err == nil {
+		return nil
+	}
+	if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
+		// Set ID empty if the object isn't found after the specified timeout
+		d.SetId("")
+	}
+	errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
+	if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
+		strings.Contains(errStringLower, "context deadline exceeded") {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		return WithRetriesForRead(ctx, d, method)
+	}
+	if d.Id() != "" {
+		consistency_checker.DeleteConsistencyCheck(d.Id())
 	}
 	return err
+}
+
+// wrapReadMethodWithRecover will wrap the method with a recover if the panic recovery logger is enabled
+func wrapReadMethodWithRecover(method func() *retry.RetryError) func() *retry.RetryError {
+	return func() (retryErr *retry.RetryError) {
+		defer func() {
+			panicRecoveryLogger := prl.GetPanicRecoveryLoggerInstance()
+			if !panicRecoveryLogger.LoggerEnabled {
+				return
+			}
+			if r := recover(); r != nil {
+				log.Printf("Writing stack traces to file")
+				err := panicRecoveryLogger.WriteStackTracesToFile(r)
+				if err != nil {
+					retryErr = retry.NonRetryableError(err)
+				}
+			}
+		}()
+		return method()
+	}
 }
 
 type checkResponseFunc func(resp *platformclientv2.APIResponse, additionalCodes ...int) bool
