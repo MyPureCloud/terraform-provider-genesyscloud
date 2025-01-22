@@ -96,13 +96,13 @@ func IsValidPlatform(p Platform) bool {
 
 func (p Platform) Validate() error {
 	if !IsValidPlatform(p) {
-		return fmt.Errorf("Invalid platform value: %d. We can't detect what platform is running this provider.", p)
+		return fmt.Errorf("Invalid platform value detected: %v. This is an error of the terraform-provider-genesyscloud provider. This may indicate the provider is running in an unsupported environment. Please ensure you're using a supported operating system and architecture.", p)
 	}
 	if platformConfigSingleton == nil {
-		return fmt.Errorf("Platform configuration not initialized inside this provider.")
+		return fmt.Errorf("Platform configuration is not initialized. This is likely an internal provider error. Please file a bug report if this persists in the terraform-provider-genesyscloud issues list.")
 	}
 	if platformConfigSingleton.binaryPath == "" {
-		return fmt.Errorf("Binary path was not set. We can't detect what platform is running this provider.")
+		return fmt.Errorf("Unable to determine provider binary path. This may indicate incorrect provider installation or an unsupported execution environment. Please verify your provider installation is complete.")
 	}
 	return nil
 }
