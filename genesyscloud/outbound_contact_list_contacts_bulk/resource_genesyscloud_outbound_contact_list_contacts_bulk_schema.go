@@ -24,9 +24,6 @@ func BulkContactsExporter() *resourceExporter.ResourceExporter {
 			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
 			// "contact_list_template_id": {RefType: "genesyscloud_outbound_contact_list_template"},
 		},
-		UnResolvableAttributes: map[string]*schema.Schema{
-			"filepath": ResourceOutboundContactListContactsBulk().Schema["filepath"],
-		},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: BulkContactsExporterResolver,
 			SubDirectory:              "bulkContacts",
@@ -113,6 +110,14 @@ func ResourceOutboundContactListContactsBulk() *schema.Resource {
 				Computed:    true,
 				ForceNew:    true,
 				Type:        schema.TypeInt,
+			},
+			"contact_list_name": {
+				Description: `The name of the contact list. This is a read-only identifying attribute.`,
+				Optional:    false,
+				Required:    false,
+				Computed:    true,
+				ForceNew:    true,
+				Type:        schema.TypeString,
 			},
 		},
 	}

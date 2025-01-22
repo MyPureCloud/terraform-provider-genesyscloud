@@ -212,11 +212,27 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 var DownloadExportFile = downloadExportFile
 
 func downloadExportFile(directory, fileName, uri string) error {
-	resp, err := http.Get(uri)
+	return downloadExportFileWithAccessToken(directory, fileName, uri, "")
+}
+
+var DownloadExportFileWithAccessToken = downloadExportFileWithAccessToken
+
+func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken string) error {
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return err
 	}
 
+	if accessToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	out, err := os.Create(path.Join(directory, fileName))

@@ -49,13 +49,18 @@ func readOutboundContactListBulkContacts(ctx context.Context, d *schema.Resource
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getBulkContactsProxy(sdkConfig)
 	contactListId := d.Get("contact_list_id").(string)
-	_, contactListContactsCount, _, err := cp.readContactListAndRecordLengthById(ctx, contactListId)
+	if contactListId == "" {
+		contactListId = getContactListIdFromResourceId(d.Id())
+		d.Set("contact_list_id", contactListId)
+	}
+	contactList, contactListContactsCount, _, err := cp.readContactListAndRecordLengthById(ctx, contactListId)
 	if err != nil {
 		return diag.Errorf("Failed to read contact list and record length by ID: %v", err)
 	}
 	d.Set("record_count", contactListContactsCount)
+	d.Set("contact_list_name", *contactList.Name)
 
-	log.Printf("Read %d bulk contact records in contact list '%s'", contactListContactsCount, contactListId)
+	log.Printf("Read %d bulk contact records in contact list '%s'", contactListContactsCount, *contactList.Name)
 	return nil
 }
 

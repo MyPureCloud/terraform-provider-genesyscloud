@@ -58,6 +58,7 @@ import (
 	obCampaignRule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	outboundContactListContact "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contact"
+	outboundContactListContactsBulk "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_contacts_bulk"
 	obContactListTemplate "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list_template"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDigitalRuleSet "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
@@ -268,6 +269,7 @@ func registerResources() {
 	routingQueueConditionalGroupRouting.SetRegistrar(regInstance)          //Registering routing queue conditional group routing
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
 	outboundContactListContact.SetRegistrar(regInstance)                   //Registering outbound contact list contact
+	outboundContactListContactsBulk.SetRegistrar(regInstance)              //Registering outbound contact list contacts bulk
 	routingSettings.SetRegistrar(regInstance)                              //Registering routing Settings
 	routingUtilization.SetRegistrar(regInstance)                           //Registering routing utilization
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label

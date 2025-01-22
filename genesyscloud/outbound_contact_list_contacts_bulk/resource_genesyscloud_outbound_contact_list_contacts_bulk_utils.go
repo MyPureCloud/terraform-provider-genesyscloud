@@ -32,8 +32,9 @@ func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory stri
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getBulkContactsProxy(sdkConfig)
 
-	contactListId := configMap["contact_list_id"].(string)
-	exportFileName := fmt.Sprintf("contacts_%s.csv", contactListId)
+	contactListName := resource.BlockLabel
+	contactListId := resource.State.Attributes["contact_list_id"]
+	exportFileName := fmt.Sprintf("%s.csv", contactListName)
 
 	directoryPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(directoryPath, os.ModePerm); err != nil {
@@ -46,7 +47,7 @@ func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory stri
 		return err
 	}
 
-	if err := files.DownloadExportFile(directoryPath, exportFileName, url); err != nil {
+	if err := files.DownloadExportFileWithAccessToken(directoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
 		return err
 	}
 
@@ -127,4 +128,10 @@ func getFileContentHash(filepath string) (string, error) {
 // We add the extra suffix to the id in order to prevent conflicts with actual contact lists
 func buildBulkContactId(contactListId string) string {
 	return fmt.Sprintf("%s_contacts_bulk", contactListId)
+}
+
+func getContactListIdFromResourceId(resourceId string) string {
+	// Remove the extra suffix from the id
+	resourceId = resourceId[:len(resourceId)-len("_contacts_bulk")]
+	return resourceId
 }

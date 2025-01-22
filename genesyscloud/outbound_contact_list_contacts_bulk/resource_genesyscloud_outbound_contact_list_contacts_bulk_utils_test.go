@@ -47,21 +47,22 @@ func TestBulkContactsExporterResolver(t *testing.T) {
 
 		// Mock resource info
 		mockResource := resourceExporter.ResourceInfo{
+			BlockLabel: "contacts_test-contact-list",
 			State: &terraform.InstanceState{
 				Attributes: make(map[string]string),
 			},
 		}
 
 		// Mock the file download function
-		origDownloadFile := files.DownloadExportFile
-		files.DownloadExportFile = func(directory, filename, url string) error {
+		origDownloadFile := files.DownloadExportFileWithAccessToken
+		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) error {
 			fullPath := path.Join(directory, filename)
 			if err := os.MkdirAll(directory, os.ModePerm); err != nil {
 				return err
 			}
 			return os.WriteFile(fullPath, []byte("test content"), 0644)
 		}
-		defer func() { files.DownloadExportFile = origDownloadFile }()
+		defer func() { files.DownloadExportFileWithAccessToken = origDownloadFile }()
 
 		// Test the function
 		err := BulkContactsExporterResolver("test-id", tempDir, subDir, configMap, mockMeta, mockResource)
@@ -130,7 +131,7 @@ func TestBulkContactsExporterResolver(t *testing.T) {
 		}
 
 		// Mock download failure
-		files.DownloadExportFile = func(directory, filename, url string) error {
+		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) error {
 			return fmt.Errorf("download failed")
 		}
 
