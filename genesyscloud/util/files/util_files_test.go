@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -283,7 +284,7 @@ func TestFileContentHashChanged(t *testing.T) {
 			)
 
 			// Pre calculate hash
-			priorHash, err := GetFileContentHash(tmpFile.Name())
+			priorHash, err := HashFileContent(tmpFile.Name())
 			if err != nil {
 				t.Fatalf("Failed to calculate hash: %v", err)
 			}
@@ -324,7 +325,7 @@ func TestFileContentHashChanged(t *testing.T) {
 	}
 }
 
-func TestGetFileContentHash(t *testing.T) {
+func TestHashFileContent(t *testing.T) {
 	// Create a temporary test file
 	tempContent := []byte("test content")
 	tempFile, err := os.CreateTemp("", "test_file_*.txt")
@@ -340,7 +341,7 @@ func TestGetFileContentHash(t *testing.T) {
 
 	// Test successful case
 	t.Run("successful hash", func(t *testing.T) {
-		hash, err := GetFileContentHash(tempFile.Name())
+		hash, err := HashFileContent(tempFile.Name())
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -356,7 +357,7 @@ func TestGetFileContentHash(t *testing.T) {
 
 	// Test non-existent file
 	t.Run("non-existent file", func(t *testing.T) {
-		hash, err := GetFileContentHash("non_existent_file.txt")
+		hash, err := HashFileContent("non_existent_file.txt")
 		if err == nil {
 			t.Error("Expected error for non-existent file, got nil")
 		}
@@ -364,4 +365,74 @@ func TestGetFileContentHash(t *testing.T) {
 			t.Errorf("Expected empty hash for error case, got %s", hash)
 		}
 	})
+}
+
+func TestGetCSVRecordCount(t *testing.T) {
+	tests := []struct {
+		name          string
+		fileContent   string
+		expectedCount int
+		expectedError bool
+	}{
+		{
+			name:          "Valid CSV with multiple records",
+			fileContent:   "header1,header2\nvalue1,value2\nvalue3,value4",
+			expectedCount: 2,
+			expectedError: false,
+		},
+		{
+			name:          "CSV with only header",
+			fileContent:   "header1,header2",
+			expectedCount: 0,
+			expectedError: false,
+		},
+		{
+			name:          "Empty file",
+			fileContent:   "",
+			expectedCount: 0,
+			expectedError: false,
+		},
+		{
+			name:          "Malformed CSV",
+			fileContent:   "header1,header2\nvalue1,value2,extra",
+			expectedCount: 0,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary test file
+			tmpDir := t.TempDir()
+			tmpFile := filepath.Join(tmpDir, "test.csv")
+
+			err := os.WriteFile(tmpFile, []byte(tt.fileContent), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create test file: %v", err)
+			}
+
+			// Run the function
+			count, err := GetCSVRecordCount(tmpFile)
+
+			// Check error
+			if tt.expectedError && err == nil {
+				t.Error("Expected an error but got none")
+			}
+			if !tt.expectedError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			// Check count
+			if !tt.expectedError && count != tt.expectedCount {
+				t.Errorf("Expected count %d, got %d", tt.expectedCount, count)
+			}
+		})
+	}
+}
+
+func TestGetCSVRecordCount_NonexistentFile(t *testing.T) {
+	_, err := GetCSVRecordCount("nonexistent.csv")
+	if err == nil {
+		t.Error("Expected error for nonexistent file, got none")
+	}
 }

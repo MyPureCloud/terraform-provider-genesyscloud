@@ -2,8 +2,6 @@ package outbound_contact_list
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -76,13 +74,19 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 	for _, configEmailColumn := range contactEmailAddressColumnList {
 		var sdkContactEmailAddressColumn platformclientv2.Emailcolumn
 		contactEmailAddressColumnMap := configEmailColumn.(map[string]interface{})
-		if columnName := contactEmailAddressColumnMap["column_name"].(string); columnName != "" {
+
+		// Safely handle column_name
+		if columnName, ok := contactEmailAddressColumnMap["column_name"].(string); ok && columnName != "" {
 			sdkContactEmailAddressColumn.ColumnName = &columnName
 		}
-		if varType := contactEmailAddressColumnMap["type"].(string); varType != "" {
+
+		// Safely handle type
+		if varType, ok := contactEmailAddressColumnMap["type"].(string); ok && varType != "" {
 			sdkContactEmailAddressColumn.VarType = &varType
 		}
-		if contactableTimeColumn := contactEmailAddressColumnMap["contactable_time_column"].(string); contactableTimeColumn != "" {
+
+		// Safely handle contactable_time_column
+		if contactableTimeColumn, ok := contactEmailAddressColumnMap["contactable_time_column"].(string); ok && contactableTimeColumn != "" {
 			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumn
 		}
 
@@ -178,44 +182,12 @@ func flattenSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpe
 	return columnDataTypeSpecificationsSlice
 }
 
-func fileContentHashChanged(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-	filepath := d.Get("contacts_filepath").(string)
-
-	newHash, err := getFileContentHash(filepath)
-	if err != nil {
-		log.Printf("Error calculating file content hash: %v", err)
-		return false
-	}
-
-	// Get the current hash value
-	oldHash := d.Get("file_content_hash").(string)
-
-	// Return true if the hashes are different
-	return oldHash != newHash
-}
-
-func getFileContentHash(filepath string) (string, error) {
-	// Read file content
-	content, err := os.ReadFile(filepath)
-	if err != nil {
-		log.Printf("Error reading file content: %v", err)
-		return "", err
-	}
-
-	// Calculate SHA256 hash of file content
-	hasher := sha256.New()
-	hasher.Write(content)
-	hash := hex.EncodeToString(hasher.Sum(nil))
-
-	return hash, nil
-}
-
-func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
+func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := GetOutboundContactlistProxy(sdkConfig)
 
 	contactListName := resource.BlockLabel
-	contactListId := resource.State.Attributes["contact_list_id"]
+	contactListId := resource.State.Attributes["id"]
 	exportFileName := fmt.Sprintf("%s.csv", contactListName)
 
 	directoryPath := path.Join(exportDirectory, subDirectory)
@@ -234,13 +206,13 @@ func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory stri
 	}
 
 	fullPath := path.Join(directoryPath, exportFileName)
-	configMap["filepath"] = fullPath
-	hash, err := getFileContentHash(fullPath)
+	configMap["contacts_filepath"] = fullPath
+	hash, err := files.HashFileContent(fullPath)
 	if err != nil {
 		log.Printf("Error calculating file content hash: %v", err)
 		return err
 	}
-	resource.State.Attributes["file_content_hash"] = hash
+	resource.State.Attributes["contacts_file_content_hash"] = hash
 
 	return nil
 }
@@ -253,6 +225,13 @@ func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string
 		callable_time_column = %s
 	}
 `, columnName, columnType, callableTimeColumn)
+}
+
+func GenerateContactsFile(filepath, contactsIdName string) string {
+	return fmt.Sprintf(`
+	contacts_filepath = "%s"
+	contacts_id_name = "%s"
+	`, filepath, contactsIdName)
 }
 
 func GenerateOutboundContactList(

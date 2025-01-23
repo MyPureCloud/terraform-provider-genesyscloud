@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -336,7 +337,7 @@ func FileContentHashChanged(filepathAttr, hashAttr string) customdiff.ResourceCo
 	return func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
 		filepath := d.Get(filepathAttr).(string)
 
-		newHash, err := GetFileContentHash(filepath)
+		newHash, err := HashFileContent(filepath)
 		if err != nil {
 			log.Printf("Error calculating file content hash: %v", err)
 			return false
@@ -350,18 +351,33 @@ func FileContentHashChanged(filepathAttr, hashAttr string) customdiff.ResourceCo
 	}
 }
 
-func GetFileContentHash(filepath string) (string, error) {
-	// Read file content
-	content, err := os.ReadFile(filepath)
+// getCSVRecordCount retrieves the number of records in a CSV file (i.e., number of lines in a file minus the header)
+func GetCSVRecordCount(filepath string) (int, error) {
+	// Open file up and read the record count
+	reader, file, err := DownloadOrOpenFile(filepath)
 	if err != nil {
-		log.Printf("Error reading file content: %v", err)
-		return "", err
+		return 0, err
+	}
+	defer file.Close()
+
+	// Count the number of records in the CSV file
+	csvReader := csv.NewReader(reader)
+	recordCount := 0
+	for {
+		_, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, err
+		}
+		recordCount++
 	}
 
-	// Calculate SHA256 hash of file content
-	hasher := sha256.New()
-	hasher.Write(content)
-	hash := hex.EncodeToString(hasher.Sum(nil))
+	// Subtract 1 to account for header row
+	if recordCount > 0 {
+		recordCount--
+	}
 
-	return hash, nil
+	return recordCount, nil
 }
