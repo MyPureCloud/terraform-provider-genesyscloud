@@ -1,8 +1,18 @@
 package outbound_contact_list
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"log"
+	"os"
+	"path"
 	"strings"
+
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
@@ -166,6 +176,73 @@ func flattenSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpe
 	}
 
 	return columnDataTypeSpecificationsSlice
+}
+
+func fileContentHashChanged(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+	filepath := d.Get("contacts_filepath").(string)
+
+	newHash, err := getFileContentHash(filepath)
+	if err != nil {
+		log.Printf("Error calculating file content hash: %v", err)
+		return false
+	}
+
+	// Get the current hash value
+	oldHash := d.Get("file_content_hash").(string)
+
+	// Return true if the hashes are different
+	return oldHash != newHash
+}
+
+func getFileContentHash(filepath string) (string, error) {
+	// Read file content
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		log.Printf("Error reading file content: %v", err)
+		return "", err
+	}
+
+	// Calculate SHA256 hash of file content
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := hex.EncodeToString(hasher.Sum(nil))
+
+	return hash, nil
+}
+
+func BulkContactsExporterResolver(resourceId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	cp := GetOutboundContactlistProxy(sdkConfig)
+
+	contactListName := resource.BlockLabel
+	contactListId := resource.State.Attributes["contact_list_id"]
+	exportFileName := fmt.Sprintf("%s.csv", contactListName)
+
+	directoryPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(directoryPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	url, _, err := cp.getContactListContactsExportUrl(ctx, contactListId)
+	if err != nil {
+		return err
+	}
+
+	if err := files.DownloadExportFileWithAccessToken(directoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
+		return err
+	}
+
+	fullPath := path.Join(directoryPath, exportFileName)
+	configMap["filepath"] = fullPath
+	hash, err := getFileContentHash(fullPath)
+	if err != nil {
+		log.Printf("Error calculating file content hash: %v", err)
+		return err
+	}
+	resource.State.Attributes["file_content_hash"] = hash
+
+	return nil
 }
 
 func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string) string {

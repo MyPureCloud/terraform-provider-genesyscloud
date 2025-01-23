@@ -6,8 +6,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
+
+	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -200,4 +206,162 @@ func TestScriptUploadSuccess(t *testing.T) {
 	if resultsStr != scriptFile {
 		t.Errorf(`expected %s got %s`, scriptFile, resultsStr)
 	}
+}
+
+func TestFileContentHashChanged(t *testing.T) {
+	// Create a temporary test file
+	tmpFile, err := os.CreateTemp("", "test-content-*.txt")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// Write initial content
+	initialContent := []byte("initial content")
+	if err := os.WriteFile(tmpFile.Name(), initialContent, 0644); err != nil {
+		t.Fatalf("Failed to write initial content: %v", err)
+	}
+
+	tests := []struct {
+		name         string
+		setupFunc    func() error
+		expectedDiff bool
+	}{
+		{
+			name: "content_unchanged",
+			setupFunc: func() error {
+				// No changes to file
+				return nil
+			},
+			expectedDiff: false,
+		},
+		{
+			name: "content_changed",
+			setupFunc: func() error {
+				return os.WriteFile(tmpFile.Name(), []byte("changed content"), 0644)
+			},
+			expectedDiff: true,
+		},
+		{
+			name: "content_unchanged_again",
+			setupFunc: func() error {
+				// No changes to file
+				return nil
+			},
+			expectedDiff: false,
+		},
+		{
+			name: "content_changed_again",
+			setupFunc: func() error {
+				return os.WriteFile(tmpFile.Name(), []byte("changed content again"), 0644)
+			},
+			expectedDiff: true,
+		},
+		{
+			name: "final_content_changed",
+			setupFunc: func() error {
+				return os.WriteFile(tmpFile.Name(), []byte("final changed content"), 0644)
+			},
+			expectedDiff: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			provider := testrunner.GenerateTestProvider("test_resource",
+				map[string]*schema.Schema{
+					"filepath": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"file_content_hash": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+				customdiff.ComputedIf("file_content_hash", FileContentHashChanged("filepath", "file_content_hash")),
+			)
+
+			// Pre calculate hash
+			priorHash, err := GetFileContentHash(tmpFile.Name())
+			if err != nil {
+				t.Fatalf("Failed to calculate hash: %v", err)
+			}
+
+			// Run setup for this test case
+			if err := tt.setupFunc(); err != nil {
+				t.Fatalf("Setup failed: %v", err)
+			}
+
+			diff, err := testrunner.GenerateTestDiff(
+				provider,
+				"test_resource",
+				map[string]string{
+					"filepath":          tmpFile.Name(),
+					"file_content_hash": priorHash,
+				},
+				map[string]string{
+					"filepath": tmpFile.Name(),
+				},
+			)
+
+			if err != nil {
+				t.Fatalf("Diff failed with error: %s", err)
+			}
+
+			if tt.expectedDiff {
+				if diff == nil {
+					t.Error("Expected a diff when file content changes, got nil")
+				} else if !diff.Attributes["file_content_hash"].NewComputed {
+					t.Error("file_content_hash is not marked as NewComputed when file content changes")
+				}
+			} else {
+				if diff != nil && diff.Attributes["file_content_hash"].NewComputed {
+					t.Error("Expected no diff when file content unchanged, but file_content_hash was marked as NewComputed")
+				}
+			}
+		})
+	}
+}
+
+func TestGetFileContentHash(t *testing.T) {
+	// Create a temporary test file
+	tempContent := []byte("test content")
+	tempFile, err := os.CreateTemp("", "test_file_*.txt")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name()) // Clean up after test
+
+	// Write content to temp file
+	if err := os.WriteFile(tempFile.Name(), tempContent, 0644); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+
+	// Test successful case
+	t.Run("successful hash", func(t *testing.T) {
+		hash, err := GetFileContentHash(tempFile.Name())
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if hash == "" {
+			t.Error("Expected non-empty hash")
+		}
+		// Known hash for "test content"
+		expectedHash := "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
+		if hash != expectedHash {
+			t.Errorf("Expected hash %s, got %s", expectedHash, hash)
+		}
+	})
+
+	// Test non-existent file
+	t.Run("non-existent file", func(t *testing.T) {
+		hash, err := GetFileContentHash("non_existent_file.txt")
+		if err == nil {
+			t.Error("Expected error for non-existent file, got nil")
+		}
+		if hash != "" {
+			t.Errorf("Expected empty hash for error case, got %s", hash)
+		}
+	})
 }

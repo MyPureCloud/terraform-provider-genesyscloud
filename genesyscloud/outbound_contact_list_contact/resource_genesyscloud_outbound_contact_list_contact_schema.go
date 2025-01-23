@@ -78,12 +78,12 @@ func ContactExporter() *resourceExporter.ResourceExporter {
 
 func ResourceOutboundContactListContact() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Outbound Contact List Contact`,
-
-		CreateContext: provider.CreateWithPooledClient(createOutboundContactListContact),
-		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListContact),
-		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListContact),
-		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListContact),
+		Description:        `Genesys Cloud Outbound Contact List Contact`,
+		DeprecationMessage: "This resource is deprecated and will be removed in version 1.60.0. Please use the contacts field within the genesyscloud_outbound_contact_list resource instead. This change consolidates contact management to improve reliability and performance.",
+		CreateContext:      provider.CreateWithPooledClient(createOutboundContactListContact),
+		ReadContext:        provider.ReadWithPooledClient(readOutboundContactListContact),
+		UpdateContext:      provider.UpdateWithPooledClient(updateOutboundContactListContact),
+		DeleteContext:      provider.DeleteWithPooledClient(deleteOutboundContactListContact),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

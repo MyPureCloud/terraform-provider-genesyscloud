@@ -19,7 +19,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type S3Uploader struct {
@@ -327,4 +329,39 @@ func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 		return util.BuildDiagnosticError("File Writer", fmt.Sprintf("Error writing file with Path %s", path), err)
 	}
 	return nil
+}
+
+// Function factory that returns a custom diff function
+func FileContentHashChanged(filepathAttr, hashAttr string) customdiff.ResourceConditionFunc {
+	return func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+		filepath := d.Get(filepathAttr).(string)
+
+		newHash, err := GetFileContentHash(filepath)
+		if err != nil {
+			log.Printf("Error calculating file content hash: %v", err)
+			return false
+		}
+
+		// Get the current hash value
+		oldHash := d.Get(hashAttr).(string)
+
+		// Return true if the hashes are different
+		return oldHash != newHash
+	}
+}
+
+func GetFileContentHash(filepath string) (string, error) {
+	// Read file content
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		log.Printf("Error reading file content: %v", err)
+		return "", err
+	}
+
+	// Calculate SHA256 hash of file content
+	hasher := sha256.New()
+	hasher.Write(content)
+	hash := hex.EncodeToString(hasher.Sum(nil))
+
+	return hash, nil
 }
