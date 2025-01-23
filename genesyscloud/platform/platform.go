@@ -96,13 +96,13 @@ func IsValidPlatform(p Platform) bool {
 
 func (p Platform) Validate() error {
 	if !IsValidPlatform(p) {
-		return fmt.Errorf("invalid platform value: %d", p)
+		return fmt.Errorf("Invalid platform value detected: %v. This is an error of the terraform-provider-genesyscloud provider. This may indicate the provider is running in an unsupported environment. Please ensure you're using a supported operating system and architecture.", p)
 	}
 	if platformConfigSingleton == nil {
-		return fmt.Errorf("platform configuration not initialized")
+		return fmt.Errorf("Platform configuration is not initialized. This is likely an internal provider error. Please file a bug report if this persists in the terraform-provider-genesyscloud issues list.")
 	}
 	if platformConfigSingleton.binaryPath == "" {
-		return fmt.Errorf("binary path not set")
+		return fmt.Errorf("Unable to determine provider binary path. This may indicate incorrect provider installation or an unsupported execution environment. Please verify your provider installation is complete.")
 	}
 	return nil
 }
@@ -132,9 +132,8 @@ func init() {
 	}
 
 	debugPatterns := []string{
-		"__debug_bin",
-		"dlv", // Delve debugger
-		"debug-server",
+		"dlv",   // Delve debugger
+		"debug", // Debug Server
 	}
 
 	for _, pattern := range debugPatterns {
