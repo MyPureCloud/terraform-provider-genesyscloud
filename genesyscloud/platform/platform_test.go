@@ -64,14 +64,14 @@ func TestPlatformValidate(t *testing.T) {
 			platform:    Platform(99),
 			setBinPath:  "/usr/local/bin/terraform",
 			wantErr:     true,
-			errContains: "invalid platform value",
+			errContains: "Invalid platform value",
 		},
 		{
 			name:        "empty binary path",
 			platform:    PlatformTerraform,
 			setBinPath:  "",
 			wantErr:     true,
-			errContains: "binary path not set",
+			errContains: "Unable to determine provider binary path",
 		},
 	}
 
