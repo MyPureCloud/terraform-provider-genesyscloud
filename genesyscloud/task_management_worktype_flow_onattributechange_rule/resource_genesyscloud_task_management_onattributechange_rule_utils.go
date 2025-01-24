@@ -66,7 +66,7 @@ func getWorkitemonattributechangerulecreateFromResourceData(d *schema.ResourceDa
 	}
 
 	onattributechangeRule := platformclientv2.Workitemonattributechangerulecreate{
-		Name: platformclientv2.String(d.Get("name").(string)),
+		Name:      platformclientv2.String(d.Get("name").(string)),
 		Condition: &ruleCondition,
 	}
 
@@ -95,7 +95,7 @@ func getWorkitemonattributechangeruleupdateFromResourceData(d *schema.ResourceDa
 	} else {
 		ruleCondition.SetField("OldValue", nil)
 	}
-	
+
 	onAttributeChangeRuleUpdate := platformclientv2.Workitemonattributechangeruleupdate{}
 	if d.HasChange("name") {
 		onAttributeChangeRuleUpdate.SetField("Name", platformclientv2.String(d.Get("name").(string)))
@@ -127,7 +127,7 @@ func flattenSdkCondition(rule *platformclientv2.Workitemonattributechangerule) [
 	conditionInterface := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(conditionInterface, "attribute", rule.Condition.Attribute)
-	
+
 	if *rule.Condition.Attribute == "statusId" {
 		newValue := composeWorktypeBasedTerraformId(*rule.Worktype.Id, *rule.Condition.NewValue)
 		resourcedata.SetMapValueIfNotNil(conditionInterface, "new_value", &newValue)
@@ -140,7 +140,7 @@ func flattenSdkCondition(rule *platformclientv2.Workitemonattributechangerule) [
 		resourcedata.SetMapValueIfNotNil(conditionInterface, "new_value", rule.Condition.NewValue)
 		resourcedata.SetMapValueIfNotNil(conditionInterface, "old_value", rule.Condition.OldValue)
 	}
-	
+
 	return []interface{}{conditionInterface}
 }
 

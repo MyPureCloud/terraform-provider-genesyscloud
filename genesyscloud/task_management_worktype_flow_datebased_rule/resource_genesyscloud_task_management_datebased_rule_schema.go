@@ -41,7 +41,7 @@ func ResourceTaskManagementDateBasedRule() *schema.Resource {
 			},
 		},
 	}
-	
+
 	return &schema.Resource{
 		Description: `Genesys Cloud task management onattributeChange Rule`,
 
@@ -70,7 +70,7 @@ func ResourceTaskManagementDateBasedRule() *schema.Resource {
 				Type:        schema.TypeList,
 				Required:    true,
 				MaxItems:    1,
-				Elem: condition,
+				Elem:        condition,
 			},
 		},
 	}
@@ -80,8 +80,8 @@ func ResourceTaskManagementDateBasedRule() *schema.Resource {
 func TaskManagementDateBasedRuleExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementDateBasedRule),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id":            {RefType: "genesyscloud_task_management_worktype"},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
 		},
 	}
 }

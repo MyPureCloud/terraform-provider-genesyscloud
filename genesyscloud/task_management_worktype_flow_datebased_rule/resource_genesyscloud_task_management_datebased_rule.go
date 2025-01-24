@@ -68,7 +68,7 @@ func createTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management datebased rule %s error: %s", *dateBasedRuleCreate.Name, err), resp)
 	}
 	log.Printf("Created the base task management datebased rule %s for worktype %s", *dateBasedRule.Id, worktypeId)
-	
+
 	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *dateBasedRule.Id))
 
 	return readTaskManagementDateBasedRule(ctx, d, meta)
@@ -79,7 +79,7 @@ func readTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementDateBasedRule(), constants.ConsistencyChecks(), ResourceType)
-	
+
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Reading task management datebased rule %s for worktype %s", id, worktypeId)

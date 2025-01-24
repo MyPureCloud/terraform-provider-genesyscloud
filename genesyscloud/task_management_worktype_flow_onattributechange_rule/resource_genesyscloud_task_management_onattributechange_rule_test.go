@@ -36,21 +36,21 @@ func TestAccResourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 		wtDescription   = "test worktype description"
 
 		// Status
-		statusOpenResourceLabel = "status_1"
-		statusOpenName          = "status-" + uuid.NewString()
-		statusOpenCategory      = "Open"
+		statusOpenResourceLabel       = "status_1"
+		statusOpenName                = "status-" + uuid.NewString()
+		statusOpenCategory            = "Open"
 		statusInProgressResourceLabel = "status_2"
 		statusInProgressName          = "status-" + uuid.NewString()
 		statusInProgressCategory      = "InProgress"
-		statusClosedResourceLabel = "status_3"
-		statusClosedName          = "status-" + uuid.NewString()
-		statusClosedCategory      = "Closed"
-		
+		statusClosedResourceLabel     = "status_3"
+		statusClosedName              = "status-" + uuid.NewString()
+		statusClosedCategory          = "Closed"
+
 		// OnAttributeChange Rule Resource
 		onAttributeChangeRuleResourceLabel = "onattributechange_rule_resource"
-		onAttributeChangeRuleName = "onattributechange-" + uuid.NewString()
-		onAttributeChangeRuleName2 = "onattributechange2-" + uuid.NewString()
-		onAttributeChangeRuleAttribute = "statusId"
+		onAttributeChangeRuleName          = "onattributechange-" + uuid.NewString()
+		onAttributeChangeRuleName2         = "onattributechange2-" + uuid.NewString()
+		onAttributeChangeRuleAttribute     = "statusId"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -85,56 +85,56 @@ func TestAccResourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
 					resource.TestCheckResourceAttr(ResourceType+"."+onAttributeChangeRuleResourceLabel, "name", onAttributeChangeRuleName),
-					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value", 
-													   fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusInProgressResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value",
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusInProgressResourceLabel), "id"),
 				),
 			},
 			{
 				// Update onattributechange rule
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
-				workType.GenerateWorktypeResourceBasic(
-					wtResourceLabel,
-					wtName,
-					wtDescription,
-					fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-					"",
-				) +
-				worktypeStatus.GenerateWorktypeStatusResource(
-					statusOpenResourceLabel,
-					fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-					statusOpenName,
-					statusOpenCategory,
-					"", util.NullValue, "",
-				) +
-				worktypeStatus.GenerateWorktypeStatusResource(
-					statusInProgressResourceLabel,
-					fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-					statusInProgressName,
-					statusInProgressCategory,
-					"", util.NullValue, "",
-				) +
-				worktypeStatus.GenerateWorktypeStatusResource(
-					statusClosedResourceLabel,
-					fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-					statusClosedName,
-					statusClosedCategory,
-					"", util.NullValue, "",
-				) +
-				GenerateOnAttributeChangeRuleResource(
-					onAttributeChangeRuleResourceLabel,
-					fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-					onAttributeChangeRuleName2,
-					onAttributeChangeRuleAttribute,
-					fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusClosedResourceLabel),
-					fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusOpenResourceLabel),
-					"",
-				),
+					workType.GenerateWorktypeResourceBasic(
+						wtResourceLabel,
+						wtName,
+						wtDescription,
+						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+						"",
+					) +
+					worktypeStatus.GenerateWorktypeStatusResource(
+						statusOpenResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						statusOpenName,
+						statusOpenCategory,
+						"", util.NullValue, "",
+					) +
+					worktypeStatus.GenerateWorktypeStatusResource(
+						statusInProgressResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						statusInProgressName,
+						statusInProgressCategory,
+						"", util.NullValue, "",
+					) +
+					worktypeStatus.GenerateWorktypeStatusResource(
+						statusClosedResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						statusClosedName,
+						statusClosedCategory,
+						"", util.NullValue, "",
+					) +
+					GenerateOnAttributeChangeRuleResource(
+						onAttributeChangeRuleResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						onAttributeChangeRuleName2,
+						onAttributeChangeRuleAttribute,
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusClosedResourceLabel),
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusOpenResourceLabel),
+						"",
+					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+onAttributeChangeRuleResourceLabel, "name", onAttributeChangeRuleName2),
-					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value", 
-													   fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusClosedResourceLabel), "id"),
-					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.old_value", 
-													   fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusOpenResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.new_value",
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusClosedResourceLabel), "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+onAttributeChangeRuleResourceLabel, "condition.0.old_value",
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusOpenResourceLabel), "id"),
 				),
 			},
 			{

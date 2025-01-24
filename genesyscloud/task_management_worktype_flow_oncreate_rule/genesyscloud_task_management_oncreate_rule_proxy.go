@@ -108,8 +108,8 @@ func getAllTaskManagementOnCreateRuleFn(ctx context.Context, p *taskManagementOn
 	const pageSize = 200
 	var (
 		allOnCreateRules []platformclientv2.Workitemoncreaterule
-		after = ""
-		response *platformclientv2.APIResponse
+		after            = ""
+		response         *platformclientv2.APIResponse
 	)
 	for {
 		onCreateRules, resp, err := p.taskManagementApi.GetTaskmanagementWorktypeFlowsOncreateRules(worktypeId, after, pageSize)
@@ -134,7 +134,7 @@ func getAllTaskManagementOnCreateRuleFn(ctx context.Context, p *taskManagementOn
 func getTaskManagementOnCreateRuleIdByNameFn(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	const pageSize = 200
 	var (
-		after = ""
+		after    = ""
 		response *platformclientv2.APIResponse
 	)
 	for {

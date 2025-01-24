@@ -28,16 +28,16 @@ type deleteTaskManagementOnAttributeChangeRuleFunc func(ctx context.Context, p *
 
 // taskManagementOnAttributeChangeRuleProxy contains all the methods that call genesys cloud APIs.
 type taskManagementOnAttributeChangeRuleProxy struct {
-	clientConfig                              *platformclientv2.Configuration
-	taskManagementApi                         *platformclientv2.TaskManagementApi
-	worktypeProxy                             *taskManagementWorktype.TaskManagementWorktypeProxy
+	clientConfig                                       *platformclientv2.Configuration
+	taskManagementApi                                  *platformclientv2.TaskManagementApi
+	worktypeProxy                                      *taskManagementWorktype.TaskManagementWorktypeProxy
 	createTaskManagementOnAttributeChangeRuleAttr      createTaskManagementOnAttributeChangeRuleFunc
 	getAllTaskManagementOnAttributeChangeRuleAttr      getAllTaskManagementOnAttributeChangeRuleFunc
 	getTaskManagementOnAttributeChangeRuleIdByNameAttr getTaskManagementOnAttributeChangeRuleIdByNameFunc
 	getTaskManagementOnAttributeChangeRuleByIdAttr     getTaskManagementOnAttributeChangeRuleByIdFunc
 	updateTaskManagementOnAttributeChangeRuleAttr      updateTaskManagementOnAttributeChangeRuleFunc
 	deleteTaskManagementOnAttributeChangeRuleAttr      deleteTaskManagementOnAttributeChangeRuleFunc
-	onAttributeChangeRuleCache                rc.CacheInterface[platformclientv2.Workitemonattributechangerule]
+	onAttributeChangeRuleCache                         rc.CacheInterface[platformclientv2.Workitemonattributechangerule]
 }
 
 // newTaskManagementOnAttributeChangeRuleProxy initializes the task management worktype proxy with all the data needed to communicate with Genesys Cloud
@@ -46,9 +46,9 @@ func newTaskManagementOnAttributeChangeRuleProxy(clientConfig *platformclientv2.
 	onAttributeChangeRuleCache := rc.NewResourceCache[platformclientv2.Workitemonattributechangerule]()
 	taskmanagementProxy := taskManagementWorktype.GetTaskManagementWorktypeProxy(clientConfig)
 	return &taskManagementOnAttributeChangeRuleProxy{
-		clientConfig:                              clientConfig,
-		taskManagementApi:                         api,
-		worktypeProxy:                             taskmanagementProxy,
+		clientConfig:      clientConfig,
+		taskManagementApi: api,
+		worktypeProxy:     taskmanagementProxy,
 		createTaskManagementOnAttributeChangeRuleAttr:      createTaskManagementOnAttributeChangeRuleFn,
 		getAllTaskManagementOnAttributeChangeRuleAttr:      getAllTaskManagementOnAttributeChangeRuleFn,
 		getTaskManagementOnAttributeChangeRuleIdByNameAttr: getTaskManagementOnAttributeChangeRuleIdByNameFn,
@@ -108,8 +108,8 @@ func getAllTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskMan
 	const pageSize = 200
 	var (
 		allOnAttributeChangeRules []platformclientv2.Workitemonattributechangerule
-		after = ""
-		response *platformclientv2.APIResponse
+		after                     = ""
+		response                  *platformclientv2.APIResponse
 	)
 	for {
 		onAttributeChangeRules, resp, err := p.taskManagementApi.GetTaskmanagementWorktypeFlowsOnattributechangeRules(worktypeId, after, pageSize)
@@ -134,7 +134,7 @@ func getAllTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskMan
 func getTaskManagementOnAttributeChangeRuleIdByNameFn(ctx context.Context, p *taskManagementOnAttributeChangeRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	const pageSize = 200
 	var (
-		after = ""
+		after    = ""
 		response *platformclientv2.APIResponse
 	)
 	for {

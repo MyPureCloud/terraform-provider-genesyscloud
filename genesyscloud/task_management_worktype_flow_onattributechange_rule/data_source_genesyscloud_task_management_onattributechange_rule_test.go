@@ -38,9 +38,9 @@ func TestAccDataSourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 
 		// OnAttributeChange Rule Resource
 		onAttributeChangeRuleResourceLabel = "onattributechange_rule_resource"
-		onAttributeChangeRuleName = "onattributechange-" + uuid.NewString()
-		onAttributeChangeRuleAttribute = "statusId"
-		
+		onAttributeChangeRuleName          = "onattributechange-" + uuid.NewString()
+		onAttributeChangeRuleAttribute     = "statusId"
+
 		// OnAttributeChange Data Source
 		onAttributeChangeRuleDataSourceLabel = "onattributechange_rule_data"
 	)
@@ -71,7 +71,7 @@ func TestAccDataSourceTaskManagementOnAttributeChangeRule(t *testing.T) {
 						onAttributeChangeRuleName,
 						onAttributeChangeRuleAttribute,
 						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel),
-						"",	"",
+						"", "",
 					) +
 					generateOnAttributeChangeRuleDataSource(
 						onAttributeChangeRuleDataSourceLabel,

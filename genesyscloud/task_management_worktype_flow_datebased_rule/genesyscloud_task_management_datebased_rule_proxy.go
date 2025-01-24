@@ -28,9 +28,9 @@ type deleteTaskManagementDateBasedRuleFunc func(ctx context.Context, p *taskMana
 
 // taskManagementDateBasedRuleProxy contains all the methods that call genesys cloud APIs.
 type taskManagementDateBasedRuleProxy struct {
-	clientConfig                              *platformclientv2.Configuration
-	taskManagementApi                         *platformclientv2.TaskManagementApi
-	worktypeProxy                             *taskManagementWorktype.TaskManagementWorktypeProxy
+	clientConfig                               *platformclientv2.Configuration
+	taskManagementApi                          *platformclientv2.TaskManagementApi
+	worktypeProxy                              *taskManagementWorktype.TaskManagementWorktypeProxy
 	createTaskManagementDateBasedRuleAttr      createTaskManagementDateBasedRuleFunc
 	getAllTaskManagementDateBasedRuleAttr      getAllTaskManagementDateBasedRuleFunc
 	getTaskManagementDateBasedRuleIdByNameAttr getTaskManagementDateBasedRuleIdByNameFunc
@@ -46,9 +46,9 @@ func newTaskManagementDateBasedRuleProxy(clientConfig *platformclientv2.Configur
 	dateBasedRuleCache := rc.NewResourceCache[platformclientv2.Workitemdatebasedrule]()
 	taskmanagementProxy := taskManagementWorktype.GetTaskManagementWorktypeProxy(clientConfig)
 	return &taskManagementDateBasedRuleProxy{
-		clientConfig:                              clientConfig,
-		taskManagementApi:                         api,
-		worktypeProxy:                             taskmanagementProxy,
+		clientConfig:                               clientConfig,
+		taskManagementApi:                          api,
+		worktypeProxy:                              taskmanagementProxy,
 		createTaskManagementDateBasedRuleAttr:      createTaskManagementDateBasedRuleFn,
 		getAllTaskManagementDateBasedRuleAttr:      getAllTaskManagementDateBasedRuleFn,
 		getTaskManagementDateBasedRuleIdByNameAttr: getTaskManagementDateBasedRuleIdByNameFn,
@@ -108,8 +108,8 @@ func getAllTaskManagementDateBasedRuleFn(ctx context.Context, p *taskManagementD
 	const pageSize = 200
 	var (
 		allDateBasedRules []platformclientv2.Workitemdatebasedrule
-		after = ""
-		response *platformclientv2.APIResponse
+		after             = ""
+		response          *platformclientv2.APIResponse
 	)
 	for {
 		dateBasedRules, resp, err := p.taskManagementApi.GetTaskmanagementWorktypeFlowsDatebasedRules(worktypeId, after, pageSize)
@@ -134,7 +134,7 @@ func getAllTaskManagementDateBasedRuleFn(ctx context.Context, p *taskManagementD
 func getTaskManagementDateBasedRuleIdByNameFn(ctx context.Context, p *taskManagementDateBasedRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	const pageSize = 200
 	var (
-		after = ""
+		after    = ""
 		response *platformclientv2.APIResponse
 	)
 	for {

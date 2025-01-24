@@ -31,11 +31,11 @@ func TestAccDataSourceTaskManagementDateBasedRule(t *testing.T) {
 		wtDescription   = "test worktype description"
 
 		// DateBased Rule Resource
-		dateBasedRuleResourceLabel = "datebased_rule_resource"
-		dateBasedRuleName = "datebased-" + uuid.NewString()
-		dateBasedRuleAttribute = "dateDue"
+		dateBasedRuleResourceLabel  = "datebased_rule_resource"
+		dateBasedRuleName           = "datebased-" + uuid.NewString()
+		dateBasedRuleAttribute      = "dateDue"
 		relativeMinutesToInvocation = 30
-		
+
 		// DateBased Data Source
 		dateBasedRuleDataSourceLabel = "datebased_rule_data"
 	)

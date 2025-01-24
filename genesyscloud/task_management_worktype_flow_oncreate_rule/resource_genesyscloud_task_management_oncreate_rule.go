@@ -68,7 +68,7 @@ func createTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceDat
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management oncreate rule %s error: %s", *workitemOnCreateRuleCreate.Name, err), resp)
 	}
 	log.Printf("Created the base task management oncreate rule %s for worktype %s", *onCreateRule.Id, worktypeId)
-	
+
 	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *onCreateRule.Id))
 
 	return readTaskManagementOnCreateRule(ctx, d, meta)
@@ -79,7 +79,7 @@ func readTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceData,
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnCreateRule(), constants.ConsistencyChecks(), ResourceType)
-	
+
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Reading task management oncreate rule %s for worktype %s", id, worktypeId)

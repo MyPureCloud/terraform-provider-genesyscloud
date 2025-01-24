@@ -36,8 +36,8 @@ func TestAccResourceTaskManagementOnCreateRule(t *testing.T) {
 
 		// OnCreate Rule Resource
 		onCreateRuleResourceLabel = "oncreate_rule_resource"
-		onCreateRuleName = "oncreate-" + uuid.NewString()
-		onCreateRuleName2 = "oncreate2-" + uuid.NewString()
+		onCreateRuleName          = "oncreate-" + uuid.NewString()
+		onCreateRuleName2         = "oncreate2-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -68,19 +68,19 @@ func TestAccResourceTaskManagementOnCreateRule(t *testing.T) {
 			{
 				// Update oncreate rule
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
-				workType.GenerateWorktypeResourceBasic(
-					wtResourceLabel,
-					wtName,
-					wtDescription,
-					fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-					"",
-				) +
-				GenerateOnCreateRuleResource(
-					onCreateRuleResourceLabel,
-					fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-					onCreateRuleName2,
-					"",
-				),
+					workType.GenerateWorktypeResourceBasic(
+						wtResourceLabel,
+						wtName,
+						wtDescription,
+						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+						"",
+					) +
+					GenerateOnCreateRuleResource(
+						onCreateRuleResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						onCreateRuleName2,
+						"",
+					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+onCreateRuleResourceLabel, "name", onCreateRuleName2),
 				),

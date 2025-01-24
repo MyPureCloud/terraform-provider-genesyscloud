@@ -42,13 +42,13 @@ func getWorkitemdatebasedrulecreateFromResourceData(d *schema.ResourceData) plat
 	conditionMap := condition[0].(map[string]interface{})
 	attribute := conditionMap["attribute"].(string)
 	relativeMinutesToInvocation := conditionMap["relative_minutes_to_invocation"].(int)
-	
+
 	ruleCondition := platformclientv2.Workitemdatebasedcondition{}
 	ruleCondition.SetField("Attribute", platformclientv2.String(attribute))
 	ruleCondition.SetField("RelativeMinutesToInvocation", platformclientv2.Int(relativeMinutesToInvocation))
-	
+
 	datebasedRule := platformclientv2.Workitemdatebasedrulecreate{
-		Name: platformclientv2.String(d.Get("name").(string)),
+		Name:      platformclientv2.String(d.Get("name").(string)),
 		Condition: &ruleCondition,
 	}
 
@@ -61,11 +61,11 @@ func getWorkitemdatebasedruleupdateFromResourceData(d *schema.ResourceData) plat
 	conditionMap := condition[0].(map[string]interface{})
 	attribute := conditionMap["attribute"].(string)
 	relativeMinutesToInvocation := conditionMap["relative_minutes_to_invocation"].(int)
-	
+
 	ruleCondition := platformclientv2.Workitemdatebasedconditionupdate{}
 	ruleCondition.SetField("Attribute", platformclientv2.String(attribute))
 	ruleCondition.SetField("RelativeMinutesToInvocation", platformclientv2.Int(relativeMinutesToInvocation))
-	
+
 	dateBasedRuleUpdate := platformclientv2.Workitemdatebasedruleupdate{}
 	if d.HasChange("name") {
 		dateBasedRuleUpdate.SetField("Name", platformclientv2.String(d.Get("name").(string)))
@@ -98,7 +98,7 @@ func flattenSdkCondition(rule *platformclientv2.Workitemdatebasedrule) []interfa
 
 	resourcedata.SetMapValueIfNotNil(conditionInterface, "attribute", rule.Condition.Attribute)
 	resourcedata.SetMapValueIfNotNil(conditionInterface, "relative_minutes_to_invocation", rule.Condition.RelativeMinutesToInvocation)
-	
+
 	return []interface{}{conditionInterface}
 }
 

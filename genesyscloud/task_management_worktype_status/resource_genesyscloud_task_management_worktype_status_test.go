@@ -40,7 +40,7 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 		wtResourceLabel = "worktype_id"
 		wtName          = "wt_" + uuid.NewString()
 		wtDescription   = "test worktype description"
-		
+
 		// Status 1
 		statusResourceLabel1 = "status1"
 		status1Name1         = "status1-" + uuid.NewString()

@@ -58,8 +58,8 @@ func ResourceTaskManagementOnCreateRule() *schema.Resource {
 func TaskManagementOnCreateRuleExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementOnCreateRule),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id":            {RefType: "genesyscloud_task_management_worktype"},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
 		},
 	}
 }

@@ -46,7 +46,7 @@ func ResourceTaskManagementOnAttributeChangeRule() *schema.Resource {
 			},
 		},
 	}
-	
+
 	return &schema.Resource{
 		Description: `Genesys Cloud task management onattributeChange Rule`,
 
@@ -75,7 +75,7 @@ func ResourceTaskManagementOnAttributeChangeRule() *schema.Resource {
 				Type:        schema.TypeList,
 				Required:    true,
 				MaxItems:    1,
-				Elem: condition,
+				Elem:        condition,
 			},
 		},
 	}
@@ -85,10 +85,10 @@ func ResourceTaskManagementOnAttributeChangeRule() *schema.Resource {
 func TaskManagementOnAttributeChangeRuleExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementOnAttributeChangeRule),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id":            {RefType: "genesyscloud_task_management_worktype"},
-			"new_value":              {RefType: "genesyscloud_task_management_worktype_status"},
-			"old_value":              {RefType: "genesyscloud_task_management_worktype_status"},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
+			"new_value":   {RefType: "genesyscloud_task_management_worktype_status"},
+			"old_value":   {RefType: "genesyscloud_task_management_worktype_status"},
 		},
 	}
 }

@@ -68,7 +68,7 @@ func createTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management onattributechange rule %s error: %s", *onAttributeChangeRuleCreate.Name, err), resp)
 	}
 	log.Printf("Created the base task management onattributechange rule %s for worktype %s", *onAttributeChangeRule.Id, worktypeId)
-	
+
 	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *onAttributeChangeRule.Id))
 
 	return readTaskManagementOnAttributeChangeRule(ctx, d, meta)
@@ -79,7 +79,7 @@ func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Reso
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnAttributeChangeRule(), constants.ConsistencyChecks(), ResourceType)
-	
+
 	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Reading task management onattributechange rule %s for worktype %s", id, worktypeId)

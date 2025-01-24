@@ -35,11 +35,11 @@ func TestAccResourceTaskManagementDateBasedRule(t *testing.T) {
 		wtDescription   = "test worktype description"
 
 		// DateBased Rule Resource
-		dateBasedRuleResourceLabel = "datebased_rule_resource"
-		dateBasedRuleName = "datebased-" + uuid.NewString()
-		dateBasedRuleName2 = "datebased2-" + uuid.NewString()
-		dateBasedRuleAttribute = "dateDue"
-		relativeMinutesToInvocation = 30
+		dateBasedRuleResourceLabel   = "datebased_rule_resource"
+		dateBasedRuleName            = "datebased-" + uuid.NewString()
+		dateBasedRuleName2           = "datebased2-" + uuid.NewString()
+		dateBasedRuleAttribute       = "dateDue"
+		relativeMinutesToInvocation  = 30
 		relativeMinutesToInvocation2 = 60
 	)
 
@@ -74,20 +74,20 @@ func TestAccResourceTaskManagementDateBasedRule(t *testing.T) {
 			{
 				// Update datebased rule
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
-				workType.GenerateWorktypeResourceBasic(
-					wtResourceLabel,
-					wtName,
-					wtDescription,
-					fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-					"",
-				) +
-				GenerateDateBasedRuleResource(
-					dateBasedRuleResourceLabel,
-					fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-					dateBasedRuleName2,
-					dateBasedRuleAttribute,
-					relativeMinutesToInvocation2,
-				),
+					workType.GenerateWorktypeResourceBasic(
+						wtResourceLabel,
+						wtName,
+						wtDescription,
+						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+						"",
+					) +
+					GenerateDateBasedRuleResource(
+						dateBasedRuleResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						dateBasedRuleName2,
+						dateBasedRuleAttribute,
+						relativeMinutesToInvocation2,
+					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "name", dateBasedRuleName2),
 					resource.TestCheckResourceAttr(ResourceType+"."+dateBasedRuleResourceLabel, "condition.0.relative_minutes_to_invocation", fmt.Sprintf("%d", relativeMinutesToInvocation2)),

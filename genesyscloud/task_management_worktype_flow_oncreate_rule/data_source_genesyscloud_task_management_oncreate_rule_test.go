@@ -32,8 +32,8 @@ func TestAccDataSourceTaskManagementOnCreateRule(t *testing.T) {
 
 		// OnCreate Rule Resource
 		onCreateRuleResourceLabel = "oncreate_rule_resource"
-		onCreateRuleName = "oncreate-" + uuid.NewString()
-		
+		onCreateRuleName          = "oncreate-" + uuid.NewString()
+
 		// OnCreate Data Source
 		onCreateRuleDataSourceLabel = "oncreate_rule_data"
 	)
