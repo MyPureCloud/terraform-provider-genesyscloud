@@ -283,7 +283,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list_template", outboundContactListTemplate.OutboundContactListTemplateExporter())
-	RegisterExporter("genesyscloud_outbound_contact_list_contact", outboundContactListContact.ContactExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", obContactListFilter.OutboundContactlistfilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
 	RegisterExporter("genesyscloud_outbound_sequence", obSequence.OutboundSequenceExporter())
