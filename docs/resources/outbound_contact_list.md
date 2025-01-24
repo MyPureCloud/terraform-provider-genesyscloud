@@ -55,7 +55,7 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 - `phone_columns` (Block Set) Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns is empty (see [below for nested schema](#nestedblock--phone_columns))
 - `preview_mode_accepted_values` (List of String) The values in the previewModeColumnName column that indicate a contact should always be dialed in preview mode.
 - `preview_mode_column_name` (String) A column to check if a contact should always be dialed in preview mode.
-- `trim_whitespace` (Boolean) Indicates if leading and trailing whitespace will be trimmed when importing a contactlist CSV file (defaults to true) Defaults to `true`.
+- `trim_whitespace` (Boolean) Indicates if leading and trailing whitespace will be trimmed when importing a contactlist CSV file
 - `zip_code_column_name` (String) The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automaticTimeZoneMapping' is set to true. Changing the zip_code_column_name attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
 
 ### Read-Only

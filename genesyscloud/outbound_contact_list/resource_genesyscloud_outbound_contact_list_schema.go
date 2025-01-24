@@ -212,8 +212,7 @@ func ResourceOutboundContactList() *schema.Resource {
 				Elem:        outboundContactListColumnDataTypeSpecification,
 			},
 			`trim_whitespace`: {
-				Description: `Indicates if leading and trailing whitespace will be trimmed when importing a contactlist CSV file (defaults to true)`,
-				Default:     true,
+				Description: `Indicates if leading and trailing whitespace will be trimmed when importing a contactlist CSV file`,
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},
