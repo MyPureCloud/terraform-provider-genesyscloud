@@ -726,7 +726,7 @@ func TestAccResourceOutboundContactListWithInvalidContacts(t *testing.T) {
 						"Id",           // contacts_id_name
 					),
 				),
-				ExpectError: regexp.MustCompile(`.*invalid contact data.*`), // Adjust the error message based on your actual implementation
+				ExpectError: regexp.MustCompile(`failed to validate contacts file: CSV file is missing required columns`), // Adjust the error message based on your actual implementation
 			},
 		},
 	})

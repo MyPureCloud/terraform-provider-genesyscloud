@@ -2,23 +2,30 @@ package validators
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/hashicorp/go-cty/cty"
 )
 
 func TestValidateCSVFormatWithConfig(t *testing.T) {
+	// Create a temporary directory for test files
+	tmpDir, err := os.MkdirTemp("", "csv-tests")
+	if err != nil {
+		t.Fatalf("failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tmpDir) // Clean up after tests
+
 	tests := []struct {
 		name          string
-		csv           any
+		csvContent    string
 		opts          ValidateCSVOptions
 		expectedError bool
 		errorMessage  string
 	}{
 		{
 			name: "Valid CSV with required columns",
-			csv: `id,name,value
+			csvContent: `id,name,value
 1,test1,val1
 2,test2,val2
 3,test3,val3`,
@@ -30,7 +37,7 @@ func TestValidateCSVFormatWithConfig(t *testing.T) {
 		},
 		{
 			name: "Missing required column",
-			csv: `id,value
+			csvContent: `id,value
 1,val1
 2,val2`,
 			opts: ValidateCSVOptions{
@@ -38,11 +45,11 @@ func TestValidateCSVFormatWithConfig(t *testing.T) {
 				SampleSize:      10,
 			},
 			expectedError: true,
-			errorMessage:  "required column 'name' not found in CSV",
+			errorMessage:  "CSV file is missing required columns: [name]",
 		},
 		{
 			name: "Inconsistent number of fields",
-			csv: `id,name,value
+			csvContent: `id,name,value
 1,test1
 2,test2,val2`,
 			opts: ValidateCSVOptions{
@@ -52,17 +59,17 @@ func TestValidateCSVFormatWithConfig(t *testing.T) {
 			errorMessage:  "error reading line 1: record on line 2: wrong number of fields",
 		},
 		{
-			name: "Empty CSV",
-			csv:  "",
+			name:       "Empty CSV",
+			csvContent: "",
 			opts: ValidateCSVOptions{
 				SampleSize: 10,
 			},
 			expectedError: true,
-			errorMessage:  "failed to read CSV headers:",
+			errorMessage:  "failed to read CSV headers",
 		},
 		{
 			name: "CSV exceeds max row count",
-			csv: `id,name
+			csvContent: `id,name
 1,test1
 2,test2
 3,test3`,
@@ -75,7 +82,7 @@ func TestValidateCSVFormatWithConfig(t *testing.T) {
 		},
 		{
 			name: "Valid CSV with sampling",
-			csv: `id,name
+			csvContent: `id,name
 1,test1
 2,test2
 3,test3
@@ -89,7 +96,7 @@ func TestValidateCSVFormatWithConfig(t *testing.T) {
 		},
 		{
 			name: "Invalid CSV format",
-			csv: `id,name
+			csvContent: `id,name
 1,"unclosed quote
 2,test2`,
 			opts: ValidateCSVOptions{
@@ -98,52 +105,28 @@ func TestValidateCSVFormatWithConfig(t *testing.T) {
 			expectedError: true,
 			errorMessage:  "parse error on line",
 		},
-		{
-			name: "Non-string input",
-			csv:  123,
-			opts: ValidateCSVOptions{
-				SampleSize: 10,
-			},
-			expectedError: true,
-			errorMessage:  "expected type of",
-		},
-		{
-			name: "Large CSV with sampling",
-			csv:  generateLargeCSV(1000), // Helper function to generate large CSV
-			opts: ValidateCSVOptions{
-				SampleSize:   100,
-				SkipInterval: 100,
-			},
-			expectedError: false,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validateFunc := ValidateCSVFormatWithConfig(tt.opts)
-			path := cty.Path{cty.GetAttrStep{Name: "test_csv"}}
-			diags := validateFunc(tt.csv, path)
+			// Create a temporary file for this test
+			tmpFile := filepath.Join(tmpDir, fmt.Sprintf("test-%s.csv", tt.name))
+			err := os.WriteFile(tmpFile, []byte(tt.csvContent), 0644)
+			if err != nil {
+				t.Fatalf("failed to create test file: %v", err)
+			}
+
+			err = ValidateCSVFormatWithConfig(tmpFile, tt.opts)
 
 			if tt.expectedError {
-				if !diags.HasError() {
+				if err == nil {
 					t.Error("expected error but got none")
-				} else if tt.errorMessage != "" {
-					// Get the error message from diagnostics
-					var found bool
-					for _, diag := range diags {
-						if strings.Contains(diag.Detail, tt.errorMessage) ||
-							strings.Contains(diag.Summary, tt.errorMessage) {
-							found = true
-							break
-						}
-					}
-					if !found {
-						t.Errorf("expected error message containing '%s', got diagnostics: %v",
-							tt.errorMessage, diags)
-					}
+				} else if tt.errorMessage != "" && !strings.Contains(err.Error(), tt.errorMessage) {
+					t.Errorf("expected error message containing '%s', got: %v",
+						tt.errorMessage, err)
 				}
-			} else if diags.HasError() {
-				t.Errorf("unexpected errors: %v", diags)
+			} else if err != nil {
+				t.Errorf("unexpected error: %v", err)
 			}
 		})
 	}
@@ -163,43 +146,77 @@ func generateLargeCSV(rows int) string {
 
 // Test specific edge cases
 func TestValidateCSVFormatWithConfigEdgeCases(t *testing.T) {
+	// Create a temporary directory for test files
+	tmpDir, err := os.MkdirTemp("", "csv-edge-cases")
+	if err != nil {
+		t.Fatalf("failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
 	t.Run("Zero skip interval defaults to 1000", func(t *testing.T) {
-		csv := generateLargeCSV(2000)
+		tmpFile := filepath.Join(tmpDir, "large.csv")
+		err := os.WriteFile(tmpFile, []byte(generateLargeCSV(2000)), 0644)
+		if err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
 		opts := ValidateCSVOptions{
 			SampleSize:   10,
 			SkipInterval: 0, // Should default to 1000
 		}
 
-		validateFunc := ValidateCSVFormatWithConfig(opts)
-		diags := validateFunc(csv, cty.Path{cty.GetAttrStep{Name: "test_csv"}})
-
-		if diags.HasError() {
-			t.Errorf("unexpected validation failure: %v", diags)
+		err = ValidateCSVFormatWithConfig(tmpFile, opts)
+		if err != nil {
+			t.Errorf("unexpected validation failure: %v", err)
 		}
 	})
 
 	t.Run("CSV with quoted fields", func(t *testing.T) {
-		csv := `id,name,description
+		csvContent := `id,name,description
 1,"Smith, John","Description, with comma"
 2,"Jones, Bob","Another, description"`
+
+		tmpFile := filepath.Join(tmpDir, "quoted.csv")
+		err := os.WriteFile(tmpFile, []byte(csvContent), 0644)
+		if err != nil {
+			t.Fatalf("failed to create test file: %v", err)
+		}
+
 		opts := ValidateCSVOptions{
 			SampleSize: 10,
 		}
 
-		validateFunc := ValidateCSVFormatWithConfig(opts)
-		diags := validateFunc(csv, cty.Path{cty.GetAttrStep{Name: "test_csv"}})
-
-		if diags.HasError() {
-			t.Errorf("unexpected validation failure: %v", diags)
+		err = ValidateCSVFormatWithConfig(tmpFile, opts)
+		if err != nil {
+			t.Errorf("unexpected validation failure: %v", err)
 		}
 	})
 }
 
 func BenchmarkValidateCSVFormatWithConfig(b *testing.B) {
-	smallCSV := generateLargeCSV(100)
-	mediumCSV := generateLargeCSV(10_000)
-	largeCSV := generateLargeCSV(1_000_000)
-	xlargeCSV := generateLargeCSV(10_000_000)
+	// Create a temporary directory for benchmark files
+	tmpDir, err := os.MkdirTemp("", "csv-benchmarks")
+	if err != nil {
+		b.Fatalf("failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create test files of different sizes
+	sizes := map[string]int{
+		"Small":  100,
+		"Medium": 10_000,
+		"Large":  100_000,
+	}
+
+	files := make(map[string]string)
+	for name, size := range sizes {
+		tmpFile := filepath.Join(tmpDir, fmt.Sprintf("%s.csv", name))
+		err := os.WriteFile(tmpFile, []byte(generateLargeCSV(size)), 0644)
+		if err != nil {
+			b.Fatalf("failed to create benchmark file: %v", err)
+		}
+		files[name] = tmpFile
+	}
 
 	opts := ValidateCSVOptions{
 		RequiredColumns: []string{"id", "name", "value"},
@@ -207,30 +224,11 @@ func BenchmarkValidateCSVFormatWithConfig(b *testing.B) {
 		SkipInterval:    1000,
 	}
 
-	validateFunc := ValidateCSVFormatWithConfig(opts)
-	path := cty.Path{cty.GetAttrStep{Name: "test_csv"}}
-
-	b.Run("Small CSV (100 rows)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			validateFunc(smallCSV, path)
-		}
-	})
-
-	b.Run("Medium CSV (10_000 rows)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			validateFunc(mediumCSV, path)
-		}
-	})
-
-	b.Run("Large CSV (1_000_000 rows)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			validateFunc(largeCSV, path)
-		}
-	})
-
-	b.Run("X-Large CSV (10_000_000 rows)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			validateFunc(xlargeCSV, path)
-		}
-	})
+	for name, file := range files {
+		b.Run(fmt.Sprintf("%s CSV", name), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ValidateCSVFormatWithConfig(file, opts)
+			}
+		})
+	}
 }

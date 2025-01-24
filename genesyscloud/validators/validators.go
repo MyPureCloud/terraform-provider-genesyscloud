@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"time"
@@ -216,75 +217,76 @@ type ValidateCSVOptions struct {
 	SkipInterval    int // How often to sample after initial sampling
 }
 
-func ValidateCSVFormatWithConfig(opts ValidateCSVOptions) schema.SchemaValidateDiagFunc {
-	return func(i interface{}, _ cty.Path) diag.Diagnostics {
-		dataStr, ok := i.(string)
-		if !ok {
-			return diag.Errorf("expected type of %s to be string", i)
-		}
+func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error {
 
-		reader := csv.NewReader(strings.NewReader(dataStr))
-
-		// Read header row
-		headers, err := reader.Read()
-		if err != nil {
-			return diag.Errorf("failed to read CSV headers: %v", err)
-		}
-
-		// Validate required columns if specified
-		if len(opts.RequiredColumns) > 0 {
-			headerMap := make(map[string]bool)
-			for _, header := range headers {
-				headerMap[header] = true
-			}
-
-			requiredColumnsNotFound := []string{}
-			for _, required := range opts.RequiredColumns {
-				if !headerMap[required] {
-					requiredColumnsNotFound = append(requiredColumnsNotFound, required)
-				}
-			}
-
-			if len(requiredColumnsNotFound) > 0 {
-				return diag.Errorf("CSV file is missing required columns: %v", requiredColumnsNotFound)
-			}
-		}
-
-		expectedFields := len(headers)
-		rowCount := int64(1) // Start at 1 since we already read header
-
-		skipInterval := opts.SkipInterval
-		if skipInterval == 0 {
-			skipInterval = 1000 // Default skip interval
-		}
-
-		for {
-			row, err := reader.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return diag.Errorf("error reading line %d: %v", rowCount, err)
-			}
-
-			if opts.MaxRowCount > 0 && rowCount > opts.MaxRowCount {
-				return diag.Errorf("CSV file exceeds maximum allowed rows of %d", opts.MaxRowCount)
-			}
-
-			// Validate sampled rows
-			if int64(rowCount) <= int64(opts.SampleSize) || rowCount%int64(skipInterval) == 0 {
-				if len(row) != expectedFields {
-					return diag.Errorf("line %d has %d fields, expected %d", rowCount, len(row), expectedFields)
-				}
-			} else {
-				reader.FieldsPerRecord = -1
-			}
-
-			rowCount++
-		}
-
-		return nil
+	// Open the file
+	fileHandler, err := os.Open(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %v", err)
 	}
+	defer fileHandler.Close()
+
+	reader := csv.NewReader(fileHandler)
+
+	// Read header row
+	headers, err := reader.Read()
+	if err != nil {
+		return fmt.Errorf("failed to read CSV headers: %v", err)
+	}
+
+	// Validate required columns if specified
+	if len(opts.RequiredColumns) > 0 {
+		headerMap := make(map[string]bool)
+		for _, header := range headers {
+			headerMap[header] = true
+		}
+
+		requiredColumnsNotFound := []string{}
+		for _, required := range opts.RequiredColumns {
+			if !headerMap[required] {
+				requiredColumnsNotFound = append(requiredColumnsNotFound, required)
+			}
+		}
+
+		if len(requiredColumnsNotFound) > 0 {
+			return fmt.Errorf("CSV file is missing required columns: %v", requiredColumnsNotFound)
+		}
+	}
+
+	expectedFields := len(headers)
+	rowCount := int64(1) // Start at 1 since we already read header
+
+	skipInterval := opts.SkipInterval
+	if skipInterval == 0 {
+		skipInterval = 1000 // Default skip interval
+	}
+
+	for {
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("error reading line %d: %v", rowCount, err)
+		}
+
+		if opts.MaxRowCount > 0 && rowCount > opts.MaxRowCount {
+			return fmt.Errorf("CSV file exceeds maximum allowed rows of %d", opts.MaxRowCount)
+		}
+
+		// Validate sampled rows
+		if int64(rowCount) <= int64(opts.SampleSize) || rowCount%int64(skipInterval) == 0 {
+			if len(row) != expectedFields {
+				return fmt.Errorf("line %d has %d fields, expected %d", rowCount, len(row), expectedFields)
+			}
+		} else {
+			reader.FieldsPerRecord = -1
+		}
+
+		rowCount++
+	}
+
+	return nil
 }
 
 // ValidateResponseAssetName validate a response asset filename matches the criteria outlined in the description

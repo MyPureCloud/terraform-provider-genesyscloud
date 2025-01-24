@@ -1,6 +1,8 @@
 package outbound_contact_list
 
 import (
+	"context"
+	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -107,6 +109,32 @@ func ResourceOutboundContactList() *schema.Resource {
 		SchemaVersion: 2,
 		CustomizeDiff: customdiff.All(
 			customdiff.ComputedIf("contacts_file_content_hash", files.FileContentHashChanged("contacts_filepath", "contacts_file_content_hash")),
+			func(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+				if !d.HasChange("contacts_filepath") {
+					return nil
+				}
+
+				filepath := d.Get("contacts_filepath").(string)
+				if filepath == "" {
+					return nil
+				}
+
+				columnNamesRaw := d.Get("column_names").([]interface{})
+				requiredColumns := make([]string, len(columnNamesRaw))
+				for i, v := range columnNamesRaw {
+					requiredColumns[i] = v.(string)
+				}
+
+				validatorOpts := validators.ValidateCSVOptions{
+					RequiredColumns: requiredColumns,
+				}
+
+				err := validators.ValidateCSVFormatWithConfig(filepath, validatorOpts)
+				if err != nil {
+					return fmt.Errorf("failed to validate contacts file: %s", err)
+				}
+				return nil
+			},
 		),
 		Schema: map[string]*schema.Schema{
 			`name`: {
@@ -190,13 +218,12 @@ func ResourceOutboundContactList() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 			`contacts_filepath`: {
-				Description:      "The path to a CSV file containing contacts to import into the contact list. When updated, existing contacts will be removed and replaced with contacts from the new file. If not specified, an empty contact list will be created.",
-				Optional:         true,
-				Computed:         false,
-				ForceNew:         false,
-				Type:             schema.TypeString,
-				RequiredWith:     []string{"contacts_filepath", "contacts_id_name"},
-				ValidateDiagFunc: validators.ValidateCSVFormatWithConfig(validators.ValidateCSVOptions{SampleSize: 100, SkipInterval: 100}),
+				Description:  "The path to a CSV file containing contacts to import into the contact list. When updated, existing contacts will be removed and replaced with contacts from the new file. If not specified, an empty contact list will be created.",
+				Optional:     true,
+				Computed:     false,
+				ForceNew:     false,
+				Type:         schema.TypeString,
+				RequiredWith: []string{"contacts_filepath", "contacts_id_name"},
 			},
 			`contacts_id_name`: {
 				Description:  `The name of the column in the CSV file that contains the contact's unique contact id. If updated, the contact list is dropped and recreated with a new ID`,
