@@ -155,23 +155,24 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 		}
 
-		_ = d.Set("name", *currentSite.Name)
+		resourcedata.SetNillableValue(d, "name", currentSite.Name)
 		_ = d.Set("location_id", nil)
 		if currentSite.Location != nil {
 			_ = d.Set("location_id", *currentSite.Location.Id)
 		}
-		_ = d.Set("media_model", *currentSite.MediaModel)
-		_ = d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
+
+		resourcedata.SetNillableValue(d, "media_model", currentSite.MediaModel)
+		resourcedata.SetNillableValue(d, "media_regions_use_latency_based", currentSite.MediaRegionsUseLatencyBased)
 
 		resourcedata.SetNillableValue(d, "description", currentSite.Description)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "edge_auto_update_config", currentSite.EdgeAutoUpdateConfig, flattenSdkEdgeAutoUpdateConfig)
 		resourcedata.SetNillableValue(d, "media_regions", currentSite.MediaRegions)
 
-		d.Set("caller_id", nil)
+		_ = d.Set("caller_id", nil)
 		if currentSite.CallerId != nil && *currentSite.CallerId != "" {
 			_ = d.Set("caller_id", utilE164.FormatAsCalculatedE164Number(*currentSite.CallerId))
 		}
-		_ = d.Set("caller_name", currentSite.CallerName)
+		resourcedata.SetNillableValue(d, "caller_name", currentSite.CallerName)
 
 		if currentSite.PrimarySites != nil {
 			_ = d.Set("primary_sites", util.SdkDomainEntityRefArrToList(*currentSite.PrimarySites))
@@ -201,7 +202,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 		_ = d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
 
-		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
+		log.Printf("Read site %s", d.Id())
 		return cc.CheckState(d)
 	})
 }

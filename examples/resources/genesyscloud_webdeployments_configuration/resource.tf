@@ -141,7 +141,8 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     }
   }
   authentication_settings {
-    enabled        = true
-    integration_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    enabled               = true
+    integration_id        = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    allow_session_upgrade = true
   }
 }
