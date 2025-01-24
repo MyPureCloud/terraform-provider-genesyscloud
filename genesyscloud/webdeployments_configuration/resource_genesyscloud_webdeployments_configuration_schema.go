@@ -754,6 +754,11 @@ var (
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"allow_session_upgrade": {
+				Description: "Allow end-users to upgrade an anonymous session to authenticated conversation.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 		},
 	}
 )
