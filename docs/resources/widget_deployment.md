@@ -1,12 +1,12 @@
 ---
 page_title: "genesyscloud_widget_deployment Resource - terraform-provider-genesyscloud"
-subcategory: ""
+subcategory: "Deprecated"
 description: |-
-  Genesys Cloud Widget Deployment
+  [DEPRECATED] Genesys Cloud Widget Deployment
 ---
 # genesyscloud_widget_deployment (Resource)
 
-Genesys Cloud Widget Deployment
+[DEPRECATED] Genesys Cloud Widget Deployment
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

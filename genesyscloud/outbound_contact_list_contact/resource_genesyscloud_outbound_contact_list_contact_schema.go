@@ -66,7 +66,7 @@ var (
 
 func ResourceOutboundContactListContact() *schema.Resource {
 	return &schema.Resource{
-		Description:        `Genesys Cloud Outbound Contact List Contact`,
+		Description:        `[DEPRECATED] Genesys Cloud Outbound Contact List Contact`,
 		DeprecationMessage: "This resource is deprecated and will be removed in a future version. The exporter functionality of this resource has been removed. Please use the contacts_* fields within the genesyscloud_outbound_contact_list resource instead. This change consolidates contact management to improve reliability and performance.",
 		CreateContext:      provider.CreateWithPooledClient(createOutboundContactListContact),
 		ReadContext:        provider.ReadWithPooledClient(readOutboundContactListContact),

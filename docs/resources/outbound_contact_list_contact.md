@@ -1,12 +1,12 @@
 ---
 page_title: "genesyscloud_outbound_contact_list_contact Resource - terraform-provider-genesyscloud"
-subcategory: ""
+subcategory: "Deprecated"
 description: |-
-  Genesys Cloud Outbound Contact List Contact
+  [DEPRECATED] Genesys Cloud Outbound Contact List Contact
 ---
 # genesyscloud_outbound_contact_list_contact (Resource)
 
-Genesys Cloud Outbound Contact List Contact
+[DEPRECATED] Genesys Cloud Outbound Contact List Contact
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
