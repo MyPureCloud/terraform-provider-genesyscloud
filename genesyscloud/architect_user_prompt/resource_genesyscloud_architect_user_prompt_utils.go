@@ -42,7 +42,7 @@ type UserPromptResourceStruct struct {
 func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformclientv2.Promptasset) *schema.Set {
 	resourceSet := schema.NewSet(schema.HashResource(userPromptResource), []interface{}{})
 	if promptResources == nil || len(*promptResources) == 0 {
-		return resourceSet
+		return nil
 	}
 
 	for _, sdkPromptAsset := range *promptResources {

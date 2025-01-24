@@ -23,6 +23,7 @@ func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllUserPrompts),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		AllowEmptyArrays: []string{"resources"},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
 			SubDirectory:              "audio_prompts",
