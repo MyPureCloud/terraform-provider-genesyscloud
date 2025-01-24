@@ -11,8 +11,10 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
@@ -197,13 +199,19 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	}
 
 	ctx := context.Background()
-	url, _, err := cp.getContactListContactsExportUrl(ctx, contactListId)
-	if err != nil {
-		return err
-	}
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		url, _, err := cp.getContactListContactsExportUrl(ctx, contactListId)
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+		if err := files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
+			return nil, diag.FromErr(err)
+		}
+		return nil, nil
+	})
 
-	if err := files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
-		return err
+	if diagErr != nil {
+		return fmt.Errorf(`Error retrieving exported contacts: %v`, diagErr)
 	}
 
 	fullCurrentPath := path.Join(fullDirectoryPath, exportFileName)
