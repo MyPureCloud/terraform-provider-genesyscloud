@@ -1,10 +1,9 @@
-package task_management_worktype_status
+package task_management_worktype_flow_datebased_rule
 
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	workType "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -15,10 +14,10 @@ import (
 )
 
 /*
-Test Class for the task management worktype status Data Source
+Test Class for the task management datebased rule Data Source
 */
 
-func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
+func TestAccDataSourceTaskManagementDateBasedRule(t *testing.T) {
 	t.Parallel()
 	var (
 		// Workbin
@@ -26,23 +25,19 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 		wbName          = "wb_" + uuid.NewString()
 		wbDescription   = "workbin created for CX as Code test case"
 
-		// Schema
-		wsResourceLabel = "schema_1"
-		wsName          = "ws_" + uuid.NewString()
-		wsDescription   = "workitem schema created for CX as Code test case"
-
 		// Worktype
-		wtResourceLabel = "worktype_id"
+		wtResourceLabel = "worktype_1"
 		wtName          = "wt_" + uuid.NewString()
 		wtDescription   = "test worktype description"
 
-		// Status Resource
-		statusResourceLabel = "status_resource"
-		statusName          = "status-" + uuid.NewString()
-		statusCategory      = "Open"
+		// DateBased Rule Resource
+		dateBasedRuleResourceLabel  = "datebased_rule_resource"
+		dateBasedRuleName           = "datebased-" + uuid.NewString()
+		dateBasedRuleAttribute      = "dateDue"
+		relativeMinutesToInvocation = 30
 
-		// Status Data Source
-		statusDataSourceLabel = "status_data"
+		// DateBased Data Source
+		dateBasedRuleDataSourceLabel = "datebased_rule_data"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -51,7 +46,6 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
-					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
 					workType.GenerateWorktypeResourceBasic(
 						wtResourceLabel,
 						wtName,
@@ -59,32 +53,35 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
 						"",
 					) +
-					GenerateWorktypeStatusResource(
-						statusResourceLabel,
+					GenerateDateBasedRuleResource(
+						dateBasedRuleResourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						statusName,
-						statusCategory,
-						"",
-						util.NullValue,
-						"",
+						dateBasedRuleName,
+						dateBasedRuleAttribute,
+						relativeMinutesToInvocation,
 					) +
-					generateWorktypeStatusDataSource(
-						statusDataSourceLabel,
+					generateDateBasedRuleDataSource(
+						dateBasedRuleDataSourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						statusName,
-						ResourceType+"."+statusResourceLabel,
+						dateBasedRuleName,
+						ResourceType+"."+dateBasedRuleResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					ValidateStatusIds(
-						fmt.Sprintf("data.%s.%s", ResourceType, statusDataSourceLabel), "id", fmt.Sprintf("%s.%s", ResourceType, statusResourceLabel), "id",
+					validateRuleIds(
+						"data."+ResourceType+"."+dateBasedRuleDataSourceLabel, "id", ResourceType+"."+dateBasedRuleResourceLabel, "id",
 					),
 				),
+			},
+			{
+				ResourceName:      ResourceType + "." + dateBasedRuleResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
 }
 
-func generateWorktypeStatusDataSource(dataSourceLabel string, worktypeId string, name string, dependsOnResource string) string {
+func generateDateBasedRuleDataSource(dataSourceLabel string, worktypeId string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		worktype_id = %s
 		name = "%s"

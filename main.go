@@ -100,6 +100,9 @@ import (
 	workitem "terraform-provider-genesyscloud/genesyscloud/task_management_workitem"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	workitemDateBasedRule "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_datebased_rule"
+	workitemOnAttributeChangeRule "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_onattributechange_rule"
+	workitemOnCreateRule "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_oncreate_rule"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/team"
 	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
@@ -246,6 +249,9 @@ func registerResources() {
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
 	worktypeStatus.SetRegistrar(regInstance)                               //Registering task management worktype status
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
+	workitemOnCreateRule.SetRegistrar(regInstance)                         //Registering task management oncreate rule
+	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule
+	workitemDateBasedRule.SetRegistrar(regInstance)                        //Registering task management datebased rule
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	team.SetRegistrar(regInstance)                                         //Registering team
 	telephony_provider_edges_trunkbasesettings.SetRegistrar(regInstance)   //Registering telephony_provider_edges_trunkbasesettings package
