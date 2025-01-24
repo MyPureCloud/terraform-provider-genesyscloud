@@ -102,7 +102,7 @@ resource "genesyscloud_quality_forms_evaluation" "example-evaluation-form" {
 
 ### Optional
 
-- `published` (Boolean) Specifies if the evaluation form is published. Defaults to `false`.
+- `published` (Boolean) Specifies if the evaluation form is published. **Note:** A form cannot be modified if published is set to true. Defaults to `false`.
 
 ### Read-Only
 
