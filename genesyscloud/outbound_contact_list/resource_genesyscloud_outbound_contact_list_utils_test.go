@@ -585,12 +585,13 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 
 		// Mock the file download function
 		origDownloadFile := files.DownloadExportFileWithAccessToken
-		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) error {
+		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) (*platformclientv2.APIResponse, error) {
 			fullPath := path.Join(directory, filename)
 			if err := os.MkdirAll(directory, os.ModePerm); err != nil {
-				return err
+				return nil, err
 			}
-			return os.WriteFile(fullPath, []byte("test content"), 0644)
+			os.WriteFile(fullPath, []byte("test content"), 0644)
+			return nil, nil
 		}
 		defer func() { files.DownloadExportFileWithAccessToken = origDownloadFile }()
 
@@ -683,8 +684,8 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 		}
 
 		// Mock download failure
-		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) error {
-			return fmt.Errorf("download failed")
+		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) (*platformclientv2.APIResponse, error) {
+			return nil, fmt.Errorf("download failed")
 		}
 
 		err := ContactsExporterResolver("test-id", tempDir, subDir, configMap, mockMeta, mockResource)

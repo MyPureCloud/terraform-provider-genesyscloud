@@ -33,7 +33,7 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 	fileName := fmt.Sprintf("%s-%s%s", baseName, responseAssetId, filepath.Ext(*data.Name))
 	exportFilename := path.Join(subDirectory, fileName)
 
-	if err := files.DownloadExportFile(fullPath, fileName, *data.ContentLocation); err != nil {
+	if _, err := files.DownloadExportFile(fullPath, fileName, *data.ContentLocation); err != nil {
 		return err
 	}
 	configMap["filename"] = exportFilename

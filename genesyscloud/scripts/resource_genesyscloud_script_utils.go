@@ -28,7 +28,7 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 		return err
 	}
 
-	if err := files.DownloadExportFile(fullPath, exportFileName, url); err != nil {
+	if _, err := files.DownloadExportFile(fullPath, exportFileName, url); err != nil {
 		return err
 	}
 

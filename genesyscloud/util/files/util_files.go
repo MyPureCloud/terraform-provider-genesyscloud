@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 type S3Uploader struct {
@@ -214,18 +215,18 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 // without actually downloading files.
 var DownloadExportFile = downloadExportFile
 
-func downloadExportFile(directory, fileName, uri string) error {
+func downloadExportFile(directory, fileName, uri string) (*platformclientv2.APIResponse, error) {
 	return downloadExportFileWithAccessToken(directory, fileName, uri, "")
 }
 
 var DownloadExportFileWithAccessToken = downloadExportFileWithAccessToken
 
-func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken string) error {
+func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken string) (*platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if accessToken != "" {
@@ -233,19 +234,23 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 	}
 
 	resp, err := client.Do(req)
+	apiResp, apiErr := platformclientv2.NewAPIResponse(resp, nil)
 	if err != nil {
-		return err
+		return apiResp, err
+	}
+	if apiErr != nil {
+		return apiResp, apiErr
 	}
 	defer resp.Body.Close()
 
 	out, err := os.Create(path.Join(directory, fileName))
 	if err != nil {
-		return err
+		return apiResp, err
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
-	return err
+	return apiResp, err
 }
 
 // Hash file content, used in stateFunc for "filepath" type attributes

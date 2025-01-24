@@ -194,18 +194,18 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	exportFileName := fmt.Sprintf("%s.csv", contactListName)
 
 	fullDirectoryPath := path.Join(exportDirectory, subDirectory)
-	if err := os.MkdirAll(fullDirectoryPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(fullDirectoryPath, 0600); err != nil {
 		return err
 	}
 
 	ctx := context.Background()
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		url, _, err := cp.getContactListContactsExportUrl(ctx, contactListId)
+		url, resp, err := cp.getContactListContactsExportUrl(ctx, contactListId)
 		if err != nil {
-			return nil, diag.FromErr(err)
+			return resp, diag.FromErr(err)
 		}
-		if err := files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
-			return nil, diag.FromErr(err)
+		if resp, err = files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
+			return resp, diag.FromErr(err)
 		}
 		return nil, nil
 	})
@@ -214,7 +214,9 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 		return fmt.Errorf(`Error retrieving exported contacts: %v`, diagErr)
 	}
 
+	// amazonq-ignore-next-line
 	fullCurrentPath := path.Join(fullDirectoryPath, exportFileName)
+	// amazonq-ignore-next-line
 	fullRelativePath := path.Join(subDirectory, exportFileName)
 	configMap["contacts_filepath"] = fullRelativePath
 	configMap["contacts_id_name"] = "inin-outbound-id"
