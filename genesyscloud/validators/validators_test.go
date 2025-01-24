@@ -96,14 +96,15 @@ func TestValidateCSVFormatWithConfig(t *testing.T) {
 		},
 		{
 			name: "Invalid CSV format",
-			csvContent: `id,name
-1,"unclosed quote
-2,test2`,
+			csvContent: `field1,'field2',"field3"
+value1,"mixed'quotes",value3
+value4,value5,value6,value7,,
+`,
 			opts: ValidateCSVOptions{
 				SampleSize: 10,
 			},
 			expectedError: true,
-			errorMessage:  "parse error on line",
+			errorMessage:  "wrong number of fields",
 		},
 	}
 

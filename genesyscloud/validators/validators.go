@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"os"
 	"regexp"
 	"strconv"
 	"time"
@@ -220,13 +219,16 @@ type ValidateCSVOptions struct {
 func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error {
 
 	// Open the file
-	fileHandler, err := os.Open(filepath)
+	_, fileHandler, err := files.DownloadOrOpenFile(filepath)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %v", err)
 	}
 	defer fileHandler.Close()
 
 	reader := csv.NewReader(fileHandler)
+	reader.LazyQuotes = true
+	reader.TrimLeadingSpace = true
+	reader.FieldsPerRecord = 0
 
 	// Read header row
 	headers, err := reader.Read()

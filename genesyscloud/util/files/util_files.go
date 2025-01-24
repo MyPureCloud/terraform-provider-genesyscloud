@@ -362,6 +362,9 @@ func GetCSVRecordCount(filepath string) (int, error) {
 
 	// Count the number of records in the CSV file
 	csvReader := csv.NewReader(reader)
+	csvReader.LazyQuotes = true
+	csvReader.TrimLeadingSpace = true
+	csvReader.FieldsPerRecord = 0
 	recordCount := 0
 	for {
 		_, err := csvReader.Read()

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -190,8 +191,8 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	contactListId := resource.State.Attributes["id"]
 	exportFileName := fmt.Sprintf("%s.csv", contactListName)
 
-	directoryPath := path.Join(exportDirectory, subDirectory)
-	if err := os.MkdirAll(directoryPath, os.ModePerm); err != nil {
+	fullDirectoryPath := path.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullDirectoryPath, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -201,18 +202,34 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 		return err
 	}
 
-	if err := files.DownloadExportFileWithAccessToken(directoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
+	if err := files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
 		return err
 	}
 
-	fullPath := path.Join(directoryPath, exportFileName)
-	configMap["contacts_filepath"] = fullPath
-	hash, err := files.HashFileContent(fullPath)
+	fullCurrentPath := path.Join(fullDirectoryPath, exportFileName)
+	fullRelativePath := path.Join(subDirectory, exportFileName)
+	configMap["contacts_filepath"] = fullRelativePath
+	configMap["contacts_id_name"] = "inin-outbound-id"
+
+	// Remove read only attributes from the config file
+	delete(configMap, "contacts_file_content_hash")
+	delete(configMap, "contacts_record_count")
+	hash, err := files.HashFileContent(fullCurrentPath)
 	if err != nil {
 		log.Printf("Error calculating file content hash: %v", err)
 		return err
 	}
 	resource.State.Attributes["contacts_file_content_hash"] = hash
+
+	recordCount, err := files.GetCSVRecordCount(fullCurrentPath)
+	if err != nil {
+		log.Printf("Error getting CSV record count: %v", err)
+		return err
+	}
+	resource.State.Attributes["contacts_record_count"] = strconv.Itoa(recordCount)
+
+	resource.State.Attributes["contacts_filepath"] = fullRelativePath
+	resource.State.Attributes["contacts_id_name"] = "inin-outbound-id"
 
 	return nil
 }

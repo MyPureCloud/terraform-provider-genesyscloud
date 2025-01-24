@@ -601,15 +601,37 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 		}
 
 		// Verify the filepath was set in configMap
-		expectedPath := path.Join(tempDir, subDir, "contacts_test-contact-list.csv")
+		expectedPath := path.Join(subDir, "contacts_test-contact-list.csv")
 		if configMap["contacts_filepath"] != expectedPath {
 			t.Errorf("Expected filepath %s, got %s", expectedPath, configMap["filepath"])
 		}
 
-		// Verify file_content_hash was set
-		if mockResource.State.Attributes["contacts_file_content_hash"] == "" {
-			t.Error("Expected file_content_hash to be set")
+		if configMap["contacts_id_name"] != "inin-outbound-id" {
+			t.Errorf("Expected contacts_id_name to be 'inin-outbound-id', got %s", configMap["contacts_id_name"])
 		}
+
+		// Verify computed attributes not set on configMap
+		if _, exists := configMap["contacts_file_content_hash"]; exists {
+			t.Errorf("Expected contacts_file_content_hash to not be in configMap")
+		}
+		if _, exists := configMap["contacts_record_count"]; exists {
+			t.Errorf("Expected contacts_record_count to not be in configMap")
+		}
+
+		// Verify state attributes set
+		if mockResource.State.Attributes["contacts_file_content_hash"] == "" {
+			t.Error("Expected contacts_file_content_hash to be set")
+		}
+		if mockResource.State.Attributes["contacts_record_count"] == "" {
+			t.Error("Expected contacts_record_count to be set")
+		}
+		if mockResource.State.Attributes["contacts_filepath"] == "" {
+			t.Error("Expected contacts_filepath to be set")
+		}
+		if mockResource.State.Attributes["contacts_id_name"] == "" {
+			t.Error("Expected contacts_id_name to be set")
+		}
+
 	})
 
 	t.Run("export url error", func(t *testing.T) {
