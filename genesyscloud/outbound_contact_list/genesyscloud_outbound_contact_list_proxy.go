@@ -35,6 +35,7 @@ type deleteOutboundContactlistFunc func(ctx context.Context, p *OutboundContactl
 type uploadContactListBulkContactsFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId, filepath, contactIdName string) (respBytes []byte, err error)
 type clearContactListContactsFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error)
 type getContactListContactsExportUrlFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, error error)
+type initiateContactListContactsExportFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (resp *platformclientv2.APIResponse, error error)
 
 // OutboundContactListProxy defines the interface for outbound contact list operations
 type OutboundContactlistProxy struct {
@@ -52,6 +53,7 @@ type OutboundContactlistProxy struct {
 	basePath                                      string
 	accessToken                                   string
 	getContactListContactsExportUrlAttr           getContactListContactsExportUrlFunc
+	initiateContactListContactsExportAttr         initiateContactListContactsExportFunc
 	contactListCache                              rc.CacheInterface[platformclientv2.Contactlist]
 }
 
@@ -73,6 +75,7 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 		basePath:                                      strings.Replace(api.Configuration.BasePath, "api", "apps", -1),
 		accessToken:                                   api.Configuration.AccessToken,
 		getContactListContactsExportUrlAttr:           getContactListContactsExportUrlFn,
+		initiateContactListContactsExportAttr:         initiateContactListContactsExportFn,
 		contactListCache:                              contactListCache,
 	}
 }
@@ -146,6 +149,11 @@ func (p *OutboundContactlistProxy) uploadContactListBulkContacts(ctx context.Con
 // clearContactListContacts clears all of the contacts in a contact list
 func (p *OutboundContactlistProxy) clearContactListContacts(ctx context.Context, contactListId string) (*platformclientv2.APIResponse, error) {
 	return p.clearContactListContactsAttr(ctx, p, contactListId)
+}
+
+// initiateContactListContactsExport initiates the export for a contact list
+func (p *OutboundContactlistProxy) initiateContactListContactsExport(ctx context.Context, contactListId string) (resp *platformclientv2.APIResponse, err error) {
+	return p.initiateContactListContactsExportAttr(ctx, p, contactListId)
 }
 
 // getContactListContactsExportUrl gets the export url for a contact list (this is just the URL itself, no authorization included)
@@ -276,8 +284,8 @@ func clearContactListContactsFn(_ context.Context, p *OutboundContactlistProxy, 
 	return resp, nil
 }
 
-// getContactListContactsExportUrlFn is an implementation function for retrieving the export URL for a contact list's contacts
-func getContactListContactsExportUrlFn(_ context.Context, p *OutboundContactlistProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
+// initiateContactListContactsExportFn is an implementation function for retrieving the export URL for a contact list's contacts
+func initiateContactListContactsExportFn(_ context.Context, p *OutboundContactlistProxy, contactListId string) (resp *platformclientv2.APIResponse, err error) {
 	var (
 		body platformclientv2.Contactsexportrequest
 	)
@@ -285,12 +293,17 @@ func getContactListContactsExportUrlFn(_ context.Context, p *OutboundContactlist
 	_, resp, err = p.outboundApi.PostOutboundContactlistExport(contactListId, body)
 
 	if err != nil {
-		return "", resp, fmt.Errorf("error calling PostOutboundContactlistExport with error: %v", err)
+		return resp, fmt.Errorf("error calling PostOutboundContactlistExport with error: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", resp, fmt.Errorf("error calling PostOutboundContactlistExport with status: %v", resp.Status)
+		return resp, fmt.Errorf("error calling PostOutboundContactlistExport with status: %v", resp.Status)
 	}
+	return resp, nil
+}
+
+// getContactListContactsExportUrlFn is an implementation function for retrieving the export URL for a contact list's contacts
+func getContactListContactsExportUrlFn(_ context.Context, p *OutboundContactlistProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
 
 	data, resp, err := p.outboundApi.GetOutboundContactlistExport(contactListId, "")
 

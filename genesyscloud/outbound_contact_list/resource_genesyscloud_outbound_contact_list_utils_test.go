@@ -3,6 +3,7 @@ package outbound_contact_list
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"reflect"
@@ -562,8 +563,19 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 	t.Run("successful export", func(t *testing.T) {
 		// Create test proxy with our test implementation
 		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return resp, nil
+			},
 			getContactListContactsExportUrlAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (string, *platformclientv2.APIResponse, error) {
-				return "http://test-url.com/export", nil, nil
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return "http://test-url.com/export", resp, nil
 			},
 		}
 
@@ -635,9 +647,45 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 
 	})
 
-	t.Run("export url error", func(t *testing.T) {
+	t.Run("initiate export url error", func(t *testing.T) {
 		// Create test proxy with error case
+
 		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				return nil, fmt.Errorf("failed to initiate export")
+			},
+		}
+
+		// Set the internal proxy to our test proxy
+		internalProxy = testProxy
+
+		mockMeta := &provider.ProviderMeta{
+			ClientConfig: &platformclientv2.Configuration{},
+		}
+
+		mockResource := resourceExporter.ResourceInfo{
+			State: &terraform.InstanceState{
+				Attributes: make(map[string]string),
+			},
+		}
+
+		err := ContactsExporterResolver("test-id", tempDir, subDir, configMap, mockMeta, mockResource)
+		if err == nil {
+			t.Error("Expected error, got nil")
+		}
+	})
+
+	t.Run("get export url error", func(t *testing.T) {
+		// Create test proxy with error case
+
+		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return resp, nil
+			},
 			getContactListContactsExportUrlAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (string, *platformclientv2.APIResponse, error) {
 				return "", nil, fmt.Errorf("failed to get export URL")
 			},
@@ -665,8 +713,19 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 	t.Run("download error", func(t *testing.T) {
 		// Create test proxy
 		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return resp, nil
+			},
 			getContactListContactsExportUrlAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (string, *platformclientv2.APIResponse, error) {
-				return "http://test-url.com/export", nil, nil
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return "http://test-url.com/export", resp, nil
 			},
 		}
 

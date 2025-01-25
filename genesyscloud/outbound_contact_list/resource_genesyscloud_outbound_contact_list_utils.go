@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -200,27 +201,45 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	}
 
 	ctx := context.Background()
+	var exportUrl string
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		url, resp, err := cp.getContactListContactsExportUrl(ctx, contactListId)
+		resp, err := cp.initiateContactListContactsExport(ctx, contactListId)
+		// Sleep one second before attempting to retrieve export url to give the system time to be able to generate the URL
+		time.Sleep(time.Second)
 		if err != nil {
-			time.Sleep(5 * time.Second)
 			return resp, diag.FromErr(err)
 		}
-		if resp, err = files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
-			time.Sleep(5 * time.Second)
-			return resp, diag.FromErr(err)
-		}
-		return nil, nil
-	})
-
+		return resp, nil
+	}, 400)
 	if diagErr != nil {
-		return fmt.Errorf(`Error retrieving exported contacts: %v`, diagErr)
+		return fmt.Errorf(`Error initiating contact list export: %v`, diagErr)
+	}
+	diagErr = util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		var err error
+		var resp *platformclientv2.APIResponse
+		exportUrl, resp, err = cp.getContactListContactsExportUrl(ctx, contactListId)
+		if err != nil {
+			return resp, diag.FromErr(err)
+		}
+		return resp, nil
+
+	}, 400)
+	if diagErr != nil {
+		return fmt.Errorf(`Error retrieving contact list export url: %v`, diagErr)
+	}
+	diagErr = util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, exportUrl, sdkConfig.AccessToken)
+		if err != nil {
+			return resp, diag.FromErr(err)
+		}
+		return resp, nil
+	}, 400)
+	if diagErr != nil {
+		return fmt.Errorf(`Error downloading exported contacts: %v`, diagErr)
 	}
 
-	// amazonq-ignore-next-line
-	fullCurrentPath := path.Join(fullDirectoryPath, exportFileName)
-	// amazonq-ignore-next-line
-	fullRelativePath := path.Join(subDirectory, exportFileName)
+	fullCurrentPath := filepath.Join(fullDirectoryPath, exportFileName)
+	fullRelativePath := filepath.Join(subDirectory, exportFileName)
 	configMap["contacts_filepath"] = fullRelativePath
 	configMap["contacts_id_name"] = "inin-outbound-id"
 
