@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math"
 	"regexp"
 	"strconv"
 	"time"
@@ -200,7 +201,7 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 
 	_, file, err := files.DownloadOrOpenFile(v)
 	if err != nil {
-		errors = append(errors, err)
+		return warnings, append(errors, err)
 	}
 	if file != nil {
 		defer file.Close()
@@ -218,10 +219,29 @@ type ValidateCSVOptions struct {
 
 func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error {
 
+	const (
+		maxSkipInterval     = 1000000 // Maximum allowed skip interval
+		defaultSkipInterval = 1000    // Default skip interval
+		maxSampleSize       = 100000  // Maximum allowed sample size
+	)
+	// Validate configuration
+	if opts.SkipInterval < 0 {
+		return fmt.Errorf("skip interval must be non-negative, got %d", opts.SkipInterval)
+	}
+	if opts.SkipInterval > maxSkipInterval {
+		return fmt.Errorf("skip interval too large, maximum allowed is %d", maxSkipInterval)
+	}
+	if opts.SampleSize < 0 {
+		return fmt.Errorf("sample size must be non-negative, got %d", opts.SampleSize)
+	}
+	if opts.SampleSize > maxSampleSize {
+		return fmt.Errorf("sample size too large, maximum allowed is %d", maxSampleSize)
+	}
+
 	// Open the file
 	_, fileHandler, err := files.DownloadOrOpenFile(filepath)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
+		return fmt.Errorf("failed to open file: %w", err)
 	}
 	defer fileHandler.Close()
 
@@ -233,7 +253,7 @@ func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error
 	// Read header row
 	headers, err := reader.Read()
 	if err != nil {
-		return fmt.Errorf("failed to read CSV headers: %v", err)
+		return fmt.Errorf("failed to read CSV headers: %w", err)
 	}
 
 	// Validate required columns if specified
@@ -256,28 +276,35 @@ func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error
 	}
 
 	expectedFields := len(headers)
-	rowCount := int64(1) // Start at 1 since we already read header
 
 	skipInterval := opts.SkipInterval
 	if skipInterval == 0 {
-		skipInterval = 1000 // Default skip interval
+		skipInterval = defaultSkipInterval
 	}
 
+	var rowCount uint64 = 1 // Start at 1 since we already read header
+	skipIntervalU64 := uint64(skipInterval)
+
 	for {
+		// Check for uint64 overflow
+		if rowCount == math.MaxUint64 {
+			return fmt.Errorf("file exceeds maximum supported row count")
+		}
+
 		row, err := reader.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("error reading line %d: %v", rowCount, err)
+			return fmt.Errorf("error reading line %d: %w", rowCount, err)
 		}
 
-		if opts.MaxRowCount > 0 && rowCount > opts.MaxRowCount {
+		if opts.MaxRowCount > 0 && rowCount > uint64(opts.MaxRowCount) {
 			return fmt.Errorf("CSV file exceeds maximum allowed rows of %d", opts.MaxRowCount)
 		}
 
 		// Validate sampled rows
-		if int64(rowCount) <= int64(opts.SampleSize) || rowCount%int64(skipInterval) == 0 {
+		if rowCount <= uint64(opts.SampleSize) || rowCount%skipIntervalU64 == 0 {
 			if len(row) != expectedFields {
 				return fmt.Errorf("line %d has %d fields, expected %d", rowCount, len(row), expectedFields)
 			}

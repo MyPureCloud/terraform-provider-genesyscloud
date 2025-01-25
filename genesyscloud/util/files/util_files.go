@@ -200,7 +200,6 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 		}
 	} else {
 		file, err = os.Open(path)
-		defer file.Close()
 		if err != nil {
 			return nil, nil, err
 		}
