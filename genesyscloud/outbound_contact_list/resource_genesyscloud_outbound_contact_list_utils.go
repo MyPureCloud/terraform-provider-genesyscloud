@@ -194,7 +194,7 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	exportFileName := fmt.Sprintf("%s.csv", contactListName)
 
 	fullDirectoryPath := path.Join(exportDirectory, subDirectory)
-	if err := os.MkdirAll(fullDirectoryPath, 0600); err != nil {
+	if err := os.MkdirAll(fullDirectoryPath, os.ModePerm); err != nil {
 		return err
 	}
 
