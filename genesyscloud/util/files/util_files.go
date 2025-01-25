@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
@@ -200,6 +200,7 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 		}
 	} else {
 		file, err = os.Open(path)
+		defer file.Close()
 		if err != nil {
 			return nil, nil, err
 		}
@@ -243,7 +244,7 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 	}
 	defer resp.Body.Close()
 
-	out, err := os.Create(path.Join(directory, fileName))
+	out, err := os.Create(filepath.Join(directory, fileName))
 	if err != nil {
 		return apiResp, err
 	}

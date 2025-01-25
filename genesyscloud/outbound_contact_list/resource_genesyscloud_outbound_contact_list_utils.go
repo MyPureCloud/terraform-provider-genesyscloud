@@ -199,7 +199,7 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	}
 
 	ctx := context.Background()
-	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		url, resp, err := cp.getContactListContactsExportUrl(ctx, contactListId)
 		if err != nil {
 			return resp, diag.FromErr(err)
