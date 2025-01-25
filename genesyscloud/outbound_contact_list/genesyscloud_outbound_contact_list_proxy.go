@@ -36,7 +36,7 @@ type uploadContactListBulkContactsFunc func(ctx context.Context, p *OutboundCont
 type clearContactListContactsFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error)
 type getContactListContactsExportUrlFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, error error)
 
-// OutboundContactlistProxy contains all of the methods that call genesys cloud APIs.
+// OutboundContactListProxy defines the interface for outbound contact list operations
 type OutboundContactlistProxy struct {
 	clientConfig                                  *platformclientv2.Configuration
 	outboundApi                                   *platformclientv2.OutboundApi
@@ -77,6 +77,25 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 	}
 }
 
+// GetOutboundContactlistProxy returns a proxy struct that implements the outbound contact list operations interface.
+// It provides abstraction for the Genesys Cloud outbound contact list API operations.
+//
+// Parameters:
+//   - sdkConfig: The Genesys Cloud SDK configuration containing authentication and connection settings
+//
+// Returns:
+//   - An implementation of the outbound contact list proxy interface
+//
+// Example Usage:
+//
+//	sdkConfig := &platformclientv2.Configuration{
+//		BasePath:           "https://api.mypurecloud.com",
+//		DefaultHeader:      make(map[string]string),
+//		UserAgent:         "terraform-provider-genesyscloud",
+//	}
+//
+//	proxy := GetOutboundContactlistProxy(sdkConfig)
+//	contactList, err := proxy.GetOutboundContactList(contactListId)
 func GetOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *OutboundContactlistProxy {
 	if internalProxy == nil {
 		internalProxy = newOutboundContactlistProxy(clientConfig)
@@ -89,7 +108,7 @@ func (p *OutboundContactlistProxy) createOutboundContactlist(ctx context.Context
 	return p.createOutboundContactlistAttr(ctx, p, outboundContactlist)
 }
 
-// getOutboundContactlist retrieves all Genesys Cloud outbound contactlist
+// GetAllOutboundContactlist retrieves all Genesys Cloud outbound contactlists
 func (p *OutboundContactlistProxy) GetAllOutboundContactlist(ctx context.Context) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
 	return p.getAllOutboundContactlistAttr(ctx, p, "")
 }

@@ -63,7 +63,6 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 - `contacts_file_content_hash` (String) The hash of the contacts file to import. This is retained as a computed value in the state in order to detect when a file's contents have changed.
 - `contacts_record_count` (Number) The number of contacts in the contact list. This is a read-only attribute and sanity check
 - `id` (String) The ID of this resource.
-- `version` (Number) Version of the contact list. Required for updates, must match the latest version otherwise update will fail.
 
 <a id="nestedblock--column_data_type_specifications"></a>
 ### Nested Schema for `column_data_type_specifications`

@@ -142,13 +142,6 @@ func ResourceOutboundContactList() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeString,
 			},
-			`version`: {
-				Description: `Version of the contact list. Required for updates, must match the latest version otherwise update will fail.`,
-				Optional:    false,
-				Required:    false,
-				Computed:    true,
-				Type:        schema.TypeInt,
-			},
 			`division_id`: {
 				Description: `The division this entity belongs to.`,
 				Optional:    true,
@@ -222,6 +215,7 @@ func ResourceOutboundContactList() *schema.Resource {
 				Computed:     false,
 				ForceNew:     false,
 				Type:         schema.TypeString,
+				ValidateFunc: validators.ValidatePath,
 				RequiredWith: []string{"contacts_filepath", "contacts_id_name"},
 			},
 			`contacts_id_name`: {
