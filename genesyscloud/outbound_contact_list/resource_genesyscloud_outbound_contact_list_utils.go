@@ -8,6 +8,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -202,9 +203,11 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		url, resp, err := cp.getContactListContactsExportUrl(ctx, contactListId)
 		if err != nil {
+			time.Sleep(5 * time.Second)
 			return resp, diag.FromErr(err)
 		}
 		if resp, err = files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, url, sdkConfig.AccessToken); err != nil {
+			time.Sleep(5 * time.Second)
 			return resp, diag.FromErr(err)
 		}
 		return nil, nil
