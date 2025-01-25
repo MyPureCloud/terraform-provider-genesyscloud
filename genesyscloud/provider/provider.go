@@ -235,10 +235,11 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 }
 
 type ProviderMeta struct {
-	Version      string
-	ClientConfig *platformclientv2.Configuration
-	Domain       string
-	Organization *platformclientv2.Organization
+	Version            string
+	ClientConfig       *platformclientv2.Configuration
+	Domain             string
+	Organization       *platformclientv2.Organization
+	DefaultCountryCode string
 }
 
 func configure(version string) schema.ConfigureContextFunc {
@@ -254,13 +255,13 @@ func configure(version string) schema.ConfigureContextFunc {
 		if err != nil {
 			return nil, err
 		}
-		setOrgDefaultCountryCode(*currentOrg.DefaultCountryCode)
 
 		meta := &ProviderMeta{
-			Version:      version,
-			ClientConfig: defaultConfig,
-			Domain:       getRegionDomain(data.Get("aws_region").(string)),
-			Organization: currentOrg,
+			Version:            version,
+			ClientConfig:       defaultConfig,
+			Domain:             getRegionDomain(data.Get("aws_region").(string)),
+			Organization:       currentOrg,
+			DefaultCountryCode: *currentOrg.DefaultCountryCode,
 		}
 
 		setProviderMeta(meta)

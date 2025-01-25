@@ -109,7 +109,7 @@ func ResourceOutboundContactList() *schema.Resource {
 		SchemaVersion: 2,
 		CustomizeDiff: customdiff.All(
 			customdiff.ComputedIf("contacts_file_content_hash", files.FileContentHashChanged("contacts_filepath", "contacts_file_content_hash")),
-			func(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+			func(ctx context.Context, d *schema.ResourceDiff, _ interface{}) error {
 				if !d.HasChange("contacts_filepath") {
 					return nil
 				}

@@ -199,11 +199,13 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("trim_whitespace", *sdkContactList.TrimWhitespace)
 		}
 
-		contactListRecordsCount, _, err := proxy.getOutboundContactlistContactRecordLength(ctx, *sdkContactList.Id)
-		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List's records %s | error: %s", d.Id(), err), resp))
+		if sdkContactList.Id != nil {
+			contactListRecordsCount, _, err := proxy.getOutboundContactlistContactRecordLength(ctx, *sdkContactList.Id)
+			if err != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List's records %s | error: %s", d.Id(), err), resp))
+			}
+			d.Set("contacts_record_count", contactListRecordsCount)
 		}
-		d.Set("contacts_record_count", contactListRecordsCount)
 
 		log.Printf("Read Outbound Contact List %s %s", d.Id(), *sdkContactList.Name)
 		return cc.CheckState(d)
@@ -269,9 +271,9 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 			}
 
 			log.Printf("Clearing existing contacts on contact list %s in preparation for updating the latest contacts", contactListName)
-			_, err = cp.clearContactListContacts(ctx, d.Id())
+			resp, err := cp.clearContactListContacts(ctx, d.Id())
 			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear contacts on contact list %s error: %s", contactListName, err), nil)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear contacts on contact list %s error: %s", contactListName, err), resp)
 			}
 
 			_, diagErr := validateContactsRecordCount(ctx, cp, d.Id(), 0)

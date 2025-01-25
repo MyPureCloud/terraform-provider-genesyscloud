@@ -195,7 +195,7 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 
 	fullDirectoryPath := path.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullDirectoryPath, os.ModePerm); err != nil {
-		return err
+		return fmt.Errorf("failed to create directory %s: %w", fullDirectoryPath, err)
 	}
 
 	ctx := context.Background()

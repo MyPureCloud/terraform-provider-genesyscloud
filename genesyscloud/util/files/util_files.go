@@ -243,6 +243,10 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 	}
 	defer resp.Body.Close()
 
+	if err := os.MkdirAll(directory, 0755); err != nil {
+		return apiResp, fmt.Errorf("failed to create directory: %w", err)
+	}
+
 	out, err := os.Create(filepath.Join(directory, fileName))
 	if err != nil {
 		return apiResp, err

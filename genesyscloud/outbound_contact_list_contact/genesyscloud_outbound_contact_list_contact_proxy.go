@@ -110,6 +110,9 @@ func getAllContactsFn(ctx context.Context, p *contactProxy) ([]ContactEntry, *pl
 	}
 
 	for _, contactList := range *contactLists {
+		if contactList.Id == nil {
+			continue
+		}
 		contacts, resp, err := p.getContactsByContactListId(ctx, *contactList.Id)
 		if err != nil {
 			return nil, resp, err
