@@ -2,7 +2,6 @@ package knowledgedocumentvariation
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -759,7 +758,6 @@ func flattenDocumentBodyBlocks(blocksIn []platformclientv2.Documentbodyblock) []
 			blockOutMap["video"] = flattenDocumentVideo(*block.Video)
 		}
 		if block.List != nil {
-			log.Println("HERE", block.List)
 			blockOutMap["list"] = flattenDocumentList(*block.List)
 		}
 		blocksOut = append(blocksOut, blockOutMap)
@@ -808,6 +806,10 @@ func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvari
 
 // Utils
 
+func buildVariationId(baseID, documentID, variationID string) string {
+	return fmt.Sprintf("%s %s %s", baseID, documentID, variationID)
+}
+
 func parseResourceIDs(id string) (*resourceIDs, error) {
 	parts := strings.Split(id, " ")
 	if len(parts) != 3 {
@@ -815,9 +817,21 @@ func parseResourceIDs(id string) (*resourceIDs, error) {
 	}
 
 	return &resourceIDs{
-		variationID:         parts[0],
-		knowledgeBaseID:     parts[1],
-		documentID:          parts[2],
-		knowledgeDocumentID: strings.Split(parts[2], ",")[0],
+		variationID:         parts[2],
+		knowledgeBaseID:     parts[0],
+		documentID:          parts[1],
+		knowledgeDocumentID: strings.Split(parts[1], ",")[0],
 	}, nil
+}
+
+func getKnowledgeIdsFromResourceData(d *schema.ResourceData) resourceIDs {
+	knowledgeBaseID, _ := d.Get("knowledge_base_id").(string)
+	documentResourceId, _ := d.Get("knowledge_document_id").(string)
+	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
+
+	return resourceIDs{
+		knowledgeBaseID:     knowledgeBaseID,
+		documentID:          documentResourceId,
+		knowledgeDocumentID: knowledgeDocumentId,
+	}
 }

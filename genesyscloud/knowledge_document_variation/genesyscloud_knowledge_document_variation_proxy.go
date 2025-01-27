@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -50,7 +51,7 @@ func newVariationRequestProxy(clientConfig *platformclientv2.Configuration) *var
 		deleteVariationRequestAttr:                       deleteVariationRequestFn,
 		getVariationRequestIdByNameAttr:                  getVariationRequestIdByNameFn,
 		createKnowledgeKnowledgebaseDocumentVersionsAttr: createKnowledgeKnowledgebaseDocumentVersionsFn,
-		GetAllKnowledgebaseEntitiesAttr:                  GetAllKnowledgebaseEntitiesFn,
+		GetAllKnowledgebaseEntitiesAttr:                  getAllKnowledgebaseEntitiesFn,
 		variationCache:                                   variationCache,
 	}
 }
@@ -158,25 +159,32 @@ func getVariationRequestByIdFn(ctx context.Context, p *variationRequestProxy, do
 
 // getVariationRequestIdByNameFn is an implementation of the function to get a Genesys Cloud variation request by name
 func getVariationRequestIdByNameFn(ctx context.Context, p *variationRequestProxy, name, knowledgeBaseID, knowledgeDocumentID string) (string, *platformclientv2.APIResponse, bool, error) {
+	var allVariations []platformclientv2.Documentvariationresponse
 
-	// Check first for published versions, if 404
-	allVariations, resp, err := getAllVariationsFn(ctx, p, knowledgeBaseID, knowledgeDocumentID, "Published", []string{})
+	// API throws a 404 if no variations of particular documentState are found
+	// Check for published state, ignore 404 and check for draft state
+	// Append the two lists together and proceed as normal provided there is at least 1 entity returned
+	allPublishedVariations, resp, err := getAllVariationsFn(ctx, p, knowledgeBaseID, knowledgeDocumentID, "Published", []string{})
+	if err != nil && resp.StatusCode != http.StatusNotFound {
+		return "", resp, false, err
+	}
+	allDraftVariations, resp, err := getAllVariationsFn(ctx, p, knowledgeBaseID, knowledgeDocumentID, "Draft", []string{})
 	if err != nil {
-		if util.IsStatus404(resp) {
-			allVariations, resp, err = getAllVariationsFn(ctx, p, knowledgeBaseID, knowledgeDocumentID, "Draft", []string{})
-			if err != nil {
-				return "", resp, false, err
-			}
-		} else {
-			return "", resp, false, err
-		}
+		return "", resp, false, err
 	}
 
-	if allVariations == nil || len(*allVariations) == 0 {
+	if allPublishedVariations != nil {
+		allVariations = append(allVariations, *allPublishedVariations...)
+	}
+	if allDraftVariations != nil {
+		allVariations = append(allVariations, *allDraftVariations...)
+	}
+
+	if allVariations == nil || len(allVariations) == 0 {
 		return "", resp, true, err
 	}
 
-	for _, variation := range *allVariations {
+	for _, variation := range allVariations {
 		if *variation.Name == name {
 			log.Printf("Retrieved the variation request id %s by name %s", *variation.Id, name)
 			return *variation.Id, resp, false, nil
@@ -193,14 +201,19 @@ func updateVariationRequestFn(ctx context.Context, p *variationRequestProxy, doc
 
 // deleteVariationRequestFn is an implementation function for deleting a Genesys Cloud variation request
 func deleteVariationRequestFn(ctx context.Context, p *variationRequestProxy, variationId, documentId, baseId string) (*platformclientv2.APIResponse, error) {
-	return p.knowledgeApi.DeleteKnowledgeKnowledgebaseDocumentVariation(variationId, documentId, baseId)
+	resp, err := p.knowledgeApi.DeleteKnowledgeKnowledgebaseDocumentVariation(variationId, documentId, baseId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.variationCache, variationId)
+	return nil, nil
 }
 
 func createKnowledgeKnowledgebaseDocumentVersionsFn(ctx context.Context, p *variationRequestProxy, knowledgeDocumentId, knowledgeBaseId string, version *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error) {
 	return p.knowledgeApi.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, *version)
 }
 
-func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *variationRequestProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *variationRequestProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	var (
 		after                 string
 		err                   error
