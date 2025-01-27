@@ -1,32 +1,26 @@
 resource "genesyscloud_externalcontacts_organization" "organization" {
-  first_name  = "jean"
-  middle_name = "jacques"
-  last_name   = "dupont"
-  salutation  = "salutation"
-  title       = "genesys staff"
+  name           = "ExampleCorporation"
+  company_type   = "Software"
+  employee_count = 450
   phone_number {
-    display      = "+33 0 00 00 00 00"
-    extension    = 4
-    accepts_sms  = false
-    e164         = "+330000000000"
-    country_code = "FR"
+    display      = "+2 123-123-4567"
+    country_code = "US"
   }
   address {
-    address1     = "1 rue de la paix"
-    address2     = "2 rue de la paix"
-    city         = "Paris"
-    state        = "île-de-France"
-    postal_code  = "75000"
-    country_code = "FR"
+    address1     = "51 Example Street"
+    city         = "Irvine"
+    state        = "California"
+    postal_code  = "45678"
+    country_code = "US"
   }
   twitter {
-    twitter_id  = "RealABCNews"
-    name        = "ABCNews"
-    screen_name = "ABCNewsCorp"
+    twitter_id  = "ExampleTwitterId"
+    name        = "ExampleTwitterName"
+    screen_name = "ExampleScreenName"
   }
   tickers {
-    symbol   = "ABC"
-    exchange = "NYSE"
+    symbol   = "EXPC"
+    exchange = "NASDAQ"
   }
   external_system_url = "https://systemUrl.com"
 }

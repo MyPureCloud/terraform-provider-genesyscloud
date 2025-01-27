@@ -118,10 +118,11 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValue(d, "survey_opt_out", externalContact.SurveyOptOut)
 		resourcedata.SetNillableValue(d, "external_system_url", externalContact.ExternalSystemUrl)
 		if externalContact.ExternalOrganization != nil && externalContact.ExternalOrganization.Id != nil {
-			resourcedata.SetNillableValue(d, "external_organization_id", externalContact.ExternalOrganization.Id)
+			_ = d.Set("external_organization_id", externalContact.ExternalOrganization.Id)
 		}
 
 		log.Printf("Read external contact %s", d.Id())
+
 		return cc.CheckState(d)
 	})
 }

@@ -122,7 +122,6 @@ func updateExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 	proxy := getExternalContactsOrganizationProxy(sdkConfig)
 
 	externalContactsOrganization, err := getExternalContactsOrganizationFromResourceData(d)
-
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to build external organization error: %s", err), nil)
 	}

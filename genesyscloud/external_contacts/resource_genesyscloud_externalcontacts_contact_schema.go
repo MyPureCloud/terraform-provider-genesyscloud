@@ -1,6 +1,7 @@
 package external_contacts
 
 import (
+	externalContactsOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -334,7 +335,7 @@ func ExternalContactExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthExternalContacts),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"external_organization_id": {RefType: "genesyscloud_contacts_organization"},
+			"external_organization_id": {RefType: externalContactsOrganization.ResourceType},
 		},
 	}
 }
