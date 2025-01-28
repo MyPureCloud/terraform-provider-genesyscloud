@@ -36,7 +36,7 @@ func (p *PanicRecoveryLogger) WriteStackTracesToFile(r any) (err error) {
 		}
 	}()
 
-	traces := fmt.Sprintf("\nStacktrace recovered: %v. %s", r, string(debug.Stack()))
-	err = os.WriteFile(p.filePath, []byte(traces), os.ModePerm)
+	tracesToWrite := fmt.Sprintf("\nStacktrace recovered: %v. %s", r, string(debug.Stack()))
+	err = os.WriteFile(p.filePath, []byte(tracesToWrite), os.ModePerm)
 	return err
 }
