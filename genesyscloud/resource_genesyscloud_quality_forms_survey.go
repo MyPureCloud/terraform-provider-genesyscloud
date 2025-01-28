@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
@@ -207,7 +208,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		surveyForms, resp, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", "", "")
+		surveyForms, resp, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "publishHistory", "", "")
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get quality forms surveys error: %s", getErr), resp)
 		}
@@ -374,11 +375,19 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		if surveyForm.Footer != nil {
 			d.Set("footer", *surveyForm.Footer)
 		}
-		if surveyForm.Published != nil {
-			d.Set("published", *surveyForm.Published)
-		}
 		if surveyForm.QuestionGroups != nil {
 			d.Set("question_groups", flattenSurveyQuestionGroups(surveyForm.QuestionGroups))
+		}
+
+		latestPublishedVersion, resp, err := qualityAPI.GetQualityPublishedformsSurvey(d.Id())
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to read survey form versions %s | error: %s", d.Id(), err), resp))
+		}
+
+		if latestPublishedVersion != nil && tfexporter_state.IsExporterActive() {
+			_ = d.Set("published", true)
+		} else {
+			_ = d.Set("published", surveyForm.Published)
 		}
 
 		return cc.CheckState(d)
