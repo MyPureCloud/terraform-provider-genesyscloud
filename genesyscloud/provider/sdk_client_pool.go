@@ -115,7 +115,8 @@ func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
 }
 
 func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
-	return schema.DeleteContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method)
+	return schema.DeleteContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 // wrapWithRecover will wrap the resource context function with a recover if the panic recovery logger is enabled
