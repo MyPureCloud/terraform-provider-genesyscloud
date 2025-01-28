@@ -132,6 +132,7 @@ resource "genesyscloud_user" "example_user" {
 - `routing_utilization` (List of Object) The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings. (see [below for nested schema](#nestedatt--routing_utilization))
 - `state` (String) User's state (active | inactive). Default is 'active'. Defaults to `active`.
 - `title` (String) User's title.
+- `voicemail_userpolicies` (Block List, Max: 1) User's voicemail policies. (see [below for nested schema](#nestedblock--voicemail_userpolicies))
 
 ### Read-Only
 
@@ -274,4 +275,13 @@ Optional:
 - `include_non_acd` (Boolean)
 - `interruptible_media_types` (Set of String)
 - `maximum_capacity` (Number)
+
+
+
+<a id="nestedblock--voicemail_userpolicies"></a>
+### Nested Schema for `voicemail_userpolicies`
+
+Optional:
+
+- `alert_timeout_seconds` (Number) The number of seconds to ring the user's phone before a call is transferred to voicemail.
 

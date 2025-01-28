@@ -173,6 +173,62 @@ func TestAccResourceUserBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserVoicemailUserpolicies(t *testing.T) {
+	var (
+		userResourceLabel1 = "test-user1"
+		email1             = "terraform-" + uuid.NewString() + "@user.com"
+		email2             = "terraform-" + uuid.NewString() + "@user.com"
+		userName1          = "John Terraform"
+		userName2          = "Jim Terraform"
+		timeoutSeconds     = 550
+		timeoutSeconds2    = 450
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email1,
+					userName1,
+					GenerateVoicemailUserpolicies(timeoutSeconds),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Update
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email2,
+					userName2,
+					GenerateVoicemailUserpolicies(timeoutSeconds2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds2)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + userResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
