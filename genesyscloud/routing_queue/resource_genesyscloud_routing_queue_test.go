@@ -629,7 +629,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		userPromptDescription1      = "Test description"
 		userPromptResourceLang1     = "en-us"
 		userPromptResourceText1     = "This is a test greeting!"
-		userPromptResourceFileName2 = "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+		userPromptResourceFileName2 = testrunner.GetTestDataPath("test-prompt-02.wav")
 		userPromptResourceTTS1      = "This is a test greeting!"
 		userPromptAsset1            = architect_user_prompt.UserPromptResourceStruct{
 			Language:        userPromptResourceLang1,
