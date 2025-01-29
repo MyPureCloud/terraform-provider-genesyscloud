@@ -325,7 +325,7 @@ func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *archit
 	}
 
 	if _, verifyErr := p.verifyPromptResourceFilesAreTranscoded(ctx, promptId, allLanguages); verifyErr != nil {
-		log.Printf("Failed to verify that all resource files were transcoded. Prompt ID: '%s'. Error: %s", promptId, verifyErr.Error())
+		log.Printf("Failed to verify that all resource files were transcoded. Please contact care for more assistance. Prompt ID: '%s'. Error: %s", promptId, verifyErr.Error())
 	}
 	return resp, nil
 }
