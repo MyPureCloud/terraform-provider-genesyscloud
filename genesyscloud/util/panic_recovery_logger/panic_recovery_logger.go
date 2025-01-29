@@ -29,14 +29,10 @@ func GetPanicRecoveryLoggerInstance() *PanicRecoveryLogger {
 	return panicRecoverLogger
 }
 
-func (p *PanicRecoveryLogger) WriteStackTracesToFile(r any) (err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("failed to write stack traces to file %s: %w", p.filePath, err)
-		}
-	}()
-
+func (p *PanicRecoveryLogger) WriteStackTracesToFile(r any) error {
 	tracesToWrite := fmt.Sprintf("\nStacktrace recovered: %v. %s", r, string(debug.Stack()))
-	err = os.WriteFile(p.filePath, []byte(tracesToWrite), os.ModePerm)
-	return err
+	if err := os.WriteFile(p.filePath, []byte(tracesToWrite), os.ModePerm); err != nil {
+		return fmt.Errorf("WriteStackTracesToFile: failed to write to file %s: %w", p.filePath, err)
+	}
+	return nil
 }
