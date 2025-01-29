@@ -23,7 +23,6 @@ import (
 )
 
 func TestAccResourceSite(t *testing.T) {
-	t.Parallel()
 
 	var (
 		// site

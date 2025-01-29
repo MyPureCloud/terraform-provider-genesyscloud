@@ -18,7 +18,7 @@ When exporting this resource, please be aware of the following behavior:
 
 If the associated Genesys Cloud Telephony Site is configured as a `managed` resource:
 
-- This resource will be exported as a data object
+- This resource will be exported as a data resource
 - Updates and modifications to this resource and its child dependencies will not be allowed through through this provider or the Genesys Cloud API
 - This limitation is enforced by the Genesys Cloud API itself
 
