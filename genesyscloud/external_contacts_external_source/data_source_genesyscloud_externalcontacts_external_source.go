@@ -21,7 +21,6 @@ var (
 
 func dataSourceExternalContactsExternalSourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newExternalContactsExternalSourceProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
@@ -29,20 +28,14 @@ func dataSourceExternalContactsExternalSourceRead(ctx context.Context, d *schema
 		log.Printf("Instantiating the %s data source cache object", ResourceType)
 		dataSourceExternalSourceCache = rc.NewDataSourceCache(sdkConfig, hydrateExternalSourceCacheFn, getExternalSourceByNameFn)
 	}
-	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		externalSourceId, retryable, response, err := proxy.getExternalContactsExternalSourceIdByName(ctx, name)
 
-		if err != nil {
-			if retryable {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No external sources found with the provided name %s", name), response))
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching exteral source %s | error: %s", name, err), response))
+	externalSourceId, err := rc.RetrieveId(dataSourceExternalSourceCache, ResourceType, name, ctx)
+	if err != nil {
+		return err
+	}
 
-		}
-
-		d.SetId(externalSourceId)
-		return nil
-	})
+	d.SetId(externalSourceId)
+	return nil
 }
 
 func hydrateExternalSourceCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
@@ -50,17 +43,17 @@ func hydrateExternalSourceCacheFn(c *rc.DataSourceCache, ctx context.Context) er
 
 	log.Printf("Hydrating cache for data source %s", ResourceType)
 
-	allExternalSource, resp, err := proxy.getAllExternalContactsExternalSources(ctx, "")
+	allExternalSources, resp, err := proxy.getAllExternalContactsExternalSources(ctx, "")
 	if err != nil {
-		return fmt.Errorf("failed to get external source. Error: %s | API Response: %s", err.Error(), resp.String())
+		return fmt.Errorf("failed to get external sources. Error: %s | API Response: %s", err.Error(), resp.String())
 	}
 
-	if allExternalSource == nil || len(*allExternalSource) == 0 {
-		log.Printf("no external source found. The cache will remain empty.")
+	if allExternalSources == nil || len(*allExternalSources) == 0 {
+		log.Printf("no external sources found. The cache will remain empty.")
 		return nil
 	}
 
-	for _, externalSource := range *allExternalSource {
+	for _, externalSource := range *allExternalSources {
 		c.Cache[*externalSource.Name] = *externalSource.Id
 	}
 

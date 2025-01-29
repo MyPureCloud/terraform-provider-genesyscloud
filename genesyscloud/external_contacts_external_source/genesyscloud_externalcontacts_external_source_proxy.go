@@ -189,5 +189,9 @@ func updateExternalContactsExternalSourceFn(ctx context.Context, p *externalCont
 // deleteExternalContactsExternalSourceFn is an implementation function for deleting a Genesys Cloud external contacts external source
 func deleteExternalContactsExternalSourceFn(ctx context.Context, p *externalContactsExternalSourceProxy, id string) (apiResponse *platformclientv2.APIResponse, err error) {
 	_, response, err := p.externalContactsApi.DeleteExternalcontactsExternalsource(id)
+	if err != nil {
+		return response, err
+	}
+	rc.DeleteCacheItem(p.externalSourcesCache, id)
 	return response, err
 }
