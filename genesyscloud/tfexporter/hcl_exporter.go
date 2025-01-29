@@ -23,18 +23,18 @@ type HCLExporter struct {
 	resourceTypesJSONMaps map[string]resourceJSONMaps
 	dataSourceTypesMaps   map[string]resourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
-	providerSource        string
+	providerRegistry      string
 	version               string
 	dirPath               string
 	splitFilesByResource  bool
 }
 
-func NewHClExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
+func NewHClExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
 	hclExporter := &HCLExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
 		dataSourceTypesMaps:   dataSourceTypesMaps,
 		unresolvedAttrs:       unresolvedAttrs,
-		providerSource:        providerSource,
+		providerRegistry:      providerRegistry,
 		version:               version,
 		dirPath:               dirPath,
 		splitFilesByResource:  splitFilesByResource,
@@ -43,7 +43,7 @@ func NewHClExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourc
 }
 
 func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
-	providerBlock := createHCLProviderBlock(h.providerSource, h.version)
+	providerBlock := createHCLProviderBlock(h.providerRegistry, h.version)
 	variablesBlock := createHCLVariablesBlock(h.unresolvedAttrs)
 
 	hclBlocks := make(map[string][][]byte, 0)
@@ -164,13 +164,13 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 }
 
 // Create the  HCL block for terraform and the genesyscloud provider
-func createHCLProviderBlock(providerSource string, version string) []byte {
+func createHCLProviderBlock(providerRegistry string, version string) []byte {
 	rootFile := hclwrite.NewEmptyFile()
 	rootBody := rootFile.Body()
 	tfBlock := rootBody.AppendNewBlock("terraform", nil)
 	requiredProvidersBlock := tfBlock.Body().AppendNewBlock("required_providers", nil)
 	requiredProvidersBlock.Body().SetAttributeValue("genesyscloud", zclconfCty.ObjectVal(map[string]zclconfCty.Value{
-		"source":  zclconfCty.StringVal(providerSource),
+		"source":  zclconfCty.StringVal(fmt.Sprintf("%s/mypurecloud/genesyscloud", providerRegistry)),
 		"version": zclconfCty.StringVal(version),
 	}))
 
