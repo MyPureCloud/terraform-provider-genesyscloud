@@ -409,22 +409,28 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 	var (
 		exportTestDir       = "../.terraformExclude" + uuid.NewString()
 		exportResourceLabel = "test-export6_1"
+		uniquePostfix       = randString(7)
 
 		queueResources = []QueueExport{
-			{OriginalResourceLabel: "test-queue-test-1", ExportedLabel: "exclude filter - exclude me", Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
-			{OriginalResourceLabel: "test-queue-test-2", ExportedLabel: "exclude filter - foo - bar me", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
-			{OriginalResourceLabel: "test-queue-test-3", ExportedLabel: "exclude filter - fu - barre you", Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+			{OriginalResourceLabel: "test-queue-test-1", ExportedLabel: "exclude filter - exclude me" + uuid.NewString() + uniquePostfix, Description: "This is an excluded bar test resource", AcwTimeoutMs: 200000},
+			{OriginalResourceLabel: "test-queue-test-2", ExportedLabel: "exclude filter - foo - bar me" + uuid.NewString() + uniquePostfix, Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
+			{OriginalResourceLabel: "test-queue-test-3", ExportedLabel: "exclude filter - fu - barre you" + uuid.NewString() + uniquePostfix, Description: "This is a foo bar test resource", AcwTimeoutMs: 200000},
 		}
 
 		wrapupCodeResources = []WrapupcodeExport{
-			{OriginalResourceLabel: "test-wrapupcode-prod", Name: "exclude me"},
-			{OriginalResourceLabel: "test-wrapupcode-test", Name: "foo + bar me"},
-			{OriginalResourceLabel: "test-wrapupcode-dev", Name: "fu - barre you"},
+			{OriginalResourceLabel: "test-wrapupcode-prod", Name: "exclude me" + uuid.NewString() + uniquePostfix},
+			{OriginalResourceLabel: "test-wrapupcode-test", Name: "foo + bar me" + uuid.NewString() + uniquePostfix},
+			{OriginalResourceLabel: "test-wrapupcode-dev", Name: "fu - barre you" + uuid.NewString() + uniquePostfix},
 		}
 		divResourceLabel = "test-division"
 		divName          = "terraform-" + uuid.NewString()
 	)
-	defer os.RemoveAll(exportTestDir)
+	cleanupFunc := func() {
+		if err := os.RemoveAll(exportTestDir); err != nil {
+			t.Logf("Error while cleaning up %v", err)
+		}
+	}
+	t.Cleanup(cleanupFunc)
 
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResourceLabel+".id")
@@ -459,9 +465,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				PreConfig: func() {
-					time.Sleep(30 * time.Second)
-				},
 				// Generate a queue as well and export it
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(

@@ -1,11 +1,8 @@
 package outbound_contact_list
 
 import (
-	"context"
-	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -108,34 +105,8 @@ func ResourceOutboundContactList() *schema.Resource {
 		},
 		SchemaVersion: 2,
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("contacts_file_content_hash", files.FileContentHashChanged("contacts_filepath", "contacts_file_content_hash")),
-			// This function ensures that the contacts file is a CSV file and that it includes the columns defined on the resource
-			func(ctx context.Context, d *schema.ResourceDiff, _ interface{}) error {
-				if !d.HasChange("contacts_filepath") {
-					return nil
-				}
-
-				filepath := d.Get("contacts_filepath").(string)
-				if filepath == "" {
-					return nil
-				}
-
-				columnNamesRaw := d.Get("column_names").([]interface{})
-				requiredColumns := make([]string, len(columnNamesRaw))
-				for i, v := range columnNamesRaw {
-					requiredColumns[i] = v.(string)
-				}
-
-				validatorOpts := validators.ValidateCSVOptions{
-					RequiredColumns: requiredColumns,
-				}
-
-				err := validators.ValidateCSVFormatWithConfig(filepath, validatorOpts)
-				if err != nil {
-					return fmt.Errorf("failed to validate contacts file: %s", err)
-				}
-				return nil
-			},
+			customdiff.ComputedIf("contacts_file_content_hash", validators.ValidateFileContentHashChanged("contacts_filepath", "contacts_file_content_hash")),
+			validators.ValidateCSVWithColumns("contacts_filepath", "column_names"),
 		),
 		Schema: map[string]*schema.Schema{
 			`name`: {

@@ -9,6 +9,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
+	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 
 	"github.com/google/uuid"
@@ -395,9 +397,12 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 
 		testContactsContentWithFourRecords = testContactsContentWithThreeRecords + `
 103,Charlie,Brown,000000000000,charlie.brown@example.com`
+
+		testContactsContentWithFiveRecords = testContactsContentWithFourRecords + `
+104,Jenny,Doe,+15558675309,jenny@jenny.com`
 	)
 	// Create a temporary file for the contacts
-	tmpFile, err := os.CreateTemp("", "contacts*.csv")
+	tmpFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "contacts*.csv")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,7 +414,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 	}
 
 	// Create a second temporary file for the contacts
-	tmpFile2, err := os.CreateTemp("", "contacts*.csv")
+	tmpFile2, err := os.CreateTemp(testrunner.GetTestDataPath(), "contacts*.csv")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -417,6 +422,18 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 
 	// Write the test contacts to the temp file
 	if err := os.WriteFile(tmpFile2.Name(), []byte(testContactsContentWithFourRecords), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a third temporary file for the contacts
+	tmpFile3, err := os.CreateTemp(testrunner.GetTestDataPath(), "contacts*.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile3.Name())
+
+	// Write the test contacts to the temp file
+	if err := os.WriteFile(tmpFile3.Name(), []byte(testContactsContentWithFiveRecords), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -645,10 +662,53 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"id",           // contacts_id_name
 					),
 				),
+				ExpectError: regexp.MustCompile("could not open.*no such file"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "3"),
+				),
+			},
+			// Ensure we can re-upload the file after it was removed
+			{
+				Config: GenerateOutboundContactList(
+					resourceLabel,
+					name,
+					util.NullValue, // division_id
+					util.NullValue, // preview_mode_column_name
+					[]string{},     // preview_mode_accepted_values
+					columnNames,
+					util.FalseValue, // automatic_time_zone_mapping
+					util.NullValue,  // zipcode_column_names
+					util.NullValue,  // attempt_limit_id
+					GeneratePhoneColumnsBlock(
+						"phone",
+						"phone",
+						util.NullValue,
+					),
+					GenerateEmailColumnsBlock(
+						"email",
+						"email",
+						util.NullValue,
+					),
+					GenerateContactsFile(
+						tmpFile3.Name(), // contacts_filepath
+						"id",            // contacts_id_name
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "id"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "firstName"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "lastName"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "phone"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "email"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.column_name", "phone"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.type", "phone"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "email"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "email"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "5"),
 				),
 			},
 			{
@@ -686,7 +746,7 @@ func TestAccResourceOutboundContactListWithInvalidContacts(t *testing.T) {
 	)
 
 	// Create a temporary file for the invalid contacts
-	tmpFile, err := os.CreateTemp("", "invalid_contacts*.csv")
+	tmpFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "invalid_contacts*.csv")
 	if err != nil {
 		t.Fatal(err)
 	}

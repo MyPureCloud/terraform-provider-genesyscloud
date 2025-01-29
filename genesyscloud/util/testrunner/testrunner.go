@@ -2,10 +2,12 @@ package testrunner
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -21,9 +23,35 @@ const (
 )
 
 func GetTestDataPath(elem ...string) string {
-	basePath := filepath.Join("..", "test", "data")
+	basePath := filepath.Join(getRootDir(), "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
+}
+
+func getRootDir() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatal("Could not get caller info")
+	}
+
+	// Get the directory containing the current file
+	dir := filepath.Dir(filename)
+
+	// Keep going up until we find the directory containing main.go
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "main.go")); err == nil {
+			// Found the directory containing main.go
+			return dir
+		}
+
+		// Move up one directory
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// We've reached the root of the filesystem without finding main.go
+			log.Fatal("Could not find directory containing main.go")
+		}
+		dir = parent
+	}
 }
 
 func NormalizePath(path string) (string, error) {
@@ -126,21 +154,56 @@ func GenerateTestProvider(resourceName string, schemas map[string]*schema.Schema
 		},
 	}
 }
-
 func GenerateTestDiff(provider *schema.Provider, resourceName string, oldValue, newValue map[string]string) (*terraform.InstanceDiff, error) {
-	newI := make(map[string]interface{}, len(newValue))
+	// Convert newValue map[string]string to map[string]interface{} and handle list attributes
+	newI := make(map[string]interface{})
 	for k, v := range newValue {
+		if strings.Contains(k, ".#") {
+			// This is a list length indicator - skip it as we'll handle the list elements
+			continue
+		}
+
+		// Check if this is a list element (e.g., "list_attr.0", "list_attr.1")
+		if idx := strings.LastIndex(k, "."); idx != -1 {
+			listName := k[:idx]
+			if _, err := strconv.Atoi(k[idx+1:]); err == nil {
+				// This is a list element
+				// Initialize the list if it doesn't exist
+				if _, exists := newI[listName]; !exists {
+					// Find the length of the list from the ".#" attribute
+					if lenStr, ok := newValue[listName+".#"]; ok {
+						length, _ := strconv.Atoi(lenStr)
+						newI[listName] = make([]interface{}, length)
+					}
+				}
+
+				// Get the list and ensure it's the correct type
+				if list, ok := newI[listName].([]interface{}); ok {
+					index, _ := strconv.Atoi(k[idx+1:])
+					if index < len(list) {
+						list[index] = v
+					}
+				}
+				continue
+			}
+		}
+
+		// Regular (non-list) attribute
 		newI[k] = v
 	}
 
-	return provider.ResourcesMap[resourceName].Diff(
-		context.Background(),
-		&terraform.InstanceState{
-			Attributes: oldValue,
-		},
-		&terraform.ResourceConfig{
-			Config: newI,
-		},
-		provider.Meta(),
-	)
+	if resource, ok := provider.ResourcesMap[resourceName]; ok {
+		return resource.Diff(
+			context.Background(),
+			&terraform.InstanceState{
+				Attributes: oldValue,
+			},
+			&terraform.ResourceConfig{
+				Config: newI,
+			},
+			provider.Meta(),
+		)
+	} else {
+		return nil, fmt.Errorf("Resource %s not found in provider", resourceName)
+	}
 }

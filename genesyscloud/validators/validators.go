@@ -1,9 +1,11 @@
 package validators
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"regexp"
 	"strconv"
@@ -14,11 +16,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -139,6 +142,7 @@ func ValidateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 // ValidateCountryCode validates a country code is in format ISO 3166-1 alpha-2
 func ValidateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
 	countryCode := code.(string)
+	// amazonq-ignore-next-line
 	if len(countryCode) == 2 {
 		return nil
 	} else if countryCode == "country-code-1" {
@@ -386,4 +390,57 @@ func ValidateLanguageCode(lang interface{}, _ cty.Path) diag.Diagnostics {
 		return diag.Errorf("Language code %s not found in language code list %v", langCode, langCodeList)
 	}
 	return diag.Errorf("Language code %v is not a string", lang)
+}
+
+// Function factory that returns a custom diff function
+func ValidateFileContentHashChanged(filepathAttr, hashAttr string) customdiff.ResourceConditionFunc {
+	return func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+		filepath := d.Get(filepathAttr).(string)
+
+		newHash, err := files.HashFileContent(filepath)
+		if err != nil {
+			log.Printf("Error calculating file content hash: %v", err)
+			return false
+		}
+
+		// Get the current hash value
+		oldHash := d.Get(hashAttr).(string)
+
+		// Return true if the hashes are different
+		return oldHash != newHash
+	}
+}
+
+// ValidateCSVColumns returns a CustomizeDiffFunction that validates if a CSV file
+// contains the required columns. It takes the names of the attributes that contain
+// the file path and the column names.
+func ValidateCSVWithColumns(filePathAttr string, columnNamesAttr string) schema.CustomizeDiffFunc {
+
+	// This function ensures that the contacts file is a CSV file and that it includes the columns defined on the resource
+	return func(ctx context.Context, d *schema.ResourceDiff, _ interface{}) error {
+		if !d.HasChange(filePathAttr) || !d.HasChange(columnNamesAttr) {
+			return nil
+		}
+
+		filepath := d.Get(filePathAttr).(string)
+		if filepath == "" {
+			return nil
+		}
+
+		columnNamesRaw := d.Get(columnNamesAttr).([]interface{})
+		requiredColumns := make([]string, len(columnNamesRaw))
+		for i, v := range columnNamesRaw {
+			requiredColumns[i] = v.(string)
+		}
+
+		validatorOpts := ValidateCSVOptions{
+			RequiredColumns: requiredColumns,
+		}
+
+		err := ValidateCSVFormatWithConfig(filepath, validatorOpts)
+		if err != nil {
+			return fmt.Errorf("failed to validate contacts file: %s", err)
+		}
+		return nil
+	}
 }

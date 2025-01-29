@@ -6,6 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestValidateCSVFormatWithConfig(t *testing.T) {
@@ -229,6 +235,304 @@ func BenchmarkValidateCSVFormatWithConfig(b *testing.B) {
 		b.Run(fmt.Sprintf("%s CSV", name), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				ValidateCSVFormatWithConfig(file, opts)
+			}
+		})
+	}
+}
+
+func TestFileContentHashChanged(t *testing.T) {
+	// Create a temporary test file
+	tmpFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "test-content-*.txt")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// Write initial content
+	initialContent := []byte("initial content")
+	if err := os.WriteFile(tmpFile.Name(), initialContent, 0644); err != nil {
+		t.Fatalf("Failed to write initial content: %v", err)
+	}
+
+	tests := []struct {
+		name         string
+		setupFunc    func() error
+		expectedDiff bool
+	}{
+		{
+			name: "content_unchanged",
+			setupFunc: func() error {
+				// No changes to file
+				return nil
+			},
+			expectedDiff: false,
+		},
+		{
+			name: "content_changed",
+			setupFunc: func() error {
+				return os.WriteFile(tmpFile.Name(), []byte("changed content"), 0644)
+			},
+			expectedDiff: true,
+		},
+		{
+			name: "content_unchanged_again",
+			setupFunc: func() error {
+				// No changes to file
+				return nil
+			},
+			expectedDiff: false,
+		},
+		{
+			name: "content_changed_again",
+			setupFunc: func() error {
+				return os.WriteFile(tmpFile.Name(), []byte("changed content again"), 0644)
+			},
+			expectedDiff: true,
+		},
+		{
+			name: "final_content_changed",
+			setupFunc: func() error {
+				return os.WriteFile(tmpFile.Name(), []byte("final changed content"), 0644)
+			},
+			expectedDiff: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			provider := testrunner.GenerateTestProvider("test_resource",
+				map[string]*schema.Schema{
+					"filepath": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"file_content_hash": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+				customdiff.ComputedIf("file_content_hash", ValidateFileContentHashChanged("filepath", "file_content_hash")),
+			)
+
+			// Pre calculate hash
+			priorHash, err := files.HashFileContent(tmpFile.Name())
+			if err != nil {
+				t.Fatalf("Failed to calculate hash: %v", err)
+			}
+
+			// Run setup for this test case
+			if err := tt.setupFunc(); err != nil {
+				t.Fatalf("Setup failed: %v", err)
+			}
+
+			diff, err := testrunner.GenerateTestDiff(
+				provider,
+				"test_resource",
+				map[string]string{
+					"filepath":          tmpFile.Name(),
+					"file_content_hash": priorHash,
+				},
+				map[string]string{
+					"filepath": tmpFile.Name(),
+				},
+			)
+
+			if err != nil {
+				t.Fatalf("Diff failed with error: %s", err)
+			}
+
+			if tt.expectedDiff {
+				if diff == nil {
+					t.Error("Expected a diff when file content changes, got nil")
+				} else if !diff.Attributes["file_content_hash"].NewComputed {
+					t.Error("file_content_hash is not marked as NewComputed when file content changes")
+				}
+			} else {
+				if diff != nil && diff.Attributes["file_content_hash"].NewComputed {
+					t.Error("Expected no diff when file content unchanged, but file_content_hash was marked as NewComputed")
+				}
+			}
+		})
+	}
+}
+
+func TestValidateCSVWithColumns(t *testing.T) {
+	// Create a temporary test file
+	tmpFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "test-csv-*.csv")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	tests := []struct {
+		name          string
+		setupFunc     func() error
+		oldValues     map[string]string
+		newValues     map[string]string
+		expectedDiff  bool
+		expectedError bool
+		errorMessage  string
+	}{
+		{
+			name: "valid_csv_with_columns",
+			setupFunc: func() error {
+				content := "header1,header2,header3\nvalue1,value2,value3"
+				return os.WriteFile(tmpFile.Name(), []byte(content), 0644)
+			},
+			oldValues: map[string]string{
+				"filepath":       tmpFile.Name() + ".old",
+				"column_names.#": "2",
+				"column_names.0": "old_header1",
+				"column_names.1": "old_header2",
+			},
+			newValues: map[string]string{
+				"filepath":       tmpFile.Name(),
+				"column_names.#": "3",
+				"column_names.0": "header1",
+				"column_names.1": "header2",
+				"column_names.2": "header3",
+			},
+			expectedDiff:  true,
+			expectedError: false,
+		},
+		{
+			name: "missing_required_column",
+			setupFunc: func() error {
+				content := "header1,header3\nvalue1,value3"
+				return os.WriteFile(tmpFile.Name(), []byte(content), 0644)
+			},
+			oldValues: map[string]string{
+				"filepath":       tmpFile.Name() + ".old",
+				"column_names.#": "2",
+				"column_names.0": "old_header1",
+				"column_names.1": "old_header2",
+			},
+			newValues: map[string]string{
+				"filepath":       tmpFile.Name(),
+				"column_names.#": "3",
+				"column_names.0": "header1",
+				"column_names.1": "header2",
+				"column_names.2": "header3",
+			},
+			expectedDiff:  false,
+			expectedError: true,
+			errorMessage:  "missing required columns: [header2]",
+		},
+		{
+			name: "empty_file",
+			setupFunc: func() error {
+				return os.WriteFile(tmpFile.Name(), []byte(""), 0644)
+			},
+			oldValues: map[string]string{
+				"filepath":       tmpFile.Name() + ".old",
+				"column_names.#": "1",
+				"column_names.0": "old_header",
+			},
+			newValues: map[string]string{
+				"filepath":       tmpFile.Name(),
+				"column_names.#": "2",
+				"column_names.0": "header1",
+				"column_names.1": "header2",
+			},
+			expectedDiff:  false,
+			expectedError: true,
+			errorMessage:  "failed to read CSV headers",
+		},
+		{
+			name: "file_with_only_headers",
+			setupFunc: func() error {
+				content := "header1,header2\n"
+				return os.WriteFile(tmpFile.Name(), []byte(content), 0644)
+			},
+			oldValues: map[string]string{
+				"filepath":       tmpFile.Name() + ".old",
+				"column_names.#": "1",
+				"column_names.0": "old_header",
+			},
+			newValues: map[string]string{
+				"filepath":       tmpFile.Name(),
+				"column_names.#": "2",
+				"column_names.0": "header1",
+				"column_names.1": "header2",
+			},
+			expectedDiff:  true,
+			expectedError: false,
+		},
+		{
+			name: "case_sensitive_headers",
+			setupFunc: func() error {
+				content := "Header1,HEADER2\nvalue1,value2"
+				return os.WriteFile(tmpFile.Name(), []byte(content), 0644)
+			},
+			oldValues: map[string]string{
+				"filepath":       tmpFile.Name() + ".old",
+				"column_names.#": "1",
+				"column_names.0": "old_header",
+			},
+			newValues: map[string]string{
+				"filepath":       tmpFile.Name(),
+				"column_names.#": "2",
+				"column_names.0": "header1",
+				"column_names.1": "header2",
+			},
+			expectedDiff:  false,
+			expectedError: true,
+			errorMessage:  "missing required column",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource := &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"filepath": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"column_names": {
+						Type:     schema.TypeList,
+						Required: true,
+						Elem: &schema.Schema{
+							Type: schema.TypeString,
+						},
+					},
+				},
+			}
+
+			provider := testrunner.GenerateTestProvider("test_resource", resource.Schema, ValidateCSVWithColumns("filepath", "column_names"))
+
+			// Run setup for this test case
+			if err := tt.setupFunc(); err != nil {
+				t.Fatalf("Setup failed: %v", err)
+			}
+
+			diff, err := testrunner.GenerateTestDiff(
+				provider,
+				"test_resource",
+				tt.oldValues,
+				tt.newValues,
+			)
+
+			// Check for expected error
+			if tt.expectedError {
+				if err == nil {
+					t.Errorf("Expected an error for '%s' check but got none", tt.name)
+				} else if tt.errorMessage != "" && !strings.Contains(err.Error(), tt.errorMessage) {
+					t.Errorf("Expected error message containing '%s', got: %v for '%s' check", tt.errorMessage, err, tt.name)
+				}
+			} else if err != nil {
+				t.Errorf("Unexpected error for '%s' check: %v", tt.name, err)
+			}
+
+			// Check for expected diff
+			if tt.expectedDiff {
+				if diff == nil {
+					t.Errorf("Expected a diff for '%s' check but got nil", tt.name)
+				}
+			} else {
+				if diff != nil {
+					t.Errorf("Expected no diff for '%s' check but got one", tt.name)
+				}
 			}
 		})
 	}

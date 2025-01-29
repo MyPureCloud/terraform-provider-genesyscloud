@@ -16,13 +16,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/util"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
@@ -183,25 +182,23 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
 
-	_, err := os.Stat(path)
-	if err != nil {
-		_, err = url.ParseRequestURI(path)
-		if err == nil {
-			resp, err := http.Get(path)
-			if err != nil {
-				return nil, nil, err
-			}
-			if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-				return nil, nil, fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
-			}
-			reader = resp.Body
-		} else {
-			return nil, nil, fmt.Errorf("invalid file path or URL: %v", path)
+	// Check if the path has a protocol scheme to call as an HTTP request
+	if u, err := url.ParseRequestURI(path); err == nil && u.Scheme != "" {
+		resp, err := http.Get(path)
+		if err != nil {
+			return nil, nil, err
 		}
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+			return nil, nil, fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
+		}
+		reader = resp.Body
 	} else {
 		file, err = os.Open(path)
 		if err != nil {
-			return nil, nil, err
+			if os.IsNotExist(err) {
+				return nil, nil, fmt.Errorf("could not %w", err)
+			}
+			return nil, nil, fmt.Errorf("error opening local file \"%s\": %v", path, err)
 		}
 		reader = file
 	}
@@ -339,25 +336,6 @@ func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 		return util.BuildDiagnosticError("File Writer", fmt.Sprintf("Error writing file with Path %s", path), err)
 	}
 	return nil
-}
-
-// Function factory that returns a custom diff function
-func FileContentHashChanged(filepathAttr, hashAttr string) customdiff.ResourceConditionFunc {
-	return func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-		filepath := d.Get(filepathAttr).(string)
-
-		newHash, err := HashFileContent(filepath)
-		if err != nil {
-			log.Printf("Error calculating file content hash: %v", err)
-			return false
-		}
-
-		// Get the current hash value
-		oldHash := d.Get(hashAttr).(string)
-
-		// Return true if the hashes are different
-		return oldHash != newHash
-	}
 }
 
 // getCSVRecordCount retrieves the number of records in a CSV file (i.e., number of lines in a file minus the header)

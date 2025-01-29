@@ -13,9 +13,6 @@ import (
 
 	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -209,126 +206,102 @@ func TestScriptUploadSuccess(t *testing.T) {
 	}
 }
 
-func TestFileContentHashChanged(t *testing.T) {
-	// Create a temporary test file
-	tmpFile, err := os.CreateTemp("", "test-content-*.txt")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
+func TestDownloadOrOpenFile(t *testing.T) {
+	// Test HTTP download
+	t.Run("successful HTTP download", func(t *testing.T) {
+		// Setup test server
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("test content"))
+		}))
+		defer server.Close()
 
-	// Write initial content
-	initialContent := []byte("initial content")
-	if err := os.WriteFile(tmpFile.Name(), initialContent, 0644); err != nil {
-		t.Fatalf("Failed to write initial content: %v", err)
-	}
+		reader, file, err := DownloadOrOpenFile(server.URL)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if file != nil {
+			t.Error("Expected file to be nil for HTTP downloads")
+		}
 
-	tests := []struct {
-		name         string
-		setupFunc    func() error
-		expectedDiff bool
-	}{
-		{
-			name: "content_unchanged",
-			setupFunc: func() error {
-				// No changes to file
-				return nil
-			},
-			expectedDiff: false,
-		},
-		{
-			name: "content_changed",
-			setupFunc: func() error {
-				return os.WriteFile(tmpFile.Name(), []byte("changed content"), 0644)
-			},
-			expectedDiff: true,
-		},
-		{
-			name: "content_unchanged_again",
-			setupFunc: func() error {
-				// No changes to file
-				return nil
-			},
-			expectedDiff: false,
-		},
-		{
-			name: "content_changed_again",
-			setupFunc: func() error {
-				return os.WriteFile(tmpFile.Name(), []byte("changed content again"), 0644)
-			},
-			expectedDiff: true,
-		},
-		{
-			name: "final_content_changed",
-			setupFunc: func() error {
-				return os.WriteFile(tmpFile.Name(), []byte("final changed content"), 0644)
-			},
-			expectedDiff: true,
-		},
-	}
+		// Read content
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			t.Errorf("Failed to read content: %v", err)
+		}
+		if string(content) != "test content" {
+			t.Errorf("Expected 'test content', got '%s'", string(content))
+		}
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			provider := testrunner.GenerateTestProvider("test_resource",
-				map[string]*schema.Schema{
-					"filepath": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"file_content_hash": {
-						Type:     schema.TypeString,
-						Computed: true,
-					},
-				},
-				customdiff.ComputedIf("file_content_hash", FileContentHashChanged("filepath", "file_content_hash")),
-			)
+	t.Run("HTTP download failure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer server.Close()
 
-			// Pre calculate hash
-			priorHash, err := HashFileContent(tmpFile.Name())
-			if err != nil {
-				t.Fatalf("Failed to calculate hash: %v", err)
-			}
+		reader, file, err := DownloadOrOpenFile(server.URL)
+		if err == nil {
+			t.Error("Expected error for 404 response, got nil")
+		}
+		if reader != nil || file != nil {
+			t.Error("Expected nil reader and file for failed request")
+		}
+	})
 
-			// Run setup for this test case
-			if err := tt.setupFunc(); err != nil {
-				t.Fatalf("Setup failed: %v", err)
-			}
+	// Test local file operations
+	t.Run("successful local file read", func(t *testing.T) {
+		// Create temporary test file
+		tmpfile, err := os.CreateTemp("", "test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(tmpfile.Name())
 
-			diff, err := testrunner.GenerateTestDiff(
-				provider,
-				"test_resource",
-				map[string]string{
-					"filepath":          tmpFile.Name(),
-					"file_content_hash": priorHash,
-				},
-				map[string]string{
-					"filepath": tmpFile.Name(),
-				},
-			)
+		content := []byte("local file content")
+		if _, err := tmpfile.Write(content); err != nil {
+			t.Fatal(err)
+		}
+		tmpfile.Close()
 
-			if err != nil {
-				t.Fatalf("Diff failed with error: %s", err)
-			}
+		reader, file, err := DownloadOrOpenFile(tmpfile.Name())
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if file == nil {
+			t.Error("Expected file to not be nil for local files")
+		}
+		defer file.Close()
 
-			if tt.expectedDiff {
-				if diff == nil {
-					t.Error("Expected a diff when file content changes, got nil")
-				} else if !diff.Attributes["file_content_hash"].NewComputed {
-					t.Error("file_content_hash is not marked as NewComputed when file content changes")
-				}
-			} else {
-				if diff != nil && diff.Attributes["file_content_hash"].NewComputed {
-					t.Error("Expected no diff when file content unchanged, but file_content_hash was marked as NewComputed")
-				}
-			}
-		})
-	}
+		// Read content
+		readContent, err := io.ReadAll(reader)
+		if err != nil {
+			t.Errorf("Failed to read content: %v", err)
+		}
+		if string(readContent) != "local file content" {
+			t.Errorf("Expected 'local file content', got '%s'", string(readContent))
+		}
+	})
+
+	t.Run("non-existent local file", func(t *testing.T) {
+		path := filepath.Join(os.TempDir(), "nonexistent-file")
+		reader, file, err := DownloadOrOpenFile(path)
+		if err == nil {
+			t.Error("Expected error for non-existent file, got nil")
+		}
+		if !strings.Contains(err.Error(), fmt.Sprintf("could not open %s: no such file", path)) {
+			t.Error("Expected 'no such file or directory' error")
+		}
+		if reader != nil || file != nil {
+			t.Error("Expected nil reader and file for non-existent file")
+		}
+	})
 }
 
 func TestHashFileContent(t *testing.T) {
 	// Create a temporary test file
 	tempContent := []byte("test content")
-	tempFile, err := os.CreateTemp("", "test_file_*.txt")
+	tempFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "test_file_*.txt")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
