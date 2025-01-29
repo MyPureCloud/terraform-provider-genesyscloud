@@ -178,6 +178,14 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		d.Set("certifications", flattenUserData(currentUser.Certifications))
 		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
+		//Get attributes from Voicemail/Userpolicies resource
+		currentVoicemailUserpolicies, resp, err := proxy.getVoicemailUserpoliciesById(ctx, d.Id())
+		if err != nil {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read voicemail userpolicies %s error: %s", d.Id(), err), resp))
+		}
+
+		_ = d.Set("voicemail_userpolicies", flattenVoicemailUserpolicies(d, currentVoicemailUserpolicies))
+
 		if diagErr := readUserRoutingUtilization(d, proxy); diagErr != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
