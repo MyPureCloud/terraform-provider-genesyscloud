@@ -14,11 +14,7 @@ Genesys Cloud external contacts external source data source. Select an external 
 
 ```terraform
 data "genesyscloud_externalcontacts_external_source" "external_source" {
-  name   = "example-source-123"
-  active = true
-  link_configuration {
-    uri_template = "https://some.host/{{externalId.value}}"
-  }
+  name = "example-source-123"
 }
 ```
 
