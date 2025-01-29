@@ -254,3 +254,28 @@ func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 	}
 	return nil
 }
+
+// AppendToFile appends data to a file. If the file does not exist, it will be created.
+func AppendToFile(filename string, data []byte) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("AppendToFile: %w", err)
+		}
+	}()
+
+	// Open file with append mode (O_APPEND), create if it doesn't exist (O_CREATE),
+	// and set write permission (O_WRONLY)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	// Write the data to the file
+	_, err = file.Write(data)
+	if err != nil {
+		_ = file.Close()
+		return err
+	}
+	_ = file.Close()
+	return err
+}
