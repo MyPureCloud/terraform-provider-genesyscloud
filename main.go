@@ -44,6 +44,7 @@ import (
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
@@ -269,6 +270,7 @@ func registerResources() {
 	user.SetRegistrar(regInstance)                                         //Registering user
 	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
 	journeyActionTemplate.SetRegistrar(regInstance)                        //Registering journey action template
+	journeyOutcome.SetRegistrar(regInstance)                               //Registering journey outcome
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue

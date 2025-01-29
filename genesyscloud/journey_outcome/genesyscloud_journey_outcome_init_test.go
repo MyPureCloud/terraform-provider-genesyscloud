@@ -1,14 +1,13 @@
-package journey_action_map
+package journey_outcome
 
 import (
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
-	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	"terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -22,8 +21,8 @@ var (
 )
 
 /*
-   The genesyscloud_journey_action_map_init_test.go file is used to initialize the data sources and resources
-   used in testing the journey_action_map resource.
+   The genesyscloud_journey_outcome_init_test.go file is used to initialize the data sources and resources
+   used in testing the journey_outcome resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -42,13 +41,13 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceJourneyActionMap()
+	providerResources[ResourceType] = ResourceJourneyOutcome()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
-	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
-	providerResources[architectSchedulegroups.ResourceType] = architectSchedulegroups.ResourceArchitectSchedulegroups()
-	providerResources[architectFlow.ResourceType] = architectFlow.ResourceArchitectFlow()
-	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
+	providerResources[architect_schedules.ResourceType] = architect_schedules.ResourceArchitectSchedules()
+	providerResources[architect_schedulegroups.ResourceType] = architect_schedulegroups.ResourceArchitectSchedulegroups()
+	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
+
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -56,7 +55,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceJourneyActionMap()
+	providerDataSources[ResourceType] = DataSourceJourneyOutcome()
 }
 
 // initTestResources initializes all test resources and data sources.
