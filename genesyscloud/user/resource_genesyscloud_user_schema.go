@@ -166,6 +166,11 @@ var (
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
+			"send_email_notifications": {
+				Description: "Whether email notifications are sent to the user when a new voicemail is received.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 		},
 	}
 )

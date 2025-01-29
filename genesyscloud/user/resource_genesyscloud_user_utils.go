@@ -244,23 +244,16 @@ func updateUserProfileSkills(d *schema.ResourceData, proxy *userProxy) diag.Diag
 func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
 	if d.HasChange("voicemail_userpolicies") {
 		if voicemailUserpolicies := d.Get("voicemail_userpolicies").([]interface{}); voicemailUserpolicies != nil {
-			if len(voicemailUserpolicies) > 0 {
-				if extractMap, ok := voicemailUserpolicies[0].(map[string]interface{}); ok {
-					reqBody := buildVoicemailUserpoliciesRequest(extractMap)
-					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-
-						_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(d.Id(), reqBody)
-						if putErr != nil {
-							return proxyPutResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update voicemail userpolicices for user %s error: %s", d.Id(), putErr), proxyPutResponse)
-						}
-
-						return nil, nil
-					})
-					if diagErr != nil {
-						return diagErr
-					}
+			reqBody := buildVoicemailUserpoliciesRequest(voicemailUserpolicies)
+			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+				_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(d.Id(), reqBody)
+				if putErr != nil {
+					return proxyPutResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update voicemail userpolicices for user %s error: %s", d.Id(), putErr), proxyPutResponse)
 				}
-
+				return nil, nil
+			})
+			if diagErr != nil {
+				return diagErr
 			}
 		}
 	}
@@ -902,12 +895,18 @@ func getSdkUtilizationTypes() []string {
 	return types
 }
 
-func buildVoicemailUserpoliciesRequest(voicemailUserpolicyMap map[string]interface{}) platformclientv2.Voicemailuserpolicy {
-	alertTimeoutSeconds := voicemailUserpolicyMap["alert_timeout_seconds"].(int)
+func buildVoicemailUserpoliciesRequest(voicemailUserpolicies []interface{}) platformclientv2.Voicemailuserpolicy {
+	var request platformclientv2.Voicemailuserpolicy
+	if extractMap, ok := voicemailUserpolicies[0].(map[string]interface{}); ok {
+		alertTimeoutSeconds := extractMap["alert_timeout_seconds"].(int)
+		sendEmailNotifications := extractMap["send_email_notifications"].(bool)
 
-	return platformclientv2.Voicemailuserpolicy{
-		AlertTimeoutSeconds: &alertTimeoutSeconds,
+		request = platformclientv2.Voicemailuserpolicy{
+			AlertTimeoutSeconds:    &alertTimeoutSeconds,
+			SendEmailNotifications: &sendEmailNotifications,
+		}
 	}
+	return request
 }
 
 func flattenVoicemailUserpolicies(d *schema.ResourceData, voicemail *platformclientv2.Voicemailuserpolicy) []interface{} {
@@ -918,6 +917,9 @@ func flattenVoicemailUserpolicies(d *schema.ResourceData, voicemail *platformcli
 	voicemailUserpolicy := make(map[string]interface{})
 	if voicemail.AlertTimeoutSeconds != nil {
 		voicemailUserpolicy["alert_timeout_seconds"] = *voicemail.AlertTimeoutSeconds
+	}
+	if voicemail.SendEmailNotifications != nil {
+		voicemailUserpolicy["send_email_notifications"] = *voicemail.SendEmailNotifications
 	}
 
 	return []interface{}{voicemailUserpolicy}
@@ -988,9 +990,10 @@ func GenerateUserResource(resourceLabel string, email string, name string, state
 	`, ResourceType, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }
 
-func GenerateVoicemailUserpolicies(timeout int) string {
+func GenerateVoicemailUserpolicies(timeout int, sendEmailNotifications bool) string {
 	return fmt.Sprintf(`voicemail_userpolicies {
 		alert_timeout_seconds = %d
+		send_email_notifications = %t
 	}
-	`, timeout)
+	`, timeout, sendEmailNotifications)
 }

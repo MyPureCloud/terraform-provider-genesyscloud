@@ -284,4 +284,5 @@ Optional:
 Optional:
 
 - `alert_timeout_seconds` (Number) The number of seconds to ring the user's phone before a call is transferred to voicemail.
+- `send_email_notifications` (Boolean) Whether email notifications are sent to the user when a new voicemail is received.
 
