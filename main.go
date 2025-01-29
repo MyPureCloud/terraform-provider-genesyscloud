@@ -46,7 +46,6 @@ import (
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
-	"terraform-provider-genesyscloud/genesyscloud/knowledge"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -84,6 +83,7 @@ import (
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
@@ -291,7 +291,7 @@ func registerResources() {
 	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
-	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
+	knowledgeDocumentVariation.SetRegistrar(regInstance)                   //Registering knowledge document variation
 	externalOrganization.SetRegistrar(regInstance)                         //Registering external organization
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
