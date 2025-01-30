@@ -100,27 +100,30 @@ type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (re
 type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
-	methodWrappedWithRecover := wrapWithRecover(method)
+	methodWrappedWithRecover := wrapWithRecover(method, Create)
 	return schema.CreateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func ReadWithPooledClient(method resContextFunc) schema.ReadContextFunc {
-	methodWrappedWithRecover := wrapWithRecover(method)
+	methodWrappedWithRecover := wrapWithRecover(method, Read)
 	return schema.ReadContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
-	methodWrappedWithRecover := wrapWithRecover(method)
+	methodWrappedWithRecover := wrapWithRecover(method, Update)
 	return schema.UpdateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
-	methodWrappedWithRecover := wrapWithRecover(method)
+	methodWrappedWithRecover := wrapWithRecover(method, Delete)
 	return schema.DeleteContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 // wrapWithRecover will wrap the resource context function with a recover if the panic recovery logger is enabled
-func wrapWithRecover(method resContextFunc) resContextFunc {
+// In the case of a Create  - Fail, provide the stack trace info, and warn of dangling resource.
+// For all other operations - Write the stack trace info to a log file and complete the TF operation.
+// If the file writing is unsuccessful, we will fail to avoid the loss of data.
+func wrapWithRecover(method resContextFunc, operation Operation) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta any) (diagErr diag.Diagnostics) {
 		panicRecoverLogger := prl.GetPanicRecoveryLoggerInstance()
 		if !panicRecoverLogger.LoggerEnabled {
@@ -129,16 +132,35 @@ func wrapWithRecover(method resContextFunc) resContextFunc {
 
 		defer func() {
 			if r := recover(); r != nil {
-				log.Println("Writing stack traces to file")
-				err := panicRecoverLogger.WriteStackTracesToFile(r)
-				if err != nil {
-					diagErr = diag.FromErr(err)
-				}
+				diagErr = handleRecover(r, operation)
 			}
 		}()
 
 		return method(ctx, r, meta)
 	}
+}
+
+func handleRecover(r any, operation Operation) (diagErr diag.Diagnostics) {
+	panicRecoverLogger := prl.GetPanicRecoveryLoggerInstance()
+
+	if operation == Create {
+		diagErr = diag.Errorf("creation failed becasue of stack trace: %s. There may be dangling resource left in your org", r)
+	}
+
+	log.Println("Writing stack traces to file")
+	err := panicRecoverLogger.WriteStackTracesToFile(r)
+	if err == nil {
+		return
+	}
+
+	// WriteStackTracesToFile failed - return error info in diagErr object
+	if diagErr != nil {
+		diagErr = diag.Errorf("%v.\n%v", diagErr, err)
+	} else {
+		diagErr = diag.FromErr(err)
+	}
+
+	return diagErr
 }
 
 // Inject a pooled SDK client connection into a resource method's meta argument
@@ -192,5 +214,29 @@ func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.G
 		}
 
 		return method(ctx, clientConfig)
+	}
+}
+
+type Operation int
+
+const (
+	Create Operation = iota
+	Read
+	Update
+	Delete
+)
+
+func (o Operation) String() string {
+	switch o {
+	case Create:
+		return "Create"
+	case Read:
+		return "Read"
+	case Update:
+		return "Update"
+	case Delete:
+		return "Delete"
+	default:
+		return "Unknown"
 	}
 }

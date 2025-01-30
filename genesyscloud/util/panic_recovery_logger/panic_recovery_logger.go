@@ -9,7 +9,7 @@ import (
 
 type PanicRecoveryLogger struct {
 	LoggerEnabled bool
-	filePath      string
+	FilePath      string
 }
 
 var panicRecoverLogger *PanicRecoveryLogger
@@ -20,7 +20,7 @@ func InitPanicRecoveryLoggerInstance(enabled bool, filepath string) {
 	}
 	panicRecoverLogger = &PanicRecoveryLogger{
 		LoggerEnabled: enabled,
-		filePath:      filepath,
+		FilePath:      filepath,
 	}
 }
 
@@ -35,8 +35,8 @@ func GetPanicRecoveryLoggerInstance() *PanicRecoveryLogger {
 
 func (p *PanicRecoveryLogger) WriteStackTracesToFile(r any) error {
 	tracesToWrite := fmt.Sprintf("\nStacktrace recovered: %v. %s", r, string(debug.Stack()))
-	if err := appendToFile(p.filePath, []byte(tracesToWrite)); err != nil {
-		return fmt.Errorf("WriteStackTracesToFile: failed to write to %s: %w", p.filePath, err)
+	if err := appendToFile(p.FilePath, []byte(tracesToWrite)); err != nil {
+		return fmt.Errorf("WriteStackTracesToFile: failed to write to %s: %w", p.FilePath, err)
 	}
 	return nil
 }
