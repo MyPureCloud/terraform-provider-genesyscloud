@@ -231,7 +231,7 @@ func ResourceEvaluationForm() *schema.Resource {
 				Required:    true,
 			},
 			"published": {
-				Description: "Specifies if the evaluation form is published.",
+				Description: "Specifies if the evaluation form is published. **Note:** A form cannot be modified if published is set to true.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

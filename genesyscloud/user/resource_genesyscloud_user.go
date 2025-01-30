@@ -123,7 +123,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 	}
 
-	diagErr := executeAllUpdates(d, proxy, sdkConfig, false)
+	diagErr := executeAllUpdates(ctx, d, proxy, sdkConfig, false)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -231,7 +231,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	diagErr = executeAllUpdates(d, proxy, sdkConfig, true)
+	diagErr = executeAllUpdates(ctx, d, proxy, sdkConfig, true)
 	if diagErr != nil {
 		return diagErr
 	}

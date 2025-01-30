@@ -2,6 +2,9 @@ package external_contacts
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"strconv"
+	externalContactOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -154,6 +157,118 @@ func TestAccResourceExternalContacts(t *testing.T) {
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_externalcontacts_contact." + contactResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyContactDestroyed,
+	})
+}
+
+func TestAccResourceExternalContactsOrganizationRef(t *testing.T) {
+	var (
+		organizationResourceLabel1 = "external_organization_test"
+		organizationResourcePath1  = externalContactOrganization.ResourceType + "." + organizationResourceLabel1
+		name1                      = "ABCCorp-" + uuid.NewString()
+		phoneDisplay1              = "+1 321-700-1243"
+		countryCode1               = "US"
+		address1                   = "1011 New Hope St"
+		city1                      = "Norristown"
+		state1                     = "PA"
+		postalCode1                = "19401"
+		twitterId1                 = "twitterId"
+		twitterName1               = "twitterName"
+		twitterScreenName1         = "twitterScreenname"
+		symbol1                    = "ABC"
+		exchange1                  = "NYSE"
+		tags1                      = []string{
+			strconv.Quote("news"),
+			strconv.Quote("channel"),
+		}
+
+		organizationResourceLabel2 = "new_external_organization"
+		organizationResourcePath2  = externalContactOrganization.ResourceType + "." + organizationResourceLabel2
+		name2                      = "NewCorp-" + uuid.NewString()
+		phoneDisplay2              = "+1 321-990-9876"
+		countryCode2               = "US"
+		address2                   = "65 Upper Street"
+		city2                      = "Springfield"
+		state2                     = "MO"
+		postalCode2                = "67890"
+		twitterId2                 = "twitterId2"
+		twitterName2               = "twitterName2"
+		twitterScreenName2         = "twitterScreenname2"
+		symbol2                    = "NEW"
+		exchange2                  = "NYSE"
+		tags2                      = []string{
+			strconv.Quote("SWE"),
+			strconv.Quote("development"),
+		}
+	)
+	var (
+		contactResourceLabel                 = "testing_contact"
+		contactResourcePath                  = ResourceType + "." + contactResourceLabel
+		title                                = "testing team"
+		title2                               = "dev team"
+		externalContactOrganizationResource1 = externalContactOrganization.GenerateBasicExternalOrganizationResource(
+			organizationResourceLabel1,
+			name1,
+			phoneDisplay1, countryCode1,
+			address1, city1, state1, postalCode1, countryCode1,
+			twitterId1, twitterName1, twitterScreenName1,
+			symbol1, exchange1,
+			tags1,
+			"",
+		)
+		externalContactOrganizationResource2 = externalContactOrganization.GenerateBasicExternalOrganizationResource(
+			organizationResourceLabel2,
+			name2,
+			phoneDisplay2, countryCode2,
+			address2, city2, state2, postalCode2, countryCode2,
+			twitterId2, twitterName2, twitterScreenName2,
+			symbol2, exchange2,
+			tags2,
+			"",
+		)
+	)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				//Create
+				Config: externalContactOrganizationResource1 +
+					GenerateBasicExternalContactResource(
+						contactResourceLabel,
+						title,
+						"external_organization_id = "+organizationResourcePath1+".id",
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(contactResourcePath, "title", title),
+					resource.TestCheckResourceAttrPair(
+						organizationResourcePath1, "id",
+						contactResourcePath, "external_organization_id",
+					),
+				),
+			},
+			{
+				//Update
+				Config: externalContactOrganizationResource2 + GenerateBasicExternalContactResource(
+					contactResourceLabel,
+					title2,
+					"external_organization_id = "+organizationResourcePath2+".id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(contactResourcePath, "title", title2),
+					resource.TestCheckResourceAttrPair(
+						organizationResourcePath2, "id",
+						contactResourcePath, "external_organization_id",
+					),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      contactResourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

@@ -12,6 +12,8 @@ import (
 	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/platform"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -251,16 +253,25 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 }
 
 type ProviderMeta struct {
-	Version               string
-	ClientConfig          *platformclientv2.Configuration
-	Domain                string
-	Organization          *platformclientv2.Organization
-	LogStackTraces        bool
-	StackTraceLogFilePath string
+	Version      string
+	Registry     string
+	Platform     *platform.Platform
+	ClientConfig *platformclientv2.Configuration
+	Domain       string
+	Organization *platformclientv2.Organization
 }
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+
+		platform := platform.GetPlatform()
+		platformValidationErr := platform.Validate()
+		if platformValidationErr != nil {
+			return nil, diag.FromErr(platformValidationErr)
+		}
+
+		providerSourceRegistry := getRegistry(&platform, version)
+
 		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
 		if err != nil {
 			return nil, err
@@ -278,14 +289,53 @@ func configure(version string) schema.ConfigureContextFunc {
 		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), stackTraceLogsFilePath)
 
 		return &ProviderMeta{
-			Version:               version,
-			ClientConfig:          defaultConfig,
-			Domain:                getRegionDomain(data.Get("aws_region").(string)),
-			Organization:          currentOrg,
-			LogStackTraces:        data.Get("log_stack_traces").(bool),
-			StackTraceLogFilePath: stackTraceLogsFilePath,
+			Version:      version,
+			Platform:     &platform,
+			Registry:     providerSourceRegistry,
+			ClientConfig: defaultConfig,
+			Domain:       getRegionDomain(data.Get("aws_region").(string)),
+			Organization: currentOrg,
 		}, nil
 	}
+}
+
+// getRegistry determines the appropriate registry URL based on the platform and version.
+// It handles special cases for developer versions (0.1.0) and platform-specific registries.
+//
+// Parameters:
+//
+//	platform: *platform.Platform - The platform configuration (must not be nil)
+//	version: string - The version string in semver format (e.g., "1.2.3")
+//
+// Returns:
+//
+//	string: The determined registry URL
+//	error: Any error encountered during processing
+//
+// Special cases:
+//   - Version "0.1.0" (development version) always returns "genesys.com"
+//   - If platform.GetProviderRegistry() returns empty, falls back to "registry.terraform.io"
+func getRegistry(platform *platform.Platform, version string) string {
+
+	defaultRegistry := "registry.terraform.io"
+	devRegistry := "genesys.com"
+
+	if platform == nil {
+		return defaultRegistry // Default fallback
+	}
+
+	// Accounting for custom builds, we return this convention
+	if version == "0.1.0" {
+		return devRegistry
+	}
+
+	// Otherwise allow the platform to determine the registry as the registry is directly
+	// tied to the specific platform (i.e., terraform vs opentofu)
+	registry := platform.GetProviderRegistry()
+	if registry == "" {
+		registry = defaultRegistry
+	}
+	return registry
 }
 
 func getOrganizationMe(defaultConfig *platformclientv2.Configuration) (*platformclientv2.Organization, diag.Diagnostics) {
