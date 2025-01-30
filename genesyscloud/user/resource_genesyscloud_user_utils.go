@@ -242,21 +242,23 @@ func updateUserProfileSkills(d *schema.ResourceData, proxy *userProxy) diag.Diag
 }
 
 func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	if d.HasChange("voicemail_userpolicies") {
-		if voicemailUserpolicies := d.Get("voicemail_userpolicies").([]interface{}); voicemailUserpolicies != nil {
-			reqBody := buildVoicemailUserpoliciesRequest(voicemailUserpolicies)
-			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(d.Id(), reqBody)
-				if putErr != nil {
-					return proxyPutResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update voicemail userpolicices for user %s error: %s", d.Id(), putErr), proxyPutResponse)
-				}
-				return nil, nil
-			})
-			if diagErr != nil {
-				return diagErr
-			}
-		}
+	if !d.HasChange("voicemail_userpolicies") {
+		return nil
 	}
+
+	voicemailUserpolicies := d.Get("voicemail_userpolicies").([]interface{})
+	reqBody := buildVoicemailUserpoliciesRequest(voicemailUserpolicies)
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(d.Id(), reqBody)
+		if putErr != nil {
+			return proxyPutResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update voicemail userpolicices for user %s error: %s", d.Id(), putErr), proxyPutResponse)
+		}
+		return nil, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+
 	return nil
 }
 
