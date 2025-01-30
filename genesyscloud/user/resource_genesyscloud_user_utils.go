@@ -297,16 +297,13 @@ func updatePassword(ctx context.Context, d *schema.ResourceData, proxy *userProx
 		return nil
 	}
 
-	password, ok := d.Get("password").(string)
-	if !ok {
-		return util.BuildDiagnosticError(ResourceType, "Invalid password type", fmt.Errorf("password must be a string"))
-	}
+	password := d.Get("password").(string)
 
 	if password == "" {
-		return util.BuildDiagnosticError(ResourceType, "Empty password", fmt.Errorf("password cannot be empty"))
+		return nil // Skip password update if empty
 	}
 
-	_, _, err := proxy.updatePassword(ctx, d.Id(), password)
+	_, err := proxy.updatePassword(ctx, d.Id(), password)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update password for user %s", d.Id()), err)
 	}

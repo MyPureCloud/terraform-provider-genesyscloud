@@ -1250,10 +1250,10 @@ func TestAccResourceUserPassword(t *testing.T) {
 	// Create our mock proxy with the authorized configuration
 	userProxyInstance := newUserProxy(sdkConfig)
 
-	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (bool, *platformclientv2.APIResponse, error) {
+	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
 		passwordUpdateCalled = true
 		lastPasswordUpdate = password
-		return true, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
 	// Initialize internal proxy
@@ -1268,6 +1268,11 @@ func TestAccResourceUserPassword(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create user with initial password
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
 				Config: generateUserWithCustomAttrs(
 					userResourceLabel,
 					email,
@@ -1285,14 +1290,16 @@ func TestAccResourceUserPassword(t *testing.T) {
 						if lastPasswordUpdate != initialPassword {
 							return fmt.Errorf("expected password to be %s, got %s", initialPassword, lastPasswordUpdate)
 						}
-						// Reset for next test
-						passwordUpdateCalled = false
-						lastPasswordUpdate = ""
 						return nil
 					},
 				),
 			},
 			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
 				// Update with new password
 				Config: generateUserWithCustomAttrs(
 					userResourceLabel,
@@ -1310,6 +1317,30 @@ func TestAccResourceUserPassword(t *testing.T) {
 						}
 						if lastPasswordUpdate != updatedPassword {
 							return fmt.Errorf("expected password to be %s, got %s", updatedPassword, lastPasswordUpdate)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel,
+					email,
+					userName,
+					`password = ""`,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if passwordUpdateCalled {
+							return fmt.Errorf("expected password update to not be called for password update")
 						}
 						return nil
 					},

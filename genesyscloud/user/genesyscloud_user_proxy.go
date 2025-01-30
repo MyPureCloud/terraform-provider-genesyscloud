@@ -33,7 +33,7 @@ type deleteUserFunc func(ctx context.Context, p *userProxy, id string) (*interfa
 type patchUserWithStateFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 type hydrateUserCacheFunc func(ctx context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error)
 type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error)
-type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (bool, *platformclientv2.APIResponse, error)
+type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error)
 
 /*
 The userProxy struct holds all the methods responsible for making calls to
@@ -150,7 +150,7 @@ func (p *userProxy) getUserByName(ctx context.Context, searchUser platformclient
 }
 
 // updatePassword
-func (p *userProxy) updatePassword(ctx context.Context, userId string, newPassword string) (bool, *platformclientv2.APIResponse, error) {
+func (p *userProxy) updatePassword(ctx context.Context, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
 	return p.updatePasswordAttr(ctx, p, userId, newPassword)
 }
 
@@ -281,13 +281,13 @@ func getUserIdByNameFn(ctx context.Context, p *userProxy, name string) (id strin
 	return "", true, apiResponse, fmt.Errorf("Unable to find user wiht name %s", name)
 }
 
-func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (bool, *platformclientv2.APIResponse, error) {
+func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
 	// Get the user's current password
 	resp, err := p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
 		NewPassword: &newPassword,
 	})
 	if err != nil {
-		return false, resp, err
+		return resp, err
 	}
-	return true, resp, nil
+	return resp, nil
 }
