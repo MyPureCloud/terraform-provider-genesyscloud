@@ -2,6 +2,9 @@ package provider
 
 import (
 	"fmt"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,6 +45,34 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+// validateLogFilePath validates that a log file path is not empty, does
+// not contain any whitespaces, and that it ends with ".log"
+// (Keeping this inside validators causes import cycle)
+func validateLogFilePath(filepath any, _ cty.Path) (err diag.Diagnostics) {
+	defer func() {
+		if err != nil {
+			err = diag.Errorf("validateLogFilePath failed: %v", err)
+		}
+	}()
+
+	val, ok := filepath.(string)
+	if !ok {
+		return diag.Errorf("expected type of %v to be string, got %T", filepath, filepath)
+	}
+
+	// Check if the string is empty or contains any whitespace
+	if val == "" || strings.ContainsAny(val, " \t\n\r") {
+		return diag.Errorf("filepath must not be empty or contain whitespace, got: %s", val)
+	}
+
+	// Check if the file ends with .log
+	if !strings.HasSuffix(val, ".log") {
+		return diag.Errorf("%s must end with .log extension", val)
+	}
+
+	return err
 }
 
 func GetOrgDefaultCountryCode() string {

@@ -121,11 +121,11 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Description: "If set to true the provider will log stack traces to a file instead of crashing, where possible. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES` environment variable.",
 				},
 				"log_stack_traces_file_path": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					Description:  "Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log",
-					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH", "genesyscloud_stack_traces.log"),
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
+					Type:             schema.TypeString,
+					Optional:         true,
+					Description:      "Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log",
+					DefaultFunc:      schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH", "genesyscloud_stack_traces.log"),
+					ValidateDiagFunc: validateLogFilePath,
 				},
 				"gateway": {
 					Type:     schema.TypeSet,

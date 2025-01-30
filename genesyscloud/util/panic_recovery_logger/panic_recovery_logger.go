@@ -2,6 +2,7 @@ package panic_recovery_logger
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime/debug"
 )
@@ -14,6 +15,9 @@ type PanicRecoveryLogger struct {
 var panicRecoverLogger *PanicRecoveryLogger
 
 func InitPanicRecoveryLoggerInstance(enabled bool, filepath string) {
+	if err := deleteFileIfExists(filepath); err != nil {
+		log.Println(err)
+	}
 	panicRecoverLogger = &PanicRecoveryLogger{
 		LoggerEnabled: enabled,
 		filePath:      filepath,
@@ -59,5 +63,33 @@ func appendToFile(filename string, data []byte) (err error) {
 		return err
 	}
 	_ = file.Close()
+	return err
+}
+
+// deleteFileIfExists deletes file at filepath if it exists and does nothing if it doesn't
+func deleteFileIfExists(filepath string) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("deleteFileIfExists failed: %w (%s may contain stack traces from the previous deployment)", err, filepath)
+		}
+	}()
+
+	// Check if file exists
+	_, err = os.Stat(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// File doesn't exist, return nil as this is not an error condition
+			return nil
+		}
+		// Return other errors (permission issues, etc.)
+		return fmt.Errorf("failed to check file existence: %w", err)
+	}
+
+	// File exists, try to remove it
+	err = os.Remove(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to delete file %s: %w", filepath, err)
+	}
+
 	return err
 }
