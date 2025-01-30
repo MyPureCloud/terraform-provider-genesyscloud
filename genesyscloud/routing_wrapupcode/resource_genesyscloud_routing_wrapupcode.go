@@ -36,10 +36,6 @@ func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv
 	return resources, nil
 }
 
-type foo struct {
-	bar *string
-}
-
 func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingWrapupcodeProxy(sdkConfig)
@@ -73,13 +69,6 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), err), proxyResponse))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), err), proxyResponse))
-		}
-
-		if *wrapupcode.Name == "OUTBOUND_SMS_WITH_SCREEN" || *wrapupcode.Name == "Win 2001" {
-			// force a panic
-			var b foo
-			b.bar = nil
-			fmt.Println(*b.bar)
 		}
 
 		resourcedata.SetNillableValue(d, "name", wrapupcode.Name)
