@@ -2,9 +2,11 @@ package flow_loglevel
 
 import (
 	"fmt"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,7 +24,7 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 		flowLoglevelAll      = "All"
 		flowLogLevelDisabled = "Disabled"
 		flowId               = "${genesyscloud_flow." + flowResourceLabel + ".id}"
-		filePath             = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		filePath             = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
 		inboundCallConfig    = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
 
