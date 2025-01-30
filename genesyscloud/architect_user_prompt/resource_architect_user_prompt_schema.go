@@ -22,8 +22,8 @@ func SetRegistrar(regInstance registrar.Registrar) {
 func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllUserPrompts),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowEmptyArrays: []string{"resources"},
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
 			SubDirectory:              "audio_prompts",
