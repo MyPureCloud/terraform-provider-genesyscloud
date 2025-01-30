@@ -44,9 +44,9 @@ import (
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
-	"terraform-provider-genesyscloud/genesyscloud/knowledge"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -81,9 +81,11 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	externalSource "terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
@@ -268,6 +270,7 @@ func registerResources() {
 	user.SetRegistrar(regInstance)                                         //Registering user
 	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
 	journeyActionTemplate.SetRegistrar(regInstance)                        //Registering journey action template
+	journeyOutcome.SetRegistrar(regInstance)                               //Registering journey outcome
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
@@ -291,8 +294,9 @@ func registerResources() {
 	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
-	knowledge.SetRegistrar(regInstance)                                    //Registering knowledge
+	knowledgeDocumentVariation.SetRegistrar(regInstance)                   //Registering knowledge document variation
 	externalOrganization.SetRegistrar(regInstance)                         //Registering external organization
+	externalSource.SetRegistrar(regInstance)                               //Registering external source
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
