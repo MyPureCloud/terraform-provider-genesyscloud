@@ -277,7 +277,5 @@ func testVerifyGrammarLanguageDestroyed(state *terraform.State) error {
 }
 
 func generateFilePath(filename string) string {
-	testFolder := "../../test/data/resource/architect_grammar_language/"
-
-	return testFolder + filename
+	return testrunner.GetTestDataPath("resource", ResourceType, filename)
 }
