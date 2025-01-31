@@ -67,20 +67,20 @@ func GetTestTempPath(elem ...string) string {
 	return filepath.Join(basePath, subPath)
 }
 
-func GenerateDataSourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(DataSourceTestType, resourceType, testCaseName, checkFuncs)
+func GenerateDataJourneySourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateJourneyTestSteps(DataSourceTestType, resourceType, testCaseName, checkFuncs)
 }
 
-func GenerateResourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(ResourceTestType, resourceType, testCaseName, checkFuncs)
+func GenerateResourceJourneyTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateJourneyTestSteps(ResourceTestType, resourceType, testCaseName, checkFuncs)
 }
 
-func GenerateTestSteps(testType string, resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+func GenerateJourneyTestSteps(testType string, resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 	var testCasePath string
 	testCasePath = GetTestDataPath(testType, resourceType, testCaseName)
 	if resourceType == "genesyscloud_journey_action_map" || resourceType == "genesyscloud_journey_action_template" || resourceType == "genesyscloud_journey_outcome" {
-		testCasePath = filepath.Join("../", testCasePath)
+		testCasePath = filepath.Join(testCasePath, testCaseName)
 	}
 	testCaseDirEntries, _ := os.ReadDir(testCasePath)
 	checkFuncIndex := 0
