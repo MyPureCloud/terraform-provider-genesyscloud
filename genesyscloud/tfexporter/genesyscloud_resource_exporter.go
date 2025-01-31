@@ -23,7 +23,6 @@ import (
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
@@ -1164,8 +1163,7 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		}
 	}
 
-	refreshWithoutUpgrade := wrapRefreshWithoutUpgradeWithRecover(resource.RefreshWithoutUpgrade)
-	state, err := refreshWithoutUpgrade(ctx, instanceState, meta)
+	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
@@ -1181,28 +1179,6 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	}
 
 	return state, nil
-}
-
-type refreshWithoutUpgradeFunc func(context.Context, *terraform.InstanceState, any) (*terraform.InstanceState, diag.Diagnostics)
-
-// wrapRefreshWithoutUpgradeWithRecover will wrap the function RefreshWithoutUpgrade and add a recover if log_stack_traces is true
-func wrapRefreshWithoutUpgradeWithRecover(method refreshWithoutUpgradeFunc) refreshWithoutUpgradeFunc {
-	return func(ctx context.Context, state *terraform.InstanceState, meta any) (*terraform.InstanceState, diag.Diagnostics) {
-		defer func() {
-			panicRecoveryLogger := prl.GetPanicRecoveryLoggerInstance()
-			if !panicRecoveryLogger.LoggerEnabled {
-				return
-			}
-			if r := recover(); r != nil {
-				log.Printf("wrapRefreshWithoutUpgradeWithRecover: Recovered from panic while refreshing resource state: %v", r)
-				if err := panicRecoveryLogger.WriteStackTracesToFile(r); err != nil {
-					err = fmt.Errorf("failed to write stack traces to file during export: %w", err)
-					log.Println(err)
-				}
-			}
-		}()
-		return method(ctx, state, meta)
-	}
 }
 
 func correctCustomFunctions(config string) string {

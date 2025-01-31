@@ -3,9 +3,9 @@ package util
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
@@ -66,8 +66,7 @@ func wrapReadMethodWithRecover(method func() *retry.RetryError) func() *retry.Re
 				return
 			}
 			if r := recover(); r != nil {
-				log.Printf("Writing stack traces to file")
-				err := panicRecoveryLogger.WriteStackTracesToFile(r)
+				err := panicRecoveryLogger.HandleRecovery(r, constants.Read)
 				if err != nil {
 					retryErr = retry.NonRetryableError(err)
 				}
@@ -80,7 +79,7 @@ func wrapReadMethodWithRecover(method func() *retry.RetryError) func() *retry.Re
 type checkResponseFunc func(resp *platformclientv2.APIResponse, additionalCodes ...int) bool
 type callSdkFunc func() (*platformclientv2.APIResponse, diag.Diagnostics)
 
-// Retries up to 10 times while the shouldRetry condition returns true
+// RetryWhen Retries up to 10 times while the shouldRetry condition returns true
 // Useful for adding custom retry logic to normally non-retryable error codes
 func RetryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc, additionalCodes ...int) diag.Diagnostics {
 	var lastErr diag.Diagnostics
