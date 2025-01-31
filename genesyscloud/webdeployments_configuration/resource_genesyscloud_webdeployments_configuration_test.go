@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -189,7 +189,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel1,
 					kbName1,
 					kbDesc1,
@@ -328,7 +328,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 			},
 			{
 				// Update cobrowse settings
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel1,
 					kbName1,
 					kbDesc1,
@@ -715,7 +715,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel1,
 					kbName1,
 					kbDesc1,
@@ -817,7 +817,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 				),
 			},
 			{
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel2,
 					kbName2,
 					kbDesc2,

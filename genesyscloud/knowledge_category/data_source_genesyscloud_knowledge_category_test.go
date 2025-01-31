@@ -2,7 +2,7 @@ package knowledge_category
 
 import (
 	"fmt"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -30,7 +30,7 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
