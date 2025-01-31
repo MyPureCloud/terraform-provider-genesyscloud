@@ -8,9 +8,10 @@ import (
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
-	knowledge "terraform-provider-genesyscloud/genesyscloud/knowledge"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
@@ -165,6 +166,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[journeyActionTemplate.ResourceType] = journeyActionTemplate.ResourceJourneyActionTemplate()
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
+	providerResources[knowledgeDocumentVariation.ResourceType] = knowledgeDocumentVariation.ResourceKnowledgeDocumentVariation()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
@@ -225,14 +227,13 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
-	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
-	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
+	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
-	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
+	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
+	providerResources["genesyscloud_journey_segment"] = journeySegment.ResourceJourneySegment()
 	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
@@ -240,6 +241,8 @@ func (r *registerTestInstance) registerTestResources() {
 func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
 	RegisterExporter(architectSchedules.ResourceType, architectSchedules.ArchitectSchedulesExporter())
+	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
+	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
 	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
 	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
 	RegisterExporter("genesyscloud_organization_authentication_settings", oAuthSettings.OrganizationAuthenticationSettingsExporter())
@@ -274,9 +277,11 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_instagram", integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
 	RegisterExporter("genesyscloud_journey_action_map", journeyActionMap.JourneyActionMapExporter())
 	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplate.JourneyActionTemplateExporter())
-	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
+	RegisterExporter("genesyscloud_journey_outcome", journeyOutcome.JourneyOutcomeExporter())
+	RegisterExporter("genesyscloud_journey_segment", journeySegment.JourneySegmentExporter())
 	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
 	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())
+	RegisterExporter("genesyscloud_knowledge_document_variation", knowledgeDocumentVariation.KnowledgeDocumentVariationExporter())
 	RegisterExporter("genesyscloud_location", location.LocationExporter())
 	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
@@ -327,7 +332,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
-	RegisterExporter("genesyscloud_knowledge_document_variation", knowledge.KnowledgeDocumentVariationExporter())
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
@@ -349,6 +353,9 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[scripts.ResourceType] = scripts.DataSourceScript()
 	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
+	providerDataSources[tbs.ResourceType] = tbs.DataSourceTrunkBaseSettings()
+	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
+	providerDataSources[outboundRoute.ResourceType] = outboundRoute.DataSourceSiteOutboundRoute()
 }
 
 func RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter) {
@@ -361,5 +368,4 @@ func TestMain(m *testing.M) {
 
 	// Run the test suite
 	m.Run()
-
 }

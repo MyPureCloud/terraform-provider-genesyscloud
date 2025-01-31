@@ -89,6 +89,97 @@ var (
 			},
 		},
 	}
+	rangeElementDataResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"number": {
+				Description: "Number value. Only one of number or duration must be specified.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"duration": {
+				Description: "An ISO 8601 time duration. Only one of number or duration must be specified",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+
+	rangeElementResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"lt": {
+				Description: "Comparator: less than",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem:        rangeElementDataResource,
+				Optional:    true,
+			},
+			"lte": {
+				Description: "Comparator: less than or equal",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem:        rangeElementDataResource,
+				Optional:    true,
+			},
+			"gt": {
+				Description: "Comparator: greater than",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem:        rangeElementDataResource,
+				Optional:    true,
+			},
+			"gte": {
+				Description: "Comparator: greater than or equal",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem:        rangeElementDataResource,
+				Optional:    true,
+			},
+			"eq": {
+				Description: "Comparator: equal",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem:        rangeElementDataResource,
+				//AtLeastOneOf: []string{"lt", "lte", "gt", "gte", "neq"},
+				Optional: true,
+			},
+			"neq": {
+				Description: "Comparator: not equal",
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Elem:        rangeElementDataResource,
+				Optional:    true,
+			},
+		},
+	}
+
+	numberPredicatesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"dimension": {
+				Description: "The element's attribute being filtered on.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"range": {
+				Description: "the range of comparators to filter on.",
+				Type:        schema.TypeList,
+				Elem:        rangeElementResource,
+				MaxItems:    1,
+				Required:    true,
+			},
+			"operator": {
+				Description:  "Optional operator, default is Matches. Valid values: Matches.Valid values: Matches, NotMatches.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Matches", "NotMatches"}, false),
+				Default:      "Matches",
+			},
+			"no_value": {
+				Description: "set this to true if no specific value to be considered.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+		},
+	}
 	attributesResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"type": {
@@ -109,10 +200,29 @@ var (
 			},
 		},
 	}
+	elementDisplayAttributesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"x": {
+				Description: "The horizontal position (x-coordinate) of the element on the journey view canvas.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"y": {
+				Description: "The vertical position (y-coordinate) of the element on the journey view canvas.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"col": {
+				Description: "The column position for the element in the journey view canvas.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+		},
+	}
 	filtersResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"type": {
-				Description:  "Boolean operation to apply to the provided predicates and clauses. Valid values: And.",
+				Description:  "Boolean operation to apply to the provided predicates, numberPredicates and clauses. Valid values: And.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"And"}, false),
@@ -121,6 +231,12 @@ var (
 				Description: "A filter on an element within a journey view.",
 				Type:        schema.TypeList,
 				Elem:        predicatesResource,
+				Optional:    true,
+			},
+			"number_predicates": {
+				Description: "A number filter on an element within a journey view.",
+				Type:        schema.TypeList,
+				Elem:        numberPredicatesResource,
 				Optional:    true,
 			},
 		},
@@ -142,6 +258,13 @@ var (
 				Type:        schema.TypeList,
 				Required:    true,
 				Elem:        attributesResource,
+				MaxItems:    1,
+			},
+			"display_attributes": {
+				Description: "Display Attributes on an element in a journey view.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        elementDisplayAttributesResource,
 				MaxItems:    1,
 			},
 			"filter": {

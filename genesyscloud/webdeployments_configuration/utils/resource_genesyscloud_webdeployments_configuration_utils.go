@@ -130,8 +130,9 @@ func buildAuthenticationSettings(d *schema.ResourceData) *platformclientv2.Authe
 
 	cfg := settings[0].(map[string]interface{})
 	return &platformclientv2.Authenticationsettings{
-		Enabled:       platformclientv2.Bool(cfg["enabled"].(bool)),
-		IntegrationId: platformclientv2.String(cfg["integration_id"].(string)),
+		Enabled:             platformclientv2.Bool(cfg["enabled"].(bool)),
+		IntegrationId:       platformclientv2.String(cfg["integration_id"].(string)),
+		AllowSessionUpgrade: platformclientv2.Bool(cfg["allow_session_upgrade"].(bool)),
 	}
 }
 
@@ -251,8 +252,9 @@ func FlattenAuthenticationSettings(authenticationSettings *platformclientv2.Auth
 	}
 
 	return []interface{}{map[string]interface{}{
-		"enabled":        authenticationSettings.Enabled,
-		"integration_id": authenticationSettings.IntegrationId,
+		"enabled":               authenticationSettings.Enabled,
+		"integration_id":        authenticationSettings.IntegrationId,
+		"allow_session_upgrade": authenticationSettings.AllowSessionUpgrade,
 	}}
 }
 

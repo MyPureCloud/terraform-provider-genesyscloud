@@ -32,6 +32,11 @@ func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyvieweleme
 			element.Attributes = &attributes
 		}
 
+		if displayAttributesSlice, ok := elemMap["display_attributes"].([]interface{}); ok {
+			displayAttributes := buildJourneyViewElementDisplayAttributes(displayAttributesSlice)
+			element.DisplayAttributes = displayAttributes
+		}
+
 		if filterSlice, ok := elemMap["filter"].([]interface{}); ok {
 			filter := buildJourneyViewElementFilter(filterSlice)
 			element.Filter = filter
@@ -66,20 +71,51 @@ func buildJourneyViewElementAttributes(attributesSlice []interface{}) platformcl
 	return attributes
 }
 
+func buildJourneyViewElementDisplayAttributes(displayAttributesSlice []interface{}) *platformclientv2.Journeyviewelementdisplayattributes {
+	var displayAttributes platformclientv2.Journeyviewelementdisplayattributes
+	if len(displayAttributesSlice) == 0 {
+		return nil
+	}
+
+	for _, elem := range displayAttributesSlice {
+		if displayAttributesMap, ok := elem.(map[string]interface{}); ok {
+			displayAttributes.X = getIntPointerFromInterface(displayAttributesMap["x"])
+			displayAttributes.Y = getIntPointerFromInterface(displayAttributesMap["y"])
+			displayAttributes.Col = getIntPointerFromInterface(displayAttributesMap["col"])
+		}
+	}
+	return &displayAttributes
+}
+
 func buildJourneyViewElementFilter(filterSlice []interface{}) *platformclientv2.Journeyviewelementfilter {
 	var filter platformclientv2.Journeyviewelementfilter
 	for _, elem := range filterSlice {
 		if filterMap, ok := elem.(map[string]interface{}); ok {
 			filter.VarType = getStringPointerFromInterface(filterMap["type"])
 			if predicatesSlice, ok := filterMap["predicates"].([]interface{}); ok {
-				predicates := make([]platformclientv2.Journeyviewelementfilterpredicate, len(predicatesSlice))
-				for i, predicate := range predicatesSlice {
-					predicateMap, ok := predicate.(map[string]interface{})
-					if ok {
-						predicates[i] = buildJourneyviewelementfilterpredicate(predicateMap)
+				if len(predicatesSlice) > 0 {
+					predicates := make([]platformclientv2.Journeyviewelementfilterpredicate, len(predicatesSlice))
+					for i, predicate := range predicatesSlice {
+						predicateMap, ok := predicate.(map[string]interface{})
+						if ok {
+							predicates[i] = buildJourneyviewelementfilterpredicate(predicateMap)
+						}
 					}
+					filter.Predicates = &predicates
 				}
-				filter.Predicates = &predicates
+			}
+
+			if numberPredicatesSlice, ok := filterMap["number_predicates"].([]interface{}); ok {
+				if len(numberPredicatesSlice) > 0 {
+					numberPredicates := make([]platformclientv2.Journeyviewelementfilternumberpredicate, len(numberPredicatesSlice))
+					for i, numberPredicate := range numberPredicatesSlice {
+						numberPredicateMap, ok := numberPredicate.(map[string]interface{})
+						if ok {
+							numberPredicates[i] = buildJourneyviewelementfilternumberpredicate(numberPredicateMap)
+						}
+					}
+					filter.NumberPredicates = &numberPredicates
+				}
 			}
 		}
 	}
@@ -104,6 +140,88 @@ func buildJourneyviewelementfilterpredicate(predicateMap map[string]interface{})
 	predicate.Operator = getStringPointerFromInterface(predicateMap["operator"])
 	predicate.NoValue = getBoolPointerFromInterface(predicateMap["no_value"])
 	return predicate
+}
+
+// Nicolas
+func buildJourneyviewelementfilternumberpredicate(numberPredicateMap map[string]interface{}) platformclientv2.Journeyviewelementfilternumberpredicate {
+	var numberPredicate platformclientv2.Journeyviewelementfilternumberpredicate
+	numberPredicate.Dimension = getStringPointerFromInterface(numberPredicateMap["dimension"])
+
+	if rangeSlice, ok := numberPredicateMap["range"].([]interface{}); ok {
+		numberPredicate.VarRange = buildJourneyviewelementfilterrange(rangeSlice)
+	}
+	numberPredicate.Operator = getStringPointerFromInterface(numberPredicateMap["operator"])
+	numberPredicate.NoValue = getBoolPointerFromInterface(numberPredicateMap["no_value"])
+	return numberPredicate
+}
+
+// Nicolas
+func buildJourneyviewelementfilterrange(rangeSlice []interface{}) *platformclientv2.Journeyviewelementfilterrange {
+	var varRange platformclientv2.Journeyviewelementfilterrange
+
+	for _, rangeObj := range rangeSlice {
+		rangeMap, ok := rangeObj.(map[string]interface{})
+		if ok {
+			if rangeMap["lt"] != nil {
+				ltSlice, ok := rangeMap["lt"].(*schema.Set)
+				if ok {
+					varRange.Lt = buildJourneyviewelementfilterrangedata(ltSlice)
+				}
+			}
+			if rangeMap["lte"] != nil {
+				lteSlice, ok := rangeMap["lte"].(*schema.Set)
+				if ok {
+					varRange.Lte = buildJourneyviewelementfilterrangedata(lteSlice)
+				}
+			}
+			if rangeMap["gt"] != nil {
+				gtSlice, ok := rangeMap["gt"].(*schema.Set)
+				if ok {
+					varRange.Gt = buildJourneyviewelementfilterrangedata(gtSlice)
+				}
+			}
+			if rangeMap["gte"] != nil {
+				gteMap, ok := rangeMap["gte"].(*schema.Set)
+				if ok {
+					varRange.Gte = buildJourneyviewelementfilterrangedata(gteMap)
+				}
+			}
+			if rangeMap["eq"] != nil {
+				eqSlice, ok := rangeMap["eq"].(*schema.Set)
+				if ok {
+					varRange.Eq = buildJourneyviewelementfilterrangedata(eqSlice)
+				}
+			}
+			if rangeMap["neq"] != nil {
+				neqSlice, ok := rangeMap["neq"].(*schema.Set)
+				if ok {
+					varRange.Neq = buildJourneyviewelementfilterrangedata(neqSlice)
+				}
+			}
+		}
+	}
+
+	return &varRange
+}
+
+func buildJourneyviewelementfilterrangedata(dataSlice *schema.Set) *platformclientv2.Journeyviewelementfilterrangedata {
+	var data platformclientv2.Journeyviewelementfilterrangedata
+
+	dataList := dataSlice.List()
+
+	if len(dataList) == 0 {
+		return nil
+	}
+
+	for _, attr := range dataSlice.List() {
+		dataMap, ok := attr.(map[string]interface{})
+		if !ok {
+			return nil
+		}
+		data.Duration = getStringPointerFromInterface(dataMap["duration"])
+		data.Number = getFloatPointerFromInterface(dataMap["number"])
+	}
+	return &data
 }
 
 func buildJourneyViewLink(linkMap map[string]interface{}) platformclientv2.Journeyviewlink {
@@ -279,6 +397,13 @@ func getIntPointerFromInterface(val interface{}) *int {
 	return nil
 }
 
+func getFloatPointerFromInterface(val interface{}) *float64 {
+	if valFloat, ok := val.(float64); ok {
+		return &valFloat
+	}
+	return nil
+}
+
 func flattenElements(elements *[]platformclientv2.Journeyviewelement) []interface{} {
 	if len(*elements) == 0 {
 		return nil
@@ -289,6 +414,7 @@ func flattenElements(elements *[]platformclientv2.Journeyviewelement) []interfac
 		resourcedata.SetMapValueIfNotNil(elementsMap, "id", element.Id)
 		resourcedata.SetMapValueIfNotNil(elementsMap, "name", element.Name)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "attributes", element.Attributes, flattenAttributes)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "display_attributes", element.DisplayAttributes, flattenElementDisplayAttributes)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "filter", element.Filter, flattenFilters)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(elementsMap, "followed_by", element.FollowedBy, flattenJourneyViewLink)
 		elementsList = append(elementsList, elementsMap)
@@ -309,6 +435,19 @@ func flattenAttributes(attribute *platformclientv2.Journeyviewelementattributes)
 	return attributesList
 }
 
+func flattenElementDisplayAttributes(displayAttributes *platformclientv2.Journeyviewelementdisplayattributes) []interface{} {
+	if displayAttributes == nil {
+		return nil
+	}
+	var displayAttributesList []interface{}
+	displayAttributesMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "x", displayAttributes.X)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "y", displayAttributes.Y)
+	resourcedata.SetMapValueIfNotNil(displayAttributesMap, "col", displayAttributes.Col)
+	displayAttributesList = append(displayAttributesList, displayAttributesMap)
+	return displayAttributesList
+}
+
 func flattenFilters(filter *platformclientv2.Journeyviewelementfilter) []interface{} {
 	if filter == nil {
 		return nil
@@ -317,6 +456,7 @@ func flattenFilters(filter *platformclientv2.Journeyviewelementfilter) []interfa
 	filtersMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(filtersMap, "type", filter.VarType)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(filtersMap, "predicates", filter.Predicates, flattenPredicates)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(filtersMap, "number_predicates", filter.NumberPredicates, flattenNumberPredicates)
 	filtersList = append(filtersList, filtersMap)
 	return filtersList
 }
@@ -335,6 +475,48 @@ func flattenPredicates(predicates *[]platformclientv2.Journeyviewelementfilterpr
 		predicatesList = append(predicatesList, predicatesMap)
 	}
 	return predicatesList
+}
+
+func flattenNumberPredicates(numberPredicates *[]platformclientv2.Journeyviewelementfilternumberpredicate) []interface{} {
+	if len(*numberPredicates) == 0 {
+		return nil
+	}
+	var numberPredicatesList []interface{}
+	for _, numberPredicate := range *numberPredicates {
+		numberPredicatesMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(numberPredicatesMap, "dimension", numberPredicate.Dimension)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(numberPredicatesMap, "range", numberPredicate.VarRange, flattenNumberPredicateRange)
+		resourcedata.SetMapValueIfNotNil(numberPredicatesMap, "operator", numberPredicate.Operator)
+		resourcedata.SetMapValueIfNotNil(numberPredicatesMap, "no_value", numberPredicate.NoValue)
+		numberPredicatesList = append(numberPredicatesList, numberPredicatesMap)
+	}
+	return numberPredicatesList
+}
+
+func flattenNumberPredicateRange(varRange *platformclientv2.Journeyviewelementfilterrange) []interface{} {
+
+	var numberPredicatesRangesList []interface{}
+	numberPredicatesRangesMap := make(map[string]interface{})
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(numberPredicatesRangesMap, "lt", varRange.Lt, flattenNumberPredicateRangeData)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(numberPredicatesRangesMap, "lte", varRange.Lte, flattenNumberPredicateRangeData)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(numberPredicatesRangesMap, "gt", varRange.Gt, flattenNumberPredicateRangeData)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(numberPredicatesRangesMap, "gte", varRange.Gte, flattenNumberPredicateRangeData)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(numberPredicatesRangesMap, "eq", varRange.Eq, flattenNumberPredicateRangeData)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(numberPredicatesRangesMap, "neq", varRange.Neq, flattenNumberPredicateRangeData)
+	numberPredicatesRangesList = append(numberPredicatesRangesList, numberPredicatesRangesMap)
+
+	return numberPredicatesRangesList
+
+}
+
+func flattenNumberPredicateRangeData(varRangeData *platformclientv2.Journeyviewelementfilterrangedata) []interface{} {
+	var numberPredicatesRangeDatasList []interface{}
+	numberPredicatesDataMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(numberPredicatesDataMap, "number", varRangeData.Number)
+	resourcedata.SetMapValueIfNotNil(numberPredicatesDataMap, "duration", varRangeData.Duration)
+	numberPredicatesRangeDatasList = append(numberPredicatesRangeDatasList, numberPredicatesDataMap)
+
+	return numberPredicatesRangeDatasList
 }
 
 func flattenJourneyViewLink(journeyViewLinks *[]platformclientv2.Journeyviewlink) []interface{} {

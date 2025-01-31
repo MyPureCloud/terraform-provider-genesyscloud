@@ -21,8 +21,25 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
+// getAllJourneySegments retrieves all journey segments from the Genesys Cloud platform.
+//
+// Parameters:
+//   - ctx: The context.Context for the request
+//   - clientConfig: The Genesys Cloud platform client configuration
+//
+// Returns:
+//   - resourceExporter.ResourceIDMetaMap: A map containing journey segment IDs as keys and ResourceMeta as values
+//   - diag.Diagnostics: Any error diagnostics that occurred during the operation
+//
+// The function performs the following operations:
+//  1. Initializes a journey segment proxy with the provided client configuration
+//  2. Retrieves all journey segments using the proxy
+//  3. For each journey segment:
+//     - Uses DisplayName as BlockLabel if available
+//     - Falls back to ID as BlockLabel if DisplayName is nil
+//     - Skips segments with nil IDs
+//  4. Returns the compiled resource map and any diagnostics
 func getAllJourneySegments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-
 	proxy := getJourneySegmentProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -32,14 +49,43 @@ func getAllJourneySegments(ctx context.Context, clientConfig *platformclientv2.C
 	}
 
 	for _, segment := range *segments {
-		resources[*segment.Id] = &resourceExporter.ResourceMeta{BlockLabel: *segment.DisplayName}
+		if segment.Id == nil {
+			continue // Skip if Id is nil as it's required for the map key
+		}
+
+		blockLabel := *segment.Id // Default to using Id as BlockLabel
+		if segment.DisplayName != nil {
+			blockLabel = *segment.DisplayName // Use DisplayName if available
+		}
+
+		resources[*segment.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 
 	return resources, nil
 }
 
+// createJourneySegment creates a new journey segment in the Genesys Cloud platform.
+//
+// Parameters:
+//   - ctx: The context.Context for the request
+//   - d: The schema.ResourceData containing the journey segment configuration
+//   - meta: The provider meta data containing client configuration
+//
+// Returns:
+//   - diag.Diagnostics: Any error diagnostics that occurred during the operation
+//
+// The function performs the following operations:
+//  1. Extracts client configuration from provider metadata
+//  2. Builds journey segment object from schema data
+//  3. Creates the journey segment via API proxy
+//  4. Handles error cases with detailed error messages:
+//     - Includes segment name in error if available
+//     - Includes full input payload in error messages
+//  5. Sets the resource ID with the created segment ID
+//  6. Performs a final read to ensure state consistency
+//
+// Note: After successful creation, the function calls readJourneySegment to sync the Terraform state
 func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneySegmentProxy(sdkConfig)
 	segment := buildSdkJourneySegment(d)
@@ -47,8 +93,12 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Creating journey segment %s", *segment.DisplayName)
 	segmentResponse, proxyResponse, err := proxy.createJourneySegment(ctx, segment)
 	if err != nil {
+		if segmentResponse != nil && segmentResponse.DisplayName != nil {
+			input, _ := util.InterfaceToJson(*segment)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create journey segment %s: %s\n(input: %+v)", *segmentResponse.DisplayName, err, input), proxyResponse)
+		}
 		input, _ := util.InterfaceToJson(*segment)
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create journey segment %s: %s\n(input: %+v)", *segmentResponse.DisplayName, err, input), proxyResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create journey segment: %s\n(input: %+v)", err, input), proxyResponse)
 	}
 
 	d.SetId(*segmentResponse.Id)
@@ -57,6 +107,27 @@ func createJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	return readJourneySegment(ctx, d, meta)
 }
 
+// readJourneySegment retrieves an existing journey segment from the Genesys Cloud platform.
+//
+// Parameters:
+//   - ctx: The context.Context for the request
+//   - d: The schema.ResourceData containing the journey segment ID and state
+//   - meta: The provider meta data containing client configuration
+//
+// Returns:
+//   - diag.Diagnostics: Any error diagnostics that occurred during the operation
+//
+// The function performs the following operations:
+//  1. Initializes client configuration and journey segment proxy
+//  2. Creates a consistency checker for state validation
+//  3. Attempts to read the journey segment with retries:
+//     - Handles 404 errors as retryable for eventual consistency
+//     - Handles other errors as non-retryable
+//     - Validates segment response is not nil
+//  4. Flattens the API response into schema data
+//  5. Performs consistency check on the final state
+//
+// Note: Uses WithRetriesForRead for handling eventual consistency scenarios
 func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneySegmentProxy(sdkConfig)
@@ -72,6 +143,10 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read journey segment %s | error: %s", d.Id(), getErr), proxyResponse))
 		}
 
+		if segmentResponse == nil {
+			return retry.NonRetryableError(fmt.Errorf("journey segment response is nil"))
+		}
+
 		flattenJourneySegment(d, segmentResponse)
 
 		log.Printf("Read journey segment %s %s", d.Id(), *segmentResponse.DisplayName)
@@ -79,6 +154,29 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 }
 
+// updateJourneySegment updates an existing journey segment in the Genesys Cloud platform.
+//
+// Parameters:
+//   - ctx: The context.Context for the request
+//   - d: The schema.ResourceData containing the journey segment configuration
+//   - meta: The provider meta data containing client configuration
+//
+// Returns:
+//   - diag.Diagnostics: Any error diagnostics that occurred during the operation
+//
+// The function performs the following operations:
+//  1. Initializes client configuration and journey segment proxy
+//  2. Builds patch segment object from schema data
+//  3. Implements retry logic for version mismatch scenarios:
+//     - Fetches current segment version
+//     - Validates DisplayName is not nil
+//     - Updates segment with current version
+//  4. Handles error cases with detailed diagnostics:
+//     - Includes segment details in error messages
+//     - Captures full input payload for troubleshooting
+//  5. Performs final read to ensure state consistency
+//
+// Note: Uses RetryWhen for handling version mismatch scenarios during concurrent updates
 func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneySegmentProxy(sdkConfig)
@@ -90,6 +188,10 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 		segmentResponse, proxyResponse, getErr := proxy.getJourneySegmentById(ctx, d.Id())
 		if getErr != nil {
 			return proxyResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to read journey segment %s error: %s", d.Id(), getErr), proxyResponse)
+		}
+
+		if patchSegment.DisplayName == nil {
+			return proxyResponse, util.BuildAPIDiagnosticError(ResourceType, "DisplayName cannot be nil", proxyResponse)
 		}
 
 		patchSegment.Version = segmentResponse.Version
@@ -108,6 +210,27 @@ func updateJourneySegment(ctx context.Context, d *schema.ResourceData, meta inte
 	return readJourneySegment(ctx, d, meta)
 }
 
+// deleteJourneySegment removes a journey segment from the Genesys Cloud platform.
+//
+// Parameters:
+//   - ctx: The context.Context for the request
+//   - d: The schema.ResourceData containing the journey segment ID and configuration
+//   - meta: The provider meta data containing client configuration
+//
+// Returns:
+//   - diag.Diagnostics: Any error diagnostics that occurred during the operation
+//
+// The function performs the following operations:
+//  1. Initializes client configuration and journey segment proxy
+//  2. Attempts to delete the journey segment using display name and ID
+//  3. Implements verification retry logic with 30 second timeout:
+//     - Polls for segment existence
+//     - Considers 404 response as successful deletion
+//     - Handles non-404 errors as non-retryable
+//     - Continues retry if segment still exists
+//  4. Logs deletion status for tracking
+//
+// Note: Uses WithRetries to ensure complete deletion and handle eventual consistency
 func deleteJourneySegment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneySegmentProxy(sdkConfig)

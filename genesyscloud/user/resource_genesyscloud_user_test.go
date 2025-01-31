@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
@@ -1132,7 +1133,10 @@ func TestAccResourceUserRestore(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
 	})
 }
 
@@ -1220,6 +1224,134 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 
 	// Success. All users destroyed
 	return nil
+}
+
+func TestAccResourceUserPassword(t *testing.T) {
+	t.Parallel()
+	var (
+		userResourceLabel = "test-user-password"
+		email             = "terraform-" + uuid.NewString() + "@user.com"
+		userName          = "Password Test User"
+		initialPassword   = "myInitialPassword123!@#"
+		updatedPassword   = "myUpdatedPassword456!@#"
+
+		// Track password updates
+		passwordUpdateCalled bool
+		lastPasswordUpdate   string
+	)
+
+	// Reset tracking variables
+	passwordUpdateCalled = false
+	lastPasswordUpdate = ""
+
+	// Get the authorized SDK configuration
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create our mock proxy with the authorized configuration
+	userProxyInstance := newUserProxy(sdkConfig)
+
+	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
+		passwordUpdateCalled = true
+		lastPasswordUpdate = password
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	// Initialize internal proxy
+	internalProxy = userProxyInstance
+	defer func() {
+		internalProxy = nil
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create user with initial password
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel,
+					email,
+					userName,
+					fmt.Sprintf(`password = "%s"`, initialPassword),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if !passwordUpdateCalled {
+							return fmt.Errorf("expected password update to be called for initial password")
+						}
+						if lastPasswordUpdate != initialPassword {
+							return fmt.Errorf("expected password to be %s, got %s", initialPassword, lastPasswordUpdate)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				// Update with new password
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel,
+					email,
+					userName,
+					fmt.Sprintf(`password = "%s"`, updatedPassword),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if !passwordUpdateCalled {
+							return fmt.Errorf("expected password update to be called for password update")
+						}
+						if lastPasswordUpdate != updatedPassword {
+							return fmt.Errorf("expected password to be %s, got %s", updatedPassword, lastPasswordUpdate)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel,
+					email,
+					userName,
+					`password = ""`,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if passwordUpdateCalled {
+							return fmt.Errorf("expected password update to not be called for password update")
+						}
+						return nil
+					},
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {

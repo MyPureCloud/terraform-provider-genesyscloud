@@ -50,7 +50,7 @@ func hydrateOrganizationCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 
 	log.Printf("Hydrating cache for data source %s", ResourceType)
 
-	allExternalOrganization, resp, err := proxy.getAllExternalContactsOrganization(ctx, "")
+	allExternalOrganization, resp, err := proxy.getAllExternalContactsOrganization(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get external organization. Error: %s | API Response: %s", err.Error(), resp.String())
 	}

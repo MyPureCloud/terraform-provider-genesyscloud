@@ -67,7 +67,9 @@ func flattenContext(context *platformclientv2.Context) map[string]interface{} {
 		return nil
 	}
 	contextMap := make(map[string]interface{})
-	contextMap["patterns"] = *lists.FlattenList(context.Patterns, flattenContextPattern)
+	if context.Patterns != nil {
+		stringmap.SetValueIfNotNil(contextMap, "patterns", lists.FlattenList(context.Patterns, flattenContextPattern))
+	}
 	return contextMap
 }
 
@@ -93,7 +95,9 @@ func buildSdkPatchContext(context map[string]interface{}) *platformclientv2.Patc
 
 func flattenContextPattern(contextPattern *platformclientv2.Contextpattern) map[string]interface{} {
 	contextPatternMap := make(map[string]interface{})
-	contextPatternMap["criteria"] = *lists.FlattenList(contextPattern.Criteria, flattenEntityTypeCriteria)
+	if contextPattern.Criteria != nil {
+		stringmap.SetValueIfNotNil(contextPatternMap, "criteria", lists.FlattenList(contextPattern.Criteria, flattenEntityTypeCriteria))
+	}
 	return contextPatternMap
 }
 
@@ -111,11 +115,13 @@ func buildSdkPatchContextPattern(contextPattern map[string]interface{}) *platfor
 
 func flattenEntityTypeCriteria(entityTypeCriteria *platformclientv2.Entitytypecriteria) map[string]interface{} {
 	entityTypeCriteriaMap := make(map[string]interface{})
-	entityTypeCriteriaMap["key"] = *entityTypeCriteria.Key
-	entityTypeCriteriaMap["values"] = lists.StringListToSet(*entityTypeCriteria.Values)
-	entityTypeCriteriaMap["should_ignore_case"] = *entityTypeCriteria.ShouldIgnoreCase
-	entityTypeCriteriaMap["operator"] = *entityTypeCriteria.Operator
-	entityTypeCriteriaMap["entity_type"] = *entityTypeCriteria.EntityType
+	resourcedata.SetMapValueIfNotNil(entityTypeCriteriaMap, "key", entityTypeCriteria.Key)
+	resourcedata.SetMapValueIfNotNil(entityTypeCriteriaMap, "should_ignore_case", entityTypeCriteria.ShouldIgnoreCase)
+	resourcedata.SetMapValueIfNotNil(entityTypeCriteriaMap, "operator", entityTypeCriteria.Operator)
+	resourcedata.SetMapValueIfNotNil(entityTypeCriteriaMap, "entity_type", entityTypeCriteria.EntityType)
+	if entityTypeCriteria.Values != nil {
+		entityTypeCriteriaMap["values"] = lists.StringListToSet(*entityTypeCriteria.Values)
+	}
 	return entityTypeCriteriaMap
 }
 
@@ -156,7 +162,9 @@ func flattenJourney(journey *platformclientv2.Journey) map[string]interface{} {
 		return nil
 	}
 	journeyMap := make(map[string]interface{})
-	journeyMap["patterns"] = *lists.FlattenList(journey.Patterns, flattenJourneyPattern)
+	if journey.Patterns != nil {
+		stringmap.SetValueIfNotNil(journeyMap, "patterns", lists.FlattenList(journey.Patterns, flattenJourneyPattern))
+	}
 	return journeyMap
 }
 
@@ -182,11 +190,14 @@ func buildSdkPatchJourney(journey map[string]interface{}) *platformclientv2.Patc
 
 func flattenJourneyPattern(journeyPattern *platformclientv2.Journeypattern) map[string]interface{} {
 	journeyPatternMap := make(map[string]interface{})
-	journeyPatternMap["criteria"] = *lists.FlattenList(journeyPattern.Criteria, flattenCriteria)
-	journeyPatternMap["count"] = *journeyPattern.Count
-	journeyPatternMap["stream_type"] = *journeyPattern.StreamType
-	journeyPatternMap["session_type"] = *journeyPattern.SessionType
+	stringmap.SetValueIfNotNil(journeyPatternMap, "criteria", lists.FlattenList(journeyPattern.Criteria, flattenCriteria))
+	stringmap.SetValueIfNotNil(journeyPatternMap, "count", journeyPattern.Count)
+	stringmap.SetValueIfNotNil(journeyPatternMap, "stream_type", journeyPattern.StreamType)
+	stringmap.SetValueIfNotNil(journeyPatternMap, "session_type", journeyPattern.SessionType)
 	stringmap.SetValueIfNotNil(journeyPatternMap, "event_name", journeyPattern.EventName)
+	if journeyPattern.Criteria != nil {
+		stringmap.SetValueIfNotNil(journeyPatternMap, "criteria", lists.FlattenList(journeyPattern.Criteria, flattenCriteria))
+	}
 	return journeyPatternMap
 }
 
@@ -224,10 +235,12 @@ func buildSdkPatchJourneyPattern(journeyPattern map[string]interface{}) *platfor
 
 func flattenCriteria(criteria *platformclientv2.Criteria) map[string]interface{} {
 	criteriaMap := make(map[string]interface{})
-	criteriaMap["key"] = *criteria.Key
-	criteriaMap["values"] = lists.StringListToSet(*criteria.Values)
-	criteriaMap["should_ignore_case"] = *criteria.ShouldIgnoreCase
-	criteriaMap["operator"] = *criteria.Operator
+	stringmap.SetValueIfNotNil(criteriaMap, "key", criteria.Key)
+	stringmap.SetValueIfNotNil(criteriaMap, "should_ignore_case", criteria.ShouldIgnoreCase)
+	stringmap.SetValueIfNotNil(criteriaMap, "operator", criteria.Operator)
+	if criteria.Values != nil {
+		criteriaMap["values"] = lists.StringListToSet(*criteria.Values)
+	}
 	return criteriaMap
 }
 

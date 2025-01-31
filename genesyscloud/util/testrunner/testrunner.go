@@ -3,7 +3,6 @@ package testrunner
 import (
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -19,7 +18,7 @@ const (
 )
 
 func GetTestDataPath(elem ...string) string {
-	basePath := filepath.Join("..", "test", "data")
+	basePath := filepath.Join("..", "..", "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
 }
@@ -75,9 +74,6 @@ func GenerateTestSteps(testType string, resourceType string, testCaseName string
 	var testSteps []resource.TestStep
 	var testCasePath string
 	testCasePath = GetTestDataPath(testType, resourceType, testCaseName)
-	if resourceType == "genesyscloud_journey_action_map" || resourceType == "genesyscloud_journey_action_template" || resourceType == "genesyscloud_journey_segment" {
-		testCasePath = path.Join("../", testCasePath)
-	}
 	testCaseDirEntries, _ := os.ReadDir(testCasePath)
 	checkFuncIndex := 0
 	for _, testCaseDirEntry := range testCaseDirEntries {

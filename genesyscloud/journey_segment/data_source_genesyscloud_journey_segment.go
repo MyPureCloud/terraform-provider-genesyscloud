@@ -7,44 +7,45 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
+// dataSourceJourneySegmentRead retrieves a Journey Segment by name from Genesys Cloud
+//
+// Parameters:
+//   - ctx: The context.Context for the request
+//   - d: The schema.ResourceData containing the resource configuration
+//   - m: The provider meta interface containing client configuration
+//
+// Returns:
+//   - diag.Diagnostics: Contains any error diagnostics encountered during the operation
+//
+// The function performs the following:
+//  1. Extracts the client configuration from the provider meta
+//  2. Creates a Journey Segment proxy
+//  3. Retrieves the segment name from the resource data
+//  4. Attempts to find the Journey Segment by name with retries
+//  5. Sets the resource ID upon successful retrieval
 func dataSourceJourneySegmentRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
-	var response *platformclientv2.APIResponse
+	proxy := getJourneySegmentProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		pageCount := 1 // Needed because of broken journey common paging
-		for pageNum := 1; pageNum <= pageCount; pageNum++ {
-			const pageSize = 100
-			journeySegments, resp, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
-			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of journey segments: %v", getErr), resp))
-			}
+		journeySegmentId, retryable, proxyResponse, err := proxy.getJourneySegmentIdByName(ctx, name)
 
-			response = resp
-
-			if journeySegments.Entities == nil || len(*journeySegments.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey segment found with name %s", name), resp))
-			}
-
-			for _, journeySegment := range *journeySegments.Entities {
-				if journeySegment.DisplayName != nil && *journeySegment.DisplayName == name {
-					d.SetId(*journeySegment.Id)
-					return nil
-				}
-			}
-
-			pageCount = *journeySegments.PageCount
+		if err != nil && !retryable {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching Journey Segment %s | error: %s", name, err), proxyResponse))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no journey segment found with name %s", name), response))
+
+		if retryable {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No Journey Segment found with name %s", name), proxyResponse))
+		}
+
+		d.SetId(journeySegmentId)
+		return nil
 	})
 }

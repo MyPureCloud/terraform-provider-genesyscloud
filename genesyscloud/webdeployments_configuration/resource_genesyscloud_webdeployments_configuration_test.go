@@ -71,6 +71,12 @@ type scConfig struct {
 	feedbackEnabled   bool
 }
 
+type authSettings struct {
+	enabled             bool
+	integrationId       string
+	allowSessionUpgrade bool
+}
+
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 	t.Parallel()
 	var (
@@ -162,6 +168,18 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 		channels       = []string{strconv.Quote("Webmessaging")}
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
+
+		authenticationSettings1 = authSettings{
+			enabled:             true,
+			integrationId:       uuid.NewString(),
+			allowSessionUpgrade: true,
+		}
+
+		authenticationSettings2 = authSettings{
+			enabled:             false,
+			integrationId:       authenticationSettings1.integrationId,
+			allowSessionUpgrade: false,
+		}
 	)
 
 	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
@@ -191,6 +209,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						generatePauseCriteria("/sensitive", "Includes"),
 						generatePauseCriteria("/login", "Equals"),
 					),
+					generateAuthenticationSettings(authenticationSettings1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", configName),
@@ -301,6 +320,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.0.percentage", "33"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.event_name", "scroll-depth-event-2"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.percentage", "66"),
+
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.enabled", strconv.FormatBool(authenticationSettings1.enabled)),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.integration_id", authenticationSettings1.integrationId),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.allow_session_upgrade", strconv.FormatBool(authenticationSettings1.allowSessionUpgrade)),
 				),
 			},
 			{
@@ -325,6 +348,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						generatePauseCriteria("/sensitive", "Includes"),
 						generatePauseCriteria("/login", "Equals"),
 					),
+					generateAuthenticationSettings(authenticationSettings2),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", configName),
@@ -397,6 +421,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.0.percentage", "33"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.event_name", "scroll-depth-event-2"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.percentage", "66"),
+
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.enabled", strconv.FormatBool(authenticationSettings2.enabled)),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.integration_id", authenticationSettings2.integrationId),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.allow_session_upgrade", strconv.FormatBool(authenticationSettings2.allowSessionUpgrade)),
 				),
 			},
 			{
@@ -1172,6 +1200,16 @@ func generateSupportCenterSettings(supportCenter scConfig) string {
 		styleSetting,
 		strconv.FormatBool(supportCenter.feedbackEnabled),
 	)
+}
+
+func generateAuthenticationSettings(authSettings authSettings) string {
+	return fmt.Sprintf(`
+		authentication_settings {
+    		enabled        = %s
+    		integration_id = "%s"
+			allow_session_upgrade = %s
+  		}
+	`, strconv.FormatBool(authSettings.enabled), authSettings.integrationId, strconv.FormatBool(authSettings.allowSessionUpgrade))
 }
 
 func verifyConfigurationDestroyed(state *terraform.State) error {

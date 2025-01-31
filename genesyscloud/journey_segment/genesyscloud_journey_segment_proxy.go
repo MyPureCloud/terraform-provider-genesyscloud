@@ -119,12 +119,21 @@ func (p *journeySegmentProxy) deleteJourneySegment(ctx context.Context, id strin
 
 // getAllJourneySegmentsFn is the implementation for retrieving all journey segments in Genesys Cloud
 func getAllJourneySegmentsFn(ctx context.Context, p *journeySegmentProxy) (*[]platformclientv2.Journeysegment, *platformclientv2.APIResponse, error) {
+	if p == nil || p.journeyApi == nil {
+		return nil, nil, fmt.Errorf("invalid journey segment proxy or API client")
+	}
+
 	var allSegments []platformclientv2.Journeysegment
 	const pageSize = 100
 
+	// Get first page
 	segments, resp, err := p.journeyApi.GetJourneySegments("", pageSize, 1, true, nil, nil, "")
 	if err != nil {
 		return nil, resp, err
+	}
+
+	if segments == nil {
+		return &allSegments, resp, nil
 	}
 
 	if segments.Entities == nil || len(*segments.Entities) == 0 {
@@ -133,22 +142,30 @@ func getAllJourneySegmentsFn(ctx context.Context, p *journeySegmentProxy) (*[]pl
 
 	allSegments = append(allSegments, *segments.Entities...)
 
+	// Check if pageCount is nil before dereferencing
+	if segments.PageCount == nil {
+		return &allSegments, resp, nil
+	}
+
+	// Get remaining pages
 	for pageNum := 2; pageNum <= *segments.PageCount; pageNum++ {
 		segments, resp, err := p.journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
 		if err != nil {
 			return nil, resp, err
 		}
 
-		if segments.Entities == nil || len(*segments.Entities) == 0 {
+		if segments == nil || segments.Entities == nil || len(*segments.Entities) == 0 {
 			break
 		}
 
 		allSegments = append(allSegments, *segments.Entities...)
 	}
 
-	// Cache the segments for later use
+	// Cache the segments only if they have valid IDs
 	for _, segment := range allSegments {
-		rc.SetCache(p.segmentCache, *segment.Id, segment)
+		if segment.Id != nil {
+			rc.SetCache(p.segmentCache, *segment.Id, segment)
+		}
 	}
 
 	return &allSegments, resp, nil
@@ -156,24 +173,58 @@ func getAllJourneySegmentsFn(ctx context.Context, p *journeySegmentProxy) (*[]pl
 
 // getJourneySegmentIdByNameFn retrieves a journey segment ID by its name
 func getJourneySegmentIdByNameFn(ctx context.Context, p *journeySegmentProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	if p == nil {
+		return "", false, nil, fmt.Errorf("invalid journey segment proxy")
+	}
+
+	if name == "" {
+		return "", false, nil, fmt.Errorf("name cannot be empty")
+	}
+
 	segments, resp, err := p.getAllJourneySegmentsAttr(ctx, p)
 	if err != nil {
-		return "", true, resp, err
+		return "", false, resp, err
+	}
+
+	if segments == nil {
+		return "", true, resp, fmt.Errorf("no journey segments found")
 	}
 
 	for _, segment := range *segments {
-		if segment.DisplayName != nil && *segment.DisplayName == name {
+		if segment.DisplayName == nil {
+			continue
+		}
+		if *segment.DisplayName == name {
+			if segment.Id == nil {
+				return "", false, resp, fmt.Errorf("journey segment found but has no ID")
+			}
 			return *segment.Id, false, resp, nil
 		}
 	}
-	return "", false, resp, fmt.Errorf("No journey segment found with name %s", name)
+
+	return "", true, resp, fmt.Errorf("no journey segment found with name %s", name)
 }
 
 // getJourneySegmentByIdFn retrieves a journey segment by its ID
-func getJourneySegmentByIdFn(ctx context.Context, p *journeySegmentProxy, id string) (segment *platformclientv2.Journeysegment, response *platformclientv2.APIResponse, err error) {
+func getJourneySegmentByIdFn(ctx context.Context, p *journeySegmentProxy, id string) (*platformclientv2.Journeysegment, *platformclientv2.APIResponse, error) {
+	if p == nil {
+		return nil, nil, fmt.Errorf("invalid journey segment proxy")
+	}
+
+	if id == "" {
+		return nil, nil, fmt.Errorf("id cannot be empty")
+	}
+
 	// Check cache first
-	if cachedSegment, found := p.segmentCache.Get(id); found {
-		return &cachedSegment, nil, nil
+	if p.segmentCache != nil {
+		if cachedSegment, found := p.segmentCache.Get(id); found {
+			return &cachedSegment, nil, nil
+		}
+	}
+
+	// Make API call if not in cache
+	if p.journeyApi == nil {
+		return nil, nil, fmt.Errorf("journey API client is nil")
 	}
 
 	segment, resp, err := p.journeyApi.GetJourneySegment(id)
@@ -181,8 +232,15 @@ func getJourneySegmentByIdFn(ctx context.Context, p *journeySegmentProxy, id str
 		return nil, resp, err
 	}
 
-	// Add to cache
-	p.segmentCache.Set(id, *segment)
+	if segment == nil {
+		return nil, resp, fmt.Errorf("retrieved journey segment is nil")
+	}
+
+	// Add to cache if cache exists
+	if p.segmentCache != nil {
+		p.segmentCache.Set(id, *segment)
+	}
+
 	return segment, resp, nil
 }
 
