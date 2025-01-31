@@ -31,6 +31,7 @@ const (
 	PlatformTerraform
 	PlatformOpenTofu
 	PlatformDebugServer
+	PlatformGoLang
 )
 
 func (p Platform) String() string {
@@ -41,6 +42,8 @@ func (p Platform) String() string {
 		return "tofu"
 	case PlatformDebugServer:
 		return "debug-server"
+	case PlatformGoLang:
+		return "go"
 	default:
 		return "unknown"
 	}
@@ -58,8 +61,8 @@ func (p Platform) Binary() string {
 	return pathSegments[len(pathSegments)-1]
 }
 
-func (p Platform) IsDebugServer() bool {
-	return p == PlatformDebugServer
+func (p Platform) IsDevelopmentPlatform() bool {
+	return p == PlatformDebugServer || p == PlatformGoLang
 }
 
 func (p Platform) GetProviderRegistry() string {
@@ -87,7 +90,7 @@ func (p Platform) ExecuteCommand(ctx context.Context, args ...string) (commandOu
 
 func IsValidPlatform(p Platform) bool {
 	switch p {
-	case PlatformTerraform, PlatformOpenTofu, PlatformDebugServer:
+	case PlatformTerraform, PlatformOpenTofu, PlatformDebugServer, PlatformGoLang:
 		return true
 	default:
 		return false
@@ -151,11 +154,17 @@ func init() {
 		return
 	}
 
+	if strings.Contains(strings.ToLower(versionOutput.Stdout), "go ") {
+		platformConfigSingleton.platform = PlatformGoLang
+		return
+	}
 	if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
 		platformConfigSingleton.platform = PlatformOpenTofu
-	} else {
-		platformConfigSingleton.platform = PlatformTerraform
+		return
 	}
+
+	platformConfigSingleton.platform = PlatformTerraform
+	return
 
 }
 
