@@ -1,13 +1,8 @@
-package journey_outcome
+package journey_segment
 
 import (
 	"log"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
-	"terraform-provider-genesyscloud/genesyscloud/architect_schedules"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -21,8 +16,8 @@ var (
 )
 
 /*
-   The genesyscloud_journey_outcome_init_test.go file is used to initialize the data sources and resources
-   used in testing the journey_outcome resource.
+   The genesyscloud_journey_segment_init_test.go file is used to initialize the data sources and resources
+   used in testing the journey_segment resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -41,13 +36,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceJourneyOutcome()
-	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
-	providerResources[architect_schedules.ResourceType] = architect_schedules.ResourceArchitectSchedules()
-	providerResources[architect_schedulegroups.ResourceType] = architect_schedulegroups.ResourceArchitectSchedulegroups()
-	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
-	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
-
+	providerResources[ResourceType] = ResourceJourneySegment()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -55,7 +44,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceJourneyOutcome()
+	providerDataSources[ResourceType] = DataSourceJourneySegment()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -74,9 +63,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the architect_schedulegroups package
+	// Run setup function before starting the test suite for the journey_segment package
 	initTestResources()
 
-	// Run the test suite for the architect_schedulegroups package
+	// Run the test suite for the journey_segment package
 	m.Run()
 }

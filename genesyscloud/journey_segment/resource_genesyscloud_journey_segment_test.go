@@ -1,4 +1,4 @@
-package genesyscloud
+package journey_segment
 
 import (
 	"fmt"
@@ -28,13 +28,12 @@ func TestAccResourceJourneySegmentOptionalAttributes(t *testing.T) {
 }
 
 func runResourceJourneySegmentTestCase(t *testing.T, testCaseName string) {
-	const resourceType = "genesyscloud_journey_segment"
 	setupJourneySegment(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(resourceType, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceTestSteps(ResourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneySegmentsDestroyed,
 	})
 }
@@ -77,7 +76,7 @@ func cleanupJourneySegments(idPrefix string) {
 	for _, journeySegment := range segmentsToDelete {
 		_, delErr := journeyApi.DeleteJourneySegment(*journeySegment.Id)
 		if delErr != nil {
-			util.BuildDiagnosticError("genesyscloud_journey_segment", fmt.Sprintf("failed to delete journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName), delErr)
+			util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to delete journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName), delErr)
 			return
 		}
 		log.Printf("Deleted journey segment %s (%s)", *journeySegment.Id, *journeySegment.DisplayName)
@@ -87,7 +86,7 @@ func cleanupJourneySegments(idPrefix string) {
 func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {
 	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_journey_segment" {
+		if rs.Type != ResourceType {
 			continue
 		}
 

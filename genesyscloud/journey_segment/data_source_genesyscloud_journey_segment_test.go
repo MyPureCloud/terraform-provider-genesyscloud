@@ -1,4 +1,4 @@
-package genesyscloud
+package journey_segment
 
 import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -15,15 +15,14 @@ func TestAccDataSourceJourneySegment(t *testing.T) {
 }
 
 func runDataJourneySegmentTestCase(t *testing.T, testCaseName string) {
-	const resourceType = "genesyscloud_journey_segment"
 	testObjectName := testrunner.TestObjectIdPrefix + testCaseName
-	testObjectFullName := resourceType + "." + testObjectName
+	testObjectFullName := ResourceType + "." + testObjectName
 	setupJourneySegment(t, testCaseName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: testrunner.GenerateDataSourceTestSteps(resourceType, testCaseName, []resource.TestCheckFunc{
+		Steps: testrunner.GenerateDataSourceTestSteps(ResourceType, testCaseName, []resource.TestCheckFunc{
 			resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttrPair("data."+testObjectFullName, "id", testObjectFullName, "id"),
 				resource.TestCheckResourceAttr(testObjectFullName, "display_name", testObjectName+"_to_find"),
