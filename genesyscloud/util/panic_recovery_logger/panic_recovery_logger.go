@@ -45,7 +45,7 @@ func GetPanicRecoveryLoggerInstance() *PanicRecoveryLogger {
 func (p *PanicRecoveryLogger) HandleRecovery(r any, operation constants.CRUDOperation) (err error) {
 	if operation == constants.Create {
 		err = fmt.Errorf("creation failed becasue of stack trace: %s. There may be dangling resource left in your org", r)
-	} else if operation == constants.Read && p.isExporterActiveAttr() {
+	} else if operation == constants.Read && p.isExporterActive() {
 		err = fmt.Errorf("failed to export resource because of stack trace: %s", r)
 	}
 
@@ -67,6 +67,10 @@ func (p *PanicRecoveryLogger) HandleRecovery(r any, operation constants.CRUDOper
 
 func (p *PanicRecoveryLogger) WriteStackTracesToFile(r any) error {
 	return p.writeStackTracesToFileAttr(p, r)
+}
+
+func (p *PanicRecoveryLogger) isExporterActive() bool {
+	return p.isExporterActiveAttr()
 }
 
 // appendToFile appends data to a file. If the file does not exist, it will be created.
