@@ -78,7 +78,7 @@ func GenerateResourceJourneyTestSteps(resourceType string, testCaseName string, 
 func GenerateJourneyTestSteps(testType string, resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 	var testCasePath string
-	testCasePath = GetTestDataPath(testType, resourceType, testCaseName)
+	testCasePath = GetTestDataPath(testType, resourceType)
 	if resourceType == "genesyscloud_journey_action_map" || resourceType == "genesyscloud_journey_action_template" || resourceType == "genesyscloud_journey_outcome" {
 		testCasePath = filepath.Join(testCasePath, testCaseName)
 	}
