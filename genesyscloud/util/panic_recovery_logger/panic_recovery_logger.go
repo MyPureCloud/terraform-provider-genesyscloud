@@ -20,7 +20,7 @@ type PanicRecoveryLogger struct {
 var panicRecoverLogger *PanicRecoveryLogger
 
 func InitPanicRecoveryLoggerInstance(enabled bool, filepath string) {
-	if err := deleteFileIfExists(filepath); err != nil {
+	if err := clearFileContentsIfExists(filepath); err != nil {
 		log.Println(err)
 	}
 	panicRecoverLogger = &PanicRecoveryLogger{
@@ -34,9 +34,7 @@ func InitPanicRecoveryLoggerInstance(enabled bool, filepath string) {
 
 func GetPanicRecoveryLoggerInstance() *PanicRecoveryLogger {
 	if panicRecoverLogger == nil {
-		return &PanicRecoveryLogger{
-			LoggerEnabled: false,
-		}
+		InitPanicRecoveryLoggerInstance(false, "")
 	}
 	return panicRecoverLogger
 }
@@ -96,11 +94,11 @@ func appendToFile(filename string, data []byte) (err error) {
 	return err
 }
 
-// deleteFileIfExists deletes file at filepath if it exists and does nothing if it doesn't
-func deleteFileIfExists(filepath string) (err error) {
+// clearFileContentsIfExists deletes file at filepath if it exists and does nothing if it doesn't
+func clearFileContentsIfExists(filepath string) (err error) {
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("deleteFileIfExists failed: %w (%s may contain stack traces from the previous deployment)", err, filepath)
+			err = fmt.Errorf("clearFileContentsIfExists failed: %w (%s may contain stack traces from the previous deployment)", err, filepath)
 		}
 	}()
 
@@ -108,18 +106,19 @@ func deleteFileIfExists(filepath string) (err error) {
 	_, err = os.Stat(filepath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// File doesn't exist, return nil as this is not an error condition
+			// File doesn't exist
 			return nil
 		}
 		// Return other errors (permission issues, etc.)
 		return fmt.Errorf("failed to check file existence: %w", err)
 	}
 
-	// File exists, try to remove it
-	err = os.Remove(filepath)
+	// Open file with truncate flag to clear contents
+	file, err := os.OpenFile(filepath, os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to delete file %s: %w", filepath, err)
+		return fmt.Errorf("failed to clear contents of %s: %w", filepath, err)
 	}
+	_ = file.Close()
 
 	return err
 }

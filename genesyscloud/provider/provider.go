@@ -285,8 +285,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		}
 		orgDefaultCountryCode = *currentOrg.DefaultCountryCode
 
-		stackTraceLogsFilePath, _ := data.Get("log_stack_traces_file_path").(string)
-		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), stackTraceLogsFilePath)
+		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
 		return &ProviderMeta{
 			Version:      version,
