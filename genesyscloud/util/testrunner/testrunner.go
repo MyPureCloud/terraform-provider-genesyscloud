@@ -22,12 +22,13 @@ const (
 	testObjectIdTestCasePlaceHolder = "-TEST-CASE-"
 )
 
-func GetTestDataPath(elem ...string) string {
-	basePath := filepath.Join(getRootDir(), "test", "data")
-	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
+var RootDir string
+
+func init() {
+	RootDir = getRootDir()
 }
 
+// Helper function that retrieves the location of the root directory
 func getRootDir() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
@@ -54,43 +55,16 @@ func getRootDir() string {
 	}
 }
 
-func NormalizePath(path string) (string, error) {
-	fullyQualifiedPath, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-
-	if runtime.GOOS == "windows" {
-		// Convert single backslashes to dobule backslashes if necessary
-		fullyQualifiedPath = strings.ReplaceAll(fullyQualifiedPath, "\\", "\\\\")
-	}
-
-	return fullyQualifiedPath, nil
+func GetTestDataPath(elem ...string) string {
+	basePath := filepath.Join(RootDir, "test", "data")
+	subPath := filepath.Join(elem...)
+	return filepath.Join(basePath, subPath)
 }
 
-func NormalizeFileName(filename string) (string, error) {
-	fullyQualifiedFineName, err := filepath.Abs(filename)
-	if err != nil {
-		return "", err
-	}
-
-	if runtime.GOOS == "windows" {
-		// Convert single backslashes to single forwardslashes if necessary
-		fullyQualifiedFineName = strings.ReplaceAll(fullyQualifiedFineName, "\\", "/")
-	}
-
-	return fullyQualifiedFineName, nil
-}
-
-func NormalizeSlash(fileNameWithSlash string) string {
-	fullyQualifiedFileName := fileNameWithSlash
-
-	if runtime.GOOS == "windows" {
-		// Convert single backslashes to dobule backslashes if necessary
-		fullyQualifiedFileName = strings.ReplaceAll(fullyQualifiedFileName, "\\", "\\\\")
-	}
-
-	return fullyQualifiedFileName
+func GetTestTempPath(elem ...string) string {
+	basePath := filepath.Join(RootDir, "test", "temp")
+	subPath := filepath.Join(elem...)
+	return filepath.Join(basePath, subPath)
 }
 
 func GenerateDataSourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {

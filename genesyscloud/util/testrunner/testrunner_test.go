@@ -65,68 +65,6 @@ func TestGetTestDataPath(t *testing.T) {
 	}
 }
 
-func TestNormalizePath(t *testing.T) {
-	tests := []struct {
-		name    string
-		path    string
-		wantErr bool
-	}{
-		{
-			name:    "valid path",
-			path:    "test/path",
-			wantErr: false,
-		},
-		{
-			name:    "empty path",
-			path:    "",
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := NormalizePath(tt.path)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			assert.NoError(t, err)
-			assert.NotEmpty(t, got)
-		})
-	}
-}
-
-func TestNormalizeFileName(t *testing.T) {
-	tests := []struct {
-		name     string
-		filename string
-		wantErr  bool
-	}{
-		{
-			name:     "valid filename",
-			filename: "test.txt",
-			wantErr:  false,
-		},
-		{
-			name:     "empty filename",
-			filename: "",
-			wantErr:  false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := NormalizeFileName(tt.filename)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			assert.NoError(t, err)
-			assert.NotEmpty(t, got)
-		})
-	}
-}
-
 func TestGenerateFullPathId(t *testing.T) {
 	tests := []struct {
 		name          string

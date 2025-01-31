@@ -156,8 +156,6 @@ func getScriptId(scriptResourcePath string, id *string) resource.TestCheckFunc {
 }
 
 func generateScriptResource(resourceLabel, scriptName, filePath, substitutions string) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(filePath)
-	normalizeFilePath := testrunner.NormalizeSlash(filePath)
 	return fmt.Sprintf(`
 resource "%s" "%s" {
 	script_name       = "%s"
@@ -165,7 +163,7 @@ resource "%s" "%s" {
 	file_content_hash = filesha256("%s")
 	%s
 }
-	`, ResourceType, resourceLabel, scriptName, normalizeFilePath, fullyQualifiedPath, substitutions)
+	`, ResourceType, resourceLabel, scriptName, filePath, filePath, substitutions)
 }
 
 func testVerifyScriptDestroyed(state *terraform.State) error {

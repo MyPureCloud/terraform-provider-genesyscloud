@@ -9,7 +9,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -17,8 +16,10 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	userPromptResource "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"terraform-provider-genesyscloud/genesyscloud/platform"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -77,7 +78,7 @@ func init() {
 // queues are exported.
 func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraformregex" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
 		exportResourceLabel = "test-export3"
 		uniquePostfix       = randString(7)
 		queueResources      = []QueueExport{
@@ -136,7 +137,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 // The test ensures that resources can be exported directly by their actual label or their sanitized label.
 func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabels(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraformregex" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
 		exportResourceLabel = "test-export3_1"
 		uniquePostfix       = randString(7)
 		queueResources      = []QueueExport{
@@ -200,7 +201,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabels(t *t
 // exported as well
 func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraformInclude" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraformInclude" + uuid.NewString())
 		exportResourceLabel = "test-export4"
 		uniquePostfix       = randString(7)
 
@@ -270,7 +271,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 // for the queue and should all be exported
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraformExclude" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6"
 		uniquePostfix       = randString(7)
 		queueResources      = []QueueExport{
@@ -344,7 +345,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 // The exporter will be run in split mode so 3 resource tf.jsons should be created as well as a provider.tf.json
 func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraform" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel = "test-export-split"
 		uniquePostfix       = randString(7)
 		expectedFilesPath   = []string{
@@ -424,7 +425,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 // regular expression provided for the resource. In this test we check against both sanitized and unsanitized labels.
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraformExclude" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6_1"
 		uniquePostfix       = randString(7)
 
@@ -504,7 +505,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 // TestAccResourceTfExportForCompress does a basic test check to make sure the compressed file is created.
 func TestAccResourceTfExportForCompress(t *testing.T) {
 	var (
-		exportTestDir        = "../../.terraform" + uuid.NewString()
+		exportTestDir        = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel1 = "test-export1"
 		zipFileName          = "../archive_genesyscloud_tf_export*"
 		divResourceLabel     = "test-division"
@@ -547,7 +548,7 @@ func TestAccResourceTfExportForCompress(t *testing.T) {
 // TestAccResourceTfExport does a basic test check to make sure the export file is created.
 func TestAccResourceTfExport(t *testing.T) {
 	var (
-		exportTestDir        = "../../.terraform" + uuid.NewString()
+		exportTestDir        = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel1 = "test-export1"
 		configPath           = filepath.Join(exportTestDir, defaultTfJSONFile)
 		statePath            = filepath.Join(exportTestDir, defaultTfStateFile)
@@ -607,7 +608,7 @@ func TestAccResourceTfExport(t *testing.T) {
 
 func TestAccResourceTfExportByLabel(t *testing.T) {
 	var (
-		exportTestDir        = "../.terraform" + uuid.NewString()
+		exportTestDir        = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel1 = "test-export1"
 
 		userResourceLabel1 = "test-user1"
@@ -850,7 +851,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 
 func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraform" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel = "test-export2"
 		uniquePostfix       = randString(7)
 	)
@@ -911,7 +912,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 // all routing queues that have a regex with -(dev|test)$ in it.  We then check to see if there are any prod queues present.
 func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraform" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel = "test-export5"
 		uniquePostfix       = randString(7)
 
@@ -979,7 +980,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 	//t.Parallel()
 
 	var (
-		exportTestDir     = "../.terraform" + uuid.NewString()
+		exportTestDir     = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportedContents  string
 		pathToHclFile     = filepath.Join(exportTestDir, defaultTfHCLFile)
 		formName          = "terraform_form_evaluations_" + uuid.NewString()
@@ -1118,7 +1119,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 	//t.Parallel()
 
 	var (
-		exportTestDir  = "../.terraform" + uuid.NewString()
+		exportTestDir  = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportContents string
 		pathToHclFile  = filepath.Join(exportTestDir, defaultTfHCLFile)
 	)
@@ -1226,7 +1227,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 
 func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 	var (
-		exportTestDir           = "../.terraform" + uuid.NewString()
+		exportTestDir           = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		configPath              = filepath.Join(exportTestDir, defaultTfJSONFile)
 		permissionsErrorMessage = "API Error 403 - Missing view permissions."
 		otherErrorMessage       = "API Error 411 - Another type of error."
@@ -1316,14 +1317,14 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		userPromptDescription       = "Test description"
 		userPromptResourceLanguage  = "en-us"
 		userPromptResourceText      = "This is a test greeting!"
-		userResourcePromptFilename1 = testrunner.GetTestDataPath("test-prompt-01.wav")
-		userResourcePromptFilename2 = testrunner.GetTestDataPath("test-prompt-02.wav")
+		userResourcePromptFilename1 = testrunner.GetTestDataPath("resource", userPromptResource.ResourceType, "test-prompt-01.wav")
+		userResourcePromptFilename2 = testrunner.GetTestDataPath("resource", userPromptResource.ResourceType, "test-prompt-02.wav")
 
 		userPromptResourceLanguage2 = "pt-br"
 		userPromptResourceText2     = "This is a test greeting!!!"
 
 		exportResourceLabel = "export"
-		exportTestDir       = filepath.Join("../", ".terraform"+uuid.NewString())
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 	)
 
 	userPromptAsset := userPrompt.UserPromptResourceStruct{
@@ -1438,7 +1439,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 // Managed can't be set on sites, therefore the default managed site is checked during the test that it is exported as data
 func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 	var (
-		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		exportTestDir = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		resourceLabel = "export"
 		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
 		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
@@ -1447,6 +1448,11 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 
 	if err := telephonyProvidersEdgesSite.CheckForDefaultSite(siteName); err != nil {
 		t.Skipf("failed to get default site %v", err)
+	}
+
+	platform := platform.GetPlatform()
+	if platform.IsDevelopmentPlatform() {
+		t.Skip("Skipping test for development platform due to inability to properly convert statefile to v4 within development platform")
 	}
 
 	defer func(path string) {
@@ -1484,7 +1490,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 // The exporter will be run in split mode so 3 resource tfs should be created as well as a provider.tf
 func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 	var (
-		exportTestDir       = "../.terraform" + uuid.NewString()
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel = "test-export-split"
 		uniquePostfix       = randString(7)
 		expectedFilesPath   = []string{
@@ -1711,7 +1717,7 @@ func validatePromptsExported(filename string, expectedPrompts []string) resource
 func TestAccResourceTfExportUserPromptsExported(t *testing.T) {
 	var (
 		uniqueStr            = strings.Replace(uuid.NewString(), "-", "_", -1)
-		exportTestDir        = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		exportTestDir        = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		resourceID           = "export"
 		dPromptResourceLabel = "d_user_prompt"
 		dPromptNameAttr      = "d_user_prompt_test" + uniqueStr
@@ -1798,7 +1804,7 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 // is working properly i.e. script_id should reference a data source pointing to the Default Outbound Script under particular circumstances
 func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {
 	var (
-		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		exportTestDir = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		resourceLabel = "export"
 
 		campaignNameDefaultScript          = "tf test df campaign " + uuid.NewString()
@@ -1812,7 +1818,7 @@ func TestAccResourceTfExportCampaignScriptIdReferences(t *testing.T) {
 		queueName                = "tf test queue " + uuid.NewString()
 
 		scriptName            = "tf_test_script_" + uuid.NewString()
-		pathToScriptFile      = filepath.Join("..", "..", "test", "data", "resource", "genesyscloud_script", "test_script.json")
+		pathToScriptFile      = testrunner.GetTestDataPath("resource", "genesyscloud_script", "test_script.json")
 		fullyQualifiedPath, _ = filepath.Abs(pathToScriptFile)
 
 		configPath = filepath.Join(exportTestDir, defaultTfJSONFile)
@@ -2145,7 +2151,7 @@ func testUserPromptAudioFileExport(filePath, resourceType, resourceLabel, export
 
 		// Check that file exists in export directory
 		for _, filename := range fileNames {
-			pathToWavFile := path.Join(exportDir, filename)
+			pathToWavFile := filepath.Join(exportDir, filename)
 			if _, err := os.Stat(pathToWavFile); err != nil {
 				return err
 			}
@@ -2157,11 +2163,11 @@ func testUserPromptAudioFileExport(filePath, resourceType, resourceLabel, export
 
 func TestAccResourceTfExportEnableDependsOn(t *testing.T) {
 	var (
-		exportTestDir            = "../.terraform" + uuid.NewString()
+		exportTestDir            = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel      = "test-export2"
 		contactListResourceLabel = "contact_list" + uuid.NewString()
 		contactListName          = "terraform contact list" + uuid.NewString()
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "testflowcxcase"
 		flowResourceLabel        = "flow"
 		wrapupcodeResourceLabel  = "wrapupcode"

@@ -154,28 +154,26 @@ func generateFileVoiceFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
 	return fmt.Sprintf(`
 		voice_file_data {
 			file_name = "%s"
 			file_type = "%s"
 			file_content_hash = filesha256("%s")
 		}
-	`, fileName, fileType, fullyQualifiedPath)
+	`, fileName, fileType, fileName)
 }
 
 func generateFileDtmfFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
 	return fmt.Sprintf(`
 		dtmf_file_data {
 			file_name = "%s"
 			file_type = "%s"
 			file_content_hash = filesha256("%s")
 		}
-	`, fileName, fileType, fullyQualifiedPath)
+	`, fileName, fileType, fileName)
 }
 
 func verifyFileUpload(grammarResourcePath string, language string, fileType FileType, filename string) resource.TestCheckFunc {

@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	files "terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
@@ -103,16 +102,16 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 			}
 		}
 		if fileName != "" {
-			fileNameVal := path.Join(subDir, fileName)
-			fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, fileName))
+			fileNameVal := filepath.Join(subDir, fileName)
+			fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, filepath.Join(subDir, fileName))
 			r["filename"] = fileNameVal
 			r["file_content_hash"] = fileContentVal
 
 			if resourceID := findResourceID(res, languageStr); resourceID != "" {
 				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "filename")] = fileNameVal
 				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = fileContentVal
-				fullPath := path.Join(exportDir, subDir)
-				hash, er := files.HashFileContent(path.Join(fullPath, fileName))
+				fullPath := filepath.Join(exportDir, subDir)
+				hash, er := files.HashFileContent(filepath.Join(fullPath, fileName))
 				if er != nil {
 					log.Printf("Error Calculating Hash '%s' ", er)
 				} else {
@@ -140,8 +139,7 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 	for _, p := range userPrompt.Resources {
 		var fileContentHash string
 		if p.FileContentHash != util.NullValue {
-			fullyQualifiedPath, _ := testrunner.NormalizePath(p.FileContentHash)
-			fileContentHash = fmt.Sprintf(`filesha256("%s")`, fullyQualifiedPath)
+			fileContentHash = fmt.Sprintf(`filesha256("%s")`, p.FileContentHash)
 		} else {
 			fileContentHash = util.NullValue
 		}
@@ -174,7 +172,7 @@ func GenerateUserPromptResource(userPrompt *UserPromptStruct) string {
 }
 
 func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) error {
-	fullPath := path.Join(exportDirectory, subDirectory)
+	fullPath := filepath.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
@@ -198,7 +196,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	log.Printf("Found %v resources with downloadable content for prompt '%s'", len(audioDataList), promptId)
 
 	for _, data := range audioDataList {
-		log.Printf("Downloading file '%s' from mediaUri", path.Join(fullPath, data.FileName))
+		log.Printf("Downloading file '%s' from mediaUri", filepath.Join(fullPath, data.FileName))
 		if _, err := files.DownloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
 			return err
 		}
