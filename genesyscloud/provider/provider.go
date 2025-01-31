@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/platform"
@@ -106,7 +107,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Optional:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "sdk_debug.log"),
 					Description:  "Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log",
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
 				},
 				"token_pool_size": {
 					Type:         schema.TypeInt,
@@ -114,6 +115,19 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", 10),
 					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 					ValidateFunc: validation.IntBetween(1, 20),
+				},
+				"log_stack_traces": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES", false),
+					Description: "If set to true the provider will log stack traces to a file instead of crashing, where possible. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES` environment variable.",
+				},
+				"log_stack_traces_file_path": {
+					Type:             schema.TypeString,
+					Optional:         true,
+					Description:      "Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log",
+					DefaultFunc:      schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH", "genesyscloud_stack_traces.log"),
+					ValidateDiagFunc: validateLogFilePath,
 				},
 				"gateway": {
 					Type:     schema.TypeSet,
@@ -271,6 +285,8 @@ func configure(version string) schema.ConfigureContextFunc {
 		}
 		orgDefaultCountryCode = *currentOrg.DefaultCountryCode
 
+		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
+
 		return &ProviderMeta{
 			Version:      version,
 			Platform:     &platform,
@@ -397,7 +413,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log RequestLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
 			sdkDebugResponse := newSDKDebugResponse(response)
@@ -406,7 +422,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 	}
 

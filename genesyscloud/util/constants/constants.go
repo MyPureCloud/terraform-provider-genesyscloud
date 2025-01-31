@@ -29,3 +29,27 @@ func ConsistencyChecks() int {
 
 	return defaultChecks
 }
+
+type CRUDOperation int
+
+const (
+	Create CRUDOperation = iota
+	Read
+	Update
+	Delete
+)
+
+func (o CRUDOperation) String() string {
+	switch o {
+	case Create:
+		return "Create"
+	case Read:
+		return "Read"
+	case Update:
+		return "Update"
+	case Delete:
+		return "Delete"
+	default:
+		return "Unknown"
+	}
+}

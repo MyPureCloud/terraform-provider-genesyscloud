@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestS3UploadSuccess will simulate a successful uploading of a file to S3 using the S3 uploader.  It does not care about the actual YAML file contents and simply mocks out what gets retruned
-func TestS3UploadSuccess(t *testing.T) {
+// TestUnitS3UploadSuccess will simulate a successful uploading of a file to S3 using the S3 uploader.  It does not care about the actual YAML file contents and simply mocks out what gets retruned
+func TestUnitS3UploadSuccess(t *testing.T) {
 	///Setting up variables
 	presignedURL := "/s3/presigned"
 	substitutions := make(map[string]interface{})
@@ -63,8 +63,8 @@ func TestS3UploadSuccess(t *testing.T) {
 	}
 }
 
-// TestS3UploadBadRequest tests the situation where the pre-signed URL call returns a bad status code
-func TestS3UploadBadRequest(t *testing.T) {
+// TestUnitS3UploadBadRequest tests the situation where the pre-signed URL call returns a bad status code
+func TestUnitS3UploadBadRequest(t *testing.T) {
 	//Setting up variables
 	presignedURL := "/s3/presigned"
 	substitutions := make(map[string]interface{})
@@ -102,8 +102,8 @@ func TestS3UploadBadRequest(t *testing.T) {
 	}
 }
 
-// TestSubstitutions will test the substitution replacement in the S3Upload
-func TestSubstitutions(t *testing.T) {
+// TestUnitSubstitutions will test the substitution replacement in the S3Upload
+func TestUnitSubstitutions(t *testing.T) {
 	///Setting up variables
 	presignedURL := "/s3/presigned"
 	substitutions := make(map[string]interface{})
@@ -126,7 +126,7 @@ func TestSubstitutions(t *testing.T) {
 
 }
 
-func TestScriptUploadSuccess(t *testing.T) {
+func TestUnitScriptUploadSuccess(t *testing.T) {
 	var (
 		urlPath     = "/uploads/v2/scripter"
 		scriptName  = "testScript"

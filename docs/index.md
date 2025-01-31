@@ -27,6 +27,8 @@ provider "genesyscloud" {
 - `access_token` (String) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
 - `aws_region` (String) AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.
 - `gateway` (Block Set) (see [below for nested schema](#nestedblock--gateway))
+- `log_stack_traces` (Boolean) If set to true the provider will log stack traces to a file instead of crashing, where possible. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES` environment variable.
+- `log_stack_traces_file_path` (String) Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log
 - `oauthclient_id` (String) OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.
 - `oauthclient_secret` (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
 - `proxy` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy))

@@ -11,7 +11,7 @@ import (
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	tfExporterState "terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -159,7 +159,7 @@ func ResourceTfExport() *schema.Resource {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tfexporter_state.ActivateExporterState()
+	tfExporterState.ActivateExporterState()
 
 	if _, ok := d.GetOk("include_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)

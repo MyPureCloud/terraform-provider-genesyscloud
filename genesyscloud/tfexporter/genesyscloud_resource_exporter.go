@@ -1031,7 +1031,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				// This calls into the resource's ReadContext method which
 				// will block until it can acquire a pooled client config object.
 				ctyType := res.CoreConfigSchema().ImpliedType()
-				instanceState, err := getResourceState(ctx, res, id, resMeta, meta, exportComputed)
+				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				if err != nil {
 					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, err)
@@ -1149,7 +1149,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}, exportComputed bool) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
