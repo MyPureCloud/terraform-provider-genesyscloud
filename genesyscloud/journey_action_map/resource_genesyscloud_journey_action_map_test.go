@@ -51,7 +51,7 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(ResourceType, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceJourneyTestSteps(ResourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }

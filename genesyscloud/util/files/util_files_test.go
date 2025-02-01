@@ -6,8 +6,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -199,5 +203,209 @@ func TestScriptUploadSuccess(t *testing.T) {
 	resultsStr := string(results)
 	if resultsStr != scriptFile {
 		t.Errorf(`expected %s got %s`, scriptFile, resultsStr)
+	}
+}
+
+func TestDownloadOrOpenFile(t *testing.T) {
+	// Test HTTP download
+	t.Run("successful HTTP download", func(t *testing.T) {
+		// Setup test server
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("test content"))
+		}))
+		defer server.Close()
+
+		reader, file, err := DownloadOrOpenFile(server.URL)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if file != nil {
+			t.Error("Expected file to be nil for HTTP downloads")
+		}
+
+		// Read content
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			t.Errorf("Failed to read content: %v", err)
+		}
+		if string(content) != "test content" {
+			t.Errorf("Expected 'test content', got '%s'", string(content))
+		}
+	})
+
+	t.Run("HTTP download failure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer server.Close()
+
+		reader, file, err := DownloadOrOpenFile(server.URL)
+		if err == nil {
+			t.Error("Expected error for 404 response, got nil")
+		}
+		if reader != nil || file != nil {
+			t.Error("Expected nil reader and file for failed request")
+		}
+	})
+
+	// Test local file operations
+	t.Run("successful local file read", func(t *testing.T) {
+		// Create temporary test file
+		tmpfile, err := os.CreateTemp("", "test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(tmpfile.Name())
+
+		content := []byte("local file content")
+		if _, err := tmpfile.Write(content); err != nil {
+			t.Fatal(err)
+		}
+		tmpfile.Close()
+
+		reader, file, err := DownloadOrOpenFile(tmpfile.Name())
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if file == nil {
+			t.Error("Expected file to not be nil for local files")
+		}
+		defer file.Close()
+
+		// Read content
+		readContent, err := io.ReadAll(reader)
+		if err != nil {
+			t.Errorf("Failed to read content: %v", err)
+		}
+		if string(readContent) != "local file content" {
+			t.Errorf("Expected 'local file content', got '%s'", string(readContent))
+		}
+	})
+
+	t.Run("non-existent local file", func(t *testing.T) {
+		path := filepath.Join(os.TempDir(), "nonexistent-file")
+		reader, file, err := DownloadOrOpenFile(path)
+		if err == nil {
+			t.Error("Expected error for non-existent file, got nil")
+		}
+		if !strings.Contains(err.Error(), fmt.Sprintf("could not open %s: no such file", path)) {
+			t.Error("Expected 'no such file or directory' error")
+		}
+		if reader != nil || file != nil {
+			t.Error("Expected nil reader and file for non-existent file")
+		}
+	})
+}
+
+func TestHashFileContent(t *testing.T) {
+	// Create a temporary test file
+	tempContent := []byte("test content")
+	tempFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "test_file_*.txt")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name()) // Clean up after test
+
+	// Write content to temp file
+	if err := os.WriteFile(tempFile.Name(), tempContent, 0644); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+
+	// Test successful case
+	t.Run("successful hash", func(t *testing.T) {
+		hash, err := HashFileContent(tempFile.Name())
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+		if hash == "" {
+			t.Error("Expected non-empty hash")
+		}
+		// Known hash for "test content"
+		expectedHash := "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
+		if hash != expectedHash {
+			t.Errorf("Expected hash %s, got %s", expectedHash, hash)
+		}
+	})
+
+	// Test non-existent file
+	t.Run("non-existent file", func(t *testing.T) {
+		hash, err := HashFileContent("non_existent_file.txt")
+		if err == nil {
+			t.Error("Expected error for non-existent file, got nil")
+		}
+		if hash != "" {
+			t.Errorf("Expected empty hash for error case, got %s", hash)
+		}
+	})
+}
+
+func TestGetCSVRecordCount(t *testing.T) {
+	tests := []struct {
+		name          string
+		fileContent   string
+		expectedCount int
+		expectedError bool
+	}{
+		{
+			name:          "Valid CSV with multiple records",
+			fileContent:   "header1,header2\nvalue1,value2\nvalue3,value4",
+			expectedCount: 2,
+			expectedError: false,
+		},
+		{
+			name:          "CSV with only header",
+			fileContent:   "header1,header2",
+			expectedCount: 0,
+			expectedError: false,
+		},
+		{
+			name:          "Empty file",
+			fileContent:   "",
+			expectedCount: 0,
+			expectedError: false,
+		},
+		{
+			name:          "Malformed CSV",
+			fileContent:   "header1,header2\nvalue1,value2,extra",
+			expectedCount: 0,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary test file
+			tmpDir := t.TempDir()
+			tmpFile := filepath.Join(tmpDir, "test.csv")
+
+			err := os.WriteFile(tmpFile, []byte(tt.fileContent), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create test file: %v", err)
+			}
+
+			// Run the function
+			count, err := GetCSVRecordCount(tmpFile)
+
+			// Check error
+			if tt.expectedError && err == nil {
+				t.Error("Expected an error but got none")
+			}
+			if !tt.expectedError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			// Check count
+			if !tt.expectedError && count != tt.expectedCount {
+				t.Errorf("Expected count %d, got %d", tt.expectedCount, count)
+			}
+		})
+	}
+}
+
+func TestGetCSVRecordCount_NonexistentFile(t *testing.T) {
+	_, err := GetCSVRecordCount("nonexistent.csv")
+	if err == nil {
+		t.Error("Expected error for nonexistent file, got none")
 	}
 }

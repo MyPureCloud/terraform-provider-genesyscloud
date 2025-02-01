@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -89,6 +90,131 @@ func TestGenerateFullPathId(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := GenerateFullPathId(tt.resourceType, tt.resourceLabel)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestGenerateTestProvider(t *testing.T) {
+	schemas := map[string]*schema.Schema{
+		"test_field": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+	}
+
+	provider := GenerateTestProvider("test_resource", schemas, nil)
+
+	assert.NotNil(t, provider)
+	assert.NotNil(t, provider.ResourcesMap["test_resource"])
+	assert.Equal(t, schemas, provider.ResourcesMap["test_resource"].Schema)
+}
+
+func TestGenerateTestDiff(t *testing.T) {
+	// Create a mock provider
+	provider := &schema.Provider{
+		ResourcesMap: map[string]*schema.Resource{
+			"test_resource": &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"simple_attr": &schema.Schema{
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					"list_attr": &schema.Schema{
+						Type:     schema.TypeList,
+						Optional: true,
+						Elem: &schema.Schema{
+							Type: schema.TypeString,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name         string
+		resourceName string
+		oldValue     map[string]string
+		newValue     map[string]string
+		wantErr      bool
+	}{
+		{
+			name:         "Simple attribute change",
+			resourceName: "test_resource",
+			oldValue: map[string]string{
+				"simple_attr": "old",
+			},
+			newValue: map[string]string{
+				"simple_attr": "new",
+			},
+			wantErr: false,
+		},
+		{
+			name:         "List attribute change",
+			resourceName: "test_resource",
+			oldValue: map[string]string{
+				"list_attr.#": "1",
+				"list_attr.0": "old_item",
+			},
+			newValue: map[string]string{
+				"list_attr.#": "2",
+				"list_attr.0": "new_item1",
+				"list_attr.1": "new_item2",
+			},
+			wantErr: false,
+		},
+		{
+			name:         "Invalid resource name",
+			resourceName: "invalid_resource",
+			oldValue:     map[string]string{},
+			newValue:     map[string]string{},
+			wantErr:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			diff, err := GenerateTestDiff(provider, tt.resourceName, tt.oldValue, tt.newValue)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("GenerateTestDiff() expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("GenerateTestDiff() error = %v", err)
+				return
+			}
+
+			// Verify the diff was generated
+			if diff == nil {
+				t.Error("GenerateTestDiff() returned nil diff")
+				return
+			}
+
+			// For simple attribute change, verify the diff contains the change
+			if tt.name == "Simple attribute change" {
+				if attr, ok := diff.Attributes["simple_attr"]; !ok {
+					t.Error("Expected diff for simple_attr but found none")
+				} else {
+					if attr.Old != "old" || attr.New != "new" {
+						t.Errorf("Unexpected diff values for simple_attr: got old=%v, new=%v", attr.Old, attr.New)
+					}
+				}
+			}
+
+			// For list attribute change, verify the diff contains the changes
+			if tt.name == "List attribute change" {
+				if attr, ok := diff.Attributes["list_attr.#"]; !ok {
+					t.Error("Expected diff for list_attr.# but found none")
+				} else {
+					if attr.Old != "1" || attr.New != "2" {
+						t.Errorf("Unexpected diff values for list_attr.#: got old=%v, new=%v", attr.Old, attr.New)
+					}
+				}
+			}
 		})
 	}
 }

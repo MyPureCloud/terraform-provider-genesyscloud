@@ -1,6 +1,10 @@
 ---
 page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+{{ if gt (len (split .Description "[DEPRECATED]")) 1 -}}
+subcategory: "Deprecated"
+{{- else -}}
 subcategory: ""
+{{- end }}
 description: |-
 {{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
 ---

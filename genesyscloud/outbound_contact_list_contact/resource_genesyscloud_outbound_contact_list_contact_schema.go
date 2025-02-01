@@ -2,7 +2,6 @@ package outbound_contact_list_contact
 
 import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -12,7 +11,6 @@ const ResourceType = "genesyscloud_outbound_contact_list_contact"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceOutboundContactListContact())
-	regInstance.RegisterExporter(ResourceType, ContactExporter())
 }
 
 var (
@@ -66,24 +64,14 @@ var (
 	}
 )
 
-func ContactExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllContacts),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
-		},
-		AllowZeroValuesInMap: []string{"data"},
-	}
-}
-
 func ResourceOutboundContactListContact() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Outbound Contact List Contact`,
-
-		CreateContext: provider.CreateWithPooledClient(createOutboundContactListContact),
-		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListContact),
-		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListContact),
-		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListContact),
+		Description:        `[DEPRECATED] Genesys Cloud Outbound Contact List Contact`,
+		DeprecationMessage: "This resource is deprecated and will be removed in a future version. The exporter functionality of this resource has been removed. Please use the contacts_* fields within the genesyscloud_outbound_contact_list resource instead. This change consolidates contact management to improve reliability and performance.",
+		CreateContext:      provider.CreateWithPooledClient(createOutboundContactListContact),
+		ReadContext:        provider.ReadWithPooledClient(readOutboundContactListContact),
+		UpdateContext:      provider.UpdateWithPooledClient(updateOutboundContactListContact),
+		DeleteContext:      provider.DeleteWithPooledClient(deleteOutboundContactListContact),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

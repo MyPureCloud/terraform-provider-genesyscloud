@@ -1,13 +1,18 @@
 package testrunner
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 const (
@@ -62,21 +67,18 @@ func GetTestTempPath(elem ...string) string {
 	return filepath.Join(basePath, subPath)
 }
 
-func GenerateDataSourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(DataSourceTestType, resourceType, testCaseName, checkFuncs)
+func GenerateDataJourneySourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateJourneyTestSteps(DataSourceTestType, resourceType, testCaseName, checkFuncs)
 }
 
-func GenerateResourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
-	return GenerateTestSteps(ResourceTestType, resourceType, testCaseName, checkFuncs)
+func GenerateResourceJourneyTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+	return GenerateJourneyTestSteps(ResourceTestType, resourceType, testCaseName, checkFuncs)
 }
 
-func GenerateTestSteps(testType string, resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
+func GenerateJourneyTestSteps(testType string, resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {
 	var testSteps []resource.TestStep
 	var testCasePath string
 	testCasePath = GetTestDataPath(testType, resourceType, testCaseName)
-	if resourceType == "genesyscloud_journey_action_map" || resourceType == "genesyscloud_journey_action_template" || resourceType == "genesyscloud_journey_outcome" {
-		testCasePath = filepath.Join("../", testCasePath)
-	}
 	testCaseDirEntries, _ := os.ReadDir(testCasePath)
 	checkFuncIndex := 0
 	for _, testCaseDirEntry := range testCaseDirEntries {
@@ -109,4 +111,70 @@ func GenerateTestSteps(testType string, resourceType string, testCaseName string
 
 func GenerateFullPathId(resourceType string, resourceLabel string) string {
 	return resourceType + "." + resourceLabel + "." + "id"
+}
+
+// Helper function to create test provider
+func GenerateTestProvider(resourceName string, schemas map[string]*schema.Schema, diff schema.CustomizeDiffFunc) *schema.Provider {
+	return &schema.Provider{
+		Schema: schemas,
+		ResourcesMap: map[string]*schema.Resource{
+			resourceName: {
+				Schema:        schemas,
+				CustomizeDiff: diff,
+			},
+		},
+	}
+}
+func GenerateTestDiff(provider *schema.Provider, resourceName string, oldValue, newValue map[string]string) (*terraform.InstanceDiff, error) {
+	// Convert newValue map[string]string to map[string]interface{} and handle list attributes
+	newI := make(map[string]interface{})
+	for k, v := range newValue {
+		if strings.Contains(k, ".#") {
+			// This is a list length indicator - skip it as we'll handle the list elements
+			continue
+		}
+
+		// Check if this is a list element (e.g., "list_attr.0", "list_attr.1")
+		if idx := strings.LastIndex(k, "."); idx != -1 {
+			listName := k[:idx]
+			if _, err := strconv.Atoi(k[idx+1:]); err == nil {
+				// This is a list element
+				// Initialize the list if it doesn't exist
+				if _, exists := newI[listName]; !exists {
+					// Find the length of the list from the ".#" attribute
+					if lenStr, ok := newValue[listName+".#"]; ok {
+						length, _ := strconv.Atoi(lenStr)
+						newI[listName] = make([]interface{}, length)
+					}
+				}
+
+				// Get the list and ensure it's the correct type
+				if list, ok := newI[listName].([]interface{}); ok {
+					index, _ := strconv.Atoi(k[idx+1:])
+					if index < len(list) {
+						list[index] = v
+					}
+				}
+				continue
+			}
+		}
+
+		// Regular (non-list) attribute
+		newI[k] = v
+	}
+
+	if resource, ok := provider.ResourcesMap[resourceName]; ok {
+		return resource.Diff(
+			context.Background(),
+			&terraform.InstanceState{
+				Attributes: oldValue,
+			},
+			&terraform.ResourceConfig{
+				Config: newI,
+			},
+			provider.Meta(),
+		)
+	} else {
+		return nil, fmt.Errorf("Resource %s not found in provider", resourceName)
+	}
 }

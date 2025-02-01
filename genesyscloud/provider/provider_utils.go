@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -44,6 +45,29 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	}
 }
 
+// Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially
+// within acceptance testing
+var (
+	providerMeta *ProviderMeta
+	mutex        sync.RWMutex
+)
+
+func GetProviderMeta() *ProviderMeta {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return providerMeta
+}
+
+func setProviderMeta(p *ProviderMeta) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	providerMeta = p
+}
+
 func GetOrgDefaultCountryCode() string {
-	return orgDefaultCountryCode
+	meta := GetProviderMeta()
+	if meta == nil {
+		return ""
+	}
+	return meta.DefaultCountryCode
 }

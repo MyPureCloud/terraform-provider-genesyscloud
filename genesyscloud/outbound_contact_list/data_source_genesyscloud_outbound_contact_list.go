@@ -15,7 +15,7 @@ import (
 
 func dataSourceOutboundContactListRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {

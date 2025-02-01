@@ -177,7 +177,7 @@ func (d *grammarLanguageDownloader) downloadFileData(fileType FileType) error {
 func (d *grammarLanguageDownloader) downloadLanguageFileAndUpdateConfigMap(url string) error {
 	d.fileUrl = url
 	d.setExportFileName()
-	if err := files.DownloadExportFile(d.exportFilesFolderPath, d.exportFileName, d.fileUrl); err != nil {
+	if _, err := files.DownloadExportFile(d.exportFilesFolderPath, d.exportFileName, d.fileUrl); err != nil {
 		return err
 	}
 	d.updatePathsInExportConfigMap()

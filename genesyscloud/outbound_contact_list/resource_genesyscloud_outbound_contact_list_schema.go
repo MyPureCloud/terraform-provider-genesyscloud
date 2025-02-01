@@ -3,7 +3,9 @@ package outbound_contact_list
 import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -101,7 +103,11 @@ func ResourceOutboundContactList() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 1,
+		SchemaVersion: 2,
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("contacts_file_content_hash", validators.ValidateFileContentHashChanged("contacts_filepath", "contacts_file_content_hash")),
+			validators.ValidateCSVWithColumns("contacts_filepath", "column_names"),
+		),
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name for the contact list.`,
@@ -115,21 +121,21 @@ func ResourceOutboundContactList() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`column_names`: {
-				Description: `The names of the contact data columns. Changing the column_names attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID`,
+				Description: `The names of the contact data columns. Changing the column_names attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID`,
 				Required:    true,
 				ForceNew:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`phone_columns`: {
-				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if email_columns is empty`,
+				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns is empty`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
 				Elem:        outboundContactListContactPhoneNumberColumnResource,
 			},
 			`email_columns`: {
-				Description: `Indicates which columns are email addresses. Changing the email_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if phone_columns is empty`,
+				Description: `Indicates which columns are email addresses. Changing the email_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if phone_columns is empty`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
@@ -170,6 +176,42 @@ func ResourceOutboundContactList() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        outboundContactListColumnDataTypeSpecification,
 			},
+			`trim_whitespace`: {
+				Description: `Indicates if leading and trailing whitespace will be trimmed when importing a contactlist CSV file`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+			},
+			`contacts_filepath`: {
+				Description:  "The path to a CSV file containing contacts to import into the contact list. When updated, existing contacts will be removed and replaced with contacts from the new file. If not specified, an empty contact list will be created.",
+				Optional:     true,
+				Computed:     false,
+				ForceNew:     false,
+				Type:         schema.TypeString,
+				ValidateFunc: validators.ValidatePath,
+				RequiredWith: []string{"contacts_filepath", "contacts_id_name"},
+			},
+			`contacts_id_name`: {
+				Description:  `The name of the column in the CSV file that contains the contact's unique contact id. If updated, the contact list is dropped and recreated with a new ID`,
+				Optional:     true,
+				Computed:     false,
+				ForceNew:     false,
+				Type:         schema.TypeString,
+				RequiredWith: []string{"contacts_id_name", "contacts_filepath"},
+			},
+			`contacts_file_content_hash`: {
+				Description: `The hash of the contacts file to import. This is retained as a computed value in the state in order to detect when a file's contents have changed.`,
+				Computed:    true,
+				Optional:    false,
+				Required:    false,
+				Type:        schema.TypeString,
+			},
+			`contacts_record_count`: {
+				Description: `The number of contacts in the contact list. This is a read-only attribute and sanity check`,
+				Computed:    true,
+				Optional:    false,
+				Required:    false,
+				Type:        schema.TypeInt,
+			},
 		},
 	}
 }
@@ -180,6 +222,10 @@ func OutboundContactListExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"attempt_limit_id": {RefType: "genesyscloud_outbound_attempt_limit"},
 			"division_id":      {RefType: "genesyscloud_auth_division"},
+		},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: ContactsExporterResolver,
+			SubDirectory:              "contacts",
 		},
 	}
 }

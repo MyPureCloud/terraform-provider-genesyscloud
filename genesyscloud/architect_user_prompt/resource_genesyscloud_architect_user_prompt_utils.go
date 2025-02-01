@@ -197,7 +197,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 
 	for _, data := range audioDataList {
 		log.Printf("Downloading file '%s' from mediaUri", filepath.Join(fullPath, data.FileName))
-		if err := files.DownloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
+		if _, err := files.DownloadExportFile(fullPath, data.FileName, data.MediaUri); err != nil {
 			return err
 		}
 		log.Println("Successfully downloaded file")

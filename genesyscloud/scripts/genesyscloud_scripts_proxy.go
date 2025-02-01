@@ -318,7 +318,7 @@ func verifyScriptUploadSuccessFn(ctx context.Context, p *scriptsProxy, body []by
 	return false, nil
 }
 
-// getUploadIdFromBody retrieves the upload Id from the json file being uploade
+// getUploadIdFromBody retrieves the upload Id from the json file being uploaded
 func (p *scriptsProxy) getUploadIdFromBody(body []byte) (string, error) {
 	var (
 		jsonData interface{}
