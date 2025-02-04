@@ -65,14 +65,17 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 	contactEmailAddressColumnList := contactEmailAddressColumn.List()
 	for _, configEmailColumn := range contactEmailAddressColumnList {
 		var sdkContactEmailAddressColumn platformclientv2.Emailcolumn
-		contactEmailAddressColumnMap := configEmailColumn.(map[string]interface{})
-		if columnName := contactEmailAddressColumnMap["column_name"].(string); columnName != "" {
+		contactEmailAddressColumnMap, ok := configEmailColumn.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if columnName, _ := contactEmailAddressColumnMap["column_name"].(string); columnName != "" {
 			sdkContactEmailAddressColumn.ColumnName = &columnName
 		}
-		if varType := contactEmailAddressColumnMap["type"].(string); varType != "" {
+		if varType, _ := contactEmailAddressColumnMap["type"].(string); varType != "" {
 			sdkContactEmailAddressColumn.VarType = &varType
 		}
-		if contactableTimeColumn := contactEmailAddressColumnMap["contactable_time_column"].(string); contactableTimeColumn != "" {
+		if contactableTimeColumn, _ := contactEmailAddressColumnMap["contactable_time_column"].(string); contactableTimeColumn != "" {
 			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumn
 		}
 
