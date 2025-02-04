@@ -42,9 +42,10 @@ func ResourceJourneyViewSchedule() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"journey_view_id": {
-				Description: "Journey View Id.",
+				Description: "Journey view ID of the schedule. Changing this will cause the schedule to be dropped and recreated for the new view ID.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"frequency": {
 				Description:  "Frequency of execution (Daily | Weekly | Monthly).",
@@ -52,7 +53,7 @@ func ResourceJourneyViewSchedule() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Daily", "Weekly", "Monthly"}, false),
 			},
-			// All other files like date modified and last modified user are read only, cannot be set by user
+			// All other fields like dateModified and last modified user are read only, cannot be set by user
 		},
 	}
 }

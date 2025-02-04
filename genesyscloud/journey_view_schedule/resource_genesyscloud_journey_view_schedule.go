@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -17,6 +16,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 /*
@@ -30,7 +30,7 @@ func getAllJourneyViewSchedule(ctx context.Context, clientConfig *platformclient
 
 	journeyViewSchedules, resp, err := proxy.getAllJourneyViewSchedule(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get journey view schedules: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get journey view schedules error: %v", err), resp)
 	}
 
 	if journeyViewSchedules == nil || len(*journeyViewSchedules) == 0 {
@@ -49,54 +49,55 @@ func createJourneyViewSchedule(ctx context.Context, d *schema.ResourceData, meta
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewScheduleProxy(sdkConfig)
 
-	JourneyViewId := d.Get("journey_view_id").(string)
+	journeyViewId := d.Get("journey_view_id").(string)
 	journeyViewSchedule := makeJourneyViewScheduleFromSchema(d)
 
-	log.Printf("Creating Schedule for jounery view id: %s", JourneyViewId)
-	journeyViewSchedule, resp, err := gp.createJourneyViewSchedule(ctx, JourneyViewId, journeyViewSchedule)
+	log.Printf("Creating schedule for journeyView id: %s", journeyViewId)
+	journeyViewSchedule, resp, err := gp.createJourneyViewSchedule(ctx, journeyViewId, journeyViewSchedule)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create schedule for journey view id %s: %s", JourneyViewId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create schedule for journeyView id %s: %s", journeyViewId, err), resp)
 	}
 
-	// The create API returns 201 with an empty response body. So the schedule id is nil
-	// The schedule entity id is identical to the journey view id, using this to set resource Id. The journey view and its schedule is a 1-1 map
+	// Currently the create API returns 201 with an empty response body. So the schedule id is nil
+	// The schedule entity id is identical to the journey view id, using this to set resource Id.
+	// A journey view and its schedule is a 1-1 map
 	if journeyViewSchedule.Id == nil {
-		d.SetId(JourneyViewId)
+		d.SetId(journeyViewId)
 	} else {
 		d.SetId(*journeyViewSchedule.Id)
 	}
 
-	log.Printf("Created schedule for jounery view id: %s", JourneyViewId)
+	log.Printf("Created schedule for journeyView id: %s", journeyViewId)
 	return readJourneyViewSchedule(ctx, d, meta)
 }
 
 // readJourneyViewSchedule is used by the journey_view_schedule resource to read an journey view schedule from genesys cloud
 func readJourneyViewSchedule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	JourneyViewId := d.Get("journey_view_id").(string)
-	if JourneyViewId == "" {
-		JourneyViewId = d.Id()
+	journeyViewId := d.Get("journey_view_id").(string)
+	if journeyViewId == "" {
+		journeyViewId = d.Id()
 	}
 
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyViewSchedule(), constants.ConsistencyChecks(), ResourceType)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewScheduleProxy(sdkConfig)
 
-	log.Printf("Reading schedule for journey view id: %s", JourneyViewId)
+	log.Printf("Reading schedule for journeyView id: %s", journeyViewId)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		journeyViewSchedule, resp, err := gp.getJourneyViewScheduleByViewId(ctx, JourneyViewId)
+		journeyViewSchedule, resp, err := gp.getJourneyViewScheduleByViewId(ctx, journeyViewId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get journeyView with viewId %s | error: %s", JourneyViewId, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get schedule for journeyView id %s | error: %s", journeyViewId, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get journeyView with viewId %s | error: %s", JourneyViewId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get schedule for journeyView id %s | error: %s", journeyViewId, err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "frequency", journeyViewSchedule.Frequency)
 		resourcedata.SetNillableValue(d, "journey_view_id", journeyViewSchedule.Id)
 
-		log.Printf("Read journey view schedule %s", d.Id())
+		log.Printf("Read schedule for journeyView id %s", journeyViewId)
 		return cc.CheckState(d)
 	})
 }
@@ -106,46 +107,46 @@ func updateJourneyViewSchedule(ctx context.Context, d *schema.ResourceData, meta
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneyViewScheduleProxy(sdkConfig)
 
-	JourneyViewId := d.Get("journey_view_id").(string)
+	journeyViewId := d.Get("journey_view_id").(string)
 	journeyViewSchedule := makeJourneyViewScheduleFromSchema(d)
 
-	log.Printf("Updating schedule for journey view id %s ", JourneyViewId)
+	log.Printf("Updating schedule for journeyView id %s ", journeyViewId)
 
-	journeyViewSchedule, resp, err := proxy.updateJourneyViewSchedule(ctx, JourneyViewId, journeyViewSchedule)
+	journeyViewSchedule, resp, err := proxy.updateJourneyViewSchedule(ctx, journeyViewId, journeyViewSchedule)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update schedule for journey view id %s:%s", JourneyViewId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update schedule for journeyView id %s: %s", journeyViewId, err), resp)
 	}
 
-	log.Printf("Updated schedule for journey view id %s", JourneyViewId)
+	log.Printf("Updated schedule for journeyView id %s", journeyViewId)
 	return readJourneyViewSchedule(ctx, d, meta)
 }
 
 // deleteJourneyViewSchedule is used by the journey_view_schedule resource to delete a journey view schedule from Genesys cloud
 func deleteJourneyViewSchedule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	JourneyViewId := d.Get("journey_view_id").(string)
+	journeyViewId := d.Get("journey_view_id").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getJourneyViewScheduleProxy(sdkConfig)
 
-	log.Printf("Deleting schedule for journey view id: %s", JourneyViewId)
+	log.Printf("Deleting schedule for journeyView id: %s", journeyViewId)
 
-	resp, err := proxy.deleteJourneyViewSchedule(ctx, JourneyViewId)
+	resp, err := proxy.deleteJourneyViewSchedule(ctx, journeyViewId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete schedule for journey view id %s: %s", JourneyViewId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete schedule for journeyView id %s: %s", journeyViewId, err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getJourneyViewScheduleByViewId(ctx, d.Id())
+		_, resp, err := proxy.getJourneyViewScheduleByViewId(ctx, journeyViewId)
 
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("Deleted schedule for journey view id %s", JourneyViewId)
+				log.Printf("Deleted schedule for journeyView id %s", journeyViewId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting schedule for journey view id %s: %s", JourneyViewId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting schedule for journeyView id %s: %s", journeyViewId, err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Schedule for journey view id %s still exists", JourneyViewId), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Schedule for journeyView id %s still exists", journeyViewId), resp))
 	})
 }
 

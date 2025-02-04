@@ -83,7 +83,7 @@ func (p *journeyViewScheduleProxy) getAllJourneyViewSchedule(ctx context.Context
 	return p.getAllJourneyViewScheduleAttr(ctx, p)
 }
 
-func getJourneyViewScheduleByViewIdFn(_ context.Context, p *journeyViewScheduleProxy, viewId string) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
+func getJourneyViewScheduleByViewIdFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
 	// Check the cache first
 	journeyViewSchedule := rc.GetCacheItem(p.journeyViewScheduleCache, viewId)
 	if journeyViewSchedule != nil {
@@ -92,18 +92,17 @@ func getJourneyViewScheduleByViewIdFn(_ context.Context, p *journeyViewScheduleP
 	return p.journeyViewsApi.GetJourneyViewSchedules(viewId)
 }
 
-func createJourneyViewScheduleFn(_ context.Context, p *journeyViewScheduleProxy, viewId string, journeyViewSchedule *platformclientv2.Journeyviewschedule) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
+func createJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string, journeyViewSchedule *platformclientv2.Journeyviewschedule) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
 	return p.journeyViewsApi.PostJourneyViewSchedules(viewId, *journeyViewSchedule)
 }
 
-func updateJourneyViewScheduleFn(_ context.Context, p *journeyViewScheduleProxy, viewId string, journeyViewSchedule *platformclientv2.Journeyviewschedule) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
+func updateJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string, journeyViewSchedule *platformclientv2.Journeyviewschedule) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
 	return p.journeyViewsApi.PutJourneyViewSchedules(viewId, *journeyViewSchedule)
 }
 
-func deleteJourneyViewScheduleFn(_ context.Context, p *journeyViewScheduleProxy, viewId string) (*platformclientv2.APIResponse, error) {
+func deleteJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string) (*platformclientv2.APIResponse, error) {
 	_, resp, err := p.journeyViewsApi.DeleteJourneyViewSchedules(viewId)
 	if err != nil {
-
 		return resp, err
 	}
 	rc.DeleteCacheItem(p.journeyViewScheduleCache, viewId)

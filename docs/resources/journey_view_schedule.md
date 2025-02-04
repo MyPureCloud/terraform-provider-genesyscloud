@@ -33,7 +33,7 @@ resource "genesyscloud_journey_view_schedule" "journey_schedule" {
 ### Required
 
 - `frequency` (String) Frequency of execution (Daily | Weekly | Monthly).
-- `journey_view_id` (String) Journey View Id.
+- `journey_view_id` (String) Journey view ID of the schedule. Changing this will cause the schedule to be dropped and recreated for the new view ID.
 
 ### Read-Only
 
