@@ -282,7 +282,7 @@ func registerResources() {
 	routingUtilization.SetRegistrar(regInstance)                           //Registering routing utilization
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
-	journeyViewSchedule.SetRegistrar(regInstance)                          // Register journey view schedule
+	journeyViewSchedule.SetRegistrar(regInstance)                          //Registering journey view schedule
 	journeyActionMap.SetRegistrar(regInstance)                             //Registering journey Action Map
 	routingWrapupcode.SetRegistrar(regInstance)                            //Registering routing wrapupcode
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
