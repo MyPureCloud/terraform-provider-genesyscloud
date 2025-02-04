@@ -60,8 +60,7 @@ func createJourneyViewSchedule(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	// The create API returns 201 with an empty response body. So the schedule id is nil
-	// The journey view and its schedule is a 1-1 map
-	// The schedule entity id is identical to the journey view id, using this to set resource Id
+	// The schedule entity id is identical to the journey view id, using this to set resource Id. The journey view and its schedule is a 1-1 map
 	if journeyViewSchedule.Id == nil {
 		d.SetId(JourneyViewId)
 	} else {

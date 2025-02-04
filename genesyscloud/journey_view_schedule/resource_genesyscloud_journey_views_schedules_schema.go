@@ -52,6 +52,7 @@ func ResourceJourneyViewSchedule() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Daily", "Weekly", "Monthly"}, false),
 			},
+			// All other files like date modified and last modified user are read only, cannot be set by user
 		},
 	}
 }
