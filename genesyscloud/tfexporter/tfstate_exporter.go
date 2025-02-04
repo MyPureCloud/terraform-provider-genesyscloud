@@ -107,7 +107,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 	cliErrorPostscript := fmt.Sprintf(`The generated tfstate file will need to be upgraded manually by running the following in the state file's directory:
 	'%s state replace-provider %s/-/genesyscloud %s/mypurecloud/genesyscloud'`, platform.Binary(), platform.GetProviderRegistry(), t.providerRegistry)
 
-	if platform.IsDebugServer() {
+	if platform.IsDevelopmentPlatform() {
 		cliErrorPostscript = `The current process is running via a debug server (debug binary detected), and so it is unable to run the proper command to replace the state. Please run this command outside of a debug session.` + cliErrorPostscript
 		log.Print(cliErrorPostscript)
 		return nil

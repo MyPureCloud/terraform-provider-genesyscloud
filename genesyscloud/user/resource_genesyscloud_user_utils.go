@@ -86,7 +86,7 @@ func executeUpdateUser(ctx context.Context, d *schema.ResourceData, proxy *userP
 	})
 }
 
-func executeAllUpdates(d *schema.ResourceData, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool) diag.Diagnostics {
+func executeAllUpdates(ctx context.Context, d *schema.ResourceData, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool) diag.Diagnostics {
 
 	if updateObjectDivision {
 		diagErr := util.UpdateObjectDivision(d, "USER", sdkConfig)
@@ -111,6 +111,11 @@ func executeAllUpdates(d *schema.ResourceData, proxy *userProxy, sdkConfig *plat
 	}
 
 	diagErr = updateUserRoutingUtilization(d, proxy)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updatePassword(ctx, d, proxy)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -284,6 +289,25 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 			log.Printf("Updated user utilization for user %s", d.Id())
 		}
 	}
+	return nil
+}
+
+func updatePassword(ctx context.Context, d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
+	if !d.HasChange("password") {
+		return nil
+	}
+
+	password := d.Get("password").(string)
+
+	if password == "" {
+		return nil // Skip password update if empty
+	}
+
+	_, err := proxy.updatePassword(ctx, d.Id(), password)
+	if err != nil {
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update password for user %s", d.Id()), err)
+	}
+
 	return nil
 }
 
