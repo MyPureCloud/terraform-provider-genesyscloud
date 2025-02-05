@@ -34,6 +34,7 @@ resource "genesyscloud_routing_wrapupcode" "win" {
 
 ### Optional
 
+- `description` (String) The wrap-up code description.
 - `division_id` (String) The division to which this routing wrapupcode will belong. If not set, * will be used to indicate all divisions.
 
 ### Read-Only
