@@ -22,6 +22,11 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
+const (
+	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
+	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
+)
+
 var orgDefaultCountryCode string
 
 func init() {
@@ -119,14 +124,16 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 				"log_stack_traces": {
 					Type:        schema.TypeBool,
 					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES", false),
-					Description: "If set to true the provider will log stack traces to a file instead of crashing, where possible. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES` environment variable.",
+					DefaultFunc: schema.EnvDefaultFunc(logStackTracesEnvVar, false),
+					Description: fmt.Sprintf(`If set to true the provider will log stack traces to a file instead of crashing, where possible. 
+If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message 
+"Root object was present, but now absent." Can be set with the %s environment variable.`, logStackTracesEnvVar),
 				},
 				"log_stack_traces_file_path": {
 					Type:             schema.TypeString,
 					Optional:         true,
-					Description:      "Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log",
-					DefaultFunc:      schema.EnvDefaultFunc("GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH", "genesyscloud_stack_traces.log"),
+					Description:      fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is genesyscloud_stack_traces.log", logStackTracesFilePathEnvVar),
+					DefaultFunc:      schema.EnvDefaultFunc(logStackTracesFilePathEnvVar, "genesyscloud_stack_traces.log"),
 					ValidateDiagFunc: validateLogFilePath,
 				},
 				"gateway": {

@@ -39,13 +39,12 @@ func GetPanicRecoveryLoggerInstance() *PanicRecoveryLogger {
 	return panicRecoverLogger
 }
 
-// HandleRecovery — In the case of a Create: return an error object with stack trace info and warn of potential dangling resources.
-// In the case of any export, return an error to avoid exporting an invalid configuration.
-// Next and in any case, write the stack trace info to the log file. If the file writing is unsuccessful, we will fail to avoid the loss of data.
+// HandleRecovery
+// In the case of an export, return an error to avoid exporting an invalid configuration.
+// Next write the stack trace info to the log file. If the file writing is unsuccessful, return an error (or append
+// to the existing error regarding export if not nil.)
 func (p *PanicRecoveryLogger) HandleRecovery(r any, operation constants.CRUDOperation) (err error) {
-	if operation == constants.Create {
-		err = fmt.Errorf("creation failed becasue of stack trace: %s. There may be dangling resource left in your org", r)
-	} else if operation == constants.Read && p.isExporterActive() {
+	if operation == constants.Read && p.isExporterActive() {
 		err = fmt.Errorf("failed to export resource because of stack trace: %s", r)
 	}
 

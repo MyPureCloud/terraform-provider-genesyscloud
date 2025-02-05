@@ -47,30 +47,21 @@ func TestUnitHandleRecovery(t *testing.T) {
 
 	InitPanicRecoveryLoggerInstance(true, "example/path.log")
 
-	// 1. returns error if operation is create
 	panicRecoverLogger.writeStackTracesToFileAttr = func(logger *PanicRecoveryLogger, a any) error {
 		return nil
 	}
-	panicRecoverLogger.isExporterActiveAttr = func() bool {
-		return false
-	}
 
-	err := panicRecoverLogger.HandleRecovery(nil, constants.Create)
-	if err == nil {
-		t.Error("Expected error, but got nil")
-	}
-
-	// 2. returns error if exporter is active
+	// 1. returns error if exporter is active
 	panicRecoverLogger.isExporterActiveAttr = func() bool {
 		return true
 	}
 
-	err = panicRecoverLogger.HandleRecovery(nil, constants.Read)
+	err := panicRecoverLogger.HandleRecovery(nil, constants.Read)
 	if err == nil {
 		t.Error("Expected error, but got nil")
 	}
 
-	// 3. returns nil if operation is not create, exporter not active, and file write successful
+	// 2. returns nil if exporter not active, and file write successful
 	panicRecoverLogger.isExporterActiveAttr = func() bool {
 		return false
 	}
@@ -79,7 +70,7 @@ func TestUnitHandleRecovery(t *testing.T) {
 		t.Errorf("Expected nil error, got '%s'", err.Error())
 	}
 
-	// 4. returns error if operation is not create, exporter not active, but file write unsuccessful
+	// 3. returns error if operation exporter not active, but file write unsuccessful
 	panicRecoverLogger.writeStackTracesToFileAttr = func(logger *PanicRecoveryLogger, a any) error {
 		return fmt.Errorf(mockWriteErrorMessage)
 	}
@@ -91,21 +82,7 @@ func TestUnitHandleRecovery(t *testing.T) {
 		t.Errorf("Expected error '%s', got '%s'", mockWriteErrorMessage, err.Error())
 	}
 
-	// 5. returns error if #1 is true and file write unsuccessful
-	err = panicRecoverLogger.HandleRecovery(nil, constants.Create)
-	if err == nil {
-		t.Errorf("Expected error, got nil")
-	}
-
-	// verify that details of create issue and write are both in the error message
-	if err != nil {
-		const snippetOfCreateErrorMessage = "creation failed"
-		if !strings.Contains(err.Error(), mockWriteErrorMessage) || !strings.Contains(err.Error(), snippetOfCreateErrorMessage) {
-			t.Errorf("Expected error '%s' to contain '%s' and '%s'", err.Error(), mockWriteErrorMessage, snippetOfCreateErrorMessage)
-		}
-	}
-
-	// 6. returns error if #2 is true and file write unsuccessful
+	// 4. returns error if #1 is true and file write unsuccessful
 	panicRecoverLogger.isExporterActiveAttr = func() bool {
 		return true
 	}
