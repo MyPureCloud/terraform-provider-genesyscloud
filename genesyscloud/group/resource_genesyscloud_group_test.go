@@ -99,7 +99,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					strconv.Quote(visMembers),
 					util.FalseValue,
 					"roles_enabled = true",
-					GenerateGroupOwners(),
+					"owner_ids = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
