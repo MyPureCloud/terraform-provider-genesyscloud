@@ -135,8 +135,9 @@ func init() {
 	}
 
 	debugPatterns := []string{
-		"dlv",   // Delve debugger
-		"debug", // Debug Server
+		"dlv",       // Delve debugger
+		"debug",     // Debug Server
+		"test2json", // test2json tool
 	}
 
 	for _, pattern := range debugPatterns {
