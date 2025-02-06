@@ -170,6 +170,7 @@ var (
 				Description: "Whether email notifications are sent to the user when a new voicemail is received.",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
@@ -403,11 +404,10 @@ func ResourceUser() *schema.Resource {
 				},
 			},
 			"voicemail_userpolicies": {
-				Description: "User's voicemail policies.",
+				Description: "User's voicemail policies. If not set, default user policies will be applied.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
 				Elem:        voicemailUserpoliciesResource,
 			},
 		},
