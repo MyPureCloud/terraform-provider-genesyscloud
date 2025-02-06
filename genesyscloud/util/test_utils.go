@@ -258,6 +258,16 @@ func ValidateValueInJsonPropertiesAttr(resourcePath string, attrName string, jso
 	}
 }
 
+func TestCheckNoResourceInState(resourcePath string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceState, ok := state.RootModule().Resources[resourcePath]
+		if ok {
+			return fmt.Errorf("Resource %s found in state with ID %s", resourcePath, resourceState.Primary.ID)
+		}
+		return nil
+	}
+}
+
 func GenerateJsonEncodedProperties(properties ...string) string {
 	return fmt.Sprintf(`jsonencode({
 		%s

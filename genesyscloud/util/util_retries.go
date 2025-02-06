@@ -37,6 +37,7 @@ func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration,
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
 			// Set ID empty if the object isn't found after the specified timeout
 			d.SetId("")
+			return nil
 		}
 		errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
 		if strings.Contains(errStringLower, "timeout while waiting for state to become") ||

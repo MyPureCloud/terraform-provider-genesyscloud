@@ -316,7 +316,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Deleting site %s", d.Id())
 	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting site %s", d.Id())
-		resp, err := sp.deleteSite(ctx, d.Id())
+		resp, err := sp.DeleteSite(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Site already deleted %s", d.Id())
