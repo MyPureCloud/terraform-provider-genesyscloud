@@ -132,7 +132,7 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create variation for knowledge document (%s) error: %s", ids.knowledgeDocumentID, err), resp)
 	}
 
-	if published == true {
+	if published {
 		_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeDocumentID, ids.knowledgeBaseID, &platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document error: %s", err), resp)
@@ -275,7 +275,7 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		if putErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update knowledge document variation %s error: %s", ids.variationID, putErr), resp)
 		}
-		if published == true {
+		if published {
 			_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeDocumentID, ids.knowledgeBaseID, &platformclientv2.Knowledgedocumentversion{})
 
 			if versionErr != nil {
@@ -314,7 +314,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.variationID, err), resp)
 	}
 
-	if published == true {
+	if published {
 		/*
 		 * If the published flag is set, attempt to publish a new document version without the variation.
 		 * However a document cannot be published if it has no variations, so first check that the document has other variations

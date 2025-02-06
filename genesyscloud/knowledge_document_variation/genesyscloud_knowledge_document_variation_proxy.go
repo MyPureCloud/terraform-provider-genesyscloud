@@ -180,7 +180,7 @@ func getVariationRequestIdByNameFn(ctx context.Context, p *variationRequestProxy
 		allVariations = append(allVariations, *allDraftVariations...)
 	}
 
-	if allVariations == nil || len(allVariations) == 0 {
+	if len(allVariations) == 0 {
 		return "", resp, true, err
 	}
 

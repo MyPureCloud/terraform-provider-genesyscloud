@@ -10,7 +10,7 @@ import (
 )
 
 func buildDocumentContentListBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentlistcontentblock {
-	if documentContentBlocks := blocksIn["blocks"].([]interface{}); documentContentBlocks != nil && len(documentContentBlocks) > 0 {
+	if documentContentBlocks, _ := blocksIn["blocks"].([]interface{}); len(documentContentBlocks) > 0 {
 		blocksOut := make([]platformclientv2.Documentlistcontentblock, 0)
 
 		for _, block := range documentContentBlocks {
@@ -31,7 +31,7 @@ func buildDocumentContentListBlocks(blocksIn map[string]interface{}) *[]platform
 }
 
 func buildDocumentContentBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentcontentblock {
-	if documentContentBlocks := blocksIn["blocks"].([]interface{}); documentContentBlocks != nil && len(documentContentBlocks) > 0 {
+	if documentContentBlocks, _ := blocksIn["blocks"].([]interface{}); len(documentContentBlocks) > 0 {
 		blocksOut := make([]platformclientv2.Documentcontentblock, 0)
 
 		for _, block := range documentContentBlocks {
@@ -52,7 +52,7 @@ func buildDocumentContentBlocks(blocksIn map[string]interface{}) *[]platformclie
 }
 
 func buildDocumentListBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentbodylistblock {
-	if documentListBlocks := blocksIn["blocks"].([]interface{}); documentListBlocks != nil && len(documentListBlocks) > 0 {
+	if documentListBlocks, _ := blocksIn["blocks"].([]interface{}); len(documentListBlocks) > 0 {
 		blocksOut := make([]platformclientv2.Documentbodylistblock, 0)
 
 		for _, block := range documentListBlocks {
@@ -72,7 +72,7 @@ func buildDocumentListBlocks(blocksIn map[string]interface{}) *[]platformclientv
 }
 
 func buildDocumentListBlockProperties(blocksIn map[string]interface{}) *platformclientv2.Documentbodylistitemproperties {
-	if listBlockProperties := blocksIn["properties"].([]interface{}); listBlockProperties != nil && len(listBlockProperties) > 0 {
+	if listBlockProperties, _ := blocksIn["properties"].([]interface{}); len(listBlockProperties) > 0 {
 		properties := listBlockProperties[0].(map[string]interface{})
 		listBlockPropertiesOut := platformclientv2.Documentbodylistitemproperties{}
 
@@ -107,7 +107,7 @@ func buildDocumentListBlockProperties(blocksIn map[string]interface{}) *platform
 }
 
 func buildDocumentText(textIn map[string]interface{}) *platformclientv2.Documenttext {
-	if textList := textIn["text"].([]interface{}); textList != nil && len(textList) > 0 {
+	if textList, _ := textIn["text"].([]interface{}); len(textList) > 0 {
 		text := textList[0].(map[string]interface{})
 		textOut := platformclientv2.Documenttext{}
 
@@ -131,7 +131,7 @@ func buildDocumentText(textIn map[string]interface{}) *platformclientv2.Document
 }
 
 func buildTextProperties(textIn map[string]interface{}) *platformclientv2.Documenttextproperties {
-	if paragraphProperties := textIn["properties"].([]interface{}); paragraphProperties != nil && len(paragraphProperties) > 0 {
+	if paragraphProperties, _ := textIn["properties"].([]interface{}); len(paragraphProperties) > 0 {
 		properties := paragraphProperties[0].(map[string]interface{})
 		textPropertiesOut := platformclientv2.Documenttextproperties{}
 
@@ -151,7 +151,7 @@ func buildTextProperties(textIn map[string]interface{}) *platformclientv2.Docume
 }
 
 func buildDocumentParagraph(paragraphIn map[string]interface{}) *platformclientv2.Documentbodyparagraph {
-	if paragraphList := paragraphIn["paragraph"].([]interface{}); paragraphList != nil && len(paragraphList) > 0 {
+	if paragraphList, _ := paragraphIn["paragraph"].([]interface{}); len(paragraphList) > 0 {
 		paragraph := paragraphList[0].(map[string]interface{})
 
 		return &platformclientv2.Documentbodyparagraph{
@@ -163,7 +163,7 @@ func buildDocumentParagraph(paragraphIn map[string]interface{}) *platformclientv
 }
 
 func buildParagraphProperties(paragraphIn map[string]interface{}) *platformclientv2.Documentbodyparagraphproperties {
-	if paragraphProperties := paragraphIn["properties"].([]interface{}); paragraphProperties != nil && len(paragraphProperties) > 0 {
+	if paragraphProperties, _ := paragraphIn["properties"].([]interface{}); len(paragraphProperties) > 0 {
 		properties := paragraphProperties[0].(map[string]interface{})
 		paragraphPropertiesOut := platformclientv2.Documentbodyparagraphproperties{}
 
@@ -193,7 +193,7 @@ func buildParagraphProperties(paragraphIn map[string]interface{}) *platformclien
 }
 
 func buildDocumentImage(imageIn map[string]interface{}) *platformclientv2.Documentbodyimage {
-	if imageList := imageIn["image"].([]interface{}); imageList != nil && len(imageList) > 0 {
+	if imageList, _ := imageIn["image"].([]interface{}); len(imageList) > 0 {
 		image := imageList[0].(map[string]interface{})
 
 		url := image["url"].(string)
@@ -211,7 +211,7 @@ func buildDocumentImage(imageIn map[string]interface{}) *platformclientv2.Docume
 }
 
 func buildDocumentVideoProperties(videoIn map[string]interface{}) *platformclientv2.Documentbodyvideoproperties {
-	if videoProperties := videoIn["properties"].([]interface{}); videoProperties != nil && len(videoProperties) > 0 {
+	if videoProperties, _ := videoIn["properties"].([]interface{}); len(videoProperties) > 0 {
 		properties := videoProperties[0].(map[string]interface{})
 		videoPropertiesOut := platformclientv2.Documentbodyvideoproperties{}
 
@@ -232,7 +232,7 @@ func buildDocumentVideoProperties(videoIn map[string]interface{}) *platformclien
 }
 
 func buildDocumentImageProperties(imageIn map[string]interface{}) *platformclientv2.Documentbodyimageproperties {
-	if imageProperties := imageIn["properties"].([]interface{}); imageProperties != nil && len(imageProperties) > 0 {
+	if imageProperties, _ := imageIn["properties"].([]interface{}); len(imageProperties) > 0 {
 		properties := imageProperties[0].(map[string]interface{})
 		imagePropertiesOut := platformclientv2.Documentbodyimageproperties{}
 
@@ -253,7 +253,7 @@ func buildDocumentImageProperties(imageIn map[string]interface{}) *platformclien
 }
 
 func buildDocumentVideo(videoIn map[string]interface{}) *platformclientv2.Documentbodyvideo {
-	if videoList := videoIn["video"].([]interface{}); videoList != nil && len(videoList) > 0 {
+	if videoList, _ := videoIn["video"].([]interface{}); len(videoList) > 0 {
 		video := videoList[0].(map[string]interface{})
 
 		url := video["url"].(string)
@@ -267,7 +267,7 @@ func buildDocumentVideo(videoIn map[string]interface{}) *platformclientv2.Docume
 }
 
 func buildDocumentList(listIn map[string]interface{}) *platformclientv2.Documentbodylist {
-	if listList := listIn["list"].([]interface{}); listList != nil && len(listList) > 0 {
+	if listList, _ := listIn["list"].([]interface{}); len(listList) > 0 {
 		list := listList[0].(map[string]interface{})
 
 		listOut := platformclientv2.Documentbodylist{
@@ -280,7 +280,7 @@ func buildDocumentList(listIn map[string]interface{}) *platformclientv2.Document
 }
 
 func buildDocumentListProperties(list map[string]interface{}) *platformclientv2.Documentbodylistblockproperties {
-	if listProperties := list["properties"].([]interface{}); listProperties != nil && len(listProperties) > 0 {
+	if listProperties, _ := list["properties"].([]interface{}); len(listProperties) > 0 {
 		properties := listProperties[0].(map[string]interface{})
 		listPropertiesOut := platformclientv2.Documentbodylistblockproperties{}
 
@@ -297,7 +297,7 @@ func buildDocumentListProperties(list map[string]interface{}) *platformclientv2.
 }
 
 func buildDocumentBodyBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentbodyblock {
-	if documentBodyBlocks := blocksIn["blocks"].([]interface{}); documentBodyBlocks != nil && len(documentBodyBlocks) > 0 {
+	if documentBodyBlocks, _ := blocksIn["blocks"].([]interface{}); len(documentBodyBlocks) > 0 {
 		blocksOut := make([]platformclientv2.Documentbodyblock, 0)
 
 		for _, block := range documentBodyBlocks {
@@ -318,7 +318,7 @@ func buildDocumentBodyBlocks(blocksIn map[string]interface{}) *[]platformclientv
 }
 
 func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documentbodyrequest {
-	if bodyList := bodyIn["body"].([]interface{}); bodyList != nil && len(bodyList) > 0 {
+	if bodyList, _ := bodyIn["body"].([]interface{}); len(bodyList) > 0 {
 		variationBody := bodyList[0].(map[string]interface{})
 
 		bodyOut := platformclientv2.Documentbodyrequest{
@@ -343,7 +343,7 @@ func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platfo
 }
 
 func buildVariationContexts(variationIn map[string]interface{}) *[]platformclientv2.Documentvariationcontext {
-	if contextsList := variationIn["contexts"].([]interface{}); contextsList != nil && len(contextsList) > 0 {
+	if contextsList, _ := variationIn["contexts"].([]interface{}); len(contextsList) > 0 {
 		contexts := contextsList[0].(map[string]interface{})
 
 		return &[]platformclientv2.Documentvariationcontext{
@@ -357,7 +357,7 @@ func buildVariationContexts(variationIn map[string]interface{}) *[]platformclien
 }
 
 func buildVariationContext(contextsIn map[string]interface{}) *platformclientv2.Knowledgecontextreference {
-	if context := contextsIn["context"].([]interface{}); context != nil && len(context) > 0 {
+	if context, _ := contextsIn["context"].([]interface{}); len(context) > 0 {
 		context := context[0].(map[string]interface{})
 		contextId := context["context_id"].(string)
 
@@ -369,7 +369,7 @@ func buildVariationContext(contextsIn map[string]interface{}) *platformclientv2.
 }
 
 func buildVariationContextValue(contextsIn map[string]interface{}) *[]platformclientv2.Knowledgecontextvaluereference {
-	if values := contextsIn["values"].([]interface{}); values != nil && len(values) > 0 {
+	if values, _ := contextsIn["values"].([]interface{}); len(values) > 0 {
 		value := values[0].(map[string]interface{})
 		valueId := value["value_id"].(string)
 
