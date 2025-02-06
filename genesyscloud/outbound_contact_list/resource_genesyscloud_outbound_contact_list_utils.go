@@ -78,7 +78,11 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 	contactEmailAddressColumnList := contactEmailAddressColumn.List()
 	for _, configEmailColumn := range contactEmailAddressColumnList {
 		var sdkContactEmailAddressColumn platformclientv2.Emailcolumn
-		contactEmailAddressColumnMap := configEmailColumn.(map[string]interface{})
+
+		contactEmailAddressColumnMap, ok := configEmailColumn.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		// Safely handle column_name
 		if columnName, ok := contactEmailAddressColumnMap["column_name"].(string); ok && columnName != "" {
