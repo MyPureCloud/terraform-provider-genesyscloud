@@ -24,30 +24,32 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetKnowledgeDocumentProxy(clientConfig)
-	//knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
-	publishedEntities, response, err := proxy.GetAllKnowledgebaseEntities(ctx, true) //getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	publishedEntities, response, err := proxy.GetAllKnowledgebaseEntities(ctx, true)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
-
+		return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 	}
-	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+	if publishedEntities != nil && len(*publishedEntities) > 0 {
+		knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+	}
 
 	// get unpublished knowledge bases
 	unpublishedEntities, response, err := proxy.GetAllKnowledgebaseEntities(ctx, false)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 	}
-	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+	if unpublishedEntities != nil && len(*unpublishedEntities) > 0 {
+		knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+	}
 
 	for _, knowledgeBase := range knowledgeBaseList {
 		partialEntities, response, err := proxy.GetAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 		}
 		for _, knowledgeDocument := range *partialEntities {
-			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeBase.Id)
 			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeDocument.Title}
 		}
 

@@ -536,5 +536,10 @@ func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
 			"knowledge_base_id":     {RefType: "genesyscloud_knowledge_knowledgebase"},
 			"knowledge_document_id": {RefType: "genesyscloud_knowledge_document"},
 		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"knowledge_document_id": {
+				ResolverFunc: customKnowledgeDocumentIdResolver,
+			},
+		},
 	}
 }

@@ -232,7 +232,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		d.SetId(newId)
 
 		_ = d.Set("knowledge_base_id", *knowledgeDocumentVariation.Document.KnowledgeBase.Id)
-		_ = d.Set("knowledge_document_id", ids.documentID)
+		_ = d.Set("knowledge_document_id", *knowledgeDocumentVariation.Document.Id)
 		_ = d.Set("knowledge_document_variation", flattenKnowledgeDocumentVariation(*knowledgeDocumentVariation))
 
 		if knowledgeDocumentVariation.DocumentVersion != nil && knowledgeDocumentVariation.DocumentVersion.Id != nil && len(*knowledgeDocumentVariation.DocumentVersion.Id) > 0 {
