@@ -5,7 +5,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -21,8 +20,6 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 }
 
 func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(srcFile)
-
 	if fileContent != "" {
 		updateFile(srcFile, fileContent)
 	}
@@ -33,7 +30,7 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 		force_unlock = %v
 		%s
 	}
-	`, resourceLabel, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), forceUnlock, strings.Join(substitutions, "\n"))
+	`, resourceLabel, strconv.Quote(srcFile), strconv.Quote(srcFile), forceUnlock, strings.Join(substitutions, "\n"))
 
 	return flowResourceStr
 }

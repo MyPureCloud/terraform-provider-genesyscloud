@@ -1,12 +1,12 @@
 ---
 page_title: "genesyscloud_widget_deployment Resource - terraform-provider-genesyscloud"
-subcategory: ""
+subcategory: "Deprecated"
 description: |-
-  Genesys Cloud Widget Deployment
+  [DEPRECATED] Genesys Cloud Widget Deployment
 ---
 # genesyscloud_widget_deployment (Resource)
 
-Genesys Cloud Widget Deployment
+[DEPRECATED] Genesys Cloud Widget Deployment
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -16,6 +16,17 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/widgets/deployments](https://developer.genesys.cloud/api/rest/v2/widgets/#post-api-v2-widgets-deployments)
 * [PUT /api/v2/widgets/deployments/{deploymentId}](https://developer.genesys.cloud/api/rest/v2/widgets/#put-api-v2-widgets-deployments--deploymentId-)
 * [DELETE /api/v2/widgets/deployments/{deploymentId}](https://developer.genesys.cloud/api/rest/v2/widgets/#delete-api-v2-widgets-deployments--deploymentId-)
+
+## Migrating from genesyscloud_widget_deployment
+
+### Deprecation Notice
+
+The `genesyscloud_widget_deployment` resource is deprecated and will be removed in a future version due to this functionality being sunset in Genesys Cloud API.
+
+### Migration Steps
+
+1. Remove any `genesyscloud_widget_deployment` resources from your Terraform configuration.
+
 
 ## Example Usage
 

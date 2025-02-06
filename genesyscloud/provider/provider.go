@@ -21,8 +21,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
-var orgDefaultCountryCode string
-
 func init() {
 	// Set descriptions to support markdown syntax, this will be used in document generation
 	// and the language server.
@@ -239,12 +237,13 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 }
 
 type ProviderMeta struct {
-	Version      string
-	Registry     string
-	Platform     *platform.Platform
-	ClientConfig *platformclientv2.Configuration
-	Domain       string
-	Organization *platformclientv2.Organization
+	Version            string
+	Registry           string
+	Platform           *platform.Platform
+	ClientConfig       *platformclientv2.Configuration
+	Domain             string
+	Organization       *platformclientv2.Organization
+	DefaultCountryCode string
 }
 
 func configure(version string) schema.ConfigureContextFunc {
@@ -269,16 +268,21 @@ func configure(version string) schema.ConfigureContextFunc {
 		if err != nil {
 			return nil, err
 		}
-		orgDefaultCountryCode = *currentOrg.DefaultCountryCode
 
-		return &ProviderMeta{
-			Version:      version,
-			Platform:     &platform,
-			Registry:     providerSourceRegistry,
-			ClientConfig: defaultConfig,
-			Domain:       getRegionDomain(data.Get("aws_region").(string)),
-			Organization: currentOrg,
-		}, nil
+		meta := &ProviderMeta{
+			Version:            version,
+			Platform:           &platform,
+			Registry:           providerSourceRegistry,
+			ClientConfig:       defaultConfig,
+			Domain:             getRegionDomain(data.Get("aws_region").(string)),
+			Organization:       currentOrg,
+			DefaultCountryCode: *currentOrg.DefaultCountryCode,
+		}
+
+		setProviderMeta(meta)
+
+		return meta, nil
+
 	}
 }
 

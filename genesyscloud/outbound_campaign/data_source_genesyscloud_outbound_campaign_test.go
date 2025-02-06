@@ -2,8 +2,10 @@ package outbound_campaign
 
 import (
 	"fmt"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -18,7 +20,7 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		resourceLabel        = "campaign"
 		campaignName         = "Test Campaign " + uuid.NewString()
 		dataSourceLabel      = "campaign_data"
-		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		divResourceLabel     = "test-outbound-campaign-division"
 		divName              = "terraform-" + uuid.NewString()
 	)
