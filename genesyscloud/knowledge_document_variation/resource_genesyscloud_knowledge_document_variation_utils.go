@@ -807,20 +807,20 @@ func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvari
 // Utils
 
 func buildVariationId(baseID, documentID, variationID string) string {
-	return fmt.Sprintf("%s %s %s", baseID, documentID, variationID)
+	return baseID + variationIdSeparator + documentID + variationIdSeparator + variationID
 }
 
 func parseResourceIDs(id string) (*resourceIDs, error) {
-	parts := strings.Split(id, " ")
+	parts := strings.Split(id, variationIdSeparator)
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid resource ID: %s", id)
 	}
 
 	return &resourceIDs{
-		variationID:         parts[2],
-		knowledgeBaseID:     parts[0],
-		documentID:          parts[1],
-		knowledgeDocumentID: strings.Split(parts[1], ",")[0],
+		knowledgeDocumentVariationID:    parts[2],
+		knowledgeBaseID:                 parts[0],
+		knowledgeDocumentResourceDataID: parts[1],
+		knowledgeDocumentID:             strings.Split(parts[1], ",")[0],
 	}, nil
 }
 
@@ -830,8 +830,8 @@ func getKnowledgeIdsFromResourceData(d *schema.ResourceData) resourceIDs {
 	knowledgeDocumentId := strings.Split(documentResourceId, ",")[0]
 
 	return resourceIDs{
-		knowledgeBaseID:     knowledgeBaseID,
-		documentID:          documentResourceId,
-		knowledgeDocumentID: knowledgeDocumentId,
+		knowledgeBaseID:                 knowledgeBaseID,
+		knowledgeDocumentResourceDataID: documentResourceId,
+		knowledgeDocumentID:             knowledgeDocumentId,
 	}
 }
