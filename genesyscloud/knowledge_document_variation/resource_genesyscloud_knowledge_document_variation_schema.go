@@ -533,12 +533,10 @@ func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocumentVariations),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"knowledge_base_id":     {RefType: "genesyscloud_knowledge_knowledgebase"},
-			"knowledge_document_id": {RefType: "genesyscloud_knowledge_document"},
-		},
-		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 			"knowledge_document_id": {
-				ResolverFunc: customKnowledgeDocumentIdResolver,
+				RefType:                    "genesyscloud_knowledge_document",
+				IsReferenceIDConcatenation: true,
 			},
 		},
 	}

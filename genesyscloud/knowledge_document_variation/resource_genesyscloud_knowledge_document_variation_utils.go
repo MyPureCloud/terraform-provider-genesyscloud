@@ -2,10 +2,7 @@ package knowledgedocumentvariation
 
 import (
 	"fmt"
-	"log"
 	"strings"
-	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -837,22 +834,4 @@ func getKnowledgeIdsFromResourceData(d *schema.ResourceData) resourceIDs {
 		documentID:          documentResourceId,
 		knowledgeDocumentID: knowledgeDocumentId,
 	}
-}
-
-func customKnowledgeDocumentIdResolver(configMap map[string]any, exporters map[string]*resourceExporter.ResourceExporter, _ string) error {
-	knowledgeDocumentID, ok := configMap["knowledge_document_id"].(string)
-	if !ok {
-		log.Println("customKnowledgeDocumentIdResolver: Could not resolve knowledge_document_id to a resource because it has no value")
-		return nil
-	}
-	if exporter, ok := exporters[knowledgeDocument.ResourceType]; ok {
-		for k, v := range exporter.SanitizedResourceMap {
-			if strings.Contains(k, knowledgeDocumentID) {
-				configMap["knowledge_document_id"] = fmt.Sprintf("${%s.%s.id}", knowledgeDocument.ResourceType, v.BlockLabel)
-				return nil
-			}
-		}
-		return fmt.Errorf("could not resolve knowledge document %s to a resource of type %s", knowledgeDocumentID, knowledgeDocument.ResourceType)
-	}
-	return fmt.Errorf("unable to locate %s in the exporters array. Unable to resolve the ID for the knowledge document resource", knowledgeDocument.ResourceType)
 }
