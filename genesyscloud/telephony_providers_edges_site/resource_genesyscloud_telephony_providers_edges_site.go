@@ -325,7 +325,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete site %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
-	})
+	}, 400)
 
 	if diagErr != nil {
 		return diagErr
