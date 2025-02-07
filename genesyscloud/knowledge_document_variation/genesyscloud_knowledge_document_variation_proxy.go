@@ -7,6 +7,7 @@ import (
 	"net/http"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
@@ -124,14 +125,23 @@ func getLatestPublishedOrDraftVariationFn(ctx context.Context, p *variationReque
 		}
 	}()
 
+	time.Sleep(2 * time.Second) // wait for the variation to be published/draft
 	publishedVariation, resp, err := p.getVariationRequestByIdAndState(ctx, ids, "Published")
 	if err != nil {
-		return nil, resp, err
+		// if it is a 404 - continue and try draft
+		if !util.IsStatus404(resp) {
+			return nil, resp, err
+		}
+		publishedVariation = nil
 	}
 
 	draftVariation, resp, err := p.getVariationRequestByIdAndState(ctx, ids, "Draft")
 	if err != nil {
 		return nil, resp, err
+	}
+
+	if publishedVariation == nil {
+		return draftVariation, resp, nil
 	}
 
 	if publishedVariation.DateModified == nil || draftVariation.DateModified == nil {
