@@ -131,6 +131,12 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
+			"mode": {
+				Description:  "The mode callbacks will use on this queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
+			},
 		},
 	}
 
