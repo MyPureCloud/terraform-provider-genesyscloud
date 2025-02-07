@@ -39,9 +39,14 @@ func TestAccResourceExternalUser(t *testing.T) {
 				),
 			}, {
 				// Update
-				Config: generateExternalUserIdentity(resourceLabel, "genesyscloud_user."+userResoureLabel+".id", authorityName, UpdatedExternalKey),
+
+				Config: userResource.GenerateBasicUserResource(
+					userResoureLabel,
+					userEmail,
+					userName,
+				) + generateExternalUserIdentity(resourceLabel, "genesyscloud_user."+userResoureLabel+".id", authorityName, UpdatedExternalKey),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePath, "external_key", externalKey),
+					resource.TestCheckResourceAttr(resourcePath, "external_key", UpdatedExternalKey),
 					resource.TestCheckResourceAttr(resourcePath, "authority_name", authorityName),
 				),
 			},

@@ -95,19 +95,21 @@ func updateExternalUser(ctx context.Context, d *schema.ResourceData, meta interf
 	proxy := getExternalUserIdentityProxy(sdkConfig)
 	var externalUserObject platformclientv2.Userexternalidentifier
 
+	oldUserId, oldAuthorityName, oldExternalKey, err := splitCompoundKey(d.Id())
+	if err != nil {
+		return util.BuildDiagnosticError(ResourceType, "failed to split compound key", err)
+	}
+	log.Printf("Update context - deleting external user %s for genesys user %s", d.Id(), oldUserId)
+	deleteResponse, deleteErr := proxy.deleteExternalUserIdentity(ctx, oldUserId, oldAuthorityName, oldExternalKey)
+	if deleteErr != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external user %s: %s", d.Id(), deleteErr), deleteResponse)
+	}
 	userId := d.Get("user_id").(string)
 	authorityName := d.Get("authority_name").(string)
 	externalKey := d.Get("external_key").(string)
 
 	externalUserObject.AuthorityName = &authorityName
 	externalUserObject.ExternalKey = &externalKey
-
-	log.Printf("deleting external user %s for genesys user %s", d.Id(), userId)
-	deleteResponse, deleteErr := proxy.deleteExternalUserIdentity(ctx, userId, authorityName, externalKey)
-	if deleteErr != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external user %s: %s", d.Id(), deleteErr), deleteResponse)
-	}
-
 	log.Printf("updating external user %s for genesys user %s", d.Id(), userId)
 	externalUser, response, err := proxy.createExternalUserIdentity(ctx, userId, externalUserObject)
 	if err != nil {
