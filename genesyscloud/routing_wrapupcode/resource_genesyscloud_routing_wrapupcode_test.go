@@ -36,6 +36,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "description", description),
 				),
 			},
 			{
@@ -49,6 +50,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "description", description),
 				),
 			},
 			{
@@ -62,6 +64,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName2),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "description", description),
 				),
 			},
 			{
