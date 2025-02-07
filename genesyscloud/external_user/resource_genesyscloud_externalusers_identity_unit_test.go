@@ -50,6 +50,11 @@ func TestGetAllHelperExternalUser(t *testing.T) {
 				{
 					Id: platformclientv2.String("user1"),
 				},
+				{
+					Id: platformclientv2.String("user2"),
+				}, {
+					Id: platformclientv2.String("user3"),
+				},
 			},
 			mockSetup: func(e *externalUserIdentityProxy) {
 				e.getAllExternalUserIdentityAttr = func(ctx context.Context, p *externalUserIdentityProxy, userId string) (*[]platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
@@ -69,7 +74,7 @@ func TestGetAllHelperExternalUser(t *testing.T) {
 				}
 			},
 			expectedError:  false,
-			expectedLength: 2,
+			expectedLength: 6,
 		},
 		{
 			name: "External user API error",
