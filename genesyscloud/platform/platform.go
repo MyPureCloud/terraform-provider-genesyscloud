@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -218,9 +220,18 @@ func verifyBinary(path string) error {
 		return fmt.Errorf("binary path is not a regular file")
 	}
 
-	// Check if we have execute permission
-	if info.Mode().Perm()&0111 == 0 {
-		return fmt.Errorf("binary is not executable")
+	// Check if we have execute permission based on OS
+	if runtime.GOOS == "windows" {
+		// On Windows, check if the file has a valid executable extension
+		ext := strings.ToLower(filepath.Ext(path))
+		if ext != ".exe" && ext != ".com" && ext != ".bat" && ext != ".cmd" {
+			return fmt.Errorf("binary does not have an executable extension")
+		}
+	} else {
+		// Unix-like systems
+		if info.Mode().Perm()&0111 == 0 {
+			return fmt.Errorf("binary is not executable")
+		}
 	}
 
 	return nil
