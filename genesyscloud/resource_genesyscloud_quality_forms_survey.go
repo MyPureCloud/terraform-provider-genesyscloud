@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
@@ -379,16 +378,20 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 			d.Set("question_groups", flattenSurveyQuestionGroups(surveyForm.QuestionGroups))
 		}
 
-		latestPublishedVersion, resp, err := qualityAPI.GetQualityPublishedformsSurvey(d.Id())
+		// Published is always set to false, Check each form for a published version and set published accordingly
+		formVersions, resp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to read survey form versions %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to read survey form versions %s | error: %s", *surveyForm.Id, err), resp))
 		}
 
-		if latestPublishedVersion != nil && tfexporter_state.IsExporterActive() {
-			_ = d.Set("published", true)
-		} else {
-			_ = d.Set("published", surveyForm.Published)
+		var published = false
+		for _, s := range *formVersions.Entities {
+			if *s.Published == true {
+				published = true
+			}
 		}
+
+		_ = d.Set("published", published)
 
 		return cc.CheckState(d)
 	})
