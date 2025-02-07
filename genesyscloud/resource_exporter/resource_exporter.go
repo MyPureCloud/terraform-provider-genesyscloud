@@ -46,13 +46,12 @@ type RefAttrSettings struct {
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
 
-	// If the keys in ResourceIDMetaMap of RefType are concatenations of IDs
-	// If true, we will validate that the GUID exists within this key, rather than perform a direct comparison.
-	// E.g.genesyscloud_knowledge_document_variation.knowledge_document_id is a GUID, but the keys in the document exporter
-	// are combinations of the document and parent knowledge base IDs, so to resolve we must see if the key contains the document ID.
-	// Note: This field should only be used if the GUID of the resource we want to resolve is reliably unique i.e. cannot be configured
-	// by the user.
-	IsReferenceIDConcatenation bool
+	// CustomReferenceIDComparator will override the default behaviour of searching for the key that matches refID
+	// in the ResourceIDMetaMap, and define some new condition to be met.
+	// E.g. variation.knowledge_document_id is a GUID, but it is a concatenation of two GUIDs in the
+	// knowledge_document_variation meta map, so we need only verify that refID (the document ID) exists within this key
+	// rather than perform a direct map indexing.
+	CustomReferenceIDComparator func(resourceIdMetaMapKey string, refID string) bool
 }
 
 type ResourceInfo struct {

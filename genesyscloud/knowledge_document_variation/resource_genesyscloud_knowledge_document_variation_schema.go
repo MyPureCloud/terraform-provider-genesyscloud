@@ -2,6 +2,7 @@ package knowledgedocumentvariation
 
 import (
 	"strconv"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -535,8 +536,10 @@ func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 			"knowledge_document_id": {
-				RefType:                    "genesyscloud_knowledge_document",
-				IsReferenceIDConcatenation: true,
+				RefType: "genesyscloud_knowledge_document",
+				CustomReferenceIDComparator: func(knowledgeDocumentResourceIDMetaMapKey string, refAttrValue string) bool {
+					return strings.Contains(knowledgeDocumentResourceIDMetaMapKey, refAttrValue)
+				},
 			},
 		},
 	}

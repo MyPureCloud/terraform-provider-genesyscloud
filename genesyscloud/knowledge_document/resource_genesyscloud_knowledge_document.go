@@ -86,7 +86,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)
+	id := buildVariationResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document %s", *knowledgeDocument.Id)
@@ -94,11 +94,10 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeDocumentId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeDocumentId, knowledgeBaseId := parseVariationResourceDataID(d.Id())
+
 	state := "Draft"
-	if d.Get("published").(bool) == true {
+	if d.Get("published").(bool) {
 		state = "Published"
 	}
 
@@ -117,21 +116,19 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		// required
-		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)
+		id := buildVariationResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 		d.SetId(id)
-		d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
+		if knowledgeDocument.KnowledgeBase != nil && knowledgeDocument.KnowledgeBase.Id != nil {
+			_ = d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
+		}
 
 		flattenedDocument, err := flattenKnowledgeDocument(ctx, knowledgeDocument, proxy, knowledgeBaseId)
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
-		d.Set("knowledge_document", flattenedDocument)
 
-		if *knowledgeDocument.State == "Published" {
-			d.Set("published", true)
-		} else {
-			d.Set("published", false)
-		}
+		_ = d.Set("knowledge_document", flattenedDocument)
+		_ = d.Set("published", knowledgeDocument.State != nil && *knowledgeDocument.State == "Published")
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
 		checkState := cc.CheckState(d)
@@ -140,11 +137,10 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeDocumentId := id[0]
+	knowledgeDocumentId, _ := parseVariationResourceDataID(d.Id())
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	state := "Draft"
-	if d.Get("published").(bool) == true {
+	if d.Get("published").(bool) {
 		state = "Published"
 	}
 
@@ -195,7 +191,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		state := "Draft"
-		if d.Get("published").(bool) == true {
+		if d.Get("published").(bool) {
 			state = "Published"
 		}
 
