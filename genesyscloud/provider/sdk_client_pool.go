@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"sync"
 	"sync/atomic"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -39,10 +40,10 @@ const (
 // This has the benefit of ensuring we don't issue too many concurrent requests and also
 // increases throughput as each token will have its own rate limit.
 type SDKClientPool struct {
-	Pool          chan *platformclientv2.Configuration
-	activeClients int64
-	config        *SDKClientPoolConfig
-	metrics       *poolMetrics
+	Pool    chan *platformclientv2.Configuration
+	config  *SDKClientPoolConfig
+	metrics *poolMetrics
+	done    chan struct{} // For cleanup
 }
 
 type SDKClientPoolConfig struct {
@@ -53,11 +54,27 @@ type SDKClientPoolConfig struct {
 }
 
 type poolMetrics struct {
+	mu              sync.RWMutex
 	totalAcquires   int64
 	totalReleases   int64
 	acquireTimeouts int64
 	lastAcquireTime time.Time
-	mu              sync.RWMutex
+	activeClients   int64
+}
+
+func (m *poolMetrics) recordAcquire() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.totalAcquires++
+	m.activeClients++
+	m.lastAcquireTime = time.Now()
+}
+
+func (m *poolMetrics) recordRelease() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.totalReleases++
+	m.activeClients--
 }
 
 var SdkClientPool *SDKClientPool
@@ -110,22 +127,27 @@ func InitSDKClientPool(version string, providerConfig *schema.ResourceData) diag
 		}
 		SdkClientPool.logDebug("Initialized %d SDK clients in the Pool with acquire timeout %v and init timeout %v.", max, acquireTimeout, initTimeout)
 
-		// Start periodic metrics logging
-		go func() {
-			ticker := time.NewTicker(MetricsLoggingInterval)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-ticker.C:
-					SdkClientPool.logDebug("Client pool status - %s", SdkClientPool.formatMetrics())
-				}
-			}
-		}()
-
+		SdkClientPool.startMetricsLogging()
 		SdkClientPoolErr = SdkClientPool.preFill(providerConfig, version)
 	})
 	return SdkClientPoolErr
+}
+
+func (p *SDKClientPool) startMetricsLogging() {
+	// Start periodic metrics logging
+	go func() {
+		ticker := time.NewTicker(MetricsLoggingInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				p.logDebug("Client pool status - %s", SdkClientPool.formatMetrics())
+			case <-p.done:
+				return
+			}
+		}
+	}()
 }
 
 func (p *SDKClientPool) logDebug(msg string, args ...interface{}) {
@@ -136,7 +158,7 @@ func (p *SDKClientPool) logDebug(msg string, args ...interface{}) {
 
 func (p *SDKClientPool) formatMetrics() string {
 	metrics := p.GetMetrics()
-	lastAcquireTime := metrics["last_acquire_time"].(time.Time)
+	lastAcquireTime := metrics.lastAcquireTime
 
 	// Check if the last acquire time is zero, if so, set it to a default value
 	var lastAcquireTimeStr string
@@ -147,11 +169,11 @@ func (p *SDKClientPool) formatMetrics() string {
 	}
 
 	return fmt.Sprintf("Active: %d/%d, Acquires: %d, Releases: %d, Timeouts: %d, Last Acquire: %s",
-		metrics["active_clients"],
+		metrics.activeClients,
 		p.config.MaxClients,
-		metrics["total_acquires"],
-		metrics["total_releases"],
-		metrics["acquire_timeouts"],
+		metrics.totalAcquires,
+		metrics.totalReleases,
+		metrics.acquireTimeouts,
 		lastAcquireTimeStr,
 	)
 }
@@ -162,104 +184,248 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 	ctx, cancel := context.WithTimeout(context.Background(), p.config.InitTimeout)
 	defer cancel()
 
-	errorChan := make(chan diag.Diagnostics)
-	wgDone := make(chan bool)
+	errorChan := make(chan diag.Diagnostics, p.config.MaxClients)
 	var wg sync.WaitGroup
+
+	// Create a semaphore to limit concurrent initializations
+	concurrentInits := int(math.Min(
+		float64(p.config.MaxClients),
+		math.Max(5, float64(p.config.MaxClients/4))))
+	sem := make(chan struct{}, concurrentInits)
+
+	// Create a done channel for signaling goroutine cleanup
+	initDone := make(chan struct{})
+	defer close(initDone)
 
 	for i := 0; i < p.config.MaxClients; i++ {
 		sdkConfig := platformclientv2.NewConfiguration()
 		wg.Add(1)
 		go func(config *platformclientv2.Configuration) {
 			defer wg.Done()
-			if err := InitClientConfig(providerConfig, version, config, false); err != nil {
-				select {
-				case <-ctx.Done():
-				case errorChan <- err:
-				}
-				cancel()
-				return
-			}
+			defer func() {
+				<-sem // Release semaphore
+			}()
+
+			// Try to acquire semaphore with context awareness
 			select {
+			case sem <- struct{}{}: // Acquire semaphore
 			case <-ctx.Done():
 				return
+			case <-initDone:
+				return
+			}
+
+			if err := InitClientConfig(providerConfig, version, config, false); err != nil {
+				select {
+				case errorChan <- err:
+				case <-ctx.Done():
+				case <-initDone:
+				}
+				return
+			}
+
+			// Try to add to pool with context awareness
+			select {
 			case p.Pool <- config:
+			case <-ctx.Done():
+				// Cleanup the config if we can't add it to the pool
+				if err := cleanupConfiguration(config); err != nil {
+					p.logDebug("Error cleaning up configuration during cancellation: %v", err)
+				}
+			case <-initDone:
+				// Cleanup the config if we can't add it to the pool
+				if err := cleanupConfiguration(config); err != nil {
+					p.logDebug("Error cleaning up configuration during cleanup: %v", err)
+				}
 			}
 		}(sdkConfig)
 	}
 
+	// Start error collector
+	errDone := make(chan struct{})
+	var resultErr diag.Diagnostics
+	go func() {
+		defer close(errDone)
+		for err := range errorChan {
+			resultErr = append(resultErr, err...)
+		}
+	}()
+
+	// Wait for completion or context cancellation
 	go func() {
 		wg.Wait()
-		close(wgDone)
+		close(errorChan)
 	}()
 
 	// Wait until either WaitGroup is done or an error is received
 	select {
-	case <-wgDone:
+	case <-errDone:
+		if resultErr != nil {
+			p.logDebug("Error pre-filling client pool - %s", p.formatMetrics())
+			return resultErr
+		}
 		p.logDebug("Successfully pre-filled client pool - %s", p.formatMetrics())
 		return nil
-	case err := <-errorChan:
-		p.logDebug("Error pre-filling client pool - %s", p.formatMetrics())
-		return err
 	case <-ctx.Done():
 		p.logDebug("Timed out pre-filling client pool - %s", p.formatMetrics())
+		// Signal all goroutines to stop and clean up
+		close(initDone)
+		// Wait for all goroutines to finish
+		wg.Wait()
 		return diag.Errorf("Timed out pre-filling client pool: %v", ctx.Err())
 	}
 }
 
-func (p *SDKClientPool) acquire() (*platformclientv2.Configuration, error) {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), p.config.AcquireTimeout)
+func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configuration, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, p.config.AcquireTimeout)
 	defer cancel()
 
 	select {
 	case client := <-p.Pool:
-		atomic.AddInt64(&p.activeClients, 1)
-		atomic.AddInt64(&p.metrics.totalAcquires, 1)
-		p.metrics.mu.Lock()
-		p.metrics.lastAcquireTime = time.Now()
-		p.metrics.mu.Unlock()
+		if client == nil {
+			return nil, fmt.Errorf("received nil client from the pool")
+		}
+		p.metrics.recordAcquire()
 
 		acquiredMsg := "Client acquired from pool"
 
-		if atomic.LoadInt64(&p.activeClients) >= int64(p.config.MaxClients-PoolCriticalThreshold) {
+		remaining := int64(p.config.MaxClients) - atomic.LoadInt64(&p.metrics.activeClients)
+		if remaining <= int64(PoolCriticalThreshold) {
 			log.Printf("[WARN] %s but pool at critical capacity - %s", acquiredMsg, p.formatMetrics())
-		} else if atomic.LoadInt64(&p.activeClients) >= int64(p.config.MaxClients-PoolNearCapacityThreshold) {
+		} else if remaining <= int64(PoolNearCapacityThreshold) {
 			log.Printf("[WARN] %s with pool near capacity - %s", acquiredMsg, p.formatMetrics())
 		} else {
 			p.logDebug("%s - %s", acquiredMsg, p.formatMetrics())
 		}
 		return client, nil
 	case <-timeoutCtx.Done():
-		atomic.AddInt64(&p.metrics.acquireTimeouts, 1)
+		p.metrics.mu.Lock()
+		p.metrics.acquireTimeouts++
+		p.metrics.mu.Unlock()
 		log.Printf("[WARN] Client acquisition timeout - %s", p.formatMetrics())
-		return nil, fmt.Errorf("timeout after %v waiting for available client", p.config.AcquireTimeout)
+		return nil, fmt.Errorf("timeout after %v waiting for available client: %v", p.config.AcquireTimeout, timeoutCtx.Err())
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
 }
 
-func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
+func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
+	if c == nil {
+		return fmt.Errorf("attempted to release a nil configuration ?!?")
+	}
+	p.metrics.recordRelease()
+
+	// Add timeout to prevent indefinite blocking
+	timeout := time.After(30 * time.Second)
 	select {
 	case p.Pool <- c:
-		atomic.AddInt64(&p.activeClients, -1)
-		atomic.AddInt64(&p.metrics.totalReleases, 1)
 
-		if atomic.LoadInt64(&p.activeClients) <= int64(p.config.MaxClients-PoolCriticalThreshold) {
+		if atomic.LoadInt64(&p.metrics.activeClients) <= int64(p.config.MaxClients-PoolCriticalThreshold) {
 			p.logDebug("Client released from full pool - %s", p.formatMetrics())
 		}
+		return nil
+
+	case <-timeout:
+		p.logDebug("Timed out attempting to release client - %s", p.formatMetrics())
+		if err := cleanupConfiguration(c); err != nil {
+			return fmt.Errorf("error cleaning up configuration: %v", err)
+		}
+		return fmt.Errorf("timeout releasing client to pool (size: %d)", p.config.MaxClients)
+
 	default:
 		// Pool is full. Don't put it back in the Pool
 		p.logDebug("Attempted to release client to full pool - %s", p.formatMetrics())
+		return nil
 	}
 }
 
-func (p *SDKClientPool) GetMetrics() map[string]interface{} {
-	p.metrics.mu.RLock()
-	defer p.metrics.mu.RUnlock()
+func cleanupConfiguration(config *platformclientv2.Configuration) error {
+	// Perform any necessary cleanup of the configuration
+	if config == nil {
+		return nil
+	}
 
-	return map[string]interface{}{
-		"active_clients":    atomic.LoadInt64(&p.activeClients),
-		"total_acquires":    atomic.LoadInt64(&p.metrics.totalAcquires),
-		"total_releases":    atomic.LoadInt64(&p.metrics.totalReleases),
-		"acquire_timeouts":  atomic.LoadInt64(&p.metrics.acquireTimeouts),
-		"last_acquire_time": p.metrics.lastAcquireTime,
+	// Clean up logging configuration
+	if config.LoggingConfiguration != nil {
+		// Close any open log files
+		config.LoggingConfiguration = nil
+	}
+
+	// Clean up proxy configuration
+	if config.ProxyConfiguration != nil {
+		// Clear sensitive data
+		if config.ProxyConfiguration.Auth != nil {
+			config.ProxyConfiguration.Auth.Password = ""
+			config.ProxyConfiguration.Auth.UserName = ""
+			config.ProxyConfiguration.Auth = nil
+		}
+		config.ProxyConfiguration = nil
+	}
+
+	// Clean up gateway configuration
+	if config.GateWayConfiguration != nil {
+		// Clear sensitive data
+		if config.GateWayConfiguration.Auth != nil {
+			config.GateWayConfiguration.Auth.Password = ""
+			config.GateWayConfiguration.Auth.UserName = ""
+			config.GateWayConfiguration.Auth = nil
+		}
+		// Clear path params
+		if config.GateWayConfiguration.PathParams != nil {
+			config.GateWayConfiguration.PathParams = nil
+		}
+		config.GateWayConfiguration = nil
+	}
+
+	// Clear any access tokens or sensitive data
+	config.AccessToken = ""
+	config.BasePath = ""
+
+	// Clear any default headers that might contain sensitive info
+	config.DefaultHeader = make(map[string]string)
+
+	// Disable automatic token refresh
+	config.AutomaticTokenRefresh = false
+
+	// Clear retry configuration
+	if config.RetryConfiguration != nil {
+		config.RetryConfiguration = nil
+	}
+	return nil
+}
+
+func (p *SDKClientPool) Close(ctx context.Context) error {
+	close(p.done) // Signal all goroutines to stop
+
+	drainCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	for {
+		select {
+		case c := <-p.Pool:
+			if err := cleanupConfiguration(c); err != nil {
+				log.Printf("[WARN] Error cleaning up configuration: %v", err)
+			}
+		case <-drainCtx.Done():
+			return fmt.Errorf("timeout while draining client pool: %v", drainCtx.Err())
+		default:
+			p.logDebug("Closed SDK client pool - %s", p.formatMetrics())
+			return nil
+		}
+	}
+}
+
+func (p *SDKClientPool) GetMetrics() poolMetrics {
+	p.metrics.mu.RLock()
+	lastAcquireTime := p.metrics.lastAcquireTime
+	p.metrics.mu.RUnlock()
+
+	return poolMetrics{
+		activeClients:   atomic.LoadInt64(&p.metrics.activeClients),
+		totalAcquires:   atomic.LoadInt64(&p.metrics.totalAcquires),
+		totalReleases:   atomic.LoadInt64(&p.metrics.totalReleases),
+		acquireTimeouts: atomic.LoadInt64(&p.metrics.acquireTimeouts),
+		lastAcquireTime: lastAcquireTime,
 	}
 }
 
@@ -287,11 +453,15 @@ func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		clientConfig, err := SdkClientPool.acquire()
+		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		defer SdkClientPool.release(clientConfig)
+		defer func() {
+			if err := SdkClientPool.release(clientConfig); err != nil {
+				log.Printf("[WARN] Error releasing client to pool: %v", err)
+			}
+		}()
 
 		// Check if the request has been cancelled
 		select {
@@ -310,11 +480,15 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 // Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire()
+		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
-		defer SdkClientPool.release(clientConfig)
+		defer func() {
+			if err := SdkClientPool.release(clientConfig); err != nil {
+				log.Printf("[WARN] Error releasing client to pool: %v", err)
+			}
+		}()
 
 		// Check if the request has been cancelled
 		select {
@@ -329,11 +503,15 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 
 func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire()
+		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
 			return nil, nil, diag.FromErr(err)
 		}
-		defer SdkClientPool.release(clientConfig)
+		defer func() {
+			if err := SdkClientPool.release(clientConfig); err != nil {
+				log.Printf("[WARN] Error releasing client to pool: %v", err)
+			}
+		}()
 
 		// Check if the request has been cancelled
 		select {

@@ -20,7 +20,7 @@ func testProviderConfig(t *testing.T) *schema.ResourceData {
 		"oauthclient_secret":    "test-client-secret",
 		"environment":           "mypurecloud.com",
 		AttrTokenPoolSize:       5,
-		AttrTokenAcquireTimeout: "1s",
+		AttrTokenAcquireTimeout: "1m",
 		AttrTokenInitTimeout:    "5s",
 		AttrSdkClientPoolDebug:  false,
 	})

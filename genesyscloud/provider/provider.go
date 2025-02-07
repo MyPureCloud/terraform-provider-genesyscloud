@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/platform"
@@ -56,6 +58,8 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 			copiedDataSources[k] = v
 		}
 
+		setupCleanup()
+
 		return &schema.Provider{
 			Schema:               ProviderSchema(),
 			ResourcesMap:         copiedResources,
@@ -73,6 +77,27 @@ type ProviderMeta struct {
 	Domain             string
 	Organization       *platformclientv2.Organization
 	DefaultCountryCode string
+}
+
+func setupCleanup() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		log.Println("Received termination signal, cleaning up...")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if SdkClientPool != nil {
+			if err := SdkClientPool.Close(ctx); err != nil {
+				log.Printf("[ERROR] Failed to close SDK client pool: %v", err)
+			}
+		}
+
+		os.Exit(0)
+	}()
 }
 
 func configure(version string) schema.ConfigureContextFunc {

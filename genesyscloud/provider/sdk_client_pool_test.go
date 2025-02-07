@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"sync/atomic"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 	"time"
@@ -26,31 +25,36 @@ func TestSDKClientPool_InitAndAcquire(t *testing.T) {
 
 	// Create ResourceData with the schema
 	providerConfig := testProviderConfig(t)
+	ctx := context.Background()
 
 	diagErr := InitSDKClientPool("test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
 	assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
 
 	// Test acquiring clients
-	client1, err := SdkClientPool.acquire()
+	client1, err := SdkClientPool.acquire(ctx)
 	assert.Nil(t, err)
 	assert.NotNil(t, client1)
-	assert.Equal(t, int64(1), atomic.LoadInt64(&SdkClientPool.activeClients))
+	metrics := SdkClientPool.GetMetrics()
+	assert.Equal(t, int64(1), metrics.activeClients)
 
-	client2, err := SdkClientPool.acquire()
+	client2, err := SdkClientPool.acquire(ctx)
 	assert.Nil(t, err)
 	assert.NotNil(t, client2)
-	assert.Equal(t, int64(2), atomic.LoadInt64(&SdkClientPool.activeClients))
+	metrics = SdkClientPool.GetMetrics()
+	assert.Equal(t, int64(2), metrics.activeClients)
 
 	// Release a client
 	SdkClientPool.release(client1)
-	assert.Equal(t, int64(1), atomic.LoadInt64(&SdkClientPool.activeClients))
+	metrics = SdkClientPool.GetMetrics()
+	assert.Equal(t, int64(1), metrics.activeClients)
 
 	// Acquire the released client
-	client3, err := SdkClientPool.acquire()
+	client3, err := SdkClientPool.acquire(ctx)
 	assert.Nil(t, err)
 	assert.NotNil(t, client3)
-	assert.Equal(t, int64(2), atomic.LoadInt64(&SdkClientPool.activeClients))
+	metrics = SdkClientPool.GetMetrics()
+	assert.Equal(t, int64(2), metrics.activeClients)
 }
 
 func TestSDKClientPool_AcquireTimeout(t *testing.T) {
@@ -65,18 +69,19 @@ func TestSDKClientPool_AcquireTimeout(t *testing.T) {
 		AttrTokenAcquireTimeout: "100ms",
 		AttrTokenInitTimeout:    "5s",
 	})
+	ctx := context.Background()
 
 	diagErr := InitSDKClientPool("test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
 	assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
 
 	// Acquire the only client
-	client1, err := SdkClientPool.acquire()
+	client1, err := SdkClientPool.acquire(ctx)
 	assert.Nil(t, err)
 	assert.NotNil(t, client1)
 
 	// Try to acquire another client (should timeout)
-	client2, err := SdkClientPool.acquire()
+	client2, err := SdkClientPool.acquire(ctx)
 	assert.Error(t, err, "Expected timeout error")
 	assert.Nil(t, client2)
 	assert.Contains(t, err.Error(), "timeout")
@@ -94,6 +99,7 @@ func TestSDKClientPool_Metrics(t *testing.T) {
 		AttrTokenAcquireTimeout: "1s",
 		AttrTokenInitTimeout:    "5s",
 	})
+	ctx := context.Background()
 
 	diagErr := InitSDKClientPool("test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
@@ -101,11 +107,11 @@ func TestSDKClientPool_Metrics(t *testing.T) {
 
 	// Test initial metrics
 	metrics := SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"])
-	assert.Equal(t, int64(0), metrics["total_acquires"])
-	assert.Equal(t, int64(0), metrics["total_releases"])
-	assert.Equal(t, int64(0), metrics["acquire_timeouts"])
-	assert.True(t, metrics["last_acquire_time"].(time.Time).IsZero())
+	assert.Equal(t, int64(0), metrics.activeClients)
+	assert.Equal(t, int64(0), metrics.totalAcquires)
+	assert.Equal(t, int64(0), metrics.totalReleases)
+	assert.Equal(t, int64(0), metrics.acquireTimeouts)
+	assert.True(t, metrics.lastAcquireTime.IsZero())
 
 	// Test metrics formatting with no activity
 	formatted := SdkClientPool.formatMetrics()
@@ -116,36 +122,36 @@ func TestSDKClientPool_Metrics(t *testing.T) {
 	assert.Contains(t, formatted, "Last Acquire: never")
 
 	// Test metrics after a successful acquire
-	client1, err := SdkClientPool.acquire()
+	client1, err := SdkClientPool.acquire(ctx)
 	assert.Nil(t, err)
 
 	metrics = SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(1), metrics["active_clients"])
-	assert.Equal(t, int64(1), metrics["total_acquires"])
-	assert.Equal(t, int64(0), metrics["total_releases"])
-	assert.False(t, metrics["last_acquire_time"].(time.Time).IsZero())
+	assert.Equal(t, int64(1), metrics.activeClients)
+	assert.Equal(t, int64(1), metrics.totalAcquires)
+	assert.Equal(t, int64(0), metrics.totalReleases)
+	assert.False(t, metrics.lastAcquireTime.IsZero())
 
 	// Test metrics after release
 	SdkClientPool.release(client1)
 	metrics = SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"])
-	assert.Equal(t, int64(1), metrics["total_acquires"])
-	assert.Equal(t, int64(1), metrics["total_releases"])
+	assert.Equal(t, int64(0), metrics.activeClients)
+	assert.Equal(t, int64(1), metrics.totalAcquires)
+	assert.Equal(t, int64(1), metrics.totalReleases)
 
 	// Test metrics with timeout
-	_, _ = SdkClientPool.acquire()
-	_, _ = SdkClientPool.acquire()
-	_, err = SdkClientPool.acquire() // Should timeout
+	_, _ = SdkClientPool.acquire(ctx)
+	_, _ = SdkClientPool.acquire(ctx)
+	_, err = SdkClientPool.acquire(ctx) // Should timeout
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "timeout")
 
 	// Check metrics
 	metrics = SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(2), metrics["active_clients"].(int64))
-	assert.Equal(t, int64(3), metrics["total_acquires"].(int64))
-	assert.Equal(t, int64(1), metrics["total_releases"].(int64))
-	assert.Equal(t, int64(1), metrics["acquire_timeouts"].(int64))
-	assert.NotZero(t, metrics["last_acquire_time"].(time.Time))
+	assert.Equal(t, int64(2), metrics.activeClients)
+	assert.Equal(t, int64(3), metrics.totalAcquires)
+	assert.Equal(t, int64(1), metrics.totalReleases)
+	assert.Equal(t, int64(1), metrics.acquireTimeouts)
+	assert.NotZero(t, metrics.lastAcquireTime)
 
 	// Test final metrics formatting
 	formatted = SdkClientPool.formatMetrics()
@@ -164,6 +170,7 @@ func TestSDKClientPool_ConcurrentOperations(t *testing.T) {
 
 	// Create ResourceData with the schema
 	providerConfig := testProviderConfig(t)
+	ctx := context.Background()
 
 	err := InitSDKClientPool("test", providerConfig)
 	assert.Nil(t, err)
@@ -175,7 +182,7 @@ func TestSDKClientPool_ConcurrentOperations(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			client, err := SdkClientPool.acquire()
+			client, err := SdkClientPool.acquire(ctx)
 			if err == nil {
 				time.Sleep(100 * time.Millisecond) // Simulate work
 				SdkClientPool.release(client)
@@ -186,8 +193,8 @@ func TestSDKClientPool_ConcurrentOperations(t *testing.T) {
 	wg.Wait()
 
 	metrics := SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"].(int64))
-	assert.True(t, metrics["total_releases"].(int64) <= metrics["total_acquires"].(int64))
+	assert.Equal(t, int64(0), metrics.activeClients)
+	assert.True(t, metrics.totalReleases <= metrics.totalAcquires)
 }
 
 func TestRunWithPooledClient(t *testing.T) {
@@ -260,12 +267,13 @@ func TestSDKClientPool_LoggingOutput(t *testing.T) {
 		AttrTokenInitTimeout:    "5s",
 		AttrSdkClientPoolDebug:  true,
 	})
+	ctx := context.Background()
 
 	err := InitSDKClientPool("test", config)
 	assert.Nil(t, err)
 
 	// Acquire one client to trigger debug msg
-	client1, _ := SdkClientPool.acquire()
+	client1, _ := SdkClientPool.acquire(ctx)
 	logOutput := buf.String()
 	assert.Contains(t, logOutput, "Client acquired from pool")
 	assert.NotContains(t, logOutput, "pool near capacity")
@@ -275,7 +283,7 @@ func TestSDKClientPool_LoggingOutput(t *testing.T) {
 	buf.Reset()
 
 	// Acquire two clients to trigger near capacity msg
-	_, _ = SdkClientPool.acquire()
+	_, _ = SdkClientPool.acquire(ctx)
 
 	// Should trigger near capacity warning (2 of 4 clients used)
 	logOutput = buf.String()
@@ -287,7 +295,7 @@ func TestSDKClientPool_LoggingOutput(t *testing.T) {
 	buf.Reset()
 
 	// Acquire one more to trigger critical capacity
-	_, _ = SdkClientPool.acquire()
+	_, _ = SdkClientPool.acquire(ctx)
 
 	logOutput = buf.String()
 	assert.Contains(t, logOutput, "Client acquired from pool")
@@ -317,9 +325,9 @@ func TestSDKClientPool_LoggingOutput(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Same operations should not generate debug logs
-	client1, _ = SdkClientPool.acquire()
-	_, _ = SdkClientPool.acquire()
-	_, _ = SdkClientPool.acquire()
+	client1, _ = SdkClientPool.acquire(ctx)
+	_, _ = SdkClientPool.acquire(ctx)
+	_, _ = SdkClientPool.acquire(ctx)
 	SdkClientPool.release(client1)
 
 	logOutput = buf.String()
@@ -393,8 +401,8 @@ func TestSDKClientPool_WrapperFunctions(t *testing.T) {
 
 	// Verify client was properly released after each operation
 	metrics := SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"])
-	assert.Equal(t, metrics["total_acquires"], metrics["total_releases"])
+	assert.Equal(t, int64(0), metrics.activeClients)
+	assert.Equal(t, metrics.totalAcquires, metrics.totalReleases)
 }
 
 func TestSDKClientPool_GetAllWithPooledClient(t *testing.T) {
@@ -432,8 +440,8 @@ func TestSDKClientPool_GetAllWithPooledClient(t *testing.T) {
 
 	// Verify clients were released
 	metrics := SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"])
-	assert.Equal(t, metrics["total_acquires"], metrics["total_releases"])
+	assert.Equal(t, int64(0), metrics.activeClients)
+	assert.Equal(t, metrics.totalAcquires, metrics.totalReleases)
 }
 
 func TestSDKClientPool_GetAllWithPooledClientCustom(t *testing.T) {
@@ -460,8 +468,8 @@ func TestSDKClientPool_GetAllWithPooledClientCustom(t *testing.T) {
 
 	// Verify client was released
 	metrics := SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"])
-	assert.Equal(t, metrics["total_acquires"], metrics["total_releases"])
+	assert.Equal(t, int64(0), metrics.activeClients)
+	assert.Equal(t, metrics.totalAcquires, metrics.totalReleases)
 }
 
 // Test error cases
@@ -500,8 +508,8 @@ func TestSDKClientPool_GetAllWithPooledClientErrors(t *testing.T) {
 
 	// Verify clients were released even with errors
 	metrics := SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"])
-	assert.Equal(t, metrics["total_acquires"], metrics["total_releases"])
+	assert.Equal(t, int64(0), metrics.activeClients)
+	assert.Equal(t, metrics.totalAcquires, metrics.totalReleases)
 }
 
 // Test context cancellation
@@ -530,7 +538,7 @@ func TestSDKClientPool_GetAllWithPooledClientContext(t *testing.T) {
 
 	// Verify client was released
 	metrics := SdkClientPool.GetMetrics()
-	assert.Equal(t, int64(0), metrics["active_clients"])
+	assert.Equal(t, int64(0), metrics.activeClients)
 }
 
 func TestSDKClientPool_SchemaValidation(t *testing.T) {
