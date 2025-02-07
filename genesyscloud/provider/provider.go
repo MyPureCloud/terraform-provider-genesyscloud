@@ -65,19 +65,6 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 	}
 }
 
-func validateDuration(i interface{}, k string) ([]string, []error) {
-	v, ok := i.(string)
-	if !ok {
-		return nil, []error{fmt.Errorf("expected type of %s to be string", k)}
-	}
-	_, err := time.ParseDuration(v)
-	if err != nil {
-		return nil, []error{fmt.Errorf("expected %s to be a valid duration string: %v", k, err)}
-	}
-	return nil, nil
-
-}
-
 type ProviderMeta struct {
 	Version            string
 	Registry           string

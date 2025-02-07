@@ -26,12 +26,6 @@ const (
 
 	// Logging intervals
 	MetricsLoggingInterval = 5 * time.Minute
-
-	// Provider attribute keys
-	AttrTokenPoolSize       = "token_pool_size"
-	AttrTokenAcquireTimeout = "token_acquire_timeout"
-	AttrTokenInitTimeout    = "token_init_timeout"
-	AttrSdkClientPoolDebug  = "sdk_client_pool_debug"
 )
 
 // Pool capacity thresholds for warnings

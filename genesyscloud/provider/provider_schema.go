@@ -1,10 +1,20 @@
 package provider
 
 import (
+	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+)
+
+const (
+	// Provider attribute keys
+	AttrTokenPoolSize       = "token_pool_size"
+	AttrTokenAcquireTimeout = "token_acquire_timeout"
+	AttrTokenInitTimeout    = "token_init_timeout"
+	AttrSdkClientPoolDebug  = "sdk_client_pool_debug"
 )
 
 func ProviderSchema() map[string]*schema.Schema {
@@ -198,4 +208,17 @@ func ProviderSchema() map[string]*schema.Schema {
 			},
 		},
 	}
+}
+
+func validateDuration(i interface{}, k string) ([]string, []error) {
+	v, ok := i.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("expected type of %s to be string", k)}
+	}
+	_, err := time.ParseDuration(v)
+	if err != nil {
+		return nil, []error{fmt.Errorf("expected %s to be a valid duration string: %v", k, err)}
+	}
+	return nil, nil
+
 }
