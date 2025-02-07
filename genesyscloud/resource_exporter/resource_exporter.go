@@ -45,13 +45,6 @@ type RefAttrSettings struct {
 
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
-
-	// CustomReferenceIDComparator will override the default behaviour of searching for the key that matches refID
-	// in the ResourceIDMetaMap, and define some new condition to be met.
-	// E.g. variation.knowledge_document_id is a GUID, but it is a concatenation of two GUIDs in the
-	// knowledge_document_variation meta map, so we need only verify that refID (the document ID) exists within this key
-	// rather than perform a direct map indexing.
-	CustomReferenceIDComparator func(resourceIdMetaMapKey string, refID string) bool
 }
 
 type ResourceInfo struct {

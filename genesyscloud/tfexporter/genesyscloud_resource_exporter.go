@@ -1589,7 +1589,7 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	if exporters[refSettings.RefType] != nil {
 		// Get the sanitized label from the ID returned as a reference expression
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
-			meta := g.resolveRefIdToResourceMeta(refID, refSettings, idMetaMap)
+			meta := idMetaMap[refID]
 			if meta != nil && meta.BlockLabel != "" {
 				if g.isDataSource(refSettings.RefType, meta.BlockLabel, meta.OriginalLabel) && g.resourceIdExists(refID, nil) {
 					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.BlockLabel)
@@ -1625,27 +1625,6 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	}
 	// No match found. Remove the value from the config since we do not have a reference to use
 	return ""
-}
-
-// resolveRefIdToResourceMeta will take the refID (the GUID value that is a reference to another resource)
-// and find the ResourceMeta object in that reference resource's exporter map. If a custom resolver function is
-// defined (CustomReferenceIDComparator), we will use that to find a matching key.
-func (g *GenesysCloudResourceExporter) resolveRefIdToResourceMeta(
-	refID string,
-	refSettings *resourceExporter.RefAttrSettings,
-	refResourceIdMetaMap resourceExporter.ResourceIDMetaMap,
-) *resourceExporter.ResourceMeta {
-
-	if customComparator := refSettings.CustomReferenceIDComparator; customComparator != nil {
-		for k, meta := range refResourceIdMetaMap {
-			if customComparator(k, refID) {
-				return meta
-			}
-		}
-		return nil
-	}
-
-	return refResourceIdMetaMap[refID]
 }
 
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {
