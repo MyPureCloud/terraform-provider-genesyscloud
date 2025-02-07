@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -160,7 +162,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
-	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.ConsistencyChecks(), ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocumentVariation(), constants.ConsistencyChecks(), ResourceType)
 
 	documentState := ""
 	if published, ok := d.GetOk("published"); ok {
@@ -181,6 +183,10 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			return retry.NonRetryableError(err)
 		}
 
+		if knowledgeDocVariation.Document == nil || knowledgeDocVariation.Document.KnowledgeBase == nil {
+			return retry.NonRetryableError(fmt.Errorf("returned knowledge document variation '%s' did not include a Document object", ids.knowledgeDocumentVariationID))
+		}
+
 		newId := buildVariationId(*knowledgeDocVariation.Document.KnowledgeBase.Id, ids.knowledgeDocumentResourceDataID, *knowledgeDocVariation.Id)
 		d.SetId(newId)
 
@@ -195,8 +201,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 		}
 
 		log.Printf("Read knowledge document variation %s", ids.knowledgeDocumentVariationID)
-		//return cc.CheckState(d)
-		return nil
+		return cc.CheckState(d)
 	})
 	if retryErr != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s: %v", ids.knowledgeDocumentVariationID, retryErr), apiResponse)

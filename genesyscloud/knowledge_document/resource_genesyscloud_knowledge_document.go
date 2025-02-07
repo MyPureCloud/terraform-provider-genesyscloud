@@ -49,7 +49,7 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 			return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 		}
 		for _, knowledgeDocument := range *partialEntities {
-			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeBase.Id)
+			id := BuildDocumentResourceDataID(*knowledgeDocument.Id, *knowledgeBase.Id)
 			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeDocument.Title}
 		}
 
