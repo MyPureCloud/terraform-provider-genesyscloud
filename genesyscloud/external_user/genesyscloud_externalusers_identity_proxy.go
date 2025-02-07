@@ -2,7 +2,11 @@ package external_user
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
@@ -67,29 +71,36 @@ func (p *externalUserIdentityProxy) deleteExternalUserIdentity(ctx context.Conte
 }
 
 func createExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityProxy, userId string, externalIdentity platformclientv2.Userexternalidentifier) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
-	externalIdList, apiResponse, err := p.externalUserApi.PostUserExternalid(userId, externalIdentity)
+	externaIdObject, apiResponse, err := callExternalUserAPI(p.externalUserApi, userId, externalIdentity)
+
 	if err != nil {
 		return nil, apiResponse, err
 	}
-	if len(externalIdList) == 0 {
-		return nil, apiResponse, fmt.Errorf("could not create a external User Identity for userId:%s ", userId)
-	}
-	externaIdObject := externalIdList[0]
-	return &externaIdObject, apiResponse, err
+	return externaIdObject, apiResponse, err
 }
 
 func getAllExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityProxy, userId string) (*[]platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
 	externalIdList, response, err := p.externalUserApi.GetUserExternalid(userId)
+	for _, externalId := range externalIdList {
+		if externalId.ExternalKey == nil || externalId.AuthorityName == nil {
+			continue
+		}
+		rc.SetCache(p.externalUserIdentityCache, createCompoundKey(userId, *externalId.AuthorityName, *externalId.ExternalKey), externalId)
+	}
+
 	return &externalIdList, response, err
 }
 
 func getExternalUserIdentityByIdFn(ctx context.Context, p *externalUserIdentityProxy, userId, authorityName, externalKey string) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
-
+	if externalId := rc.GetCacheItem(p.externalUserIdentityCache, createCompoundKey(userId, authorityName, externalKey)); externalId != nil {
+		return externalId, nil, nil
+	}
 	externalIdList, response, err := getAllExternalUserIdentityFn(ctx, p, userId)
 	if err != nil {
 		return nil, response, err
 	}
 	if externalIdList == nil || len(*externalIdList) == 0 {
+		response.StatusCode = 404
 		return nil, response, fmt.Errorf("could not find a external User Identity for userId :%s authorityName:%s externalKey:%s ", userId, authorityName, externalKey)
 	}
 	for _, externalId := range *externalIdList {
@@ -102,5 +113,65 @@ func getExternalUserIdentityByIdFn(ctx context.Context, p *externalUserIdentityP
 }
 
 func deleteExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityProxy, userId, authorityName, externalKey string) (*platformclientv2.APIResponse, error) {
-	return p.externalUserApi.DeleteUserExternalidAuthorityNameExternalKey(userId, authorityName, externalKey)
+	apiResponse, err := p.externalUserApi.DeleteUserExternalidAuthorityNameExternalKey(userId, authorityName, externalKey)
+	rc.DeleteCacheItem(p.externalUserIdentityCache, createCompoundKey(userId, authorityName, externalKey))
+	return apiResponse, err
+}
+
+func callExternalUserAPI(userApi *platformclientv2.UsersApi, userId string, externalUser platformclientv2.Userexternalidentifier) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
+	var httpMethod = "POST"
+	path := userApi.Configuration.BasePath + "/api/v2/users/{userId}/externalid"
+	path = strings.Replace(path, "{userId}", url.PathEscape(fmt.Sprintf("%v", userId)), -1)
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+	formParams := url.Values{}
+	var postBody interface{}
+	var postFileName string
+	var fileBytes []byte
+
+	if userApi.Configuration.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + userApi.Configuration.AccessToken
+	}
+	for key := range userApi.Configuration.DefaultHeader {
+		headerParams[key] = userApi.Configuration.DefaultHeader[key]
+	}
+
+	correctedQueryParams := make(map[string]string)
+	for k, v := range queryParams {
+		if k == "varType" {
+			correctedQueryParams["type"] = v
+			continue
+		}
+		correctedQueryParams[k] = v
+	}
+	queryParams = correctedQueryParams
+
+	localVarHttpContentTypes := []string{"application/json"}
+
+	localVarHttpContentType := userApi.Configuration.APIClient.SelectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		headerParams["Content-Type"] = localVarHttpContentType
+	}
+	localVarHttpHeaderAccepts := []string{
+		"application/json",
+	}
+
+	localVarHttpHeaderAccept := userApi.Configuration.APIClient.SelectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		headerParams["Accept"] = localVarHttpHeaderAccept
+	}
+	postBody = &externalUser
+
+	var successPayload *platformclientv2.Userexternalidentifier
+	response, err := userApi.Configuration.APIClient.CallAPI(path, httpMethod, postBody, headerParams, queryParams, formParams, postFileName, fileBytes, "other")
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if err == nil && response.Error != nil {
+		err = errors.New(response.ErrorMessage)
+	} else if response.HasBody {
+		json.Unmarshal(response.RawBody, &successPayload)
+
+	}
+	return successPayload, response, err
 }

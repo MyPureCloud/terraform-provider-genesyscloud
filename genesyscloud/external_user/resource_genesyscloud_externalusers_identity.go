@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	userResource "terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -32,9 +31,9 @@ func getAllExternalUserIdentity(ctx context.Context, clientConfig *platformclien
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get genesys users error: %s", err), userResponse)
 	}
-	resources, err := getAllHelperExternalUser(ctx, externalUserproxy, userList)
+	resources, response, err := getAllHelperExternalUser(ctx, externalUserproxy, userList)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external users error: %s", err), userResponse)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get external users error: %s", err), response)
 	}
 	return resources, nil
 }
@@ -56,7 +55,7 @@ func createExternalUser(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get external user %s", err), response)
 	}
-	id := fmt.Sprintf("%s_%s_%s", userId, *externalUser.AuthorityName, *externalUser.ExternalKey)
+	id := createCompoundKey(userId, *externalUser.AuthorityName, *externalUser.ExternalKey)
 
 	d.SetId(id)
 	log.Printf("Created external user %s for genesys user %s", id, userId)
@@ -150,11 +149,11 @@ func deleteExternalUser(ctx context.Context, d *schema.ResourceData, meta interf
 
 }
 
-func getAllHelperExternalUser(ctx context.Context, externalUserproxy *externalUserIdentityProxy, userList *[]platformclientv2.User) (resourceExporter.ResourceIDMetaMap, error) {
+func getAllHelperExternalUser(ctx context.Context, externalUserproxy *externalUserIdentityProxy, userList *[]platformclientv2.User) (resourceExporter.ResourceIDMetaMap, *platformclientv2.APIResponse, error) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	if userList == nil || len(*userList) == 0 {
-		return resources, nil
+		return resources, nil, nil
 	}
 
 	for _, eachUser := range *userList {
@@ -164,7 +163,7 @@ func getAllHelperExternalUser(ctx context.Context, externalUserproxy *externalUs
 		userId := *eachUser.Id
 		externalUseList, response, err := externalUserproxy.getAllExternalUserIdentity(ctx, userId)
 		if err != nil || externalUseList == nil {
-			return nil, fmt.Errorf("%s:%s", err, response)
+			return nil, response, err
 		}
 		for _, externalUser := range *externalUseList {
 
@@ -174,17 +173,5 @@ func getAllHelperExternalUser(ctx context.Context, externalUserproxy *externalUs
 
 	}
 
-	return resources, nil
-}
-
-func createCompoundKey(userId, authorityName, externalKey string) string {
-	return fmt.Sprintf("%s::%s::%s", userId, authorityName, externalKey)
-}
-
-func splitCompoundKey(compoundKey string) (string, string, string, error) {
-	split := strings.Split(compoundKey, "::")
-	if len(split) != 3 {
-		return "", "", "", fmt.Errorf("invalid compound key: %s", compoundKey)
-	}
-	return split[0], split[1], split[2], nil
+	return resources, nil, nil
 }
