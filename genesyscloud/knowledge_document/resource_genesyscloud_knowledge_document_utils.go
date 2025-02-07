@@ -14,11 +14,11 @@ import (
 
 const documentIDSeparator = ","
 
-func buildVariationResourceDataID(knowledgeDocumentId, knowledgeBaseId string) string {
+func BuildDocumentResourceDataID(knowledgeDocumentId, knowledgeBaseId string) string {
 	return knowledgeDocumentId + documentIDSeparator + knowledgeBaseId
 }
 
-func parseVariationResourceDataID(id string) (knowledgeDocumentID, knowledgeBaseID string) {
+func parseDocumentResourceDataID(id string) (knowledgeDocumentID, knowledgeBaseID string) {
 	split := strings.Split(id, documentIDSeparator)
 	return split[0], split[1]
 }

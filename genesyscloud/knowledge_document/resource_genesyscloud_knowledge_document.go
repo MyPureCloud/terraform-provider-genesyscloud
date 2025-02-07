@@ -86,7 +86,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	id := buildVariationResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
+	id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document %s", *knowledgeDocument.Id)
@@ -94,7 +94,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	knowledgeDocumentId, knowledgeBaseId := parseVariationResourceDataID(d.Id())
+	knowledgeDocumentId, knowledgeBaseId := parseDocumentResourceDataID(d.Id())
 
 	state := "Draft"
 	if d.Get("published").(bool) {
@@ -116,7 +116,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		// required
-		id := buildVariationResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
+		id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 		d.SetId(id)
 		if knowledgeDocument.KnowledgeBase != nil && knowledgeDocument.KnowledgeBase.Id != nil {
 			_ = d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
@@ -137,7 +137,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	knowledgeDocumentId, _ := parseVariationResourceDataID(d.Id())
+	knowledgeDocumentId, _ := parseDocumentResourceDataID(d.Id())
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	state := "Draft"
 	if d.Get("published").(bool) {
