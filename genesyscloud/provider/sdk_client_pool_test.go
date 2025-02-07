@@ -427,8 +427,8 @@ func TestSDKClientPool_LoggingOutput(t *testing.T) {
 	logOutput = buf.String()
 	assert.NotContains(t, logOutput, "Client acquired from pool - ")      // Debug log
 	assert.NotContains(t, logOutput, "Client released from full pool - ") // Debug log
-	assert.Contains(t, logOutput, "pool near capacity")
-	assert.Contains(t, logOutput, "pool at critical capacity")
+	assert.NotContains(t, logOutput, "pool near capacity")
+	assert.NotContains(t, logOutput, "pool at critical capacity")
 }
 
 func TestSDKClientPool_InitializationLogging(t *testing.T) {

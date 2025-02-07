@@ -225,6 +225,8 @@ func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.Reso
 			if err := InitClientConfig(ctx, providerConfig, version, config, false); err != nil {
 				select {
 				case errorChan <- err:
+				case <-ctx.Done():
+					log.Printf("[WARN] Context cancelled while trying to send error: %v", err)
 				default:
 				}
 				return
@@ -306,9 +308,9 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 
 		remaining := int64(p.config.MaxClients) - atomic.LoadInt64(&p.metrics.activeClients)
 		if remaining <= int64(PoolCriticalThreshold) {
-			log.Printf("[WARN] %s but pool at critical capacity - %s", acquiredMsg, p.formatMetrics())
+			p.logDebug("[WARN] %s but pool at critical capacity - %s", acquiredMsg, p.formatMetrics())
 		} else if remaining <= int64(PoolNearCapacityThreshold) {
-			log.Printf("[WARN] %s with pool near capacity - %s", acquiredMsg, p.formatMetrics())
+			p.logDebug("[WARN] %s with pool near capacity - %s", acquiredMsg, p.formatMetrics())
 		} else {
 			p.logDebug("%s - %s", acquiredMsg, p.formatMetrics())
 		}
@@ -317,7 +319,7 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 		p.metrics.mu.Lock()
 		p.metrics.acquireTimeouts++
 		p.metrics.mu.Unlock()
-		log.Printf("[WARN] Client acquisition timeout - %s", p.formatMetrics())
+		p.logDebug("[WARN] Client acquisition timeout - %s", p.formatMetrics())
 		return nil, fmt.Errorf("timeout after %v waiting for available client: %v", p.config.AcquireTimeout, timeoutCtx.Err())
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -407,7 +409,16 @@ func cleanupConfiguration(config *platformclientv2.Configuration) error {
 }
 
 func (p *SDKClientPool) Close(ctx context.Context) error {
+	metrics := p.GetMetrics()
+	if metrics.activeClients > 0 {
+		p.logDebug("[WARN] Closing pool with %d active clients", metrics.activeClients)
+	}
+
+	if p.done == nil {
+		return nil
+	}
 	close(p.done) // Signal all goroutines to stop
+	p.done = nil
 
 	drainCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
