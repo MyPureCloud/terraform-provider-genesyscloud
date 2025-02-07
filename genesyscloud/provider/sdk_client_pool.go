@@ -83,11 +83,11 @@ var Once sync.Once
 
 // InitSDKClientPool creates a new Pool of Clients with the given provider config
 // This must be called during provider initialization before the Pool is used
-func InitSDKClientPool(version string, providerConfig *schema.ResourceData) diag.Diagnostics {
+func InitSDKClientPool(ctx context.Context, version string, providerConfig *schema.ResourceData) diag.Diagnostics {
 	Once.Do(func() {
 		log.Print("Initializing default SDK client.")
 		// Initialize the default config for tests and anything else that doesn't use the Pool
-		err := InitClientConfig(providerConfig, version, platformclientv2.GetDefaultConfiguration(), true)
+		err := InitClientConfig(ctx, providerConfig, version, platformclientv2.GetDefaultConfiguration(), true)
 		if err != nil {
 			SdkClientPoolErr = err
 			return
@@ -101,16 +101,22 @@ func InitSDKClientPool(version string, providerConfig *schema.ResourceData) diag
 		// Get timeouts from provider config
 		acquireTimeout := DefaultAcquireTimeout
 		if v, ok := providerConfig.GetOk(AttrTokenAcquireTimeout); ok {
-			if parsed, err := time.ParseDuration(v.(string)); err == nil {
-				acquireTimeout = parsed
+			parsed, err := time.ParseDuration(v.(string))
+			if err != nil {
+				SdkClientPoolErr = diag.Errorf("Failed to parse token acquire timeout: %v", err)
+				return
 			}
+			acquireTimeout = parsed
 		}
 
 		initTimeout := DefaultInitTimeout
 		if v, ok := providerConfig.GetOk(AttrTokenInitTimeout); ok {
-			if parsed, err := time.ParseDuration(v.(string)); err == nil {
-				initTimeout = parsed
+			parsed, err := time.ParseDuration(v.(string))
+			if err != nil {
+				SdkClientPoolErr = diag.Errorf("Failed to parse token init timeout: %v", err)
+				return
 			}
+			initTimeout = parsed
 		}
 
 		config := &SDKClientPoolConfig{
@@ -124,11 +130,12 @@ func InitSDKClientPool(version string, providerConfig *schema.ResourceData) diag
 			Pool:    make(chan *platformclientv2.Configuration, max),
 			config:  config,
 			metrics: &poolMetrics{},
+			done:    make(chan struct{}),
 		}
 		SdkClientPool.logDebug("Initialized %d SDK clients in the Pool with acquire timeout %v and init timeout %v.", max, acquireTimeout, initTimeout)
 
 		SdkClientPool.startMetricsLogging()
-		SdkClientPoolErr = SdkClientPool.preFill(providerConfig, version)
+		SdkClientPoolErr = SdkClientPool.preFill(ctx, providerConfig, version)
 	})
 	return SdkClientPoolErr
 }
@@ -142,7 +149,7 @@ func (p *SDKClientPool) startMetricsLogging() {
 		for {
 			select {
 			case <-ticker.C:
-				p.logDebug("Client pool status - %s", SdkClientPool.formatMetrics())
+				p.logDebug("Client pool status - %s", p.formatMetrics())
 			case <-p.done:
 				return
 			}
@@ -178,10 +185,10 @@ func (p *SDKClientPool) formatMetrics() string {
 	)
 }
 
-func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version string) diag.Diagnostics {
+func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.ResourceData, version string) diag.Diagnostics {
 	p.logDebug("Prefilling SDK client pool with %d clients.", p.config.MaxClients)
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.config.InitTimeout)
+	ctx, cancel := context.WithTimeout(ctx, p.config.InitTimeout)
 	defer cancel()
 
 	errorChan := make(chan diag.Diagnostics, p.config.MaxClients)
@@ -215,39 +222,51 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 				return
 			}
 
-			if err := InitClientConfig(providerConfig, version, config, false); err != nil {
+			if err := InitClientConfig(ctx, providerConfig, version, config, false); err != nil {
 				select {
 				case errorChan <- err:
-				case <-ctx.Done():
-				case <-initDone:
+				default:
 				}
 				return
 			}
 
 			// Try to add to pool with context awareness
+			cleanup := false
 			select {
 			case p.Pool <- config:
+				// Successfully added to the pool
 			case <-ctx.Done():
-				// Cleanup the config if we can't add it to the pool
+				cleanup = true
+			case <-initDone:
+				cleanup = true
+			}
+
+			// Cleanup the config if we can't add it to the pool
+			if cleanup {
 				if err := cleanupConfiguration(config); err != nil {
 					p.logDebug("Error cleaning up configuration during cancellation: %v", err)
-				}
-			case <-initDone:
-				// Cleanup the config if we can't add it to the pool
-				if err := cleanupConfiguration(config); err != nil {
-					p.logDebug("Error cleaning up configuration during cleanup: %v", err)
 				}
 			}
 		}(sdkConfig)
 	}
 
-	// Start error collector
-	errDone := make(chan struct{})
+	// Use a separate goroutine to collect errors
 	var resultErr diag.Diagnostics
+	errDone := make(chan struct{})
 	go func() {
 		defer close(errDone)
-		for err := range errorChan {
-			resultErr = append(resultErr, err...)
+		for {
+			select {
+			case err, ok := <-errorChan:
+				if !ok {
+					return
+				}
+				resultErr = append(resultErr, err...)
+			case <-ctx.Done():
+				return
+			case <-initDone:
+				return
+			}
 		}
 	}()
 
@@ -268,10 +287,6 @@ func (p *SDKClientPool) preFill(providerConfig *schema.ResourceData, version str
 		return nil
 	case <-ctx.Done():
 		p.logDebug("Timed out pre-filling client pool - %s", p.formatMetrics())
-		// Signal all goroutines to stop and clean up
-		close(initDone)
-		// Wait for all goroutines to finish
-		wg.Wait()
 		return diag.Errorf("Timed out pre-filling client pool: %v", ctx.Err())
 	}
 }
@@ -327,9 +342,6 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 
 	case <-timeout:
 		p.logDebug("Timed out attempting to release client - %s", p.formatMetrics())
-		if err := cleanupConfiguration(c); err != nil {
-			return fmt.Errorf("error cleaning up configuration: %v", err)
-		}
 		return fmt.Errorf("timeout releasing client to pool (size: %d)", p.config.MaxClients)
 
 	default:
@@ -417,15 +429,14 @@ func (p *SDKClientPool) Close(ctx context.Context) error {
 
 func (p *SDKClientPool) GetMetrics() poolMetrics {
 	p.metrics.mu.RLock()
-	lastAcquireTime := p.metrics.lastAcquireTime
-	p.metrics.mu.RUnlock()
+	defer p.metrics.mu.RUnlock()
 
 	return poolMetrics{
-		activeClients:   atomic.LoadInt64(&p.metrics.activeClients),
-		totalAcquires:   atomic.LoadInt64(&p.metrics.totalAcquires),
-		totalReleases:   atomic.LoadInt64(&p.metrics.totalReleases),
-		acquireTimeouts: atomic.LoadInt64(&p.metrics.acquireTimeouts),
-		lastAcquireTime: lastAcquireTime,
+		activeClients:   p.metrics.activeClients,
+		totalAcquires:   p.metrics.totalAcquires,
+		totalReleases:   p.metrics.totalReleases,
+		acquireTimeouts: p.metrics.acquireTimeouts,
+		lastAcquireTime: p.metrics.lastAcquireTime,
 	}
 }
 

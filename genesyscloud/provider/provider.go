@@ -111,7 +111,7 @@ func configure(version string) schema.ConfigureContextFunc {
 
 		providerSourceRegistry := getRegistry(&platform, version)
 
-		err := InitSDKClientPool(version, data)
+		err := InitSDKClientPool(context, version, data)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +227,7 @@ func GetRegionBasePath(region string) string {
 	return "https://api." + getRegionDomain(region)
 }
 
-func InitClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration, isDefaultConfig bool) diag.Diagnostics {
+func InitClientConfig(ctx context.Context, data *schema.ResourceData, version string, config *platformclientv2.Configuration, isDefaultConfig bool) diag.Diagnostics {
 	accessToken := data.Get("access_token").(string)
 	oauthclientID := data.Get("oauthclient_id").(string)
 	oauthclientSecret := data.Get("oauthclient_secret").(string)
@@ -276,7 +276,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 	} else {
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
 
-		return withRetries(context.Background(), time.Minute, func() *retry.RetryError {
+		return withRetries(ctx, time.Minute, func() *retry.RetryError {
 			err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 			if err != nil {
 				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {

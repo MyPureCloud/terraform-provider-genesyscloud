@@ -27,7 +27,7 @@ func TestSDKClientPool_InitAndAcquire(t *testing.T) {
 	providerConfig := testProviderConfig(t)
 	ctx := context.Background()
 
-	diagErr := InitSDKClientPool("test", providerConfig)
+	diagErr := InitSDKClientPool(ctx, "test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
 	assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
 
@@ -71,7 +71,7 @@ func TestSDKClientPool_AcquireTimeout(t *testing.T) {
 	})
 	ctx := context.Background()
 
-	diagErr := InitSDKClientPool("test", providerConfig)
+	diagErr := InitSDKClientPool(ctx, "test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
 	assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
 
@@ -101,7 +101,7 @@ func TestSDKClientPool_Metrics(t *testing.T) {
 	})
 	ctx := context.Background()
 
-	diagErr := InitSDKClientPool("test", providerConfig)
+	diagErr := InitSDKClientPool(ctx, "test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
 	assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
 
@@ -172,7 +172,7 @@ func TestSDKClientPool_ConcurrentOperations(t *testing.T) {
 	providerConfig := testProviderConfig(t)
 	ctx := context.Background()
 
-	err := InitSDKClientPool("test", providerConfig)
+	err := InitSDKClientPool(ctx, "test", providerConfig)
 	assert.Nil(t, err)
 
 	var wg sync.WaitGroup
@@ -197,7 +197,99 @@ func TestSDKClientPool_ConcurrentOperations(t *testing.T) {
 	assert.True(t, metrics.totalReleases <= metrics.totalAcquires)
 }
 
-func TestRunWithPooledClient(t *testing.T) {
+func TestSDKClientPool_PreFill(t *testing.T) {
+	tests := []struct {
+		name        string
+		maxClients  int
+		initTimeout string
+		wantErr     bool
+	}{
+		{
+			name:        "successful_prefill",
+			maxClients:  5,
+			initTimeout: "10s",
+			wantErr:     false,
+		},
+		{
+			name:        "timeout_prefill",
+			maxClients:  20,    // Maximum allowed clients
+			initTimeout: "1ns", // Set to essentially immediate timeout
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetClientPool()
+
+			// Create a buffer to capture logs
+			var logBuffer bytes.Buffer
+			log.SetOutput(&logBuffer)
+			defer log.SetOutput(os.Stdout)
+
+			// Create ResourceData with the schema
+			providerConfig := testProviderConfigCustom(t, map[string]interface{}{
+				AttrTokenPoolSize:       tt.maxClients,
+				AttrTokenAcquireTimeout: "1s",
+				AttrSdkClientPoolDebug:  true,
+				AttrTokenInitTimeout:    tt.initTimeout,
+			})
+
+			// Initialize the pool
+			ctx := context.Background()
+
+			diagErr := InitSDKClientPool(ctx, "test", providerConfig)
+			t.Logf("Pool initialization completed with error: %v", diagErr)
+			if (diagErr != nil) != tt.wantErr {
+				t.Errorf("InitSDKClientPool() error = %v, wantErr %v", diagErr, tt.wantErr)
+				return
+			}
+
+			// Verify pool was initialized
+			assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
+
+			if !tt.wantErr {
+				// Test concurrent access
+				ctx := context.Background()
+				var wg sync.WaitGroup
+				for i := 0; i < 5; i++ {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						client, err := SdkClientPool.acquire(ctx)
+						if err == nil {
+							defer SdkClientPool.release(client)
+							// Simulate some work
+							time.Sleep(10 * time.Millisecond)
+						}
+					}()
+				}
+				wg.Wait()
+
+				// Verify metrics
+				metrics := SdkClientPool.GetMetrics()
+				assert.Equal(t, int64(0), metrics.activeClients, "Expected 0 active clients")
+				assert.Equal(t, metrics.totalAcquires, metrics.totalReleases,
+					"Mismatch between acquires and releases")
+
+				// Verify logging
+				logs := logBuffer.String()
+				if !strings.Contains(logs, "Successfully pre-filled client pool") {
+					t.Error("Expected success message in logs")
+					t.Logf("Actual logs: %s", logs)
+				}
+			}
+
+			// Cleanup
+			if SdkClientPool != nil {
+				err := SdkClientPool.Close(context.Background())
+				assert.NoError(t, err, "Failed to close pool")
+			}
+		})
+	}
+}
+
+func TestSDKClientPool_RunWithPooledClient(t *testing.T) {
 	// Reset the singleton for testing
 	SdkClientPool = nil
 	SdkClientPoolErr = nil
@@ -205,8 +297,9 @@ func TestRunWithPooledClient(t *testing.T) {
 
 	// Create ResourceData with the schema
 	providerConfig := testProviderConfig(t)
+	ctx := context.Background()
 
-	diagErr := InitSDKClientPool("test", providerConfig)
+	diagErr := InitSDKClientPool(ctx, "test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
 	assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
 
@@ -231,8 +324,9 @@ func TestSDKClientPool_ContextCancellation(t *testing.T) {
 
 	// Create ResourceData with the schema
 	providerConfig := testProviderConfig(t)
+	ctx := context.Background()
 
-	diagErr := InitSDKClientPool("test", providerConfig)
+	diagErr := InitSDKClientPool(ctx, "test", providerConfig)
 	assert.Nil(t, diagErr, "Expected no error initializing pool")
 	assert.NotNil(t, SdkClientPool, "Expected pool to be initialized")
 
@@ -269,7 +363,7 @@ func TestSDKClientPool_LoggingOutput(t *testing.T) {
 	})
 	ctx := context.Background()
 
-	err := InitSDKClientPool("test", config)
+	err := InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	// Acquire one client to trigger debug msg
@@ -321,7 +415,7 @@ func TestSDKClientPool_LoggingOutput(t *testing.T) {
 		AttrSdkClientPoolDebug:  false,
 	})
 
-	err = InitSDKClientPool("test", config)
+	err = InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	// Same operations should not generate debug logs
@@ -349,8 +443,9 @@ func TestSDKClientPool_InitializationLogging(t *testing.T) {
 		AttrTokenAcquireTimeout: "1s",
 		AttrTokenInitTimeout:    "5s",
 	})
+	ctx := context.Background()
 
-	err := InitSDKClientPool("test", config)
+	err := InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	logOutput := buf.String()
@@ -364,14 +459,67 @@ func TestSDKClientPool_InitializationLogging(t *testing.T) {
 	assert.Equal(t, 1, poolClientLogs, "Expected exactly one default setting access token logs")
 }
 
+func TestSDKClientPool_TimeoutLogging(t *testing.T) {
+	resetClientPool()
+
+	// Capture log output
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+
+	// Test with debug logging enabled
+	config := testProviderConfigCustom(t, map[string]interface{}{
+		AttrTokenPoolSize:       20,
+		AttrTokenAcquireTimeout: "1s",
+		AttrTokenInitTimeout:    "1ns",
+		AttrSdkClientPoolDebug:  true,
+	})
+	ctx := context.Background()
+
+	// Initialize pool (should timeout)
+	diagErr := InitSDKClientPool(ctx, "test", config)
+
+	// Verify error and logs
+	assert.NotNil(t, diagErr, "Expected timeout error")
+
+	// Check diagErr for error message
+	assert.Contains(t, diagErr[0].Summary, "Timed out pre-filling client pool")
+
+	logOutput := buf.String()
+	assert.Contains(t, logOutput, "Timed out pre-filling client pool")
+
+	// Clear buffer and test with debug logging disabled
+	buf.Reset()
+	resetClientPool()
+
+	config = testProviderConfigCustom(t, map[string]interface{}{
+		AttrTokenPoolSize:       20,
+		AttrTokenAcquireTimeout: "1s",
+		AttrTokenInitTimeout:    "1ns",
+		AttrSdkClientPoolDebug:  false,
+	})
+
+	ctx2 := context.Background()
+	diagErr = InitSDKClientPool(ctx2, "test", config)
+	assert.NotNil(t, diagErr, "Expected timeout error")
+
+	// Check diagErr for error message
+	assert.Contains(t, diagErr[0].Summary, "Timed out pre-filling client pool")
+
+	logOutput = buf.String()
+	// Should not see error logged with debug disabled
+	assert.NotContains(t, logOutput, "Timed out pre-filling client pool")
+}
+
 func TestSDKClientPool_WrapperFunctions(t *testing.T) {
 	resetClientPool()
 
 	config := testProviderConfigCustom(t, map[string]interface{}{
 		AttrTokenPoolSize: 2,
 	})
+	ctx := context.Background()
 
-	err := InitSDKClientPool("test", config)
+	err := InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	// Mock resource data
@@ -411,8 +559,9 @@ func TestSDKClientPool_GetAllWithPooledClient(t *testing.T) {
 	config := testProviderConfigCustom(t, map[string]interface{}{
 		AttrTokenPoolSize: 2,
 	})
+	ctx := context.Background()
 
-	err := InitSDKClientPool("test", config)
+	err := InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	// Test GetAllWithPooledClient
@@ -450,8 +599,9 @@ func TestSDKClientPool_GetAllWithPooledClientCustom(t *testing.T) {
 	config := testProviderConfigCustom(t, map[string]interface{}{
 		AttrTokenPoolSize: 2,
 	})
+	ctx := context.Background()
 
-	err := InitSDKClientPool("test", config)
+	err := InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	// Test GetAllWithPooledClientCustom
@@ -479,8 +629,9 @@ func TestSDKClientPool_GetAllWithPooledClientErrors(t *testing.T) {
 	config := testProviderConfigCustom(t, map[string]interface{}{
 		AttrTokenPoolSize: 2,
 	})
+	ctx := context.Background()
 
-	err := InitSDKClientPool("test", config)
+	err := InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	// Test error from getAllFunc
@@ -519,8 +670,9 @@ func TestSDKClientPool_GetAllWithPooledClientContext(t *testing.T) {
 	config := testProviderConfigCustom(t, map[string]interface{}{
 		AttrTokenPoolSize: 2,
 	})
+	ctx := context.Background()
 
-	err := InitSDKClientPool("test", config)
+	err := InitSDKClientPool(ctx, "test", config)
 	assert.Nil(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())

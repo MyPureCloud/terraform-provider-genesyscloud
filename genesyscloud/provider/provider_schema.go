@@ -220,5 +220,4 @@ func validateDuration(i interface{}, k string) ([]string, []error) {
 		return nil, []error{fmt.Errorf("expected %s to be a valid duration string: %v", k, err)}
 	}
 	return nil, nil
-
 }
