@@ -1,10 +1,36 @@
 package provider
 
 import (
+	"context"
+	"os"
+	"os/signal"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+func TestMain(m *testing.M) {
+	// Setup
+	cleanup := func() {
+		if sigChan != nil {
+			signal.Stop(sigChan)
+			close(sigChan)
+		}
+		if SdkClientPool != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_ = SdkClientPool.Close(ctx)
+		}
+	}
+
+	// Run tests
+	code := m.Run()
+
+	// Cleanup
+	cleanup()
+	os.Exit(code)
+}
 
 func TestProvider(t *testing.T) {
 	if err := New("0.1.0", make(map[string]*schema.Resource), make(map[string]*schema.Resource))().InternalValidate(); err != nil {

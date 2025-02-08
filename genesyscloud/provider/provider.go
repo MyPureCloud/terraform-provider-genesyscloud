@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -79,25 +80,34 @@ type ProviderMeta struct {
 	DefaultCountryCode string
 }
 
+var (
+	cleanupOnce sync.Once
+	sigChan     chan os.Signal
+)
+
 func setupCleanup() {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	cleanupOnce.Do(func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	go func() {
-		<-sigChan
-		log.Println("Received termination signal, cleaning up...")
+		go func() {
+			<-sigChan
+			log.Println("Received termination signal, cleaning up...")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-		if SdkClientPool != nil {
-			if err := SdkClientPool.Close(ctx); err != nil {
-				log.Printf("[ERROR] Failed to close SDK client pool: %v", err)
+			if SdkClientPool != nil {
+				if err := SdkClientPool.Close(ctx); err != nil {
+					log.Printf("[ERROR] Failed to close SDK client pool: %v", err)
+				}
 			}
-		}
-
-		os.Exit(0)
-	}()
+			// Ensure we stop listening for signals after cleanup
+			signal.Stop(sigChan)
+			close(sigChan)
+			os.Exit(0)
+		}()
+	})
 }
 
 func configure(version string) schema.ConfigureContextFunc {

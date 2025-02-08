@@ -3,6 +3,7 @@ package tfexporter
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -444,6 +445,11 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		divName          = "terraform-" + uuid.NewString()
 	)
 	cleanupFunc := func() {
+		if provider.SdkClientPool != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_ = provider.SdkClientPool.Close(ctx)
+		}
 		if err := os.RemoveAll(exportTestDir); err != nil {
 			t.Logf("Error while cleaning up %v", err)
 		}
