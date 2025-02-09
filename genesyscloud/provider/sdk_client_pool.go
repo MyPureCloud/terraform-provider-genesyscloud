@@ -353,6 +353,10 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 	}
 }
 
+func (p *SDKClientPool) GetMaxClients() int {
+	return p.config.MaxClients
+}
+
 func cleanupConfiguration(config *platformclientv2.Configuration) error {
 	// Perform any necessary cleanup of the configuration
 	if config == nil {

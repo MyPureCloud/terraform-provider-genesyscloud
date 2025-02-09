@@ -78,6 +78,7 @@ type ProviderMeta struct {
 	Domain             string
 	Organization       *platformclientv2.Organization
 	DefaultCountryCode string
+	MaxClients         int
 }
 
 var (
@@ -133,6 +134,11 @@ func configure(version string) schema.ConfigureContextFunc {
 			return nil, err
 		}
 
+		maxClients := MaxClients
+		if v, ok := data.GetOk(AttrTokenPoolSize); ok {
+			maxClients = v.(int)
+		}
+
 		meta := &ProviderMeta{
 			Version:            version,
 			Platform:           &platform,
@@ -141,6 +147,7 @@ func configure(version string) schema.ConfigureContextFunc {
 			Domain:             getRegionDomain(data.Get("aws_region").(string)),
 			Organization:       currentOrg,
 			DefaultCountryCode: *currentOrg.DefaultCountryCode,
+			MaxClients:         maxClients,
 		}
 
 		setProviderMeta(meta)
