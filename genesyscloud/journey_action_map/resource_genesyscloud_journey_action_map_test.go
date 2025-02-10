@@ -2,7 +2,6 @@ package journey_action_map
 
 import (
 	"fmt"
-	"path"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -39,7 +38,7 @@ func TestAccResourceJourneyActionMapScheduleGroups(t *testing.T) {
 func runJourneyActionMapTestCaseWithFileServer(t *testing.T, testCaseName string, port int) {
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	server := fileserver.Start(httpServerExitDone, path.Join("../", testrunner.GetTestDataPath(testrunner.ResourceTestType, ResourceType)), port)
+	server := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath(testrunner.ResourceTestType, ResourceType), port)
 
 	runJourneyActionMapTestCase(t, testCaseName)
 
@@ -52,7 +51,7 @@ func runJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             testrunner.GenerateResourceTestSteps(ResourceType, testCaseName, nil),
+		Steps:             testrunner.GenerateResourceJourneyTestSteps(ResourceType, testCaseName, nil),
 		CheckDestroy:      testVerifyJourneyActionMapsDestroyed,
 	})
 }

@@ -70,6 +70,7 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
     }
     display_name = "facebookName"
   }
-  survey_opt_out      = false
-  external_system_url = "https://systemUrl.com"
+  survey_opt_out           = false
+  external_system_url      = "https://systemUrl.com"
+  external_organization_id = genesyscloud_externalcontacts_organization.example.id
 }

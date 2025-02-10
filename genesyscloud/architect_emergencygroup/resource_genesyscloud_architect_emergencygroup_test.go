@@ -3,11 +3,13 @@ package architect_emergencygroup
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -27,7 +29,7 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 
 		flowResourceLabel = "test_flow"
 		flowName          = "Terraform Emergency Test Flow " + uuid.NewString()
-		flowFilePath      = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		flowFilePath      = filepath.Join(testrunner.RootDir, "/examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
 		inboundCallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
 

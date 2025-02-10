@@ -426,6 +426,7 @@ func UserExporter() *resourceExporter.ResourceExporter {
 			"routing_languages": {"language_id"},
 			"locations":         {"location_id"},
 		},
-		AllowZeroValues: []string{"routing_skills.proficiency", "routing_languages.proficiency"},
+		AllowEmptyArrays: []string{"routing_skills", "routing_languages"},
+		AllowZeroValues:  []string{"routing_skills.proficiency", "routing_languages.proficiency"},
 	}
 }
