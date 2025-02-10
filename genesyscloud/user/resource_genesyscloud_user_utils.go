@@ -900,12 +900,13 @@ func getSdkUtilizationTypes() []string {
 func buildVoicemailUserpoliciesRequest(voicemailUserpolicies []interface{}) platformclientv2.Voicemailuserpolicy {
 	var request platformclientv2.Voicemailuserpolicy
 	if extractMap, ok := voicemailUserpolicies[0].(map[string]interface{}); ok {
-		alertTimeoutSeconds := extractMap["alert_timeout_seconds"].(int)
 		sendEmailNotifications := extractMap["send_email_notifications"].(bool)
-
 		request = platformclientv2.Voicemailuserpolicy{
-			AlertTimeoutSeconds:    &alertTimeoutSeconds,
 			SendEmailNotifications: &sendEmailNotifications,
+		}
+		// Optional
+		if alertTimeoutSeconds := extractMap["alert_timeout_seconds"].(int); alertTimeoutSeconds > 0 {
+			request.AlertTimeoutSeconds = &alertTimeoutSeconds
 		}
 	}
 	return request
