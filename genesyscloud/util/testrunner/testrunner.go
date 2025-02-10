@@ -24,10 +24,6 @@ const (
 
 var RootDir string
 
-func init() {
-	RootDir = getRootDir()
-}
-
 // Helper function that retrieves the location of the root directory
 func getRootDir() string {
 	_, filename, _, ok := runtime.Caller(0)
@@ -56,13 +52,13 @@ func getRootDir() string {
 }
 
 func GetTestDataPath(elem ...string) string {
-	basePath := filepath.Join(RootDir, "test", "data")
+	basePath := filepath.Join(getRootDir(), "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
 }
 
 func GetTestTempPath(elem ...string) string {
-	basePath := filepath.Join(RootDir, "test", "temp")
+	basePath := filepath.Join(getRootDir(), "test", "temp")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
 }
