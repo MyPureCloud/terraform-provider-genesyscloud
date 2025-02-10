@@ -123,7 +123,7 @@ func init() {
 	path, err := detectExecutingBinary()
 	if err != nil {
 		log.Printf(`Error detecting binary: %v`, err)
-		platformConfigSingleton.platform = PlatformUnknown
+		platformConfigSingleton.platform = PlatformTerraform // use default terraform binary. so it wont break regression
 		return
 	}
 
