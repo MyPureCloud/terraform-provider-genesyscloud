@@ -252,7 +252,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		platform := platform.GetPlatform()
 		platformValidationErr := platform.Validate()
 		if platformValidationErr != nil {
-			return nil, diag.FromErr(platformValidationErr)
+			log.Printf("%v error during platform validation switching to defaults", platformValidationErr)
 		}
 
 		providerSourceRegistry := getRegistry(&platform, version)
