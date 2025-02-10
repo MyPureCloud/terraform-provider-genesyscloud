@@ -116,11 +116,11 @@ func executeAllUpdates(ctx context.Context, d *schema.ResourceData, proxy *userP
 	}
 
 	diagErr = updateUserVoicemailPolicies(d, proxy)
-  if diagErr != nil {
+	if diagErr != nil {
 		return diagErr
 	}
-  
-  diagErr = updatePassword(ctx, d, proxy)
+
+	diagErr = updatePassword(ctx, d, proxy)
 	if diagErr != nil {
 		return diagErr
 	}

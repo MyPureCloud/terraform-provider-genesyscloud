@@ -60,7 +60,7 @@ type userProxy struct {
 	getUserByNameAttr                 getUserByNameFunc
 	updateVoicemailUserpoliciesAttr   updateVoicemailUserpoliciesFunc
 	getVoicemailUserpolicicesByIdAttr getVoicemailUserpoliciesByIdFunc
-  updatePasswordAttr                updatePasswordFunc
+	updatePasswordAttr                updatePasswordFunc
 	userCache                         rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
 }
 
@@ -90,9 +90,9 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		patchUserWithStateAttr:            patchUserWithStateFn,
 		hydrateUserCacheAttr:              hydrateUserCacheFn,
 		getUserByNameAttr:                 getUserByNameFn,
-    updateVoicemailUserpoliciesAttr:   updateVoicemailUserpoliciesFn,
+		updateVoicemailUserpoliciesAttr:   updateVoicemailUserpoliciesFn,
 		getVoicemailUserpolicicesByIdAttr: getVoicemailUserpoliciesByUserIdFn,
-    updatePasswordAttr:                updatePasswordFn,
+		updatePasswordAttr:                updatePasswordFn,
 	}
 }
 
@@ -166,6 +166,7 @@ func (p *userProxy) updateVoicemailUserpolicies(ctx context.Context, userId stri
 // getVoicemailUserpoliciesById
 func (p *userProxy) getVoicemailUserpoliciesById(ctx context.Context, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
 	return p.getVoicemailUserpolicicesByIdAttr(ctx, p, id)
+}
 
 // updatePassword
 func (p *userProxy) updatePassword(ctx context.Context, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
