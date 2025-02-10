@@ -449,6 +449,7 @@ func UserExporter() *resourceExporter.ResourceExporter {
 			"locations":              {"location_id"},
 			"voicemail_userpolicies": {"alert_timeout_seconds"},
 		},
-		AllowZeroValues: []string{"routing_skills.proficiency", "routing_languages.proficiency"},
+		AllowEmptyArrays: []string{"routing_skills", "routing_languages"},
+		AllowZeroValues:  []string{"routing_skills.proficiency", "routing_languages.proficiency"},
 	}
 }

@@ -35,6 +35,7 @@ type hydrateUserCacheFunc func(ctx context.Context, p *userProxy, pageSize int, 
 type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error)
 type updateVoicemailUserpoliciesFunc func(ctx context.Context, p *userProxy, id string, policy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type getVoicemailUserpoliciesByIdFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
+type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error)
 
 /*
 The userProxy struct holds all the methods responsible for making calls to
@@ -59,6 +60,7 @@ type userProxy struct {
 	getUserByNameAttr                 getUserByNameFunc
 	updateVoicemailUserpoliciesAttr   updateVoicemailUserpoliciesFunc
 	getVoicemailUserpolicicesByIdAttr getVoicemailUserpoliciesByIdFunc
+  updatePasswordAttr                updatePasswordFunc
 	userCache                         rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
 }
 
@@ -87,9 +89,10 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		deleteUserAttr:                    deleteUserFn,
 		patchUserWithStateAttr:            patchUserWithStateFn,
 		hydrateUserCacheAttr:              hydrateUserCacheFn,
-		updateVoicemailUserpoliciesAttr:   updateVoicemailUserpoliciesFn,
 		getUserByNameAttr:                 getUserByNameFn,
+    updateVoicemailUserpoliciesAttr:   updateVoicemailUserpoliciesFn,
 		getVoicemailUserpolicicesByIdAttr: getVoicemailUserpoliciesByUserIdFn,
+    updatePasswordAttr:                updatePasswordFn,
 	}
 }
 
@@ -163,6 +166,10 @@ func (p *userProxy) updateVoicemailUserpolicies(ctx context.Context, userId stri
 // getVoicemailUserpoliciesById
 func (p *userProxy) getVoicemailUserpoliciesById(ctx context.Context, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
 	return p.getVoicemailUserpolicicesByIdAttr(ctx, p, id)
+
+// updatePassword
+func (p *userProxy) updatePassword(ctx context.Context, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
+	return p.updatePasswordAttr(ctx, p, userId, newPassword)
 }
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
@@ -298,4 +305,15 @@ func updateVoicemailUserpoliciesFn(ctx context.Context, p *userProxy, userId str
 
 func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
 	return p.voicemailApi.GetVoicemailUserpolicy(id)
+}
+
+func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
+	// Get the user's current password
+	resp, err := p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
+		NewPassword: &newPassword,
+	})
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
 }

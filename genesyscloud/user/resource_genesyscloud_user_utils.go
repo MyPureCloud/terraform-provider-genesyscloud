@@ -86,7 +86,7 @@ func executeUpdateUser(ctx context.Context, d *schema.ResourceData, proxy *userP
 	})
 }
 
-func executeAllUpdates(d *schema.ResourceData, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool) diag.Diagnostics {
+func executeAllUpdates(ctx context.Context, d *schema.ResourceData, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool) diag.Diagnostics {
 
 	if updateObjectDivision {
 		diagErr := util.UpdateObjectDivision(d, "USER", sdkConfig)
@@ -116,6 +116,11 @@ func executeAllUpdates(d *schema.ResourceData, proxy *userProxy, sdkConfig *plat
 	}
 
 	diagErr = updateUserVoicemailPolicies(d, proxy)
+  if diagErr != nil {
+		return diagErr
+	}
+  
+  diagErr = updatePassword(ctx, d, proxy)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -124,36 +129,63 @@ func executeAllUpdates(d *schema.ResourceData, proxy *userProxy, sdkConfig *plat
 }
 
 func updateUserSkills(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	transformFunc := func(configSkill interface{}) platformclientv2.Userroutingskillpost {
-		skillMap := configSkill.(map[string]interface{})
-		skillID := skillMap["skill_id"].(string)
-		skillProf := skillMap["proficiency"].(float64)
-
-		return platformclientv2.Userroutingskillpost{
-			Id:          &skillID,
-			Proficiency: &skillProf,
-		}
-	}
-
-	chunkProcessor := func(chunk []platformclientv2.Userroutingskillpost) diag.Diagnostics {
-		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			_, resp, err := proxy.userApi.PatchUserRoutingskillsBulk(d.Id(), chunk)
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update skills for user %s error: %s", d.Id(), err), resp)
-			}
-			return nil, nil
-		})
-		if diagErr != nil {
-			return diagErr
-		}
-		return nil
-	}
-
 	if d.HasChange("routing_skills") {
 		if skillsConfig := d.Get("routing_skills"); skillsConfig != nil {
-			skillsList := skillsConfig.(*schema.Set).List()
-			chunks := chunksProcess.ChunkItems(skillsList, transformFunc, 50)
-			return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+			log.Printf("Updating skills for user %s", d.Get("email"))
+			newSkillProfs := make(map[string]float64)
+			skillList := skillsConfig.(*schema.Set).List()
+			newSkillIds := make([]string, len(skillList))
+			for i, skill := range skillList {
+				skillMap := skill.(map[string]interface{})
+				newSkillIds[i] = skillMap["skill_id"].(string)
+				newSkillProfs[newSkillIds[i]] = skillMap["proficiency"].(float64)
+			}
+
+			oldSdkSkills, err := getUserRoutingSkills(d.Id(), proxy)
+			if err != nil {
+				return err
+			}
+
+			oldSkillIds := make([]string, len(oldSdkSkills))
+			oldSkillProfs := make(map[string]float64)
+			for i, skill := range oldSdkSkills {
+				oldSkillIds[i] = *skill.Id
+				oldSkillProfs[oldSkillIds[i]] = *skill.Proficiency
+			}
+
+			if len(oldSkillIds) > 0 {
+				skillsToRemove := lists.SliceDifference(oldSkillIds, newSkillIds)
+				for _, skillId := range skillsToRemove {
+					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+						resp, err := proxy.userApi.DeleteUserRoutingskill(d.Id(), skillId)
+						if err != nil {
+							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove skill from user %s error: %s", d.Id(), err), resp)
+						}
+						return nil, nil
+					})
+					if diagErr != nil {
+						return diagErr
+					}
+				}
+			}
+
+			if len(newSkillIds) > 0 {
+				// skills to add
+				skillsToAddOrUpdate := lists.SliceDifference(newSkillIds, oldSkillIds)
+				// Check for existing proficiencies to update which can be done with the same API
+				for langID, newNum := range newSkillProfs {
+					if oldNum, found := oldSkillProfs[langID]; found {
+						if newNum != oldNum {
+							skillsToAddOrUpdate = append(skillsToAddOrUpdate, langID)
+						}
+					}
+				}
+
+				if diagErr := updateUserRoutingSkills(d.Id(), skillsToAddOrUpdate, newSkillProfs, proxy); diagErr != nil {
+					return diagErr
+				}
+			}
+
 		}
 	}
 	return nil
@@ -313,6 +345,60 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 	return nil
 }
 
+func updatePassword(ctx context.Context, d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
+	if !d.HasChange("password") {
+		return nil
+	}
+
+	password := d.Get("password").(string)
+
+	if password == "" {
+		return nil // Skip password update if empty
+	}
+
+	_, err := proxy.updatePassword(ctx, d.Id(), password)
+	if err != nil {
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update password for user %s", d.Id()), err)
+	}
+
+	return nil
+}
+
+func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs map[string]float64, proxy *userProxy) diag.Diagnostics {
+	// Bulk API restricts skills adds to 50 per call
+	const maxBatchSize = 50
+
+	chunkBuild := func(val string) platformclientv2.Userroutingskillpost {
+		newProf := skillProfs[val]
+		return platformclientv2.Userroutingskillpost{
+			Id:          &val,
+			Proficiency: &newProf,
+		}
+	}
+
+	// Generic call to prepare chunks for the Update. Takes in three args
+	// 1. skillsToUpdate 2. The Entity prepare func for the update 3. Chunk Size
+	chunks := chunksProcess.ChunkItems(skillsToUpdate, chunkBuild, maxBatchSize)
+	// Closure to process the chunks
+
+	chunkProcessor := func(chunk []platformclientv2.Userroutingskillpost) diag.Diagnostics {
+		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			_, resp, err := proxy.userApi.PatchUserRoutingskillsBulk(userID, chunk)
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update languages for user %s error: %s", userID, err), resp)
+			}
+			return nil, nil
+		})
+		if diagErr != nil {
+			return diagErr
+		}
+		return nil
+	}
+
+	// Generic Function call which takes in the chunks and the processing function
+	return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+}
+
 func updateUserRoutingLanguages(userID string, langsToUpdate []string, langProfs map[string]int, proxy *userProxy) diag.Diagnostics {
 	// Bulk API restricts language adds to 50 per call
 	const maxBatchSize = 50
@@ -362,6 +448,23 @@ func getUserRoutingLanguages(userID string, proxy *userProxy) ([]platformclientv
 		}
 
 		sdkLanguages = append(sdkLanguages, *langs.Entities...)
+	}
+}
+
+func getUserRoutingSkills(userID string, proxy *userProxy) ([]platformclientv2.Userroutingskill, diag.Diagnostics) {
+	const maxPageSize = 50
+
+	var sdkSkills []platformclientv2.Userroutingskill
+	for pageNum := 1; ; pageNum++ {
+		skills, resp, err := proxy.userApi.GetUserRoutingskills(userID, maxPageSize, pageNum, "")
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
+		}
+		if skills == nil || skills.Entities == nil || len(*skills.Entities) == 0 {
+			return sdkSkills, nil
+		}
+
+		sdkSkills = append(sdkSkills, *skills.Entities...)
 	}
 }
 
