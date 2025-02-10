@@ -90,6 +90,7 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		if currentPhone.Site != nil && currentPhone.Site.Id != nil {
+			_ = d.Set("site_id", *currentPhone.Site.Id)
 			log.Printf("Phone ID = %s and the site_id = %s", d.Id(), *currentPhone.Site.Id)
 		} else {
 			log.Printf("Phone ID = %s and the site_id is nil", d.Id())
