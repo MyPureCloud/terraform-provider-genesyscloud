@@ -65,12 +65,12 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 Required:
 
 - `column_name` (String) The column name of a column selected for dynamic queueing.
-- `max_length` (Number) The maximum length of the text column selected for dynamic queueing.
 
 Optional:
 
 - `column_data_type` (String) The data type of the column selected for dynamic queueing (TEXT, NUMERIC or TIMESTAMP)
 - `max` (Number) The maximum length of the numeric column selected for dynamic queueing.
+- `max_length` (Number) The maximum length of the text column selected for dynamic queueing.
 - `min` (Number) The minimum length of the numeric column selected for dynamic queueing.
 
 
