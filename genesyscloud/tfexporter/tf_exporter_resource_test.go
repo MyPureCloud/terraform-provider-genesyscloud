@@ -104,6 +104,7 @@ import (
 
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	externalUser "terraform-provider-genesyscloud/genesyscloud/external_user"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 
@@ -344,6 +345,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_open", cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
+	RegisterExporter("genesyscloud_externalusers_identity", externalUser.ExternalUserIdentityExporter())
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
