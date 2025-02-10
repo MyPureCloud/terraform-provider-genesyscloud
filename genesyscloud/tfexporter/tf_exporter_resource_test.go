@@ -11,6 +11,7 @@ import (
 	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
@@ -166,6 +167,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[knowledgeDocumentVariation.ResourceType] = knowledgeDocumentVariation.ResourceKnowledgeDocumentVariation()
+	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
@@ -233,7 +235,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
@@ -273,10 +274,10 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplate.JourneyActionTemplateExporter())
 	RegisterExporter("genesyscloud_journey_outcome", journeyOutcome.JourneyOutcomeExporter())
 	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
-	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
 	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())
 	RegisterExporter("genesyscloud_knowledge_document_variation", knowledgeDocumentVariation.KnowledgeDocumentVariationExporter())
 	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
+	RegisterExporter(knowledgeKnowledgebase.ResourceType, knowledgeKnowledgebase.KnowledgeKnowledgebaseExporter())
 	RegisterExporter("genesyscloud_location", location.LocationExporter())
 	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
@@ -285,7 +286,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list_template", outboundContactListTemplate.OutboundContactListTemplateExporter())
-	RegisterExporter("genesyscloud_outbound_contact_list_contact", outboundContactListContact.ContactExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", obContactListFilter.OutboundContactlistfilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
 	RegisterExporter("genesyscloud_outbound_sequence", obSequence.OutboundSequenceExporter())

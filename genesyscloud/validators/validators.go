@@ -1,7 +1,12 @@
 package validators
 
 import (
+	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"log"
+	"math"
 	"regexp"
 	"strconv"
 	"time"
@@ -11,11 +16,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	files "terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -136,6 +142,7 @@ func ValidateDateTime(date interface{}, _ cty.Path) diag.Diagnostics {
 // ValidateCountryCode validates a country code is in format ISO 3166-1 alpha-2
 func ValidateCountryCode(code interface{}, _ cty.Path) diag.Diagnostics {
 	countryCode := code.(string)
+	// amazonq-ignore-next-line
 	if len(countryCode) == 2 {
 		return nil
 	} else if countryCode == "country-code-1" {
@@ -198,13 +205,121 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 
 	_, file, err := files.DownloadOrOpenFile(v)
 	if err != nil {
-		errors = append(errors, err)
+		return warnings, append(errors, err)
 	}
 	if file != nil {
 		defer file.Close()
 	}
 
 	return warnings, errors
+}
+
+type ValidateCSVOptions struct {
+	RequiredColumns []string
+	SampleSize      int
+	MaxRowCount     int64
+	SkipInterval    int // How often to sample after initial sampling
+}
+
+func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error {
+
+	const (
+		maxSkipInterval     = 1000000 // Maximum allowed skip interval
+		defaultSkipInterval = 1000    // Default skip interval
+		maxSampleSize       = 100000  // Maximum allowed sample size
+	)
+	// Validate configuration
+	if opts.SkipInterval < 0 {
+		return fmt.Errorf("skip interval must be non-negative, got %d", opts.SkipInterval)
+	}
+	if opts.SkipInterval > maxSkipInterval {
+		return fmt.Errorf("skip interval too large, maximum allowed is %d", maxSkipInterval)
+	}
+	if opts.SampleSize < 0 {
+		return fmt.Errorf("sample size must be non-negative, got %d", opts.SampleSize)
+	}
+	if opts.SampleSize > maxSampleSize {
+		return fmt.Errorf("sample size too large, maximum allowed is %d", maxSampleSize)
+	}
+
+	// Open the file
+	_, fileHandler, err := files.DownloadOrOpenFile(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer fileHandler.Close()
+
+	reader := csv.NewReader(fileHandler)
+	reader.LazyQuotes = true
+	reader.TrimLeadingSpace = true
+	reader.FieldsPerRecord = 0
+
+	// Read header row
+	headers, err := reader.Read()
+	if err != nil {
+		return fmt.Errorf("failed to read CSV headers: %w", err)
+	}
+
+	// Validate required columns if specified
+	if len(opts.RequiredColumns) > 0 {
+		headerMap := make(map[string]bool)
+		for _, header := range headers {
+			headerMap[header] = true
+		}
+
+		requiredColumnsNotFound := []string{}
+		for _, required := range opts.RequiredColumns {
+			if !headerMap[required] {
+				requiredColumnsNotFound = append(requiredColumnsNotFound, required)
+			}
+		}
+
+		if len(requiredColumnsNotFound) > 0 {
+			return fmt.Errorf("CSV file is missing required columns: %v", requiredColumnsNotFound)
+		}
+	}
+
+	expectedFields := len(headers)
+
+	skipInterval := opts.SkipInterval
+	if skipInterval == 0 {
+		skipInterval = defaultSkipInterval
+	}
+
+	var rowCount uint64 = 1 // Start at 1 since we already read header
+	skipIntervalU64 := uint64(skipInterval)
+
+	for {
+		// Check for uint64 overflow
+		if rowCount == math.MaxUint64 {
+			return fmt.Errorf("file exceeds maximum supported row count")
+		}
+
+		row, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("error reading line %d: %w", rowCount, err)
+		}
+
+		if opts.MaxRowCount > 0 && rowCount > uint64(opts.MaxRowCount) {
+			return fmt.Errorf("CSV file exceeds maximum allowed rows of %d", opts.MaxRowCount)
+		}
+
+		// Validate sampled rows
+		if rowCount <= uint64(opts.SampleSize) || rowCount%skipIntervalU64 == 0 {
+			if len(row) != expectedFields {
+				return fmt.Errorf("line %d has %d fields, expected %d", rowCount, len(row), expectedFields)
+			}
+		} else {
+			reader.FieldsPerRecord = -1
+		}
+
+		rowCount++
+	}
+
+	return nil
 }
 
 // ValidateResponseAssetName validate a response asset filename matches the criteria outlined in the description
@@ -275,4 +390,57 @@ func ValidateLanguageCode(lang interface{}, _ cty.Path) diag.Diagnostics {
 		return diag.Errorf("Language code %s not found in language code list %v", langCode, langCodeList)
 	}
 	return diag.Errorf("Language code %v is not a string", lang)
+}
+
+// Function factory that returns a custom diff function
+func ValidateFileContentHashChanged(filepathAttr, hashAttr string) customdiff.ResourceConditionFunc {
+	return func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+		filepath := d.Get(filepathAttr).(string)
+
+		newHash, err := files.HashFileContent(filepath)
+		if err != nil {
+			log.Printf("Error calculating file content hash: %v", err)
+			return false
+		}
+
+		// Get the current hash value
+		oldHash := d.Get(hashAttr).(string)
+
+		// Return true if the hashes are different
+		return oldHash != newHash
+	}
+}
+
+// ValidateCSVColumns returns a CustomizeDiffFunction that validates if a CSV file
+// contains the required columns. It takes the names of the attributes that contain
+// the file path and the column names.
+func ValidateCSVWithColumns(filePathAttr string, columnNamesAttr string) schema.CustomizeDiffFunc {
+
+	// This function ensures that the contacts file is a CSV file and that it includes the columns defined on the resource
+	return func(ctx context.Context, d *schema.ResourceDiff, _ interface{}) error {
+		if !d.HasChange(filePathAttr) || !d.HasChange(columnNamesAttr) {
+			return nil
+		}
+
+		filepath := d.Get(filePathAttr).(string)
+		if filepath == "" {
+			return nil
+		}
+
+		columnNamesRaw := d.Get(columnNamesAttr).([]interface{})
+		requiredColumns := make([]string, len(columnNamesRaw))
+		for i, v := range columnNamesRaw {
+			requiredColumns[i] = v.(string)
+		}
+
+		validatorOpts := ValidateCSVOptions{
+			RequiredColumns: requiredColumns,
+		}
+
+		err := ValidateCSVFormatWithConfig(filepath, validatorOpts)
+		if err != nil {
+			return fmt.Errorf("failed to validate contacts file: %s", err)
+		}
+		return nil
+	}
 }
