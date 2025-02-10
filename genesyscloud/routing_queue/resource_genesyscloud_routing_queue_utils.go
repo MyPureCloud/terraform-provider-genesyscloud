@@ -157,12 +157,6 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
 	settingsMap := settings[0].(map[string]interface{})
-	// var mode *string
-	// if *platformclientv2.String(settingsMap["mode"].(string)) != "" {
-	// 	mode = platformclientv2.String(settingsMap["mode"].(string))
-	// } else {
-	// 	mode = nil
-	// }
 	return &platformclientv2.Callbackmediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		ServiceLevel: &platformclientv2.Servicelevel{
