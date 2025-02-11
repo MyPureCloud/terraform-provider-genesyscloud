@@ -190,6 +190,7 @@ func getAllGroupFn(_ context.Context, p *groupProxy) (*[]platformclientv2.Group,
 	return &allGroups, nil, nil
 }
 
+// PUT API call to set ownerIds as empty if found nil
 func callUpdateGroupApi(groupId string, body *platformclientv2.Groupupdate, sdkConfig *platformclientv2.Configuration) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	var httpMethod = "PUT"
