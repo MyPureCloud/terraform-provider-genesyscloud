@@ -3,8 +3,8 @@ package journey_action_template
 import (
 	"log"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -39,8 +39,8 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceJourneyActionTemplate()
-	providerResources[journey_action_map.ResourceType] = journey_action_map.ResourceJourneyActionMap()
-	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
+	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
+	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
