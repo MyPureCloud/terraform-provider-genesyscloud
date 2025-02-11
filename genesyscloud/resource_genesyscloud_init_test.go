@@ -9,6 +9,9 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	"terraform-provider-genesyscloud/genesyscloud/group"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
@@ -51,10 +54,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
-	providerResources["genesyscloud_journey_segment"] = ResourceJourneySegment()
-	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
@@ -68,6 +68,18 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
 	providerResources[cMessagingSettings.ResourceType] = cMessagingSettings.ResourceConversationsMessagingSettings()
 	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
+	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
+	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
+	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
+	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
+	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
+	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
+	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
+	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
+	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
@@ -87,7 +99,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingWrapupCode.ResourceType] = routingWrapupCode.DataSourceRoutingWrapupCode()
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
-	providerDataSources["genesyscloud_journey_segment"] = dataSourceJourneySegment()
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()

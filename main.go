@@ -46,6 +46,7 @@ import (
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
@@ -282,6 +283,7 @@ func registerResources() {
 	routingUtilization.SetRegistrar(regInstance)                           //Registering routing utilization
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
+	journeySegment.SetRegistrar(regInstance)                               //Registering journey Segment
 	journeyActionMap.SetRegistrar(regInstance)                             //Registering journey Action Map
 	routingWrapupcode.SetRegistrar(regInstance)                            //Registering routing wrapupcode
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
