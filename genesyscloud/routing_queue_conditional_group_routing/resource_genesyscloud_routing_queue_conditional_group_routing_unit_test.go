@@ -43,42 +43,42 @@ func TestUnitBuildConditionalGroupRouting(t *testing.T) {
 		t.Errorf("Error building conditional group routing: %v", err)
 	}
 	if cgrRules == nil {
-		t.Errorf("Expected conditional group routing, got nil")
+		t.Fatalf("Expected conditional group routing, got nil")
 	}
 	if len(cgrRules) != 1 {
 		t.Errorf("Expected 1 rule, got %d", len(cgrRules))
 	}
 	cgrRule := cgrRules[0]
 	if cgrRule.Metric == nil {
-		t.Errorf("Expected metric to not be nil")
+		t.Fatalf("Expected metric to not be nil")
 	}
 	if *cgrRule.Metric != metric {
 		t.Errorf("Expected metric to be '%s', got %s", metric, *cgrRule.Metric)
 	}
 
 	if cgrRule.Operator == nil {
-		t.Errorf("Expected operator to not be nil")
+		t.Fatalf("Expected operator to not be nil")
 	}
 	if *cgrRule.Operator != operator {
 		t.Errorf("Expected operator to be '%s', got %s", operator, *cgrRule.Operator)
 	}
 
 	if cgrRule.ConditionValue == nil {
-		t.Errorf("Expected condition_value to not be nil")
+		t.Fatalf("Expected condition_value to not be nil")
 	}
 	if *cgrRule.ConditionValue != conditionValue {
 		t.Errorf("Expected condition_value to be %f, got %f", conditionValue, *cgrRule.ConditionValue)
 	}
 
 	if cgrRule.WaitSeconds == nil {
-		t.Errorf("Expected WaitSeconds to not be nil")
+		t.Fatalf("Expected WaitSeconds to not be nil")
 	}
 	if *cgrRule.WaitSeconds != waitSeconds {
 		t.Errorf("Expected WaitSeconds to be %d, got %d", waitSeconds, *cgrRule.WaitSeconds)
 	}
 
 	if cgrRule.Groups == nil {
-		t.Errorf("Expected groups to not be nil")
+		t.Fatalf("Expected groups to not be nil")
 	}
 	if len(*cgrRule.Groups) != 3 {
 		t.Errorf("Expected 3 groups, got %d", len(*cgrRule.Groups))
@@ -102,12 +102,12 @@ func TestUnitFlattenConditionalGroupRouting(t *testing.T) {
 
 	cgrRule, ok := cgrRulesFlattened[0].(map[string]any)
 	if !ok {
-		t.Errorf("Expected map[string]any, got %T", cgrRulesFlattened[0])
+		t.Fatalf("Expected map[string]any, got %T", cgrRulesFlattened[0])
 	}
 
 	metricFlattened, ok := cgrRule["metric"].(string)
 	if !ok {
-		t.Errorf("Expected metric to be a string, got %T", cgrRule["metric"])
+		t.Fatalf("Expected metric to be a string, got %T", cgrRule["metric"])
 	}
 	if metricFlattened != metric {
 		t.Errorf("Expected metric to be 'test', got %s", cgrRule["metric"].(string))
@@ -115,7 +115,7 @@ func TestUnitFlattenConditionalGroupRouting(t *testing.T) {
 
 	operatorFlattened, ok := cgrRule["operator"].(string)
 	if !ok {
-		t.Errorf("Expected operator to be a string, got %T", cgrRule["operator"])
+		t.Fatalf("Expected operator to be a string, got %T", cgrRule["operator"])
 	}
 	if operatorFlattened != "GreaterThan" {
 		t.Errorf("Expected operator to be 'GreaterThan', got %s", operatorFlattened)
@@ -123,7 +123,7 @@ func TestUnitFlattenConditionalGroupRouting(t *testing.T) {
 
 	conditionValueFlattened, ok := cgrRule["condition_value"].(float64)
 	if !ok {
-		t.Errorf("Expected condition_value to be a float64, got %T", cgrRule["condition_value"])
+		t.Fatalf("Expected condition_value to be a float64, got %T", cgrRule["condition_value"])
 	}
 	if conditionValueFlattened != 2345 {
 		t.Errorf("Expected condition_value to be 2345, got %f", conditionValueFlattened)
@@ -131,7 +131,7 @@ func TestUnitFlattenConditionalGroupRouting(t *testing.T) {
 
 	groupsFlattened, ok := cgrRule["groups"].(*schema.Set)
 	if !ok {
-		t.Errorf("Expected *schema.Set, got %T", cgrRule["groups"])
+		t.Fatalf("Expected *schema.Set, got %T", cgrRule["groups"])
 	}
 	if len(groupsFlattened.List()) != 3 {
 		t.Errorf("Expected 3 groups, got %d", len(groupsFlattened.List()))

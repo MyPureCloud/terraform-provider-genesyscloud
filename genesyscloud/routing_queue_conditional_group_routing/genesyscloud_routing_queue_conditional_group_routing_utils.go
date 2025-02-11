@@ -11,10 +11,18 @@ import (
 func buildConditionalGroupRouting(rules []interface{}) ([]platformclientv2.Conditionalgrouproutingrule, error) {
 	var sdkRules []platformclientv2.Conditionalgrouproutingrule
 	for i, rule := range rules {
-		configRule := rule.(map[string]interface{})
-		sdkRule := platformclientv2.Conditionalgrouproutingrule{
-			Operator:       platformclientv2.String(configRule["operator"].(string)),
-			ConditionValue: platformclientv2.Float64(configRule["condition_value"].(float64)),
+		configRule, ok := rule.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		var sdkRule platformclientv2.Conditionalgrouproutingrule
+
+		if operator, ok := configRule["operator"].(string); ok {
+			sdkRule.Operator = &operator
+		}
+
+		if conditionValue, ok := configRule["condition_value"].(float64); ok {
+			sdkRule.ConditionValue = &conditionValue
 		}
 
 		if evaluatedQueue, ok := configRule["evaluated_queue_id"].(string); ok && evaluatedQueue != "" {
