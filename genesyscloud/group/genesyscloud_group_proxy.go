@@ -249,7 +249,10 @@ func callUpdateGroupApi(groupId string, body *platformclientv2.Groupupdate) (*pl
 	headerParams["Accept"] = "application/json"
 
 	// Convert the golang map to jsonBytes and to string
-	jsonBytes, _ := json.Marshal(gpMap)
+	jsonBytes, err := json.Marshal(gpMap)
+	if err != nil {
+		return nil, nil, err
+	}
 	jsonStr := string(jsonBytes)
 
 	var jsonMap map[string]interface{}
