@@ -157,22 +157,6 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Updating group %s", name)
-		ownerIdsArr := lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids")
-		// check if owners list is empty
-		if len(*ownerIdsArr) == 0 {
-			// check if the group originally contains owners
-			if len(*group.Owners) > 0 {
-				strIds := []string{}
-				for _, owner := range *group.Owners {
-					strIds = append(strIds, *owner.Id)
-				}
-				delimitedStr := strings.Join(strIds[:], ",")
-				_, resp, err = gp.deleteGroupMembers(ctx, *group.Id, delimitedStr)
-				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error while trying to delete group owners %s: %s", d.Id(), err), resp)
-				}
-			}
-		}
 		updateGroup := &platformclientv2.Groupupdate{
 			Version:      group.Version,
 			Name:         &name,

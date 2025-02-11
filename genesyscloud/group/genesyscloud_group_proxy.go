@@ -2,7 +2,11 @@ package group
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
@@ -98,7 +102,7 @@ func createGroupFn(_ context.Context, p *groupProxy, group *platformclientv2.Gro
 }
 
 func updateGroupFn(_ context.Context, p *groupProxy, id string, group *platformclientv2.Groupupdate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
-	return p.groupsApi.PutGroup(id, *group)
+	return callUpdateGroupApi(id, group, p.clientConfig)
 }
 
 func deleteGroupFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error) {
@@ -184,4 +188,78 @@ func getAllGroupFn(_ context.Context, p *groupProxy) (*[]platformclientv2.Group,
 	}
 
 	return &allGroups, nil, nil
+}
+
+func callUpdateGroupApi(groupId string, body *platformclientv2.Groupupdate, sdkConfig *platformclientv2.Configuration) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
+	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+	var httpMethod = "PUT"
+	// create path and map variables
+	path := api.Configuration.BasePath + "/api/v2/groups/{groupId}"
+	path = strings.Replace(path, "{groupId}", url.PathEscape(fmt.Sprintf("%v", groupId)), -1)
+
+	// Converting the groupupdate req to a JSON byte arrays
+	b, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, err
+	}
+	gpJson := string(b)
+
+	// Converting the JSON string to a Golang Map
+	var gpMap map[string]interface{}
+	err = json.Unmarshal([]byte(gpJson), &gpMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Set the value for ownerIds as empty array if found nil
+	ownerIds := gpMap["ownerIds"]
+	if ownerIds == nil {
+		gpMap["ownerIds"] = []string{}
+	}
+
+	headerParams := make(map[string]string)
+	queryParams := make(map[string]string)
+	formParams := url.Values{}
+	var postFileName string
+	var fileBytes []byte
+
+	// authentication (PureCloud OAuth) required
+	// oauth required
+	if api.Configuration.AccessToken != "" {
+		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
+	}
+	// add default headers if any
+	for key := range api.Configuration.DefaultHeader {
+		headerParams[key] = api.Configuration.DefaultHeader[key]
+	}
+
+	// Find an replace keys that were altered to avoid clashes with go keywords
+	correctedQueryParams := make(map[string]string)
+	for k, v := range queryParams {
+		if k == "varType" {
+			correctedQueryParams["type"] = v
+			continue
+		}
+		correctedQueryParams[k] = v
+	}
+	queryParams = correctedQueryParams
+
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	// Convert the golang map to jsonBytes and to string
+	jsonBytes, _ := json.Marshal(gpMap)
+	jsonStr := string(jsonBytes)
+
+	var jsonMap map[string]interface{}
+	json.Unmarshal([]byte(jsonStr), &jsonMap)
+
+	var successPayload *platformclientv2.Group
+	response, err := api.Configuration.APIClient.CallAPI(path, httpMethod, jsonMap, headerParams, queryParams, formParams, postFileName, fileBytes, "other")
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if err == nil && response.Error != nil {
+		err = errors.New(response.ErrorMessage)
+	}
+	return successPayload, response, err
 }
