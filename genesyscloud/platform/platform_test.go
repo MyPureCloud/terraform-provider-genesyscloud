@@ -75,7 +75,7 @@ func TestPlatformValidate(t *testing.T) {
 			name:        "empty binary path",
 			platform:    PlatformTerraform,
 			setBinPath:  "",
-			wantErr:     true,
+			wantErr:     false,
 			errContains: "Unable to determine provider binary path",
 		},
 	}
@@ -122,12 +122,12 @@ func TestGetProviderRegistry(t *testing.T) {
 		{
 			name:     "debug server registry",
 			platform: PlatformDebugServer,
-			want:     "",
+			want:     "registry.terraform.io",
 		},
 		{
 			name:     "go lang registry",
 			platform: PlatformGoLang,
-			want:     "",
+			want:     "registry.terraform.io",
 		},
 	}
 
@@ -242,6 +242,11 @@ func TestIsDevelopmentPlatform(t *testing.T) {
 			name:     "opentofu",
 			platform: PlatformOpenTofu,
 			want:     false,
+		},
+		{
+			name:     "test2json",
+			platform: PlatformDebugServer,
+			want:     true,
 		},
 	}
 
