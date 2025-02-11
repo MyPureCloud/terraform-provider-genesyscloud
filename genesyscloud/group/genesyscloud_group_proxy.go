@@ -102,7 +102,7 @@ func createGroupFn(_ context.Context, p *groupProxy, group *platformclientv2.Gro
 }
 
 func updateGroupFn(_ context.Context, p *groupProxy, id string, group *platformclientv2.Groupupdate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
-	return callUpdateGroupApi(id, group, p.clientConfig)
+	return callUpdateGroupApi(id, group)
 }
 
 func deleteGroupFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error) {
@@ -191,8 +191,8 @@ func getAllGroupFn(_ context.Context, p *groupProxy) (*[]platformclientv2.Group,
 }
 
 // PUT API call to set ownerIds as empty if found nil
-func callUpdateGroupApi(groupId string, body *platformclientv2.Groupupdate, sdkConfig *platformclientv2.Configuration) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
-	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+func callUpdateGroupApi(groupId string, body *platformclientv2.Groupupdate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
+	api := platformclientv2.NewGroupsApi()
 	var httpMethod = "PUT"
 	// create path and map variables
 	path := api.Configuration.BasePath + "/api/v2/groups/{groupId}"
