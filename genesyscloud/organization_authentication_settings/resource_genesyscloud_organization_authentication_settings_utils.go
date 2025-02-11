@@ -24,6 +24,13 @@ func getOrganizationAuthenticationSettingsFromResourceData(d *schema.ResourceDat
 	}
 }
 
+func getTimeOutSettingsFromResourceData(d *schema.ResourceData) platformclientv2.Idletokentimeout {
+	return platformclientv2.Idletokentimeout{
+		IdleTokenTimeoutSeconds: platformclientv2.Int(d.Get("idle_token_timeout_seconds").(int)),
+		EnableIdleTokenTimeout:  platformclientv2.Bool(d.Get("enable_idle_token_timeout").(bool)),
+	}
+}
+
 // buildPasswordRequirements maps an []interface{} into a Genesys Cloud *[]platformclientv2.Passwordrequirements
 func buildPasswordRequirements(d *schema.ResourceData, key string) *platformclientv2.Passwordrequirements {
 	if d.Get(key) != nil {

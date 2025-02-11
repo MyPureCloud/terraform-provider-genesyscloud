@@ -67,6 +67,16 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read organization authentication settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
+		tokenTimeOut, resp, err := proxy.getTokensTimeOutSettings(ctx)
+		if err != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read time out settings %s | error: %s", d.Id(), err), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read time out settings %s | error: %s", d.Id(), err), resp))
+		}
+
+		resourcedata.SetNillableValue(d, "enable_idle_token_timeout", tokenTimeOut.EnableIdleTokenTimeout)
+		resourcedata.SetNillableValue(d, "idle_token_timeout_seconds", tokenTimeOut.IdleTokenTimeoutSeconds)
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
 		resourcedata.SetNillableValue(d, "domain_allowlist_enabled", orgAuthSettings.DomainAllowlistEnabled)
 		resourcedata.SetNillableValue(d, "domain_allowlist", orgAuthSettings.DomainAllowlist)
@@ -92,7 +102,16 @@ func updateOrganizationAuthenticationSettings(ctx context.Context, d *schema.Res
 	}
 
 	log.Printf("Updated organization authentication settings %s %s", d.Id(), orgAuthSettings)
+
+	timeOutSettings := getTimeOutSettingsFromResourceData(d)
+	log.Printf("Updating timeout settings %s", d.Id())
+	_, resp, err = proxy.updateTokensTimeOutSettings(ctx, &timeOutSettings)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update time out settings: %s", err), resp)
+	}
+
 	return readOrganizationAuthenticationSettings(ctx, d, meta)
+
 }
 
 // deleteOrganizationAuthenticationSettings is used by the organization_authentication_settings resource to delete an organization authentication settings from Genesys cloud

@@ -112,6 +112,14 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        passwordRequirements,
+			}, `enable_idle_token_timeout`: {
+				Description: `Indicates whether the Token Timeout should be enabled or disabled.`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+			}, "idle_token_timeout_seconds": {
+				Description: "Token timeout length in seconds. Must be at least 5 minutes and 8 hours or less (if HIPAA is disabled) or 15 minutes or less (if HIPAA is enabled).",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 		},
 	}
