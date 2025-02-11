@@ -270,7 +270,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 		}
 
 		if memberGroupSet, ok := ruleSettings["groups"].(*schema.Set); ok {
-			sdkCGRRule.Groups = buildCGRGroups(memberGroupSet)
+			sdkCGRRule.Groups = BuildCGRGroups(memberGroupSet)
 		}
 		sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
 	}
@@ -278,7 +278,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 	return &platformclientv2.Conditionalgrouprouting{Rules: &sdkCGRRules}, nil
 }
 
-func buildCGRGroups(groups *schema.Set) *[]platformclientv2.Membergroup {
+func BuildCGRGroups(groups *schema.Set) *[]platformclientv2.Membergroup {
 	groupList := groups.List()
 	if len(groupList) == 0 {
 		return nil
@@ -591,7 +591,7 @@ func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interf
 		}
 
 		if rule.Groups != nil {
-			ruleSettings["groups"] = flattenCGRGroups(*rule.Groups)
+			ruleSettings["groups"] = FlattenCGRGroups(*rule.Groups)
 		}
 
 		rules[i] = ruleSettings
@@ -600,7 +600,7 @@ func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interf
 	return rules
 }
 
-func flattenCGRGroups(sdkGroups []platformclientv2.Membergroup) *schema.Set {
+func FlattenCGRGroups(sdkGroups []platformclientv2.Membergroup) *schema.Set {
 	groupSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
 	for _, sdkGroup := range sdkGroups {
 		groupMap := make(map[string]interface{})
