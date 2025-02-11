@@ -149,7 +149,7 @@ func readJourneySegment(ctx context.Context, d *schema.ResourceData, meta interf
 
 		flattenJourneySegment(d, segmentResponse)
 
-		log.Printf("Read journey segment %s %s", d.Id(), *segmentResponse.DisplayName)
+		log.Printf("Read journey segment %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
