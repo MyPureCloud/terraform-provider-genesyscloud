@@ -1004,6 +1004,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 		wrapupCodeName3          = "Terraform Test Code3-" + uuid.NewString()
 		divResourceLabel         = "test-division"
 		divName                  = "terraform-" + uuid.NewString()
+		description              = "Terraform wrapup code description"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1021,10 +1022,12 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel1),
@@ -1045,14 +1048,17 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel3,
 					wrapupCodeName3,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel1),
@@ -1070,6 +1076,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel2),

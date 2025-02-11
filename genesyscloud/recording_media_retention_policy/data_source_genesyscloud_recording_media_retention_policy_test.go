@@ -139,6 +139,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		domainId            = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
 		divResourceLabel    = "test-division"
 		divName             = "terraform-" + uuid.NewString()
+		description         = "Terraform test description"
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -177,7 +178,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routingLanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					architect_flow.GenerateFlowResource(
 						flowResourceLabel1,
 						filePath1,

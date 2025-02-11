@@ -20,6 +20,7 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 		codeName2          = "Terraform Code-" + uuid.NewString()
 		divResourceLabel   = "test-division"
 		divName            = "terraform-" + uuid.NewString()
+		description        = "Terraform wrapup code description"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,9 +32,11 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 					codeResourceLabel1,
 					codeName1,
 					util.NullValue,
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "description", description),
 				),
 			},
 			{
@@ -42,10 +45,12 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 					codeResourceLabel1,
 					codeName1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName1),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "description", description),
 				),
 			},
 			{
@@ -54,10 +59,12 @@ func TestAccResourceRoutingWrapupcode(t *testing.T) {
 					codeResourceLabel1,
 					codeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "name", codeName2),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+codeResourceLabel1, "division_id", "genesyscloud_auth_division."+divResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "description", description),
 				),
 			},
 			{
