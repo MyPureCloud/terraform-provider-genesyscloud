@@ -51,7 +51,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 	platform := platform.GetPlatform()
 	platformErr := platform.Validate()
 	if platformErr != nil {
-		return diag.Errorf("Failed to validate platform: %v", platformErr)
+		log.Printf("Failed to validate platform: %v. Will use default values to run final state commands.", platformErr)
 	}
 
 	stateFilePath, diagErr := getFilePath(t.d, defaultTfStateFile)
