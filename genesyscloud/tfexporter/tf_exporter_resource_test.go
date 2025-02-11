@@ -10,6 +10,7 @@ import (
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	journeyViewSchedule "terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
 	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
@@ -165,6 +166,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
 	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
 	providerResources[journeyActionTemplate.ResourceType] = journeyActionTemplate.ResourceJourneyActionTemplate()
+	providerResources[journeyViewSchedule.ResourceType] = journeyViewSchedule.ResourceJourneyViewSchedule()
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[knowledgeDocumentVariation.ResourceType] = knowledgeDocumentVariation.ResourceKnowledgeDocumentVariation()
@@ -247,6 +249,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
 	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
 	RegisterExporter(knowledgeKnowledgebase.ResourceType, knowledgeKnowledgebase.KnowledgeKnowledgebaseExporter())
+	RegisterExporter(journeyViewSchedule.ResourceType, journeyViewSchedule.JourneyViewScheduleExporter())
 	RegisterExporter("genesyscloud_organization_authentication_settings", oAuthSettings.OrganizationAuthenticationSettingsExporter())
 	RegisterExporter("genesyscloud_architect_grammar", grammar.ArchitectGrammarExporter())
 	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
