@@ -33,6 +33,8 @@ type deleteUserFunc func(ctx context.Context, p *userProxy, id string) (*interfa
 type patchUserWithStateFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 type hydrateUserCacheFunc func(ctx context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error)
 type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error)
+type updateVoicemailUserpoliciesFunc func(ctx context.Context, p *userProxy, id string, policy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
+type getVoicemailUserpoliciesByIdFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error)
 
 /*
@@ -43,20 +45,23 @@ enabling this terraform provider software to perform tasks like retrieving data,
 or triggering actions within the Genesys Cloud environment.
 */
 type userProxy struct {
-	clientConfig           *platformclientv2.Configuration
-	userApi                *platformclientv2.UsersApi
-	routingApi             *platformclientv2.RoutingApi
-	createUserAttr         createUserFunc
-	getAllUserAttr         getAllUserFunc
-	getUserIdByNameAttr    getUserIdByNameFunc
-	getUserByIdAttr        getUserByIdFunc
-	updateUserAttr         updateUserFunc
-	deleteUserAttr         deleteUserFunc
-	patchUserWithStateAttr patchUserWithStateFunc
-	hydrateUserCacheAttr   hydrateUserCacheFunc
-	getUserByNameAttr      getUserByNameFunc
-	updatePasswordAttr     updatePasswordFunc
-	userCache              rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
+	clientConfig                      *platformclientv2.Configuration
+	userApi                           *platformclientv2.UsersApi
+	routingApi                        *platformclientv2.RoutingApi
+	voicemailApi                      *platformclientv2.VoicemailApi
+	createUserAttr                    createUserFunc
+	getAllUserAttr                    getAllUserFunc
+	getUserIdByNameAttr               getUserIdByNameFunc
+	getUserByIdAttr                   getUserByIdFunc
+	updateUserAttr                    updateUserFunc
+	deleteUserAttr                    deleteUserFunc
+	patchUserWithStateAttr            patchUserWithStateFunc
+	hydrateUserCacheAttr              hydrateUserCacheFunc
+	getUserByNameAttr                 getUserByNameFunc
+	updateVoicemailUserpoliciesAttr   updateVoicemailUserpoliciesFunc
+	getVoicemailUserpolicicesByIdAttr getVoicemailUserpoliciesByIdFunc
+	updatePasswordAttr                updatePasswordFunc
+	userCache                         rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
 }
 
 /*
@@ -68,22 +73,26 @@ seamlessly with the Genesys Cloud platform.
 func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 	userApi := platformclientv2.NewUsersApiWithConfig(clientConfig)      // NewUsersApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
 	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewRoutingApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
-	userCache := rc.NewResourceCache[platformclientv2.User]()            // Create Cache for User resource
+	voicemailApi := platformclientv2.NewVoicemailApiWithConfig(clientConfig)
+	userCache := rc.NewResourceCache[platformclientv2.User]() // Create Cache for User resource
 	return &userProxy{
-		clientConfig:           clientConfig,
-		userApi:                userApi,
-		routingApi:             routingApi,
-		userCache:              userCache,
-		createUserAttr:         createUserFn,
-		getAllUserAttr:         getAllUserFn,
-		getUserIdByNameAttr:    getUserIdByNameFn,
-		getUserByIdAttr:        getUserByIdFn,
-		updateUserAttr:         updateUserFn,
-		deleteUserAttr:         deleteUserFn,
-		patchUserWithStateAttr: patchUserWithStateFn,
-		hydrateUserCacheAttr:   hydrateUserCacheFn,
-		updatePasswordAttr:     updatePasswordFn,
-		getUserByNameAttr:      getUserByNameFn,
+		clientConfig:                      clientConfig,
+		userApi:                           userApi,
+		routingApi:                        routingApi,
+		voicemailApi:                      voicemailApi,
+		userCache:                         userCache,
+		createUserAttr:                    createUserFn,
+		getAllUserAttr:                    getAllUserFn,
+		getUserIdByNameAttr:               getUserIdByNameFn,
+		getUserByIdAttr:                   getUserByIdFn,
+		updateUserAttr:                    updateUserFn,
+		deleteUserAttr:                    deleteUserFn,
+		patchUserWithStateAttr:            patchUserWithStateFn,
+		hydrateUserCacheAttr:              hydrateUserCacheFn,
+		getUserByNameAttr:                 getUserByNameFn,
+		updateVoicemailUserpoliciesAttr:   updateVoicemailUserpoliciesFn,
+		getVoicemailUserpolicicesByIdAttr: getVoicemailUserpoliciesByUserIdFn,
+		updatePasswordAttr:                updatePasswordFn,
 	}
 }
 
@@ -147,6 +156,16 @@ func (p *userProxy) hydrateUserCache(ctx context.Context, pageSize int, pageNum 
 // getUserByName
 func (p *userProxy) getUserByName(ctx context.Context, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
 	return p.getUserByNameAttr(ctx, p, searchUser)
+}
+
+// updateVoicemailUserpolicies
+func (p *userProxy) updateVoicemailUserpolicies(ctx context.Context, userId string, updatePolicy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+	return p.updateVoicemailUserpoliciesAttr(ctx, p, userId, updatePolicy)
+}
+
+// getVoicemailUserpoliciesById
+func (p *userProxy) getVoicemailUserpoliciesById(ctx context.Context, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+	return p.getVoicemailUserpolicicesByIdAttr(ctx, p, id)
 }
 
 // updatePassword
@@ -278,7 +297,15 @@ func getUserIdByNameFn(ctx context.Context, p *userProxy, name string) (id strin
 		}
 	}
 
-	return "", true, apiResponse, fmt.Errorf("Unable to find user wiht name %s", name)
+	return "", true, apiResponse, fmt.Errorf("Unable to find user with name %s", name)
+}
+
+func updateVoicemailUserpoliciesFn(ctx context.Context, p *userProxy, userId string, updatePolicy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+	return p.voicemailApi.PatchVoicemailUserpolicy(userId, *updatePolicy)
+}
+
+func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+	return p.voicemailApi.GetVoicemailUserpolicy(id)
 }
 
 func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
