@@ -1,9 +1,9 @@
 package integration_credential
 
 import (
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

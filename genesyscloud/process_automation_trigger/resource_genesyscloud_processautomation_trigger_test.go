@@ -3,13 +3,13 @@ package process_automation_trigger
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

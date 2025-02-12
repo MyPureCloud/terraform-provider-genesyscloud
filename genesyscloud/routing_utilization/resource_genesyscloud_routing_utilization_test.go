@@ -2,12 +2,12 @@ package routing_utilization
 
 import (
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 

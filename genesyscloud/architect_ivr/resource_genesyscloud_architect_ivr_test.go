@@ -3,12 +3,12 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	util "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

@@ -2,14 +2,14 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"strings"
 	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 

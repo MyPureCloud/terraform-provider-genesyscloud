@@ -3,10 +3,10 @@ package task_management_workitem_schema
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
-	"strconv"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"

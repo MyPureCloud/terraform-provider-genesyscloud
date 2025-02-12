@@ -3,9 +3,9 @@ package task_management_workitem
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"net/http"
 	"testing"
 	"time"
 

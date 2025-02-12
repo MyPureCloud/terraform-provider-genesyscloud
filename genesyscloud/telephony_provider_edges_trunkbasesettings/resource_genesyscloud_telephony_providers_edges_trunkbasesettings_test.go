@@ -2,12 +2,12 @@ package telephony_provider_edges_trunkbasesettings
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

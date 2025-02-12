@@ -2,14 +2,14 @@ package outbound_campaignrule
 
 import (
 	"fmt"
-	"math/rand"
-	"path/filepath"
-	"strconv"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	outboundCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"math/rand"
+	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"

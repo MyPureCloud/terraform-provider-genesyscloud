@@ -3,8 +3,8 @@ package outbound_dnclist
 import (
 	"context"
 	"fmt"
-	"log"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"

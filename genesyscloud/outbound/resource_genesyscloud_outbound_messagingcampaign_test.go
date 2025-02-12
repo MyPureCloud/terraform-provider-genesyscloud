@@ -2,14 +2,14 @@ package outbound
 
 import (
 	"fmt"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
 	obDigRuleset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 

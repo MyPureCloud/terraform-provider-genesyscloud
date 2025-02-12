@@ -1,8 +1,8 @@
 package util
 
 import (
-	"log"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/nyaruka/phonenumbers"

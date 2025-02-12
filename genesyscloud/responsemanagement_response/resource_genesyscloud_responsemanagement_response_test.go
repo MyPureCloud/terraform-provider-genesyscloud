@@ -2,14 +2,14 @@ package responsemanagement_response
 
 import (
 	"fmt"
-	"log"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	respManagementRespAsset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
+	"path/filepath"
+	"strconv"
+	"strings"
 
 	"testing"
 

@@ -2,14 +2,14 @@ package group_roles
 
 import (
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"log"
+	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 

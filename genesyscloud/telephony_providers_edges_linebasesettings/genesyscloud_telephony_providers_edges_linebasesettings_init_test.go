@@ -1,8 +1,8 @@
 package telephony_providers_edges_linebasesettings
 
 import (
-	"sync"
 	phoneBaseSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

@@ -1,11 +1,11 @@
 package journey_action_template
 
 import (
-	"log"
-	"sync"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"log"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

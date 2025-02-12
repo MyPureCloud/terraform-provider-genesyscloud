@@ -1,8 +1,8 @@
 package architect_grammar_language
 
 import (
-	"sync"
 	architectGrammar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

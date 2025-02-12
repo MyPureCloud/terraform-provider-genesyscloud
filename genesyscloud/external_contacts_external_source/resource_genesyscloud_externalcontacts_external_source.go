@@ -3,8 +3,8 @@ package external_contacts_external_source
 import (
 	"context"
 	"fmt"
-	"log"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
 	"time"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

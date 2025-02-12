@@ -2,12 +2,12 @@ package telephony_providers_edges_site_outbound_route
 
 import (
 	"fmt"
-	"strconv"
 	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"

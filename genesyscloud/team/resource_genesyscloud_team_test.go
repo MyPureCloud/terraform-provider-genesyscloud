@@ -2,10 +2,10 @@ package team
 
 import (
 	"fmt"
-	"math/rand"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

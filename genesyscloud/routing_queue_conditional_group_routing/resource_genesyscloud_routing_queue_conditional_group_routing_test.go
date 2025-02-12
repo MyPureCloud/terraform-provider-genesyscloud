@@ -2,16 +2,16 @@ package routing_queue_conditional_group_routing
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"strings"
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"log"
+	"os"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 

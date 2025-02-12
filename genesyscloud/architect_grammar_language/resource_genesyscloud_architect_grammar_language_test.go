@@ -2,14 +2,14 @@ package architect_grammar_language
 
 import (
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"strings"
 	architectGrammar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"io"
+	"net/http"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

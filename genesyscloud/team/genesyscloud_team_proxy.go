@@ -3,8 +3,8 @@ package team
 import (
 	"context"
 	"fmt"
-	"log"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )

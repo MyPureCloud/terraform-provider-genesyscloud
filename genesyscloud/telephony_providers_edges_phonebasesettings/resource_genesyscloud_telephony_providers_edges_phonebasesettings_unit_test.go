@@ -2,8 +2,8 @@ package telephony_providers_edges_phonebasesettings
 
 import (
 	"context"
-	"net/http"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"

@@ -2,11 +2,11 @@ package scripts
 
 import (
 	"fmt"
-	"log"
-	"net/http"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"log"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"

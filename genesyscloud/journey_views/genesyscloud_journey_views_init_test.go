@@ -1,8 +1,8 @@
 package journey_views
 
 import (
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

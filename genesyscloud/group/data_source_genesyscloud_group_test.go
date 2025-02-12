@@ -3,10 +3,10 @@ package group
 import (
 	"context"
 	"fmt"
-	"log"
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
+	"sync"
 	"testing"
 	"time"
 

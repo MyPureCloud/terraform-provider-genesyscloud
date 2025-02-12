@@ -2,10 +2,10 @@ package architect_user_prompt
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

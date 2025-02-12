@@ -3,8 +3,8 @@ package routing_email_domain
 import (
 	"context"
 	"fmt"
-	"log"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )

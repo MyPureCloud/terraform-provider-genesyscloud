@@ -2,10 +2,10 @@ package architect_schedules
 
 import (
 	"fmt"
-	"regexp"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"regexp"
 	"testing"
 
 	"github.com/google/uuid"

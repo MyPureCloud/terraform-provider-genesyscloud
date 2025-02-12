@@ -2,9 +2,9 @@ package employeeperformance_externalmetrics_definitions
 
 import (
 	"fmt"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

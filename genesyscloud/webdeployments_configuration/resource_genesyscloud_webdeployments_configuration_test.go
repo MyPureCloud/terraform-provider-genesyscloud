@@ -2,12 +2,12 @@ package webdeployments_configuration
 
 import (
 	"fmt"
-	"regexp"
-	"strconv"
-	"strings"
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
