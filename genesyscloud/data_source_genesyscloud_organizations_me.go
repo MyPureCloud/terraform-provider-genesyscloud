@@ -71,7 +71,7 @@ func DataSourceOrganizationsMe() *schema.Resource {
 }
 
 func ATestFunc() string {
-	return "Hello, Mr Mo."
+	return "Hello, Mr Mo. (Replacement)"
 }
 
 func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
