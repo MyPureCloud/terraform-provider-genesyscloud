@@ -24,6 +24,20 @@ const (
 
 var RootDir string
 
+func init() {
+	if isRunningTests() {
+		RootDir = getRootDir()
+	}
+}
+
+func isRunningTests() bool {
+	if os.Getenv("TF_ACC") != "" {
+		return true
+	}
+
+	return false
+}
+
 // Helper function that retrieves the location of the root directory
 func getRootDir() string {
 	_, filename, _, ok := runtime.Caller(0)
@@ -52,13 +66,19 @@ func getRootDir() string {
 }
 
 func GetTestDataPath(elem ...string) string {
-	basePath := filepath.Join(getRootDir(), "test", "data")
+	if !isRunningTests() {
+		return ""
+	}
+	basePath := filepath.Join(RootDir, "test", "data")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
 }
 
 func GetTestTempPath(elem ...string) string {
-	basePath := filepath.Join(getRootDir(), "test", "temp")
+	if !isRunningTests() {
+		return ""
+	}
+	basePath := filepath.Join(RootDir, "test", "temp")
 	subPath := filepath.Join(elem...)
 	return filepath.Join(basePath, subPath)
 }
