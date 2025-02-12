@@ -511,7 +511,7 @@ func TestAccResourceTfExportForCompress(t *testing.T) {
 	var (
 		exportTestDir        = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel1 = "test-export1"
-		zipFileName          = "../archive_genesyscloud_tf_export*"
+		zipFileName          = filepath.Join(exportTestDir, "..", "archive_genesyscloud_tf_export*")
 		divResourceLabel     = "test-division"
 		divName              = "terraform-" + uuid.NewString()
 	)
