@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"

@@ -3,7 +3,7 @@ package organization_authentication_settings
 import (
 	"context"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"

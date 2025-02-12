@@ -2,7 +2,7 @@ package journey_outcome_predictor
 
 import (
 	"sync"
-	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

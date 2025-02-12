@@ -2,7 +2,7 @@ package auth_role
 
 import (
 	"sync"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

@@ -2,7 +2,7 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"

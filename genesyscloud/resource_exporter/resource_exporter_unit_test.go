@@ -4,7 +4,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 )
 

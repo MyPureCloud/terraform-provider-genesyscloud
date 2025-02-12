@@ -3,9 +3,9 @@ package telephony_provider_edges_trunkbasesettings
 import (
 	"sync"
 
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	edgeTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	edgeTrunk "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

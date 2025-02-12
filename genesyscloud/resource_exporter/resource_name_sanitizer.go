@@ -7,7 +7,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	unidecode "github.com/mozillazg/go-unidecode"
 )

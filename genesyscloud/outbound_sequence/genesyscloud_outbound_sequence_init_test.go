@@ -3,18 +3,18 @@ package outbound_sequence
 import (
 	"log"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
-	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
-	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	obResponseSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
+	outboundCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	outboundContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 

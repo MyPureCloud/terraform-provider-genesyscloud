@@ -6,7 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )

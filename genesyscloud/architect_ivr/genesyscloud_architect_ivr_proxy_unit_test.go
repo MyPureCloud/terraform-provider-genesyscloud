@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/google/uuid"
