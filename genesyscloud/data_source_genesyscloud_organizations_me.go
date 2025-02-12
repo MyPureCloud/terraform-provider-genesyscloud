@@ -70,6 +70,10 @@ func DataSourceOrganizationsMe() *schema.Resource {
 	}
 }
 
+func ATestFunc() string {
+	return "Hello, Mr Mo."
+}
+
 func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	orgAPI := platformclientv2.NewOrganizationApiWithConfig(sdkConfig)
