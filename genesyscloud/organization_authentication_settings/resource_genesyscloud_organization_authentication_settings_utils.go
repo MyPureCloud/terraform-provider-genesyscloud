@@ -24,11 +24,23 @@ func getOrganizationAuthenticationSettingsFromResourceData(d *schema.ResourceDat
 	}
 }
 
-func getTimeOutSettingsFromResourceData(d *schema.ResourceData) platformclientv2.Idletokentimeout {
-	return platformclientv2.Idletokentimeout{
-		IdleTokenTimeoutSeconds: platformclientv2.Int(d.Get("idle_token_timeout_seconds").(int)),
-		EnableIdleTokenTimeout:  platformclientv2.Bool(d.Get("enable_idle_token_timeout").(bool)),
+func getTimeOutSettingsFromResourceData(d *schema.ResourceData) *platformclientv2.Idletokentimeout {
+
+	if d.Get("timeout_settings") == nil {
+		return nil
 	}
+
+	if timeOutData, ok := d.Get("timeout_settings").([]interface{}); ok {
+
+		if timeOutMap, ok := timeOutData[0].(map[string]interface{}); ok {
+			return &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(timeOutMap["enable_idle_token_timeout"].(bool)),
+				IdleTokenTimeoutSeconds: platformclientv2.Int(timeOutMap["idle_token_timeout_seconds"].(int)),
+			}
+		}
+
+	}
+	return nil
 }
 
 // buildPasswordRequirements maps an []interface{} into a Genesys Cloud *[]platformclientv2.Passwordrequirements
@@ -75,4 +87,15 @@ func flattenPasswordRequirements(passwordRequirements *platformclientv2.Password
 	resourcedata.SetMapValueIfNotNil(pReqInterface, "expiration_days", passwordRequirements.ExpirationDays)
 
 	return []interface{}{pReqInterface}
+}
+
+func flattenTimeOutSettings(timeOutSettings *platformclientv2.Idletokentimeout) []interface{} {
+	if timeOutSettings == nil {
+		return nil
+	}
+	timeOutInterface := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(timeOutInterface, "enable_idle_token_timeout", timeOutSettings.EnableIdleTokenTimeout)
+	resourcedata.SetMapValueIfNotNil(timeOutInterface, "idle_token_timeout_seconds", timeOutSettings.IdleTokenTimeoutSeconds)
+
+	return []interface{}{timeOutInterface}
 }

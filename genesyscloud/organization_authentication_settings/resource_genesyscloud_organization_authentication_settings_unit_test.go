@@ -36,6 +36,14 @@ func generateAuthSettingsData(domainAllowList []string, ipAllowList []string) pl
 	}
 }
 
+func generateTimeOutSettings() *platformclientv2.Idletokentimeout {
+	return &platformclientv2.Idletokentimeout{
+		EnableIdleTokenTimeout:  platformclientv2.Bool(true),
+		IdleTokenTimeoutSeconds: platformclientv2.Int(3000),
+	}
+
+}
+
 func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 	tId := uuid.NewString()
 	domainAllowList := []string{"Genesys.com", "Google.com"}
@@ -55,6 +63,11 @@ func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return orgAuthSettings, apiResponse, nil
+	}
+	timeOutSettings := generateTimeOutSettings()
+	orgAuthProxy.getTokensTimeOutSettingsAttr = func(ctx context.Context, p *orgAuthSettingsProxy) (*platformclientv2.Idletokentimeout, *platformclientv2.APIResponse, error) {
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		return timeOutSettings, apiResponse, nil
 	}
 	internalProxy = orgAuthProxy
 	defer func() { internalProxy = nil }()
@@ -99,6 +112,11 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 		return orgAuthSettings, apiResponse, nil
 	}
 
+	timeOutSettings := generateTimeOutSettings()
+	orgAuthProxy.getTokensTimeOutSettingsAttr = func(ctx context.Context, p *orgAuthSettingsProxy) (*platformclientv2.Idletokentimeout, *platformclientv2.APIResponse, error) {
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		return timeOutSettings, apiResponse, nil
+	}
 	orgAuthProxy.updateOrgAuthSettingsAttr = func(ctx context.Context, p *orgAuthSettingsProxy, orgAuthSettings *platformclientv2.Orgauthsettings) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
 
 		equal := cmp.Equal(testOrgAuthSettings, *orgAuthSettings)
@@ -107,7 +125,14 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return orgAuthSettings, apiResponse, nil
 	}
+	orgAuthProxy.updateTokensTimeOutSettingsAttr = func(ctx context.Context, p *orgAuthSettingsProxy, idletimeout *platformclientv2.Idletokentimeout) (*platformclientv2.Idletokentimeout, *platformclientv2.APIResponse, error) {
 
+		equal := cmp.Equal(timeOutSettings, *idletimeout)
+		assert.Equal(t, false, equal, "timeout settings not equal to expected value in update: %s", cmp.Diff(timeOutSettings, *idletimeout))
+
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		return timeOutSettings, apiResponse, nil
+	}
 	internalProxy = orgAuthProxy
 	defer func() { internalProxy = nil }()
 
@@ -134,6 +159,7 @@ func buildOrgAuthSettingsDataMap(tMultifactorAuthRequired bool, tDomainAllowList
 		"domain_allowlist":                    tDomainAllowList,
 		"ip_address_allowlist":                tIpAddressAllowList,
 		"password_requirements":               flattenPasswordRequirements(&tPasswordRequirements),
+		"timeout_settings":                    flattenTimeOutSettings(generateTimeOutSettings()),
 	}
 	return resourceDataMap
 }
