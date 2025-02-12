@@ -3,13 +3,12 @@ package knowledgedocumentvariation
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 	"log"
 	"net/http"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
 var internalProxy *variationRequestProxy
@@ -118,21 +117,27 @@ func (p *variationRequestProxy) getLatestPublishedOrDraftVariation(ctx context.C
 	return p.getLatestPublishedOrDraftVariationAttr(ctx, p, ids)
 }
 
-func getLatestPublishedOrDraftVariationFn(ctx context.Context, p *variationRequestProxy, ids *resourceIDs) (_ *platformclientv2.Documentvariationresponse, _ *platformclientv2.APIResponse, err error) {
+func getLatestPublishedOrDraftVariationFn(ctx context.Context, p *variationRequestProxy, ids *resourceIDs) (_ *platformclientv2.Documentvariationresponse, resp *platformclientv2.APIResponse, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("getLatestPublishedOrDraftVariationFn: %w", err)
 		}
 	}()
 
-	time.Sleep(2 * time.Second) // wait for the variation to be published/draft
-	publishedVariation, resp, err := p.getVariationRequestByIdAndState(ctx, ids, "Published")
-	if err != nil {
-		// if it is a 404 - continue and try draft
-		if !util.IsStatus404(resp) {
-			return nil, resp, err
+	var publishedVariation *platformclientv2.Documentvariationresponse
+
+	const maxRetries = 3
+	for i := 1; i <= maxRetries; i++ {
+		publishedVariation, resp, err = p.getVariationRequestByIdAndState(ctx, ids, "Published")
+		if err == nil {
+			break
 		}
-		publishedVariation = nil
+		if util.IsStatus404(resp) {
+			publishedVariation = nil
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		return nil, resp, err
 	}
 
 	draftVariation, resp, err := p.getVariationRequestByIdAndState(ctx, ids, "Draft")
