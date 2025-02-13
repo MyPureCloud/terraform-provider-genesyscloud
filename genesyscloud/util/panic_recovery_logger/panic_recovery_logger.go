@@ -105,6 +105,10 @@ func clearFileContentsIfExists(filepath string) (err error) {
 		}
 	}()
 
+	if filepath == "" {
+		return nil
+	}
+
 	// Check if file exists
 	_, err = os.Stat(filepath)
 	if err != nil {
