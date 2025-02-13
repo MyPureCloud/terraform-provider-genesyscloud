@@ -395,14 +395,13 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
 		}
 
-		g.customWriteAttributes(jsonResult, resource)
-
 		if isDataSource {
 			if g.dataSourceTypesMaps[resource.Type] == nil {
 				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
 			}
 			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		} else {
+			g.customWriteAttributes(jsonResult, resource)
 			g.resourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		}
 
