@@ -3,6 +3,7 @@ package organization_authentication_settings
 import (
 	"context"
 	"net/http"
+	"reflect"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -162,4 +163,165 @@ func buildOrgAuthSettingsDataMap(tMultifactorAuthRequired bool, tDomainAllowList
 		"timeout_settings":                    flattenTimeOutSettings(generateTimeOutSettings()),
 	}
 	return resourceDataMap
+}
+
+func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
+	// Test cases
+	tests := []struct {
+		name     string
+		input    map[string]interface{}
+		expected *platformclientv2.Idletokentimeout
+	}{
+		{
+			name: "Valid timeout settings",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  true,
+						"idle_token_timeout_seconds": 3600,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(true),
+				IdleTokenTimeoutSeconds: platformclientv2.Int(3600),
+			},
+		},
+		{
+			name:     "Nil timeout settings",
+			input:    map[string]interface{}{"timeout_settings": nil},
+			expected: nil,
+		},
+		{
+			name:     "Empty timeout settings",
+			input:    map[string]interface{}{"timeout_settings": []interface{}{}},
+			expected: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a new resource data object
+			d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
+				"timeout_settings": {
+					Type:     schema.TypeList,
+					Optional: true,
+					MaxItems: 1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"enable_idle_token_timeout": {
+								Type:     schema.TypeBool,
+								Required: true,
+							},
+							"idle_token_timeout_seconds": {
+								Type:     schema.TypeInt,
+								Required: true,
+							},
+						},
+					},
+				},
+			}, tt.input)
+
+			// Call the function
+			result := getTimeOutSettingsFromResourceData(d)
+
+			// Check the results
+			if tt.expected == nil {
+				if result != nil {
+					t.Errorf("expected nil, got %v", result)
+				}
+				return
+			}
+
+			if result == nil {
+				t.Fatal("expected non-nil result")
+			}
+
+			if *result.EnableIdleTokenTimeout != *tt.expected.EnableIdleTokenTimeout {
+				t.Errorf("EnableIdleTokenTimeout: expected %v, got %v",
+					*tt.expected.EnableIdleTokenTimeout,
+					*result.EnableIdleTokenTimeout)
+			}
+
+			if *result.IdleTokenTimeoutSeconds != *tt.expected.IdleTokenTimeoutSeconds {
+				t.Errorf("IdleTokenTimeoutSeconds: expected %v, got %v",
+					*tt.expected.IdleTokenTimeoutSeconds,
+					*result.IdleTokenTimeoutSeconds)
+			}
+		})
+	}
+}
+
+func TestFlattenTimeOutSettings(t *testing.T) {
+	// Test cases
+	tests := []struct {
+		name     string
+		input    *platformclientv2.Idletokentimeout
+		expected []interface{}
+	}{
+		{
+			name: "Valid timeout settings",
+			input: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(true),
+				IdleTokenTimeoutSeconds: platformclientv2.Int(3600),
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"enable_idle_token_timeout":  true,
+					"idle_token_timeout_seconds": 3600,
+				},
+			},
+		},
+		{
+			name:     "Nil input",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name: "Empty values",
+			input: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  nil,
+				IdleTokenTimeoutSeconds: nil,
+			},
+			expected: []interface{}{
+				map[string]interface{}{},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Call the function
+			result := flattenTimeOutSettings(tt.input)
+
+			// Check if result is nil
+			if tt.expected == nil {
+				if result != nil {
+					t.Errorf("expected nil, got %v", result)
+				}
+				return
+			}
+
+			// Check if result is empty
+			if len(result) == 0 {
+				if len(tt.expected) != 0 {
+					t.Errorf("expected non-empty result, got empty")
+				}
+				return
+			}
+
+			// Get the first map from the result
+			resultMap := result[0].(map[string]interface{})
+			expectedMap := tt.expected[0].(map[string]interface{})
+
+			// Compare the maps
+			for key, expectedValue := range expectedMap {
+				if resultValue, ok := resultMap[key]; !ok {
+					t.Errorf("missing key %s in result", key)
+				} else if !reflect.DeepEqual(resultValue, expectedValue) {
+					t.Errorf("for key %s: expected %v, got %v", key, expectedValue, resultValue)
+				}
+			}
+		})
+	}
 }

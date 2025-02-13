@@ -24,23 +24,24 @@ func getOrganizationAuthenticationSettingsFromResourceData(d *schema.ResourceDat
 	}
 }
 
+// getTimeOutSettingsFromResourceData maps timeout settings data from a schema ResourceData object to a platformclientv2.Idletokentimeout struct
 func getTimeOutSettingsFromResourceData(d *schema.ResourceData) *platformclientv2.Idletokentimeout {
 
 	if d.Get("timeout_settings") == nil {
 		return nil
 	}
 
-	if timeOutData, ok := d.Get("timeout_settings").([]interface{}); ok {
-
+	timeOutData := d.Get("timeout_settings").([]interface{})
+	if len(timeOutData) > 0 {
 		if timeOutMap, ok := timeOutData[0].(map[string]interface{}); ok {
 			return &platformclientv2.Idletokentimeout{
 				EnableIdleTokenTimeout:  platformclientv2.Bool(timeOutMap["enable_idle_token_timeout"].(bool)),
 				IdleTokenTimeoutSeconds: platformclientv2.Int(timeOutMap["idle_token_timeout_seconds"].(int)),
 			}
 		}
-
 	}
 	return nil
+
 }
 
 // buildPasswordRequirements maps an []interface{} into a Genesys Cloud *[]platformclientv2.Passwordrequirements
@@ -89,6 +90,7 @@ func flattenPasswordRequirements(passwordRequirements *platformclientv2.Password
 	return []interface{}{pReqInterface}
 }
 
+// flattenTimeOutSettings maps a Genesys Cloud *platformclientv2.Idletokentimeout into a []interface{}
 func flattenTimeOutSettings(timeOutSettings *platformclientv2.Idletokentimeout) []interface{} {
 	if timeOutSettings == nil {
 		return nil
