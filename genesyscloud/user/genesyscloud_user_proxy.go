@@ -310,22 +310,7 @@ func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id st
 
 func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
 	// Get the user's current password
-	resp, err := p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
+	return p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
 		NewPassword: &newPassword,
 	})
-	if err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
-	// Get the user's current password
-	resp, err := p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
-		NewPassword: &newPassword,
-	})
-	if err != nil {
-		return resp, err
-	}
-	return resp, nil
 }
