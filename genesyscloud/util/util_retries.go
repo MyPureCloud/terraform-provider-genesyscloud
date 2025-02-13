@@ -37,22 +37,22 @@ func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func
 func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
-	if err == nil {
-		return nil
-	}
-	if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
-		// Set ID empty if the object isn't found after the specified timeout
-		d.SetId("")
-	}
-	errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
-	if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
-		strings.Contains(errStringLower, "context deadline exceeded") {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-		return WithRetriesForRead(ctx, d, method)
-	}
-	if d.Id() != "" {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
+	if err != nil {
+		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
+			// Set ID empty if the object isn't found after the specified timeout
+			d.SetId("")
+			return nil
+		}
+		errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
+		if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
+			strings.Contains(errStringLower, "context deadline exceeded") {
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+			return WithRetriesForRead(ctx, d, method)
+		}
+		if d.Id() != "" {
+			consistency_checker.DeleteConsistencyCheck(d.Id())
+		}
 	}
 	return err
 }

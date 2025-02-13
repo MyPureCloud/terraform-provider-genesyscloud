@@ -30,6 +30,11 @@ func TestPlatformString(t *testing.T) {
 			want:     "debug-server",
 		},
 		{
+			name:     "go lang platform",
+			platform: PlatformGoLang,
+			want:     "go",
+		},
+		{
 			name:     "unknown platform",
 			platform: Platform(99),
 			want:     "unknown",
@@ -70,7 +75,7 @@ func TestPlatformValidate(t *testing.T) {
 			name:        "empty binary path",
 			platform:    PlatformTerraform,
 			setBinPath:  "",
-			wantErr:     true,
+			wantErr:     false,
 			errContains: "Unable to determine provider binary path",
 		},
 	}
@@ -117,7 +122,12 @@ func TestGetProviderRegistry(t *testing.T) {
 		{
 			name:     "debug server registry",
 			platform: PlatformDebugServer,
-			want:     "",
+			want:     "registry.terraform.io",
+		},
+		{
+			name:     "go lang registry",
+			platform: PlatformGoLang,
+			want:     "registry.terraform.io",
 		},
 	}
 
@@ -207,7 +217,7 @@ exit 0
 	}
 }
 
-func TestIsDebugServer(t *testing.T) {
+func TestIsDevelopmentPlatform(t *testing.T) {
 	tests := []struct {
 		name     string
 		platform Platform
@@ -216,6 +226,11 @@ func TestIsDebugServer(t *testing.T) {
 		{
 			name:     "debug server",
 			platform: PlatformDebugServer,
+			want:     true,
+		},
+		{
+			name:     "go lang",
+			platform: PlatformGoLang,
 			want:     true,
 		},
 		{
@@ -228,11 +243,16 @@ func TestIsDebugServer(t *testing.T) {
 			platform: PlatformOpenTofu,
 			want:     false,
 		},
+		{
+			name:     "test2json",
+			platform: PlatformDebugServer,
+			want:     true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.platform.IsDebugServer(); got != tt.want {
+			if got := tt.platform.IsDevelopmentPlatform(); got != tt.want {
 				t.Errorf("Platform.IsDebugServer() = %v, want %v", got, tt.want)
 			}
 		})

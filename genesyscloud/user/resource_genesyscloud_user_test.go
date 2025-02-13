@@ -174,6 +174,66 @@ func TestAccResourceUserBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserVoicemailUserpolicies(t *testing.T) {
+	var (
+		userResourceLabel1     = "test-user1"
+		email1                 = "terraform-" + uuid.NewString() + "@user.com"
+		email2                 = "terraform-" + uuid.NewString() + "@user.com"
+		userName1              = "John Terraform"
+		userName2              = "Jim Terraform"
+		timeoutSeconds1        = 550
+		timeoutSeconds2        = 450
+		sendEmailNotification1 = true
+		sendEmailNotification2 = false
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email1,
+					userName1,
+					GenerateVoicemailUserpolicies(timeoutSeconds1, sendEmailNotification1),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds1)),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.send_email_notifications", strconv.FormatBool(sendEmailNotification1)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Update
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email2,
+					userName2,
+					GenerateVoicemailUserpolicies(timeoutSeconds2, sendEmailNotification2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds2)),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.send_email_notifications", strconv.FormatBool(sendEmailNotification2)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + userResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
@@ -529,7 +589,10 @@ func TestAccResourceUserSkills(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
 	})
 }
 

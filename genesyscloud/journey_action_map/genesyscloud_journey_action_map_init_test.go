@@ -3,12 +3,12 @@ package journey_action_map
 import (
 	"log"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
@@ -48,7 +48,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[architectSchedulegroups.ResourceType] = architectSchedulegroups.ResourceArchitectSchedulegroups()
 	providerResources[architectFlow.ResourceType] = architectFlow.ResourceArchitectFlow()
 	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
-	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
+	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

@@ -3,6 +3,7 @@ package outbound_campaign
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
@@ -11,6 +12,7 @@ import (
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
 
@@ -55,7 +57,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		ruleSetResourceLabel     = "rule_set"
 		siteId                   = "site"
 		callableTimeSetId        = "time_set"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 
 		contactSortFieldName = "zipcode"
@@ -69,6 +71,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		divName              = "terraform-" + uuid.NewString()
 
 		resourcePath = ResourceType + "." + resourceLabel
+
+		description = "Terraform test description"
 	)
 
 	emergencyNumber := "+13178793428"
@@ -110,6 +114,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		wrapupCodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
+		description,
 	) + architect_flow.GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
@@ -428,7 +433,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		carResourceLabel         = "car"
 		siteId                   = "site"
 		wrapupCodeResourceLabel  = "wrapupcode"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 		flowResourceLabel        = "flow"
 		wrapupcodeResourceLabel  = "wrapupcode"
@@ -437,6 +442,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		divName                  = "terraform-" + uuid.NewString()
 
 		resourcePath = ResourceType + "." + resourceLabel
+		description  = "Terraform test description"
 	)
 
 	emergencyNumber := "+13178793429"
@@ -468,6 +474,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		wrapupcodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
+		description,
 	) + architect_flow.GenerateFlowResource(
 		flowResourceLabel,
 		outboundFlowFilePath,
@@ -630,7 +637,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 		contactListResourceLabel = "contact_list"
 		carResourceLabel         = "car"
 		siteId                   = "site"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 		flowResourceLabel        = "flow"
 		wrapupcodeResourceLabel  = "wrapupcode"

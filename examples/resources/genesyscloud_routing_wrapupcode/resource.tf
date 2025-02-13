@@ -1,3 +1,4 @@
 resource "genesyscloud_routing_wrapupcode" "win" {
-  name = "Win"
+  name        = "Win"
+  description = "test description"
 }

@@ -7,10 +7,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 // The Platform package provides information as to which platform is executing the provider, namely, Terraform, OpenTofu, or a Debug Server.
@@ -31,6 +33,7 @@ const (
 	PlatformTerraform
 	PlatformOpenTofu
 	PlatformDebugServer
+	PlatformGoLang
 )
 
 func (p Platform) String() string {
@@ -41,6 +44,8 @@ func (p Platform) String() string {
 		return "tofu"
 	case PlatformDebugServer:
 		return "debug-server"
+	case PlatformGoLang:
+		return "go"
 	default:
 		return "unknown"
 	}
@@ -52,24 +57,22 @@ func (p Platform) BinaryPath() string {
 
 func (p Platform) Binary() string {
 	if platformConfigSingleton.binaryPath == "" {
-		return ""
+		return "terraform"
 	}
 	pathSegments := strings.Split(platformConfigSingleton.binaryPath, string(os.PathSeparator))
 	return pathSegments[len(pathSegments)-1]
 }
 
-func (p Platform) IsDebugServer() bool {
-	return p == PlatformDebugServer
+func (p Platform) IsDevelopmentPlatform() bool {
+	return p == PlatformDebugServer || p == PlatformGoLang
 }
 
 func (p Platform) GetProviderRegistry() string {
 	switch p {
-	case PlatformTerraform:
-		return "registry.terraform.io"
 	case PlatformOpenTofu:
 		return "registry.opentofu.org"
 	default:
-		return ""
+		return "registry.terraform.io"
 	}
 }
 
@@ -87,7 +90,7 @@ func (p Platform) ExecuteCommand(ctx context.Context, args ...string) (commandOu
 
 func IsValidPlatform(p Platform) bool {
 	switch p {
-	case PlatformTerraform, PlatformOpenTofu, PlatformDebugServer:
+	case PlatformTerraform, PlatformOpenTofu, PlatformDebugServer, PlatformGoLang:
 		return true
 	default:
 		return false
@@ -100,9 +103,6 @@ func (p Platform) Validate() error {
 	}
 	if platformConfigSingleton == nil {
 		return fmt.Errorf("Platform configuration is not initialized. This is likely an internal provider error. Please file a bug report if this persists in the terraform-provider-genesyscloud issues list.")
-	}
-	if platformConfigSingleton.binaryPath == "" {
-		return fmt.Errorf("Unable to determine provider binary path. This may indicate incorrect provider installation or an unsupported execution environment. Please verify your provider installation is complete.")
 	}
 	return nil
 }
@@ -118,7 +118,7 @@ func init() {
 	path, err := detectExecutingBinary()
 	if err != nil {
 		log.Printf(`Error detecting binary: %v`, err)
-		platformConfigSingleton.platform = PlatformUnknown
+		platformConfigSingleton.platform = PlatformTerraform // use default terraform binary. so it wont break regression
 		return
 	}
 
@@ -132,8 +132,9 @@ func init() {
 	}
 
 	debugPatterns := []string{
-		"dlv",   // Delve debugger
-		"debug", // Debug Server
+		"dlv",       // Delve debugger
+		"debug",     // Debug Server
+		"test2json", // test2json tool
 	}
 
 	for _, pattern := range debugPatterns {
@@ -151,11 +152,17 @@ func init() {
 		return
 	}
 
+	if strings.Contains(strings.ToLower(versionOutput.Stdout), "go ") {
+		platformConfigSingleton.platform = PlatformGoLang
+		return
+	}
 	if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
 		platformConfigSingleton.platform = PlatformOpenTofu
-	} else {
-		platformConfigSingleton.platform = PlatformTerraform
+		return
 	}
+
+	platformConfigSingleton.platform = PlatformTerraform
+	return
 
 }
 
@@ -208,9 +215,18 @@ func verifyBinary(path string) error {
 		return fmt.Errorf("binary path is not a regular file")
 	}
 
-	// Check if we have execute permission
-	if info.Mode().Perm()&0111 == 0 {
-		return fmt.Errorf("binary is not executable")
+	// Check if we have execute permission based on OS
+	if runtime.GOOS == "windows" {
+		// On Windows, check if the file has a valid executable extension
+		ext := strings.ToLower(filepath.Ext(path))
+		if ext != ".exe" && ext != ".com" && ext != ".bat" && ext != ".cmd" {
+			return fmt.Errorf("binary does not have an executable extension")
+		}
+	} else {
+		// Unix-like systems
+		if info.Mode().Perm()&0111 == 0 {
+			return fmt.Errorf("binary is not executable")
+		}
 	}
 
 	return nil

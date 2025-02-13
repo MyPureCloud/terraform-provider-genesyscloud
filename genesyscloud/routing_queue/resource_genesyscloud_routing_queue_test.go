@@ -3,11 +3,13 @@ package routing_queue
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -616,9 +618,9 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		queueFlowName1                   = "Terraform Flow Test-" + uuid.NewString()
 		queueFlowName2                   = "Terraform Flow Test-" + uuid.NewString()
 		queueFlowName3                   = "Terraform Flow Test-" + uuid.NewString()
-		queueFlowFilePath1               = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
-		queueFlowFilePath2               = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		queueFlowFilePath3               = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		queueFlowFilePath1               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		queueFlowFilePath2               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml")
+		queueFlowFilePath3               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml")
 
 		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
 		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
@@ -629,7 +631,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		userPromptDescription1      = "Test description"
 		userPromptResourceLang1     = "en-us"
 		userPromptResourceText1     = "This is a test greeting!"
-		userPromptResourceFileName2 = "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+		userPromptResourceFileName2 = testrunner.GetTestDataPath("resource", userPrompt.ResourceType, "test-prompt-02.wav")
 		userPromptResourceTTS1      = "This is a test greeting!"
 		userPromptAsset1            = architect_user_prompt.UserPromptResourceStruct{
 			Language:        userPromptResourceLang1,
@@ -1002,6 +1004,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 		wrapupCodeName3          = "Terraform Test Code3-" + uuid.NewString()
 		divResourceLabel         = "test-division"
 		divName                  = "terraform-" + uuid.NewString()
+		description              = "Terraform wrapup code description"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1019,10 +1022,12 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel1),
@@ -1043,14 +1048,17 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel3,
 					wrapupCodeName3,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel1),
@@ -1068,6 +1076,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel2),

@@ -27,8 +27,6 @@ const (
 	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
 )
 
-var orgDefaultCountryCode string
-
 func init() {
 	// Set descriptions to support markdown syntax, this will be used in document generation
 	// and the language server.
@@ -261,12 +259,13 @@ If you encounter any stack traces, please report them so we can address the unde
 }
 
 type ProviderMeta struct {
-	Version      string
-	Registry     string
-	Platform     *platform.Platform
-	ClientConfig *platformclientv2.Configuration
-	Domain       string
-	Organization *platformclientv2.Organization
+	Version            string
+	Registry           string
+	Platform           *platform.Platform
+	ClientConfig       *platformclientv2.Configuration
+	Domain             string
+	Organization       *platformclientv2.Organization
+	DefaultCountryCode string
 }
 
 func configure(version string) schema.ConfigureContextFunc {
@@ -275,7 +274,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		platform := platform.GetPlatform()
 		platformValidationErr := platform.Validate()
 		if platformValidationErr != nil {
-			return nil, diag.FromErr(platformValidationErr)
+			log.Printf("%v error during platform validation switching to defaults", platformValidationErr)
 		}
 
 		providerSourceRegistry := getRegistry(&platform, version)
@@ -291,18 +290,23 @@ func configure(version string) schema.ConfigureContextFunc {
 		if err != nil {
 			return nil, err
 		}
-		orgDefaultCountryCode = *currentOrg.DefaultCountryCode
 
 		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
-		return &ProviderMeta{
-			Version:      version,
-			Platform:     &platform,
-			Registry:     providerSourceRegistry,
-			ClientConfig: defaultConfig,
-			Domain:       getRegionDomain(data.Get("aws_region").(string)),
-			Organization: currentOrg,
-		}, nil
+		meta := &ProviderMeta{
+			Version:            version,
+			Platform:           &platform,
+			Registry:           providerSourceRegistry,
+			ClientConfig:       defaultConfig,
+			Domain:             getRegionDomain(data.Get("aws_region").(string)),
+			Organization:       currentOrg,
+			DefaultCountryCode: *currentOrg.DefaultCountryCode,
+		}
+
+		setProviderMeta(meta)
+
+		return meta, nil
+
 	}
 }
 
