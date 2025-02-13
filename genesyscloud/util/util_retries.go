@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -18,6 +20,7 @@ import (
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
+	method = wrapReadMethodWithRecover(method)
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
 	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -32,6 +35,7 @@ func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func
 }
 
 func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
+	method = wrapReadMethodWithRecover(method)
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
@@ -53,10 +57,29 @@ func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration,
 	return err
 }
 
+// wrapReadMethodWithRecover will wrap the method with a recover if the panic recovery logger is enabled
+func wrapReadMethodWithRecover(method func() *retry.RetryError) func() *retry.RetryError {
+	return func() (retryErr *retry.RetryError) {
+		defer func() {
+			panicRecoveryLogger := prl.GetPanicRecoveryLoggerInstance()
+			if !panicRecoveryLogger.LoggerEnabled {
+				return
+			}
+			if r := recover(); r != nil {
+				err := panicRecoveryLogger.HandleRecovery(r, constants.Read)
+				if err != nil {
+					retryErr = retry.NonRetryableError(err)
+				}
+			}
+		}()
+		return method()
+	}
+}
+
 type checkResponseFunc func(resp *platformclientv2.APIResponse, additionalCodes ...int) bool
 type callSdkFunc func() (*platformclientv2.APIResponse, diag.Diagnostics)
 
-// Retries up to 10 times while the shouldRetry condition returns true
+// RetryWhen Retries up to 10 times while the shouldRetry condition returns true
 // Useful for adding custom retry logic to normally non-retryable error codes
 func RetryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc, additionalCodes ...int) diag.Diagnostics {
 	var lastErr diag.Diagnostics

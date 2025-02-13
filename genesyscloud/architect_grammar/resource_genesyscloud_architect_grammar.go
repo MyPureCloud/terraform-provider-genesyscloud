@@ -139,9 +139,9 @@ func GenerateGrammarResource(
 	description string,
 ) string {
 	return fmt.Sprintf(`
-		resource "genesyscloud_architect_grammar" "%s" {
+		resource "%s" "%s" {
 			name = "%s"
 			description = "%s"
 		}
-	`, resourceLabel, name, description)
+	`, ResourceType, resourceLabel, name, description)
 }
