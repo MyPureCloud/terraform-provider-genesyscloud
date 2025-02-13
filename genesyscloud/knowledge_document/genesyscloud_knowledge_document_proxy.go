@@ -290,7 +290,7 @@ func cacheKnowledgeLabelEntities(p *knowledgeDocumentProxy, knowledgeBaseId stri
 	for {
 		knowledgeLabels, resp, getErr := p.KnowledgeApi.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", after, fmt.Sprintf("%v", pageSize), "", false)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to get knowledge labels error: %s", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get knowledge labels error: %s", getErr), resp)
 		}
 
 		if knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
@@ -305,7 +305,7 @@ func cacheKnowledgeLabelEntities(p *knowledgeDocumentProxy, knowledgeBaseId stri
 
 		after, err = util.GetQueryParamValueFromUri(*knowledgeLabels.NextUri, "after")
 		if err != nil {
-			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_label", fmt.Sprintf("Failed to parse after cursor from knowledge label nextUri"), err)
+			return nil, util.BuildDiagnosticError(ResourceType, "Failed to parse after cursor from knowledge label nextUri", err)
 		}
 		if after == "" {
 			break
@@ -332,7 +332,7 @@ func cacheKnowledgeCategoryEntities(p *knowledgeDocumentProxy, knowledgeBaseId s
 	for i := 0; ; i++ {
 		knowledgeCategories, resp, getErr := p.KnowledgeApi.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", after, fmt.Sprintf("%v", pageSize), "", false, "", "", "", false)
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to read knowledge document error: %s", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document error: %s", getErr.Error()), resp)
 		}
 
 		if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
@@ -347,7 +347,7 @@ func cacheKnowledgeCategoryEntities(p *knowledgeDocumentProxy, knowledgeBaseId s
 
 		after, err = util.GetQueryParamValueFromUri(*knowledgeCategories.NextUri, "after")
 		if err != nil {
-			return nil, util.BuildDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to parse after cursor from knowledge category nextUri"), err)
+			return nil, util.BuildDiagnosticError(ResourceType, "Failed to parse after cursor from knowledge category nextUri", err)
 		}
 		if after == "" {
 			break
