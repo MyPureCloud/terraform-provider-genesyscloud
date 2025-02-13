@@ -157,7 +157,6 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
 	settingsMap := settings[0].(map[string]interface{})
-
 	return &platformclientv2.Callbackmediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		ServiceLevel: &platformclientv2.Servicelevel{
@@ -168,6 +167,7 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 		AutoEndDelaySeconds:  platformclientv2.Int(settingsMap["auto_end_delay_seconds"].(int)),
 		AutoDialDelaySeconds: platformclientv2.Int(settingsMap["auto_dial_delay_seconds"].(int)),
 		EnableAutoDialAndEnd: platformclientv2.Bool(settingsMap["enable_auto_dial_and_end"].(bool)),
+		Mode:                 platformclientv2.String(settingsMap["mode"].(string)),
 	}
 }
 
@@ -553,6 +553,7 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
 	settingsMap["auto_end_delay_seconds"] = *settings.AutoEndDelaySeconds
 	settingsMap["auto_dial_delay_seconds"] = *settings.AutoDialDelaySeconds
+	settingsMap["mode"] = *settings.Mode
 	return []interface{}{settingsMap}
 }
 
@@ -812,17 +813,18 @@ func GenerateAgentOwnedRouting(attrName string, enableAgentOwnedCallBacks string
 	`, attrName, enableAgentOwnedCallBacks, maxOwnedCallBackHours, maxOwnedCallBackDelayHours)
 }
 
-func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string) string {
+func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`%s {
 		alerting_timeout_sec = %s
 		enable_auto_answer = %s
 		service_level_percentage = %s
 		service_level_duration_ms = %s
+		%s
 	}
-	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs)
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, strings.Join(nestedBlocks, "\n"))
 }
 
-func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableAutoDial string, autoEndDelay string, autoDailDelay string) string {
+func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableAutoDial string, autoEndDelay string, autoDailDelay string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`%s {
 		alerting_timeout_sec = %s
 		enable_auto_answer = %s
@@ -831,8 +833,9 @@ func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enab
 		enable_auto_dial_and_end = %s
 		auto_end_delay_seconds = %s
 		auto_dial_delay_seconds = %s
+		%s
 	}
-	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay)
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {

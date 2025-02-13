@@ -592,6 +592,7 @@ func generateCallbackMediaSettings() platformclientv2.Callbackmediasettings {
 		EnableAutoDialAndEnd: platformclientv2.Bool(true),
 		AutoDialDelaySeconds: platformclientv2.Int(10),
 		AutoEndDelaySeconds:  platformclientv2.Int(10),
+		Mode:                 platformclientv2.String("AgentFirst"),
 	}
 }
 
