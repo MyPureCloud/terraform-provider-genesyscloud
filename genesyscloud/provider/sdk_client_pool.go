@@ -4,7 +4,6 @@ import (
 	"context"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"log"
-	"os"
 	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -100,22 +99,35 @@ type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (re
 type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
-	if _, ok := os.LookupEnv("MR_MO"); ok {
+	if usingMrMo() {
 		return schema.CreateContextFunc(method)
 	}
 	return schema.CreateContextFunc(runWithPooledClient(method))
 }
 
 func ReadWithPooledClient(method resContextFunc) schema.ReadContextFunc {
+	if usingMrMo() {
+		return schema.ReadContextFunc(method)
+	}
 	return schema.ReadContextFunc(runWithPooledClient(method))
 }
 
 func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
+	if usingMrMo() {
+		return schema.UpdateContextFunc(method)
+	}
 	return schema.UpdateContextFunc(runWithPooledClient(method))
 }
 
 func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
+	if usingMrMo() {
+		return schema.DeleteContextFunc(method)
+	}
 	return schema.DeleteContextFunc(runWithPooledClient(method))
+}
+
+func usingMrMo() bool {
+	return true
 }
 
 // Inject a pooled SDK client connection into a resource method's meta argument
