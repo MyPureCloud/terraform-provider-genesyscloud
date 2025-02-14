@@ -197,50 +197,54 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 }
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
-func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	const pageSize = 50
+func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (scriptsThatMatchName []platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("getScriptsByNameFn: %w", err)
+		}
+	}()
+
+	const pageSize = 100
 	var (
-		scripts            []platformclientv2.Script
-		response           *platformclientv2.APIResponse
+		getScripsRespBody  *platformclientv2.Scriptentitylisting
 		processedScriptIds []string
 	)
 
-	log.Printf("Retrieving scripts with name '%s'", scriptName)
+	log.Printf("Retrieving scriptsThatMatchName with name '%s'", scriptName)
 	for pageNum := 1; ; pageNum++ {
-		data, response, err := p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")
+		getScripsRespBody, resp, err = p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")
 		if err != nil {
-			return scripts, response, err
+			return nil, resp, err
 		}
-
-		if data.Entities == nil || len(*data.Entities) == 0 {
+		if getScripsRespBody.Entities == nil || len(*getScripsRespBody.Entities) == 0 {
 			break
 		}
 
-		for _, script := range *data.Entities {
+		for _, script := range *getScripsRespBody.Entities {
 			if *script.Name == scriptName {
-				scripts = append(scripts, script)
+				scriptsThatMatchName = append(scriptsThatMatchName, script)
 				processedScriptIds = append(processedScriptIds, *script.Id)
 			}
 		}
 	}
 
 	for pageNum := 1; ; pageNum++ {
-		data, response, err := p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", scriptName, "", "", "", "")
+		getScripsRespBody, resp, err = p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", scriptName, "", "", "", "")
 		if err != nil {
-			return nil, response, err
+			return nil, resp, err
 		}
-		if data.Entities == nil || len(*data.Entities) == 0 {
+		if getScripsRespBody.Entities == nil || len(*getScripsRespBody.Entities) == 0 {
 			break
 		}
-		for _, script := range *data.Entities {
+		for _, script := range *getScripsRespBody.Entities {
 			if *script.Name == scriptName && !util.StringExists(*script.Id, processedScriptIds) {
-				scripts = append(scripts, script)
+				scriptsThatMatchName = append(scriptsThatMatchName, script)
 				processedScriptIds = append(processedScriptIds, *script.Id)
 			}
 		}
 	}
 
-	return scripts, response, nil
+	return scriptsThatMatchName, resp, err
 }
 
 // createScriptFormData creates the form data attributes to create a script in Genesys Cloud
@@ -275,7 +279,13 @@ func (p *scriptsProxy) uploadScriptFile(filePath, scriptName, scriptId string, s
 }
 
 // getScriptIdByNameFn is the implementation function for retrieving a script ID by name, if no other scripts have the same name
-func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
+func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (_ string, _ bool, _ *platformclientv2.APIResponse, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("getScriptIdByNameFn: %w", err)
+		}
+	}()
+
 	sdkScripts, resp, err := p.getScriptsByName(ctx, name)
 	if err != nil {
 		return "", false, resp, err
