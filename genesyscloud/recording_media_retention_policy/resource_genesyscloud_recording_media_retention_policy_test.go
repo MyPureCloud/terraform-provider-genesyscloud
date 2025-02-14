@@ -927,6 +927,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		domainId            = fmt.Sprintf("terraformmedia%v.com", time.Now().Unix())
 		divResourceLabel    = "test-division"
 		divName             = "terraform-" + uuid.NewString()
+		description         = "Terraform test description"
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -965,7 +966,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					architect_flow.GenerateFlowResource(
 						flowResourceLabel1,
 						filePath1,
@@ -1073,7 +1074,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					architect_flow.GenerateFlowResource(
 						flowResourceLabel1,
 						filePath1,
@@ -1181,7 +1182,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					architect_flow.GenerateFlowResource(
 						flowResourceLabel1,
 						filePath1,
@@ -1289,7 +1290,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					architect_flow.GenerateFlowResource(
 						flowResourceLabel1,
 						filePath1,

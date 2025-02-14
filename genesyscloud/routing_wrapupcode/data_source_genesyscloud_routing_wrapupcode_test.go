@@ -18,6 +18,7 @@ func TestAccDataSourceWrapupcode(t *testing.T) {
 		codeName          = "Terraform Code-" + uuid.NewString()
 		divResourceLabel  = "test-division"
 		divName           = "terraform-" + uuid.NewString()
+		description       = "Terraform wrapup code description"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -29,6 +30,7 @@ func TestAccDataSourceWrapupcode(t *testing.T) {
 					codeResourceLabel,
 					codeName,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + generateRoutingWrapupcodeDataSource(
 					codeDataLabel,
 					codeName,

@@ -64,7 +64,7 @@ resource "genesyscloud_routing_queue_conditional_group_routing" "example-name" {
 Required:
 
 - `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
-- `groups` (Block List, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--rules--groups))
+- `groups` (Block Set, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--rules--groups))
 - `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
 
 Optional:

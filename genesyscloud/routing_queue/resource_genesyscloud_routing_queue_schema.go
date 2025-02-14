@@ -131,6 +131,12 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
+			"mode": {
+				Description:  "The mode callbacks will use on this queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
+			},
 		},
 	}
 
@@ -588,7 +594,8 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
 			"teams":                                    {RefType: "genesyscloud_team"},
 			"groups":                                   {RefType: "genesyscloud_group"},
-			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
+			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
+			"direct_routing.backup_queue_id":           {RefType: ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},

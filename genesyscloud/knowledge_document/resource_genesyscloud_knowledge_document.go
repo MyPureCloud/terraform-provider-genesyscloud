@@ -24,30 +24,32 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 	knowledgeBaseList := make([]platformclientv2.Knowledgebase, 0)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetKnowledgeDocumentProxy(clientConfig)
-	//knowledgeAPI := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
 
 	// get published knowledge bases
-	publishedEntities, response, err := proxy.GetAllKnowledgebaseEntities(ctx, true) //getAllKnowledgebaseEntities(*knowledgeAPI, true)
+	publishedEntities, response, err := proxy.GetAllKnowledgebaseEntities(ctx, true)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
-
+		return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 	}
-	knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+	if publishedEntities != nil && len(*publishedEntities) > 0 {
+		knowledgeBaseList = append(knowledgeBaseList, *publishedEntities...)
+	}
 
 	// get unpublished knowledge bases
 	unpublishedEntities, response, err := proxy.GetAllKnowledgebaseEntities(ctx, false)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 	}
-	knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+	if unpublishedEntities != nil && len(*unpublishedEntities) > 0 {
+		knowledgeBaseList = append(knowledgeBaseList, *unpublishedEntities...)
+	}
 
 	for _, knowledgeBase := range knowledgeBaseList {
 		partialEntities, response, err := proxy.GetAllKnowledgeDocumentEntities(ctx, &knowledgeBase)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_knowledgebase", fmt.Sprintf("%s", err), response)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 		}
 		for _, knowledgeDocument := range *partialEntities {
-			id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, *knowledgeDocument.KnowledgeBase.Id)
+			id := BuildDocumentResourceDataID(*knowledgeDocument.Id, *knowledgeBase.Id)
 			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeDocument.Title}
 		}
 
@@ -84,7 +86,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)
+	id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document %s", *knowledgeDocument.Id)
@@ -92,11 +94,10 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeDocumentId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeDocumentId, knowledgeBaseId := parseDocumentResourceDataID(d.Id())
+
 	state := "Draft"
-	if d.Get("published").(bool) == true {
+	if d.Get("published").(bool) {
 		state = "Published"
 	}
 
@@ -115,21 +116,19 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		// required
-		id := fmt.Sprintf("%s,%s", *knowledgeDocument.Id, knowledgeBaseId)
+		id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 		d.SetId(id)
-		d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
+		if knowledgeDocument.KnowledgeBase != nil && knowledgeDocument.KnowledgeBase.Id != nil {
+			_ = d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
+		}
 
 		flattenedDocument, err := flattenKnowledgeDocument(ctx, knowledgeDocument, proxy, knowledgeBaseId)
 		if err != nil {
 			return retry.NonRetryableError(err)
 		}
-		d.Set("knowledge_document", flattenedDocument)
 
-		if *knowledgeDocument.State == "Published" {
-			d.Set("published", true)
-		} else {
-			d.Set("published", false)
-		}
+		_ = d.Set("knowledge_document", flattenedDocument)
+		_ = d.Set("published", knowledgeDocument.State != nil && *knowledgeDocument.State == "Published")
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
 		checkState := cc.CheckState(d)
@@ -138,11 +137,10 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeDocumentId := id[0]
+	knowledgeDocumentId, _ := parseDocumentResourceDataID(d.Id())
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	state := "Draft"
-	if d.Get("published").(bool) == true {
+	if d.Get("published").(bool) {
 		state = "Published"
 	}
 
@@ -193,7 +191,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		state := "Draft"
-		if d.Get("published").(bool) == true {
+		if d.Get("published").(bool) {
 			state = "Published"
 		}
 

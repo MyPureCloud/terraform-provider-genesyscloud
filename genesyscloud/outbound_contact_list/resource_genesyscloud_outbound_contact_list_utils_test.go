@@ -1,10 +1,20 @@
 package outbound_contact_list
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
@@ -538,4 +548,211 @@ func TestContactListFlattenSdkOutboundContactListColumnDataTypeSpecifications(t 
 	} else {
 		t.Error("Failed to type assert result to map[string]interface{}")
 	}
+}
+
+func TestContactListContactsExporterResolver(t *testing.T) {
+	// Setup test directory
+	tempDir := t.TempDir()
+	subDir := "test_subdir"
+
+	// Mock the config map
+	configMap := map[string]interface{}{
+		"contact_list_id": "test-contact-list",
+	}
+
+	t.Run("successful export", func(t *testing.T) {
+		// Create test proxy with our test implementation
+		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return resp, nil
+			},
+			getContactListContactsExportUrlAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (string, *platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return "http://test-url.com/export", resp, nil
+			},
+		}
+
+		// Set the internal proxy to our test proxy
+		internalProxy = testProxy
+
+		// Mock the provider meta
+		mockMeta := &provider.ProviderMeta{
+			ClientConfig: &platformclientv2.Configuration{},
+		}
+
+		// Mock resource info
+		mockResource := resourceExporter.ResourceInfo{
+			BlockLabel: "contacts_test-contact-list",
+			State: &terraform.InstanceState{
+				Attributes: make(map[string]string),
+			},
+		}
+
+		// Mock the file download function
+		origDownloadFile := files.DownloadExportFileWithAccessToken
+		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) (*platformclientv2.APIResponse, error) {
+			fullPath := filepath.Join(directory, filename)
+			if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+				return nil, err
+			}
+			os.WriteFile(fullPath, []byte("test content"), 0644)
+			return nil, nil
+		}
+		defer func() { files.DownloadExportFileWithAccessToken = origDownloadFile }()
+
+		// Test the function
+		err := ContactsExporterResolver("test-id", tempDir, subDir, configMap, mockMeta, mockResource)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		// Verify the filepath was set in configMap
+		expectedPath := filepath.Join(subDir, "contacts_test-contact-list.csv")
+		if configMap["contacts_filepath"] != expectedPath {
+			t.Errorf("Expected filepath %s, got %s", expectedPath, configMap["filepath"])
+		}
+
+		if configMap["contacts_id_name"] != "inin-outbound-id" {
+			t.Errorf("Expected contacts_id_name to be 'inin-outbound-id', got %s", configMap["contacts_id_name"])
+		}
+
+		// Verify computed attributes not set on configMap
+		if _, exists := configMap["contacts_file_content_hash"]; exists {
+			t.Errorf("Expected contacts_file_content_hash to not be in configMap")
+		}
+		if _, exists := configMap["contacts_record_count"]; exists {
+			t.Errorf("Expected contacts_record_count to not be in configMap")
+		}
+
+		// Verify state attributes set
+		if mockResource.State.Attributes["contacts_file_content_hash"] == "" {
+			t.Error("Expected contacts_file_content_hash to be set")
+		}
+		if mockResource.State.Attributes["contacts_record_count"] == "" {
+			t.Error("Expected contacts_record_count to be set")
+		}
+		if mockResource.State.Attributes["contacts_filepath"] == "" {
+			t.Error("Expected contacts_filepath to be set")
+		}
+		if mockResource.State.Attributes["contacts_id_name"] == "" {
+			t.Error("Expected contacts_id_name to be set")
+		}
+
+	})
+
+	t.Run("initiate export url error", func(t *testing.T) {
+		// Create test proxy with error case
+
+		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				return nil, fmt.Errorf("failed to initiate export")
+			},
+		}
+
+		// Set the internal proxy to our test proxy
+		internalProxy = testProxy
+
+		mockMeta := &provider.ProviderMeta{
+			ClientConfig: &platformclientv2.Configuration{},
+		}
+
+		mockResource := resourceExporter.ResourceInfo{
+			State: &terraform.InstanceState{
+				Attributes: make(map[string]string),
+			},
+		}
+
+		err := ContactsExporterResolver("test-id", tempDir, subDir, configMap, mockMeta, mockResource)
+		if err == nil {
+			t.Error("Expected error, got nil")
+		}
+	})
+
+	t.Run("get export url error", func(t *testing.T) {
+		// Create test proxy with error case
+
+		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return resp, nil
+			},
+			getContactListContactsExportUrlAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (string, *platformclientv2.APIResponse, error) {
+				return "", nil, fmt.Errorf("failed to get export URL")
+			},
+		}
+
+		// Set the internal proxy to our test proxy
+		internalProxy = testProxy
+
+		mockMeta := &provider.ProviderMeta{
+			ClientConfig: &platformclientv2.Configuration{},
+		}
+
+		mockResource := resourceExporter.ResourceInfo{
+			State: &terraform.InstanceState{
+				Attributes: make(map[string]string),
+			},
+		}
+
+		err := ContactsExporterResolver("test-id", tempDir, subDir, configMap, mockMeta, mockResource)
+		if err == nil {
+			t.Error("Expected error, got nil")
+		}
+	})
+
+	t.Run("download error", func(t *testing.T) {
+		// Create test proxy
+		testProxy := &OutboundContactlistProxy{
+			initiateContactListContactsExportAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return resp, nil
+			},
+			getContactListContactsExportUrlAttr: func(_ context.Context, p *OutboundContactlistProxy, contactListId string) (string, *platformclientv2.APIResponse, error) {
+				// Mock the API response
+				resp := &platformclientv2.APIResponse{
+					StatusCode: http.StatusOK,
+				}
+				return "http://test-url.com/export", resp, nil
+			},
+		}
+
+		// Set the internal proxy to our test proxy
+		internalProxy = testProxy
+
+		mockMeta := &provider.ProviderMeta{
+			ClientConfig: &platformclientv2.Configuration{},
+		}
+
+		mockResource := resourceExporter.ResourceInfo{
+			State: &terraform.InstanceState{
+				Attributes: make(map[string]string),
+			},
+		}
+
+		// Mock download failure
+		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) (*platformclientv2.APIResponse, error) {
+			return nil, fmt.Errorf("download failed")
+		}
+
+		err := ContactsExporterResolver("test-id", tempDir, subDir, configMap, mockMeta, mockResource)
+		if err == nil {
+			t.Error("Expected error, got nil")
+		}
+	})
+
+	// Clean up after all tests
+	internalProxy = nil
 }

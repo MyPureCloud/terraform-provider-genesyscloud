@@ -3,7 +3,7 @@ package knowledge_category
 import (
 	"fmt"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -32,7 +32,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -52,7 +52,7 @@ func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -105,7 +105,7 @@ func TestAccResourceKnowledgeCategoryParentChild(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -130,7 +130,7 @@ func TestAccResourceKnowledgeCategoryParentChild(t *testing.T) {
 			},
 			{
 				// Update
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,

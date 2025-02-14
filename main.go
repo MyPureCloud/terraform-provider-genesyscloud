@@ -46,6 +46,8 @@ import (
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeyOutcomePredictor "terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	journeyViewSchedule "terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
 	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
@@ -87,6 +89,7 @@ import (
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	routingQueueConditionalGroupRouting "terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
@@ -282,6 +285,8 @@ func registerResources() {
 	routingUtilization.SetRegistrar(regInstance)                           //Registering routing utilization
 	routingUtilizationLabel.SetRegistrar(regInstance)                      //Registering routing utilization label
 	journeyViews.SetRegistrar(regInstance)                                 //Registering journey views
+	journeyViewSchedule.SetRegistrar(regInstance)                          //Registering journey view schedule
+	journeySegment.SetRegistrar(regInstance)                               //Registering journey Segment
 	journeyActionMap.SetRegistrar(regInstance)                             //Registering journey Action Map
 	routingWrapupcode.SetRegistrar(regInstance)                            //Registering routing wrapupcode
 	routingLanguage.SetRegistrar(regInstance)                              //Registering Routing Language
@@ -301,6 +306,7 @@ func registerResources() {
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
 	externalUser.SetRegistrar(regInstance)                                 //Registering external user
+	knowledgeKnowledgebase.SetRegistrar(regInstance)                       //Registering Knowledge base
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

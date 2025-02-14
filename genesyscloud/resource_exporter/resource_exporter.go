@@ -159,7 +159,10 @@ type ResourceExporter struct {
 
 	CustomFlowResolver map[string]*CustomFlowResolver
 
-	ExportAsDataFunc   func(context.Context, *platformclientv2.Configuration, map[string]string) (bool, error)
+	ExportAsDataFunc func(context.Context, *platformclientv2.Configuration, map[string]string) (bool, error)
+
+	// used when the names of the attributes in Datasource and Resource schema does not match,
+	//gives you the flexibility to match them and use when a resource need to be replaced as datasource.
 	DataSourceResolver map[*DataAttr]*ResourceAttr
 
 	//This a placeholder filter out specific resources from a filter.

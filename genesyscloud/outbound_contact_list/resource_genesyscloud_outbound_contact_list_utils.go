@@ -1,9 +1,21 @@
 package outbound_contact_list
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
@@ -65,17 +77,24 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 	contactEmailAddressColumnList := contactEmailAddressColumn.List()
 	for _, configEmailColumn := range contactEmailAddressColumnList {
 		var sdkContactEmailAddressColumn platformclientv2.Emailcolumn
+
 		contactEmailAddressColumnMap, ok := configEmailColumn.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		if columnName, _ := contactEmailAddressColumnMap["column_name"].(string); columnName != "" {
+
+		// Safely handle column_name
+		if columnName, ok := contactEmailAddressColumnMap["column_name"].(string); ok && columnName != "" {
 			sdkContactEmailAddressColumn.ColumnName = &columnName
 		}
-		if varType, _ := contactEmailAddressColumnMap["type"].(string); varType != "" {
+
+		// Safely handle type
+		if varType, ok := contactEmailAddressColumnMap["type"].(string); ok && varType != "" {
 			sdkContactEmailAddressColumn.VarType = &varType
 		}
-		if contactableTimeColumn, _ := contactEmailAddressColumnMap["contactable_time_column"].(string); contactableTimeColumn != "" {
+
+		// Safely handle contactable_time_column
+		if contactableTimeColumn, ok := contactEmailAddressColumnMap["contactable_time_column"].(string); ok && contactableTimeColumn != "" {
 			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumn
 		}
 
@@ -171,6 +190,85 @@ func flattenSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpe
 	return columnDataTypeSpecificationsSlice
 }
 
+func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	cp := GetOutboundContactlistProxy(sdkConfig)
+
+	contactListName := resource.BlockLabel
+	contactListId := resource.State.Attributes["id"]
+	exportFileName := fmt.Sprintf("%s.csv", contactListName)
+
+	fullDirectoryPath := filepath.Join(exportDirectory, subDirectory)
+	if err := os.MkdirAll(fullDirectoryPath, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", fullDirectoryPath, err)
+	}
+
+	ctx := context.Background()
+	var exportUrl string
+	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := cp.initiateContactListContactsExport(ctx, contactListId)
+		// Sleep one second before attempting to retrieve export url to give the system time to be able to generate the URL
+		time.Sleep(time.Second)
+		if err != nil {
+			return resp, diag.FromErr(err)
+		}
+		return resp, nil
+	}, 400)
+	if diagErr != nil {
+		return fmt.Errorf(`Error initiating contact list export: %v`, diagErr)
+	}
+	diagErr = util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		var err error
+		var resp *platformclientv2.APIResponse
+		exportUrl, resp, err = cp.getContactListContactsExportUrl(ctx, contactListId)
+		if err != nil {
+			return resp, diag.FromErr(err)
+		}
+		return resp, nil
+
+	}, 400)
+	if diagErr != nil {
+		return fmt.Errorf(`Error retrieving contact list export url: %v`, diagErr)
+	}
+	diagErr = util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, exportUrl, sdkConfig.AccessToken)
+		if err != nil {
+			return resp, diag.FromErr(err)
+		}
+		return resp, nil
+	}, 400)
+	if diagErr != nil {
+		return fmt.Errorf(`Error downloading exported contacts: %v`, diagErr)
+	}
+
+	fullCurrentPath := filepath.Join(fullDirectoryPath, exportFileName)
+	fullRelativePath := filepath.Join(subDirectory, exportFileName)
+	configMap["contacts_filepath"] = fullRelativePath
+	configMap["contacts_id_name"] = "inin-outbound-id"
+
+	// Remove read only attributes from the config file
+	delete(configMap, "contacts_file_content_hash")
+	delete(configMap, "contacts_record_count")
+	hash, err := files.HashFileContent(fullCurrentPath)
+	if err != nil {
+		log.Printf("Error calculating file content hash: %v", err)
+		return err
+	}
+	resource.State.Attributes["contacts_file_content_hash"] = hash
+
+	recordCount, err := files.GetCSVRecordCount(fullCurrentPath)
+	if err != nil {
+		log.Printf("Error getting CSV record count: %v", err)
+		return err
+	}
+	resource.State.Attributes["contacts_record_count"] = strconv.Itoa(recordCount)
+
+	resource.State.Attributes["contacts_filepath"] = fullRelativePath
+	resource.State.Attributes["contacts_id_name"] = "inin-outbound-id"
+
+	return nil
+}
+
 func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string) string {
 	return fmt.Sprintf(`
 	phone_columns {
@@ -179,6 +277,13 @@ func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string
 		callable_time_column = %s
 	}
 `, columnName, columnType, callableTimeColumn)
+}
+
+func GenerateContactsFile(filepath, contactsIdName string) string {
+	return fmt.Sprintf(`
+	contacts_filepath = "%s"
+	contacts_id_name = "%s"
+	`, filepath, contactsIdName)
 }
 
 func GenerateOutboundContactList(

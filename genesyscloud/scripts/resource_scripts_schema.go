@@ -85,5 +85,8 @@ func ExporterScript() *resourceExporter.ResourceExporter {
 			RetrieveAndWriteFilesFunc: ScriptResolver,
 			SubDirectory:              "scripts",
 		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "name"}: {Attr: "script_name"},
+		},
 	}
 }
