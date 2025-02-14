@@ -30,7 +30,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -511,7 +511,7 @@ func TestAccResourceTfExportForCompress(t *testing.T) {
 	var (
 		exportTestDir        = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportResourceLabel1 = "test-export1"
-		zipFileName          = "../archive_genesyscloud_tf_export*"
+		zipFileName          = filepath.Join(exportTestDir, "..", "archive_genesyscloud_tf_export*")
 		divResourceLabel     = "test-division"
 		divName              = "terraform-" + uuid.NewString()
 	)

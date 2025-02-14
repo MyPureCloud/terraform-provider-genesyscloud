@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/platform"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -101,6 +104,16 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 		return diagErr
 	}
 
+	platform := platform.GetPlatform()
+	platformErr := platform.Validate()
+	if platformErr != nil {
+		log.Printf("Failed to validate platform: %v", platformErr)
+		err := t.writeTfStateLegacy(stateFilePath)
+		if err != nil {
+			return nil
+		}
+	}
+
 	// This outputs terraform state v3, and there is currently no public lib to generate v4 which is required for terraform 0.13+.
 	// However, the state can be upgraded automatically by calling the terraform CLI. If this fails, just print a warning indicating
 	// that the state likely needs to be upgraded manually.
@@ -132,6 +145,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 			%s`, err, cliErrorPostscript)
 		log.Print(cliErrorPostscript)
 		// Don't fail everything even if this errors.
+
 		return nil
 	}
 	return nil

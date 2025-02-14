@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/platform"
@@ -18,7 +19,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+)
+
+const (
+	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
+	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
 )
 
 func init() {
@@ -104,7 +110,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Optional:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "sdk_debug.log"),
 					Description:  "Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log",
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
 				},
 				"token_pool_size": {
 					Type:         schema.TypeInt,
@@ -112,6 +118,22 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", 10),
 					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 					ValidateFunc: validation.IntBetween(1, 20),
+				},
+				"log_stack_traces": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc(logStackTracesEnvVar, false),
+					Description: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible. 
+If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message 
+"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API. 
+If you encounter any stack traces, please report them so we can address the underlying issues.`, logStackTracesEnvVar),
+				},
+				"log_stack_traces_file_path": {
+					Type:             schema.TypeString,
+					Optional:         true,
+					Description:      fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is genesyscloud_stack_traces.log", logStackTracesFilePathEnvVar),
+					DefaultFunc:      schema.EnvDefaultFunc(logStackTracesFilePathEnvVar, "genesyscloud_stack_traces.log"),
+					ValidateDiagFunc: validateLogFilePath,
 				},
 				"gateway": {
 					Type:     schema.TypeSet,
@@ -252,7 +274,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		platform := platform.GetPlatform()
 		platformValidationErr := platform.Validate()
 		if platformValidationErr != nil {
-			log.Printf("%v error during platform validation, using to default platform values", platformValidationErr)
+			log.Printf("%v error during platform validation switching to defaults", platformValidationErr)
 		}
 
 		providerSourceRegistry := getRegistry(&platform, version)
@@ -268,6 +290,8 @@ func configure(version string) schema.ConfigureContextFunc {
 		if err != nil {
 			return nil, err
 		}
+
+		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
 		meta := &ProviderMeta{
 			Version:            version,
@@ -401,7 +425,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log RequestLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
 			sdkDebugResponse := newSDKDebugResponse(response)
@@ -410,7 +434,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 	}
 

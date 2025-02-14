@@ -124,7 +124,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 						KnowledgeDocumentID := strings.Split(rs2.Primary.Attributes["knowledge_document_id"], ",")[0]
 
 						// Ensure IDs are equal
-						assert.Equal(t, resourceIDs.variationID, variationID, "Variation ID should be equal")
+						assert.Equal(t, resourceIDs.knowledgeDocumentVariationID, variationID, "Variation ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeBaseID, knowledgeBaseID, "Knowledge Base ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeDocumentID, KnowledgeDocumentID, "Knowledge Document ID should be equal")
 						return nil
