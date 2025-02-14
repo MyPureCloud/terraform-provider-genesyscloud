@@ -244,6 +244,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
+			"customer_participation": {
+				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"YES", "NO"}, false),
+			},
 		},
 	}
 
@@ -286,6 +292,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        timeAllowed,
+			},
+			"customer_participation": {
+				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"YES", "NO"}, false),
 			},
 		},
 	}
@@ -343,6 +355,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        timeAllowed,
+			},
+			"customer_participation": {
+				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"YES", "NO"}, false),
 			},
 		},
 	}
