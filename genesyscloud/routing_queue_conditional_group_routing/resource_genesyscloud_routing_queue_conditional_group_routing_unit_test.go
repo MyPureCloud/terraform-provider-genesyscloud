@@ -1,10 +1,11 @@
 package routing_queue_conditional_group_routing
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
-	"testing"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestUnitBuildConditionalGroupRouting(t *testing.T) {
