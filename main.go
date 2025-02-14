@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	providerRegistrar "terraform-provider-genesyscloud/genesyscloud/provider_registrar"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
