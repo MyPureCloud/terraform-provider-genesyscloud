@@ -250,14 +250,14 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 	})
 }
 
-func TestAccResourceSurveyFormRepublishing(t *testing.T) {
+func TestAccResourceSurveyFormPublishing(t *testing.T) {
 	formResourceLabel1 := "test-survey-form-1"
 
 	// Most basic survey form
 	surveyForm1 := SurveyFormStruct{
 		Name:      "terraform-form-surveys-" + uuid.NewString(),
 		Language:  "en-US",
-		Published: true,
+		Published: false,
 		QuestionGroups: []SurveyFormQuestionGroupStruct{
 			{
 				Name: "Test Question Group 1",
@@ -281,31 +281,23 @@ func TestAccResourceSurveyFormRepublishing(t *testing.T) {
 		},
 	}
 
-	// Unpublish
 	surveyForm2 := surveyForm1
-	surveyForm2.Disabled = true
+	surveyForm2.Published = true
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Publish form on creation
+				// Not Published
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.FalseValue),
 				),
 			},
 			{
-				// Unpublish
+				// Published
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm2),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "disabled", util.TrueValue),
-				),
-			},
-			{
-				// republish
-				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.TrueValue),
 				),

@@ -1398,6 +1398,46 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 	})
 }
 
+func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
+	var (
+		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		resourceLabel = "export"
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+	)
+
+	// Clean up
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByIncludeFilterResources(
+					resourceLabel,
+					exportTestDir,
+					util.TrueValue, // include_state_file
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_quality_forms_survey"),
+					},
+					util.FalseValue, // export_as_hcl
+					util.FalseValue,
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validatePublishedAndUnpublishedExported(configPath),
+					validateStateFileHasPublishedAndUnpublished(statePath),
+				),
+			},
+		},
+	})
+}
+
 // TestAccResourceExportManagedSitesAsData checks that during an export, managed sites are exported as data source
 // Managed can't be set on sites, therefore the default managed site is checked during the test that it is exported as data
 func TestAccResourceExportManagedSitesAsData(t *testing.T) {
@@ -1484,6 +1524,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 	config := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + wrapupcodeResourceDef + userResourcesDef +
 		generateTfExportByIncludeFilterResources(
 			exportResourceLabel,
+
 			exportTestDir,
 			util.TrueValue,
 			[]string{
@@ -1519,6 +1560,69 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+func validateStateFileHasPublishedAndUnpublished(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		stateData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable ")
+
+		// Check if resources exist in the exported data
+		if resources, ok := stateData["resources"].([]interface{}); ok {
+			log.Printf("checking that quality forms surveys exports published and unpublished in tf state")
+
+			for _, r := range resources {
+				out, _ := r.(map[string]interface{})
+
+				instances, ok := out["instances"].([]interface{})
+				if !ok {
+					return fmt.Errorf("unexpected structure for form %s", filename)
+				}
+
+				res, ok := instances[0].(map[string]interface{})["attributes_flat"].(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("unexpected structure attributes %s", filename)
+				}
+
+				name, ok := res["name"].(string)
+				if !ok {
+					return fmt.Errorf("unexpected name structure for form %s", filename)
+				}
+
+				published, ok := res["published"].(string)
+				if !ok {
+					return fmt.Errorf("unexpected published structure for form %s", filename)
+				}
+
+				if name == "test-published-form" {
+					if published == "true" {
+						log.Printf("Form with name '%s' is correctly exported as published\n", name)
+					} else {
+						return fmt.Errorf("Form with name '%s' is not correctly exported as published\n", name)
+					}
+				}
+
+				if name == "test-unpublished-form" {
+					if published == "false" {
+						log.Printf("Form with name '%s' is correctly exported as unpublished\n", name)
+					} else {
+						return fmt.Errorf("Form with name '%s' is not correctly exported as unpublished\n", name)
+					}
+				}
+			}
+		} else {
+			return fmt.Errorf("no resources found in exported data")
+		}
+		return nil
+	}
 }
 
 // validateStateFileAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
@@ -1572,6 +1676,45 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 		} else {
 			return fmt.Errorf("No data sources found in exported data")
 		}
+	}
+}
+
+func validatePublishedAndUnpublishedExported(configFile string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.ReadFile(configFile)
+		if err != nil {
+			return fmt.Errorf("failed to read state file %s: %v", configFile, err)
+		}
+
+		// Load the JSON content of the export file
+		log.Println("Loading export config into map variable")
+		exportData, err := loadJsonFileToMap(configFile)
+		if err != nil {
+			return err
+		}
+
+		if data, ok := exportData["resource"].(map[string]interface{}); ok {
+			forms, ok := data["genesyscloud_quality_forms_survey"].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("no resources exported for genesyscloud_quality_forms_survey")
+			}
+
+			if publishedForm, ok := forms["test-published-form"].(map[string]interface{}); ok {
+				if publishedForm["published"].(bool) != true {
+					return fmt.Errorf("test-published-form is not published")
+				}
+			} else {
+				return fmt.Errorf("test-published-form is not exported")
+			}
+			if unpublishedForm, ok := forms["test-unpublished-form"].(map[string]interface{}); ok {
+				if unpublishedForm["published"].(bool) != false {
+					return fmt.Errorf("test-unpublished-form is published")
+				}
+			} else {
+				return fmt.Errorf("test-unpublished-form is not exported")
+			}
+		}
+		return nil
 	}
 }
 
