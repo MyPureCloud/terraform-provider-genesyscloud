@@ -12,7 +12,7 @@ require (
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/mozillazg/go-unidecode v0.2.0
-	github.com/mypurecloud/platform-client-sdk-go/v150 v150.1.0
+	github.com/mypurecloud/platform-client-sdk-go/v152 v152.0.0
 	github.com/nyaruka/phonenumbers v1.5.0
 	github.com/rjNemo/underscore v0.7.0
 	github.com/shirou/gopsutil/v4 v4.25.1

@@ -85,6 +85,7 @@ import (
 
 	externalSource "terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	externalUser "terraform-provider-genesyscloud/genesyscloud/external_user"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
 	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
@@ -304,6 +305,7 @@ func registerResources() {
 	externalSource.SetRegistrar(regInstance)                               //Registering external source
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
+	externalUser.SetRegistrar(regInstance)                                 //Registering external user
 	knowledgeKnowledgebase.SetRegistrar(regInstance)                       //Registering Knowledge base
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter

@@ -14,14 +14,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
 The genesyscloud_scripts_proxy.go file contains all of the logic associated with calling the Genesys cloud API for scripts.
 */
-var internalProxy *scriptsProxy
-
 type createScriptFunc func(ctx context.Context, filePath, scriptName string, substitutions map[string]interface{}, p *scriptsProxy) (scriptId string, err error)
 type updateScriptFunc func(ctx context.Context, filePath, scriptName, scriptId string, substitutions map[string]interface{}, p *scriptsProxy) (id string, err error)
 type getAllPublishedScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
