@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 const (
@@ -75,7 +75,7 @@ func WidgetDeploymentExporter() *resourceExporter.ResourceExporter {
 
 func ResourceWidgetDeployment() *schema.Resource {
 	return &schema.Resource{
-		Description:        "Genesys Cloud Widget Deployment",
+		Description:        "[DEPRECATED] Genesys Cloud Widget Deployment",
 		DeprecationMessage: "The CX as Code team will be removing the genesyscloud_widget_deployment resource and data source from the CX as Code Terraform provider in mid-April. If you are using these resources you must upgrade your CX as Code provider version after mid-April and before mid-June, you will experience errors in your CI/CD pipelines and CX as Code exports with the removal of /api/v2/widgets/deployments APIs.",
 		CreateContext:      provider.CreateWithPooledClient(createWidgetDeployment),
 		ReadContext:        provider.ReadWithPooledClient(readWidgetDeployment),

@@ -3,10 +3,11 @@ package outbound_contact_list_contact
 import (
 	"context"
 	"log"
+	contactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var contactCache = rc.NewResourceCache[platformclientv2.Dialercontact]()
@@ -30,10 +31,12 @@ type contactProxy struct {
 	deleteContactAttr   deleteContactFunc
 	getAllContactsAttr  getAllContactsFunc
 	contactCache        rc.CacheInterface[platformclientv2.Dialercontact]
+	contactListProxy    *contactList.OutboundContactlistProxy
 }
 
 func newContactProxy(clientConfig *platformclientv2.Configuration) *contactProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
+	contactListProxy := contactList.GetOutboundContactlistProxy(clientConfig)
 	return &contactProxy{
 		clientConfig:        clientConfig,
 		outboundApi:         api,
@@ -43,6 +46,7 @@ func newContactProxy(clientConfig *platformclientv2.Configuration) *contactProxy
 		deleteContactAttr:   deleteContactFn,
 		getAllContactsAttr:  getAllContactsFn,
 		contactCache:        contactCache,
+		contactListProxy:    contactListProxy,
 	}
 }
 
@@ -100,12 +104,15 @@ func deleteContactFn(_ context.Context, p *contactProxy, contactListId, contactI
 func getAllContactsFn(ctx context.Context, p *contactProxy) ([]ContactEntry, *platformclientv2.APIResponse, error) {
 	var allContacts []ContactEntry
 
-	contactLists, resp, err := p.getAllContactLists(ctx)
+	contactLists, resp, err := p.contactListProxy.GetAllOutboundContactlist(ctx)
 	if err != nil {
 		return allContacts, resp, err
 	}
 
-	for _, contactList := range contactLists {
+	for _, contactList := range *contactLists {
+		if contactList.Id == nil {
+			continue
+		}
 		contacts, resp, err := p.getContactsByContactListId(ctx, *contactList.Id)
 		if err != nil {
 			return nil, resp, err
@@ -161,36 +168,4 @@ func (p *contactProxy) getContactsByContactListId(_ context.Context, contactList
 	}
 
 	return allContacts, nil, nil
-}
-
-func (p *contactProxy) getAllContactLists(_ context.Context) ([]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
-	const pageSize = 100
-	var pageNum = 1
-	var allContactLists []platformclientv2.Contactlist
-
-	contactListConfigs, resp, getErr := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
-	if getErr != nil {
-		return nil, resp, getErr
-	}
-	if contactListConfigs.Entities == nil || len(*contactListConfigs.Entities) == 0 {
-		return nil, nil, nil
-	}
-	for _, cl := range *contactListConfigs.Entities {
-		allContactLists = append(allContactLists, cl)
-	}
-
-	for pageNum := 2; pageNum <= *contactListConfigs.PageCount; pageNum++ {
-		contactListConfigs, resp, getErr := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", "", []string{}, []string{}, "", "")
-		if getErr != nil {
-			return nil, resp, getErr
-		}
-		if contactListConfigs.Entities == nil || len(*contactListConfigs.Entities) == 0 {
-			break
-		}
-		for _, cl := range *contactListConfigs.Entities {
-			allContactLists = append(allContactLists, cl)
-		}
-	}
-
-	return allContactLists, nil, nil
 }

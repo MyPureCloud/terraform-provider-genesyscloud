@@ -14,7 +14,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -318,7 +318,7 @@ func verifyScriptUploadSuccessFn(ctx context.Context, p *scriptsProxy, body []by
 	return false, nil
 }
 
-// getUploadIdFromBody retrieves the upload Id from the json file being uploade
+// getUploadIdFromBody retrieves the upload Id from the json file being uploaded
 func (p *scriptsProxy) getUploadIdFromBody(body []byte) (string, error) {
 	var (
 		jsonData interface{}

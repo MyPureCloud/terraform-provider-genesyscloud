@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -117,8 +117,12 @@ func readExternalContact(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "facebook_id", externalContact.FacebookId, flattenSdkFacebookId)
 		resourcedata.SetNillableValue(d, "survey_opt_out", externalContact.SurveyOptOut)
 		resourcedata.SetNillableValue(d, "external_system_url", externalContact.ExternalSystemUrl)
+		if externalContact.ExternalOrganization != nil && externalContact.ExternalOrganization.Id != nil {
+			_ = d.Set("external_organization_id", externalContact.ExternalOrganization.Id)
+		}
 
 		log.Printf("Read external contact %s", d.Id())
+
 		return cc.CheckState(d)
 	})
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -147,7 +147,7 @@ func (p *SiteProxy) createSite(ctx context.Context, site *platformclientv2.Site)
 }
 
 // deleteSiteFunc deletes a Genesys Cloud Site by ID
-func (p *SiteProxy) deleteSite(ctx context.Context, siteId string) (*platformclientv2.APIResponse, error) {
+func (p *SiteProxy) DeleteSite(ctx context.Context, siteId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteSiteAttr(ctx, p, siteId)
 }
 

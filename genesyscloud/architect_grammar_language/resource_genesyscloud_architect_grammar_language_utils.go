@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -115,7 +115,7 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
-	fullPath := path.Join(exportDirectory, subDirectory)
+	fullPath := filepath.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (d *grammarLanguageDownloader) downloadFileData(fileType FileType) error {
 func (d *grammarLanguageDownloader) downloadLanguageFileAndUpdateConfigMap(url string) error {
 	d.fileUrl = url
 	d.setExportFileName()
-	if err := files.DownloadExportFile(d.exportFilesFolderPath, d.exportFileName, d.fileUrl); err != nil {
+	if _, err := files.DownloadExportFile(d.exportFilesFolderPath, d.exportFileName, d.fileUrl); err != nil {
 		return err
 	}
 	d.updatePathsInExportConfigMap()
@@ -215,7 +215,7 @@ func (d *grammarLanguageDownloader) setLanguageFileExtension() {
 func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 	var (
 		fileDataMapKey string
-		filePath       = path.Join(d.subDirectory, d.exportFileName)
+		filePath       = filepath.Join(d.subDirectory, d.exportFileName)
 	)
 
 	switch d.fileType {
@@ -230,9 +230,9 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 			fileDataMap["file_name"] = filePath
 			fileHashVal := fmt.Sprintf(`${filesha256("%s")}`, filePath)
 			fileDataMap["file_content_hash"] = fileHashVal
-			fullPath := path.Join(d.exportDirectory, d.subDirectory)
+			fullPath := filepath.Join(d.exportDirectory, d.subDirectory)
 			d.resource.State.Attributes["file_name"] = filePath
-			hash, er := files.HashFileContent(path.Join(fullPath, d.exportFileName))
+			hash, er := files.HashFileContent(filepath.Join(fullPath, d.exportFileName))
 			if er != nil {
 				log.Printf("Error Calculating Hash '%s' ", er)
 			} else {

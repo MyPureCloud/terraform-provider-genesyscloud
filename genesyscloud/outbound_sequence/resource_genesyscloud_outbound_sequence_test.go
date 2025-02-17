@@ -2,10 +2,12 @@ package outbound_sequence
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -14,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceOutboundSequence(t *testing.T) {
@@ -31,7 +33,7 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 		contactListResourceLabel = "contact_list"
 		carResourceLabel         = "car"
 		siteId                   = "site"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 		emergencyNumber          = "+13172947329"
 		divResourceLabel         = "test-outbound-sequence-division"
@@ -139,7 +141,7 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 		contactListResourceLabel = "contact_list"
 		carResourceLabel         = "car"
 		siteId                   = "site"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 		emergencyNumber          = "+13172947330"
 		divResourceLabel         = "test-outbound-sequence-division"

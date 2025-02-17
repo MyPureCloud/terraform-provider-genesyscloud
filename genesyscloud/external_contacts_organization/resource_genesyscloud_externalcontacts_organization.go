@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -122,7 +122,6 @@ func updateExternalContactsOrganization(ctx context.Context, d *schema.ResourceD
 	proxy := getExternalContactsOrganizationProxy(sdkConfig)
 
 	externalContactsOrganization, err := getExternalContactsOrganizationFromResourceData(d)
-
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to build external organization error: %s", err), nil)
 	}

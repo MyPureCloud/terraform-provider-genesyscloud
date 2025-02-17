@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -272,7 +272,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Updating site %s", *site.Name)
 		site, resp, err = sp.updateSite(ctx, d.Id(), site)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update site %s error: %s", *site.Name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update site %s error: %s", *currentSite.Name, err), resp)
 		}
 
 		return resp, nil
@@ -316,7 +316,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Deleting site %s", d.Id())
 	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting site %s", d.Id())
-		resp, err := sp.deleteSite(ctx, d.Id())
+		resp, err := sp.DeleteSite(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Site already deleted %s", d.Id())
@@ -325,7 +325,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete site %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
-	})
+	}, 400)
 
 	if diagErr != nil {
 		return diagErr

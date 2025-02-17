@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceSite(t *testing.T) {
@@ -44,7 +44,7 @@ func TestAccResourceSite(t *testing.T) {
 		locationResourceLabel = "test-location1"
 	)
 
-	emergencyNumber := "+13173124741"
+	emergencyNumber := "+13173124742"
 	if err := DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
@@ -70,7 +70,7 @@ func TestAccResourceSite(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateSiteResourceWithCustomAttrs(
+				Config: locationConfig + GenerateSiteResourceWithCustomAttrs(
 					siteResourceLabel,
 					name1,
 					description1,
@@ -79,7 +79,7 @@ func TestAccResourceSite(t *testing.T) {
 					false,
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing")) + locationConfig,
+					strconv.Quote("Wilco plumbing")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteResourceLabel, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_site."+siteResourceLabel, "description", description1),

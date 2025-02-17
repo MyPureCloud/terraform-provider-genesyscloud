@@ -2,8 +2,8 @@ package knowledge_document
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"testing"
 
@@ -29,7 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
+	providerResources["genesyscloud_knowledge_knowledgebase"] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[ResourceType] = ResourceKnowledgeDocument()
 }

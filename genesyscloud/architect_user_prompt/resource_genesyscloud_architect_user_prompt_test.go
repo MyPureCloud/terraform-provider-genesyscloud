@@ -2,7 +2,6 @@ package architect_user_prompt
 
 import (
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceUserPromptBasic(t *testing.T) {
@@ -124,8 +123,8 @@ func TestAccResourceUserPromptWavFile(t *testing.T) {
 	userPromptDescription1 := "Test prompt with wav audio file"
 	userPromptResourceLang1 := "en-us"
 	userPromptResourceText1 := "This is a test greeting!"
-	userPromptResourceFileName1 := path.Join("../", testrunner.GetTestDataPath("test-prompt-01.wav"))
-	userPromptResourceFileName2 := path.Join("../", testrunner.GetTestDataPath("test-prompt-02.wav"))
+	userPromptResourceFileName1 := testrunner.GetTestDataPath("resource", ResourceType, "test-prompt-01.wav")
+	userPromptResourceFileName2 := testrunner.GetTestDataPath("resource", ResourceType, "test-prompt-02.wav")
 
 	userPromptAsset1 := UserPromptResourceStruct{
 		Language:        userPromptResourceLang1,
@@ -220,7 +219,7 @@ func TestAccResourceUserPromptWavFileURL(t *testing.T) {
 
 	httpServerExitDone := &sync.WaitGroup{}
 	httpServerExitDone.Add(1)
-	srv := fileserver.Start(httpServerExitDone, path.Join("../", testrunner.GetTestDataPath()), 8100)
+	srv := fileserver.Start(httpServerExitDone, testrunner.GetTestDataPath("resource", ResourceType), 8100)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

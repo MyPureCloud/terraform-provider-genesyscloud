@@ -8,8 +8,12 @@ import (
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	knowledge "terraform-provider-genesyscloud/genesyscloud/knowledge"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	journeyViewSchedule "terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
 	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
@@ -103,6 +107,7 @@ import (
 
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	externalUser "terraform-provider-genesyscloud/genesyscloud/external_user"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 
@@ -162,8 +167,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
 	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
 	providerResources[journeyActionTemplate.ResourceType] = journeyActionTemplate.ResourceJourneyActionTemplate()
+	providerResources[journeyViewSchedule.ResourceType] = journeyViewSchedule.ResourceJourneyViewSchedule()
 	providerResources[knowledgeDocument.ResourceType] = knowledgeDocument.ResourceKnowledgeDocument()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
+	providerResources[knowledgeDocumentVariation.ResourceType] = knowledgeDocumentVariation.ResourceKnowledgeDocumentVariation()
+	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
@@ -224,19 +232,26 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
-
+	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
+	providerResources[externalUser.ResourceType] = externalUser.ResourceExternalUserIdentity()
+	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_knowledge_document_variation"] = knowledge.ResourceKnowledgeDocumentVariation()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
-	providerResources["genesyscloud_journey_outcome"] = gcloud.ResourceJourneyOutcome()
-	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
 }
 
 func (r *registerTestInstance) registerTestExporters() {
+	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
+	RegisterExporter(architectSchedules.ResourceType, architectSchedules.ArchitectSchedulesExporter())
+	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
+	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
+	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
+	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
+	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
+	RegisterExporter(knowledgeKnowledgebase.ResourceType, knowledgeKnowledgebase.KnowledgeKnowledgebaseExporter())
+	RegisterExporter(journeyViewSchedule.ResourceType, journeyViewSchedule.JourneyViewScheduleExporter())
 	RegisterExporter("genesyscloud_organization_authentication_settings", oAuthSettings.OrganizationAuthenticationSettingsExporter())
 	RegisterExporter("genesyscloud_architect_grammar", grammar.ArchitectGrammarExporter())
 	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
@@ -244,7 +259,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_architect_datatable_row", architect_datatable_row.ArchitectDatatableRowExporter())
 	RegisterExporter("genesyscloud_architect_emergencygroup", emergencyGroup.ArchitectEmergencyGroupExporter())
 	RegisterExporter("genesyscloud_architect_ivr", archIvr.ArchitectIvrExporter())
-	RegisterExporter(architectSchedules.ResourceType, architectSchedules.ArchitectSchedulesExporter())
 	RegisterExporter("genesyscloud_architect_schedulegroups", architectSchedulegroups.ArchitectSchedulegroupsExporter())
 	RegisterExporter("genesyscloud_architect_user_prompt", userPrompt.ArchitectUserPromptExporter())
 	RegisterExporter("genesyscloud_auth_division", authDivision.AuthDivisionExporter())
@@ -270,11 +284,10 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_instagram", integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
 	RegisterExporter("genesyscloud_journey_action_map", journeyActionMap.JourneyActionMapExporter())
 	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplate.JourneyActionTemplateExporter())
-	RegisterExporter("genesyscloud_journey_outcome", gcloud.JourneyOutcomeExporter())
-	RegisterExporter("genesyscloud_journey_segment", gcloud.JourneySegmentExporter())
-	RegisterExporter("genesyscloud_knowledge_knowledgebase", gcloud.KnowledgeKnowledgebaseExporter())
+	RegisterExporter("genesyscloud_journey_outcome", journeyOutcome.JourneyOutcomeExporter())
+	RegisterExporter("genesyscloud_journey_segment", journeySegment.JourneySegmentExporter())
 	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())
-	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
+	RegisterExporter("genesyscloud_knowledge_document_variation", knowledgeDocumentVariation.KnowledgeDocumentVariationExporter())
 	RegisterExporter("genesyscloud_location", location.LocationExporter())
 	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
 	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
@@ -283,7 +296,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
 	RegisterExporter("genesyscloud_outbound_contact_list_template", outboundContactListTemplate.OutboundContactListTemplateExporter())
-	RegisterExporter("genesyscloud_outbound_contact_list_contact", outboundContactListContact.ContactExporter())
 	RegisterExporter("genesyscloud_outbound_contactlistfilter", obContactListFilter.OutboundContactlistfilterExporter())
 	RegisterExporter("genesyscloud_outbound_messagingcampaign", ob.OutboundMessagingcampaignExporter())
 	RegisterExporter("genesyscloud_outbound_sequence", obSequence.OutboundSequenceExporter())
@@ -325,25 +337,20 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
 	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
-
-	RegisterExporter("genesyscloud_knowledge_document_variation", knowledge.KnowledgeDocumentVariationExporter())
-	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
-
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
-
 	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
 	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_settings", cMessagingSettings.ConversationsMessagingSettingsExporter())
 	RegisterExporter("genesyscloud_task_management_worktype_status", worktypeStatus.TaskManagementWorktypeStatusExporter())
-
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent_default", defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_open", cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
+	RegisterExporter(externalUser.ResourceType, externalUser.ExternalUserIdentityExporter())
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
@@ -367,5 +374,4 @@ func TestMain(m *testing.M) {
 
 	// Run the test suite
 	m.Run()
-
 }

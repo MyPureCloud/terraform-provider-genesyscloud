@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -89,9 +89,20 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		_ = d.Set("name", *currentPhone.Name)
-		_ = d.Set("site_id", *currentPhone.Site.Id)
-		_ = d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
+		if currentPhone.Site != nil && currentPhone.Site.Id != nil {
+			_ = d.Set("site_id", *currentPhone.Site.Id)
+			log.Printf("Phone ID = %s and the site_id = %s", d.Id(), *currentPhone.Site.Id)
+		} else {
+			log.Printf("Phone ID = %s and the site_id is nil", d.Id())
+		}
+
+		if currentPhone.Name != nil {
+			_ = d.Set("name", *currentPhone.Name)
+		}
+
+		if currentPhone.PhoneBaseSettings != nil && currentPhone.PhoneBaseSettings.Id != nil {
+			_ = d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
+		}
 
 		if currentPhone.State != nil {
 			_ = d.Set("state", *currentPhone.State)

@@ -4,15 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"time"
 
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var internalProxy *trunkbaseSettingProxy
@@ -98,39 +94,40 @@ func getTrunkBaseSettingByIdFn(ctx context.Context, p *trunkbaseSettingProxy, tr
 }
 
 func getAllTrunkBaseSettingsFn(ctx context.Context, p *trunkbaseSettingProxy, name string) (*[]platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {
-	trunkbaseSlice := make([]platformclientv2.Trunkbase, 0, 10)
-	util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
-		for pageNum := 1; ; pageNum++ {
-			const pageSize = 100.
-			trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(p, pageNum, pageSize, name)
+	var allTrunkbaseSettings []platformclientv2.Trunkbase
+	const pageSize = 100
 
-			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting trunk base settings %s | error: %s", name, getErr), resp))
-			}
+	trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(p, 1, pageSize, name)
+	if getErr != nil {
+		return nil, resp, getErr
+	}
 
-			if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No trunkBaseSettings found with name %s", name), resp))
-			}
+	if trunkBaseSettings.Entities == nil || len(*trunkBaseSettings.Entities) == 0 {
+		return &allTrunkbaseSettings, nil, nil
+	}
 
-			for _, trunkBaseSetting := range *trunkBaseSettings.Entities {
-				if trunkBaseSetting.State != nil && *trunkBaseSetting.State != "deleted" {
-					if name == "" {
-						rc.SetCache(p.trunkBaseCache, *trunkBaseSetting.Id, trunkBaseSetting)
-					}
+	allTrunkbaseSettings = append(allTrunkbaseSettings, *trunkBaseSettings.Entities...)
 
-					trunkbaseSlice = append(trunkbaseSlice, trunkBaseSetting)
-				}
-			}
-
-			if name == "" {
-				break
-			}
-
+	for pageNum := 2; pageNum <= *trunkBaseSettings.PageCount; pageNum++ {
+		trunkBaseSettings, resp, getErr := getTelephonyProvidersEdgesTrunkbasesettings(p, pageNum, pageSize, name)
+		if getErr != nil {
+			return nil, resp, getErr
 		}
-		return nil
-	})
 
-	return &trunkbaseSlice, nil, nil
+		if trunkBaseSettings.Entities == nil {
+			break
+		}
+		allTrunkbaseSettings = append(allTrunkbaseSettings, *trunkBaseSettings.Entities...)
+	}
+	for _, trunkBaseSetting := range allTrunkbaseSettings {
+		if trunkBaseSetting.State != nil && *trunkBaseSetting.State != "deleted" {
+			if name != "" {
+				rc.SetCache(p.trunkBaseCache, *trunkBaseSetting.Id, trunkBaseSetting)
+			}
+		}
+	}
+
+	return &allTrunkbaseSettings, nil, nil
 }
 
 // The SDK function is too cumbersome because of the various boolean query parameters.

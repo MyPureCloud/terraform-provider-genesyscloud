@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceArchitectGrammarLanguage(t *testing.T) {
@@ -154,28 +154,26 @@ func generateFileVoiceFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
 	return fmt.Sprintf(`
 		voice_file_data {
 			file_name = "%s"
 			file_type = "%s"
 			file_content_hash = filesha256("%s")
 		}
-	`, fileName, fileType, fullyQualifiedPath)
+	`, fileName, fileType, fileName)
 }
 
 func generateFileDtmfFileDataBlock(
 	fileName string,
 	fileType string,
 ) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(fileName)
 	return fmt.Sprintf(`
 		dtmf_file_data {
 			file_name = "%s"
 			file_type = "%s"
 			file_content_hash = filesha256("%s")
 		}
-	`, fileName, fileType, fullyQualifiedPath)
+	`, fileName, fileType, fileName)
 }
 
 func verifyFileUpload(grammarResourcePath string, language string, fileType FileType, filename string) resource.TestCheckFunc {
@@ -277,7 +275,5 @@ func testVerifyGrammarLanguageDestroyed(state *terraform.State) error {
 }
 
 func generateFilePath(filename string) string {
-	testFolder := "../../test/data/resource/architect_grammar_language/"
-
-	return testFolder + filename
+	return testrunner.GetTestDataPath("resource", ResourceType, filename)
 }

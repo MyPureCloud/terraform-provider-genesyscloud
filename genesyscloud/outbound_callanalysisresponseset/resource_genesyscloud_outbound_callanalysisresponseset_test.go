@@ -2,6 +2,7 @@ package outbound_callanalysisresponseset
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -9,12 +10,13 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
@@ -35,10 +37,11 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 		contactListName      = "Terraform Test Contact List " + uuid.NewString()
 		wrapupCodeName       = "Terraform Test WrapUpCode " + uuid.NewString()
 		outboundFlowName     = "Terraform Test Flow " + uuid.NewString()
-		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 
 		divResourceLabel = "test-division"
 		divName          = "terraform-" + uuid.NewString()
+		description      = "Terraform test description"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -138,6 +141,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 					wrapupCodeResourceLabel,
 					wrapupCodeName,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + architect_flow.GenerateFlowResource(
 					flowResourceLabel,
 					outboundFlowFilePath,
