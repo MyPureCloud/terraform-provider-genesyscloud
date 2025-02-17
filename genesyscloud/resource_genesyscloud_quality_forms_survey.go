@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
@@ -362,9 +363,7 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		if surveyForm.Name != nil {
 			d.Set("name", *surveyForm.Name)
 		}
-		if surveyForm.Disabled != nil {
-			d.Set("disabled", *surveyForm.Disabled)
-		}
+
 		if surveyForm.Language != nil {
 			d.Set("language", *surveyForm.Language)
 		}
@@ -385,13 +384,20 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		var published = false
-		for _, s := range *formVersions.Entities {
-			if *s.Published == true {
-				published = true
+		if tfexporter_state.IsExporterActive() {
+			for _, s := range *formVersions.Entities {
+				if *s.Published == true {
+					published = true
+				}
 			}
+
+			_ = d.Set("published", published)
+		} else {
+			_ = d.Set("published", *surveyForm.Published)
 		}
 
-		_ = d.Set("published", published)
+		log.Println(surveyForm.String())
+		d.Set("disabled", *surveyForm.Disabled)
 
 		return cc.CheckState(d)
 	})
@@ -432,12 +438,12 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 		log.Printf("Updating Survey Form %s", name)
 		form, putResp, err := qualityAPI.PutQualityFormsSurvey(latestUnpublishedVersion, platformclientv2.Surveyform{
 			Name:           &name,
-			Disabled:       &disabled,
 			Language:       &language,
 			Header:         &header,
 			Footer:         &footer,
 			QuestionGroups: questionGroups,
 		})
+		log.Println(form.String())
 		if err != nil {
 			return putResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to update survey form %s error: %s", name, err), putResp)
 		}
@@ -452,9 +458,16 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 			if err != nil {
 				return postResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to publish survey form %s error: %s", name, err), postResp)
 			}
-		} else {
-			// If published property is reset to false, set the resource Id to the latest unpublished form
-			d.SetId(*form.Id)
+		}
+
+		if disabled {
+			f, resp, err := qualityAPI.PatchQualityFormsSurvey(*form.Id, platformclientv2.Surveyform{
+				Disabled: &disabled,
+			})
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to disable survey form %s error: %s", name, err), resp)
+			}
+			log.Println("HERE:", f.String())
 		}
 		return putResp, nil
 	})

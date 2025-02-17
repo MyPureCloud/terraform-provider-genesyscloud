@@ -283,7 +283,7 @@ func TestAccResourceSurveyFormRepublishing(t *testing.T) {
 
 	// Unpublish
 	surveyForm2 := surveyForm1
-	surveyForm2.Published = false
+	surveyForm2.Disabled = true
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -300,7 +300,7 @@ func TestAccResourceSurveyFormRepublishing(t *testing.T) {
 				// Unpublish
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "disabled", util.TrueValue),
 				),
 			},
 			{
