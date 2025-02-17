@@ -56,19 +56,18 @@ type scriptsProxy struct {
 	scriptCache                       rc.CacheInterface[platformclientv2.Script]
 }
 
+var scriptCache = rc.NewResourceCache[platformclientv2.Script]()
+
 // getScriptsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
+// (abandoned singleton pattern for DEVTOOLING-1081)
 func getScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy {
-	if internalProxy == nil {
-		internalProxy = newScriptsProxy(clientConfig)
-	}
-	return internalProxy
+	return newScriptsProxy(clientConfig)
 }
 
 // newScriptsProxy initializes the Scripts proxy with all of the data needed to communicate with Genesys Cloud
 func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy {
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(clientConfig)
-	scriptCache := rc.NewResourceCache[platformclientv2.Script]()
 	return &scriptsProxy{
 		clientConfig:                      clientConfig,
 		scriptsApi:                        scriptsAPI,
@@ -206,21 +205,21 @@ func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (
 
 	const pageSize = 100
 	var (
-		getScripsRespBody  *platformclientv2.Scriptentitylisting
+		getScriptsRespBody *platformclientv2.Scriptentitylisting
 		processedScriptIds []string
 	)
 
-	log.Printf("Retrieving scriptsThatMatchName with name '%s'", scriptName)
+	log.Printf("Retrieving scripts with name '%s'", scriptName)
 	for pageNum := 1; ; pageNum++ {
-		getScripsRespBody, resp, err = p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")
+		getScriptsRespBody, resp, err = p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")
 		if err != nil {
 			return nil, resp, err
 		}
-		if getScripsRespBody.Entities == nil || len(*getScripsRespBody.Entities) == 0 {
+		if getScriptsRespBody.Entities == nil || len(*getScriptsRespBody.Entities) == 0 {
 			break
 		}
 
-		for _, script := range *getScripsRespBody.Entities {
+		for _, script := range *getScriptsRespBody.Entities {
 			if *script.Name == scriptName {
 				scriptsThatMatchName = append(scriptsThatMatchName, script)
 				processedScriptIds = append(processedScriptIds, *script.Id)
@@ -228,15 +227,16 @@ func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (
 		}
 	}
 
+	log.Printf("Retrieving published scripts with name '%s'", scriptName)
 	for pageNum := 1; ; pageNum++ {
-		getScripsRespBody, resp, err = p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", scriptName, "", "", "", "")
+		getScriptsRespBody, resp, err = p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", scriptName, "", "", "", "")
 		if err != nil {
 			return nil, resp, err
 		}
-		if getScripsRespBody.Entities == nil || len(*getScripsRespBody.Entities) == 0 {
+		if getScriptsRespBody.Entities == nil || len(*getScriptsRespBody.Entities) == 0 {
 			break
 		}
-		for _, script := range *getScripsRespBody.Entities {
+		for _, script := range *getScriptsRespBody.Entities {
 			if *script.Name == scriptName && !util.StringExists(*script.Id, processedScriptIds) {
 				scriptsThatMatchName = append(scriptsThatMatchName, script)
 				processedScriptIds = append(processedScriptIds, *script.Id)
