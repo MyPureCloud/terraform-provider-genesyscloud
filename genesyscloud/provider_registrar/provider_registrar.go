@@ -27,6 +27,7 @@ import (
 	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	externalSource "terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	externalUser "terraform-provider-genesyscloud/genesyscloud/external_user"
 	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
@@ -258,6 +259,7 @@ func registerResources() {
 	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule
 	workitemDateBasedRule.SetRegistrar(regInstance)                        //Registering task management datebased rule
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
+	externalUser.SetRegistrar(regInstance)                                 //Registering external user identity
 	team.SetRegistrar(regInstance)                                         //Registering team
 	telephony_provider_edges_trunkbasesettings.SetRegistrar(regInstance)   //Registering telephony_provider_edges_trunkbasesettings package
 	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
