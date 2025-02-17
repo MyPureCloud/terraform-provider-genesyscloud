@@ -49,7 +49,7 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 
 	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
 	if err != nil {
-		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp.String())
+		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp)
 	}
 
 	if queues != nil || len(*queues) != 0 {
@@ -58,10 +58,10 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 
 	trueQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "", true)
 	if err != nil {
-		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp.String())
+		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp)
 	}
 
-	if trueQueues != nil || len(*trueQueues) != 0 {
+	if trueQueues != nil && len(*trueQueues) != 0 {
 		allQueues = append(allQueues, *trueQueues...)
 	}
 
