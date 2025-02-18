@@ -3,6 +3,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log"
+	"regexp"
+	"terraform-provider-genesyscloud/genesyscloud/platform"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -12,10 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
-	"log"
-	"regexp"
-	"terraform-provider-genesyscloud/genesyscloud/platform"
-	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 )
 
 var (
@@ -300,7 +300,8 @@ func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.Co
 		response.Diagnostics.AddError(fmt.Sprintf("%v", getOrgMeErr), "Failed to establish current organisation.")
 	}
 
-	prl.InitPanicRecoveryLoggerInstance(data.LogStackTraces.ValueBool(), data.LogStackTracesFilePath.ValueString())
+	// probably not necessary because this is being called in the Plugin SDK configure function
+	//prl.InitPanicRecoveryLoggerInstance(data.LogStackTraces.ValueBool(), data.LogStackTracesFilePath.ValueString())
 
 	meta := &ProviderMeta{
 		Version:            f.Version,
