@@ -54,13 +54,23 @@ func getRootDir() string {
 func GetTestDataPath(elem ...string) string {
 	basePath := filepath.Join(getRootDir(), "test", "data")
 	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
+	return NormalizePath(filepath.Join(basePath, subPath))
 }
 
 func GetTestTempPath(elem ...string) string {
 	basePath := filepath.Join(RootDir, "test", "temp")
 	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
+	return NormalizePath(filepath.Join(basePath, subPath))
+}
+
+func NormalizePath(path string) string {
+	fullyQualifiedPath := path
+
+	if runtime.GOOS == "windows" {
+		// Convert single backslashes to dobule backslashes if necessary
+		fullyQualifiedPath = strings.ReplaceAll(path, "\\", "\\\\")
+	}
+	return fullyQualifiedPath
 }
 
 func GenerateDataJourneySourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {

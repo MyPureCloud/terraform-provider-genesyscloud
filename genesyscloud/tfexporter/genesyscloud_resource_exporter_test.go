@@ -266,7 +266,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		filterType:         IncludeResources,
 		resourceTypeFilter: IncludeFilterByResourceType,
 		resourceFilter:     IncludeFilterResourceByRegex,
-		exportAsHCL:        true,
+		exportFormat:       "hcl",
 		exporters: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
@@ -444,7 +444,7 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 
 	gre := &GenesysCloudResourceExporter{
-		exportAsHCL:          false,
+		exportFormat:         "json",
 		splitFilesByResource: true,
 	}
 
@@ -570,7 +570,7 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 
 func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExporter {
 	exportMap := map[string]interface{}{
-		"export_as_hcl":                false,
+		"export_format":                "json",
 		"split_files_by_resource":      false,
 		"log_permission_errors":        false,
 		"enable_dependency_resolution": false,
@@ -588,7 +588,7 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 		t.Errorf("%v", diagErr)
 	}
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.exportAsHCL = true
+	g.exportFormat = "hcl"
 	return g
 }
 
