@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
-	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
+	awsRegionDefaultValue              = "us-east-1"
+	logStackTracesFilePathDefaultValue = "genesyscloud_stack_traces.log"
+	sdkDebugFilePathDefaultValue       = "sdk_debug.log"
 )
 
 func init() {
@@ -69,54 +70,54 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 				"access_token": {
 					Type:        schema.TypeString,
 					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_ACCESS_TOKEN", nil),
-					Description: "A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.",
+					DefaultFunc: schema.EnvDefaultFunc(accessTokenEnvVar, nil),
+					Description: fmt.Sprintf("A string that the OAuth client uses to make requests. Can be set with the `%s` environment variable.", accessTokenEnvVar),
 				},
 				"oauthclient_id": {
 					Type:        schema.TypeString,
 					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_ID", nil),
-					Description: "OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.",
+					DefaultFunc: schema.EnvDefaultFunc(clientIdEnvVar, nil),
+					Description: fmt.Sprintf("OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `%s` environment variable.", clientIdEnvVar),
 				},
 				"oauthclient_secret": {
 					Type:        schema.TypeString,
 					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
-					Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
+					DefaultFunc: schema.EnvDefaultFunc(clientSecretEnvVar, nil),
+					Description: fmt.Sprintf("OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `%s` environment variable.", clientSecretEnvVar),
 					Sensitive:   true,
 				},
 				"aws_region": {
 					Type:         schema.TypeString,
 					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_REGION", nil),
-					Description:  "AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.",
+					DefaultFunc:  schema.EnvDefaultFunc(regionEnvVar, awsRegionDefaultValue),
+					Description:  fmt.Sprintf("AWS region where org exists. e.g. us-east-1. Can be set with the `%s` environment variable. Defaults to \"%s\"", regionEnvVar, awsRegionDefaultValue),
 					ValidateFunc: validation.StringInSlice(getAllowedRegions(), true),
 				},
 				"sdk_debug": {
 					Type:        schema.TypeBool,
 					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG", false),
-					Description: "Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'. Can be set with the `GENESYSCLOUD_SDK_DEBUG` environment variable.",
+					DefaultFunc: schema.EnvDefaultFunc(sdkDebugEnvVar, false),
+					Description: fmt.Sprintf("Enables debug tracing in the Genesys Cloud SDK. Output will be written to `sdk_debug_file_path`. Can be set with the `%s` environment variable.", sdkDebugEnvVar),
 				},
 				"sdk_debug_format": {
 					Type:         schema.TypeString,
 					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FORMAT", "Text"),
-					Description:  "Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FORMAT` environment variable. Default value is Text.",
+					DefaultFunc:  schema.EnvDefaultFunc(sdkDebugFormatEnvVar, "Text"),
+					Description:  fmt.Sprintf("Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `%s` environment variable. Default value is Text.", sdkDebugFormatEnvVar),
 					ValidateFunc: validation.StringInSlice([]string{"Text", "Json"}, false),
 				},
 				"sdk_debug_file_path": {
 					Type:         schema.TypeString,
 					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "sdk_debug.log"),
-					Description:  "Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log",
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
+					DefaultFunc:  schema.EnvDefaultFunc(sdkDebugFilePathEnvVar, sdkDebugFilePathDefaultValue),
+					Description:  fmt.Sprintf("Specifies the file path for the log file. Can be set with the `%s` environment variable. Default value is %s", sdkDebugFilePathEnvVar, sdkDebugFilePathDefaultValue),
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid file path."),
 				},
 				"token_pool_size": {
 					Type:         schema.TypeInt,
 					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", 10),
-					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
+					DefaultFunc:  schema.EnvDefaultFunc(tokenPoolSizeEnvVar, 10),
+					Description:  fmt.Sprintf("Max number of OAuth tokens in the token pool. Can be set with the `%s` environment variable.", tokenPoolSizeEnvVar),
 					ValidateFunc: validation.IntBetween(1, 20),
 				},
 				"log_stack_traces": {
@@ -131,32 +132,33 @@ If you encounter any stack traces, please report them so we can address the unde
 				"log_stack_traces_file_path": {
 					Type:             schema.TypeString,
 					Optional:         true,
-					Description:      fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is genesyscloud_stack_traces.log", logStackTracesFilePathEnvVar),
-					DefaultFunc:      schema.EnvDefaultFunc(logStackTracesFilePathEnvVar, "genesyscloud_stack_traces.log"),
+					Description:      fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is %s", logStackTracesFilePathEnvVar, logStackTracesFilePathDefaultValue),
+					DefaultFunc:      schema.EnvDefaultFunc(logStackTracesFilePathEnvVar, logStackTracesFilePathDefaultValue),
 					ValidateDiagFunc: validateLogFilePath,
 				},
 				"gateway": {
 					Type:     schema.TypeSet,
 					Optional: true,
+					MaxItems: 1,
 					Elem: &schema.Resource{
 						Schema: map[string]*schema.Schema{
 							"port": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PORT", nil),
-								Description: "Port for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PORT` environment variable.",
+								DefaultFunc: schema.EnvDefaultFunc(gatewayPortEnvVar, nil),
+								Description: fmt.Sprintf("Port for the gateway can be set with the `%s` environment variable.", gatewayPortEnvVar),
 							},
 							"host": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_HOST", nil),
-								Description: "Host for the gateway can be set with the `GENESYSCLOUD_GATEWAY_HOST` environment variable.",
+								DefaultFunc: schema.EnvDefaultFunc(gatewayHostEnvVar, nil),
+								Description: fmt.Sprintf("Host for the gateway can be set with the `%s` environment variable.", gatewayHostEnvVar),
 							},
 							"protocol": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PROTOCOL", nil),
-								Description: "Protocol for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PROTOCOL` environment variable.",
+								DefaultFunc: schema.EnvDefaultFunc(gatewayProtocolEnvVar, nil),
+								Description: fmt.Sprintf("Protocol for the gateway can be set with the `%s` environment variable.", gatewayProtocolEnvVar),
 							},
 							"path_params": {
 								Type:     schema.TypeSet,
@@ -166,14 +168,14 @@ If you encounter any stack traces, please report them so we can address the unde
 										"path_name": {
 											Type:        schema.TypeString,
 											Required:    true,
-											Description: "Path name for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_NAME` environment variable.",
-											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PATH_NAME", nil),
+											Description: fmt.Sprintf("Path name for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsNameEnvVar),
+											DefaultFunc: schema.EnvDefaultFunc(gatewayPathParamsNameEnvVar, nil),
 										},
 										"path_value": {
 											Type:        schema.TypeString,
 											Required:    true,
-											Description: "Path value for Gateway Path Params can be set with the `GENESYSCLOUD_GATEWAY_PATH_VALUE` environment variable.",
-											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_PATH_VALUE", nil),
+											Description: fmt.Sprintf("Path value for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsValueEnvVar),
+											DefaultFunc: schema.EnvDefaultFunc(gatewayPathParamsValueEnvVar, nil),
 										},
 									},
 								},
@@ -187,14 +189,15 @@ If you encounter any stack traces, please report them so we can address the unde
 										"username": {
 											Type:        schema.TypeString,
 											Optional:    true,
-											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_AUTH_USERNAME", nil),
-											Description: "UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.",
+											DefaultFunc: schema.EnvDefaultFunc(gatewayAuthUsernameEnvVar, nil),
+											Description: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", gatewayAuthUsernameEnvVar),
 										},
 										"password": {
 											Type:        schema.TypeString,
 											Optional:    true,
-											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_GATEWAY_AUTH_PASSWORD", nil),
-											Description: "Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.",
+											Sensitive:   true,
+											DefaultFunc: schema.EnvDefaultFunc(gatewayAuthPasswordEnvVar, nil),
+											Description: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", gatewayAuthPasswordEnvVar),
 										},
 									},
 								},
@@ -211,20 +214,20 @@ If you encounter any stack traces, please report them so we can address the unde
 							"port": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_PORT", nil),
-								Description: "Port for the proxy can be set with the `GENESYSCLOUD_PROXY_PORT` environment variable.",
+								DefaultFunc: schema.EnvDefaultFunc(proxyPortEnvVar, nil),
+								Description: fmt.Sprintf("Port for the proxy can be set with the `%s` environment variable.", proxyPortEnvVar),
 							},
 							"host": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_HOST", nil),
-								Description: "Host for the proxy can be set with the `GENESYSCLOUD_PROXY_HOST` environment variable.",
+								DefaultFunc: schema.EnvDefaultFunc(proxyHostEnvVar, nil),
+								Description: fmt.Sprintf("Host for the proxy can be set with the `%s` environment variable.", proxyHostEnvVar),
 							},
 							"protocol": {
 								Type:        schema.TypeString,
 								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_PROTOCOL", nil),
-								Description: "Protocol for the proxy can be set with the `GENESYSCLOUD_PROXY_PROTOCOL` environment variable.",
+								DefaultFunc: schema.EnvDefaultFunc(proxyProtocolEnvVar, nil),
+								Description: fmt.Sprintf("Protocol for the proxy can be set with the `%s` environment variable.", proxyProtocolEnvVar),
 							},
 							"auth": {
 								Type:     schema.TypeSet,
@@ -234,15 +237,15 @@ If you encounter any stack traces, please report them so we can address the unde
 									Schema: map[string]*schema.Schema{
 										"username": {
 											Type:        schema.TypeString,
-											Optional:    true,
-											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_AUTH_USERNAME", nil),
-											Description: "UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.",
+											Required:    true,
+											DefaultFunc: schema.EnvDefaultFunc(proxyAuthUsernameEnvVar, nil),
+											Description: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", proxyAuthUsernameEnvVar),
 										},
 										"password": {
 											Type:        schema.TypeString,
 											Optional:    true,
-											DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_PROXY_AUTH_PASSWORD", nil),
-											Description: "Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.",
+											DefaultFunc: schema.EnvDefaultFunc(proxyAuthPasswordEnvVar, nil),
+											Description: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", proxyAuthPasswordEnvVar),
 										},
 									},
 								},
@@ -306,7 +309,6 @@ func configure(version string) schema.ConfigureContextFunc {
 		setProviderMeta(meta)
 
 		return meta, nil
-
 	}
 }
 

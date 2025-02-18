@@ -161,7 +161,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 	}
 }
 
-// Inject a pooled SDK client connection into an exporter's getAll* method
+// GetAllWithPooledClient injects a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig := SdkClientPool.acquire()

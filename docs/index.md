@@ -25,8 +25,8 @@ provider "genesyscloud" {
 ### Optional
 
 - `access_token` (String) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
-- `aws_region` (String) AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.
-- `gateway` (Block Set) (see [below for nested schema](#nestedblock--gateway))
+- `aws_region` (String) AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable. Defaults to "us-east-1"
+- `gateway` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--gateway))
 - `log_stack_traces` (Boolean) If true, stack traces will be logged to a file instead of crashing the provider, whenever possible. 
 If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message 
 "Root object was present, but now absent." Can be set with the GENESYSCLOUD_LOG_STACK_TRACES environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API. 
@@ -35,7 +35,7 @@ If you encounter any stack traces, please report them so we can address the unde
 - `oauthclient_id` (String) OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.
 - `oauthclient_secret` (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
 - `proxy` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy))
-- `sdk_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'. Can be set with the `GENESYSCLOUD_SDK_DEBUG` environment variable.
+- `sdk_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to `sdk_debug_file_path`. Can be set with the `GENESYSCLOUD_SDK_DEBUG` environment variable.
 - `sdk_debug_file_path` (String) Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log
 - `sdk_debug_format` (String) Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FORMAT` environment variable. Default value is Text.
 - `token_pool_size` (Number) Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.
@@ -56,8 +56,8 @@ Optional:
 
 Optional:
 
-- `password` (String) Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.
-- `username` (String) UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.
+- `password` (String, Sensitive) Password for the Auth can be set with the `GENESYSCLOUD_GATEWAY_AUTH_PASSWORD` environment variable.
+- `username` (String) UserName for the Auth can be set with the `GENESYSCLOUD_GATEWAY_AUTH_USERNAME` environment variable.
 
 
 <a id="nestedblock--gateway--path_params"></a>
@@ -83,7 +83,10 @@ Optional:
 <a id="nestedblock--proxy--auth"></a>
 ### Nested Schema for `proxy.auth`
 
+Required:
+
+- `username` (String) UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.
+
 Optional:
 
 - `password` (String) Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.
-- `username` (String) UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.

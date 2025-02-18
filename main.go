@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -128,7 +133,6 @@ import (
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -158,6 +162,7 @@ var resourceExporters map[string]*resourceExporter.ResourceExporter
 
 func main() {
 	var debugMode bool
+	var ctx = context.Background()
 
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
@@ -168,13 +173,28 @@ func main() {
 
 	registerResources()
 
-	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version, providerResources, providerDataSources)}
-
-	if debugMode {
-		opts.Debug = true
-		opts.ProviderAddr = "genesys.com/mypurecloud/genesyscloud"
+	upgradedSdkProvider, err := tf5to6server.UpgradeServer(ctx, provider.New(version, providerResources, providerDataSources)().GRPCProvider)
+	if err != nil {
+		log.Fatal(err)
 	}
-	plugin.Serve(opts)
+
+	err = tf6server.Serve(
+		"registry.terraform.io/mypurecloud/genesyscloud",
+		func() tfprotov6.ProviderServer {
+			return upgradedSdkProvider
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//opts := &plugin.ServeOpts{ProviderFunc: provider.New(version, providerResources, providerDataSources)}
+	//
+	//if debugMode {
+	//	opts.Debug = true
+	//	opts.ProviderAddr = "genesys.com/mypurecloud/genesyscloud"
+	//}
+	//plugin.Serve(opts)
 }
 
 type RegisterInstance struct {
