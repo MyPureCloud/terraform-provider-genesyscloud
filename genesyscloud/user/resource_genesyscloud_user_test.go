@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
@@ -1255,11 +1254,13 @@ func TestAccResourceUserPassword(t *testing.T) {
 
 	// Create our mock proxy with the authorized configuration
 	userProxyInstance := newUserProxy(sdkConfig)
+	originalUpdatePassword := userProxyInstance.updatePasswordAttr
 
 	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
 		passwordUpdateCalled = true
 		lastPasswordUpdate = password
-		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+		resp, err := originalUpdatePassword(ctx, p, id, password)
+		return resp, err
 	}
 
 	// Initialize internal proxy
