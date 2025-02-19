@@ -167,6 +167,15 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			RolesEnabled: &rolesEnabled,
 			OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
 		}
+
+		// If no owner IDs are provided, assign a list with an empty space, otherwise use the provided owner IDs
+		ownerIds := lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids")
+		if ownerIds == nil || len(*ownerIds) == 0 {
+			emptyList := []string{" "}
+			ownerIds = &emptyList
+		}
+		updateGroup.OwnerIds = ownerIds
+
 		_, resp, putErr := gp.updateGroup(ctx, d.Id(), updateGroup)
 		if putErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group %s: %s", d.Id(), putErr), resp)
