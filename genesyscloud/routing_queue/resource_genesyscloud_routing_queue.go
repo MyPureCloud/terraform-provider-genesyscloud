@@ -30,20 +30,30 @@ var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetRoutingQueueProxy(clientConfig)
+	var allQueues []platformclientv2.Queue
 
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
 
-	if queues == nil || len(*queues) == 0 {
-		return resources, nil
+	if queues != nil || len(*queues) != 0 {
+		allQueues = append(allQueues, *queues...)
 	}
 
-	for _, queue := range *queues {
+	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
+	}
+
+	if queues != nil || len(*queues) != 0 {
+		allQueues = append(allQueues, *queues...)
+	}
+
+	for _, queue := range allQueues {
 		resources[*queue.Id] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name}
 	}
 

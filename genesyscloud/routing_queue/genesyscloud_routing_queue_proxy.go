@@ -18,10 +18,10 @@ out during testing.
 var routingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
 var internalProxy *RoutingQueueProxy
 
-type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
+type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type createRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueByIdFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
-type getRoutingQueueByNameFunc func(ctx context.Context, p *RoutingQueueProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
+type getRoutingQueueByNameFunc func(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (string, *platformclientv2.APIResponse, bool, error)
 type updateRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string, updateReq *platformclientv2.Queuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type deleteRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string, forceDelete bool) (*platformclientv2.APIResponse, error)
 
@@ -92,8 +92,8 @@ func GetRoutingQueueProxy(clientConfig *platformclientv2.Configuration) *Routing
 	return newRoutingQueuesProxy(clientConfig)
 }
 
-func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	return p.GetAllRoutingQueuesAttr(ctx, p, name)
+func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.GetAllRoutingQueuesAttr(ctx, p, name, hasPeer)
 }
 
 func (p *RoutingQueueProxy) createRoutingQueue(ctx context.Context, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -104,8 +104,8 @@ func (p *RoutingQueueProxy) getRoutingQueueById(ctx context.Context, queueId str
 	return p.getRoutingQueueByIdAttr(ctx, p, queueId, checkCache)
 }
 
-func (p *RoutingQueueProxy) getRoutingQueueByName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	return p.getRoutingQueueByNameAttr(ctx, p, name)
+func (p *RoutingQueueProxy) getRoutingQueueByName(ctx context.Context, name string, hasPeer bool) (string, *platformclientv2.APIResponse, bool, error) {
+	return p.getRoutingQueueByNameAttr(ctx, p, name, hasPeer)
 }
 
 func (p *RoutingQueueProxy) updateRoutingQueue(ctx context.Context, queueId string, updateReq *platformclientv2.Queuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -137,11 +137,11 @@ func (p *RoutingQueueProxy) updateRoutingQueueMember(ctx context.Context, queueI
 }
 
 // GetAllRoutingQueuesFn is the implementation for retrieving all routing queues in Genesys Cloud
-func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name string) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	var allQueues []platformclientv2.Queue
 	const pageSize = 100
 
-	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", false)
+	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", hasPeer)
 	if getErr != nil {
 		return nil, resp, fmt.Errorf("failed to get first page of queues: %v", getErr)
 	}
@@ -162,7 +162,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	allQueues = append(allQueues, *queues.Entities...)
 
 	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", false)
+		queues, resp, getErr := p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", hasPeer)
 		if getErr != nil {
 			return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
 		}
@@ -196,8 +196,8 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 	return p.routingApi.GetRoutingQueue(queueId)
 }
 
-func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	queues, resp, err := p.GetAllRoutingQueues(ctx, name)
+func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (string, *platformclientv2.APIResponse, bool, error) {
+	queues, resp, err := p.GetAllRoutingQueues(ctx, name, hasPeer)
 	if err != nil {
 		return "", resp, false, err
 	}
