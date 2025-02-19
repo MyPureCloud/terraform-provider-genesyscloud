@@ -132,7 +132,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBase.Version = trunkBaseSettings.Version
 
 		log.Printf("Updating trunk base settings %s", name)
-		trunkBaseSettings, resp, err := proxy.UpdateTrunkBaseSetting(ctx, d.Id(), trunkBase)
+		_, resp, err := proxy.UpdateTrunkBaseSetting(ctx, d.Id(), trunkBase)
 		if err != nil {
 
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update trunk base settings %s error: %s", name, err), resp)

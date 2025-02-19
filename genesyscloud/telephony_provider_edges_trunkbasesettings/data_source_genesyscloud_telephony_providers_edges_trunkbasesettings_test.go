@@ -5,6 +5,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -20,6 +21,9 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		trunkMetaBaseId                    = "phone_connections_webrtc.json"
 		trunkType                          = "PHONE"
 		managed                            = false
+
+		dataResourcePath = "data." + ResourceType + "." + trunkBaseSettingsDataResourceLabel
+		resourcePath     = ResourceType + "." + trunkBaseSettingsResourceLabel
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -35,12 +39,25 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 					trunkMetaBaseId,
 					trunkType,
 					managed,
+				),
+			},
+			{
+				PreConfig: func() {
+					time.Sleep(1 * time.Second)
+				},
+				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+					trunkBaseSettingsResourceLabel,
+					name,
+					description,
+					trunkMetaBaseId,
+					trunkType,
+					managed,
 				) + generateTrunkBaseSettingsDataSource(
 					trunkBaseSettingsDataResourceLabel,
 					name,
-					"genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsResourceLabel),
+					resourcePath),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseSettingsResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(dataResourcePath, "id", resourcePath, "id"),
 				),
 			},
 		},
