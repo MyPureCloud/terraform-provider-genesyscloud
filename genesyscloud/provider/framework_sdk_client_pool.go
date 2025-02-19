@@ -17,26 +17,26 @@ import (
 
 var SdkClientPoolFrameWorkDiagErr diag.Diagnostics
 
-func (f GenesysCloudProvider) InitSDKClientPool(data GenesysCloudProviderModel) diag.Diagnostics {
+func (f GenesysCloudProvider) InitSDKClientPool() diag.Diagnostics {
 	Once.Do(func() {
 		log.Print("Initializing default SDK client.")
 		// Initialize the default config for tests and anything else that doesn't use the Pool
-		err := f.InitClientConfig(data, platformclientv2.GetDefaultConfiguration())
+		err := f.InitClientConfig(platformclientv2.GetDefaultConfiguration())
 		if err != nil {
 			SdkClientPoolFrameWorkDiagErr = err
 			return
 		}
 
-		log.Printf("Initializing %d SDK clients in the Pool.", data.TokenPoolSize.ValueInt32())
+		log.Printf("Initializing %d SDK clients in the Pool.", f.TokenPoolSize)
 		f.SdkClientPool = SDKClientPool{
-			Pool: make(chan *platformclientv2.Configuration, data.TokenPoolSize.ValueInt32()),
+			Pool: make(chan *platformclientv2.Configuration, f.TokenPoolSize),
 		}
-		SdkClientPoolFrameWorkDiagErr = f.frameworkPreFill(data)
+		SdkClientPoolFrameWorkDiagErr = f.frameworkPreFill()
 	})
 	return SdkClientPoolFrameWorkDiagErr
 }
 
-func (f GenesysCloudProvider) frameworkPreFill(data GenesysCloudProviderModel) diag.Diagnostics {
+func (f GenesysCloudProvider) frameworkPreFill() diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	var wg sync.WaitGroup
@@ -48,7 +48,7 @@ func (f GenesysCloudProvider) frameworkPreFill(data GenesysCloudProviderModel) d
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := f.InitClientConfig(data, sdkConfig)
+			err := f.InitClientConfig(sdkConfig)
 			if err != nil {
 				select {
 				case <-ctx.Done():
@@ -74,20 +74,19 @@ func (f GenesysCloudProvider) frameworkPreFill(data GenesysCloudProviderModel) d
 	}
 }
 
-func (f GenesysCloudProvider) InitClientConfig(data GenesysCloudProviderModel, config *platformclientv2.Configuration) diag.Diagnostics {
+func (f GenesysCloudProvider) InitClientConfig(config *platformclientv2.Configuration) diag.Diagnostics {
 	accessToken := f.AuthDetails.AccessToken
 	oauthclientID := f.AuthDetails.ClientId
 	oauthclientSecret := f.AuthDetails.ClientSecret
 	basePath := GetRegionBasePath(f.AuthDetails.Region)
 	config.BasePath = basePath
 
-	err := frameworkSetUpSDKLogging(data, config)
-	if err != nil {
+	if err := f.setUpSDKLogging(config); err != nil {
 		return err
 	}
 
-	frameworkSetupProxy(data, config)
-	frameworkSetupGateway(data, config)
+	f.setupProxy(config)
+	f.setupGateway(config)
 
 	config.AddDefaultHeader("User-Agent", "GC Terraform Provider/"+f.Version)
 	config.RetryConfiguration = &platformclientv2.RetryConfiguration{
@@ -95,10 +94,9 @@ func (f GenesysCloudProvider) InitClientConfig(data GenesysCloudProviderModel, c
 		RetryWaitMax: time.Second * 30,
 		RetryMax:     20,
 		RequestLogHook: func(request *http.Request, count int) {
-			sdkDebugRequest := newSDKDebugRequest(request, count)
-			request.Header.Set("TF-Correlation-Id", sdkDebugRequest.TransactionId)
-			err, jsonStr := sdkDebugRequest.ToJSON()
-
+			sdkDebugReq := newSDKDebugRequest(request, count)
+			request.Header.Set("TF-Correlation-Id", sdkDebugReq.TransactionId)
+			err, jsonStr := sdkDebugReq.ToJSON()
 			if err != nil {
 				log.Printf("WARNING: Unable to log RequestLogHook: %s", err)
 			}
@@ -134,15 +132,19 @@ func (f GenesysCloudProvider) InitClientConfig(data GenesysCloudProviderModel, c
 		})
 	}
 
-	log.Printf("Initialized Go SDK Client. Debug=%t", data.SdkDebug.ValueBool())
+	log.Printf("Initialized Go SDK Client. Debug=%t", f.SdkDebugInfo.DebugEnabled)
 	return nil
 }
 
-func frameworkSetUpSDKLogging(data GenesysCloudProviderModel, config *platformclientv2.Configuration) diag.Diagnostics {
+func (f GenesysCloudProvider) setUpSDKLogging(config *platformclientv2.Configuration) diag.Diagnostics {
 	var diagErrors diag.Diagnostics = make([]diag.Diagnostic, 0)
 
-	sdkDebugFilePath := data.SdkDebugFilePath.ValueString()
-	if data.SdkDebug.ValueBool() {
+	if f.SdkDebugInfo == nil {
+		return nil
+	}
+
+	sdkDebugFilePath := f.SdkDebugInfo.FilePath
+	if f.SdkDebugInfo.DebugEnabled {
 		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
 			LogLevel:        platformclientv2.LTrace,
 			LogRequestBody:  true,
@@ -157,7 +159,7 @@ func frameworkSetUpSDKLogging(data GenesysCloudProviderModel, config *platformcl
 			return diagErrors
 		}
 
-		if format := data.SdkDebugFormat.ValueString(); format == "Json" {
+		if format := f.SdkDebugInfo.Format; format == "Json" {
 			config.LoggingConfiguration.SetLogFormat(platformclientv2.JSON)
 		} else {
 			config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
@@ -166,49 +168,50 @@ func frameworkSetUpSDKLogging(data GenesysCloudProviderModel, config *platformcl
 	return nil
 }
 
-func frameworkSetupProxy(data GenesysCloudProviderModel, config *platformclientv2.Configuration) {
-	if data.Proxy == nil {
+func (f GenesysCloudProvider) setupProxy(config *platformclientv2.Configuration) {
+	if f.Proxy == nil {
 		return
 	}
 
 	config.ProxyConfiguration = &platformclientv2.ProxyConfiguration{}
-	config.ProxyConfiguration.Host = data.Proxy.Host.ValueString()
-	config.ProxyConfiguration.Port = data.Proxy.Port.ValueString()
-	config.ProxyConfiguration.Protocol = data.Proxy.Protocol.ValueString()
 
-	if data.Proxy.Auth == nil {
+	config.ProxyConfiguration.Host = f.Proxy.Host
+	config.ProxyConfiguration.Port = f.Proxy.Port
+	config.ProxyConfiguration.Protocol = f.Proxy.Protocol
+
+	if f.Proxy.Auth == nil {
 		return
 	}
 
 	config.ProxyConfiguration.Auth = &platformclientv2.Auth{}
-	config.ProxyConfiguration.Auth.UserName = data.Proxy.Auth.Username.ValueString()
-	config.ProxyConfiguration.Auth.Password = data.Proxy.Auth.Password.ValueString()
+	config.ProxyConfiguration.Auth.UserName = f.Proxy.Auth.Username
+	config.ProxyConfiguration.Auth.Password = f.Proxy.Auth.Password
 }
 
-func frameworkSetupGateway(data GenesysCloudProviderModel, config *platformclientv2.Configuration) {
-	if data.Gateway == nil {
+func (f GenesysCloudProvider) setupGateway(config *platformclientv2.Configuration) {
+	if f.Gateway == nil {
 		return
 	}
 
 	config.GateWayConfiguration = &platformclientv2.GateWayConfiguration{}
-	config.GateWayConfiguration.Host = data.Gateway.Host.ValueString()
-	config.GateWayConfiguration.Port = data.Gateway.Port.ValueString()
-	config.GateWayConfiguration.Protocol = data.Gateway.Protocol.ValueString()
+	config.GateWayConfiguration.Host = f.Gateway.Host
+	config.GateWayConfiguration.Port = f.Gateway.Port
+	config.GateWayConfiguration.Protocol = f.Gateway.Protocol
 
-	for _, param := range data.Gateway.PathParams {
+	for _, param := range f.Gateway.PathParams {
 		config.GateWayConfiguration.PathParams = append(config.GateWayConfiguration.PathParams, &platformclientv2.PathParams{
-			PathName:  param.PathName.ValueString(),
-			PathValue: param.PathValue.ValueString(),
+			PathName:  param.PathName,
+			PathValue: param.PathValue,
 		})
 	}
 
-	if data.Gateway.Auth == nil {
+	if f.Gateway.Auth == nil {
 		return
 	}
 	config.GateWayConfiguration.Auth = &platformclientv2.Auth{}
 
-	config.GateWayConfiguration.Auth.UserName = data.Gateway.Auth.Username.ValueString()
-	config.GateWayConfiguration.Auth.Password = data.Gateway.Auth.Password.ValueString()
+	config.GateWayConfiguration.Auth.UserName = f.Gateway.Auth.Username
+	config.GateWayConfiguration.Auth.Password = f.Gateway.Auth.Password
 }
 
 func frameworkWithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {

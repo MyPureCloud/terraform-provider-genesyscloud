@@ -2,6 +2,9 @@ package provider
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -75,6 +78,41 @@ func validateLogFilePath(filepath any, _ cty.Path) (err diag.Diagnostics) {
 	}
 
 	return err
+}
+
+// determineTokenPoolSize returns the token pool size based on a precedence order:
+// 1. Value from ResourceData if set
+// 2. Value from environment variable GENESYSCLOUD_TOKEN_POOL_SIZE if set and valid
+// 3. Default value (tokenPoolSizeDefault)
+//
+// The token pool size determines the number of OAuth tokens that can be cached
+// simultaneously for API authentication.
+//
+// Parameters:
+//   - d: *schema.ResourceData containing the provider configuration
+//
+// Returns:
+//   - int: The determined token pool size
+func determineTokenPoolSize(d *schema.ResourceData) int {
+	var tokenPoolSize = int(tokenPoolSizeDefault)
+
+	if tps, ok := d.GetOk("token_pool_size"); ok {
+		tokenPoolSize = tps.(int)
+	} else {
+		tpsStr, ok := os.LookupEnv(tokenPoolSizeEnvVar)
+		if !ok {
+			return tokenPoolSize
+		}
+		// Convert environment variable string to int
+		parsedSize, err := strconv.ParseInt(tpsStr, 10, 64)
+		if err != nil {
+			log.Printf("failed to parse env var %s: %s", tokenPoolSizeEnvVar, err.Error())
+			return tokenPoolSize
+		}
+		tokenPoolSize = int(parsedSize)
+	}
+
+	return tokenPoolSize
 }
 
 // Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially

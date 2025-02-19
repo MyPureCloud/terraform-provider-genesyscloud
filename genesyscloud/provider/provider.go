@@ -23,9 +23,11 @@ import (
 )
 
 const (
-	awsRegionDefaultValue              = "us-east-1"
-	logStackTracesFilePathDefaultValue = "genesyscloud_stack_traces.log"
-	sdkDebugFilePathDefaultValue       = "sdk_debug.log"
+	awsRegionDefaultValue                    = "us-east-1"
+	logStackTracesFilePathDefaultValue       = "genesyscloud_stack_traces.log"
+	sdkDebugFilePathDefaultValue             = "sdk_debug.log"
+	sdkDebugFormatDefaultValue               = "Text"
+	tokenPoolSizeDefault               int32 = 10
 )
 
 func init() {
@@ -102,8 +104,8 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 				"sdk_debug_format": {
 					Type:         schema.TypeString,
 					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc(sdkDebugFormatEnvVar, "Text"),
-					Description:  fmt.Sprintf("Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `%s` environment variable. Default value is Text.", sdkDebugFormatEnvVar),
+					DefaultFunc:  schema.EnvDefaultFunc(sdkDebugFormatEnvVar, sdkDebugFormatDefaultValue),
+					Description:  fmt.Sprintf("Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `%s` environment variable. Default value is %s.", sdkDebugFormatEnvVar, sdkDebugFormatDefaultValue),
 					ValidateFunc: validation.StringInSlice([]string{"Text", "Json"}, false),
 				},
 				"sdk_debug_file_path": {
@@ -116,7 +118,6 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 				"token_pool_size": {
 					Type:         schema.TypeInt,
 					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc(tokenPoolSizeEnvVar, 10),
 					Description:  fmt.Sprintf("Max number of OAuth tokens in the token pool. Can be set with the `%s` environment variable.", tokenPoolSizeEnvVar),
 					ValidateFunc: validation.IntBetween(1, 20),
 				},
@@ -274,15 +275,17 @@ type ProviderMeta struct {
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 
-		platform := platform.GetPlatform()
-		platformValidationErr := platform.Validate()
+		platformInstance := platform.GetPlatform()
+		platformValidationErr := platformInstance.Validate()
 		if platformValidationErr != nil {
 			log.Printf("%v error during platform validation switching to defaults", platformValidationErr)
 		}
 
-		providerSourceRegistry := getRegistry(&platform, version)
+		providerSourceRegistry := getRegistry(&platformInstance, version)
 
-		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
+		tokenPoolSize := determineTokenPoolSize(data)
+
+		err := InitSDKClientPool(tokenPoolSize, version, data)
 		if err != nil {
 			return nil, err
 		}
@@ -298,7 +301,7 @@ func configure(version string) schema.ConfigureContextFunc {
 
 		meta := &ProviderMeta{
 			Version:            version,
-			Platform:           &platform,
+			Platform:           &platformInstance,
 			Registry:           providerSourceRegistry,
 			ClientConfig:       defaultConfig,
 			Domain:             getRegionDomain(data.Get("aws_region").(string)),

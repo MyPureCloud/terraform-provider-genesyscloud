@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
 )
 
@@ -28,59 +27,53 @@ type GenesysCloudProvider struct {
 	Version       string
 	SdkClientPool SDKClientPool
 
-	AuthDetails *AuthDetails
+	AttributeEnvValues     *providerEnvVars
+	TokenPoolSize          int32
+	LogStackTraces         bool
+	LogStackTracesFilePath string
+
+	AuthDetails  *AuthInfo
+	SdkDebugInfo *SdkDebugInfo
+	Proxy        *Proxy
+	Gateway      *Gateway
 }
 
-type AuthDetails struct {
+type AuthInfo struct {
 	AccessToken  string
 	ClientId     string
 	ClientSecret string
 	Region       string
 }
 
-type GenesysCloudProviderModel struct {
-	AccessToken            types.String  `tfsdk:"access_token"`
-	OAuthClientId          types.String  `tfsdk:"oauthclient_id"`
-	OAuthClientSecret      types.String  `tfsdk:"oauthclient_secret"`
-	AwsRegion              types.String  `tfsdk:"aws_region"`
-	SdkDebug               types.Bool    `tfsdk:"sdk_debug"`
-	SdkDebugFormat         types.String  `tfsdk:"sdk_debug_format"`
-	SdkDebugFilePath       types.String  `tfsdk:"sdk_debug_file_path"`
-	TokenPoolSize          types.Int32   `tfsdk:"token_pool_size"`
-	LogStackTraces         types.Bool    `tfsdk:"log_stack_traces"`
-	LogStackTracesFilePath types.String  `tfsdk:"log_stack_traces_file_path"`
-	Gateway                *GatewayModel `tfsdk:"gateway"`
-	Proxy                  *ProxyModel   `tfsdk:"proxy"`
+type SdkDebugInfo struct {
+	DebugEnabled bool
+	Format       string
+	FilePath     string
 }
 
-type GatewayModel struct {
-	Port       types.String     `tfsdk:"port"`
-	Host       types.String     `tfsdk:"host"`
-	Protocol   types.String     `tfsdk:"protocol"`
-	PathParams []PathParamModel `tfsdk:"path_params"`
-	Auth       *AuthModel       `tfsdk:"auth"`
+type Proxy struct {
+	Port     string
+	Host     string
+	Protocol string
+	Auth     *Auth
 }
 
-type PathParamModel struct {
-	PathName  types.String `tfsdk:"path_name"`
-	PathValue types.String `tfsdk:"path_value"`
+type Auth struct {
+	Username string
+	Password string
 }
 
-type AuthModel struct {
-	Username types.String `tfsdk:"username"`
-	Password types.String `tfsdk:"password"`
+type Gateway struct {
+	Port       string
+	Host       string
+	Protocol   string
+	PathParams []PathParam
+	Auth       *Auth
 }
 
-type ProxyModel struct {
-	Port     types.String    `tfsdk:"port"`
-	Host     types.String    `tfsdk:"host"`
-	Protocol types.String    `tfsdk:"protocol"`
-	Auth     *ProxyAuthModel `tfsdk:"auth"`
-}
-
-type ProxyAuthModel struct {
-	Username types.String `tfsdk:"username"`
-	Password types.String `tfsdk:"password"`
+type PathParam struct {
+	PathName  string
+	PathValue string
 }
 
 func NewFrameWorkProvider(version string) func() provider.Provider {
@@ -91,9 +84,8 @@ func NewFrameWorkProvider(version string) func() provider.Provider {
 	}
 }
 
-func (f GenesysCloudProvider) Metadata(ctx context.Context, request provider.MetadataRequest, response *provider.MetadataResponse) {
-	//TODO implement me
-	panic("implement me")
+func (f GenesysCloudProvider) Metadata(_ context.Context, request provider.MetadataRequest, response *provider.MetadataResponse) {
+	response.TypeName = "genesyscloud"
 }
 
 func (f GenesysCloudProvider) Schema(_ context.Context, request provider.SchemaRequest, response *provider.SchemaResponse) {
@@ -126,7 +118,7 @@ func (f GenesysCloudProvider) Schema(_ context.Context, request provider.SchemaR
 			},
 			"sdk_debug_format": schema.StringAttribute{
 				Optional:            true,
-				MarkdownDescription: fmt.Sprintf("Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `%s` environment variable. Default value is Text.", sdkDebugFormatEnvVar),
+				MarkdownDescription: fmt.Sprintf("Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `%s` environment variable. Default value is %s.", sdkDebugFormatEnvVar, sdkDebugFormatDefaultValue),
 				Validators: []validator.String{
 					stringvalidator.OneOf("Text", "Json"),
 				},
@@ -243,41 +235,7 @@ If you encounter any stack traces, please report them so we can address the unde
 func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
 	var data GenesysCloudProviderModel
 
-	// TODO: read all env variables
-	providerEnvValues := readProviderEnvVars()
-
 	response.Diagnostics.Append(request.Config.Get(ctx, &data)...)
-
-	// TODO: use data values if env vars are not set
-	var authDetails AuthDetails
-
-	if data.AccessToken.ValueString() != "" {
-		authDetails.AccessToken = data.AccessToken.ValueString()
-	} else if providerEnvValues.accessToken != "" {
-		authDetails.AccessToken = providerEnvValues.accessToken
-	}
-
-	if data.OAuthClientId.ValueString() != "" {
-		authDetails.AccessToken = data.OAuthClientId.ValueString()
-	} else if providerEnvValues.clientId != "" {
-		authDetails.AccessToken = providerEnvValues.clientId
-	}
-
-	if data.OAuthClientSecret.ValueString() != "" {
-		authDetails.ClientSecret = data.OAuthClientSecret.ValueString()
-	} else if providerEnvValues.clientSecret != "" {
-		authDetails.ClientSecret = providerEnvValues.clientSecret
-	}
-
-	if data.AwsRegion.ValueString() != "" {
-		authDetails.Region = data.AwsRegion.ValueString()
-	} else if providerEnvValues.region != "" {
-		authDetails.Region = providerEnvValues.region
-	} else {
-		authDetails.Region = awsRegionDefaultValue
-	}
-
-	f.AuthDetails = &authDetails
 
 	platformInstance := platform.GetPlatform()
 	platformValidationErr := platformInstance.Validate()
@@ -287,7 +245,14 @@ func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.Co
 
 	providerSourceRegistry := getRegistry(&platformInstance, f.Version)
 
-	err := f.InitSDKClientPool(data)
+	f.AttributeEnvValues = readProviderEnvVars()
+	f.configureAuthInfo(data)
+	f.configureSdkDebugInfo(data)
+	f.configureRootAttributes(data)
+	f.configureProxyAttributes(data)
+	f.configureGatewayAttributes(data)
+
+	err := f.InitSDKClientPool()
 	if err != nil {
 		response.Diagnostics.AddError(fmt.Sprintf("%v", err), "Failed to init SDK client pool")
 		return
@@ -308,7 +273,7 @@ func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.Co
 		Platform:           &platformInstance,
 		Registry:           providerSourceRegistry,
 		ClientConfig:       defaultConfig,
-		Domain:             getRegionDomain(data.AwsRegion.ValueString()),
+		Domain:             getRegionDomain(f.AuthDetails.Region),
 		Organization:       currentOrg,
 		DefaultCountryCode: *currentOrg.DefaultCountryCode,
 	}
@@ -316,12 +281,14 @@ func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.Co
 	f.Meta = *meta
 }
 
-func (f GenesysCloudProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	//TODO implement me
-	panic("implement me")
+func (f GenesysCloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		// TODO: add a datasource
+	}
 }
 
-func (f GenesysCloudProvider) Resources(ctx context.Context) []func() resource.Resource {
-	//TODO implement me
-	panic("implement me")
+func (f GenesysCloudProvider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		// TODO: add a resource
+	}
 }

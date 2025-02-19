@@ -52,8 +52,8 @@ type providerEnvVars struct {
 	proxyAuthPassword      string
 }
 
-func readProviderEnvVars() providerEnvVars {
-	return providerEnvVars{
+func readProviderEnvVars() *providerEnvVars {
+	return &providerEnvVars{
 		accessToken:            os.Getenv(accessTokenEnvVar),
 		region:                 os.Getenv(regionEnvVar),
 		clientId:               os.Getenv(clientIdEnvVar),

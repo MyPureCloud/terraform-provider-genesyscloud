@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
 	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"log"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -178,11 +180,28 @@ func main() {
 		log.Fatal(err)
 	}
 
+	frameworkServer := providerserver.NewProtocol6(provider.NewFrameWorkProvider(version)())
+
+	bothServers := []func() tfprotov6.ProviderServer{
+		frameworkServer,
+		func() tfprotov6.ProviderServer { return upgradedSdkProvider },
+	}
+
+	muxServer, err := tf6muxserver.NewMuxServer(ctx, bothServers...)
+	if err != nil {
+		log.Fatalf("failed to create mux server: %s", err.Error())
+	}
+
+	var serveOpts []tf6server.ServeOpt
+
+	if debugMode {
+		serveOpts = append(serveOpts, tf6server.WithManagedDebug())
+	}
+
 	err = tf6server.Serve(
 		"registry.terraform.io/mypurecloud/genesyscloud",
-		func() tfprotov6.ProviderServer {
-			return upgradedSdkProvider
-		},
+		muxServer.ProviderServer,
+		serveOpts...,
 	)
 	if err != nil {
 		log.Fatal(err)
