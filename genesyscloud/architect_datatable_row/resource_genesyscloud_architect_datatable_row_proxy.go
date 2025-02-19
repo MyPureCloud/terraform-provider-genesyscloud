@@ -9,11 +9,8 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
-
-// internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *architectDatatableRowProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getArchitectDatatableFunc func(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error)
@@ -38,10 +35,13 @@ type architectDatatableRowProxy struct {
 	dataTableCache                   rc.CacheInterface[Datatable]
 }
 
+var (
+	dataTableRowCache = rc.NewResourceCache[map[string]interface{}]()
+	dataTableCache    = rc.NewResourceCache[Datatable]()
+)
+
 func newArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration) *architectDatatableRowProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	dataTableRowCache := rc.NewResourceCache[map[string]interface{}]()
-	dataTableCache := rc.NewResourceCache[Datatable]()
 	return &architectDatatableRowProxy{
 		clientConfig:                     clientConfig,
 		architectApi:                     api,
@@ -58,10 +58,7 @@ func newArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration)
 }
 
 func getArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration) *architectDatatableRowProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectDatatableRowProxy(clientConfig)
-	}
-	return internalProxy
+	return newArchitectDatatableRowProxy(clientConfig)
 }
 
 func (p *architectDatatableRowProxy) getArchitectDatatable(ctx context.Context, id string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
@@ -168,7 +165,7 @@ func getArchitectDatatableFn(_ context.Context, p *architectDatatableRowProxy, d
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
@@ -237,5 +234,10 @@ func updateArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowPr
 }
 
 func deleteArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, rowId string) (*platformclientv2.APIResponse, error) {
-	return p.architectApi.DeleteFlowsDatatableRow(tableId, rowId)
+	resp, err := p.architectApi.DeleteFlowsDatatableRow(tableId, rowId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.dataTableRowCache, tableId+"_"+rowId)
+	return nil, nil
 }

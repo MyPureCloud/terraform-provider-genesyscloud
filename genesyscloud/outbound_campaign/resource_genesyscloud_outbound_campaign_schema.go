@@ -1,7 +1,6 @@
 package outbound_campaign
 
 import (
-	outboundMessagingcampaign "terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -18,13 +17,14 @@ resource_genesycloud_outbound_campaign_schema.go holds four functions within it:
 3.  The datasource schema definitions for the outbound_campaign datasource.
 4.  The resource exporter configuration for the outbound_campaign exporter.
 */
-const resourceName = "genesyscloud_outbound_campaign"
+
+const ResourceType = "genesyscloud_outbound_campaign"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundCampaign())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundCampaign())
-	regInstance.RegisterExporter(resourceName, OutboundCampaignExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundCampaign())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundCampaign())
+	regInstance.RegisterExporter(ResourceType, OutboundCampaignExporter())
 }
 
 // ResourceOutboundCampaign registers the genesyscloud_outbound_campaign resource with Terraform
@@ -117,7 +117,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 			`dnc_list_ids`: {
 				Description: `DncLists for this Campaign to check before placing a call.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`callable_time_set_id`: {
@@ -195,6 +195,18 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			`skill_columns`: {
+				Description: `The skill columns on the ContactList that this Campaign should take into account when dialing.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			`auto_answer`: {
+				Description: `The option manages the auto-answer callback calls`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeBool,
+			},
 			`division_id`: {
 				Description: `The division this campaign belongs to.`,
 				Optional:    true,
@@ -214,6 +226,28 @@ func ResourceOutboundCampaign() *schema.Resource {
 							Type:        schema.TypeBool,
 							Required:    true,
 							ForceNew:    true,
+						},
+					},
+				},
+			},
+			`dynamic_line_balancing_settings`: {
+				Description: `Dynamic line balancing settings.`,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Description: "Indicates that this campaign is subject of dynamic line balancing.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"relative_weight": {
+							Description:  "Relative weight of this campaign in dynamic line balancing.",
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: validation.IntBetween(0, 100),
 						},
 					},
 				},

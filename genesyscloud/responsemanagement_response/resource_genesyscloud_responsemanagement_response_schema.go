@@ -1,11 +1,12 @@
 package responsemanagement_response
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -16,13 +17,13 @@ resource_genesycloud_responsemanagement_response_schema.go holds four functions 
 3.  The datasource schema definitions for the responsemanagement_response datasource.
 4.  The resource exporter configuration for the responsemanagement_response exporter.
 */
-const resourceName = "genesyscloud_responsemanagement_response"
+const ResourceType = "genesyscloud_responsemanagement_response"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceResponsemanagementResponse())
-	regInstance.RegisterDataSource(resourceName, DataSourceResponsemanagementResponse())
-	regInstance.RegisterExporter(resourceName, ResponsemanagementResponseExporter())
+	regInstance.RegisterResource(ResourceType, ResourceResponsemanagementResponse())
+	regInstance.RegisterDataSource(ResourceType, DataSourceResponsemanagementResponse())
+	regInstance.RegisterExporter(ResourceType, ResponsemanagementResponseExporter())
 }
 
 var (
@@ -38,6 +39,12 @@ var (
 				Optional:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{`text/plain`, `text/html`}, false),
+			},
+			`type`: {
+				Description:  `Response text type.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`body`, `subject`}, false),
 			},
 		},
 	}

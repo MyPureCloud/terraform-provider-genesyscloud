@@ -1,8 +1,11 @@
 package architect_flow
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -10,14 +13,14 @@ import (
 )
 
 const (
-	resourceName = "genesyscloud_flow"
+	ResourceType = "genesyscloud_flow"
 )
 
 // SetRegistrar registers all resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceArchitectFlow())
-	l.RegisterResource(resourceName, ResourceArchitectFlow())
-	l.RegisterExporter(resourceName, ArchitectFlowExporter())
+	l.RegisterDataSource(ResourceType, DataSourceArchitectFlow())
+	l.RegisterResource(ResourceType, ResourceArchitectFlow())
+	l.RegisterExporter(ResourceType, ArchitectFlowExporter())
 }
 
 func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
@@ -46,6 +49,18 @@ func ResourceArchitectFlow() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"type": {
+				Description: "Flow Type used for export purposes. Note: The 'substitutions' block should be used to set/change 'type' and any other fields in the yaml file",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"filepath": {
 				Description:  "YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.",
 				Type:         schema.TypeString,
@@ -72,15 +87,43 @@ func ResourceArchitectFlow() *schema.Resource {
 	}
 }
 
+var validFlowTypes = []string{
+	"bot",
+	"commonmodule",
+	"digitalbot",
+	"inboundcall",
+	"inboundchat",
+	"inboundemail",
+	"inboundshortmessage",
+	"outboundcall",
+	"inqueuecall",
+	"inqueueemail",
+	"inqueueshortmessage",
+	"speech",
+	"securecall",
+	"surveyinvite",
+	"voice",
+	"voicemail",
+	"voicesurvey",
+	"workflow",
+	"workitem",
+}
+
 func DataSourceArchitectFlow() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Flows. Select a flow by name.",
+		Description: "Data source for Genesys Cloud Flows. Select a flow by name and type.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceFlowRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Flow name.",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"type": {
+				Description:  "Flow type. Valid options: " + strings.Join(validFlowTypes, ", "),
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice(validFlowTypes, true),
 			},
 		},
 	}

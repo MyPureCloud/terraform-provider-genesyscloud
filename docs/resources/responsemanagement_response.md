@@ -101,6 +101,7 @@ Required:
 Optional:
 
 - `content_type` (String) Response text content type.
+- `type` (String) Response text type.
 
 
 <a id="nestedblock--footer"></a>

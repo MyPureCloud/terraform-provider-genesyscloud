@@ -6,7 +6,7 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -15,12 +15,14 @@ var internalProxy *routingQueueConditionalGroupRoutingProxy
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getRoutingQueueConditionRoutingFunc func(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error)
 type updateRoutingQueueConditionRoutingFunc func(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string, rules *[]platformclientv2.Conditionalgrouproutingrule) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error)
+type getRoutingQueueByIdFunc func(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
 
-// routingQueueConditionalGroupRoutingProxy contains all of the methods that call genesys cloud APIs.
+// routingQueueConditionalGroupRoutingProxy contains all methods that call genesys cloud APIs.
 type routingQueueConditionalGroupRoutingProxy struct {
 	clientConfig                           *platformclientv2.Configuration
 	routingApi                             *platformclientv2.RoutingApi
 	getRoutingQueueConditionRoutingAttr    getRoutingQueueConditionRoutingFunc
+	getRoutingQueueByIdAttr                getRoutingQueueByIdFunc
 	updateRoutingQueueConditionRoutingAttr updateRoutingQueueConditionRoutingFunc
 	routingQueueProxy                      *routingQueue.RoutingQueueProxy
 }
@@ -35,6 +37,7 @@ func newRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.
 		routingApi:                             api,
 		getRoutingQueueConditionRoutingAttr:    getRoutingQueueConditionRoutingFn,
 		updateRoutingQueueConditionRoutingAttr: updateRoutingQueueConditionRoutingFn,
+		getRoutingQueueByIdAttr:                getRoutingQueueByIdFn,
 		routingQueueProxy:                      routingQueueProxy,
 	}
 }
@@ -46,6 +49,11 @@ func getRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.
 	}
 
 	return internalProxy
+}
+
+// getRoutingQueueById get a queue by ID
+func (p *routingQueueConditionalGroupRoutingProxy) getRoutingQueueById(ctx context.Context, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.getRoutingQueueByIdAttr(ctx, p, id)
 }
 
 // getRoutingQueueConditionRouting gets the conditional group routing rules for a queue
@@ -68,7 +76,7 @@ func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCondi
 
 	queue = rc.GetCacheItem(p.routingQueueProxy.RoutingQueueCache, queueId)
 	if queue == nil {
-		queue, resp, err = p.routingApi.GetRoutingQueue(queueId)
+		queue, resp, err = p.getRoutingQueueById(ctx, queueId)
 		if err != nil {
 			return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 		}
@@ -78,13 +86,13 @@ func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCondi
 		return queue.ConditionalGroupRouting.Rules, resp, nil
 	}
 
-	return nil, resp, fmt.Errorf("no conditional group routing rules found for queue %s", queueId)
+	return nil, resp, nil
 }
 
 // updateRoutingQueueConditionRoutingFn is an implementation function for updating the conditional group routing rules for a queue
 func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string, rules *[]platformclientv2.Conditionalgrouproutingrule) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
 	// Get the routing queue the rules belong to
-	queue, resp, err := p.routingApi.GetRoutingQueue(queueId)
+	queue, resp, err := p.getRoutingQueueById(ctx, queueId)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}
@@ -140,5 +148,10 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 		return queue.ConditionalGroupRouting.Rules, resp, nil
 	}
 
-	return nil, resp, fmt.Errorf("no conditional group routing rules found for queue %s", queueId)
+	return nil, resp, nil
+}
+
+// getRoutingQueueByIdFn is an implementation function for getting a queue by ID
+func getRoutingQueueByIdFn(_ context.Context, p *routingQueueConditionalGroupRoutingProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.routingApi.GetRoutingQueue(id)
 }

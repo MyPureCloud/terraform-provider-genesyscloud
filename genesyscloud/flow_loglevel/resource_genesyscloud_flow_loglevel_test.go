@@ -2,32 +2,34 @@ package flow_loglevel
 
 import (
 	"fmt"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceFlowLogLevel(t *testing.T) {
 	var (
-		flowResource         = "test_logLevel_flow1"
-		resourceId           = "flow_log_level" + uuid.NewString()
+		flowResourceLabel    = "test_logLevel_flow1"
+		resourceLabel        = "flow_log_level" + uuid.NewString()
 		flowName             = "Terraform Test Flow log level " + uuid.NewString()
 		flowLoglevelBase     = "Base"
 		flowLoglevelAll      = "All"
 		flowLogLevelDisabled = "Disabled"
-		flowId               = "${genesyscloud_flow." + flowResource + ".id}"
-		filePath             = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		flowId               = "${genesyscloud_flow." + flowResourceLabel + ".id}"
+		filePath             = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
 		inboundCallConfig    = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
 
 	flowResourceConfig := architect_flow.GenerateFlowResource(
-		flowResource,
+		flowResourceLabel,
 		filePath,
 		inboundCallConfig,
 		true,
@@ -44,10 +46,10 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelBase,
-					resourceId,
+					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelBase),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceLabel, "flow_log_level", flowLoglevelBase),
 				),
 			},
 			{
@@ -55,10 +57,10 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLoglevelAll,
-					resourceId,
+					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLoglevelAll),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceLabel, "flow_log_level", flowLoglevelAll),
 				),
 			},
 			{
@@ -66,10 +68,10 @@ func TestAccResourceFlowLogLevel(t *testing.T) {
 				Config: flowResourceConfig + generateFlowLogLevelResource(
 					flowId,
 					flowLogLevelDisabled,
-					resourceId,
+					resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceId, "flow_log_level", flowLogLevelDisabled),
+					resource.TestCheckResourceAttr("genesyscloud_flow_loglevel."+resourceLabel, "flow_log_level", flowLogLevelDisabled),
 				),
 			},
 		},
@@ -101,13 +103,13 @@ func testVerifyFlowLogLevelDestroyed(state *terraform.State) error {
 func generateFlowLogLevelResource(
 	flowId string,
 	flowLoglevel string,
-	resourceId string,
+	resourceLabel string,
 ) string {
 	return fmt.Sprintf(`resource "genesyscloud_flow_loglevel" "%s" {
 	  flow_id					= "%s"
 	  flow_log_level 			= "%s"
 	}`,
-		resourceId,
+		resourceLabel,
 		flowId,
 		flowLoglevel)
 }

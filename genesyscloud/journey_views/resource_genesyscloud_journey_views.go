@@ -6,6 +6,7 @@ import (
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -14,8 +15,28 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
+
+func getAllJourneyViews(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	proxy := getJourneyViewProxy(clientConfig)
+
+	journeys, resp, err := proxy.getAllJourneyViews(ctx, "")
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get journey views: %s", err), resp)
+	}
+
+	if journeys == nil || len(*journeys) == 0 {
+		return resources, nil
+	}
+
+	for _, journey := range *journeys {
+		resources[*journey.Id] = &resourceExporter.ResourceMeta{BlockLabel: *journey.Name}
+	}
+
+	return resources, nil
+}
 
 func createJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
@@ -27,7 +48,7 @@ func createJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 	journeyView, resp, err := gp.createJourneyView(ctx, journeyView)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create journeyView %s: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create journeyView %s: %s", name, err), resp)
 	}
 	d.SetId(*journeyView.Id)
 	log.Printf("Created journeyView with viewId: %s", d.Id())
@@ -36,15 +57,17 @@ func createJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
+	versionId := d.Get("version").(int)
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewProxy(sdkConfig)
 
 	journeyView := makeJourneyViewFromSchema(d)
 	log.Printf("Updating journeyView %s", d.Id())
-	journeyView, resp, err := gp.updateJourneyView(ctx, d.Id(), journeyView)
+	journeyView, resp, err := gp.updateJourneyView(ctx, d.Id(), versionId, journeyView)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create journeyView %s: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create journeyView %s: %s", name, err), resp)
 	}
 	log.Printf("Updated journeyView %s", d.Id())
 	return readJourneyView(ctx, d, meta)
@@ -53,7 +76,7 @@ func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	viewId := d.Id()
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyViews(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyViews(), constants.ConsistencyChecks(), ResourceType)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewProxy(sdkConfig)
 	log.Printf("Getting journeyView with viewId: %s", viewId)
@@ -62,16 +85,20 @@ func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface
 		journeyView, resp, err := gp.getJourneyViewById(ctx, viewId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get journeyView with viewId %s | error: %s", viewId, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get journeyView with viewId %s | error: %s", viewId, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to get journeyView with viewId %s | error: %s", viewId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get journeyView with viewId %s | error: %s", viewId, err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", journeyView.Name)
 		resourcedata.SetNillableValue(d, "description", journeyView.Description)
 		resourcedata.SetNillableValue(d, "interval", journeyView.Interval)
 		resourcedata.SetNillableValue(d, "duration", journeyView.Duration)
+		resourcedata.SetNillableValue(d, "version", journeyView.Version)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "elements", journeyView.Elements, flattenElements)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "charts", journeyView.Charts, flattenCharts)
+
+		log.Printf("Retrieved journeyView with viewId: %s with version %d", viewId, journeyView.Version)
 
 		return cc.CheckState(d)
 	})
@@ -88,7 +115,7 @@ func deleteJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 		log.Printf("Deleting journeyView with viewId %s", viewId)
 		resp, err := gp.deleteJourneyView(ctx, viewId)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete journeyView with viewId %s: %s", viewId, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete journeyView with viewId %s: %s", viewId, err), resp)
 		}
 		return nil, nil
 	})
@@ -100,10 +127,10 @@ func deleteJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("JourneyView %s deleted", viewId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting joruneyView with viewId %s | error: %s", viewId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting joruneyView with viewId %s | error: %s", viewId, err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("JourneyView with viewId %s still exists", viewId), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("JourneyView with viewId %s still exists", viewId), resp))
 	})
 }
 
@@ -113,6 +140,7 @@ func makeJourneyViewFromSchema(d *schema.ResourceData) *platformclientv2.Journey
 	interval := d.Get("interval").(string)
 	duration := d.Get("duration").(string)
 	elements, _ := buildElements(d)
+	charts := buildCharts(d)
 
 	journeyView := &platformclientv2.Journeyview{
 		Name:        &name,
@@ -120,6 +148,7 @@ func makeJourneyViewFromSchema(d *schema.ResourceData) *platformclientv2.Journey
 		Interval:    &interval,
 		Duration:    &duration,
 		Elements:    elements,
+		Charts:      charts,
 	}
 	return journeyView
 }

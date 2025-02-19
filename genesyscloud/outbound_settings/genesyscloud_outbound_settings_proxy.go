@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -17,25 +17,25 @@ out during testing.
 var internalProxy *outboundSettingsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getOutboundSettingsByIdFunc func(ctx context.Context, p *outboundSettingsProxy, id string) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error)
-type updateOutboundSettingsFunc func(ctx context.Context, p *outboundSettingsProxy, id string, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error)
+type getOutboundSettingsFunc func(ctx context.Context, p *outboundSettingsProxy) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error)
+type updateOutboundSettingsFunc func(ctx context.Context, p *outboundSettingsProxy, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error)
 
 // outboundSettingsProxy contains all of the methods that call genesys cloud APIs.
 type outboundSettingsProxy struct {
-	clientConfig                *platformclientv2.Configuration
-	outboundApi                 *platformclientv2.OutboundApi
-	getOutboundSettingsByIdAttr getOutboundSettingsByIdFunc
-	updateOutboundSettingsAttr  updateOutboundSettingsFunc
+	clientConfig               *platformclientv2.Configuration
+	outboundApi                *platformclientv2.OutboundApi
+	getOutboundSettingsAttr    getOutboundSettingsFunc
+	updateOutboundSettingsAttr updateOutboundSettingsFunc
 }
 
 // newOutboundSettingsProxy initializes the outbound settings proxy with all of the data needed to communicate with Genesys Cloud
 func newOutboundSettingsProxy(clientConfig *platformclientv2.Configuration) *outboundSettingsProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 	return &outboundSettingsProxy{
-		clientConfig:                clientConfig,
-		outboundApi:                 api,
-		getOutboundSettingsByIdAttr: getOutboundSettingsByIdFn,
-		updateOutboundSettingsAttr:  updateOutboundSettingsFn,
+		clientConfig:               clientConfig,
+		outboundApi:                api,
+		getOutboundSettingsAttr:    getOutboundSettingsFn,
+		updateOutboundSettingsAttr: updateOutboundSettingsFn,
 	}
 }
 
@@ -48,30 +48,30 @@ func getOutboundSettingsProxy(clientConfig *platformclientv2.Configuration) *out
 	return internalProxy
 }
 
-// getOutboundSettingsById returns a single Genesys Cloud outbound settings by Id
-func (p *outboundSettingsProxy) getOutboundSettingsById(ctx context.Context, id string) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
-	return p.getOutboundSettingsByIdAttr(ctx, p, id)
+// getOutboundSettings returns a single Genesys Cloud outbound settings by Id
+func (p *outboundSettingsProxy) getOutboundSettings(ctx context.Context) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
+	return p.getOutboundSettingsAttr(ctx, p)
 }
 
 // updateOutboundSettings updates a Genesys Cloud outbound settings
-func (p *outboundSettingsProxy) updateOutboundSettings(ctx context.Context, id string, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
-	return p.updateOutboundSettingsAttr(ctx, p, id, outboundSettings)
+func (p *outboundSettingsProxy) updateOutboundSettings(ctx context.Context, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
+	return p.updateOutboundSettingsAttr(ctx, p, outboundSettings)
 }
 
-// getOutboundSettingsByIdFn is an implementation of the function to get a Genesys Cloud outbound settings by Id
-func getOutboundSettingsByIdFn(ctx context.Context, p *outboundSettingsProxy, id string) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
+// getOutboundSettingsFn is an implementation of the function to get a Genesys Cloud outbound settings by Id
+func getOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
 	outboundSettings, resp, err := p.outboundApi.GetOutboundSettings()
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to retrieve outbound settings by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("failed to retrieve outbound settings: %s", err)
 	}
 	return outboundSettings, resp, nil
 }
 
 // updateOutboundSettingsFn is an implementation of the function to update a Genesys Cloud outbound settings
-func updateOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy, id string, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
+func updateOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
 	resp, err := p.outboundApi.PatchOutboundSettings(*outboundSettings)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to update outbound settings: %s", err)
+		return nil, nil, fmt.Errorf("failed to update outbound settings: %s", err)
 	}
 	return outboundSettings, resp, nil
 }

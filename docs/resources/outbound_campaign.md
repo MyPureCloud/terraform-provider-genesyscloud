@@ -55,6 +55,7 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 
 - `abandon_rate` (Number) The targeted abandon rate percentage. Required for progressive, power, and predictive campaigns.
 - `always_running` (Boolean) Indicates (when true) that the campaign will remain on after contacts are depleted, allowing additional contacts to be appended/added to the contact list and processed by the still-running campaign. The campaign can still be turned off manually.
+- `auto_answer` (Boolean) The option manages the auto-answer callback calls
 - `call_analysis_language` (String) The language the edge will use to analyze the call.
 - `call_analysis_response_set_id` (String) The call analysis response set to handle call analysis results from the edge. Required for all dialing modes except preview.
 - `callable_time_set_id` (String) The callable time set for this campaign to check before placing a call.
@@ -62,8 +63,9 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 - `contact_list_filter_ids` (List of String) Filter to apply to the contact list before dialing. Currently a campaign can only have one filter applied.
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
 - `division_id` (String) The division this campaign belongs to.
-- `dnc_list_ids` (List of String) DncLists for this Campaign to check before placing a call.
+- `dnc_list_ids` (Set of String) DncLists for this Campaign to check before placing a call.
 - `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
+- `dynamic_line_balancing_settings` (Block List, Max: 1) Dynamic line balancing settings. (see [below for nested schema](#nestedblock--dynamic_line_balancing_settings))
 - `edge_group_id` (String) The EdgeGroup that will place the calls. Required for all dialing modes except preview.
 - `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign.
 - `no_answer_timeout` (Number) How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.
@@ -74,6 +76,7 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 - `rule_set_ids` (List of String) Rule sets to be applied while this campaign is dialing.
 - `script_id` (String) The Script to be displayed to agents that are handling outbound calls. Required for all dialing modes except agentless.
 - `site_id` (String) The identifier of the site to be used for dialing; can be set in place of an edge group.
+- `skill_columns` (List of String) The skill columns on the ContactList that this Campaign should take into account when dialing.
 - `skip_preview_disabled` (Boolean) Whether or not agents can skip previews without placing a call. Only applicable for preview campaigns.
 
 ### Read-Only
@@ -107,4 +110,13 @@ Optional:
 Required:
 
 - `sort` (Boolean) Whether to sort contacts dynamically.
+
+
+<a id="nestedblock--dynamic_line_balancing_settings"></a>
+### Nested Schema for `dynamic_line_balancing_settings`
+
+Optional:
+
+- `enabled` (Boolean) Indicates that this campaign is subject of dynamic line balancing.
+- `relative_weight` (Number) Relative weight of this campaign in dynamic line balancing.
 

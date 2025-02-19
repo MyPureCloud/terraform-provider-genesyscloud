@@ -3,25 +3,26 @@ package telephony_providers_edges_phone
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type PhoneConfig struct {
-	PhoneRes            string
+	PhoneResourceLabel  string
 	Name                string
 	State               string
 	SiteId              string
@@ -100,17 +101,32 @@ func getLineBaseSettingsID(ctx context.Context, pp *phoneProxy, phoneBaseSetting
 	return *(*phoneBase.Lines)[0].Id, nil
 }
 
-func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string) diag.Diagnostics {
+func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string, phoneId string) diag.Diagnostics {
 	stationId := ""
 	stationIsAssociated := false
 
-	retryErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		_, resp, getErr := pp.getPhoneById(ctx, phoneId)
+		if getErr != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone %s | error: %s", phoneId, getErr), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone %s | error: %s", phoneId, getErr), resp))
+		}
+		return nil
+	})
+
+	if retryErr != nil {
+		return retryErr
+	}
+
+	retryErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		station, retryable, resp, err := pp.getStationOfUser(ctx, userId)
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting stations: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting stations: %s", err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no stations found with userID %v", userId), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no stations found with userID %v", userId), resp))
 		}
 
 		stationId = *station.Id
@@ -126,22 +142,22 @@ func assignUserToWebRtcPhone(ctx context.Context, pp *phoneProxy, userId string)
 		if stationIsAssociated {
 			log.Printf("Disassociating user from phone station %s", stationId)
 			if resp, err := pp.unassignUserFromStation(ctx, stationId); err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Error unassigning user from station %s: %v", stationId, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error unassigning user from station %s: %v", stationId, err), resp)
 			}
 		}
 
 		resp, putErr := pp.assignUserToStation(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to assign user %v to the station %s: %s", userId, stationId, putErr), resp)
 		}
 
 		resp, putErr = pp.assignStationAsDefault(ctx, userId, stationId)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to assign Station %v as the default station for user %s: %s", stationId, userId, putErr), resp)
 		}
 
 		return resp, nil
-	})
+	}, 409)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -202,9 +218,7 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 		return linesPtr, isStandAlone, nil
 	}
 	// If line_addresses is not provided, phone is not standalone
-	hasher := fnv.New32()
-	hasher.Write([]byte(d.Get("name").(string)))
-	lineName := "line_" + *lineBaseSettings.Id + fmt.Sprintf("%x", hasher.Sum32())
+	lineName := "line_" + *lineBaseSettings.Id + util.GetUniqueString()
 	line := platformclientv2.Line{
 		Name:             &lineName,
 		LineBaseSettings: lineBaseSettings,
@@ -225,18 +239,32 @@ func buildSdkLines(ctx context.Context, pp *phoneProxy, d *schema.ResourceData, 
 }
 
 func getLineProperties(d *schema.ResourceData) (*[]interface{}, *[]interface{}) {
+
 	lineAddress := make([]interface{}, 0)
 	remoteAddress := make([]interface{}, 0)
+	if d == nil {
+		return &lineAddress, &remoteAddress
+	}
+
 	linePropertiesMap := make(map[string]interface{})
-	if linePropertiesObject, ok := d.Get("line_properties").([]interface{}); ok && len(linePropertiesObject) > 0 {
-		linePropertiesMap = linePropertiesObject[0].(map[string]interface{})
+
+	// Safely get and check line properties
+	if lineProps, ok := d.Get("line_properties").([]interface{}); ok && len(lineProps) > 0 {
+		if propsMap, ok := lineProps[0].(map[string]interface{}); ok {
+			linePropertiesMap = propsMap
+
+			// Safely handle line_address
+			if lineAddr, ok := linePropertiesMap["line_address"].([]interface{}); ok {
+				lineAddress = lineAddr
+			}
+
+			// Safely handle remote_address
+			if remoteAddr, ok := linePropertiesMap["remote_address"].([]interface{}); ok {
+				remoteAddress = remoteAddr
+			}
+		}
 	}
-	if lineAddressObject, ok := linePropertiesMap["line_address"].([]interface{}); ok {
-		lineAddress = lineAddressObject
-	}
-	if remoteAddressObject, ok := linePropertiesMap["remote_address"].([]interface{}); ok {
-		remoteAddress = remoteAddressObject
-	}
+
 	return &lineAddress, &remoteAddress
 }
 
@@ -253,8 +281,8 @@ func generatePhoneProperties(hardware_id string) string {
 }
 func createNonStandalonePhoneLine(remoteAddress []interface{}, linesPtr *[]platformclientv2.Line, lineBaseSettings *platformclientv2.Domainentityref) *[]platformclientv2.Line {
 	lines := *linesPtr
-	for i, eachAddress := range remoteAddress {
-		lineName := "line_" + *lineBaseSettings.Id + "_" + strconv.Itoa(i+1)
+	for _, eachAddress := range remoteAddress {
+		lineName := "line_" + *lineBaseSettings.Id + "_" + util.GetUniqueString()
 		properties := map[string]interface{}{
 			"station_remote_address": &map[string]interface{}{
 				"value": &map[string]interface{}{
@@ -272,8 +300,8 @@ func createNonStandalonePhoneLine(remoteAddress []interface{}, linesPtr *[]platf
 }
 func createStandalonePhoneLines(lineAddress []interface{}, linesPtr *[]platformclientv2.Line, lineBaseSettings *platformclientv2.Domainentityref) *[]platformclientv2.Line {
 	lines := *linesPtr
-	for i, eachLineAddress := range lineAddress {
-		lineName := "line_" + *lineBaseSettings.Id + "_" + strconv.Itoa(i+1)
+	for _, eachLineAddress := range lineAddress {
+		lineName := "line_" + *lineBaseSettings.Id + "_" + util.GetUniqueString()
 		properties := map[string]interface{}{
 			"station_identity_address": &map[string]interface{}{
 				"value": &map[string]interface{}{
@@ -321,7 +349,9 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	}
 
 	if len(lineAddressList) > 0 {
-		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "line_address", &lineAddressList)
+		utilE164 := util.NewUtilE164Service()
+		formattedLineAddresses := lists.Map(lineAddressList, utilE164.FormatAsCalculatedE164Number)
+		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "line_address", &formattedLineAddresses)
 	}
 	if len(remoteAddressList) > 0 {
 		resourcedata.SetMapValueIfNotNil(linePropertiesMap, "remote_address", &remoteAddressList)
@@ -333,29 +363,20 @@ func flattenLines(phoneLines *[]platformclientv2.Line) []interface{} {
 	return nil
 }
 
-func generateLineProperties(lineAddress string, remoteAddress string) string {
-	if lineAddress == "" {
-		return fmt.Sprintf(`
+func generateLinePropertiesRemoteAddress(remoteAddress string) string {
+	return fmt.Sprintf(`
 		line_properties {
 			remote_address = [%s]
 		}
 	`, remoteAddress)
-	}
+}
 
-	if remoteAddress == "" {
-		fmt.Sprintf(`
+func generateLinePropertiesLineAddress(lineAddress string) string {
+	return fmt.Sprintf(`
 		line_properties {
 			line_address = [%s]
 		}
 	`, lineAddress)
-	}
-
-	return fmt.Sprintf(`
-	line_properties {
-		line_address = [%s]
-		remote_address = [%s]
-	}
-`, lineAddress, remoteAddress)
 }
 
 func getLineIdByPhoneId(ctx context.Context, pp *phoneProxy, phoneId string) (string, error) {
@@ -424,7 +445,7 @@ func GeneratePhoneResourceWithCustomAttrs(config *PhoneConfig, otherAttrs ...str
 		%s
 		%s
 	}
-	`, config.PhoneRes,
+	`, config.PhoneResourceLabel,
 		config.Name,
 		config.State,
 		config.SiteId,
@@ -457,4 +478,28 @@ func TestVerifyWebRtcPhoneDestroyed(state *terraform.State) error {
 	}
 	//Success. Phone destroyed
 	return nil
+}
+
+func customizePhonePropertiesDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Defaults must be set on missing properties
+	if !diff.NewValueKnown("properties") {
+		// properties value not yet in final state. Nothing to do.
+		return nil
+	}
+	id := diff.Id()
+	if id == "" {
+		return nil
+	}
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	phoneProxy := getPhoneProxy(sdkConfig)
+
+	// Retrieve defaults from the settings
+	phone, resp, getErr := phoneProxy.getPhoneById(ctx, id)
+	if getErr != nil {
+		if util.IsStatus404(resp) {
+			return nil
+		}
+		return fmt.Errorf("failed to read phone %s: %s", id, getErr)
+	}
+	return util.ApplyPropertyDefaults(diff, phone.Properties)
 }

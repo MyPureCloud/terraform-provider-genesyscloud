@@ -4,16 +4,18 @@ import (
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	outboundCampaignrule "terraform-provider-genesyscloud/genesyscloud/outbound_campaignrule"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDigitalRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
-	outboundMessagingcampaign "terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -33,22 +35,23 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.ResourceOutboundCampaignrule()
-	providerResources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.ResourceOutboundAttemptLimit()
-	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
-	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_outbound_messagingcampaign"] = outboundMessagingcampaign.ResourceOutboundMessagingcampaign()
-	providerResources["genesyscloud_outbound_sequence"] = outboundSequence.ResourceOutboundSequence()
+	providerResources[ResourceType] = ResourceOutboundMessagingCampaign()
+	providerResources[obCallableTimeset.ResourceType] = obCallableTimeset.ResourceOutboundCallabletimeset()
+	providerResources[outboundCampaignrule.ResourceType] = outboundCampaignrule.ResourceOutboundCampaignrule()
+	providerResources[obAttemptLimit.ResourceType] = obAttemptLimit.ResourceOutboundAttemptLimit()
+	providerResources[obContactListFilter.ResourceType] = obContactListFilter.ResourceOutboundContactlistfilter()
+	providerResources[obContactList.ResourceType] = obContactList.ResourceOutboundContactList()
+	providerResources[outboundSequence.ResourceType] = outboundSequence.ResourceOutboundSequence()
 
 	// external package dependencies for outbound
-	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
-	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
-	providerResources["genesyscloud_outbound_ruleset"] = obRuleset.ResourceOutboundRuleset()
-	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
+	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[obRuleset.ResourceType] = obRuleset.ResourceOutboundRuleset()
+	providerResources[obDigitalRuleset.ResourceType] = obDigitalRuleset.ResourceOutboundDigitalruleset()
+	providerResources[obDnclist.ResourceType] = obDnclist.ResourceOutboundDncList()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
@@ -56,22 +59,22 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.DataSourceOutboundCallabletimeset()
-	providerDataSources["genesyscloud_outbound_attempt_limit"] = obAttemptLimit.DataSourceOutboundAttemptLimit()
-	providerDataSources["genesyscloud_outbound_campaignrule"] = outboundCampaignrule.DataSourceOutboundCampaignrule()
-	providerDataSources["genesyscloud_outbound_contact_list"] = obContactList.DataSourceOutboundContactList()
-	providerDataSources["genesyscloud_outbound_messagingcampaign"] = outboundMessagingcampaign.DataSourceOutboundMessagingcampaign()
-	providerDataSources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.DataSourceOutboundContactlistfilter()
-	providerDataSources["genesyscloud_outbound_sequence"] = outboundSequence.DataSourceOutboundSequence()
+	providerDataSources[obCallableTimeset.ResourceType] = obCallableTimeset.DataSourceOutboundCallabletimeset()
+	providerDataSources[obAttemptLimit.ResourceType] = obAttemptLimit.DataSourceOutboundAttemptLimit()
+	providerDataSources[outboundCampaignrule.ResourceType] = outboundCampaignrule.DataSourceOutboundCampaignrule()
+	providerDataSources[obContactList.ResourceType] = obContactList.DataSourceOutboundContactList()
+	providerDataSources[ResourceType] = dataSourceOutboundMessagingcampaign()
+	providerDataSources[obContactListFilter.ResourceType] = obContactListFilter.DataSourceOutboundContactlistfilter()
+	providerDataSources[outboundSequence.ResourceType] = outboundSequence.DataSourceOutboundSequence()
 
 	// external package dependencies for outbound
-	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
-	providerDataSources["genesyscloud_routing_wrapupcode"] = gcloud.DataSourceRoutingWrapupcode()
-	providerDataSources["genesyscloud_routing_queue"] = routingQueue.DataSourceRoutingQueue()
-	providerDataSources["genesyscloud_flow"] = flow.DataSourceArchitectFlow()
-	providerDataSources["genesyscloud_location"] = gcloud.DataSourceLocation()
+	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
+	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
+	providerDataSources[routingQueue.ResourceType] = routingQueue.DataSourceRoutingQueue()
+	providerDataSources[flow.ResourceType] = flow.DataSourceArchitectFlow()
+	providerDataSources[location.ResourceType] = location.DataSourceLocation()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_outbound_ruleset"] = obRuleset.DataSourceOutboundRuleset()
+	providerDataSources[obRuleset.ResourceType] = obRuleset.DataSourceOutboundRuleset()
 
 }
 

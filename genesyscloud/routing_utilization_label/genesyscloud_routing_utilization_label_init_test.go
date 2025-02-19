@@ -1,14 +1,21 @@
 package routing_utilization_label
 
 import (
+	"log"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
-var providerDataSources map[string]*schema.Resource
-var providerResources map[string]*schema.Resource
+var (
+	providerDataSources map[string]*schema.Resource
+	providerResources   map[string]*schema.Resource
+	sdkConfig           *platformclientv2.Configuration
+	err                 error
+)
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -20,7 +27,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingUtilizationLabel()
+	providerResources[ResourceType] = ResourceRoutingUtilizationLabel()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -28,11 +35,14 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingUtilizationLabel()
+	providerDataSources[ResourceType] = DataSourceRoutingUtilizationLabel()
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
+		log.Fatal(err)
+	}
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

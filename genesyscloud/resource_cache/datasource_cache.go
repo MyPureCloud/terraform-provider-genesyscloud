@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // Cache for Data Sources
@@ -16,12 +16,14 @@ type DataSourceCache struct {
 	Cache            map[string]string
 	mutex            sync.RWMutex
 	ClientConfig     *platformclientv2.Configuration
-	HydrateCacheFunc func(*DataSourceCache) error
+	HydrateCacheFunc func(*DataSourceCache, context.Context) error
 	getApiFunc       func(*DataSourceCache, string, context.Context) (string, diag.Diagnostics)
 }
 
 // NewDataSourceCache creates a new data source cache
-func NewDataSourceCache(clientConfig *platformclientv2.Configuration, hydrateFn func(*DataSourceCache) error, getFn func(*DataSourceCache, string, context.Context) (string, diag.Diagnostics)) *DataSourceCache {
+func NewDataSourceCache(clientConfig *platformclientv2.Configuration,
+	hydrateFn func(*DataSourceCache, context.Context) error,
+	getFn func(*DataSourceCache, string, context.Context) (string, diag.Diagnostics)) *DataSourceCache {
 
 	return &DataSourceCache{
 		Cache:            make(map[string]string),
@@ -31,11 +33,11 @@ func NewDataSourceCache(clientConfig *platformclientv2.Configuration, hydrateFn 
 	}
 }
 
-func (c *DataSourceCache) HydrateCacheIfEmpty() error {
+func (c *DataSourceCache) HydrateCacheIfEmpty(ctx context.Context) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if c.isEmpty() {
-		if err := c.hydrateCache(); err != nil {
+		if err := c.hydrateCache(ctx); err != nil {
 			return err
 		}
 	}
@@ -43,8 +45,8 @@ func (c *DataSourceCache) HydrateCacheIfEmpty() error {
 }
 
 // Hydrate the cache with updated values.
-func (c *DataSourceCache) hydrateCache() error {
-	return c.HydrateCacheFunc(c)
+func (c *DataSourceCache) hydrateCache(ctx context.Context) error {
+	return c.HydrateCacheFunc(c, ctx)
 }
 
 // Adds or updates a cache entry
@@ -89,9 +91,9 @@ func (c *DataSourceCache) Get(key string) (val string, isFound bool) {
 }
 
 func RetrieveId(cache *DataSourceCache,
-	resourceName, key string, ctx context.Context) (string, diag.Diagnostics) {
+	resourceType, key string, ctx context.Context) (string, diag.Diagnostics) {
 
-	if err := cache.HydrateCacheIfEmpty(); err != nil {
+	if err := cache.HydrateCacheIfEmpty(ctx); err != nil {
 		return "", diag.FromErr(err)
 	}
 
@@ -106,7 +108,7 @@ func RetrieveId(cache *DataSourceCache,
 		}
 
 		if err := cache.UpdateCacheEntry(key, idFromApi); err != nil {
-			return "", util.BuildDiagnosticError(resourceName, fmt.Sprintf("error updating cache"), err)
+			return "", util.BuildDiagnosticError(resourceType, fmt.Sprintf("error updating cache"), err)
 		}
 		// id gets reset to empty string at the updateCacheEntry method.
 		id = idFromApi

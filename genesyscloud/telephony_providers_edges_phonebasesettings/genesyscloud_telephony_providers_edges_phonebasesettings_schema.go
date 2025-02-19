@@ -1,20 +1,21 @@
 package telephony_providers_edges_phonebasesettings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
-	resourceName = "genesyscloud_telephony_providers_edges_phonebasesettings"
+	ResourceType = "genesyscloud_telephony_providers_edges_phonebasesettings"
 )
 
-var (
-	phoneCapabilities = &schema.Resource{
+func ResourcePhoneBaseSettings() *schema.Resource {
+	phoneCapabilities := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"provisions": {
 				Description: "Provisions",
@@ -67,9 +68,24 @@ var (
 			},
 		},
 	}
-)
 
-func ResourcePhoneBaseSettings() *schema.Resource {
+	lineBase := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"station_persistent_enabled": {
+				Description: "The station_persistent_enabled attribute in the line's property",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"station_persistent_timeout": {
+				Description: "The station_persistent_timeout attribute in the line's property",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     600,
+			},
+		},
+	}
+
 	return &schema.Resource{
 		Description: "Genesys Cloud Phone Base Settings",
 
@@ -96,6 +112,7 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Description: "A phone metabase is essentially a database for storing phone configuration settings, which simplifies the configuration process.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"properties": {
 				Description:      "phone base settings properties",
@@ -112,14 +129,22 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Computed:    true,
 				Elem:        phoneCapabilities,
 			},
+			"line_base": {
+				Description: "Line Base Settings for the phonebasesettings",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
+				Elem:        lineBase,
+			},
 			"line_base_settings_id": {
-				Description: "Computed line base settings id",
+				Description: "This field is computed when a line base is created.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 			},
 		},
-		CustomizeDiff: util.CustomizePhoneBaseSettingsPropertiesDiff,
+		CustomizeDiff: customizePhoneBaseSettingsPropertiesDiff,
 	}
 }
 

@@ -3,11 +3,12 @@ package group_roles
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var internalProxy *groupRolesProxy
@@ -69,6 +70,11 @@ func getGroupRolesByIdFn(_ context.Context, p *groupRolesProxy, roleId string) (
 func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
 	// Get existing roles/divisions
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+
+	if err != nil || resp.StatusCode == http.StatusNotFound || subject == nil {
+		return resp, fmt.Errorf("failed to get current grants for subject %s: %s while updating group role", roleId, err)
+	}
+
 	grants, resp, err := getAssignedGrants(*subject.Id, p)
 
 	existingGrants, configGrants, _ := getExistingAndConfigGrants(grants, rolesConfig)
@@ -105,7 +111,7 @@ func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, ro
 		diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			resp, err := p.authorizationApi.PostAuthorizationSubjectBulkadd(roleId, roleDivPairsToGrants(grantsToAdd), subjectType)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("failed to add role grants for subject %s: %s", roleId, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to add role grants for subject %s: %s", roleId, err), resp)
 			}
 			return nil, nil
 		})

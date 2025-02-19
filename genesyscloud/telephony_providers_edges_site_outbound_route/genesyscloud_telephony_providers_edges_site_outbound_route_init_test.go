@@ -3,14 +3,16 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"log"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
+	gcloud "terraform-provider-genesyscloud/genesyscloud"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -26,11 +28,15 @@ var (
 	authErr   error
 )
 
+// providerDataSources holds a map of all registered sites
+var providerDataSources map[string]*schema.Resource
+
 // providerResources holds a map of all registered sites
 var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex sync.RWMutex
+	resourceMapMutex   sync.RWMutex
+	datasourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -38,10 +44,19 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceSiteOutboundRoute()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
-	providerResources["genesyscloud_telephony_providers_edges_site"] = telephony_providers_edges_site.ResourceSite()
+	providerResources[ResourceType] = ResourceSiteOutboundRoute()
+	providerResources[telephony_provider_edges_trunkbasesettings.ResourceType] = telephony_provider_edges_trunkbasesettings.ResourceTrunkBaseSettings()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[telephony_providers_edges_site.ResourceType] = telephony_providers_edges_site.ResourceSite()
+}
+
+// registerTestDataSources registers all data sources used in the tests.
+func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
+	providerDataSources[ResourceType] = DataSourceSiteOutboundRoute()
+	providerDataSources["genesyscloud_organizations_me"] = gcloud.DataSourceOrganizationsMe()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -51,11 +66,13 @@ func initTestResources() {
 		log.Fatalf("failed to authorize sdk: %v", authErr)
 	}
 
+	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

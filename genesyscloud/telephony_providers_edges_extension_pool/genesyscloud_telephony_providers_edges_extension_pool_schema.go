@@ -1,15 +1,16 @@
 package telephony_providers_edges_extension_pool
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
-	resourceName = "genesyscloud_telephony_providers_edges_extension_pool"
+	ResourceType = "genesyscloud_telephony_providers_edges_extension_pool"
 )
 
 func ResourceTelephonyExtensionPool() *schema.Resource {
@@ -76,7 +77,7 @@ func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
 }
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceExtensionPool())
-	l.RegisterResource(resourceName, ResourceTelephonyExtensionPool())
-	l.RegisterExporter(resourceName, TelephonyExtensionPoolExporter())
+	l.RegisterDataSource(ResourceType, DataSourceExtensionPool())
+	l.RegisterResource(ResourceType, ResourceTelephonyExtensionPool())
+	l.RegisterExporter(ResourceType, TelephonyExtensionPoolExporter())
 }

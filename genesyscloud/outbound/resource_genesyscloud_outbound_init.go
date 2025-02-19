@@ -5,6 +5,7 @@ import (
 )
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource("genesyscloud_outbound_attempt_limit", DataSourceOutboundAttemptLimit())
-
+	l.RegisterDataSource(ResourceType, dataSourceOutboundMessagingcampaign())
+	l.RegisterResource(ResourceType, ResourceOutboundMessagingCampaign())
+	l.RegisterExporter(ResourceType, OutboundMessagingcampaignExporter())
 }

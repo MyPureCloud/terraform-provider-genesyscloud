@@ -3,9 +3,11 @@ package task_management_worktype
 import (
 	"sync"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
@@ -33,12 +35,12 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceTaskManagementWorktype()
-	providerResources["genesyscloud_task_management_workbin"] = workbin.ResourceTaskManagementWorkbin()
-	providerResources["genesyscloud_task_management_workitem_schema"] = workitemSchema.ResourceTaskManagementWorkitemSchema()
-	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_skill"] = gcloud.ResourceRoutingSkill()
+	providerResources[ResourceType] = ResourceTaskManagementWorktype()
+	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
+	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -46,7 +48,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceTaskManagementWorktype()
+	providerDataSources[ResourceType] = DataSourceTaskManagementWorktype()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 

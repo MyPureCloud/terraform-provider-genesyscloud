@@ -2,10 +2,11 @@ package responsemanagement_library
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -16,13 +17,13 @@ resource_genesycloud_responsemanagement_library_schema.go holds four functions w
 3.  The datasource schema definitions for the responsemanagement_library datasource.
 4.  The resource exporter configuration for the responsemanagement_library exporter.
 */
-const resourceName = "genesyscloud_responsemanagement_library"
+const ResourceType = "genesyscloud_responsemanagement_library"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceResponsemanagementLibrary())
-	regInstance.RegisterDataSource(resourceName, DataSourceResponsemanagementLibrary())
-	regInstance.RegisterExporter(resourceName, ResponsemanagementLibraryExporter())
+	regInstance.RegisterResource(ResourceType, ResourceResponsemanagementLibrary())
+	regInstance.RegisterDataSource(ResourceType, DataSourceResponsemanagementLibrary())
+	regInstance.RegisterExporter(ResourceType, ResponsemanagementLibraryExporter())
 }
 
 // ResourceResponsemanagementLibrary registers the genesyscloud_responsemanagement_library resource with Terraform
@@ -74,11 +75,11 @@ func DataSourceResponsemanagementLibrary() *schema.Resource {
 }
 
 func GenerateResponseManagementLibraryResource(
-	resourceId string,
+	resourceLabel string,
 	name string) string {
 	return fmt.Sprintf(`
 		resource "genesyscloud_responsemanagement_library" "%s" {
 			name = "%s"
 		}
-	`, resourceId, name)
+	`, resourceLabel, name)
 }

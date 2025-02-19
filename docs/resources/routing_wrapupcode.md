@@ -21,7 +21,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_routing_wrapupcode" "win" {
-  name = "Win"
+  name        = "Win"
+  description = "test description"
 }
 ```
 
@@ -31,6 +32,11 @@ resource "genesyscloud_routing_wrapupcode" "win" {
 ### Required
 
 - `name` (String) Wrapup Code name.
+
+### Optional
+
+- `description` (String) The wrap-up code description.
+- `division_id` (String) The division to which this routing wrapupcode will belong. If not set, * will be used to indicate all divisions.
 
 ### Read-Only
 

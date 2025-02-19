@@ -39,7 +39,7 @@ resource "genesyscloud_idp_adfs" "adfs" {
 - `disabled` (Boolean) True if ADFS is disabled. Defaults to `false`.
 - `name` (String) IDP ADFS resource name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to ADFS.
-- `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
+- `slo_binding` (String)
 - `slo_uri` (String) Provided by ADFS on app creation
 - `target_uri` (String) Target URI provided by ADFS.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type SurveyFormStruct struct {
@@ -53,6 +53,11 @@ type SurveyFormQuestionStruct struct {
 var (
 	surveyQuestionGroup = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the survey question group.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"name": {
 				Description: "Name of display question in question group.",
 				Type:        schema.TypeString,
@@ -83,6 +88,11 @@ var (
 
 	surveyQuestion = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The ID of the survey question.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"text": {
 				Description: "Individual question",
 				Type:        schema.TypeString,
@@ -151,6 +161,11 @@ var (
 
 	surveyFormAnswerOptions = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:        schema.TypeString,
+				Description: "The ID of the survey answer option.",
+				Computed:    true,
+			},
 			"text": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -161,19 +176,20 @@ var (
 			},
 			"assistance_conditions": {
 				Description: "Options from which to choose an answer for this question.",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
-				Elem:        assistanceConditions,
+				Elem:        assistanceConditionsResource,
 			},
 		},
 	}
 
-	assistanceConditions = &schema.Resource{
+	assistanceConditionsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"operator": {
-				Description: "List of assistance conditions which are combined together with a logical AND operator. Eg ( assistanceCondtion1 && assistanceCondition2 ) wherein assistanceCondition could be ( EXISTS topic1 || topic2 || ... ) or (NOTEXISTS topic3 || topic4 || ...).",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:  "List of assistance conditions which are combined together with a logical AND operator. Eg ( assistanceCondtion1 && assistanceCondition2 ) wherein assistanceCondition could be ( EXISTS topic1 || topic2 || ... ) or (NOTEXISTS topic3 || topic4 || ...).",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"EXISTS", "NOTEXISTS"}, true),
 			},
 			"topic_ids": {
 				Description: "List of topicIds within the assistance condition which would be combined together using logical OR operator. Eg ( topicId_1 || topicId_2 ) .",
@@ -201,7 +217,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 		}
 
 		for _, surveyForm := range *surveyForms.Entities {
-			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{Name: *surveyForm.Name}
+			resources[*surveyForm.Id] = &resourceExporter.ResourceMeta{BlockLabel: *surveyForm.Name}
 		}
 	}
 
@@ -213,6 +229,11 @@ func SurveyFormExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSurveyForms),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
+		ExcludedAttributes: []string{
+			"question_groups.id",
+			"question_groups.questions.id",
+			"question_groups.questions.answer_options.id",
+		},
 	}
 }
 
@@ -326,7 +347,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm(), constants.DefaultConsistencyChecks, "genesyscloud_quality_forms_survey")
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSurveyForm(), constants.ConsistencyChecks(), "genesyscloud_quality_forms_survey")
 
 	log.Printf("Reading survey form %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -511,13 +532,14 @@ func buildSurveyQuestions(questions []interface{}) *[]platformclientv2.Surveyque
 		naEnabled := questionsMap["na_enabled"].(bool)
 		answerQuestions := questionsMap["answer_options"].([]interface{})
 		maxResponseCharacters := questionsMap["max_response_characters"].(int)
+		sdkAnswerOptions := buildSdkAnswerOptions(answerQuestions)
 
 		sdkQuestion := platformclientv2.Surveyquestion{
 			Text:                  &text,
 			HelpText:              &helpText,
 			VarType:               &questionType,
 			NaEnabled:             &naEnabled,
-			AnswerOptions:         buildSdkAnswerOptions(answerQuestions),
+			AnswerOptions:         sdkAnswerOptions,
 			MaxResponseCharacters: &maxResponseCharacters,
 		}
 
@@ -540,10 +562,13 @@ func flattenSurveyQuestionGroups(questionGroups *[]platformclientv2.Surveyquesti
 		return nil
 	}
 
-	questionGroupList := []interface{}{}
+	var questionGroupList []interface{}
 
 	for _, questionGroup := range *questionGroups {
 		questionGroupMap := make(map[string]interface{})
+		if questionGroup.Id != nil {
+			questionGroupMap["id"] = *questionGroup.Id
+		}
 		if questionGroup.Name != nil {
 			questionGroupMap["name"] = *questionGroup.Name
 		}
@@ -567,10 +592,13 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 		return nil
 	}
 
-	questionList := []interface{}{}
+	var questionList []interface{}
 
 	for _, question := range *questions {
 		questionMap := make(map[string]interface{})
+		if question.Id != nil {
+			questionMap["id"] = *question.Id
+		}
 		if question.Text != nil {
 			questionMap["text"] = *question.Text
 		}
@@ -601,7 +629,7 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 	return questionList
 }
 
-func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct) string {
+func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStruct) string {
 	form := fmt.Sprintf(`resource "genesyscloud_quality_forms_survey" "%s" {
 		name = "%s"
 		published = %v
@@ -612,7 +640,7 @@ func GenerateSurveyFormResource(resourceID string, surveyForm *SurveyFormStruct)
 		%s
         %s
 	}
-	`, resourceID,
+	`, resourceLabel,
 		surveyForm.Name,
 		surveyForm.Published,
 		surveyForm.Disabled,

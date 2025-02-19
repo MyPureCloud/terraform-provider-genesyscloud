@@ -1,11 +1,15 @@
 package user_roles
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -28,10 +32,10 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_user_roles"] = ResourceUserRoles()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
+	providerResources[ResourceType] = ResourceUserRoles()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -39,7 +43,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_auth_role"] = authRole.DataSourceAuthRole()
+	providerDataSources[authRole.ResourceType] = authRole.DataSourceAuthRole()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 
 }
@@ -57,9 +61,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for outbound_callabletimeset package
+	// Run setup function before starting the test suite for user_roles package
 	initTestResources()
 
-	// Run the test suite for the outbound_callabletimeset package
+	// Run the test suite for the user_roles package
 	m.Run()
 }

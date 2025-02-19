@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -106,18 +107,20 @@ type grammarLanguageDownloader struct {
 	fileUrl               string
 	fileExtension         string
 	fileType              FileType
+	resource              resourceExporter.ResourceInfo
+	exportDirectory       string
 }
 
-func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}) error {
+func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
-	fullPath := path.Join(exportDirectory, subDirectory)
+	fullPath := filepath.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	grammarId, languageCode := splitLanguageId(languageId)
+	grammarId, languageCode := splitGrammarLanguageId(languageId)
 	language, _, err := proxy.getArchitectGrammarLanguageById(context.Background(), grammarId, languageCode)
 	if err != nil {
 		return err
@@ -129,6 +132,8 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 		grammarId:             grammarId,
 		language:              language,
 		subDirectory:          subDirectory,
+		resource:              resource,
+		exportDirectory:       exportDirectory,
 	}
 
 	return downloader.downloadVoiceAndDtmfFileData()
@@ -172,7 +177,7 @@ func (d *grammarLanguageDownloader) downloadFileData(fileType FileType) error {
 func (d *grammarLanguageDownloader) downloadLanguageFileAndUpdateConfigMap(url string) error {
 	d.fileUrl = url
 	d.setExportFileName()
-	if err := files.DownloadExportFile(d.exportFilesFolderPath, d.exportFileName, d.fileUrl); err != nil {
+	if _, err := files.DownloadExportFile(d.exportFilesFolderPath, d.exportFileName, d.fileUrl); err != nil {
 		return err
 	}
 	d.updatePathsInExportConfigMap()
@@ -210,7 +215,7 @@ func (d *grammarLanguageDownloader) setLanguageFileExtension() {
 func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 	var (
 		fileDataMapKey string
-		filePath       = path.Join(d.subDirectory, d.exportFileName)
+		filePath       = filepath.Join(d.subDirectory, d.exportFileName)
 	)
 
 	switch d.fileType {
@@ -223,10 +228,33 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 	if fileDataList, ok := d.configMap[fileDataMapKey].([]interface{}); ok {
 		if fileDataMap, ok := fileDataList[0].(map[string]interface{}); ok {
 			fileDataMap["file_name"] = filePath
-			fileDataMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, filePath)
+			fileHashVal := fmt.Sprintf(`${filesha256("%s")}`, filePath)
+			fileDataMap["file_content_hash"] = fileHashVal
+			fullPath := filepath.Join(d.exportDirectory, d.subDirectory)
+			d.resource.State.Attributes["file_name"] = filePath
+			hash, er := files.HashFileContent(filepath.Join(fullPath, d.exportFileName))
+			if er != nil {
+				log.Printf("Error Calculating Hash '%s' ", er)
+			} else {
+				d.resource.State.Attributes["file_content_hash"] = hash
+			}
 			if fileDataMap["file_type"] == nil {
 				fileDataMap["file_type"] = ""
 			}
 		}
 	}
+}
+
+// Language id is always in format <grammar-id>:<language-code>
+func buildGrammarLanguageId(grammarId string, languageCode string) (grammarLanguageId string) {
+	return fmt.Sprintf("%s:%s", grammarId, languageCode)
+}
+
+// Language id is always in format <grammar-id>:<language-code>
+func splitGrammarLanguageId(languageId string) (grammarId string, languageCode string) {
+	split := strings.SplitN(languageId, ":", 2)
+	if len(split) == 2 {
+		return split[0], split[1]
+	}
+	return "", ""
 }

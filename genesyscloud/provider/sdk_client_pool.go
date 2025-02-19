@@ -5,10 +5,12 @@ import (
 	"log"
 	"sync"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // SDKClientPool holds a Pool of client configs for the Genesys Cloud SDK. One should be
@@ -99,19 +101,43 @@ type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (re
 type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
-	return schema.CreateContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method, constants.Create)
+	return schema.CreateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func ReadWithPooledClient(method resContextFunc) schema.ReadContextFunc {
-	return schema.ReadContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method, constants.Read)
+	return schema.ReadContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func UpdateWithPooledClient(method resContextFunc) schema.UpdateContextFunc {
-	return schema.UpdateContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method, constants.Update)
+	return schema.UpdateContextFunc(runWithPooledClient(methodWrappedWithRecover))
 }
 
 func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
-	return schema.DeleteContextFunc(runWithPooledClient(method))
+	methodWrappedWithRecover := wrapWithRecover(method, constants.Delete)
+	return schema.DeleteContextFunc(runWithPooledClient(methodWrappedWithRecover))
+}
+
+func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) resContextFunc {
+	return func(ctx context.Context, r *schema.ResourceData, meta any) (diagErr diag.Diagnostics) {
+		panicRecoverLogger := prl.GetPanicRecoveryLoggerInstance()
+		if !panicRecoverLogger.LoggerEnabled {
+			return method(ctx, r, meta)
+		}
+
+		defer func() {
+			if r := recover(); r != nil {
+				err := panicRecoverLogger.HandleRecovery(r, operation)
+				if err != nil {
+					diagErr = diag.FromErr(err)
+				}
+			}
+		}()
+
+		return method(ctx, r, meta)
+	}
 }
 
 // Inject a pooled SDK client connection into a resource method's meta argument

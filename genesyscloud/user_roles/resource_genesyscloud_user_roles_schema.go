@@ -1,19 +1,20 @@
 package user_roles
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/user"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_user_roles"
+const ResourceType = "genesyscloud_user_roles"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceUserRoles())
-	l.RegisterExporter(resourceName, UserRolesExporter())
+	l.RegisterResource(ResourceType, ResourceUserRoles())
+	l.RegisterExporter(ResourceType, UserRolesExporter())
 }
 
 var (
@@ -69,7 +70,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 // userRolesExporter returns the resourceExporter object used to hold the genesyscloud_user_roles exporter's config
 func UserRolesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(genesyscloud.GetAllUsers),
+		GetResourcesFunc: provider.GetAllWithPooledClient(user.GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"user_id":            {RefType: "genesyscloud_user"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},

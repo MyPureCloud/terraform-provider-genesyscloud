@@ -2,9 +2,8 @@ package webdeployments_configuration
 
 import (
 	"sync"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"testing"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -25,8 +24,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceWebDeploymentConfiguration()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = gcloud.ResourceKnowledgeKnowledgebase()
+	providerResources[ResourceType] = ResourceWebDeploymentConfiguration()
+	providerResources["genesyscloud_knowledge_knowledgebase"] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -34,7 +33,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceWebDeploymentsConfiguration()
+	providerDataSources[ResourceType] = DataSourceWebDeploymentsConfiguration()
 }
 
 // initTestResources initializes all test resources and data sources.

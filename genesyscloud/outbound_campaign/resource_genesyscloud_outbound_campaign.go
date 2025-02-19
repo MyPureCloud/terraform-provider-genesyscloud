@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -29,7 +29,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 
 	campaigns, resp, err := proxy.getAllOutboundCampaign(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get campaigns error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get campaigns error: %s", err), resp)
 	}
 
 	for _, campaign := range *campaigns {
@@ -42,13 +42,13 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 				campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, *campaign.Id)
 				if getErr != nil {
 					if util.IsStatus404(resp) {
-						return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Campaign %s during export | error: %s", *campaign.Id, getErr), resp))
+						return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Campaign %s during export | error: %s", *campaign.Id, getErr), resp))
 					}
-					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Campaign %s: during export | error: %s", *campaign.Id, getErr), resp))
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Campaign %s: during export | error: %s", *campaign.Id, getErr), resp))
 				}
 
 				if *campaign.CampaignStatus == "stopping" {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Campaign %s didn't stop in time, unable to export", *campaign.Id), resp))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Campaign %s didn't stop in time, unable to export", *campaign.Id), resp))
 				}
 
 				return nil
@@ -58,7 +58,7 @@ func getAllAuthOutboundCampaign(ctx context.Context, clientConfig *platformclien
 				continue
 			}
 		}
-		resources[*campaign.Id] = &resourceExporter.ResourceMeta{Name: *campaign.Name}
+		resources[*campaign.Id] = &resourceExporter.ResourceMeta{BlockLabel: *campaign.Name}
 	}
 	return resources, nil
 }
@@ -75,7 +75,7 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Creating Outbound Campaign %s", *campaign.Name)
 	outboundCampaign, resp, err := proxy.createOutboundCampaign(ctx, &campaign)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create Outbound Campaign %s error: %s", *campaign.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create Outbound Campaign %s error: %s", *campaign.Name, err), resp)
 	}
 
 	d.SetId(*outboundCampaign.Id)
@@ -97,7 +97,7 @@ func createOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCampaign(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Campaign %s", d.Id())
 
@@ -105,13 +105,13 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		campaign, resp, getErr := proxy.getOutboundCampaignById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Campaign %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		if *campaign.CampaignStatus == "stopping" {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign still stopping %s", d.Id()), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound Campaign still stopping %s", d.Id()), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", campaign.Name)
@@ -126,7 +126,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
 		resourcedata.SetNillableValue(d, "max_calls_per_agent", campaign.MaxCallsPerAgent)
 		if campaign.DncLists != nil {
-			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*campaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*campaign.DncLists))
 		}
 		resourcedata.SetNillableReference(d, "callable_time_set_id", campaign.CallableTimeSet)
 		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.CallAnalysisResponseSet)
@@ -148,7 +148,11 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 		resourcedata.SetNillableReference(d, "division_id", campaign.Division)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
-
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_line_balancing_settings", campaign.DynamicLineBalancingSettings, flattenLineBalancingSettings)
+		if campaign.SkillColumns != nil && len(*campaign.SkillColumns) > 0 {
+			_ = d.Set("skill_columns", *campaign.SkillColumns)
+		}
+		resourcedata.SetNillableValue(d, "auto_answer", campaign.CallbackAutoAnswer)
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
 		return cc.CheckState(d)
 	})
@@ -165,7 +169,7 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Updating Outbound Campaign %s", *campaign.Name)
 	campaignSdk, resp, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update campaign %s error: %s", *campaign.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update campaign %s error: %s", *campaign.Name, err), resp)
 	}
 
 	// Check if Campaign Status needs updated
@@ -204,7 +208,7 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	log.Printf("Deleting Outbound Campaign %s", d.Id())
 	resp, err := proxy.deleteOutboundCampaign(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete campaign %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete campaign %s error: %s", d.Id(), err), resp)
 	}
 	log.Printf("Deleted Outbound Campaign %s", d.Id())
 
@@ -217,8 +221,8 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 				log.Printf("Deleted Outbound Campaign %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting Outbound Campaign %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Outbound Campaign %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Outbound Campaign %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound Campaign %s still exists", d.Id()), resp))
 	})
 }

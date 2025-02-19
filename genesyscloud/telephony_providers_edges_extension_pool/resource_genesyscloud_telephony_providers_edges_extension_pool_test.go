@@ -2,36 +2,27 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
-
-type extensionPoolStruct struct {
-	resourceID  string
-	startNumber string
-	endNumber   string
-	description string
-}
 
 func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	t.Parallel()
-	extensionPoolResource1 := "test-extensionpool1"
+	extensionPoolResourceLabel1 := "test-extensionpool1"
 	extensionPoolStartNumber1 := "15000"
 	extensionPoolEndNumber1 := "15001"
 	_, err := provider.AuthorizeSdk()
 	if err != nil {
 		t.Fatal(err)
 	}
-	deleteExtensionPoolWithNumber(extensionPoolStartNumber1)
-	deleteExtensionPoolWithNumber(extensionPoolEndNumber1)
+	DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	DeleteExtensionPoolWithNumber(extensionPoolEndNumber1)
 	extensionPoolDescription1 := "Test description"
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -39,82 +30,41 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateExtensionPoolResource(&extensionPoolStruct{
-					extensionPoolResource1,
+				Config: GenerateExtensionPoolResource(&ExtensionPoolStruct{
+					extensionPoolResourceLabel1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
 					util.NullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "end_number", extensionPoolEndNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "description", ""),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "start_number", extensionPoolStartNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "end_number", extensionPoolEndNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "description", ""),
 				),
 			},
 			{
 				// Update
-				Config: generateExtensionPoolResource(&extensionPoolStruct{
-					extensionPoolResource1,
+				Config: GenerateExtensionPoolResource(&ExtensionPoolStruct{
+					extensionPoolResourceLabel1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
 					strconv.Quote(extensionPoolDescription1),
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "start_number", extensionPoolStartNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "end_number", extensionPoolEndNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResource1, "description", extensionPoolDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "start_number", extensionPoolStartNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "end_number", extensionPoolEndNumber1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "description", extensionPoolDescription1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_extension_pool." + extensionPoolResource1,
+				ResourceName:      "genesyscloud_telephony_providers_edges_extension_pool." + extensionPoolResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyExtensionPoolsDestroyed,
 	})
-}
-
-func deleteExtensionPoolWithNumber(startNumber string) error {
-	sdkConfig, err := provider.AuthorizeSdk()
-	if err != nil {
-		log.Fatal(err)
-	}
-	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		extensionPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesExtensionpools(100, pageNum, "", "")
-		if getErr != nil {
-			return getErr
-		}
-
-		if extensionPools.Entities == nil || len(*extensionPools.Entities) == 0 {
-			break
-		}
-
-		for _, extensionPool := range *extensionPools.Entities {
-			if extensionPool.StartNumber != nil && *extensionPool.StartNumber == startNumber {
-				_, err := edgesAPI.DeleteTelephonyProvidersEdgesExtensionpool(*extensionPool.Id)
-				time.Sleep(20 * time.Second)
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func generateExtensionPoolResource(extensionPool *extensionPoolStruct) string {
-	return fmt.Sprintf(`resource "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
-		start_number = "%s"
-		end_number = "%s"
-		description = %s
-	}
-	`, extensionPool.resourceID,
-		extensionPool.startNumber,
-		extensionPool.endNumber,
-		extensionPool.description)
 }
 
 func testVerifyExtensionPoolsDestroyed(state *terraform.State) error {

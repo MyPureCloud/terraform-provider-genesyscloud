@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type EvaluationFormQuestionGroupStruct struct {
@@ -43,8 +43,14 @@ type EvaluationFormQuestionStruct struct {
 }
 
 type AnswerOptionStruct struct {
-	Text  string
-	Value int
+	Text                 string
+	Value                int
+	AssistanceConditions []AssistanceConditionStruct
+}
+
+type AssistanceConditionStruct struct {
+	Operator string
+	TopicIds []string
 }
 
 type VisibilityConditionStruct struct {

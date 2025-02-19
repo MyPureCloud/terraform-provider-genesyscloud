@@ -1,21 +1,22 @@
 package outbound_dnclist
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_outbound_dnclist"
+const ResourceType = "genesyscloud_outbound_dnclist"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceOutboundDncList())
-	l.RegisterResource(resourceName, ResourceOutboundDncList())
-	l.RegisterExporter(resourceName, OutboundDncListExporter())
+	l.RegisterDataSource(ResourceType, DataSourceOutboundDncList())
+	l.RegisterResource(ResourceType, ResourceOutboundDncList())
+	l.RegisterExporter(ResourceType, OutboundDncListExporter())
 }
 
 func ResourceOutboundDncList() *schema.Resource {
@@ -41,7 +42,7 @@ func ResourceOutboundDncList() *schema.Resource {
 				Optional:     true,
 				Computed:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`Email`, `Phone`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`Email`, `Phone`, `Any`}, false),
 			},
 			`login_id`: {
 				Description: `A dnc.com loginId. Required if the dncSourceType is dnc.com.`,
@@ -78,7 +79,14 @@ func ResourceOutboundDncList() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`rds`, `dnc.com`, `gryphon`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`rds`, `rds_custom`, `dnc.com`, `gryphon`}, false),
+			},
+			`custom_exclusion_column`: {
+				Description: `The column to evaluate exclusion against. Required if the dncSourceType is rds_custom. Since custom_exclusion_column cannot be updated, changing this value after deployment 
+				will cause the dnc list to be destroyed and recreated with a new GUID.`,
+				Optional: true,
+				Type:     schema.TypeString,
+				ForceNew: true,
 			},
 			`entries`: {
 				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past.`,

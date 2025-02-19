@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -26,11 +26,11 @@ func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration
 
 	phones, resp, err := pp.getAllPhones(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get page of phones error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of phones error: %s", err), resp)
 	}
 
 	for _, phone := range *phones {
-		resources[*phone.Id] = &resourceExporter.ResourceMeta{Name: *phone.Name}
+		resources[*phone.Id] = &resourceExporter.ResourceMeta{BlockLabel: *phone.Name}
 	}
 	return resources, nil
 }
@@ -41,7 +41,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to create phone %v", *phoneConfig.Name), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to create phone %v", *phoneConfig.Name), err)
 	}
 
 	log.Printf("Creating phone %s", *phoneConfig.Name)
@@ -49,7 +49,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone %s error: %s", *phoneConfig.Name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create phone %s error: %s", *phoneConfig.Name, err), resp)
 		}
 		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID)
 
@@ -57,7 +57,7 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 		webRtcUserId := d.Get("web_rtc_user_id")
 		if webRtcUserId != "" {
-			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string))
+			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string), *phone.Id)
 			if diagErr != nil {
 				return resp, diagErr
 			}
@@ -77,21 +77,32 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPhoneProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhone(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading phone %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentPhone, resp, getErr := pp.getPhoneById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		_ = d.Set("name", *currentPhone.Name)
-		_ = d.Set("site_id", *currentPhone.Site.Id)
-		_ = d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
+		if currentPhone.Site != nil && currentPhone.Site.Id != nil {
+			_ = d.Set("site_id", *currentPhone.Site.Id)
+			log.Printf("Phone ID = %s and the site_id = %s", d.Id(), *currentPhone.Site.Id)
+		} else {
+			log.Printf("Phone ID = %s and the site_id is nil", d.Id())
+		}
+
+		if currentPhone.Name != nil {
+			_ = d.Set("name", *currentPhone.Name)
+		}
+
+		if currentPhone.PhoneBaseSettings != nil && currentPhone.PhoneBaseSettings.Id != nil {
+			_ = d.Set("phone_base_settings_id", *currentPhone.PhoneBaseSettings.Id)
+		}
 
 		if currentPhone.State != nil {
 			_ = d.Set("state", *currentPhone.State)
@@ -135,23 +146,21 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	phoneConfig, err := getPhoneFromResourceData(ctx, pp, d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, fmt.Sprintf("failed to updated phone %v", *phoneConfig.Name), err)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to updated phone %v", *phoneConfig.Name), err)
 	}
 	log.Printf("Updating phone %s", *phoneConfig.Name)
 	phone, resp, err := pp.updatePhone(ctx, d.Id(), phoneConfig)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update phone %s error: %s", *phoneConfig.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update phone %s error: %s", *phoneConfig.Name, err), resp)
 	}
 
 	log.Printf("Updated phone %s", *phone.Id)
 
 	webRtcUserId := d.Get("web_rtc_user_id")
 	if webRtcUserId != "" {
-		if d.HasChange("web_rtc_user_id") {
-			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string))
-			if diagErr != nil {
-				return diagErr
-			}
+		diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string), *phone.Id)
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -172,7 +181,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	*/
 	time.Sleep(5 * time.Second)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete phone %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -183,7 +192,7 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Deleted Phone %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Phone %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting Phone %s | error: %s", d.Id(), err), resp))
 		}
 
 		if phone.State != nil && *phone.State == "deleted" {
@@ -192,6 +201,6 @@ func deletePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("phone %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("phone %s still exists", d.Id()), resp))
 	})
 }

@@ -2,10 +2,12 @@ package external_contacts
 
 import (
 	"fmt"
+	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -28,8 +30,9 @@ func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2
 	otherEmail := d.Get("other_email").(string)
 	surveyOptOut := d.Get("survey_opt_out").(bool)
 	externalSystemUrl := d.Get("external_system_url").(string)
+	externalOrganizationId := d.Get("external_organization_id").(string)
 
-	return platformclientv2.Externalcontact{
+	externalContact := platformclientv2.Externalcontact{
 		FirstName:         &firstName,
 		MiddleName:        &middleName,
 		LastName:          &lastName,
@@ -50,6 +53,12 @@ func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2
 		SurveyOptOut:      &surveyOptOut,
 		ExternalSystemUrl: &externalSystemUrl,
 	}
+
+	if externalOrganizationId != "" {
+		externalContact.ExternalOrganization = &platformclientv2.Externalorganization{Id: &externalOrganizationId}
+	}
+
+	return externalContact
 }
 
 // buildPhonenumberFromData is a helper method to map phone data to the GenesysCloud platformclientv2.PhoneNumber
@@ -57,25 +66,27 @@ func buildPhonenumberFromData(phoneData []interface{}) *platformclientv2.Phonenu
 	phoneMap := phoneData[0].(map[string]interface{})
 
 	display := phoneMap["display"].(string)
-	extension := phoneMap["extension"].(int)
 	acceptSMS := phoneMap["accepts_sms"].(bool)
 	e164 := phoneMap["e164"].(string)
 	countryCode := phoneMap["country_code"].(string)
-
-	return &platformclientv2.Phonenumber{
+	phoneNumber := &platformclientv2.Phonenumber{
 		Display:     &display,
-		Extension:   &extension,
 		AcceptsSMS:  &acceptSMS,
 		E164:        &e164,
 		CountryCode: &countryCode,
 	}
+	extension := phoneMap["extension"].(int)
+	if extension != 0 {
+		phoneNumber.Extension = &extension
+	}
+	return phoneNumber
+
 }
 
 // buildSdkPhoneNumber is a helper method to build a Genesys Cloud SDK PhoneNumber
 func buildSdkPhoneNumber(d *schema.ResourceData, key string) *platformclientv2.Phonenumber {
 	if d.Get(key) != nil {
 		phoneData := d.Get(key).([]interface{})
-
 		if len(phoneData) > 0 {
 			return buildPhonenumberFromData(phoneData)
 		}
@@ -85,11 +96,20 @@ func buildSdkPhoneNumber(d *schema.ResourceData, key string) *platformclientv2.P
 
 // flattenPhoneNumber converts a platformclientv2.Phonenumber into a map and then into array for consumption by Terraform
 func flattenPhoneNumber(phonenumber *platformclientv2.Phonenumber) []interface{} {
+	if phonenumber == nil {
+		return nil
+	}
+
 	phonenumberInterface := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "display", phonenumber.Display)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "extension", phonenumber.Extension)
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "accepts_sms", phonenumber.AcceptsSMS)
-	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "e164", phonenumber.E164)
+	if phonenumber.E164 != nil && *phonenumber.E164 != "" {
+		var phoneNumberE164 string
+		utilE164 := util.NewUtilE164Service()
+		phoneNumberE164 = utilE164.FormatAsCalculatedE164Number(*phonenumber.E164)
+		phonenumberInterface["e164"] = phoneNumberE164
+	}
 	resourcedata.SetMapValueIfNotNil(phonenumberInterface, "country_code", phonenumber.CountryCode)
 	return []interface{}{phonenumberInterface}
 }
@@ -187,8 +207,13 @@ func buildSdkLineId(d *schema.ResourceData, key string) *platformclientv2.Lineid
 				},
 			}
 			lineId := platformclientv2.Lineid{
-				DisplayName: &displayname,
-				Ids:         &ids,
+				Ids: &ids,
+			}
+
+			// https://inindca.atlassian.net/browse/DEVTOOLING-894
+			// Only add DisplayName if it is non-empty
+			if displayname != "" {
+				lineId.DisplayName = &displayname
 			}
 			return &lineId
 		}
@@ -198,15 +223,24 @@ func buildSdkLineId(d *schema.ResourceData, key string) *platformclientv2.Lineid
 
 // flattenSdkLineId maps platformclientv2.Lineid to a []interace{}
 func flattenSdkLineId(lineId *platformclientv2.Lineid) []interface{} {
+	if lineId == nil {
+		return nil
+	}
 	lineInterface := make(map[string]interface{})
-	flattenUserid := flattenSdkLineUserId(lineId.Ids)
-	lineInterface["display_name"] = *lineId.DisplayName
-	lineInterface["ids"] = &flattenUserid
+
+	if flattenUserid := flattenSdkLineUserId(lineId.Ids); flattenUserid != nil {
+		lineInterface["ids"] = &flattenUserid
+	}
+	resourcedata.SetMapValueIfNotNil(lineInterface, "display_name", lineId.DisplayName)
+
 	return []interface{}{lineInterface}
 }
 
 // flattenSdkLineUserId maps an []platformclientv2.Lineuserid to a []interface{}
 func flattenSdkLineUserId(lineUserdid *[]platformclientv2.Lineuserid) []interface{} {
+	if lineUserdid == nil || len(*lineUserdid) == 0 {
+		return nil
+	}
 	lineUseridInterface := make(map[string]interface{})
 	if (*lineUserdid)[0].UserId != nil {
 		lineUseridInterface["user_id"] = (*lineUserdid)[0].UserId
@@ -233,6 +267,9 @@ func buildSdkWhatsAppId(d *schema.ResourceData, key string) *platformclientv2.Wh
 
 // flattenSdkWhatsAppId maps a Genesys Cloud platformclientv2.Whatsappid to a []interface{}
 func flattenSdkWhatsAppId(whatsappId *platformclientv2.Whatsappid) []interface{} {
+	if whatsappId.DisplayName == nil || whatsappId.PhoneNumber == nil {
+		return nil
+	}
 	whatsappInterface := make(map[string]interface{})
 	flattenPhonenumber := flattenPhoneNumber(whatsappId.PhoneNumber)
 	whatsappInterface["display_name"] = *whatsappId.DisplayName
@@ -266,15 +303,24 @@ func buildSdkFacebookId(d *schema.ResourceData, key string) *platformclientv2.Fa
 
 // flattenSdkFacebookId maps a Genesys Cloud platformclientv2.Facebookid object to a []interface{}
 func flattenSdkFacebookId(facebookid *platformclientv2.Facebookid) []interface{} {
+	if facebookid == nil {
+		return nil
+	}
+
 	whatsappInterface := make(map[string]interface{})
-	flattenScopedid := flattenSdkFacebookScopedId(facebookid.Ids)
-	whatsappInterface["display_name"] = *facebookid.DisplayName
-	whatsappInterface["ids"] = &flattenScopedid
+	resourcedata.SetMapValueIfNotNil(whatsappInterface, "display_name", facebookid.DisplayName)
+	if flattenScopedId := flattenSdkFacebookScopedId(facebookid.Ids); flattenScopedId != nil {
+		whatsappInterface["ids"] = &flattenScopedId
+	}
+
 	return []interface{}{whatsappInterface}
 }
 
 // flattenSdkFacebookScopedId maps a Genesys Cloud platformclientv2.Facebookscopedid struct ot a []interface{}
 func flattenSdkFacebookScopedId(facebookScopedid *[]platformclientv2.Facebookscopedid) []interface{} {
+	if facebookScopedid == nil || len(*facebookScopedid) == 0 {
+		return nil
+	}
 	facebookScopedidInterface := make(map[string]interface{})
 	if (*facebookScopedid)[0].ScopedId != nil {
 		facebookScopedidInterface["scoped_id"] = (*facebookScopedid)[0].ScopedId
@@ -294,9 +340,10 @@ func hashFormattedPhoneNumber(val string) int {
 	return schema.HashString(formattedNumber)
 }
 
-func GenerateBasicExternalContactResource(resourceID string, title string) string {
+func GenerateBasicExternalContactResource(resourceLabel string, title string, extras ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_externalcontacts_contact" "%s" {
 		title = "%s"
+		%s
 	}
-	`, resourceID, title)
+	`, resourceLabel, title, strings.Join(extras, "\n"))
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_group"
+const ResourceType = "genesyscloud_group"
 
 var (
 	groupPhoneType       = "PHONE"
@@ -39,14 +39,14 @@ var (
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceGroup())
-	regInstance.RegisterDataSource(resourceName, DataSourceGroup())
-	regInstance.RegisterExporter(resourceName, GroupExporter())
+	regInstance.RegisterResource(ResourceType, ResourceGroup())
+	regInstance.RegisterDataSource(ResourceType, DataSourceGroup())
+	regInstance.RegisterExporter(ResourceType, GroupExporter())
 }
 
 func GroupExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllGroups),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGroups),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"owner_ids":  {RefType: "genesyscloud_user"},
 			"member_ids": {RefType: "genesyscloud_user"},

@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceIdpGeneric(t *testing.T) {
@@ -52,7 +52,6 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 					util.ValidateStringInArray("genesyscloud_idp_generic.generic", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "relying_party_identifier", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "logo_image_data", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_generic.generic", "endpoint_compression", util.FalseValue),

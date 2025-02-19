@@ -2,8 +2,8 @@ package orgauthorization_pairing
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/group"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -26,9 +26,9 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOrgauthorizationPairing()
-	providerResources["genesyscloud_user"] = genesyscloud.ResourceUser()
-	providerResources["genesyscloud_group"] = group.ResourceGroup()
+	providerResources[ResourceType] = ResourceOrgauthorizationPairing()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[group.ResourceType] = group.ResourceGroup()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -19,12 +19,12 @@ resource_genesycloud_idp_gsuite_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_gsuite datasource.
 4.  The resource exporter configuration for the idp_gsuite exporter.
 */
-const resourceName = "genesyscloud_idp_gsuite"
+const ResourceType = "genesyscloud_idp_gsuite"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceIdpGsuite())
-	regInstance.RegisterExporter(resourceName, IdpGsuiteExporter())
+	regInstance.RegisterResource(ResourceType, ResourceIdpGsuite())
+	regInstance.RegisterExporter(ResourceType, IdpGsuiteExporter())
 }
 
 // ResourceIdpGsuite registers the genesyscloud_idp_gsuite resource with Terraform
@@ -80,6 +80,7 @@ func ResourceIdpGsuite() *schema.Resource {
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to GSuite.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`certificates`: {

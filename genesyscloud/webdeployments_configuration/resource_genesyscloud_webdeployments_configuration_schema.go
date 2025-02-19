@@ -11,13 +11,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_webdeployments_configuration"
+const ResourceType = "genesyscloud_webdeployments_configuration"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceWebDeploymentsConfiguration())
-	l.RegisterResource(resourceName, ResourceWebDeploymentConfiguration())
-	l.RegisterExporter(resourceName, WebDeploymentConfigurationExporter())
+	l.RegisterDataSource(ResourceType, DataSourceWebDeploymentsConfiguration())
+	l.RegisterResource(ResourceType, ResourceWebDeploymentConfiguration())
+	l.RegisterExporter(ResourceType, WebDeploymentConfigurationExporter())
 }
 
 var (
@@ -335,6 +335,12 @@ var (
 				Optional:    true,
 				Computed:    true,
 			},
+			"allow_draw": {
+				Description: "Whether drawing is enabled or not",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"channels": {
 				Description: "List of channels through which cobrowse is available (for now only Webmessaging and Voice)",
 				Type:        schema.TypeList,
@@ -371,7 +377,7 @@ var (
 							Description:  "The condition to be applied to the `url_fragment`. Conditions are 'includes', 'does_not_include', 'starts_with', 'ends_with', 'equals'",
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"includes", "does_not_include", "starts_with", "ends_with", "equals"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"Includes", "DoesNotInclude", "StartsWith", "EndsWith", "Equals"}, true),
 						},
 					},
 				},
@@ -748,6 +754,11 @@ var (
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"allow_session_upgrade": {
+				Description: "Allow end-users to upgrade an anonymous session to authenticated conversation.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 		},
 	}
 )
@@ -891,6 +902,11 @@ func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
 		ExcludedAttributes: []string{"version"},
 		RemoveIfMissing: map[string][]string{
 			"authentication_settings": {"integration_id"},
+		},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"authentication_settings.integration_id": {RefType: "genesyscloud_integration"},
+			"enabled_categories.category_id":         {RefType: "genesyscloud_knowledge_category"},
+			"apps.knowledge.knowlege_base_id":        {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
 	}
 }

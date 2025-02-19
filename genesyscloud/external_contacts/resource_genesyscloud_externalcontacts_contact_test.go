@@ -2,13 +2,17 @@ package external_contacts
 
 import (
 	"fmt"
+	"strconv"
+	externalContactOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -17,8 +21,8 @@ tests for external_contacts.
 */
 func TestAccResourceExternalContacts(t *testing.T) {
 	var (
-		contactresource1 = "externalcontact-contact1"
-		title1           = "integration team"
+		contactResourceLabel1 = "externalcontact-contact1"
+		title1                = "integration team"
 
 		firstname2  = "jean"
 		middlename2 = "jacques"
@@ -62,20 +66,20 @@ func TestAccResourceExternalContacts(t *testing.T) {
 			{
 				// Create
 				Config: GenerateBasicExternalContactResource(
-					contactresource1,
+					contactResourceLabel1,
 					title1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "title", title1),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "first_name", ""),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "middle_name", ""),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "last_name", ""),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "title", title1),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "first_name", ""),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "middle_name", ""),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "last_name", ""),
 				),
 			},
 			{
 				// Update with more attributes
 				Config: generateFullExternalContactResource(
-					contactresource1,
+					contactResourceLabel1,
 					firstname2,
 					middlename2,
 					lastname2,
@@ -106,54 +110,166 @@ func TestAccResourceExternalContacts(t *testing.T) {
 					externalsystemurl,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "title", title2),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "first_name", firstname2),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "middle_name", middlename2),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "last_name", lastname2),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "work_phone.0.display", phoneDisplay),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "work_phone.0.extension", phoneExtension),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "work_phone.0.accepts_sms", phoneAcceptssms),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "work_phone.0.e164", phoneE164),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "work_phone.0.country_code", phoneCountrycode),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "cell_phone.0.display", phoneDisplay),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "cell_phone.0.extension", phoneExtension),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "cell_phone.0.accepts_sms", phoneAcceptssms),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "cell_phone.0.e164", phoneE164),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "cell_phone.0.country_code", phoneCountrycode),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "home_phone.0.display", phoneDisplay),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "home_phone.0.extension", phoneExtension),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "home_phone.0.accepts_sms", phoneAcceptssms),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "home_phone.0.e164", phoneE164),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "home_phone.0.country_code", phoneCountrycode),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "other_phone.0.display", phoneDisplay),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "other_phone.0.extension", phoneExtension),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "other_phone.0.accepts_sms", phoneAcceptssms),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "other_phone.0.e164", phoneE164),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "other_phone.0.country_code", phoneCountrycode),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.address1", address1),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.address2", address2),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.city", city),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.state", state),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.postal_code", postal_code),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "address.0.country_code", country_code),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.id", twitterId),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.name", twitterName),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "twitter_id.0.screen_name", twitterScreenname),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "line_id.0.ids.0.user_id", lineId),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "line_id.0.display_name", lineDisplayname),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.display", whatsappPhoneDisplay),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.e164", whatsappPhoneE164),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.phone_number.0.country_code", whatsappPhoneCountryCode),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "whatsapp_id.0.display_name", whatsappPhoneDisplayName),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "facebook_id.0.ids.0.scoped_id", facebookScopedid),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "facebook_id.0.display_name", facebookDisplayname),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "survey_opt_out", surveyoptout),
-					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactresource1, "external_system_url", externalsystemurl),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "title", title2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "first_name", firstname2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "middle_name", middlename2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "last_name", lastname2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "work_phone.0.display", phoneDisplay),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "work_phone.0.extension", phoneExtension),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "work_phone.0.accepts_sms", phoneAcceptssms),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "work_phone.0.e164", phoneE164),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "work_phone.0.country_code", phoneCountrycode),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "cell_phone.0.display", phoneDisplay),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "cell_phone.0.extension", phoneExtension),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "cell_phone.0.accepts_sms", phoneAcceptssms),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "cell_phone.0.e164", phoneE164),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "cell_phone.0.country_code", phoneCountrycode),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "home_phone.0.display", phoneDisplay),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "home_phone.0.extension", phoneExtension),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "home_phone.0.accepts_sms", phoneAcceptssms),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "home_phone.0.e164", phoneE164),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "home_phone.0.country_code", phoneCountrycode),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "other_phone.0.display", phoneDisplay),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "other_phone.0.extension", phoneExtension),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "other_phone.0.accepts_sms", phoneAcceptssms),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "other_phone.0.e164", phoneE164),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "other_phone.0.country_code", phoneCountrycode),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "address.0.address1", address1),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "address.0.address2", address2),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "address.0.city", city),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "address.0.state", state),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "address.0.postal_code", postal_code),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "address.0.country_code", country_code),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "twitter_id.0.id", twitterId),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "twitter_id.0.name", twitterName),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "twitter_id.0.screen_name", twitterScreenname),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "line_id.0.ids.0.user_id", lineId),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "line_id.0.display_name", lineDisplayname),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "whatsapp_id.0.phone_number.0.display", whatsappPhoneDisplay),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "whatsapp_id.0.phone_number.0.e164", whatsappPhoneE164),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "whatsapp_id.0.phone_number.0.country_code", whatsappPhoneCountryCode),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "whatsapp_id.0.display_name", whatsappPhoneDisplayName),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "facebook_id.0.ids.0.scoped_id", facebookScopedid),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "facebook_id.0.display_name", facebookDisplayname),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "survey_opt_out", surveyoptout),
+					resource.TestCheckResourceAttr("genesyscloud_externalcontacts_contact."+contactResourceLabel1, "external_system_url", externalsystemurl),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_externalcontacts_contact." + contactresource1,
+				ResourceName:      "genesyscloud_externalcontacts_contact." + contactResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyContactDestroyed,
+	})
+}
+
+func TestAccResourceExternalContactsOrganizationRef(t *testing.T) {
+	var (
+		organizationResourceLabel1 = "external_organization_test"
+		organizationResourcePath1  = externalContactOrganization.ResourceType + "." + organizationResourceLabel1
+		name1                      = "ABCCorp-" + uuid.NewString()
+		phoneDisplay1              = "+1 321-700-1243"
+		countryCode1               = "US"
+		address1                   = "1011 New Hope St"
+		city1                      = "Norristown"
+		state1                     = "PA"
+		postalCode1                = "19401"
+		twitterId1                 = "twitterId"
+		twitterName1               = "twitterName"
+		twitterScreenName1         = "twitterScreenname"
+		symbol1                    = "ABC"
+		exchange1                  = "NYSE"
+		tags1                      = []string{
+			strconv.Quote("news"),
+			strconv.Quote("channel"),
+		}
+
+		organizationResourceLabel2 = "new_external_organization"
+		organizationResourcePath2  = externalContactOrganization.ResourceType + "." + organizationResourceLabel2
+		name2                      = "NewCorp-" + uuid.NewString()
+		phoneDisplay2              = "+1 321-990-9876"
+		countryCode2               = "US"
+		address2                   = "65 Upper Street"
+		city2                      = "Springfield"
+		state2                     = "MO"
+		postalCode2                = "67890"
+		twitterId2                 = "twitterId2"
+		twitterName2               = "twitterName2"
+		twitterScreenName2         = "twitterScreenname2"
+		symbol2                    = "NEW"
+		exchange2                  = "NYSE"
+		tags2                      = []string{
+			strconv.Quote("SWE"),
+			strconv.Quote("development"),
+		}
+	)
+	var (
+		contactResourceLabel                 = "testing_contact"
+		contactResourcePath                  = ResourceType + "." + contactResourceLabel
+		title                                = "testing team"
+		title2                               = "dev team"
+		externalContactOrganizationResource1 = externalContactOrganization.GenerateBasicExternalOrganizationResource(
+			organizationResourceLabel1,
+			name1,
+			phoneDisplay1, countryCode1,
+			address1, city1, state1, postalCode1, countryCode1,
+			twitterId1, twitterName1, twitterScreenName1,
+			symbol1, exchange1,
+			tags1,
+			"",
+		)
+		externalContactOrganizationResource2 = externalContactOrganization.GenerateBasicExternalOrganizationResource(
+			organizationResourceLabel2,
+			name2,
+			phoneDisplay2, countryCode2,
+			address2, city2, state2, postalCode2, countryCode2,
+			twitterId2, twitterName2, twitterScreenName2,
+			symbol2, exchange2,
+			tags2,
+			"",
+		)
+	)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				//Create
+				Config: externalContactOrganizationResource1 +
+					GenerateBasicExternalContactResource(
+						contactResourceLabel,
+						title,
+						"external_organization_id = "+organizationResourcePath1+".id",
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(contactResourcePath, "title", title),
+					resource.TestCheckResourceAttrPair(
+						organizationResourcePath1, "id",
+						contactResourcePath, "external_organization_id",
+					),
+				),
+			},
+			{
+				//Update
+				Config: externalContactOrganizationResource2 + GenerateBasicExternalContactResource(
+					contactResourceLabel,
+					title2,
+					"external_organization_id = "+organizationResourcePath2+".id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(contactResourcePath, "title", title2),
+					resource.TestCheckResourceAttrPair(
+						organizationResourcePath2, "id",
+						contactResourcePath, "external_organization_id",
+					),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      contactResourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -163,7 +279,7 @@ func TestAccResourceExternalContacts(t *testing.T) {
 }
 
 func generateFullExternalContactResource(
-	resourceID string,
+	resourceLabel string,
 	firstname string, middlename string, lastname string, title string,
 	phoneDisplay string, phoneExtension string, phoneAcceptssms string, phoneE164 string, phoneCountrycode string,
 	address1 string, address2 string, city string, state string, postal_code string, country_code string,
@@ -212,7 +328,7 @@ func generateFullExternalContactResource(
 		  state = "%s"
 		  postal_code = "%s"
 		  country_code = "%s"
-		} 
+		}
 		twitter_id {
 		  id = "%s"
 		  name = "%s"
@@ -239,9 +355,9 @@ func generateFullExternalContactResource(
 			display_name = "%s"
 		  }
 		survey_opt_out = %s
-		external_system_url = "%s"  
+		external_system_url = "%s"
 	}
-	`, resourceID, firstname, middlename, lastname, title,
+	`, resourceLabel, firstname, middlename, lastname, title,
 		phoneDisplay, phoneExtension, phoneAcceptssms, phoneE164, phoneCountrycode,
 		phoneDisplay, phoneExtension, phoneAcceptssms, phoneE164, phoneCountrycode,
 		phoneDisplay, phoneExtension, phoneAcceptssms, phoneE164, phoneCountrycode,

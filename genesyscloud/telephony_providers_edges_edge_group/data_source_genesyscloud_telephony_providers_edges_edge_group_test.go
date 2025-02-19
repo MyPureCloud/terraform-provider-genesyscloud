@@ -3,7 +3,7 @@ package telephony_providers_edges_edge_group
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -14,24 +14,16 @@ import (
 func TestAccDataSourceEdgeGroup(t *testing.T) {
 	t.Parallel()
 	var (
-		edgeGroupRes          = "edgeGroup1234"
-		edgeGroupData         = "edgeGroupData"
-		edgeGroupName1        = "test edge group " + uuid.NewString()
-		edgeGroupDescription1 = "test description 1"
+		edgeGroupResourceLabel = "edgeGroup1234"
+		edgeGroupDataLabel     = "edgeGroupData"
+		edgeGroupName1         = "test edge group " + uuid.NewString()
+		edgeGroupDescription1  = "test description 1"
 
-		phoneTrunkBaseSettingsRes1 = "phoneTrunkBaseSettingsRes1"
-		phoneTrunkBaseSettingsRes2 = "phoneTrunkBaseSettingsRes2"
+		phoneTrunkBaseSettingsResourceLabel1 = "phoneTrunkBaseSettingsRes1"
 	)
 
-	phoneTrunkBaseSetting1 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-		phoneTrunkBaseSettingsRes1,
-		"phone trunk base settings "+uuid.NewString(),
-		"",
-		"phone_connections_webrtc.json",
-		"PHONE",
-		false)
-	phoneTrunkBaseSetting2 := telephony.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-		phoneTrunkBaseSettingsRes2,
+	phoneTrunkBaseSetting1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+		phoneTrunkBaseSettingsResourceLabel1,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
 		"phone_connections_webrtc.json",
@@ -43,22 +35,21 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: phoneTrunkBaseSetting1 + phoneTrunkBaseSetting2 + GenerateEdgeGroupResourceWithCustomAttrs(
-					edgeGroupRes,
+				Config: phoneTrunkBaseSetting1 + GenerateEdgeGroupResourceWithCustomAttrs(
+					edgeGroupResourceLabel,
 					edgeGroupName1,
 					edgeGroupDescription1,
 					false,
 					false,
-					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes1+".id",
-						"genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsRes2+".id"),
+					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsResourceLabel1+".id"),
 				) + generateEdgeGroupDataSource(
-					edgeGroupData,
+					edgeGroupDataLabel,
 					edgeGroupName1,
-					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes,
+					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupData, "id", "genesyscloud_telephony_providers_edges_edge_group."+edgeGroupRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupDataLabel, "id", "genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "id"),
 				),
 			},
 		},
@@ -71,8 +62,8 @@ This test expects that the org has a product called "voice" enabled on it. If th
 func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 	t.Parallel()
 	var (
-		edgeGroupData  = "edgeGroupData"
-		edgeGroupName1 = "PureCloud Voice - AWS"
+		edgeGroupDataLabel = "edgeGroupData"
+		edgeGroupName1     = "PureCloud Voice - AWS"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -81,13 +72,13 @@ func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateEdgeGroupDataSource(
-					edgeGroupData,
+					edgeGroupDataLabel,
 					edgeGroupName1,
 					"",
 					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupData, "name", edgeGroupName1),
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupDataLabel, "name", edgeGroupName1),
 				),
 			},
 		},
@@ -95,7 +86,7 @@ func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 }
 
 func generateEdgeGroupDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -106,5 +97,5 @@ func generateEdgeGroupDataSource(
 		managed = %t
 		depends_on=[%s]
 	}
-	`, resourceID, name, managed, dependsOnResource)
+	`, resourceLabel, name, managed, dependsOnResource)
 }

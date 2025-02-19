@@ -1,11 +1,12 @@
 package outbound_callanalysisresponseset
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -16,13 +17,13 @@ resource_genesycloud_outbound_callanalysisresponseset_schema.go holds four funct
 3.  The datasource schema definitions for the outbound_callanalysisresponseset datasource.
 4.  The resource exporter configuration for the outbound_callanalysisresponseset exporter.
 */
-const resourceName = "genesyscloud_outbound_callanalysisresponseset"
+const ResourceType = "genesyscloud_outbound_callanalysisresponseset"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundCallanalysisresponseset())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundCallanalysisresponseset())
-	regInstance.RegisterExporter(resourceName, OutboundCallanalysisresponsesetExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundCallanalysisresponseset())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundCallanalysisresponseset())
+	regInstance.RegisterExporter(ResourceType, OutboundCallanalysisresponsesetExporter())
 }
 
 var (
@@ -164,8 +165,16 @@ func OutboundCallanalysisresponsesetExporter() *resourceExporter.ResourceExporte
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundCallanalysisresponsesets),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"responses.callable_person.data":  {RefType: "genesyscloud_flow"},
-			"responses.callable_machine.data": {RefType: "genesyscloud_flow"},
+			"responses.callable_busy.data":          {RefType: "genesyscloud_flow"},
+			"responses.callable_disconnect.data":    {RefType: "genesyscloud_flow"},
+			"responses.callable_fax.data":           {RefType: "genesyscloud_flow"},
+			"responses.callable_lineconnected.data": {RefType: "genesyscloud_flow"},
+			"responses.callable_machine.data":       {RefType: "genesyscloud_flow"},
+			"responses.callable_noanswer.data":      {RefType: "genesyscloud_flow"},
+			"responses.callable_person.data":        {RefType: "genesyscloud_flow"},
+			"responses.callable_sit.data":           {RefType: "genesyscloud_flow"},
+			"responses.uncallable_notfound.data":    {RefType: "genesyscloud_flow"},
+			"responses.uncallable_sit.data":         {RefType: "genesyscloud_flow"},
 		},
 	}
 }

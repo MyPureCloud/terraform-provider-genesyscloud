@@ -6,16 +6,29 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	archScheduleGroup "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	"terraform-provider-genesyscloud/genesyscloud/group"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSettings "terraform-provider-genesyscloud/genesyscloud/routing_settings"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	routingWrapupCode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	extensionPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var (
@@ -36,35 +49,36 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_flow"] = architect_flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_group"] = group.ResourceGroup()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_location"] = ResourceLocation()
-	providerResources["genesyscloud_auth_division"] = ResourceAuthDivision()
-	providerResources["genesyscloud_journey_action_map"] = ResourceJourneyActionMap()
-	providerResources["genesyscloud_journey_action_template"] = ResourceJourneyActionTemplate()
-	providerResources["genesyscloud_journey_outcome"] = ResourceJourneyOutcome()
-	providerResources["genesyscloud_journey_segment"] = ResourceJourneySegment()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_knowledge_document"] = ResourceKnowledgeDocument()
-	providerResources["genesyscloud_knowledge_document_variation"] = ResourceKnowledgeDocumentVariation()
-	providerResources["genesyscloud_knowledge_category"] = ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_label"] = ResourceKnowledgeLabel()
-	providerResources["genesyscloud_location"] = ResourceLocation()
+	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
+	providerResources[group.ResourceType] = group.ResourceGroup()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[location.ResourceType] = location.ResourceLocation()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
+	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
+	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
+	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
+	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
+	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
+	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
+	providerResources[routingWrapupCode.ResourceType] = routingWrapupCode.ResourceRoutingWrapupCode()
+	providerResources[archScheduleGroup.ResourceType] = archScheduleGroup.ResourceArchitectSchedulegroups()
+	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
+	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
+	providerResources[cMessagingSettings.ResourceType] = cMessagingSettings.ResourceConversationsMessagingSettings()
+	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
+	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
+	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_routing_email_domain"] = ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_language"] = ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_skill"] = ResourceRoutingSkill()
-	providerResources["genesyscloud_routing_skill_group"] = ResourceRoutingSkillGroup()
-	providerResources["genesyscloud_routing_settings"] = routingSettings.ResourceRoutingSettings()
-	providerResources["genesyscloud_routing_utilization"] = routingUtilization.ResourceRoutingUtilization()
-	providerResources["genesyscloud_routing_wrapupcode"] = ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_user"] = ResourceUser()
 	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
-	providerResources["genesyscloud_architect_schedulegroups"] = archScheduleGroup.ResourceArchitectSchedulegroups()
-	providerResources["genesyscloud_architect_schedules"] = architectSchedules.ResourceArchitectSchedules()
-	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
+	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
+	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
+	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
+	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
+	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
+	providerResources["genesyscloud_widget_deployment"] = ResourceWidgetDeployment()
 
 }
 
@@ -73,33 +87,24 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_flow"] = architect_flow.DataSourceArchitectFlow()
-	providerDataSources["genesyscloud_group"] = group.DataSourceGroup()
-	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
-	providerDataSources["genesyscloud_routing_queue"] = routingQueue.DataSourceRoutingQueue()
-	providerDataSources["genesyscloud_location"] = DataSourceLocation()
-	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_auth_division"] = dataSourceAuthDivision()
-	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
-	providerDataSources["genesyscloud_journey_action_map"] = dataSourceJourneyActionMap()
-	providerDataSources["genesyscloud_journey_action_template"] = dataSourceJourneyActionTemplate()
-	providerDataSources["genesyscloud_journey_outcome"] = dataSourceJourneyOutcome()
-	providerDataSources["genesyscloud_journey_segment"] = dataSourceJourneySegment()
-	providerDataSources["genesyscloud_knowledge_knowledgebase"] = dataSourceKnowledgeKnowledgebase()
-	providerDataSources["genesyscloud_knowledge_category"] = dataSourceKnowledgeCategory()
-	providerDataSources["genesyscloud_knowledge_label"] = dataSourceKnowledgeLabel()
-	providerDataSources["genesyscloud_location"] = DataSourceLocation()
+	providerDataSources[architect_flow.ResourceType] = architect_flow.DataSourceArchitectFlow()
+	providerDataSources[group.ResourceType] = group.DataSourceGroup()
+	providerDataSources[routingQueue.ResourceType] = routingQueue.DataSourceRoutingQueue()
+	providerDataSources[location.ResourceType] = location.DataSourceLocation()
+	providerDataSources[authDivision.ResourceType] = authDivision.DataSourceAuthDivision()
+	providerDataSources[user.ResourceType] = user.DataSourceUser()
+	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
+	providerDataSources[routingEmailDomain.ResourceType] = routingEmailDomain.DataSourceRoutingEmailDomain()
+	providerDataSources[routingSkillGroup.ResourceType] = routingSkillGroup.DataSourceRoutingSkillGroup()
+	providerDataSources[routingWrapupCode.ResourceType] = routingWrapupCode.DataSourceRoutingWrapupCode()
+	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
+	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
 	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
-	providerDataSources["genesyscloud_routing_language"] = dataSourceRoutingLanguage()
-	providerDataSources["genesyscloud_routing_skill"] = dataSourceRoutingSkill()
-	providerDataSources["genesyscloud_routing_skill_group"] = dataSourceRoutingSkillGroup()
-	providerDataSources["genesyscloud_routing_email_domain"] = DataSourceRoutingEmailDomain()
-	providerDataSources["genesyscloud_routing_wrapupcode"] = DataSourceRoutingWrapupcode()
-	providerDataSources["genesyscloud_user"] = DataSourceUser()
+	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 	providerDataSources["genesyscloud_widget_deployment"] = dataSourceWidgetDeployments()
-	providerResources["genesyscloud_routing_utilization_label"] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
+
 }
 
 func initTestResources() {

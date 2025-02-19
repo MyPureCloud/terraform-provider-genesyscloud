@@ -2,10 +2,14 @@ package routing_email_route
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 
 	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,13 +36,13 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceRoutingEmailRoute()
-	providerResources["genesyscloud_routing_email_domain"] = genesyscloud.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_routing_language"] = genesyscloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_skill"] = genesyscloud.ResourceRoutingSkill()
-	providerResources["genesyscloud_flow"] = architectFlow.ResourceArchitectFlow()
-	providerResources["genesyscloud_routing_skill_group"] = genesyscloud.ResourceRoutingSkillGroup()
+	providerResources[ResourceType] = ResourceRoutingEmailRoute()
+	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
+	providerResources[architectFlow.ResourceType] = architectFlow.ResourceArchitectFlow()
+	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -46,7 +50,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.dataSourceMapMutex.Lock()
 	defer r.dataSourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRoutingEmailRoute()
+	providerDataSources[ResourceType] = DataSourceRoutingEmailRoute()
 }
 
 // initTestResources initializes all test resources and data sources.

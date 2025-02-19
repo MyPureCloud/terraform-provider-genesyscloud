@@ -1,11 +1,12 @@
 package telephony_providers_edges_did
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // providerDataSources holds a map of all registered data sources
@@ -24,8 +25,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_telephony_providers_edges_did_pool"] = didPool.ResourceTelephonyDidPool()
-	providerResources["genesyscloud_architect_ivr"] = archIvr.ResourceArchitectIvrConfig()
+	providerResources[didPool.ResourceType] = didPool.ResourceTelephonyDidPool()
+	providerResources[archIvr.ResourceType] = archIvr.ResourceArchitectIvrConfig()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -33,7 +34,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceDid()
+	providerDataSources[ResourceType] = DataSourceDid()
 }
 
 // initTestResources initializes all test resources and data sources.

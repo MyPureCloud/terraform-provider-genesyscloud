@@ -15,16 +15,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
 The resource_genesyscloud_outbound_settings.go contains all the methods that perform the core logic for a resource.
 */
 
-func getAllOutboundSettings(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllOutboundSettings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
+	proxy := getOutboundSettingsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "outbound_settings"}
+	_, resp, err := proxy.getOutboundSettings(ctx)
+	if err != nil {
+		if util.IsStatus404(resp) {
+			// Don't export if config doesn't exist
+			return resources, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
+	}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "outbound_settings"}
 	return resources, nil
 }
 
@@ -39,7 +52,7 @@ func createOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundSettingsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 	maxLineUtilization := d.Get("max_line_utilization").(float64)
@@ -48,15 +61,15 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
 	rescheduleTimeZoneSkippedContacts := d.Get("reschedule_time_zone_skipped_contacts").(bool)
 
-	log.Printf("Reading Outbound setting %s", d.Id())
+	log.Printf("Reading Outbound Settings %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		settings, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
+		settings, resp, getErr := proxy.getOutboundSettings(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Setting: %s", getErr), resp))
 
 		}
 
@@ -98,9 +111,9 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current Outbound settings version
-		setting, resp, getErr := proxy.getOutboundSettingsById(ctx, d.Id())
+		setting, resp, getErr := proxy.getOutboundSettings(ctx)
 		if getErr != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound Setting %s error: %s", d.Id(), getErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound Setting %s error: %s", d.Id(), getErr), resp)
 		}
 
 		update := platformclientv2.Outboundsettings{
@@ -124,9 +137,9 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 			update.AutomaticTimeZoneMapping = buildOutboundSettingsAutomaticTimeZoneMapping(d)
 		}
 
-		_, resp, err := proxy.updateOutboundSettings(ctx, d.Id(), &update)
+		_, resp, err := proxy.updateOutboundSettings(ctx, &update)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update Outbound settings %s error: %s", *setting.Name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound settings %s error: %s", *setting.Name, err), resp)
 		}
 		return nil, nil
 	})

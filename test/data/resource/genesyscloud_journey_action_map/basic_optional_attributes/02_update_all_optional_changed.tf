@@ -15,6 +15,12 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
     maximum_probability = 0.666
     probability         = 0.125
   }
+  # optional
+  trigger_with_outcome_quantile_conditions {
+    outcome_id                  = genesyscloud_journey_outcome.terraform_test_-TEST-CASE-_action_map_dependency.id
+    max_quantile_threshold      = 0.666
+    fallback_quantile_threshold = 0.125
+  }
   page_url_conditions {
     values   = ["some_other_value", "some_other_value_2"]
     operator = "containsAny"

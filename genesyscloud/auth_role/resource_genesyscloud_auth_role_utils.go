@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) (*platformclientv2.APIResponse, error) {
@@ -221,7 +221,7 @@ func flattenRoleConditionOperands(operands []platformclientv2.Domainresourcecond
 }
 
 func GenerateAuthRoleResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	description string,
 	nestedBlocks ...string) string {
@@ -230,7 +230,7 @@ func GenerateAuthRoleResource(
 		description = "%s"
 		%s
 	}
-	`, resourceID, name, description, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, description, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateRolePermissions(permissions ...string) string {
@@ -249,10 +249,10 @@ func GenerateRolePermPolicy(domain string, entityName string, actions ...string)
 }
 
 func GenerateDefaultAuthRoleDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string) string {
 	return fmt.Sprintf(`data "genesyscloud_auth_role" "%s" {
 		name = %s
 	}
-	`, resourceID, name)
+	`, resourceLabel, name)
 }

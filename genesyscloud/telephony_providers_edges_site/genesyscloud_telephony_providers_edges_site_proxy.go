@@ -5,7 +5,7 @@ import (
 	"fmt"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -37,7 +37,7 @@ type getAllSitesFunc func(ctx context.Context, p *SiteProxy, managed bool) (*[]p
 type createSiteFunc func(ctx context.Context, p *SiteProxy, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
 type deleteSiteFunc func(ctx context.Context, p *SiteProxy, siteId string) (*platformclientv2.APIResponse, error)
 type getSiteByIdFunc func(ctx context.Context, p *SiteProxy, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error)
-type getSiteIdByNameFunc func(ctx context.Context, p *SiteProxy, siteName string, managed bool) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error)
+type getSiteIdByNameFunc func(ctx context.Context, p *SiteProxy, siteName string) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error)
 type updateSiteFunc func(ctx context.Context, p *SiteProxy, siteId string, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
 
 type createSiteOutboundRouteFunc func(ctx context.Context, p *SiteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
@@ -147,18 +147,18 @@ func (p *SiteProxy) createSite(ctx context.Context, site *platformclientv2.Site)
 }
 
 // deleteSiteFunc deletes a Genesys Cloud Site by ID
-func (p *SiteProxy) deleteSite(ctx context.Context, siteId string) (*platformclientv2.APIResponse, error) {
+func (p *SiteProxy) DeleteSite(ctx context.Context, siteId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteSiteAttr(ctx, p, siteId)
 }
 
 // getSiteByIdFunc returns a single Genesys Cloud Site by Id
-func (p *SiteProxy) getSiteById(ctx context.Context, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error) {
+func (p *SiteProxy) GetSiteById(ctx context.Context, siteId string) (site *platformclientv2.Site, resp *platformclientv2.APIResponse, err error) {
 	return p.getSiteByIdAttr(ctx, p, siteId)
 }
 
 // getSiteIdByNameFunc returns a single Genesys Cloud Site by Name
-func (p *SiteProxy) getSiteIdByName(ctx context.Context, siteName string, managed bool) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	return p.getSiteIdByNameAttr(ctx, p, siteName, managed)
+func (p *SiteProxy) GetSiteIdByName(ctx context.Context, siteName string) (siteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	return p.getSiteIdByNameAttr(ctx, p, siteName)
 }
 
 // updateSiteFunc updates a Genesys Cloud Site
@@ -321,20 +321,32 @@ func getSiteByIdFn(ctx context.Context, p *SiteProxy, siteId string) (*platformc
 }
 
 // getSiteIdByNameFn is an implementation function for retrieving a Genesys Cloud Site by name
-func getSiteIdByNameFn(ctx context.Context, p *SiteProxy, siteName string, managed bool) (string, bool, *platformclientv2.APIResponse, error) {
-	sites, resp, err := getAllSitesFn(ctx, p, managed)
+func getSiteIdByNameFn(ctx context.Context, p *SiteProxy, siteName string) (string, bool, *platformclientv2.APIResponse, error) {
+	managed, resp, err := getAllSitesFn(ctx, p, true)
 	if err != nil {
 		return "", false, resp, err
 	}
-	if sites == nil || len(*sites) == 0 {
-		return "", true, resp, fmt.Errorf("no sites found with name %s", siteName)
-	}
-	for _, site := range *sites {
-		if (site.Name != nil && *site.Name == siteName) && (site.State != nil && *site.State != "deleted") {
-			return *site.Id, false, resp, nil
+
+	if managed != nil {
+		for _, site := range *managed {
+			if (site.Name != nil && *site.Name == siteName) && (site.State != nil && *site.State != "deleted") {
+				return *site.Id, false, resp, nil
+			}
 		}
 	}
 
+	unmanaged, resp, err := getAllSitesFn(ctx, p, false)
+	if err != nil {
+		return "", false, resp, err
+	}
+
+	if unmanaged != nil {
+		for _, site := range *unmanaged {
+			if (site.Name != nil && *site.Name == siteName) && (site.State != nil && *site.State != "deleted") {
+				return *site.Id, false, resp, nil
+			}
+		}
+	}
 	return "", true, resp, fmt.Errorf("no sites found with name %s", siteName)
 }
 

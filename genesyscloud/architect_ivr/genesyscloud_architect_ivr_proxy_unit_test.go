@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestUnitUploadIvrDnisChunksSuccess(t *testing.T) {
@@ -87,8 +87,8 @@ func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 		mockGetError      = fmt.Errorf("error on proxy.GetArchitectIvr")
 		mockPostError     = fmt.Errorf("error on proxy.PostArchitectIvr")
 		mockPutError      = fmt.Errorf("error on proxy.PutArchitectIvr")
-		dnis              = []string{"123", "abc", "iii", "zzz"}
 		maxDnisPerRequest = 2
+		dnis              = []string{"123", "abc", "iii", "zzz"}
 	)
 
 	ivr := platformclientv2.Ivr{
@@ -98,7 +98,7 @@ func TestUnitUploadIvrDnisChunksError(t *testing.T) {
 	architectProxy := newArchitectIvrProxy(nil)
 	architectProxy.maxDnisPerRequest = maxDnisPerRequest
 
-	// will be called on create after a chunk update fails because the ivr will need to be manually taken down, in that case
+	// Will be called on create after a chunk update fails because the ivr will need to be manually taken down, in that case
 	architectProxy.deleteArchitectIvrAttr = createMockDeleteIvrFunc(nil)
 
 	testCases := []architectIvrUploadErrorTestData{

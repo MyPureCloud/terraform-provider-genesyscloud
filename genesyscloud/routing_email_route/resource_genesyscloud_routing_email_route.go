@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -32,14 +32,14 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 
 	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, "Failed to get routing email route", respCode)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, "Failed to get routing email route", respCode)
 	}
 
 	for domainId, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
 			resources[*inboundRoute.Id] = &resourceExporter.ResourceMeta{
-				Name:     *inboundRoute.Pattern + domainId,
-				IdPrefix: domainId + "/",
+				BlockLabel: *inboundRoute.Pattern + domainId,
+				IdPrefix:   domainId + "/",
 			}
 		}
 	}
@@ -57,7 +57,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	replyEmail, err := validateSdkReplyEmailAddress(d)
 	// Checking the self_reference_route flag and routeId rules
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, "Error occurred while validating the reply email address when creating the record", err)
+		return util.BuildDiagnosticError(ResourceType, "Error occurred while validating the reply email address when creating the record", err)
 	}
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
@@ -70,7 +70,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating routing email route %s", d.Id())
 	inboundRoute, resp, err := proxy.createRoutingEmailRoute(ctx, domainId, &routingEmailRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create routing email route %s error: %s", *routingEmailRoute.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create routing email route %s error: %s", *routingEmailRoute.FromName, err), resp)
 	}
 
 	d.SetId(*inboundRoute.Id)
@@ -82,7 +82,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 		_, resp, err = proxy.updateRoutingEmailRoute(ctx, *inboundRoute.Id, domainId, inboundRoute)
 
 		if err != nil {
-			return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Created routing email route %v %s %s, but failed to update the reply answer route to itself | error: %s", inboundRoute.Pattern, domainId, *inboundRoute.Id, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Created routing email route %v %s %s, but failed to update the reply answer route to itself | error: %s", inboundRoute.Pattern, domainId, *inboundRoute.Id, err), resp)
 		}
 	}
 
@@ -93,7 +93,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailRouteProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute(), constants.ConsistencyChecks(), ResourceType)
 	domainId := d.Get("domain_id").(string)
 
 	log.Printf("Reading routing email route %s", d.Id())
@@ -106,9 +106,9 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				d.SetId("")
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		for _, inboundRoutes := range *inboundRoutesMap {
@@ -127,12 +127,14 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "pattern", route.Pattern)
 		resourcedata.SetNillableReference(d, "queue_id", route.Queue)
 		resourcedata.SetNillableValue(d, "priority", route.Priority)
+		resourcedata.SetNillableValue(d, "history_inclusion", route.HistoryInclusion)
 		resourcedata.SetNillableReference(d, "language_id", route.Language)
 		resourcedata.SetNillableValue(d, "from_name", route.FromName)
 		resourcedata.SetNillableValue(d, "from_email", route.FromEmail)
 		resourcedata.SetNillableReference(d, "flow_id", route.Flow)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "auto_bcc", route.AutoBcc, flattenAutoBccEmailAddress)
 		resourcedata.SetNillableReference(d, "spam_flow_id", route.SpamFlow)
+		resourcedata.SetNillableValue(d, "allow_multiple_actions", route.AllowMultipleActions)
 
 		if route.Skills != nil {
 			_ = d.Set("skill_ids", util.SdkDomainEntityRefArrToSet(*route.Skills))
@@ -157,7 +159,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			_ = d.Set("reply_email_address", nil)
 		}
 
-		log.Printf("Read routing email route %s %v", d.Id(), route.Name)
+		log.Printf("Read routing email route %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
@@ -173,7 +175,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	//Checking the self_reference_route flag and routeId rules
 	replyEmail, err := validateSdkReplyEmailAddress(d)
 	if err != nil {
-		return util.BuildDiagnosticError(resourceName, "Error occurred while validating the reply email address while trying to update the record", err)
+		return util.BuildDiagnosticError(ResourceType, "Error occurred while validating the reply email address while trying to update the record", err)
 	}
 
 	replyDomainID, replyRouteID, _ := extractReplyEmailAddressValue(d)
@@ -189,7 +191,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Updating routing email route %s", d.Id())
 	inboundRoute, resp, err := proxy.updateRoutingEmailRoute(ctx, d.Id(), domainId, &routingEmailRoute)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update routing email route %s error: %s", *routingEmailRoute.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update routing email route %s error: %s", *routingEmailRoute.FromName, err), resp)
 	}
 
 	log.Printf("Updated routing email route %s", *inboundRoute.Id)
@@ -204,7 +206,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	resp, err := proxy.deleteRoutingEmailRoute(ctx, domainId, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete routing email route %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete routing email route %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -214,8 +216,8 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted routing email route %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting routing email route %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting routing email route %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("routing email route %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("routing email route %s still exists", d.Id()), resp))
 	})
 }

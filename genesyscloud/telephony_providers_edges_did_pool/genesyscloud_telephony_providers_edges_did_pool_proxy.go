@@ -3,8 +3,9 @@ package telephony_providers_edges_did_pool
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -178,13 +179,14 @@ func getAllTelephonyDidPoolsFn(_ context.Context, t *telephonyDidPoolProxy) (*[]
 
 // getTelephonyDidPoolIdByStartAndEndNumberFn is an implementation function for finding a Genesys Cloud did pool using the start and end number
 func getTelephonyDidPoolIdByStartAndEndNumberFn(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (string, bool, *platformclientv2.APIResponse, error) {
+	utilE164 := util.NewUtilE164Service()
 	allDidPools, resp, err := getAllTelephonyDidPoolsFn(ctx, t)
 	if err != nil {
 		return "", false, resp, fmt.Errorf("failed to read did pools: %v", err)
 	}
 	for _, didPool := range *allDidPools {
-		if didPool.StartPhoneNumber != nil && *didPool.StartPhoneNumber == start &&
-			didPool.EndPhoneNumber != nil && *didPool.EndPhoneNumber == end &&
+		if didPool.StartPhoneNumber != nil && utilE164.FormatAsCalculatedE164Number(*didPool.StartPhoneNumber) == start &&
+			didPool.EndPhoneNumber != nil && utilE164.FormatAsCalculatedE164Number(*didPool.EndPhoneNumber) == end &&
 			didPool.State != nil && *didPool.State != "deleted" {
 			return *didPool.Id, false, resp, nil
 		}

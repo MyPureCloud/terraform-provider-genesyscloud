@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -19,12 +18,12 @@ resource_genesycloud_idp_adfs_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_adfs datasource.
 4.  The resource exporter configuration for the idp_adfs exporter.
 */
-const resourceName = "genesyscloud_idp_adfs"
+const ResourceType = "genesyscloud_idp_adfs"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceIdpAdfs())
-	regInstance.RegisterExporter(resourceName, IdpAdfsExporter())
+	regInstance.RegisterResource(ResourceType, ResourceIdpAdfs())
+	regInstance.RegisterExporter(ResourceType, IdpAdfsExporter())
 }
 
 // ResourceIdpAdfs registers the genesyscloud_idp_adfs resource with Terraform
@@ -72,14 +71,13 @@ func ResourceIdpAdfs() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`slo_binding`: {
-				Description:  `Valid values: HTTP Redirect, HTTP Post`,
-				Optional:     true,
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`HTTP Redirect`, `HTTP Post`}, false),
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to ADFS.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`certificates`: {

@@ -3,13 +3,15 @@ package task_management_workitem
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -24,7 +26,7 @@ func getWorkitemCreateFromResourceData(d *schema.ResourceData) (*platformclientv
 		return nil, err
 	}
 
-	return &platformclientv2.Workitemcreate{
+	workItem := platformclientv2.Workitemcreate{
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		TypeId:      platformclientv2.String(d.Get("worktype_id").(string)),
 		Description: platformclientv2.String(d.Get("description").(string)),
@@ -47,7 +49,16 @@ func getWorkitemCreateFromResourceData(d *schema.ResourceData) (*platformclientv
 
 		CustomFields: customFields,
 		ScoredAgents: buildWorkitemScoredAgents(d.Get("scored_agents").([]interface{})),
-	}, nil
+	}
+
+	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
+	// so we need to extract just the status id from any status references that look like this
+	if workItem.StatusId != nil && strings.Contains(*workItem.StatusId, "/") {
+		_, id := task_management_worktype_status.SplitWorktypeStatusTerraformId(*workItem.StatusId)
+		workItem.StatusId = &id
+	}
+
+	return &workItem, nil
 }
 
 // getWorkitemUpdateFromResourceData maps data from schema ResourceData object to a platformclientv2.Workitemupdate
@@ -58,7 +69,7 @@ func getWorkitemUpdateFromResourceData(d *schema.ResourceData) (*platformclientv
 	}
 
 	// NOTE: The only difference from  Workitemcreate is that you can't change the Worktype
-	return &platformclientv2.Workitemupdate{
+	workItem := platformclientv2.Workitemupdate{
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		Description: platformclientv2.String(d.Get("description").(string)),
 
@@ -80,7 +91,16 @@ func getWorkitemUpdateFromResourceData(d *schema.ResourceData) (*platformclientv
 
 		CustomFields: customFields,
 		ScoredAgents: buildWorkitemScoredAgents(d.Get("scored_agents").([]interface{})),
-	}, nil
+	}
+
+	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
+	// so we need to extract just the status id from any status references that look like this
+	if workItem.StatusId != nil && strings.Contains(*workItem.StatusId, "/") {
+		_, id := task_management_worktype_status.SplitWorktypeStatusTerraformId(*workItem.StatusId)
+		workItem.StatusId = &id
+	}
+
+	return &workItem, nil
 }
 
 // buildCustomFieldsNillable builds a Genesys Cloud *[]platformclientv2.Workitemscoredagent from a JSON string

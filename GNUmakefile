@@ -54,6 +54,7 @@ clean:
 
 build:
 	mkdir -p ${DIST_DIR}
+	go mod tidy
 	go build -o ${DIST_DIR} ./...
 
 GOOS = $(shell go env GOOS)

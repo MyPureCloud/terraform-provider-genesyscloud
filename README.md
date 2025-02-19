@@ -96,8 +96,23 @@ GENESYSCLOUD_PROXY_HOST
 GENESYSCLOUD_PROXY_PROTOCOL
 GENESYSCLOUD_PROXY_AUTH_USERNAME
 GENESYSCLOUD_PROXY_AUTH_PASSWORD
-
 ```
+
+### Customizing the consistency checker
+The provider uses a consistency checker to help deal with eventual consistency problems that might occur when a GET api does not return up-to-date data after a resource is updated. By default, the consistency checker will throw an error if, after retrying, there is still an unexpected mismatch between states. 
+To change this behaviour and make the consistency checker write errors to a file, you can set the following environment variable:
+```
+BYPASS_CONSISTENCY_CHECKER
+```
+
+When `BYPASS_CONSISTENCY_CHECKER` is set the provider will retry 5 times by default when it encounters a problem before writing the error to a file. You can specifically set how many times you want the consistency checker to run by setting the following environment variable.
+```
+CONSISTENCY_CHECKS=5
+```
+
+_Note_: `CONSISTENCY_CHECKS` can only be used when `BYPASS_CONSISTENCY_CHECKER` is set.
+
+_Note_: Settings `CONSISTENCY_CHECKS=0` will completely disable the consistency checker and stop it from running.
 
 ### Data Sources
 
@@ -155,6 +170,24 @@ If you want to go off of an example, we recommend using the [external contacts](
 ### Using the Provider locally
 
 In order to use a locally compiled version of the provider, the correct binary for your system must be copied to the local `~/.terraform.d/plugins` folder. Run `make sideload` to build the provider and copy it to the correct folder. In your Terraform config file, specify version `0.1.0` and set the provider source to `genesys.com/mypurecloud/genesyscloud`. Run `terraform init` and verify that it finds the local version.
+
+An alternative option that [the official docs recommend](https://developer.hashicorp.com/terraform/plugin/debugging#terraform-cli-development-overrides) is to create a `.terraformrc` file in your home directory and update the location to the correct absolute path of the bin file:
+
+```hcl
+provider_installation {
+  dev_overrides {
+    "genesys.com/mypurecloud/genesyscloud" = "/Users/jdoe/path/to/terraform-provider-genesyscloud/dist/"
+  }
+}
+```
+
+### Dictionary
+
+A shared [Dictionary](./DICTIONARY.md) of terminology should be referenced as a guide to ensure consistency in variable naming, function parameters, and code comments throughout the provider implementation. The aim is to improve code readability, maintainability, and collaboration among developers working on the provider by adhering to these conventions.
+
+### Debugging
+
+See the [Debugging](./DEBUGGING.md) section for information on how to setup your IDE to debug the provider.
 
 ### Branches
 

@@ -2,7 +2,8 @@ package team
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -28,16 +29,16 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_team"] = ResourceTeam()
-	providerResources["genesyscloud_auth_division"] = gcloud.ResourceAuthDivision()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources[ResourceType] = ResourceTeam()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[user.ResourceType] = user.ResourceUser()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_team"] = DataSourceTeam()
+	providerDataSources[ResourceType] = DataSourceTeam()
 }
 
 // initTestresources initializes all test resources and data sources.

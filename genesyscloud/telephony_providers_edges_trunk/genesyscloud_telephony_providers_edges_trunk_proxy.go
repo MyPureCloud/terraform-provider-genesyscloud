@@ -3,7 +3,7 @@ package telephony_providers_edges_trunk
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 //generate a proxy for telephony_providers_edges_trunk
@@ -114,6 +114,5 @@ func getTrunkByIdFn(ctx context.Context, p *trunkProxy, trunkBaseSettingsId stri
 }
 
 func getAllTrunksFn(ctx context.Context, p *trunkProxy, pageNum int, pageSize int) (*platformclientv2.Trunkentitylisting, *platformclientv2.APIResponse, error) {
-
 	return p.edgesApi.GetTelephonyProvidersEdgesTrunks(pageNum, pageSize, "", "", "", "", "")
 }

@@ -12,10 +12,10 @@ import (
 
 func TestAccDataSourceResponseManagementResponseAsset(t *testing.T) {
 	var (
-		resourceId   = "resp_asset"
-		testDirName  = "test_responseasset_data"
-		fileName     = filepath.Join(testDirName, "yeti-img-asset.png")
-		dataSourceId = "resp_asset_data"
+		resourceLabel   = "resp_asset"
+		testDirName     = "test_responseasset_data"
+		fileName        = filepath.Join(testDirName, "yeti-img-asset.png")
+		dataSourceLabel = "resp_asset_data"
 	)
 	cleanupResponseAssets("yeti")
 
@@ -24,11 +24,11 @@ func TestAccDataSourceResponseManagementResponseAsset(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateResponseManagementResponseAssetResource(resourceId, fileName, util.NullValue) +
-					generateResponseManagementResponseAssetDataSource(dataSourceId, fileName, "genesyscloud_responsemanagement_responseasset."+resourceId),
+				Config: GenerateResponseManagementResponseAssetResource(resourceLabel, fileName, util.NullValue) +
+					generateResponseManagementResponseAssetDataSource(dataSourceLabel, fileName, "genesyscloud_responsemanagement_responseasset."+resourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_responsemanagement_responseasset."+dataSourceId, "id",
-						"genesyscloud_responsemanagement_responseasset."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_responsemanagement_responseasset."+dataSourceLabel, "id",
+						"genesyscloud_responsemanagement_responseasset."+resourceLabel, "id"),
 				),
 			},
 		},
@@ -36,11 +36,11 @@ func TestAccDataSourceResponseManagementResponseAsset(t *testing.T) {
 	})
 }
 
-func generateResponseManagementResponseAssetDataSource(id string, name string, dependsOn string) string {
+func generateResponseManagementResponseAssetDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_responsemanagement_responseasset" "%s" {
     name       = "%s"
     depends_on = [%s]
 }
-`, id, name, dependsOn)
+`, dataSourceLabel, name, dependsOn)
 }

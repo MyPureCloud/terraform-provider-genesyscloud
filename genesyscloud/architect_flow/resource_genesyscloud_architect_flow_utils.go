@@ -2,11 +2,11 @@ package architect_flow
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
-	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func isForceUnlockEnabled(d *schema.ResourceData) bool {
@@ -19,9 +19,7 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	return false
 }
 
-func GenerateFlowResource(resourceID, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
-	fullyQualifiedPath, _ := filepath.Abs(srcFile)
-
+func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
 	if fileContent != "" {
 		updateFile(srcFile, fileContent)
 	}
@@ -32,7 +30,7 @@ func GenerateFlowResource(resourceID, srcFile, fileContent string, forceUnlock b
 		force_unlock = %v
 		%s
 	}
-	`, resourceID, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), forceUnlock, strings.Join(substitutions, "\n"))
+	`, resourceLabel, strconv.Quote(srcFile), strconv.Quote(srcFile), forceUnlock, strings.Join(substitutions, "\n"))
 
 	return flowResourceStr
 }

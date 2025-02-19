@@ -2,9 +2,9 @@ package telephony_providers_edges_edge_group
 
 import (
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 
-	telephony "terraform-provider-genesyscloud/genesyscloud/telephony"
+	"terraform-provider-genesyscloud/genesyscloud/location"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
@@ -23,11 +23,11 @@ func (r *registerTestInstance) registerTestResources() {
 
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_telephony_providers_edges_edge_group"] = ResourceEdgeGroup()
+	providerResources[ResourceType] = ResourceEdgeGroup()
 	// external package dependencies for Edges Edge group
-	providerResources["genesyscloud_telephony_providers_edges_site"] = edgeSite.ResourceSite()
-	providerResources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.ResourceTrunkBaseSettings()
-	providerResources["genesyscloud_location"] = gcloud.ResourceLocation()
+	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
+	providerResources[tbs.ResourceType] = tbs.ResourceTrunkBaseSettings()
+	providerResources[location.ResourceType] = location.ResourceLocation()
 
 }
 
@@ -35,10 +35,10 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources["genesyscloud_telephony_providers_edges_edge_group"] = DataSourceEdgeGroup()
+	providerDataSources[ResourceType] = DataSourceEdgeGroup()
 	// external package dependencies for Edges Edge group
-	providerDataSources["genesyscloud_telephony_providers_edges_site"] = edgeSite.DataSourceSite()
-	providerDataSources["genesyscloud_telephony_providers_edges_trunkbasesettings"] = telephony.DataSourceTrunkBaseSettings()
+	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
+	providerDataSources[tbs.ResourceType] = tbs.DataSourceTrunkBaseSettings()
 
 }
 

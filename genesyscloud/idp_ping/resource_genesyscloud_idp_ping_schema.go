@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -19,12 +18,12 @@ resource_genesycloud_idp_ping_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_ping datasource.
 4.  The resource exporter configuration for the idp_ping exporter.
 */
-const resourceName = "genesyscloud_idp_ping"
+const ResourceType = "genesyscloud_idp_ping"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceIdpPing())
-	regInstance.RegisterExporter(resourceName, IdpPingExporter())
+	regInstance.RegisterResource(ResourceType, ResourceIdpPing())
+	regInstance.RegisterExporter(ResourceType, IdpPingExporter())
 }
 
 // ResourceIdpPing registers the genesyscloud_idp_ping resource with Terraform
@@ -72,14 +71,13 @@ func ResourceIdpPing() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`slo_binding`: {
-				Description:  `Valid values: HTTP Redirect, HTTP Post`,
-				Optional:     true,
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`HTTP Redirect`, `HTTP Post`}, false),
+				Optional: true,
+				Type:     schema.TypeString,
 			},
 			`relying_party_identifier`: {
 				Description: `String used to identify Genesys Cloud to Ping.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`certificates`: {

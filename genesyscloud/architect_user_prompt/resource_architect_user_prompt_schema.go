@@ -10,17 +10,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_architect_user_prompt"
+const ResourceType = "genesyscloud_architect_user_prompt"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceArchitectUserPrompt())
-	regInstance.RegisterDataSource(resourceName, DataSourceUserPrompt())
-	regInstance.RegisterExporter(resourceName, ArchitectUserPromptExporter())
+	regInstance.RegisterResource(ResourceType, ResourceArchitectUserPrompt())
+	regInstance.RegisterDataSource(ResourceType, DataSourceUserPrompt())
+	regInstance.RegisterExporter(ResourceType, ArchitectUserPromptExporter())
 }
+
 func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllUserPrompts),
+		AllowEmptyArrays: []string{"resources"},
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
@@ -48,7 +50,7 @@ var userPromptResource = &schema.Resource{
 		"language": {
 			Description:  "Language for the prompt resource. (eg. en-us)",
 			Type:         schema.TypeString,
-			Required:     true,
+			Optional:     true,
 			ValidateFunc: validation.StringInSlice(architectlanguages.Languages, false),
 		},
 		"tts_string": {
@@ -91,7 +93,6 @@ func ResourceArchitectUserPrompt() *schema.Resource {
 				Description: "Name of the user audio prompt. Note: If the name of the user prompt is changed, this will cause the Prompt to be dropped and recreated with a new ID. This will generate a new ID for the prompt and will invalidate any Architect flows referencing it. ",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"description": {
 				Description: "Description of the user audio prompt.",

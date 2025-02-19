@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -28,6 +28,10 @@ The resource_genesyscloud_idp_gsuite.go contains all of the methods that perform
 
 // getAllAuthIdpGsuite retrieves all of the idp gsuite via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIdpGsuites(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getIdpGsuiteProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -37,10 +41,10 @@ func getAllAuthIdpGsuites(ctx context.Context, clientConfig *platformclientv2.Co
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP GSuite error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP GSuite error: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "gsuite"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "gsuite"}
 	return resources, nil
 }
 
@@ -58,16 +62,16 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading idp gsuite")
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		gSuite, resp, getErr := proxy.getIdpGsuite(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpGsuite(ctx, d, meta)
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP GSuite: %s", getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", gSuite.Name)
@@ -110,7 +114,7 @@ func updateIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 
 	_, resp, err := proxy.updateIdpGsuite(ctx, d.Id(), &idpGsuite)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IDP GSuite %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update IDP GSuite %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated idp gsuite")
@@ -124,7 +128,7 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 
 	resp, err := proxy.deleteIdpGsuite(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete IDP GSuite %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete IDP GSuite %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
@@ -136,9 +140,9 @@ func deleteIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface
 				log.Printf("Deleted IDP GSuite")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP GSuite: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting IDP GSuite: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP GSuite still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("IDP GSuite still exists"), resp))
 	})
 }
 

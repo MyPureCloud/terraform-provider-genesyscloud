@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -28,6 +28,10 @@ The resource_genesyscloud_idp_onelogin.go contains all of the methods that perfo
 
 // getAllAuthIdpOnelogin retrieves all of the idp onelogin via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIdpOnelogins(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getIdpOneloginProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -37,10 +41,10 @@ func getAllAuthIdpOnelogins(ctx context.Context, clientConfig *platformclientv2.
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP Onelogin error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP Onelogin error: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "onelogin"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "onelogin"}
 	return resources, nil
 }
 
@@ -63,12 +67,12 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpOnelogin(ctx, d, meta)
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin(), constants.DefaultConsistencyChecks, resourceName)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin(), constants.ConsistencyChecks(), ResourceType)
 
 		if oneLogin.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*oneLogin.Certificate}))
@@ -109,7 +113,7 @@ func updateIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 	log.Printf("Updating idp onelogin")
 	_, resp, err := proxy.updateIdpOnelogin(ctx, d.Id(), &idpOnelogin)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update IDP Onelogin %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update IDP Onelogin %s error: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated idp onelogin")
@@ -125,7 +129,7 @@ func deleteIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	resp, err := proxy.deleteIdpOnelogin(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to updadeletete IDP Onelogin %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to updadeletete IDP Onelogin %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
@@ -137,9 +141,9 @@ func deleteIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interfa
 				log.Printf("Deleted IDP Onelogin")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP Onelogin: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting IDP Onelogin: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP Onelogin still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("IDP Onelogin still exists"), resp))
 	})
 }
 

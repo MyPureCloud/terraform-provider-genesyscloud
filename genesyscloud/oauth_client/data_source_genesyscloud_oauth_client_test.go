@@ -13,17 +13,17 @@ import (
 
 func TestAccDataSourceOAuthClient(t *testing.T) {
 	var (
-		oauthClientDataSource = "oauth-client"
+		oauthClientDataSourceLabel = "oauth-client"
 
-		clientResource1      = "test-client"
+		clientResourceLabel1 = "test-client"
 		clientName1          = "terraform1-" + uuid.NewString()
 		clientDesc1          = "terraform test client1"
 		tokenSec1            = "300"
 		redirectURI1         = "https://example.com/auth1"
 		grantTypeClientCreds = "CLIENT-CREDENTIALS"
 
-		roleResource1 = "admin-role"
-		roleName1     = "admin" // Must use a role already assigned to the TF OAuth client
+		roleResourceLabel1 = "admin-role"
+		roleName1          = "admin" // Must use a role already assigned to the TF OAuth client
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -32,11 +32,11 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateAuthRoleDataSource(
-					roleResource1,
+					roleResourceLabel1,
 					strconv.Quote(roleName1),
 					"",
 				) + generateOauthClient(
-					clientResource1,
+					clientResourceLabel1,
 					clientName1,
 					clientDesc1,
 					grantTypeClientCreds,
@@ -44,14 +44,14 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 					util.NullValue, // Default state
 					util.GenerateStringArray(strconv.Quote(redirectURI1)),
 					util.NullValue, // No scopes for client creds
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResource1+".id", util.NullValue),
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
 				) + generateOAuthClientDataSource(
-					oauthClientDataSource,
-					"genesyscloud_oauth_client."+clientResource1+".name",
-					"genesyscloud_oauth_client."+clientResource1,
+					oauthClientDataSourceLabel,
+					"genesyscloud_oauth_client."+clientResourceLabel1+".name",
+					"genesyscloud_oauth_client."+clientResourceLabel1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_oauth_client."+oauthClientDataSource, "id", "genesyscloud_oauth_client."+clientResource1, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_oauth_client."+oauthClientDataSourceLabel, "id", "genesyscloud_oauth_client."+clientResourceLabel1, "id"),
 				),
 			},
 		},
@@ -59,7 +59,7 @@ func TestAccDataSourceOAuthClient(t *testing.T) {
 }
 
 func generateOAuthClientDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -68,11 +68,11 @@ func generateOAuthClientDataSource(
 		name = %s
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }
 
 func generateAuthRoleDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -81,5 +81,5 @@ func generateAuthRoleDataSource(
 		name = %s
         depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

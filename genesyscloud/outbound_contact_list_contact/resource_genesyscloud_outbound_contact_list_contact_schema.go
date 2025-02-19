@@ -1,17 +1,16 @@
 package outbound_contact_list_contact
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const resourceName = "genesyscloud_outbound_contact_list_contact"
+const ResourceType = "genesyscloud_outbound_contact_list_contact"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundContactListContact())
-	regInstance.RegisterExporter(resourceName, ContactExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundContactListContact())
 }
 
 var (
@@ -65,24 +64,14 @@ var (
 	}
 )
 
-func ContactExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllContacts),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
-		},
-		AllowZeroValuesInMap: []string{"data"},
-	}
-}
-
 func ResourceOutboundContactListContact() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Outbound Contact List Contact`,
-
-		CreateContext: provider.CreateWithPooledClient(createOutboundContactListContact),
-		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListContact),
-		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListContact),
-		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListContact),
+		Description:        `[DEPRECATED] Genesys Cloud Outbound Contact List Contact`,
+		DeprecationMessage: "This resource is deprecated and will be removed in a future version. The exporter functionality of this resource has been removed. Please use the contacts_* fields within the genesyscloud_outbound_contact_list resource instead. This change consolidates contact management to improve reliability and performance.",
+		CreateContext:      provider.CreateWithPooledClient(createOutboundContactListContact),
+		ReadContext:        provider.ReadWithPooledClient(readOutboundContactListContact),
+		UpdateContext:      provider.UpdateWithPooledClient(updateOutboundContactListContact),
+		DeleteContext:      provider.DeleteWithPooledClient(deleteOutboundContactListContact),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -94,23 +83,30 @@ func ResourceOutboundContactListContact() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeString,
 			},
+			"contact_id": {
+				Description: `The identifier of the contact list. This is usually a generated guid and not modifiable.`,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+			},
 			"priority": {
-				Description: `Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue. 
+				Description: `Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
 				ForceNew: true,
 				Optional: true,
 				Type:     schema.TypeBool,
 			},
 			"clear_system_data": {
-				Description: `Clear system data. True means the system columns (attempts, callable status, etc) stored on the contact will be cleared if the contact already exists; false means they won't. 
+				Description: `Clear system data. True means the system columns (attempts, callable status, etc) stored on the contact will be cleared if the contact already exists; false means they won't.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
 				ForceNew: true,
 				Optional: true,
 				Type:     schema.TypeBool,
 			},
 			"do_not_queue": {
-				Description: `Do not queue. True means that updated contacts will not have their positions in the queue altered, so contacts that have already been dialed will not be redialed. 
-For new contacts, this parameter has no effect; False means that updated contacts will be re-queued, according to the 'priority' parameter. 
+				Description: `Do not queue. True means that updated contacts will not have their positions in the queue altered, so contacts that have already been dialed will not be redialed.
+For new contacts, this parameter has no effect; False means that updated contacts will be re-queued, according to the 'priority' parameter.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.`,
 				ForceNew: true,
 				Optional: true,
@@ -132,14 +128,14 @@ Only applicable on the creation of a contact, so updating this field will force 
 				Description: `A map of phone number columns to PhoneNumberStatuses, which indicate if the phone number is callable or not.`,
 				Type:        schema.TypeSet,
 				Optional:    true,
-				ForceNew:    true,
+				Computed:    true,
 				Elem:        phoneNumberStatusResource,
 			},
 			"contactable_status": {
 				Description: `A map of media types (Voice, SMS and Email) to ContactableStatus, which indicates if the contact can be contacted using the specified media type.`,
 				Type:        schema.TypeSet,
 				Optional:    true,
-				ForceNew:    true,
+				Computed:    true,
 				Elem:        contactableStatusResource,
 			},
 		},

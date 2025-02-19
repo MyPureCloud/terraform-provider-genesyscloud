@@ -1,0 +1,24 @@
+{
+    "name": "Terraform and Go",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/terraform:1":{},
+        "ghcr.io/devcontainers/features/go:1":{
+            "version": "1.23"
+        },
+        "ghcr.io/devcontainers/features/python": {}
+    },
+    "containerEnv": {
+        "TF_ACC": "-"
+    },
+    "hostRequirements": {
+        "cpus": 4,
+        "memory": "16gb",
+        "storage": "32gb"
+    },
+    "forwardPorts": [
+        8080
+    ]
+}

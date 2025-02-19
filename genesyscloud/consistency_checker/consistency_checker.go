@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"unsafe"
 
@@ -57,7 +58,7 @@ type consistencyErrorJson struct {
 func (e *consistencyError) Error() string {
 	return fmt.Sprintf(`mismatch on attribute %s:
 expected value: %v
-actual value:   %v`, e.key, e.oldValue, e.newValue)
+actual value: %v`, e.key, e.oldValue, e.newValue)
 }
 
 func NewConsistencyCheck(ctx context.Context, d *schema.ResourceData, meta interface{}, r *schema.Resource, maxStateChecks int, resourceType string) *ConsistencyCheck {
@@ -200,21 +201,6 @@ func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int,
 	}
 }
 
-func (c *ConsistencyCheck) isComputed(d *schema.ResourceData, key string) bool {
-	schemaInterface := getUnexportedField(reflect.ValueOf(d).Elem().FieldByName("schema"))
-	resourceSchema := schemaInterface.(map[string]*schema.Schema)
-
-	k := key
-	if strings.Contains(key, ".") {
-		k = strings.Split(key, ".")[0]
-	}
-	if resourceSchema[k] == nil {
-		return false
-	}
-
-	return resourceSchema[k].Computed
-}
-
 func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.RetryError {
 	if c.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
@@ -224,10 +210,10 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 		return nil
 	}
 
-	if featureToggles.CCToggleExists() {
-		log.Printf("%s is set, write consistency errors to consistency-errors.log.json", featureToggles.CCToggleName())
-	} else {
-		log.Printf("%s is not set, consistency checker behaving as default", featureToggles.CCToggleName())
+	// If the user has set BYPASS_CONSISTENCY_CHECKER and CONSISTENCY_CHECKS=0 then the consistency checker will not run
+	if featureToggles.CCToggleExists() && constants.ConsistencyChecks() == 0 {
+		log.Print("Consistency checker disabled")
+		return nil
 	}
 
 	originalState := filterMap(c.originalState)

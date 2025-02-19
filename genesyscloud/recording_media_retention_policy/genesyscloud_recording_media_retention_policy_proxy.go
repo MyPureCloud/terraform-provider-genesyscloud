@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -271,6 +271,7 @@ func callGetAllPoliciesApi(pageSize, pageNumber int, config *platformclientv2.Co
 	formParams := url.Values{}
 	var postBody interface{}
 	var postFileName string
+	var postFilePath string
 	var fileBytes []byte
 
 	// oauth required
@@ -289,7 +290,7 @@ func callGetAllPoliciesApi(pageSize, pageNumber int, config *platformclientv2.Co
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *platformclientv2.Policyentitylisting
-	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes)
+	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes, postFilePath)
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {

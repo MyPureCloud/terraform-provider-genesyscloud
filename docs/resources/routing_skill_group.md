@@ -55,7 +55,7 @@ resource "genesyscloud_routing_skill_group" "skillgroup" {
 
 - `description` (String) Description of the skill group
 - `division_id` (String) The division to which this entity belongs
-- `member_division_ids` (List of String) The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, "*" means all divisions will be added.
+- `member_division_ids` (List of String) The IDs of member divisions to add or remove for this skill group. An empty array means all divisions will be removed, '*' means all divisions will be added.
 - `skill_conditions` (String) JSON encoded array of rules that will be used to determine group membership.
 
 ### Read-Only

@@ -14,14 +14,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
 The genesyscloud_scripts_proxy.go file contains all of the logic associated with calling the Genesys cloud API for scripts.
 */
-var internalProxy *scriptsProxy
-
 type createScriptFunc func(ctx context.Context, filePath, scriptName string, substitutions map[string]interface{}, p *scriptsProxy) (scriptId string, err error)
 type updateScriptFunc func(ctx context.Context, filePath, scriptName, scriptId string, substitutions map[string]interface{}, p *scriptsProxy) (id string, err error)
 type getAllPublishedScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
@@ -56,19 +54,18 @@ type scriptsProxy struct {
 	scriptCache                       rc.CacheInterface[platformclientv2.Script]
 }
 
+var scriptCache = rc.NewResourceCache[platformclientv2.Script]()
+
 // getScriptsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
+// (abandoned singleton pattern for DEVTOOLING-1081)
 func getScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy {
-	if internalProxy == nil {
-		internalProxy = newScriptsProxy(clientConfig)
-	}
-	return internalProxy
+	return newScriptsProxy(clientConfig)
 }
 
 // newScriptsProxy initializes the Scripts proxy with all of the data needed to communicate with Genesys Cloud
 func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy {
 	scriptsAPI := platformclientv2.NewScriptsApiWithConfig(clientConfig)
-	scriptCache := rc.NewResourceCache[platformclientv2.Script]()
 	return &scriptsProxy{
 		clientConfig:                      clientConfig,
 		scriptsApi:                        scriptsAPI,
@@ -151,7 +148,7 @@ func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*plat
 
 // getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud instance
 func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	var allScripts []platformclientv2.Script
+	var allPublishedScripts []platformclientv2.Script
 	var response *platformclientv2.APIResponse
 	pageSize := 50
 	for pageNum := 1; ; pageNum++ {
@@ -166,7 +163,7 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 		}
 
 		for _, script := range *scripts.Entities {
-			_, resp, err := p.scriptsApi.GetScriptsPublishedScriptId(*script.Id, "")
+			publishedScript, resp, err := p.scriptsApi.GetScriptsPublishedScriptId(*script.Id, "")
 			response = resp
 			//If the item is not found this indicates it is not published
 			if resp.StatusCode == http.StatusNotFound && err == nil {
@@ -185,62 +182,67 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 				return nil, resp, fmt.Errorf("failed to retrieve publication status for script id %s.  Err: %v", *script.Id, err)
 			}
 
-			allScripts = append(allScripts, script)
+			allPublishedScripts = append(allPublishedScripts, *publishedScript)
 		}
 	}
 
-	for _, script := range allScripts {
+	for _, script := range allPublishedScripts {
 		rc.SetCache(p.scriptCache, *script.Id, script)
 	}
 
-	return &allScripts, response, nil
+	return &allPublishedScripts, response, nil
 }
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
-func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error) {
-	const pageSize = 50
+func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (scriptsThatMatchName []platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("getScriptsByNameFn: %w", err)
+		}
+	}()
+
+	const pageSize = 100
 	var (
-		scripts            []platformclientv2.Script
-		response           *platformclientv2.APIResponse
+		getScriptsRespBody *platformclientv2.Scriptentitylisting
 		processedScriptIds []string
 	)
 
 	log.Printf("Retrieving scripts with name '%s'", scriptName)
 	for pageNum := 1; ; pageNum++ {
-		data, response, err := p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")
+		getScriptsRespBody, resp, err = p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")
 		if err != nil {
-			return scripts, response, err
+			return nil, resp, err
 		}
-
-		if data.Entities == nil || len(*data.Entities) == 0 {
+		if getScriptsRespBody.Entities == nil || len(*getScriptsRespBody.Entities) == 0 {
 			break
 		}
 
-		for _, script := range *data.Entities {
+		for _, script := range *getScriptsRespBody.Entities {
 			if *script.Name == scriptName {
-				scripts = append(scripts, script)
+				scriptsThatMatchName = append(scriptsThatMatchName, script)
 				processedScriptIds = append(processedScriptIds, *script.Id)
 			}
 		}
 	}
 
+	log.Printf("Retrieving published scripts with name '%s'", scriptName)
 	for pageNum := 1; ; pageNum++ {
-		data, response, err := p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", scriptName, "", "", "", "")
+		getScriptsRespBody, resp, err = p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", scriptName, "", "", "", "")
 		if err != nil {
-			return nil, response, err
+			return nil, resp, err
 		}
-		if data.Entities == nil || len(*data.Entities) == 0 {
+		if getScriptsRespBody.Entities == nil || len(*getScriptsRespBody.Entities) == 0 {
 			break
 		}
-		for _, script := range *data.Entities {
+		for _, script := range *getScriptsRespBody.Entities {
 			if *script.Name == scriptName && !util.StringExists(*script.Id, processedScriptIds) {
-				scripts = append(scripts, script)
+				scriptsThatMatchName = append(scriptsThatMatchName, script)
 				processedScriptIds = append(processedScriptIds, *script.Id)
 			}
 		}
 	}
 
-	return scripts, response, nil
+	return scriptsThatMatchName, resp, err
 }
 
 // createScriptFormData creates the form data attributes to create a script in Genesys Cloud
@@ -249,7 +251,7 @@ func (p *scriptsProxy) createScriptFormData(filePath, scriptName, scriptId strin
 	if err != nil {
 		return nil, err
 	}
-	formData := make(map[string]io.Reader, 0)
+	formData := make(map[string]io.Reader)
 	formData["file"] = fileReader
 	formData["scriptName"] = strings.NewReader(scriptName)
 	if scriptId != "" {
@@ -275,7 +277,13 @@ func (p *scriptsProxy) uploadScriptFile(filePath, scriptName, scriptId string, s
 }
 
 // getScriptIdByNameFn is the implementation function for retrieving a script ID by name, if no other scripts have the same name
-func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
+func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (_ string, _ bool, _ *platformclientv2.APIResponse, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("getScriptIdByNameFn: %w", err)
+		}
+	}()
+
 	sdkScripts, resp, err := p.getScriptsByName(ctx, name)
 	if err != nil {
 		return "", false, resp, err
@@ -318,7 +326,7 @@ func verifyScriptUploadSuccessFn(ctx context.Context, p *scriptsProxy, body []by
 	return false, nil
 }
 
-// getUploadIdFromBody retrieves the upload Id from the json file being uploade
+// getUploadIdFromBody retrieves the upload Id from the json file being uploaded
 func (p *scriptsProxy) getUploadIdFromBody(body []byte) (string, error) {
 	var (
 		jsonData interface{}
@@ -355,6 +363,11 @@ func getScriptExportUrlFn(_ context.Context, p *scriptsProxy, scriptId string) (
 	var (
 		body platformclientv2.Exportscriptrequest
 	)
+
+	// Sets the VersionId on the request so that the Published Version of the script is exported and not the editable version
+	// See DEVTOOLING-777
+	scriptCache := rc.GetCacheItem(p.scriptCache, scriptId)
+	body.VersionId = scriptCache.VersionId
 
 	data, resp, err := p.scriptsApi.PostScriptExport(scriptId, body)
 	if err != nil {
@@ -465,7 +478,10 @@ func createScriptFn(ctx context.Context, filePath, scriptName string, substituti
 	}
 
 	if resp, err := p.publishScript(ctx, scriptId); err != nil {
-		return "", fmt.Errorf("script '%s' with id '%s' was not successfully published: %v %v", scriptName, scriptId, err, resp)
+		// If the script is not able to be published, clean up the script instance on the API before throwing an error
+		// See DEVTOOLING-777
+		p.deleteScript(ctx, scriptId)
+		return "", fmt.Errorf("script '%s' (ID: %s) failed to publish and was deleted: %w (response: %v)", scriptName, scriptId, err, resp)
 	}
 	return scriptId, nil
 }

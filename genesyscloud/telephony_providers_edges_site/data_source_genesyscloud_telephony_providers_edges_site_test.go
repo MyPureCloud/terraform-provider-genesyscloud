@@ -3,13 +3,12 @@ package telephony_providers_edges_site
 import (
 	"fmt"
 	"strconv"
+	location "terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
-
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -19,14 +18,14 @@ func TestAccDataSourceSite(t *testing.T) {
 	t.Parallel()
 	var (
 		// site
-		siteRes      = "site"
-		siteDataRes  = "site-data"
-		name         = "tf-site-" + uuid.NewString()
-		description1 = "test site description"
-		mediaModel   = "Cloud"
+		siteResourceLabel     = "site"
+		siteDataResourceLabel = "site-data"
+		name                  = "tf-site-" + uuid.NewString()
+		description1          = "test site description"
+		mediaModel            = "Cloud"
 
 		// location
-		locationRes = "test-location1"
+		locationResourceLabel = "test-location1"
 	)
 
 	emergencyNumber := "+13173124745"
@@ -34,15 +33,15 @@ func TestAccDataSourceSite(t *testing.T) {
 		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
 	}
 
-	location := gcloud.GenerateLocationResource(
-		locationRes,
+	locationConfig := location.GenerateLocationResource(
+		locationResourceLabel,
 		"Terraform location"+uuid.NewString(),
 		"HQ1",
 		[]string{},
-		gcloud.GenerateLocationEmergencyNum(
+		location.GenerateLocationEmergencyNum(
 			emergencyNumber,
 			util.NullValue, // Default number type
-		), gcloud.GenerateLocationAddress(
+		), location.GenerateLocationAddress(
 			"7601 Interactive Way",
 			"Indianapolis",
 			"IN",
@@ -56,21 +55,20 @@ func TestAccDataSourceSite(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSiteResourceWithCustomAttrs(
-					siteRes,
+					siteResourceLabel,
 					name,
 					description1,
-					"genesyscloud_location."+locationRes+".id",
+					"genesyscloud_location."+locationResourceLabel+".id",
 					mediaModel,
 					false,
 					util.AssignRegion(),
 					strconv.Quote("+19205551212"),
-					strconv.Quote("Wilco plumbing")) + location + generateSiteDataSource(
-					siteDataRes,
+					strconv.Quote("Wilco plumbing")) + locationConfig + generateSiteDataSource(
+					siteDataResourceLabel,
 					name,
-					"genesyscloud_telephony_providers_edges_site."+siteRes,
-					false),
+					"genesyscloud_telephony_providers_edges_site."+siteResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", "genesyscloud_telephony_providers_edges_site."+siteRes, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_site."+siteDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_site."+siteResourceLabel, "id"),
 				),
 			},
 		},
@@ -83,8 +81,8 @@ This test expects that the org has a product called "voice" enabled on it. If th
 func TestAccDataSourceSiteManaged(t *testing.T) {
 	t.Parallel()
 	var (
-		siteDataRes = "managed-site-data"
-		name        = "PureCloud Voice - AWS"
+		siteDataResourceLabel = "managed-site-data"
+		name                  = "PureCloud Voice - AWS"
 	)
 
 	siteId, err := getSiteIdByName(name)
@@ -98,13 +96,12 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateSiteDataSource(
-					siteDataRes,
+					siteDataResourceLabel,
 					name,
 					"",
-					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataRes, "id", siteId),
+					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_site."+siteDataResourceLabel, "id", siteId),
 				),
 			},
 		},
@@ -112,18 +109,17 @@ func TestAccDataSourceSiteManaged(t *testing.T) {
 }
 
 func generateSiteDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string,
-	managed bool) string {
+) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_site" "%s" {
 		name = "%s"
-		managed = %t
 		depends_on=[%s]
 	}
-	`, resourceID, name, managed, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }
 
 func getSiteIdByName(name string) (string, error) {

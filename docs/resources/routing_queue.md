@@ -35,6 +35,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   whisper_prompt_id                 = data.genesyscloud_architect_user_prompt.whisper.id
   auto_answer_only                  = true
   enable_transcription              = true
+  enable_audio_monitoring           = true
   enable_manual_assignment          = true
   calling_party_name                = "Example Inc."
   outbound_messaging_sms_address_id = "c1bb045e-254d-4316-9d78-cea6849a3db4"
@@ -89,12 +90,14 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
-- `conditional_group_routing_rules` (Block List, Max: 5, Deprecated) The Conditional Group Routing settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
+- `canned_response_libraries` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--canned_response_libraries))
+- `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
 - `division_id` (String) The division to which this queue will belong. If not set, the home division will be used.
 - `email_in_queue_flow_id` (String) The in-queue flow ID to use for email conversations waiting in queue.
+- `enable_audio_monitoring` (Boolean) Indicates whether audio monitoring is enabled for this queue.
 - `enable_manual_assignment` (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
 - `enable_transcription` (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
 - `groups` (Set of String) List of group ids assigned to the queue
@@ -106,13 +109,17 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedatt--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `on_hold_prompt_id` (String) The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
-- `outbound_email_address` (Block List, Max: 1, Deprecated) The outbound email address settings for this queue. (see [below for nested schema](#nestedblock--outbound_email_address))
+- `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. **Note**: outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address (see [below for nested schema](#nestedblock--outbound_email_address))
+- `outbound_messaging_open_messaging_recipient_id` (String) The unique ID of the outbound messaging open messaging recipient for the queue.
 - `outbound_messaging_sms_address_id` (String) The unique ID of the outbound messaging SMS address for the queue.
+- `outbound_messaging_whatsapp_recipient_id` (String) The unique ID of the outbound messaging whatsapp recipient for the queue.
+- `peer_id` (String) The ID of an associated external queue
 - `queue_flow_id` (String) The in-queue flow ID to use for call conversations waiting in queue.
 - `routing_rules` (Block List, Max: 6) The routing rules for the queue, used for routing to known or preferred agents. (see [below for nested schema](#nestedblock--routing_rules))
 - `scoring_method` (String) The Scoring Method for the queue. Defaults to TimestampAndPriority. Defaults to `TimestampAndPriority`.
 - `skill_evaluation_method` (String) The skill evaluation method to use when routing conversations (NONE | BEST | ALL). Defaults to `ALL`.
 - `skill_groups` (Set of String) List of skill group ids assigned to the queue.
+- `source_queue_id` (String) The id of an existing queue to copy the settings (does not include GPR settings) from when creating a new queue.
 - `suppress_in_queue_call_recording` (Boolean) Indicates whether recording in-queue calls is suppressed for this queue. Defaults to `true`.
 - `teams` (Set of String) List of ids assigned to the queue
 - `whisper_prompt_id` (String) The prompt ID used for whisper on the queue, if configured.
@@ -125,7 +132,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 <a id="nestedblock--agent_owned_routing"></a>
 ### Nested Schema for `agent_owned_routing`
 
-Required:
+Optional:
 
 - `enable_agent_owned_callbacks` (Boolean) Enable Agent Owned Callbacks
 - `max_owned_callback_delay_hours` (Number) Max Owned Call Back Delay Hours >= 7
@@ -154,18 +161,27 @@ Required:
 
 
 
+<a id="nestedblock--canned_response_libraries"></a>
+### Nested Schema for `canned_response_libraries`
+
+Optional:
+
+- `library_ids` (List of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
+- `mode` (String) The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.
+
+
 <a id="nestedblock--conditional_group_routing_rules"></a>
 ### Nested Schema for `conditional_group_routing_rules`
 
 Required:
 
-- `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
-- `groups` (Block List, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--conditional_group_routing_rules--groups))
-- `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
+- `groups` (Block Set, Min: 1) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--conditional_group_routing_rules--groups))
 
 Optional:
 
+- `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
 - `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
+- `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
 - `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 
@@ -195,86 +211,126 @@ Optional:
 <a id="nestedblock--media_settings_call"></a>
 ### Nested Schema for `media_settings_call`
 
-Required:
-
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
 Optional:
 
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
+- `mode` (String) The mode callbacks will use on this queue.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_call--sub_type_settings))
+
+<a id="nestedblock--media_settings_call--sub_type_settings"></a>
+### Nested Schema for `media_settings_call.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_callback"></a>
 ### Nested Schema for `media_settings_callback`
 
-Required:
-
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
 Optional:
 
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
+- `mode` (String) The mode callbacks will use on this queue.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_callback--sub_type_settings))
+
+<a id="nestedblock--media_settings_callback--sub_type_settings"></a>
+### Nested Schema for `media_settings_callback.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_chat"></a>
 ### Nested Schema for `media_settings_chat`
 
-Required:
-
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
 Optional:
 
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
+- `mode` (String) The mode callbacks will use on this queue.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_chat--sub_type_settings))
+
+<a id="nestedblock--media_settings_chat--sub_type_settings"></a>
+### Nested Schema for `media_settings_chat.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_email"></a>
 ### Nested Schema for `media_settings_email`
 
-Required:
-
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
 Optional:
 
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
+- `mode` (String) The mode callbacks will use on this queue.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_email--sub_type_settings))
+
+<a id="nestedblock--media_settings_email--sub_type_settings"></a>
+### Nested Schema for `media_settings_email.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedblock--media_settings_message"></a>
 ### Nested Schema for `media_settings_message`
 
-Required:
-
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-
 Optional:
 
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
+- `mode` (String) The mode callbacks will use on this queue.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
+
+<a id="nestedblock--media_settings_message--sub_type_settings"></a>
+### Nested Schema for `media_settings_message.sub_type_settings`
+
+Required:
+
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
+- `media_type` (String) The name of the social media company
+
 
 
 <a id="nestedatt--members"></a>

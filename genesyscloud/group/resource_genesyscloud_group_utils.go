@@ -8,7 +8,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // 'number' and 'extension' conflict with eachother. However, one must be set.
@@ -27,6 +27,7 @@ func validateAddressesMap(m map[string]interface{}) error {
 
 func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2.Groupcontact) []interface{} {
 	addressSlice := make([]interface{}, 0)
+	utilE164 := util.NewUtilE164Service()
 	for _, address := range *addresses {
 		if address.MediaType != nil {
 			if *address.MediaType == groupPhoneType {
@@ -34,7 +35,7 @@ func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2
 
 				// Strip off any parentheses from phone numbers
 				if address.Address != nil {
-					phoneNumber["number"] = strings.Trim(*address.Address, "()")
+					phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Address, "()"))
 				}
 
 				resourcedata.SetMapValueIfNotNil(phoneNumber, "extension", address.Extension)
@@ -44,7 +45,7 @@ func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2
 				if address.Address == nil &&
 					address.Extension == nil &&
 					address.Display != nil {
-					setExtensionOrNumberBasedOnDisplay(d, phoneNumber, &address)
+					setExtensionOrNumberBasedOnDisplay(d, phoneNumber, &address, utilE164)
 				}
 
 				addressSlice = append(addressSlice, phoneNumber)
@@ -62,7 +63,7 @@ func flattenGroupAddresses(d *schema.ResourceData, addresses *[]platformclientv2
 *  This function establishes which field was set in the schema data (`extension` or `address`)
 *  and then sets that field in the map to the value that came back in `display`
  */
-func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[string]interface{}, address *platformclientv2.Groupcontact) {
+func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[string]interface{}, address *platformclientv2.Groupcontact, utilE164 *util.UtilE164Service) {
 	display := strings.Trim(*address.Display, "()")
 	schemaAddresses := d.Get("addresses").([]interface{})
 	for _, a := range schemaAddresses {
@@ -77,7 +78,7 @@ func setExtensionOrNumberBasedOnDisplay(d *schema.ResourceData, addressMap map[s
 		if ext, _ := currentAddress["extension"].(string); ext != "" {
 			addressMap["extension"] = display
 		} else if number, _ := currentAddress["number"].(string); number != "" {
-			addressMap["number"] = display
+			addressMap["number"] = utilE164.FormatAsCalculatedE164Number(display)
 		}
 	}
 }
@@ -120,12 +121,12 @@ func buildSdkGroupAddresses(d *schema.ResourceData) (*[]platformclientv2.Groupco
 	return nil, nil
 }
 
-func GenerateBasicGroupResource(resourceID string, name string, nestedBlocks ...string) string {
-	return GenerateGroupResource(resourceID, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
+func GenerateBasicGroupResource(resourceLabel string, name string, nestedBlocks ...string) string {
+	return GenerateGroupResource(resourceLabel, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
 }
 
 func GenerateGroupResource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	desc string,
 	groupType string,
@@ -140,7 +141,7 @@ func GenerateGroupResource(
 		rules_visible = %s
         %s
 	}
-	`, resourceID, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
+	`, resourceLabel, name, desc, groupType, visibility, rulesVisible, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateGroupAddress(number string, phoneType string, extension string) string {

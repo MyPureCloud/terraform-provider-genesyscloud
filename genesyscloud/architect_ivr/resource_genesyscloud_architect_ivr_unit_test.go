@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +20,7 @@ func TestUnitResourceArchitectRead(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -82,7 +82,7 @@ func TestUnitResourceArchitectDeleteStandard(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -135,7 +135,7 @@ func TestUnitResourceArchitectDeleteSoftDelete(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -199,7 +199,7 @@ func TestUnitResourceArchitectCreate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -232,7 +232,7 @@ func TestUnitResourceArchitectCreate(t *testing.T) {
 	archProxy.createArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *ivr.Name, "ivr.Name check failed in create createArchitectIvrAttr")
 		assert.Equal(t, tDescription, *ivr.Description, "ivr.Description check failed in create createArchitectIvrAttr")
-		assert.EqualValues(t, &tDnis, ivr.Dnis, "ivr.Dnis check failed in create createArchitectIvrAttr")
+		assert.ElementsMatch(t, tDnis, *ivr.Dnis, "ivr.Dnis check failed in create createArchitectIvrAttr")
 		assert.Equal(t, tOpenHoursFlowId, *ivr.OpenHoursFlow.Id, "ivr.OpenHoursFlow.Id check failed in create createArchitectIvrAttr")
 		assert.Equal(t, tClosedHoursFlowId, *ivr.ClosedHoursFlow.Id, "ivr.ClosedHoursFlow.Id check failed in create createArchitectIvrAttr")
 		assert.Equal(t, tHolidayHoursFlowId, *ivr.HolidayHoursFlow.Id, "ivr.HolidayHoursFlow.Id check failed in create createArchitectIvrAttr")
@@ -270,7 +270,7 @@ func TestUnitResourceArchitectUpdate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "My Unit Test IVR"
 	tDescription := "My updated Unit Test IVR"
-	tDnis := []string{"+920-555-2902", "+920-321-5463"}
+	tDnis := []string{"+192055529", "+192032154"}
 	tIDnis := make([]interface{}, len(tDnis))
 	for i, v := range tDnis {
 		tIDnis[i] = v
@@ -303,7 +303,7 @@ func TestUnitResourceArchitectUpdate(t *testing.T) {
 	archProxy.updateArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *ivr.Name, "ivr.Name check failed in create updateArchitectIvrAttr")
 		assert.Equal(t, tDescription, *ivr.Description, "ivr.Description check failed in updateArchitectIvrAttr")
-		assert.EqualValues(t, &tDnis, ivr.Dnis, "ivr.Dnis check failed in updateArchitectIvrAttr")
+		assert.ElementsMatch(t, tDnis, *ivr.Dnis, "ivr.Dnis check failed in updateArchitectIvrAttr")
 		assert.Equal(t, tOpenHoursFlowId, *ivr.OpenHoursFlow.Id, "ivr.OpenHoursFlow.Id check failed in updateArchitectIvrAttr")
 		assert.Equal(t, tClosedHoursFlowId, *ivr.ClosedHoursFlow.Id, "ivr.ClosedHoursFlow.Id check failed in updateArchitectIvrAttr")
 		assert.Equal(t, tHolidayHoursFlowId, *ivr.HolidayHoursFlow.Id, "ivr.HolidayHoursFlow.Id check failed in updateArchitectIvrAttr")

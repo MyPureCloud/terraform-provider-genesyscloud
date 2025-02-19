@@ -3,8 +3,9 @@ package telephony_providers_edges_did
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -67,6 +68,7 @@ func (t *telephonyProvidersEdgesDidProxy) getTelephonyProvidersEdgesDidIdByDid(c
 
 // getTelephonyProvidersEdgesDidIdByDidFn is an implementation function for getting a telephony DID ID by DID number.
 func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, *platformclientv2.APIResponse, error) {
+	utilE164 := util.NewUtilE164Service()
 	const pageSize = 100
 
 	pageNum := 1
@@ -84,7 +86,7 @@ func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvi
 			break
 		}
 		for _, entity := range *dids.Entities {
-			if *entity.PhoneNumber == did {
+			if utilE164.FormatAsCalculatedE164Number(*entity.PhoneNumber) == did {
 				return *entity.Id, false, resp, nil
 			}
 		}

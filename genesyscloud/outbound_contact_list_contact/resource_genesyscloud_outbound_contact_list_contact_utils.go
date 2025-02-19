@@ -7,11 +7,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // buildWritableContactFromResourceData used to build the request body for contact creation
 func buildWritableContactFromResourceData(d *schema.ResourceData) platformclientv2.Writabledialercontact {
+	contactId, _ := d.Get("contact_id").(string)
 	contactListId := d.Get("contact_list_id").(string)
 	callable := d.Get("callable").(bool)
 
@@ -20,13 +21,21 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 		Callable:      &callable,
 	}
 
+	if contactId != "" {
+		contactRequest.Id = &contactId
+	}
+
 	if dataMap, ok := d.Get("data").(map[string]any); ok {
 		stringMap := utillists.ConvertMapStringAnyToMapStringString(dataMap)
 		contactRequest.Data = &stringMap
 	}
 
-	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
-	contactRequest.ContactableStatus = buildContactableStatus(d)
+	if phoneNumberStatus := buildPhoneNumberStatus(d); phoneNumberStatus != nil {
+		contactRequest.PhoneNumberStatus = phoneNumberStatus
+	}
+	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
+		contactRequest.ContactableStatus = contactableStatus
+	}
 	return contactRequest
 }
 
@@ -42,14 +51,18 @@ func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2
 		stringMap := utillists.ConvertMapStringAnyToMapStringString(dataMap)
 		contactRequest.Data = &stringMap
 	}
-	contactRequest.PhoneNumberStatus = buildPhoneNumberStatus(d)
-	contactRequest.ContactableStatus = buildContactableStatus(d)
+	if phoneNumberStatus := buildPhoneNumberStatus(d); phoneNumberStatus != nil {
+		contactRequest.PhoneNumberStatus = phoneNumberStatus
+	}
+	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
+		contactRequest.ContactableStatus = contactableStatus
+	}
 	return contactRequest
 }
 
 func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2.Contactablestatus {
 	contactableStatus, ok := d.Get("contactable_status").(*schema.Set)
-	if !ok {
+	if !ok || len(contactableStatus.List()) == 0 {
 		return nil
 	}
 
@@ -84,7 +97,7 @@ func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2
 
 func buildPhoneNumberStatus(d *schema.ResourceData) *map[string]platformclientv2.Phonenumberstatus {
 	phoneNumberStatus, ok := d.Get("phone_number_status").(*schema.Set)
-	if !ok {
+	if !ok || len(phoneNumberStatus.List()) == 0 {
 		return nil
 	}
 
@@ -143,18 +156,20 @@ func flattenColumnStatus(columnStatus *map[string]platformclientv2.Columnstatus)
 }
 
 func GenerateOutboundContactListContact(
-	resourceId,
+	resourceLabel,
 	contactListId,
+	contactId,
 	callable,
 	data string,
 	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
-    contact_list_id = %s
+		contact_list_id = %s
+		contact_id = "%s"
     callable        = %s
     %s
     %s
-}`, resourceName, resourceId, contactListId, callable, data, strings.Join(nestedBlocks, "\n"))
+}`, ResourceType, resourceLabel, contactListId, contactId, callable, data, strings.Join(nestedBlocks, "\n"))
 }
 
 func GeneratePhoneNumberStatus(key, callable string) string {
@@ -180,4 +195,16 @@ func GenerateColumnStatus(column, contactable string) string {
 			column      = "%s"
 			contactable = %s
 		}`, column, contactable)
+}
+
+func buildComplexContactId(contactListId string, contactId string) string {
+	return fmt.Sprintf("%s:%s", contactListId, contactId)
+}
+
+func splitComplexContactId(complexContactId string) (string, string) {
+	if strings.Contains(complexContactId, ":") {
+		split := strings.SplitN(complexContactId, ":", 2)
+		return split[0], split[1]
+	}
+	return "", complexContactId
 }

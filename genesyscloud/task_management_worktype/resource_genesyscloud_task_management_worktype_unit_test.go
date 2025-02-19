@@ -1,6 +1,5 @@
 package task_management_worktype
 
-// build
 import (
 	"context"
 	"fmt"
@@ -12,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,38 +25,6 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		description:      "worktype created for CX as Code test case",
 		divisionId:       uuid.NewString(),
 		defaultWorkbinId: uuid.NewString(),
-
-		statuses: []worktypeStatusConfig{
-			{
-				id:                           uuid.NewString(),
-				name:                         "Open Status",
-				description:                  "Description of open status. Updated",
-				defaultDestinationStatusName: "WIP",
-				destinationStatusNames:       []string{"WIP", "Waiting Status"},
-				transitionDelay:              120,
-				statusTransitionTime:         "12:11:10",
-				category:                     "Open",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "WIP",
-				description: "Description of in progress status. Updated",
-				category:    "InProgress",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "Waiting Status",
-				description: "Description of waiting status. Updated",
-				category:    "Waiting",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "Close Status",
-				description: "Description of close status. Updated",
-				category:    "Closed",
-			},
-		},
-		defaultStatusName: "Open Status",
 
 		defaultDurationS:    86400,
 		defaultExpirationS:  86400,
@@ -74,9 +41,9 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		schemaVersion: 1,
 	}
 
-	taskProxy := &taskManagementWorktypeProxy{}
+	taskProxy := &TaskManagementWorktypeProxy{}
 
-	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, wt.name, *create.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.description, *create.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.divisionId, *create.DivisionId, "wt.divisionId check failed in create createTaskManagementWorktypeAttr")
@@ -121,32 +88,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		}, nil, nil
 	}
 
-	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-		return &platformclientv2.Workitemstatus{
-			Id:                           &worktypeId,
-			Name:                         status.Name,
-			Category:                     status.Category,
-			Description:                  status.Description,
-			StatusTransitionDelaySeconds: status.StatusTransitionDelaySeconds,
-			StatusTransitionTime:         status.StatusTransitionTime,
-		}, nil, nil
-	}
-
-	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-		return &platformclientv2.Workitemstatus{
-			Id:                  &statusId,
-			Name:                statusUpdate.Name,
-			DestinationStatuses: buildDestinationStatuses(statusUpdate.DestinationStatusIds),
-			Description:         statusUpdate.Description,
-			DefaultDestinationStatus: &platformclientv2.Workitemstatusreference{
-				Id: statusUpdate.DefaultDestinationStatusId,
-			},
-			StatusTransitionDelaySeconds: statusUpdate.StatusTransitionDelaySeconds,
-			StatusTransitionTime:         statusUpdate.StatusTransitionTime,
-		}, nil, nil
-	}
-
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
@@ -182,50 +124,6 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			Schema: &platformclientv2.Workitemschema{
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
-			},
-
-			Statuses: &[]platformclientv2.Workitemstatus{
-				{
-					Id:          &wt.statuses[0].id,
-					Name:        &wt.statuses[0].name,
-					Description: &wt.statuses[0].description,
-					DefaultDestinationStatus: &platformclientv2.Workitemstatusreference{
-						Id: wt.getStatusIdFromName(wt.statuses[0].defaultDestinationStatusName),
-					},
-					DestinationStatuses: &[]platformclientv2.Workitemstatusreference{
-						{
-							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[0]),
-						},
-						{
-							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[1]),
-						},
-					},
-					StatusTransitionDelaySeconds: &wt.statuses[0].transitionDelay,
-					StatusTransitionTime:         &wt.statuses[0].statusTransitionTime,
-					Category:                     &wt.statuses[0].category,
-				},
-				{
-					Id:          &wt.statuses[1].id,
-					Name:        &wt.statuses[1].name,
-					Description: &wt.statuses[1].description,
-					Category:    &wt.statuses[1].category,
-				},
-				{
-					Id:          &wt.statuses[2].id,
-					Name:        &wt.statuses[2].name,
-					Description: &wt.statuses[2].description,
-					Category:    &wt.statuses[2].category,
-				},
-				{
-					Id:          &wt.statuses[3].id,
-					Name:        &wt.statuses[3].name,
-					Description: &wt.statuses[3].description,
-					Category:    &wt.statuses[3].category,
-				},
-			},
-
-			DefaultStatus: &platformclientv2.Workitemstatusreference{
-				Id: wt.getStatusIdFromName(wt.defaultStatusName),
 			},
 		}
 
@@ -251,7 +149,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 	d.SetId(tId)
 
 	diag := createTaskManagementWorktype(ctx, d, gcloud)
-	assert.Equal(t, false, diag.HasError())
+	assert.Equal(t, false, diag.HasError(), diag)
 	assert.Equal(t, tId, d.Id())
 }
 
@@ -264,38 +162,6 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 		description:      "worktype created for CX as Code test case",
 		divisionId:       uuid.NewString(),
 		defaultWorkbinId: uuid.NewString(),
-
-		statuses: []worktypeStatusConfig{
-			{
-				id:                           uuid.NewString(),
-				name:                         "Open Status",
-				description:                  "Description of open status. Updated",
-				defaultDestinationStatusName: "WIP",
-				destinationStatusNames:       []string{"WIP", "Waiting Status"},
-				transitionDelay:              120,
-				statusTransitionTime:         "12:11:10",
-				category:                     "Open",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "WIP",
-				description: "Description of in progress status. Updated",
-				category:    "InProgress",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "Waiting Status",
-				description: "Description of waiting status. Updated",
-				category:    "Waiting",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "Close Status",
-				description: "Description of close status. Updated",
-				category:    "Closed",
-			},
-		},
-		defaultStatusName: "Open Status",
 
 		defaultDurationS:    86400,
 		defaultExpirationS:  86400,
@@ -312,9 +178,9 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 		schemaVersion: 1,
 	}
 
-	taskProxy := &taskManagementWorktypeProxy{}
+	taskProxy := &TaskManagementWorktypeProxy{}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
@@ -351,50 +217,6 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
 			},
-
-			Statuses: &[]platformclientv2.Workitemstatus{
-				{
-					Id:          &wt.statuses[0].id,
-					Name:        &wt.statuses[0].name,
-					Description: &wt.statuses[0].description,
-					DefaultDestinationStatus: &platformclientv2.Workitemstatusreference{
-						Id: wt.getStatusIdFromName(wt.statuses[0].defaultDestinationStatusName),
-					},
-					DestinationStatuses: &[]platformclientv2.Workitemstatusreference{
-						{
-							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[0]),
-						},
-						{
-							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[1]),
-						},
-					},
-					StatusTransitionDelaySeconds: &wt.statuses[0].transitionDelay,
-					StatusTransitionTime:         &wt.statuses[0].statusTransitionTime,
-					Category:                     &wt.statuses[0].category,
-				},
-				{
-					Id:          &wt.statuses[1].id,
-					Name:        &wt.statuses[1].name,
-					Description: &wt.statuses[1].description,
-					Category:    &wt.statuses[1].category,
-				},
-				{
-					Id:          &wt.statuses[2].id,
-					Name:        &wt.statuses[2].name,
-					Description: &wt.statuses[2].description,
-					Category:    &wt.statuses[2].category,
-				},
-				{
-					Id:          &wt.statuses[3].id,
-					Name:        &wt.statuses[3].name,
-					Description: &wt.statuses[3].description,
-					Category:    &wt.statuses[3].category,
-				},
-			},
-
-			DefaultStatus: &platformclientv2.Workitemstatusreference{
-				Id: wt.getStatusIdFromName(wt.defaultStatusName),
-			},
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -419,14 +241,12 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 
 	diag := readTaskManagementWorktype(ctx, d, gcloud)
 
-	assert.Equal(t, false, diag.HasError())
+	assert.Equal(t, false, diag.HasError(), diag)
 	assert.Equal(t, tId, d.Id())
 	assert.Equal(t, wt.name, d.Get("name").(string))
 	assert.Equal(t, wt.description, d.Get("description").(string))
 	assert.Equal(t, wt.divisionId, d.Get("division_id").(string))
 	assert.Equal(t, wt.defaultWorkbinId, d.Get("default_workbin_id").(string))
-	assert.Equal(t, len(wt.statuses), d.Get("statuses").(*schema.Set).Len())
-	assert.Equal(t, wt.defaultStatusName, d.Get("default_status_name").(string))
 	assert.Equal(t, wt.defaultDurationS, d.Get("default_duration_seconds").(int))
 	assert.Equal(t, wt.defaultExpirationS, d.Get("default_expiration_seconds").(int))
 	assert.Equal(t, wt.defaultDueDurationS, d.Get("default_due_duration_seconds").(int))
@@ -450,38 +270,6 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 		divisionId:       uuid.NewString(),
 		defaultWorkbinId: uuid.NewString(),
 
-		statuses: []worktypeStatusConfig{
-			{
-				id:                           uuid.NewString(),
-				name:                         "Open Status",
-				description:                  "Description of open status. Updated",
-				defaultDestinationStatusName: "WIP",
-				destinationStatusNames:       []string{"WIP", "Waiting Status"},
-				transitionDelay:              120,
-				statusTransitionTime:         "12:11:10",
-				category:                     "Open",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "WIP",
-				description: "Description of in progress status. Updated",
-				category:    "InProgress",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "Waiting Status",
-				description: "Description of waiting status. Updated",
-				category:    "Waiting",
-			},
-			{
-				id:          uuid.NewString(),
-				name:        "Close Status",
-				description: "Description of close status. Updated",
-				category:    "Closed",
-			},
-		},
-		defaultStatusName: "Open Status",
-
 		defaultDurationS:    86400,
 		defaultExpirationS:  86400,
 		defaultDueDurationS: 86400,
@@ -497,9 +285,9 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 		schemaVersion: 1,
 	}
 
-	taskProxy := &taskManagementWorktypeProxy{}
+	taskProxy := &TaskManagementWorktypeProxy{}
 
-	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		assert.Equal(t, wt.name, *update.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
 
@@ -531,34 +319,8 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 		}, nil, nil
 	}
 
-	taskProxy.createTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, status *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-		return &platformclientv2.Workitemstatus{
-			Id:                           &worktypeId,
-			Name:                         status.Name,
-			Category:                     status.Category,
-			Description:                  status.Description,
-			StatusTransitionDelaySeconds: status.StatusTransitionDelaySeconds,
-			StatusTransitionTime:         status.StatusTransitionTime,
-		}, nil, nil
-	}
-
-	taskProxy.updateTaskManagementWorktypeStatusAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, worktypeId string, statusId string, statusUpdate *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
-		return &platformclientv2.Workitemstatus{
-			Id:                  &statusId,
-			Name:                statusUpdate.Name,
-			DestinationStatuses: buildDestinationStatuses(statusUpdate.DestinationStatusIds),
-			Description:         statusUpdate.Description,
-			DefaultDestinationStatus: &platformclientv2.Workitemstatusreference{
-				Id: statusUpdate.DefaultDestinationStatusId,
-			},
-			StatusTransitionDelaySeconds: statusUpdate.StatusTransitionDelaySeconds,
-			StatusTransitionTime:         statusUpdate.StatusTransitionTime,
-		}, nil, nil
-	}
-
 	// The final complete worktype for read
-	// This is where we'll be asserting the statuses
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		// The expected final form of the worktype
@@ -595,50 +357,6 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
 			},
-
-			Statuses: &[]platformclientv2.Workitemstatus{
-				{
-					Id:          &wt.statuses[0].id,
-					Name:        &wt.statuses[0].name,
-					Description: &wt.statuses[0].description,
-					DefaultDestinationStatus: &platformclientv2.Workitemstatusreference{
-						Id: wt.getStatusIdFromName(wt.statuses[0].defaultDestinationStatusName),
-					},
-					DestinationStatuses: &[]platformclientv2.Workitemstatusreference{
-						{
-							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[0]),
-						},
-						{
-							Id: wt.getStatusIdFromName(wt.statuses[0].destinationStatusNames[1]),
-						},
-					},
-					StatusTransitionDelaySeconds: &wt.statuses[0].transitionDelay,
-					StatusTransitionTime:         &wt.statuses[0].statusTransitionTime,
-					Category:                     &wt.statuses[0].category,
-				},
-				{
-					Id:          &wt.statuses[1].id,
-					Name:        &wt.statuses[1].name,
-					Description: &wt.statuses[1].description,
-					Category:    &wt.statuses[1].category,
-				},
-				{
-					Id:          &wt.statuses[2].id,
-					Name:        &wt.statuses[2].name,
-					Description: &wt.statuses[2].description,
-					Category:    &wt.statuses[2].category,
-				},
-				{
-					Id:          &wt.statuses[3].id,
-					Name:        &wt.statuses[3].name,
-					Description: &wt.statuses[3].description,
-					Category:    &wt.statuses[3].category,
-				},
-			},
-
-			DefaultStatus: &platformclientv2.Workitemstatusreference{
-				Id: wt.getStatusIdFromName(wt.defaultStatusName),
-			},
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -663,7 +381,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 	d.SetId(tId)
 
 	diag := updateTaskManagementWorktype(ctx, d, gcloud)
-	assert.Equal(t, false, diag.HasError())
+	assert.Equal(t, false, diag.HasError(), diag)
 	assert.Equal(t, tId, d.Id())
 }
 
@@ -676,16 +394,16 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 		schemaId:         uuid.NewString(),
 	}
 
-	taskProxy := &taskManagementWorktypeProxy{}
+	taskProxy := &TaskManagementWorktypeProxy{}
 
-	taskProxy.deleteTaskManagementWorktypeAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (*platformclientv2.APIResponse, error) {
+	taskProxy.deleteTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}
 		return apiResponse, nil
 	}
 
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *taskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error) {
+	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{
@@ -714,7 +432,7 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 	d.SetId(tId)
 
 	diag := deleteTaskManagementWorktype(ctx, d, gcloud)
-	assert.Nil(t, diag)
+	assert.Nil(t, diag, diag)
 	assert.Equal(t, tId, d.Id())
 }
 
@@ -724,7 +442,6 @@ func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interfa
 		"name":                         wt.name,
 		"description":                  wt.description,
 		"division_id":                  wt.divisionId,
-		"statuses":                     buildWorktypeStatusesList(&wt.statuses),
 		"default_workbin_id":           wt.defaultWorkbinId,
 		"default_duration_seconds":     wt.defaultDurationS,
 		"default_expiration_seconds":   wt.defaultExpirationS,
@@ -740,38 +457,4 @@ func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interfa
 	}
 
 	return resourceDataMap
-}
-
-func buildWorktypeStatusesList(statuses *[]worktypeStatusConfig) []interface{} {
-	statusList := []interface{}{}
-	for _, s := range *statuses {
-		statusList = append(statusList, buildWorktypeStatusResourceMap(&s))
-	}
-
-	return statusList
-}
-
-func buildWorktypeStatusResourceMap(status *worktypeStatusConfig) map[string]interface{} {
-	return map[string]interface{}{
-		"id":                              status.id,
-		"name":                            status.name,
-		"description":                     status.description,
-		"category":                        status.category,
-		"destination_status_names":        lists.StringListToInterfaceList(status.destinationStatusNames),
-		"default_destination_status_name": status.defaultDestinationStatusName,
-		"status_transition_delay_seconds": status.transitionDelay,
-		"status_transition_time":          status.statusTransitionTime,
-	}
-}
-
-func buildDestinationStatuses(statusIds *[]string) *[]platformclientv2.Workitemstatusreference {
-	ret := []platformclientv2.Workitemstatusreference{}
-
-	for _, sid := range *statusIds {
-		ret = append(ret, platformclientv2.Workitemstatusreference{
-			Id: &sid,
-		})
-	}
-
-	return &ret
 }

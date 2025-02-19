@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -31,13 +31,7 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Name:          &name,
 		PhoneMetaBase: phoneMetaBase,
 		Properties:    properties,
-		Lines: &[]platformclientv2.Linebase{
-			{
-				Name:         &name,
-				LineMetaBase: phoneMetaBase,
-			},
-		},
-		Capabilities: buildSdkCapabilities(d),
+		Capabilities:  buildSdkCapabilities(d),
 	}
 
 	if description != "" {
@@ -47,10 +41,30 @@ func createPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
-	log.Printf("Creating phone base settings %s", name)
+	log.Printf("Getting phone base settings template for %s", phoneMetaBase)
+	phoneBaseSettingTemplate, resp, err := phoneBaseProxy.getPhoneBaseSettingTemplate(ctx, *phoneMetaBase.Id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get phone base settings template %s error: %s", phoneMetaBase, err), resp)
+	}
+
+	phoneBaseSettingTemplateLines := *phoneBaseSettingTemplate.Lines
+	if len(phoneBaseSettingTemplateLines) == 0 {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get phone base settings template lines for %s", phoneMetaBase), resp)
+	}
+	phoneBase.Lines = &[]platformclientv2.Linebase{
+		{
+			Name:         &name,
+			LineMetaBase: phoneBaseSettingTemplateLines[0].LineMetaBase,
+		},
+	}
+	if lineProperties := BuildTelephonyLineBaseProperties(d); lineProperties != nil {
+		(*phoneBase.Lines)[0].Properties = lineProperties
+	}
+
+	log.Printf("Creating phone base settings %s for %s", name, phoneMetaBase)
 	phoneBaseSettings, resp, err := phoneBaseProxy.postPhoneBaseSetting(ctx, phoneBase)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create phone base settings %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create phone base settings %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*phoneBaseSettings.Id)
@@ -72,13 +86,7 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		Name:          &name,
 		PhoneMetaBase: phoneMetaBase,
 		Properties:    properties,
-		Lines: &[]platformclientv2.Linebase{
-			{
-				Name:         &name,
-				LineMetaBase: phoneMetaBase,
-			},
-		},
-		Capabilities: buildSdkCapabilities(d),
+		Capabilities:  buildSdkCapabilities(d),
 	}
 
 	if description != "" {
@@ -92,14 +100,35 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		if util.IsStatus404(resp) {
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read phone base settings %s | error: %s", d.Id(), getErr), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read phone base settings %s | error: %s", d.Id(), getErr), resp)
 	}
-	(*phoneBase.Lines)[0].Id = (*phoneBaseSettings.Lines)[0].Id
+
+	log.Printf("Getting phone base settings template for %s", phoneMetaBase)
+	phoneBaseSettingTemplate, resp, err := phoneBaseProxy.getPhoneBaseSettingTemplate(ctx, *phoneMetaBase.Id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get phone base settings template %s error: %s", phoneMetaBase, err), resp)
+	}
+
+	phoneBaseSettingTemplateLines := *phoneBaseSettingTemplate.Lines
+	if len(phoneBaseSettingTemplateLines) == 0 {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get phone base settings template lines for %s", phoneMetaBase), resp)
+	}
+	phoneBase.Lines = &[]platformclientv2.Linebase{
+		{
+			Name:         &name,
+			LineMetaBase: phoneBaseSettingTemplateLines[0].LineMetaBase,
+			Id:           (*phoneBaseSettings.Lines)[0].Id,
+			State:        (*phoneBaseSettings.Lines)[0].State,
+		},
+	}
+	if lineProperties := BuildTelephonyLineBaseProperties(d); lineProperties != nil {
+		(*phoneBase.Lines)[0].Properties = lineProperties
+	}
 
 	log.Printf("Updating phone base settings %s", name)
-	phoneBaseSettings, resp, err := phoneBaseProxy.putPhoneBaseSetting(ctx, d.Id(), phoneBase)
+	_, resp, err = phoneBaseProxy.putPhoneBaseSetting(ctx, d.Id(), phoneBase)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update phone base settings %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update phone base settings %s error: %s", name, err), resp)
 	}
 
 	log.Printf("Updated phone base settings %s", d.Id())
@@ -110,16 +139,16 @@ func updatePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings(), constants.DefaultConsistencyChecks, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourcePhoneBaseSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading phone base settings %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		phoneBaseSettings, resp, getErr := phoneBaseProxy.getPhoneBaseSetting(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone base settings %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone base settings %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read phone base settings %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read phone base settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		d.Set("name", *phoneBaseSettings.Name)
@@ -143,8 +172,9 @@ func readPhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 			d.Set("capabilities", flattenPhoneCapabilities(phoneBaseSettings.Capabilities))
 		}
 
-		if len(*phoneBaseSettings.Lines) > 0 {
-			d.Set("line_base_settings_id", (*phoneBaseSettings.Lines)[0].Id)
+		if phoneBaseSettings.Lines != nil && len(*phoneBaseSettings.Lines) > 0 {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "line_base", phoneBaseSettings.Lines, flattenTelephonyLineBaseProperties)
+			resourcedata.SetNillableValue(d, "line_base_settings_id", (*phoneBaseSettings.Lines)[0].Id)
 		}
 
 		log.Printf("Read phone base settings %s %s", d.Id(), *phoneBaseSettings.Name)
@@ -157,10 +187,17 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 
-	log.Printf("Deleting phone base settings")
-	resp, err := phoneBaseProxy.deletePhoneBaseSetting(ctx, d.Id())
-	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete phone base settings %s error: %s", d.Id(), err), resp)
+	// DEVTOOLING-317: Unable to delete phone base settings when a station is still attached, retrying on HTTP 409
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting phone base settings")
+		resp, err := phoneBaseProxy.deletePhoneBaseSetting(ctx, d.Id())
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone base settings %s error: %s", d.Id(), err), resp)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -171,7 +208,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Phone base settings %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting Phone base settings %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting Phone base settings %s | error: %s", d.Id(), err), resp))
 		}
 
 		if phoneBaseSettings.State != nil && *phoneBaseSettings.State == "deleted" {
@@ -180,7 +217,7 @@ func deletePhoneBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 			return nil
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("phone base settings %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("phone base settings %s still exists", d.Id()), resp))
 	})
 }
 
@@ -189,12 +226,12 @@ func getAllPhoneBaseSettings(ctx context.Context, sdkConfig *platformclientv2.Co
 	phoneBaseProxy := getPhoneBaseProxy(sdkConfig)
 	phoneBaseSettings, resp, err := phoneBaseProxy.getAllPhoneBaseSettings(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get all phone base settings error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all phone base settings error: %s", err), resp)
 	}
 
 	if phoneBaseSettings != nil {
 		for _, phoneBaseSetting := range *phoneBaseSettings {
-			resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{Name: *phoneBaseSetting.Name}
+			resources[*phoneBaseSetting.Id] = &resourceExporter.ResourceMeta{BlockLabel: *phoneBaseSetting.Name}
 		}
 	}
 	return resources, nil

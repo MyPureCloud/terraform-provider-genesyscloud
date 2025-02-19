@@ -2,9 +2,10 @@ package group_roles
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud"
+	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -13,28 +14,34 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+var (
+	mu sync.Mutex
+)
+
 func TestAccResourceGroupRolesMembership(t *testing.T) {
 	var (
-		groupRoleResource = "test-group-roles1"
-		groupResource1    = "test-group"
-		groupName         = "terraform-" + uuid.NewString()
-		roleResource1     = "test-role-1"
-		roleResource2     = "test-role-2"
-		roleName1         = "Terraform Group Role Test1" + uuid.NewString()
-		roleName2         = "Terraform Group Role Test2" + uuid.NewString()
-		roleDesc          = "Terraform Group roles test"
-		divResource       = "test-division"
-		divName           = "terraform-" + uuid.NewString()
-		testUserResource  = "user_resource1"
-		testUserName      = "nameUser1" + uuid.NewString()
-		testUserEmail     = uuid.NewString() + "@example.com"
+		groupRoleResourceLabel = "test-group-roles1"
+		groupResourceLabel1    = "test-group"
+		groupName              = "terraform-" + uuid.NewString()
+		roleResourceLabel1     = "test-role-1"
+		roleResourceLabel2     = "test-role-2"
+		roleName1              = "Terraform Group Role Test1" + uuid.NewString()
+		roleName2              = "Terraform Group Role Test2" + uuid.NewString()
+		roleDesc               = "Terraform Group roles test"
+		divResourceLabel       = "test-division"
+		divName                = "terraform-" + uuid.NewString()
+		testUserResourceLabel  = "user_resource1"
+		testUserName           = "nameUser1" + uuid.NewString()
+		testUserEmail          = uuid.NewString() + "@example.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -43,118 +50,116 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create group with 1 role in default division
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
-					groupResource1,
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
+					groupResourceLabel1,
 					groupName,
-					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				) + authRole.GenerateAuthRoleResource(
-					roleResource1,
+					roleResourceLabel1,
 					roleName1,
 					roleDesc,
 				) + generateGroupRoles(
-					groupRoleResource,
-					groupResource1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
+					groupRoleResourceLabel,
+					groupResourceLabel1,
+					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 				),
 			},
 			{
 				// Create another role and division and add to the group
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
-					groupResource1,
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
+					groupResourceLabel1,
 					groupName,
-					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				) + authRole.GenerateAuthRoleResource(
-					roleResource1,
+					roleResourceLabel1,
 					roleName1,
 					roleDesc,
 				) + authRole.GenerateAuthRoleResource(
-					roleResource2,
+					roleResourceLabel2,
 					roleName2,
 					roleDesc,
 				) + generateGroupRoles(
-					groupRoleResource,
-					groupResource1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
-					generateResourceRoles("genesyscloud_auth_role."+roleResource2+".id", "genesyscloud_auth_division."+divResource+".id"),
-				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
+					groupRoleResourceLabel,
+					groupResourceLabel1,
+					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
+					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel2+".id", "genesyscloud_auth_division."+divResourceLabel+".id"),
+				) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName),
 				Check: resource.ComposeTestCheckFunc(
-					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1),
-					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource2, "genesyscloud_auth_division."+divResource),
+					validateResourceRole("genesyscloud_group_roles."+groupRoleResourceLabel, "genesyscloud_auth_role."+roleResourceLabel1),
+					validateResourceRole("genesyscloud_group_roles."+groupRoleResourceLabel, "genesyscloud_auth_role."+roleResourceLabel2, "genesyscloud_auth_division."+divResourceLabel),
 				),
 			},
 			{
 				// Remove a role from the group and modify division
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
-					groupResource1,
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
+					groupResourceLabel1,
 					groupName,
-					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				) + authRole.GenerateAuthRoleResource(
-					roleResource1,
+					roleResourceLabel1,
 					roleName1,
 					roleDesc,
 				) + generateGroupRoles(
-					groupRoleResource,
-					groupResource1,
-					generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id", "genesyscloud_auth_division."+divResource+".id"),
-				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
+					groupRoleResourceLabel,
+					groupResourceLabel1,
+					generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id", "genesyscloud_auth_division."+divResourceLabel+".id"),
+				) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName),
 				Check: resource.ComposeTestCheckFunc(
-					validateResourceRole("genesyscloud_group_roles."+groupRoleResource, "genesyscloud_auth_role."+roleResource1, "genesyscloud_auth_division."+divResource),
+					validateResourceRole("genesyscloud_group_roles."+groupRoleResourceLabel, "genesyscloud_auth_role."+roleResourceLabel1, "genesyscloud_auth_division."+divResourceLabel),
 				),
 			},
 			{
 				// Remove all roles from the group
-				Config: generateUserWithCustomAttrs(testUserResource, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
-					groupResource1,
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + group.GenerateBasicGroupResource(
+					groupResourceLabel1,
 					groupName,
-					group.GenerateGroupOwners("genesyscloud_user."+testUserResource+".id"),
+					group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				) + authRole.GenerateAuthRoleResource(
-					roleResource1,
+					roleResourceLabel1,
 					roleName1,
 					roleDesc,
 				) + generateGroupRoles(
-					groupRoleResource,
-					groupResource1,
-				) + genesyscloud.GenerateAuthDivisionBasic(divResource, divName),
+					groupRoleResourceLabel,
+					groupResourceLabel1,
+				) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckNoResourceAttr("genesyscloud_group_roles."+groupRoleResource, "roles.%"),
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
-						return nil
-					},
+					resource.TestCheckNoResourceAttr("genesyscloud_group_roles."+groupRoleResourceLabel, "roles.%"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_group_roles." + groupRoleResource,
+				ResourceName:      "genesyscloud_group_roles." + groupRoleResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
 		},
 	})
 }
 
-func generateGroupRoles(resourceID string, groupResource string, roles ...string) string {
+func generateGroupRoles(resourceLabel string, groupResource string, roles ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_group_roles" "%s" {
 		group_id = genesyscloud_group.%s.id
 		%s
 	}
-	`, resourceID, groupResource, strings.Join(roles, "\n"))
+	`, resourceLabel, groupResource, strings.Join(roles, "\n"))
 }
 
-func validateResourceRole(resourceName string, roleResourceName string, divisions ...string) resource.TestCheckFunc {
+func validateResourceRole(groupRolesResourcePath string, authRoleResourcePath string, divisions ...string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		resourceState, ok := state.RootModule().Resources[resourceName]
+		resourceState, ok := state.RootModule().Resources[groupRolesResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find %s in state", resourceName)
+			return fmt.Errorf("Failed to find %s in state", groupRolesResourcePath)
 		}
-		resourceID := resourceState.Primary.ID
+		resourceLabel := resourceState.Primary.ID
 
-		roleResource, ok := state.RootModule().Resources[roleResourceName]
+		roleResource, ok := state.RootModule().Resources[authRoleResourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find role %s in state", roleResourceName)
+			return fmt.Errorf("Failed to find role %s in state", authRoleResourcePath)
 		}
 		roleID := roleResource.Primary.ID
 
@@ -166,10 +171,10 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 		if len(divisions) > 0 && divisions[0] != "*" {
 			// Get the division IDs from state
 			divisionIDs := make([]string, len(divisions))
-			for i, divResourceName := range divisions {
-				divResource, ok := state.RootModule().Resources[divResourceName]
+			for i, divResourcePath := range divisions {
+				divResource, ok := state.RootModule().Resources[divResourcePath]
 				if !ok {
-					return fmt.Errorf("failed to find %s in state", divResourceName)
+					return fmt.Errorf("failed to find %s in state", divResourcePath)
 				}
 				divisionIDs[i] = divResource.Primary.ID
 			}
@@ -204,7 +209,7 @@ func validateResourceRole(resourceName string, roleResourceName string, division
 				return nil
 			}
 		}
-		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceID, roleID)
+		return fmt.Errorf("Missing expected role for resource %s in state: %s", resourceLabel, roleID)
 	}
 }
 
@@ -221,11 +226,90 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 }
 
 // TODO: Duplicating this code within the function to not break a cyclic dependency
-func generateUserWithCustomAttrs(resourceID string, email string, name string, attrs ...string) string {
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 	}
-	`, resourceID, email, name, strings.Join(attrs, "\n"))
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
+}
+
+func checkUserDeleted(id string) resource.TestCheckFunc {
+	log.Printf("Fetching user with ID: %s\n", id)
+	return func(s *terraform.State) error {
+		maxAttempts := 30
+		for i := 0; i < maxAttempts; i++ {
+
+			deleted, err := isUserDeleted(id)
+			if err != nil {
+				return err
+			}
+			if deleted {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+		return fmt.Errorf("user %s was not deleted properly", id)
+	}
+}
+
+func isUserDeleted(id string) (bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	usersAPI := platformclientv2.NewUsersApi()
+	// Attempt to get the user
+	_, response, err := usersAPI.GetUser(id, nil, "", "")
+
+	// Check if the user is not found (deleted)
+	if response != nil && response.StatusCode == 404 {
+		return true, nil // User is deleted
+	}
+
+	// Handle other errors
+	if err != nil {
+		log.Printf("Error fetching user: %v", err)
+		return false, err
+	}
+
+	// If user is found, it means the user is not deleted
+	return false, nil
+}
+
+func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
+	groupsAPI := platformclientv2.NewGroupsApi()
+	usersAPI := platformclientv2.NewUsersApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_group" {
+			group, resp, err := groupsAPI.GetGroup(rs.Primary.ID)
+			if group != nil {
+				return fmt.Errorf("Group (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// Group not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+		if rs.Type == "genesyscloud_user" {
+			err := checkUserDeleted(rs.Primary.ID)(state)
+			if err != nil {
+				continue
+			}
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			if user != nil {
+				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
+			} else if util.IsStatus404(resp) {
+				// User not found as expected
+				continue
+			} else {
+				// Unexpected error
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+		}
+
+	}
+	return nil
 }

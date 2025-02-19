@@ -9,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_routing_queue"
+const ResourceType = "genesyscloud_routing_queue"
 
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingQueue())
-	regInstance.RegisterDataSource(resourceName, DataSourceRoutingQueue())
-	regInstance.RegisterExporter(resourceName, RoutingQueueExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingQueue())
+	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingQueue())
+	regInstance.RegisterExporter(ResourceType, RoutingQueueExporter())
 }
 
 var (
@@ -33,33 +33,62 @@ var (
 			},
 		},
 	}
+	cannedResponseLibrariesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"mode": {
+				Description:  "The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"All", "SelectedOnly", "None"}, false),
+			},
+			"library_ids": {
+				Description: "Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.",
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
 
 	agentOwnedRoutingResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"enable_agent_owned_callbacks": {
 				Description: "Enable Agent Owned Callbacks",
 				Type:        schema.TypeBool,
-				Required:    true,
+				Optional:    true,
 			},
 			"max_owned_callback_hours": {
 				Description: "Auto End Delay Seconds Must be >= 7",
 				Type:        schema.TypeInt,
-				Required:    true,
+				Optional:    true,
 			},
 			"max_owned_callback_delay_hours": {
 				Description: "Max Owned Call Back Delay Hours >= 7",
 				Type:        schema.TypeInt,
-				Required:    true,
+				Optional:    true,
 			},
 		},
 	}
-
+	subTypeSettingsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"media_type": {
+				Description: "The name of the social media company",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"enable_auto_answer": {
+				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+		},
+	}
 	queueMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
 				Description:  "Alerting timeout in seconds. Must be >= 7",
 				Type:         schema.TypeInt,
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"auto_end_delay_seconds": {
@@ -71,6 +100,12 @@ var (
 				Description: "Auto Dial Delay Seconds.",
 				Type:        schema.TypeInt,
 				Optional:    true,
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
 			},
 			"enable_auto_answer": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
@@ -87,14 +122,20 @@ var (
 			"service_level_percentage": {
 				Description:  "The desired Service Level. A float value between 0 and 1.",
 				Type:         schema.TypeFloat,
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validation.FloatBetween(0, 1),
 			},
 			"service_level_duration_ms": {
 				Description:  "Service Level target in milliseconds. Must be >= 1000",
 				Type:         schema.TypeInt,
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(1000),
+			},
+			"mode": {
+				Description:  "The mode callbacks will use on this queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
 		},
 	}
@@ -162,10 +203,10 @@ func ResourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
 
-		CreateContext: provider.CreateWithPooledClient(createQueue),
-		ReadContext:   provider.ReadWithPooledClient(readQueue),
-		UpdateContext: provider.UpdateWithPooledClient(updateQueue),
-		DeleteContext: provider.DeleteWithPooledClient(deleteQueue),
+		CreateContext: provider.CreateWithPooledClient(createRoutingQueue),
+		ReadContext:   provider.ReadWithPooledClient(readRoutingQueue),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingQueue),
+		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingQueue),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -202,6 +243,13 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				Elem:        agentOwnedRoutingResource,
+			},
+			"canned_response_libraries": {
+				Description: "Agent Owned Routing.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        cannedResponseLibrariesResource,
 			},
 			"media_settings_callback": {
 				Description: "Callback media settings.",
@@ -292,11 +340,10 @@ func ResourceRoutingQueue() *schema.Resource {
 				},
 			},
 			"conditional_group_routing_rules": {
-				Description: "The Conditional Group Routing settings for the queue.",
+				Description: "The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    5,
-				Deprecated:  "conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"queue_id": {
@@ -307,7 +354,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"operator": {
 							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
 							Type:         schema.TypeString,
-							Required:     true,
+							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo"}, false),
 						},
 						"metric": {
@@ -319,7 +366,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"condition_value": {
 							Description:  "The limit value, beyond which a rule evaluates as true.",
 							Type:         schema.TypeFloat,
-							Required:     true,
+							Optional:     true,
 							ValidateFunc: validation.FloatBetween(0, 259200),
 						},
 						"wait_seconds": {
@@ -330,7 +377,7 @@ func ResourceRoutingQueue() *schema.Resource {
 							ValidateFunc: validation.IntBetween(0, 259200),
 						},
 						"groups": {
-							Type:        schema.TypeList,
+							Type:        schema.TypeSet,
 							Required:    true,
 							MinItems:    1,
 							Description: "The group(s) to activate if the rule evaluates as true.",
@@ -403,6 +450,21 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
+			"enable_audio_monitoring": {
+				Description: "Indicates whether audio monitoring is enabled for this queue.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"peer_id": {
+				Description: "The ID of an associated external queue",
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			"source_queue_id": {
+				Description: "The id of an existing queue to copy the settings (does not include GPR settings) from when creating a new queue.",
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			"enable_manual_assignment": {
 				Description: "Indicates whether manual assignment is enabled for this queue.",
 				Type:        schema.TypeBool,
@@ -438,12 +500,21 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"outbound_messaging_open_messaging_recipient_id": {
+				Description: "The unique ID of the outbound messaging open messaging recipient for the queue.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"outbound_messaging_whatsapp_recipient_id": {
+				Description: "The unique ID of the outbound messaging whatsapp recipient for the queue.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"outbound_email_address": {
-				Description: "The outbound email address settings for this queue.",
+				Description: "The outbound email address settings for this queue. **Note**: outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Deprecated:  "outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"domain_id": {
@@ -523,7 +594,8 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
 			"teams":                                    {RefType: "genesyscloud_team"},
 			"groups":                                   {RefType: "genesyscloud_group"},
-			"conditional_group_routing_rules.queue_id": {RefType: "genesyscloud_routing_queue"},
+			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
+			"direct_routing.backup_queue_id":           {RefType: ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},

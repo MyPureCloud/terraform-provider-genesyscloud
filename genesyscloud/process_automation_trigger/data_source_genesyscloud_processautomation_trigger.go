@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type ProcessAutomationTriggers struct {
@@ -50,11 +50,11 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
 
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to get page of process automation triggers: %s", getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %s", getErr), resp))
 			}
 
 			if processAutomationTriggers.Entities == nil || len(*processAutomationTriggers.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no process automation triggers found with name: %s", triggerName), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no process automation triggers found with name: %s", triggerName), resp))
 			}
 
 			for _, trigger := range *processAutomationTriggers.Entities {
@@ -65,7 +65,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 			}
 
 			if processAutomationTriggers.NextUri == nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no process automation triggers found with name: %s", getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no process automation triggers found with name: %s", getErr), resp))
 			}
 
 			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri
@@ -91,7 +91,7 @@ func getAllProcessAutomationTriggers(path string, api *platformclientv2.Integrat
 	headerParams["Accept"] = "application/json"
 
 	var successPayload *ProcessAutomationTriggers
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil)
+	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {

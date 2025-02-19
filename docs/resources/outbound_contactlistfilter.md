@@ -42,12 +42,13 @@ resource "genesyscloud_outbound_contactlistfilter" "contact_list_filter" {
 
 ### Required
 
-- `contact_list_id` (String) The contact list the filter is based on.
 - `name` (String) The name of the list.
 
 ### Optional
 
 - `clauses` (Block List) Groups of conditions to filter the contacts by. (see [below for nested schema](#nestedblock--clauses))
+- `contact_list_id` (String) The contact list the filter is based on. Mutually exclusive to 'contact_list_template_id', however, one of the two must be specified
+- `contact_list_template_id` (String) The contact list template the filter is based on. Mutually exclusive to 'contact_list_id', however, one of the two must be specified.
 - `filter_type` (String) How to join clauses together.
 
 ### Read-Only
@@ -68,13 +69,13 @@ Optional:
 Required:
 
 - `operator` (String) The operator for this contact list filter predicate.
-- `value` (String) Value with which to compare the contact's data. This could be text, a number, or a relative time. A value for relative time should follow the format PxxDTyyHzzM, where xx, yy, and zz specify the days, hours and minutes. For example, a value of P01DT08H30M corresponds to 1 day, 8 hours, and 30 minutes from now. To specify a time in the past, include a negative sign before each numeric value. For example, a value of P-01DT-08H-30M corresponds to 1 day, 8 hours, and 30 minutes in the past. You can also do things like P01DT00H-30M, which would correspond to 23 hours and 30 minutes from now (1 day - 30 minutes).
 
 Optional:
 
 - `column` (String) Contact list column from the contact list filter's contact list.
 - `column_type` (String) The type of data in the contact column.
 - `inverted` (Boolean) Inverts the result of the predicate (i.e., if the predicate returns true, inverting it will return false).
+- `value` (String) Value with which to compare the contact's data. This could be text, a number, or a relative time. A value for relative time should follow the format PxxDTyyHzzM, where xx, yy, and zz specify the days, hours and minutes. For example, a value of P01DT08H30M corresponds to 1 day, 8 hours, and 30 minutes from now. To specify a time in the past, include a negative sign before each numeric value. For example, a value of P-01DT-08H-30M corresponds to 1 day, 8 hours, and 30 minutes in the past. You can also do things like P01DT00H-30M, which would correspond to 23 hours and 30 minutes from now (1 day - 30 minutes).
 - `var_range` (Block Set, Max: 1) A range of values. Required for operators BETWEEN and IN. (see [below for nested schema](#nestedblock--clauses--predicates--var_range))
 
 <a id="nestedblock--clauses--predicates--var_range"></a>

@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesettings {
@@ -26,6 +26,7 @@ func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowseset
 	enabled, _ := cfg["enabled"].(bool)
 	allowAgentControl, _ := cfg["allow_agent_control"].(bool)
 	allowAgentNavigation, _ := cfg["allow_agent_navigation"].(bool)
+	allowDraw, _ := cfg["allow_draw"].(bool)
 	channels := lists.InterfaceListToStrings(cfg["channels"].([]interface{}))
 	maskSelectors := lists.InterfaceListToStrings(cfg["mask_selectors"].([]interface{}))
 	readonlySelectors := lists.InterfaceListToStrings(cfg["readonly_selectors"].([]interface{}))
@@ -43,15 +44,15 @@ func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowseset
 		}
 	}
 
-
 	return &platformclientv2.Cobrowsesettings{
 		Enabled:              &enabled,
 		AllowAgentControl:    &allowAgentControl,
 		AllowAgentNavigation: &allowAgentNavigation,
+		AllowDraw:            &allowDraw,
 		Channels:             &channels,
 		MaskSelectors:        &maskSelectors,
 		ReadonlySelectors:    &readonlySelectors,
-		PauseCriteria:		  &pauseCriteria,
+		PauseCriteria:        &pauseCriteria,
 	}
 }
 
@@ -129,8 +130,9 @@ func buildAuthenticationSettings(d *schema.ResourceData) *platformclientv2.Authe
 
 	cfg := settings[0].(map[string]interface{})
 	return &platformclientv2.Authenticationsettings{
-		Enabled:       platformclientv2.Bool(cfg["enabled"].(bool)),
-		IntegrationId: platformclientv2.String(cfg["integration_id"].(string)),
+		Enabled:             platformclientv2.Bool(cfg["enabled"].(bool)),
+		IntegrationId:       platformclientv2.String(cfg["integration_id"].(string)),
+		AllowSessionUpgrade: platformclientv2.Bool(cfg["allow_session_upgrade"].(bool)),
 	}
 }
 
@@ -176,10 +178,28 @@ func FlattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 		"enabled":                cobrowseSettings.Enabled,
 		"allow_agent_control":    cobrowseSettings.AllowAgentControl,
 		"allow_agent_navigation": cobrowseSettings.AllowAgentNavigation,
+		"allow_draw":             cobrowseSettings.AllowDraw,
 		"channels":               cobrowseSettings.Channels,
 		"mask_selectors":         cobrowseSettings.MaskSelectors,
 		"readonly_selectors":     cobrowseSettings.ReadonlySelectors,
+		"pause_criteria":         flattenPauseCriteria(cobrowseSettings.PauseCriteria),
 	}}
+}
+
+func flattenPauseCriteria(pauseCriteria *[]platformclientv2.Pausecriteria) []interface{} {
+	if pauseCriteria == nil {
+		return nil
+	}
+
+	criterias := make([]interface{}, len(*pauseCriteria))
+	for i, criteria := range *pauseCriteria {
+		criterias[i] = map[string]interface{}{
+			"url_fragment": *criteria.UrlFragment,
+			"condition":    *criteria.Condition,
+		}
+	}
+
+	return criterias
 }
 
 func flattenLocalizedLabels(localizedLabels *[]platformclientv2.Localizedlabels) []interface{} {
@@ -232,8 +252,9 @@ func FlattenAuthenticationSettings(authenticationSettings *platformclientv2.Auth
 	}
 
 	return []interface{}{map[string]interface{}{
-		"enabled":        authenticationSettings.Enabled,
-		"integration_id": authenticationSettings.IntegrationId,
+		"enabled":               authenticationSettings.Enabled,
+		"integration_id":        authenticationSettings.IntegrationId,
+		"allow_session_upgrade": authenticationSettings.AllowSessionUpgrade,
 	}}
 }
 

@@ -1,21 +1,22 @@
 package oauth_client
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
-	resourceName = "genesyscloud_oauth_client"
+	ResourceType = "genesyscloud_oauth_client"
 )
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceOAuthClient())
-	l.RegisterResource(resourceName, ResourceOAuthClient())
-	l.RegisterExporter(resourceName, OauthClientExporter())
+	l.RegisterDataSource(ResourceType, DataSourceOAuthClient())
+	l.RegisterResource(ResourceType, ResourceOAuthClient())
+	l.RegisterExporter(ResourceType, OauthClientExporter())
 }
 
 var (
@@ -73,10 +74,10 @@ func ResourceOAuthClient() *schema.Resource {
 				Optional:    true,
 			},
 			"authorized_grant_type": {
-				Description:  "The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2BEARER | PASSWORD | CLIENT-CREDENTIALS).",
+				Description:  "The OAuth Grant/Client type supported by this client (CODE | TOKEN | SAML2-BEARER | PASSWORD | CLIENT-CREDENTIALS).",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"CODE", "TOKEN", "SAML2BEARER", "PASSWORD", "CLIENT-CREDENTIALS"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"CODE", "TOKEN", "SAML2BEARER", "SAML2-BEARER", "PASSWORD", "CLIENT-CREDENTIALS"}, false),
 			},
 			"scopes": {
 				Description: "The scopes requested by this client. Scopes must be set for clients not using the CLIENT-CREDENTIALS grant.",
@@ -109,7 +110,6 @@ func ResourceOAuthClient() *schema.Resource {
 				Description: "Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.",
 				Type:        schema.TypeString,
 				Optional:    true,
-				Computed:    true,
 			},
 		},
 	}

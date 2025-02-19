@@ -2,10 +2,13 @@ package outbound_campaign
 
 import (
 	"fmt"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
@@ -14,10 +17,12 @@ import (
 
 func TestAccDataSourceOutboundCampaign(t *testing.T) {
 	var (
-		resourceId           = "campaign"
+		resourceLabel        = "campaign"
 		campaignName         = "Test Campaign " + uuid.NewString()
-		dataSourceId         = "campaign_data"
-		outboundFlowFilePath = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		dataSourceLabel      = "campaign_data"
+		outboundFlowFilePath = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
+		divResourceLabel     = "test-outbound-campaign-division"
+		divName              = "terraform-" + uuid.NewString()
 	)
 
 	emergencyNumber := "+13173124740"
@@ -30,39 +35,42 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: `data "genesyscloud_auth_division_home" "home" {}` + GenerateOutboundCampaignBasic(
-					resourceId,
+				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
+					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
+					GenerateOutboundCampaignBasic(
+						resourceLabel,
+						campaignName,
+						"contact_list",
+						"site",
+						emergencyNumber,
+						"car",
+						util.NullValue,
+						outboundFlowFilePath,
+						"data-campaign-test-flow",
+						"test flow "+uuid.NewString(),
+						"${data.genesyscloud_auth_division_home.home.name}",
+						"data-campaign-test-location",
+						"data-campaign-test-wrapupcode",
+						divResourceLabel,
+					) + generateOutboundCampaignDataSource(
+					dataSourceLabel,
 					campaignName,
-					"contact_list",
-					"site",
-					emergencyNumber,
-					"car",
-					util.NullValue,
-					outboundFlowFilePath,
-					"data-campaign-test-flow",
-					"test flow "+uuid.NewString(),
-					"${data.genesyscloud_auth_division_home.home.name}",
-					"data-campaign-test-location",
-					"data-campaign-test-wrapupcode",
-				) + generateOutboundCampaignDataSource(
-					dataSourceId,
-					campaignName,
-					"genesyscloud_outbound_campaign."+resourceId,
+					"genesyscloud_outbound_campaign."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_campaign."+dataSourceId, "id",
-						"genesyscloud_outbound_campaign."+resourceId, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_campaign."+dataSourceLabel, "id",
+						"genesyscloud_outbound_campaign."+resourceLabel, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateOutboundCampaignDataSource(id string, name string, dependsOn string) string {
+func generateOutboundCampaignDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	return fmt.Sprintf(`
 data "genesyscloud_outbound_campaign" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, id, name, dependsOn)
+`, dataSourceLabel, name, dependsOn)
 }

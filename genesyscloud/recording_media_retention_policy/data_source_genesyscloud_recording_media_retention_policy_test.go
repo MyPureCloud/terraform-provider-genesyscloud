@@ -6,9 +6,13 @@ import (
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -25,8 +29,8 @@ Test Class for the Recording media Retention Policy Data Source
 */
 func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 	var (
-		policyResource     = "recording-media-retention-policy"
-		policyDataResource = "recording-media-retention-policy-data"
+		policyResourceLabel     = "recording-media-retention-policy"
+		policyDataResourceLabel = "recording-media-retention-policy-data"
 
 		policyName = "terraform-policy-" + uuid.NewString()
 	)
@@ -131,8 +135,11 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 	}
 
 	var (
-		domainRes = "routing-domain1"
-		domainId  = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainResourceLabel = "routing-domain1"
+		domainId            = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		divResourceLabel    = "test-division"
+		divName             = "terraform-" + uuid.NewString()
+		description         = "Terraform test description"
 	)
 
 	_, err := provider.AuthorizeSdk()
@@ -146,14 +153,14 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
 					domainId,
 					util.FalseValue, // Subdomain
 					util.NullValue,
-				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResource1, queueName, "") +
+				) + routingQueue.GenerateRoutingQueueResourceBasic(queueResourceLabel1, queueName, "") +
 					authRole.GenerateAuthRoleResource(
-						roleResource1,
+						roleResourceLabel1,
 						roleName1,
 						roleDesc1,
 						authRole.GenerateRolePermissions(permissions...),
@@ -161,18 +168,19 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						authRole.GenerateRolePermPolicy(qualityDomain, calibrationEntityType, strconv.Quote(addAction)),
 					) +
 					userRoles.GenerateUserRoles(
-						userRoleResource1,
-						userResource1,
-						generateResourceRoles("genesyscloud_auth_role."+roleResource1+".id"),
+						userRoleResourceLabel1,
+						userResourceLabel1,
+						generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
-					generateUserWithCustomAttrs(userResource1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResource1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResource1, &surveyFormResourceBody) +
-					integration.GenerateIntegrationResource(integrationResource1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
-					gcloud.GenerateRoutingLanguageResource(languageResource1, languageName) +
-					gcloud.GenerateRoutingWrapupcodeResource(wrapupCodeResource1, wrapupCodeName) +
+					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
+					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
+					routingLanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
+					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					architect_flow.GenerateFlowResource(
-						flowResource1,
+						flowResourceLabel1,
 						filePath1,
 						"",
 						false,
@@ -184,16 +192,16 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						}),
 					) +
 					generateMediaRetentionPolicyResource(
-						policyResource, &mediaRetentionChatPolicy,
+						policyResourceLabel, &mediaRetentionChatPolicy,
 					) +
 					generateRecordingMediaRetentionPolicyDataSource(
-						policyDataResource,
+						policyDataResourceLabel,
 						policyName,
-						"genesyscloud_recording_media_retention_policy."+policyResource,
+						"genesyscloud_recording_media_retention_policy."+policyResourceLabel,
 					),
 
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_recording_media_retention_policy."+policyDataResource, "id", "genesyscloud_recording_media_retention_policy."+policyResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_recording_media_retention_policy."+policyDataResourceLabel, "id", "genesyscloud_recording_media_retention_policy."+policyResourceLabel, "id"),
 				),
 			},
 		},
@@ -202,7 +210,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 }
 
 func generateRecordingMediaRetentionPolicyDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -212,7 +220,7 @@ func generateRecordingMediaRetentionPolicyDataSource(
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resourceID, name, dependsOn)
+	`, resourceLabel, name, dependsOn)
 }
 
 func generateResourceRoles(skillID string, divisionIds ...string) string {
@@ -225,4 +233,13 @@ func generateResourceRoles(skillID string, divisionIds ...string) string {
 		%s
 	}
 	`, skillID, divAttr)
+}
+
+func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_user" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}
+	`, resourceLabel, email, name, strings.Join(attrs, "\n"))
 }

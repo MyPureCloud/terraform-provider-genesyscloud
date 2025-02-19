@@ -30,11 +30,11 @@ func dataSourceResponsemanagementResponseRead(ctx context.Context, d *schema.Res
 		managementResponseId, retryable, resp, err := proxy.getResponsemanagementResponseIdByName(ctx, name, library)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error requesting responsemanagement response %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting responsemanagement response %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("no responsemanagement response found with name %s | error: %s", name, err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no responsemanagement response found with name %s | error: %s", name, err), resp))
 		}
 
 		d.SetId(managementResponseId)

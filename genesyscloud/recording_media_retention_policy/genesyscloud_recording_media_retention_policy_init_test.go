@@ -8,13 +8,18 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"terraform-provider-genesyscloud/genesyscloud/user"
+	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -43,18 +48,19 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceMediaRetentionPolicy()
-	providerResources["genesyscloud_routing_email_domain"] = gcloud.ResourceRoutingEmailDomain()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
-	providerResources["genesyscloud_auth_role"] = authRole.ResourceAuthRole()
-	providerResources["genesyscloud_user_roles"] = userRoles.ResourceUserRoles()
-	providerResources["genesyscloud_user"] = gcloud.ResourceUser()
+	providerResources[ResourceType] = ResourceMediaRetentionPolicy()
+	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
+	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
-	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
-	providerResources["genesyscloud_routing_language"] = gcloud.ResourceRoutingLanguage()
-	providerResources["genesyscloud_routing_wrapupcode"] = gcloud.ResourceRoutingWrapupCode()
-	providerResources["genesyscloud_flow"] = flow.ResourceArchitectFlow()
+	providerResources[integration.ResourceType] = integration.ResourceIntegration()
+	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
+	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -62,7 +68,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceRecordingMediaRetentionPolicy()
+	providerDataSources[ResourceType] = DataSourceRecordingMediaRetentionPolicy()
 }
 
 // initTestResources initializes all test resources and data sources.

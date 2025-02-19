@@ -12,12 +12,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const resourceName = "genesyscloud_routing_utilization"
+const ResourceType = "genesyscloud_routing_utilization"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceRoutingUtilization())
-	regInstance.RegisterExporter(resourceName, RoutingUtilizationExporter())
+	regInstance.RegisterResource(ResourceType, ResourceRoutingUtilization())
+	regInstance.RegisterExporter(ResourceType, RoutingUtilizationExporter())
 }
 
 var (

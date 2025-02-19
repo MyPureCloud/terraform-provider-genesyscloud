@@ -11,18 +11,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourcePhoneBaseSettings(t *testing.T) {
 	t.Parallel()
 	var (
-		phoneBaseSettingsRes = "phoneBaseSettings1234"
-		name1                = "test phone base settings resource" + uuid.NewString()
-		name2                = "test phone base settings resource" + uuid.NewString()
-		description1         = "test description 1"
-		description2         = "test description 2"
-		phoneMetaBaseId      = "generic_sip.json"
+		phoneBaseSettingsResourceLabel = "phoneBaseSettings1234"
+		name1                          = "test phone base settings resource" + uuid.NewString()
+		name2                          = "test phone base settings resource" + uuid.NewString()
+		description1                   = "test description 1"
+		description2                   = "test description 2"
+		phoneMetaBaseId                = "generic_sip.json"
+		stationPersistTimeout          = "2000"
+		stationPersistTimeoutUpdate    = "3000"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,7 +33,7 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-					phoneBaseSettingsRes,
+					phoneBaseSettingsResourceLabel,
 					name1,
 					description1,
 					phoneMetaBaseId,
@@ -41,24 +43,25 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 						util.TrueValue,
 						util.TrueValue,
 						util.FalseValue,
-						[]string{strconv.Quote("station 1")}),
+						[]string{strconv.Quote("station 1")}), generateLineBase(stationPersistTimeout),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "description", description1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "phone_meta_base_id", phoneMetaBaseId),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "1"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", util.TrueValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", util.TrueValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", util.FalseValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 1"}, ",")),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "description", description1),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "phone_meta_base_id", phoneMetaBaseId),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "line_base.0.station_persistent_timeout", stationPersistTimeout),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_label", "Generic SIP Phone"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_maxLineKeys", "1"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_mwi_enabled", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_mwi_subscribe", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_standalone", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_stations", strings.Join([]string{"station 1"}, ",")),
 				),
 			},
 			// Update with new name, description and properties
 			{
 				Config: GeneratePhoneBaseSettingsResourceWithCustomAttrs(
-					phoneBaseSettingsRes,
+					phoneBaseSettingsResourceLabel,
 					name2,
 					description2,
 					phoneMetaBaseId,
@@ -68,23 +71,24 @@ func TestAccResourcePhoneBaseSettings(t *testing.T) {
 						util.FalseValue,
 						util.FalseValue,
 						util.TrueValue,
-						[]string{strconv.Quote("station 2"), strconv.Quote("station 1")}),
+						[]string{strconv.Quote("station 2"), strconv.Quote("station 1")}), generateLineBase(stationPersistTimeoutUpdate),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "description", description2),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "phone_meta_base_id", phoneMetaBaseId),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_label", "Generic SIP Phone 1"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_maxLineKeys", "2"),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_enabled", util.FalseValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_mwi_subscribe", util.FalseValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_standalone", util.TrueValue),
-					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsRes, "properties", "phone_stations", strings.Join([]string{"station 2", "station 1"}, ",")),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "phone_meta_base_id", phoneMetaBaseId),
+					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "line_base.0.station_persistent_timeout", stationPersistTimeoutUpdate),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_label", "Generic SIP Phone 1"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_maxLineKeys", "2"),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_mwi_enabled", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_mwi_subscribe", util.FalseValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_standalone", util.TrueValue),
+					util.ValidateValueInJsonPropertiesAttr("genesyscloud_telephony_providers_edges_phonebasesettings."+phoneBaseSettingsResourceLabel, "properties", "phone_stations", strings.Join([]string{"station 2", "station 1"}, ",")),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsRes,
+				ResourceName:      "genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -155,4 +159,13 @@ func generatePhoneBaseSettingsProperties(phoneLabel, phoneMaxLineKeys, phoneMwiE
 						util.GenerateJsonArrayProperty("instance", strings.Join(phoneStations, ",")),
 					)))),
 	)
+}
+
+func generateLineBase(station_persistent_timeout string) string {
+	return fmt.Sprintf(`
+	line_base {
+		station_persistent_enabled = true
+		station_persistent_timeout = %s
+	}
+`, station_persistent_timeout)
 }

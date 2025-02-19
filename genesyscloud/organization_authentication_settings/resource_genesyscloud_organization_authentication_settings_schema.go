@@ -1,9 +1,10 @@
 package organization_authentication_settings
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
@@ -16,12 +17,12 @@ resource_genesycloud_organization_authentication_settings_schema.go holds four f
 3.  The datasource schema definitions for the organization_authentication_settings datasource.
 4.  The resource exporter configuration for the organization_authentication_settings exporter.
 */
-const resourceName = "genesyscloud_organization_authentication_settings"
+const ResourceType = "genesyscloud_organization_authentication_settings"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(resourceName, ResourceOrganizationAuthenticationSettings())
-	l.RegisterExporter(resourceName, OrganizationAuthenticationSettingsExporter())
+	l.RegisterResource(ResourceType, ResourceOrganizationAuthenticationSettings())
+	l.RegisterExporter(ResourceType, OrganizationAuthenticationSettingsExporter())
 }
 
 var passwordRequirements = &schema.Resource{
@@ -69,6 +70,20 @@ var passwordRequirements = &schema.Resource{
 	},
 }
 
+var timeOutSettings = &schema.Resource{
+	Schema: map[string]*schema.Schema{
+		`enable_idle_token_timeout`: {
+			Description: `Indicates whether the Token Timeout should be enabled or disabled.`,
+			Required:    true,
+			Type:        schema.TypeBool,
+		}, `idle_token_timeout_seconds`: {
+			Description: `Token timeout length in seconds. Must be at least 5 minutes and 8 hours or less (if HIPAA is disabled) or 15 minutes or less (if HIPAA is enabled).`,
+			Required:    true,
+			Type:        schema.TypeInt,
+		},
+	},
+}
+
 // ResourceOrganizationAuthenticationSettings registers the genesyscloud_organization_authentication_settings resource with Terraform
 func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 	return &schema.Resource{
@@ -111,6 +126,13 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        passwordRequirements,
+			},
+			`timeout_settings`: {
+				Description: `the time out settings for the tokens`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        timeOutSettings,
 			},
 		},
 	}

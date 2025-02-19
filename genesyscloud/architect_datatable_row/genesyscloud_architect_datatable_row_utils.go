@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -32,7 +32,7 @@ func buildSdkRowPropertyMap(propertiesJson string, keyStr string) (map[string]in
 	propMap := map[string]interface{}{}
 	if propertiesJson != "" {
 		if err := json.Unmarshal([]byte(propertiesJson), &propMap); err != nil {
-			return nil, util.BuildDiagnosticError(resourceName, fmt.Sprintf("Error parsing properties_json value %s", propertiesJson), err)
+			return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error parsing properties_json value %s", propertiesJson), err)
 		}
 	}
 	// Set the key value
@@ -51,7 +51,7 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 	if !diff.NewValueKnown("datatable_id") {
 		// datatable_id not yet in final state, but properties_json is marked as known.
 		// There may be computed defaults to set on properties_json that we do not know yet.
-		diff.SetNewComputed("properties_json")
+		_ = diff.SetNewComputed("properties_json")
 		return nil
 	}
 
@@ -109,7 +109,7 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 		return fmt.Errorf("Failure to marshal properties for %s: %s", id, err)
 	}
 
-	diff.SetNew("properties_json", string(result))
+	_ = diff.SetNew("properties_json", string(result))
 	return nil
 }
 

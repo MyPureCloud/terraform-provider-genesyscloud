@@ -1,12 +1,13 @@
 package integration_action
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -17,13 +18,13 @@ resource_genesyscloud_integration_action_schema.go should hold four types of fun
 3.  The datasource schema definitions for the integration_action datasource.
 4.  The resource exporter configuration for the integration_action exporter.
 */
-const resourceName = "genesyscloud_integration_action"
+const ResourceType = "genesyscloud_integration_action"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceIntegrationAction())
-	l.RegisterResource(resourceName, ResourceIntegrationAction())
-	l.RegisterExporter(resourceName, IntegrationActionExporter())
+	l.RegisterDataSource(ResourceType, DataSourceIntegrationAction())
+	l.RegisterResource(ResourceType, ResourceIntegrationAction())
+	l.RegisterExporter(ResourceType, IntegrationActionExporter())
 }
 
 // ResourceIntegrationAction registers the genesyscloud_integration_action resource with Terraform

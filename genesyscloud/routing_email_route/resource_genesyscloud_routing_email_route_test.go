@@ -3,12 +3,13 @@ package routing_email_route
 import (
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
@@ -17,267 +18,162 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
-
 	var (
-		domainRes          = "routing-domain1"
-		domainId           = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
-		queueResource      = "email-queue"
-		queueName          = "Terraform Email Queue-" + uuid.NewString()
-		langResource       = "email-lang"
-		langName           = "tflang" + uuid.NewString()
-		skillResource      = "test-skill1"
-		skillName          = "Terraform Skill" + uuid.NewString()
-		routeRes           = "email-route1"
-		routeRes2          = "email-route2"
-		routePattern1      = "terraform1"
-		routePattern2      = "terraform2"
-		routePattern3      = "terraform3"
-		fromEmail1         = "terraform1@test.com"
-		fromEmail2         = "terraform2@test.com"
-		fromName1          = "John Terraform"
-		fromName2          = "Jane Terraform"
-		priority1          = "1"
-		bccEmail1          = "test1@" + domainId
-		bccEmail2          = "test2@" + domainId
-		emailFlowResource1 = "test_flow1"
-		emailFlowFilePath1 = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		domainResourceLabel  = "routing-domain1"
+		domainId             = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
+		queueResourceLabel   = "email-queue"
+		queueName            = "Terraform Email Queue-" + uuid.NewString()
+		langResourceLabel    = "email-lang"
+		langName             = "tflang" + uuid.NewString()
+		skillResourceLabel   = "test-skill1"
+		skillName            = "Terraform Skill" + uuid.NewString()
+		routeResourceLabel1  = "email-route1"
+		routeResourceLabel2  = "email-route2"
+		routePattern1        = "terraform1"
+		routePattern2        = "terraform2"
+		routePattern3        = "terraform3"
+		fromEmail1           = "terraform1@test.com"
+		fromEmail2           = "terraform2@test.com"
+		fromName1            = "John Terraform"
+		fromName2            = "Jane Terraform"
+		priority1            = "1"
+		bccEmail1            = "test1@" + domainId
+		bccEmail2            = "test2@" + domainId
+		allowMultipleActions = "true"
+		historyInclusion     = "Include"
 	)
 
 	CleanupRoutingEmailDomains()
 
-	// Test error configs
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
-		Steps: []resource.TestStep{
-			{
-				// Confirm mutual exclusivity of reply_email_address and from_email
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
-					domainId,
-					util.FalseValue,
-					util.NullValue,
-				) + GenerateRoutingEmailRouteResource(
-					routeRes+"expectFail",
-					"genesyscloud_routing_email_domain."+domainRes+".id",
-					routePattern1,
-					fromName1,
-					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
-					generateRoutingReplyEmail(
-						false,
-						"genesyscloud_routing_email_domain."+domainRes+".id",
-						"genesyscloud_routing_email_route."+routeRes2+".id",
-					),
-				) + GenerateRoutingEmailRouteResource( // Second route to use as the reply_email_address
-					routeRes2,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
-					routePattern3,
-					fromName1,
-					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
-					generateRoutingAutoBcc(fromName2, bccEmail2),
-				),
-				ExpectError: regexp.MustCompile("Conflicting configuration arguments"),
-				PreConfig: func() {
-					// Wait for a specified duration - to avoid getting non empty plan
-					time.Sleep(30 * time.Second)
-				},
-			},
-			{
-				// Confirm mutual exclusivity of reply_email_address and auto_bcc
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
-					domainId,
-					util.FalseValue,
-					util.NullValue,
-				) + GenerateRoutingEmailRouteResource(
-					routeRes+"expectFail",
-					"genesyscloud_routing_email_domain."+domainRes+".id",
-					routePattern1,
-					fromName1,
-					generateRoutingAutoBcc(fromName1, bccEmail1),
-					generateRoutingReplyEmail(
-						false,
-						"genesyscloud_routing_email_domain."+domainRes+".id",
-						"genesyscloud_routing_email_route."+routeRes2+".id",
-					),
-				) + GenerateRoutingEmailRouteResource( // Second route to use as the reply_email_address
-					routeRes2,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
-					routePattern3,
-					fromName1,
-					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
-					generateRoutingAutoBcc(fromName2, bccEmail2),
-				),
-				ExpectError: regexp.MustCompile("Conflicting configuration arguments"),
-			},
-			{
-				// Confirm mutual exclusivity of flow_id and queue_id
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
-					domainId,
-					util.FalseValue,
-					util.NullValue,
-				) + routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource,
-					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
-					langResource,
-					langName,
-				) + gcloud.GenerateRoutingSkillResource(
-					skillResource,
-					skillName,
-				) + architect_flow.GenerateFlowResource(
-					emailFlowResource1,
-					emailFlowFilePath1,
-					"",
-					false,
-				) + GenerateRoutingEmailRouteResource(
-					routeRes+"expectFail",
-					"genesyscloud_routing_email_domain."+domainRes+".id",
-					routePattern1,
-					fromName1,
-					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
-					generateRoutingEmailQueueSettings(
-						"genesyscloud_routing_queue."+queueResource+".id",
-						priority1,
-						"genesyscloud_routing_language."+langResource+".id",
-						"genesyscloud_routing_skill."+skillResource+".id",
-					),
-					fmt.Sprintf("flow_id = genesyscloud_flow.%s.id", emailFlowResource1),
-				),
-				ExpectError: regexp.MustCompile("Conflicting configuration arguments"),
-			},
-		},
-		CheckDestroy: testVerifyRoutingEmailRouteDestroyed,
-	})
-
-	domainId = fmt.Sprintf("terraformroute.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
-	// Standard acceptance tests
+	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + GenerateRoutingEmailRouteResource(
-					routeRes,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
+					routeResourceLabel1,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern1,
 					fromName1,
 					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
+					fmt.Sprintf("allow_multiple_actions = \"%s\"", allowMultipleActions),
+					fmt.Sprintf("history_inclusion = \"%s\"", historyInclusion),
 					generateRoutingAutoBcc(fromName1, bccEmail1),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "pattern", routePattern1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_name", fromName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_email", fromEmail1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "auto_bcc.0.name", fromName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "auto_bcc.0.email", bccEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "pattern", routePattern1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_name", fromName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_email", fromEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.name", fromName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.email", bccEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "allow_multiple_actions", allowMultipleActions),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "history_inclusion", historyInclusion),
 				),
 			},
 			{
 				// Update email route and add a queue, language, and skill
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
-
-					queueResource,
+					queueResourceLabel,
 					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
-					langResource,
+				) + routingLanguage.GenerateRoutingLanguageResource(
+					langResourceLabel,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
-					skillResource,
+				) + routingSkill.GenerateRoutingSkillResource(
+					skillResourceLabel,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(
-					routeRes,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
+					routeResourceLabel1,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern2,
 					fromName2,
 					generateRoutingReplyEmail(
 						false,
-						"genesyscloud_routing_email_domain."+domainRes+".id",
-						"genesyscloud_routing_email_route."+routeRes2+".id",
+						"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+						"genesyscloud_routing_email_route."+routeResourceLabel2+".id",
 					),
 					generateRoutingEmailQueueSettings(
-						"genesyscloud_routing_queue."+queueResource+".id",
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
 						priority1,
-						"genesyscloud_routing_language."+langResource+".id",
-						"genesyscloud_routing_skill."+skillResource+".id",
+						"genesyscloud_routing_language."+langResourceLabel+".id",
+						"genesyscloud_routing_skill."+skillResourceLabel+".id",
 					),
 				) + GenerateRoutingEmailRouteResource( // Second route to use as the reply_email_address
-					routeRes2,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
+					routeResourceLabel2,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern3,
 					fromName1,
 					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
 					generateRoutingAutoBcc(fromName2, bccEmail2),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "pattern", routePattern2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_email", ""),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "queue_id", "genesyscloud_routing_queue."+queueResource, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "language_id", "genesyscloud_routing_language."+langResource, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "skill_ids.0", "genesyscloud_routing_skill."+skillResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "priority", priority1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.domain_id", domainId),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.route_id", "genesyscloud_routing_email_route."+routeRes2, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "pattern", routePattern3),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "from_name", fromName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "from_email", fromEmail1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "auto_bcc.0.name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "auto_bcc.0.email", bccEmail2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "pattern", routePattern2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_name", fromName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_email", ""),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "queue_id", "genesyscloud_routing_queue."+queueResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "language_id", "genesyscloud_routing_language."+langResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "skill_ids.0", "genesyscloud_routing_skill."+skillResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "priority", priority1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.route_id", "genesyscloud_routing_email_route."+routeResourceLabel2, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "pattern", routePattern3),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "from_name", fromName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "from_email", fromEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.name", fromName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.email", bccEmail2),
 				),
 			},
 			{
 				// Update email reply to true
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource,
+					queueResourceLabel,
 					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
-					langResource,
+				) + routingLanguage.GenerateRoutingLanguageResource(
+					langResourceLabel,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
-					skillResource,
+				) + routingSkill.GenerateRoutingSkillResource(
+					skillResourceLabel,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(
-					routeRes,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
+					routeResourceLabel1,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern2,
 					fromName2,
 					generateRoutingReplyEmail(
 						true,
-						"genesyscloud_routing_email_domain."+domainRes+".id",
+						"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 						"",
 					),
 					generateRoutingEmailQueueSettings(
-						"genesyscloud_routing_queue."+queueResource+".id",
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
 						priority1,
-						"genesyscloud_routing_language."+langResource+".id",
-						"genesyscloud_routing_skill."+skillResource+".id",
+						"genesyscloud_routing_language."+langResourceLabel+".id",
+						"genesyscloud_routing_skill."+skillResourceLabel+".id",
 					),
 				) + GenerateRoutingEmailRouteResource( // Second route to use as the reply_email_address
-					routeRes2,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
+					routeResourceLabel2,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern3,
 					fromName1,
 					fmt.Sprintf("from_email = \"%s\"", fromEmail2),
@@ -288,84 +184,87 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to be updated
 						return nil
 					},
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "pattern", routePattern2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_email", ""),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "queue_id", "genesyscloud_routing_queue."+queueResource, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "language_id", "genesyscloud_routing_language."+langResource, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "skill_ids.0", "genesyscloud_routing_skill."+skillResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "priority", priority1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.route_id", ""),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.self_reference_route", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "auto_bcc.0.name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "auto_bcc.0.email", bccEmail2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "pattern", routePattern3),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "from_name", fromName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "from_email", fromEmail2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "pattern", routePattern2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_name", fromName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_email", ""),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "queue_id", "genesyscloud_routing_queue."+queueResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "language_id", "genesyscloud_routing_language."+langResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "skill_ids.0", "genesyscloud_routing_skill."+skillResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "priority", priority1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.route_id", ""),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.self_reference_route", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.name", fromName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.email", bccEmail2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "pattern", routePattern3),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "from_name", fromName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "from_email", fromEmail2),
 				),
 			},
 			{
 				// Update email reply to false and set a route id
-				Config: gcloud.GenerateRoutingEmailDomainResource(
-					domainRes,
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
 					domainId,
 					util.FalseValue,
 					util.NullValue,
 				) + routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResource,
+					queueResourceLabel,
 					queueName,
-				) + gcloud.GenerateRoutingLanguageResource(
-					langResource,
+				) + routingLanguage.GenerateRoutingLanguageResource(
+					langResourceLabel,
 					langName,
-				) + gcloud.GenerateRoutingSkillResource(
-					skillResource,
+				) + routingSkill.GenerateRoutingSkillResource(
+					skillResourceLabel,
 					skillName,
 				) + GenerateRoutingEmailRouteResource(
-					routeRes,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
+					routeResourceLabel1,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern2,
 					fromName2,
+					generateRoutingAutoBcc(fromName2, bccEmail2),
 					generateRoutingReplyEmail(
 						false,
-						"genesyscloud_routing_email_domain."+domainRes+".id",
-						"genesyscloud_routing_email_route."+routeRes2+".id",
+						"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+						"genesyscloud_routing_email_route."+routeResourceLabel2+".id",
 					),
 					generateRoutingEmailQueueSettings(
-						"genesyscloud_routing_queue."+queueResource+".id",
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
 						priority1,
-						"genesyscloud_routing_language."+langResource+".id",
-						"genesyscloud_routing_skill."+skillResource+".id",
+						"genesyscloud_routing_language."+langResourceLabel+".id",
+						"genesyscloud_routing_skill."+skillResourceLabel+".id",
 					),
 				) + GenerateRoutingEmailRouteResource( // Second route to use as the reply_email_address
-					routeRes2,
-					"genesyscloud_routing_email_domain."+domainRes+".id",
+					routeResourceLabel2,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern3,
 					fromName1,
 					fmt.Sprintf("from_email = \"%s\"", fromEmail1),
 					generateRoutingAutoBcc(fromName2, bccEmail2),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "pattern", routePattern2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "from_email", ""),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "queue_id", "genesyscloud_routing_queue."+queueResource, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "language_id", "genesyscloud_routing_language."+langResource, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "skill_ids.0", "genesyscloud_routing_skill."+skillResource, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "priority", priority1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.domain_id", domainId),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeRes, "reply_email_address.0.route_id", "genesyscloud_routing_email_route."+routeRes2, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "auto_bcc.0.name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "auto_bcc.0.email", bccEmail2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "pattern", routePattern3),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "from_name", fromName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeRes2, "from_email", fromEmail1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "pattern", routePattern2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_name", fromName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_email", ""),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "queue_id", "genesyscloud_routing_queue."+queueResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "language_id", "genesyscloud_routing_language."+langResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "skill_ids.0", "genesyscloud_routing_skill."+skillResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "priority", priority1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.name", fromName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.email", bccEmail2),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.route_id", "genesyscloud_routing_email_route."+routeResourceLabel2, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.name", fromName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.email", bccEmail2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "pattern", routePattern3),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "from_name", fromName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "from_email", fromEmail1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:        "genesyscloud_routing_email_route." + routeRes,
+				ResourceName:        "genesyscloud_routing_email_route." + routeResourceLabel1,
 				ImportState:         true,
 				ImportStateVerify:   true,
 				ImportStateIdPrefix: domainId + "/",

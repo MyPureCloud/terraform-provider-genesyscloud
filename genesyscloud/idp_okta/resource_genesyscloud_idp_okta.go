@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -28,6 +28,10 @@ The resource_genesyscloud_idp_okta.go contains all of the methods that perform t
 
 // getAllAuthIdpOkta retrieves all of the idp okta via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIdpOktas(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	// Although this resource typically has only a single instance,
+	// we are attempting to fetch the data from the API in order to
+	// verify the user's permission to access this resource's API endpoint(s).
+
 	proxy := getIdpOktaProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -37,10 +41,10 @@ func getAllAuthIdpOktas(ctx context.Context, clientConfig *platformclientv2.Conf
 			// Don't export if config doesn't exist
 			return resources, nil
 		}
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get IDP okta error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP okta error: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{Name: "okta"}
+	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "okta"}
 	return resources, nil
 }
 
@@ -63,12 +67,12 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				createIdpOkta(ctx, d, meta)
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.DefaultConsistencyChecks, "genesyscloud_idp_okta")
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.ConsistencyChecks(), "genesyscloud_idp_okta")
 
 		resourcedata.SetNillableValue(d, "name", okta.Name)
 		resourcedata.SetNillableValue(d, "disabled", okta.Disabled)
@@ -109,7 +113,7 @@ func updateIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 	log.Printf("Updating idp okta")
 	_, resp, err := proxy.updateIdpOkta(ctx, d.Id(), &idpOkta)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update idp okta: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update idp okta: %s", err), resp)
 	}
 
 	log.Printf("Updated idp okta")
@@ -123,7 +127,7 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	resp, err := proxy.deleteIdpOkta(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete idp okta: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete idp okta: %s", err), resp)
 	}
 
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
@@ -135,9 +139,9 @@ func deleteIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}
 				log.Printf("Deleted IDP Okta")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting IDP Okta: %s", err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting IDP Okta: %s", err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("IDP Okta still exists"), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("IDP Okta still exists"), resp))
 	})
 }
 

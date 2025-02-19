@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -34,11 +36,13 @@ type taskManagementWorkbinProxy struct {
 	getTaskManagementWorkbinByIdAttr     getTaskManagementWorkbinByIdFunc
 	updateTaskManagementWorkbinAttr      updateTaskManagementWorkbinFunc
 	deleteTaskManagementWorkbinAttr      deleteTaskManagementWorkbinFunc
+	workbinCache                         rc.CacheInterface[platformclientv2.Workbin]
 }
 
 // newTaskManagementWorkbinProxy initializes the task management workbin proxy with all of the data needed to communicate with Genesys Cloud
 func newTaskManagementWorkbinProxy(clientConfig *platformclientv2.Configuration) *taskManagementWorkbinProxy {
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
+	workbinCache := rc.NewResourceCache[platformclientv2.Workbin]()
 	return &taskManagementWorkbinProxy{
 		clientConfig:                         clientConfig,
 		taskManagementApi:                    api,
@@ -48,6 +52,7 @@ func newTaskManagementWorkbinProxy(clientConfig *platformclientv2.Configuration)
 		getTaskManagementWorkbinByIdAttr:     getTaskManagementWorkbinByIdFn,
 		updateTaskManagementWorkbinAttr:      updateTaskManagementWorkbinFn,
 		deleteTaskManagementWorkbinAttr:      deleteTaskManagementWorkbinFn,
+		workbinCache:                         workbinCache,
 	}
 }
 
@@ -143,11 +148,12 @@ func getTaskManagementWorkbinIdByNameFn(ctx context.Context, p *taskManagementWo
 
 // getTaskManagementWorkbinByIdFn is an implementation of the function to get a Genesys Cloud task management workbin by Id
 func getTaskManagementWorkbinByIdFn(ctx context.Context, p *taskManagementWorkbinProxy, id string) (taskManagementWorkbin *platformclientv2.Workbin, resp *platformclientv2.APIResponse, err error) {
-	workbin, resp, err := p.taskManagementApi.GetTaskmanagementWorkbin(id)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to retrieve task management workbin by id %s: %s", id, err)
+	workbin := rc.GetCacheItem(p.workbinCache, id)
+	if workbin != nil {
+		return workbin, nil, nil
 	}
-	return workbin, resp, nil
+
+	return p.taskManagementApi.GetTaskmanagementWorkbin(id)
 }
 
 // updateTaskManagementWorkbinFn is an implementation of the function to update a Genesys Cloud task management workbin

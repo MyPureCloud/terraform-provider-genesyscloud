@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -24,7 +24,7 @@ func getOutboundSequenceFromResourceData(d *schema.ResourceData) platformclientv
 }
 
 func GenerateOutboundSequence(
-	resourceId string,
+	resourceLabel string,
 	name string,
 	campaignIds []string,
 	status string,
@@ -36,5 +36,5 @@ func GenerateOutboundSequence(
 			status = %s
 			repeat = %s
 		}
-	`, resourceId, name, strings.Join(campaignIds, ", "), status, repeat)
+	`, resourceLabel, name, strings.Join(campaignIds, ", "), status, repeat)
 }

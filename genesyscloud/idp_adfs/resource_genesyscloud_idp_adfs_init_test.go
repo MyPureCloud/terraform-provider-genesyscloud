@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_idp_adfs"] = ResourceIdpAdfs()
+	providerResources[ResourceType] = ResourceIdpAdfs()
 }
 
 // initTestResources initializes all test_data resources and data sources.

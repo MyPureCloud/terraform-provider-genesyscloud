@@ -12,8 +12,8 @@ import (
 
 func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 	var (
-		formResource     = "quality-form"
-		formDataResource = "quality-form-data"
+		formResourceLabel     = "quality-form"
+		formDataResourceLabel = "quality-form-data"
 
 		formName = "terraform-form-evaluations-" + uuid.NewString()
 	)
@@ -69,14 +69,14 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateSurveyFormResource(
-					formResource, &surveyForm1,
+					formResourceLabel, &surveyForm1,
 				) + generateQualityFormsSurveyDataSource(
-					formDataResource,
+					formDataResourceLabel,
 					formName,
-					"genesyscloud_quality_forms_survey."+formResource,
+					"genesyscloud_quality_forms_survey."+formResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_survey."+formDataResource, "id", "genesyscloud_quality_forms_survey."+formResource, "id"),
+					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_survey."+formDataResourceLabel, "id", "genesyscloud_quality_forms_survey."+formResourceLabel, "id"),
 				),
 			},
 		},
@@ -84,7 +84,7 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 }
 
 func generateQualityFormsSurveyDataSource(
-	resourceID string,
+	resourceLabel string,
 	name string,
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
@@ -93,5 +93,5 @@ func generateQualityFormsSurveyDataSource(
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

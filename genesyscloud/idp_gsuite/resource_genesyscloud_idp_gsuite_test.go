@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceIdpGsuite(t *testing.T) {
@@ -46,7 +46,6 @@ func TestAccResourceIdpGsuite(t *testing.T) {
 					util.ValidateStringInArray("genesyscloud_idp_gsuite.gsuite", "certificates", util.TestCert1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "issuer_uri", uri1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "target_uri", uri2),
-					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "relying_party_identifier", ""),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_gsuite.gsuite", "slo_binding", slo_binding1),

@@ -1,12 +1,12 @@
 package responsemanagement_responseasset
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -17,13 +17,13 @@ resource_genesycloud_responsemanagement_responseasset_schema.go holds four funct
 3.  The datasource schema definitions for the responsemanagement_responseasset datasource.
 4.  The resource exporter configuration for the responsemanagement_responseasset exporter.
 */
-const resourceName = "genesyscloud_responsemanagement_responseasset"
+const ResourceType = "genesyscloud_responsemanagement_responseasset"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceResponseManagementResponseAsset())
-	regInstance.RegisterDataSource(resourceName, DataSourceResponseManagementResponseAsset())
-	regInstance.RegisterExporter(resourceName, ExporterResponseManagementResponseAsset())
+	regInstance.RegisterResource(ResourceType, ResourceResponseManagementResponseAsset())
+	regInstance.RegisterDataSource(ResourceType, DataSourceResponseManagementResponseAsset())
+	regInstance.RegisterExporter(ResourceType, ExporterResponseManagementResponseAsset())
 }
 
 // ResourceResponsemanagementResponseasset registers the genesyscloud_responsemanagement_responseasset resource with Terraform
@@ -41,7 +41,7 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`filename`: {
-				Description:      "Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. Whitespace and the following characters are not allowed: \\{^}%`]\">[~<#|",
+				Description:      "Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \\{^}%`]\">[~<#|",
 				Required:         true,
 				ForceNew:         true,
 				Type:             schema.TypeString,
@@ -79,6 +79,9 @@ func DataSourceResponseManagementResponseAsset() *schema.Resource {
 func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllResponseAssets),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
 			SubDirectory:              "response_assets",

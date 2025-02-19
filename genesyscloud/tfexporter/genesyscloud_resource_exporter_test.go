@@ -9,7 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -26,6 +26,42 @@ type PostProcessHclBytesTestCase struct {
 	decodedMap map[string]string
 }
 
+// Test case for updateInstanceStateAttributes
+func TestUnitUpdateInstanceStateAttributes(t *testing.T) {
+	jsonResult := util.JsonMap{
+		"file_content_hash": "${filesha256(\"file_fr.json\")}",
+		"file_name":         "444",
+	}
+
+	// Mock initial resource attributes to simulate current state
+	initialAttributes := map[string]string{
+		"file_content_hash": "",
+		"file_name":         "",
+	}
+
+	// Create an instance of ResourceInfo
+	resources := []resourceExporter.ResourceInfo{
+		{
+			BlockLabel: "testResourceLabel",
+			Type:       "testResourceType",
+			State: &terraform.InstanceState{
+				ID:         "testResourceId",
+				Attributes: initialAttributes,
+			},
+		},
+	}
+
+	exporter := GenesysCloudResourceExporter{}
+	exporter.updateInstanceStateAttributes(jsonResult, resources[0])
+
+	expectedAttributes := map[string]string{
+		"file_content_hash": "${filesha256(\"file_fr.json\")}",
+		"file_name":         "444",
+	}
+
+	assert.Equal(t, expectedAttributes, resources[0].State.Attributes, "Attributes should be correctly updated")
+}
+
 func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 	testCase1 := PostProcessHclBytesTestCase{
 		original: `
@@ -33,32 +69,32 @@ func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 			file_content_hash = "${filesha256(\"file.json\")}"
 			another_field     = filesha256("file2.json")
 		}
-		
+
 		resource "example_resource" "example2" {
 			file_content_hash = "${filesha256(\"file3.json\")}"
 			another_field     = "${filesha256(var.file_path)}"
 		}
-		
+
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256(\"file.json\")}"
-			another_field     = "${var.foo}" 
+			another_field     = "${var.foo}"
 		}`,
 		expected: `
 		resource "example_resource" "example" {
 			file_content_hash = "${filesha256("file.json")}"
 			another_field     = filesha256("file2.json")
 		}
-		
+
 		resource "example_resource" "example2" {
 			file_content_hash = "${filesha256("file3.json")}"
 			another_field     = "${filesha256(var.file_path)}"
 		}
-		
+
 		resource "example_resource" "example3" {
 			file_content_hash = filesha256(var.file_path)
 			another_file      = "${filesha256("file.json")}"
-			another_field     = "${var.foo}" 
+			another_field     = "${var.foo}"
 		}`,
 	}
 
@@ -191,7 +227,7 @@ func TestUnitComputeDependsOn(t *testing.T) {
 func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 	testResourceType := "test_allow_empty_array_resource"
 	testResourceId := "test_id"
-	testResourceName := "test_res_name"
+	testResourceLabel := "test_res_label"
 	testExporter := &resourceExporter.ResourceExporter{
 		AllowEmptyArrays: []string{"null_arr_attr", "nested.arr_attr"},
 	}
@@ -230,14 +266,14 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		filterType:         IncludeResources,
 		resourceTypeFilter: IncludeFilterByResourceType,
 		resourceFilter:     IncludeFilterResourceByRegex,
-		exportAsHCL:        true,
+		exportFormat:       "hcl",
 		exporters: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
 		resources: []resourceExporter.ResourceInfo{
 			{
-				Name: testResourceName,
-				Type: testResourceType,
+				BlockLabel: testResourceLabel,
+				Type:       testResourceType,
 				State: &terraform.InstanceState{
 					ID: testResourceId,
 					Attributes: map[string]string{
@@ -263,7 +299,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		t.Errorf("failure: %v", diagErr)
 	}
 
-	configMap := testResourceExporter.resourceTypesMaps[testResourceType][testResourceName]
+	configMap := testResourceExporter.resourceTypesMaps[testResourceType][testResourceLabel]
 
 	// Empty array fields included in `AllowEmptyArrays` should be empty arrays
 	assert.NotNil(t, configMap["null_arr_attr"])
@@ -305,8 +341,8 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example::::resource",
-		IdPrefix: "prefix_",
+		BlockLabel: "example::::resource",
+		IdPrefix:   "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
@@ -324,7 +360,6 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 	}
 
 	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		//assert.Equal(t, targetName, name)
 		return resources, dependencyStruct, nil
 	}
 
@@ -342,14 +377,14 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	state := &terraform.InstanceState{}
 	state.ID = "1"
-	name := "genesyscloud_resource_queue"
-	resourceType := "example_type"
+	label := "resource_queue"
+	resourceType := "genesyscloud_example_type"
 
 	// Create an instance of ResourceInfo
 	resourceInfo := &resourceExporter.ResourceInfo{
-		State: state,
-		Name:  name,
-		Type:  resourceType,
+		State:      state,
+		BlockLabel: label,
+		Type:       resourceType,
 	}
 	gre.resources = []resourceExporter.ResourceInfo{*resourceInfo}
 	filterList, _, err := gre.processAndBuildDependencies()
@@ -365,41 +400,41 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 func TestUnitTfExportFilterResourceById(t *testing.T) {
 
 	meta := &resourceExporter.ResourceMeta{
-		Name:     "example resource1",
-		IdPrefix: "prefix_",
+		BlockLabel: "example resource1",
+		IdPrefix:   "prefix_",
 	}
 
 	// Create an instance of ResourceIDMetaMap and add the meta to it
 	result := resourceExporter.ResourceIDMetaMap{
 		"queue_resources_1": meta,
 		"queue_resources_2": &resourceExporter.ResourceMeta{
-			Name:     "example resource2",
-			IdPrefix: "prefix_",
+			BlockLabel: "example resource2",
+			IdPrefix:   "prefix_",
 		},
 	}
 
-	// Test case 1: When the name is found in the filter
-	name := "Resource2"
+	// Test case 1: When the resType is found in the filter
+	resType := "Resource2"
 	filter := []string{"Resource1::queue_resources", "Resource2::queue_resources_2"}
 
 	expectedResult := resourceExporter.ResourceIDMetaMap{
 		"queue_resources_2": &resourceExporter.ResourceMeta{
-			Name:     "example resource2",
-			IdPrefix: "prefix_",
+			BlockLabel: "example resource2",
+			IdPrefix:   "prefix_",
 		},
 	}
-	actualResult := FilterResourceById(result, name, filter)
+	actualResult := FilterResourceById(result, resType, filter)
 
 	if !reflect.DeepEqual(actualResult, expectedResult) {
 		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
 	}
 
-	// Test case 2: When the name is not found in the filter
-	name = "Resource4"
+	// Test case 2: When the resType is not found in the filter
+	resType = "Resource4"
 	filter = []string{"Resource1::", "Resource2::"}
 
 	expectedResult = result // The result should remain unchanged
-	actualResult = FilterResourceById(result, name, filter)
+	actualResult = FilterResourceById(result, resType, filter)
 
 	if !reflect.DeepEqual(actualResult, expectedResult) {
 		t.Errorf("Expected result: %v, but got: %v", expectedResult, actualResult)
@@ -409,29 +444,29 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 
 	gre := &GenesysCloudResourceExporter{
-		exportAsHCL:          false,
+		exportFormat:         "json",
 		splitFilesByResource: true,
 	}
 
 	m1 := map[string]*resourceExporter.ResourceExporter{
-		"exporter1": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key1", "key2"}},
-		"exporter2": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
-		"exporter3": &resourceExporter.ResourceExporter{AllowZeroValues: []string{"key3", "key4"}},
+		"exporter1": {AllowZeroValues: []string{"key1", "key2"}},
+		"exporter2": {AllowZeroValues: []string{"key3", "key4"}},
+		"exporter3": {AllowZeroValues: []string{"key3", "key4"}},
 	}
 
 	filter := []string{"e*.name"}
 
 	// Call the function
 	gre.populateConfigExcluded(m1, filter)
-	name := "name"
+	nameAttr := "name"
 	// Check if the exporters in the result have the expected keys
 	for _, exporter := range m1 {
 
 		attributes := exporter.ExcludedAttributes
 
 		for _, atribute := range attributes {
-			if atribute != name {
-				t.Errorf("Attribute %s not excluded in exporter", name)
+			if atribute != nameAttr {
+				t.Errorf("Attribute %s not excluded in exporter", nameAttr)
 			}
 		}
 	}
@@ -472,20 +507,20 @@ func TestUnitTfExportMergeExporters(t *testing.T) {
 
 func TestUnitResolveValueToDataSource(t *testing.T) {
 	var (
-		originalValueOfScriptId         = "1234"
-		scriptResourceId                = "genesyscloud_script"
-		defaultOutboundScriptName       = "Default Outbound Script"
-		defaultOutboundScriptResourceId = "Default_Outbound_Script"
+		originalValueOfScriptId            = "1234"
+		scriptResourceType                 = "genesyscloud_script"
+		defaultOutboundScriptName          = "Default Outbound Script"
+		defaultOutboundScriptResourceLabel = "Default_Outbound_Script"
 	)
 
 	// set up
 	g := setupGenesysCloudResourceExporter(t)
 
 	resolverFunc := func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
-		configMap["script_id"] = fmt.Sprintf(`${data.%s.%s.id}`, scriptResourceId, defaultOutboundScriptResourceId)
+		configMap["script_id"] = fmt.Sprintf(`${data.%s.%s.id}`, scriptResourceType, defaultOutboundScriptResourceLabel)
 		dataSourceConfig := make(map[string]any)
 		dataSourceConfig["name"] = defaultOutboundScriptName
-		return scriptResourceId, defaultOutboundScriptResourceId, dataSourceConfig, true
+		return scriptResourceType, defaultOutboundScriptResourceLabel, dataSourceConfig, true
 	}
 	attrCustomResolver := make(map[string]*resourceExporter.RefAttrCustomResolver)
 	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
@@ -498,15 +533,15 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 	// invoke - expecting script data source to be added to export
 	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
 
-	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; !ok {
-		t.Errorf("expected key '%s' to exist in dataSourceTypesMaps", scriptResourceId)
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType]; !ok {
+		t.Errorf("expected key '%s' to exist in dataSourceTypesMaps", scriptResourceType)
 	}
 
-	if _, ok := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]; !ok {
-		t.Errorf("expected dataSourceTypesMaps['%s'] to hold nested key '%s'", scriptResourceId, defaultOutboundScriptResourceId)
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType][defaultOutboundScriptResourceLabel]; !ok {
+		t.Errorf("expected dataSourceTypesMaps['%s'] to hold nested key '%s'", scriptResourceType, defaultOutboundScriptResourceLabel)
 	}
 
-	dataSourceConfig := g.dataSourceTypesMaps[scriptResourceId][defaultOutboundScriptResourceId]
+	dataSourceConfig := g.dataSourceTypesMaps[scriptResourceType][defaultOutboundScriptResourceLabel]
 	nameInDataSource, ok := dataSourceConfig["name"].(string)
 	if !ok {
 		t.Errorf("expected the data source config to contain key 'name'")
@@ -515,20 +550,11 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 		t.Errorf("expected data source name to be '%s', got '%s'", defaultOutboundScriptName, nameInDataSource)
 	}
 
-	hclBlocks, ok := g.resourceTypesHCLBlocks[scriptResourceId]
-	if !ok {
-		t.Errorf("expected resourceTypesHCLBlocks to contain key '%s'", scriptResourceId)
-	}
-	if len(hclBlocks) == 0 {
-		t.Errorf("expected length of resourceTypesHCLBlocks to not be zero")
-	}
-
 	// set up
 	resolverFunc = func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
 		return "", "", nil, false
 	}
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
 	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
 	exporter = &resourceExporter.ResourceExporter{
 		CustomAttributeResolver: attrCustomResolver,
@@ -537,18 +563,14 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 	// invoke - not expecting script data source to be added to export
 	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
 
-	if _, ok := g.dataSourceTypesMaps[scriptResourceId]; ok {
-		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceId)
-	}
-
-	if _, ok := g.resourceTypesHCLBlocks[scriptResourceId]; ok {
-		t.Errorf("expected key '%s' to not exist in resourceTypesHCLBlocks map", scriptResourceId)
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType]; ok {
+		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceType)
 	}
 }
 
 func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExporter {
 	exportMap := map[string]interface{}{
-		"export_as_hcl":                false,
+		"export_format":                "json",
 		"split_files_by_resource":      false,
 		"log_permission_errors":        false,
 		"enable_dependency_resolution": false,
@@ -566,8 +588,7 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 		t.Errorf("%v", diagErr)
 	}
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.resourceTypesHCLBlocks = make(map[string]resourceHCLBlock)
-	g.exportAsHCL = true
+	g.exportFormat = "hcl"
 	return g
 }
 
@@ -578,4 +599,325 @@ func getMockCampaignConfig(originalValueOfScriptId string) map[string]any {
 	config["script_id"] = originalValueOfScriptId
 
 	return config
+}
+
+func TestContainsElement(t *testing.T) {
+	// set up
+	exporter := setupGenesysCloudResourceExporter(t)
+
+	tests := []struct {
+		name           string
+		elements       []string
+		resType        string
+		resLabel       string
+		originalLabel  string
+		expectedResult bool
+	}{
+		{
+			name:           "Exact match",
+			elements:       []string{"resourceType::resourceLabel"},
+			resType:        "resourceType",
+			resLabel:       "resourceLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+		{
+			name:           "Regex match",
+			elements:       []string{"resourceType::.*Label"},
+			resType:        "resourceType",
+			resLabel:       "resourceLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+		{
+			name:           "No match",
+			elements:       []string{"resourceType::unrelatedLabel"},
+			resType:        "resourceType",
+			resLabel:       "resourceLabel",
+			originalLabel:  "",
+			expectedResult: false,
+		},
+		{
+			name:           "Sanitized label match",
+			elements:       []string{"resourceType::sanitized resourceLabel"},
+			resType:        "resourceType",
+			resLabel:       "sanitized resourceLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := exporter.containsElement(tt.elements, tt.resType, tt.resLabel, tt.originalLabel)
+			assert.Equal(t, tt.expectedResult, result)
+		})
+	}
+}
+
+func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
+
+	testCases := []struct {
+		name            string
+		resourceId      string
+		schema          map[string]*schema.Schema
+		resourceMetaMap resourceExporter.ResourceIDMetaMap
+		initialState    map[string]string
+		exportComputed  bool
+		expectedState   map[string]string
+		expectError     bool
+	}{
+		{
+			name:       "Basic resource state with computed attributes disabled",
+			resourceId: "test-resource-1",
+			schema: map[string]*schema.Schema{
+				"computed_attr": {
+					Type:     schema.TypeString,
+					Computed: true,
+				},
+				"normal_attr": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			resourceMetaMap: resourceExporter.ResourceIDMetaMap{
+				"test-resource-1": &resourceExporter.ResourceMeta{
+					BlockLabel: "test-resource-1",
+				},
+			},
+			initialState: map[string]string{
+				"computed_attr": "computed_value",
+				"normal_attr":   "normal_value",
+			},
+			exportComputed: false,
+			expectedState: map[string]string{
+				"normal_attr": "normal_value",
+				"id":          "test-resource-1",
+			},
+			expectError: false,
+		},
+		{
+			name:       "Resource state with computed attributes enabled",
+			resourceId: "test-resource-2",
+			schema: map[string]*schema.Schema{
+				"computed_attr": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"normal_attr": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			resourceMetaMap: resourceExporter.ResourceIDMetaMap{
+				"test-resource-2": &resourceExporter.ResourceMeta{
+					BlockLabel: "test-resource-2",
+				},
+			},
+			initialState: map[string]string{
+				"computed_attr": "computed_value",
+				"normal_attr":   "normal_value",
+			},
+			exportComputed: true,
+			expectedState: map[string]string{
+				"computed_attr": "computed_value",
+				"normal_attr":   "normal_value",
+				"id":            "test-resource-2",
+			},
+			expectError: false,
+		},
+		{
+			name:       "Always remove read-only computed attributes",
+			resourceId: "test-resource-3",
+			schema: map[string]*schema.Schema{
+				"readonly_computed": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: false,
+					Required: false,
+				},
+				"normal_attr": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			resourceMetaMap: resourceExporter.ResourceIDMetaMap{
+				"test-resource-3": &resourceExporter.ResourceMeta{
+					BlockLabel: "test-resource-3",
+				},
+			},
+			initialState: map[string]string{
+				"readonly_computed": "computed_value",
+				"normal_attr":       "normal_value",
+			},
+			exportComputed: true,
+			expectedState: map[string]string{
+				"normal_attr": "normal_value",
+				"id":          "test-resource-3",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			mockResourceType := "test_resource"
+
+			// Create a mock mockResource
+			mockResource := &schema.Resource{
+				Schema: tc.schema,
+				// Mock the refresh functionality
+				Read: func(d *schema.ResourceData, m interface{}) error {
+					// Simulate reading the resource by setting the test case's initial state
+					for k, v := range tc.initialState {
+						d.Set(k, v)
+					}
+					d.SetId(tc.resourceId)
+					return nil
+				},
+			}
+
+			// Create mock provider
+			mockProvider := &schema.Provider{
+				ResourcesMap: map[string]*schema.Resource{
+					mockResourceType: mockResource,
+				},
+			}
+
+			// Create mock exporter
+			mockExporter := &resourceExporter.ResourceExporter{
+				SanitizedResourceMap: tc.resourceMetaMap,
+			}
+
+			// Create provider meta
+			providerMeta := &provider.ProviderMeta{
+				ClientConfig: &platformclientv2.Configuration{},
+			}
+
+			// Create GenesysCloudResourceExporter instance
+			exporter := &GenesysCloudResourceExporter{
+				exportComputed: tc.exportComputed,
+				meta:           providerMeta,
+				ctx:            context.Background(),
+			}
+
+			// Call the function being tested
+			resources, diags := exporter.getResourcesForType(
+				mockResourceType,
+				mockProvider,
+				mockExporter,
+				providerMeta,
+			)
+
+			// Check for expected errors
+			if tc.expectError {
+				if diags == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+
+			if diags != nil {
+				t.Errorf("Unexpected error: %v", diags)
+				return
+			}
+
+			if resources == nil {
+				t.Fatal("Expected resources but got nil")
+			}
+
+			// Verify the state attributes
+			for key, expectedValue := range tc.expectedState {
+				if actualValue, ok := resources[0].State.Attributes[key]; !ok {
+					t.Errorf("Expected attribute %s not found in state", key)
+				} else if actualValue != expectedValue {
+					t.Errorf("Attribute %s: expected %s, got %s", key, expectedValue, actualValue)
+				}
+			}
+
+			// Verify no unexpected attributes exist
+			for key := range resources[0].State.Attributes {
+				if _, ok := tc.expectedState[key]; !ok {
+					t.Errorf("Unexpected attribute %s found in state", key)
+				}
+			}
+		})
+	}
+}
+
+func TestUnitMatchesFormat(t *testing.T) {
+	tests := []struct {
+		name         string
+		exportFormat string
+		formats      []string
+		expected     bool
+	}{
+		{
+			name:         "Exact match with single format",
+			exportFormat: "hcl",
+			formats:      []string{"hcl"},
+			expected:     true,
+		},
+		{
+			name:         "Exact match with multiple formats",
+			exportFormat: "hcl",
+			formats:      []string{"json", "hcl", "yaml"},
+			expected:     true,
+		},
+		{
+			name:         "No match with multiple formats",
+			exportFormat: "xml",
+			formats:      []string{"json", "hcl", "yaml"},
+			expected:     false,
+		},
+		{
+			name:         "Regex match contains",
+			exportFormat: "json_hcl",
+			formats:      []string{"/.*hcl.*/"},
+			expected:     true,
+		},
+		{
+			name:         "Regex match case insensitive",
+			exportFormat: "JSON_HCL",
+			formats:      []string{"/(?i).*hcl.*/"},
+			expected:     true,
+		},
+		{
+			name:         "Regex no match",
+			exportFormat: "json",
+			formats:      []string{"/.*hcl.*/"},
+			expected:     false,
+		},
+		{
+			name:         "Invalid regex pattern",
+			exportFormat: "hcl",
+			formats:      []string{"/[invalid/"},
+			expected:     false,
+		},
+		{
+			name:         "Format normalization HCLJSON to JSONHCL",
+			exportFormat: formatHCLJSON,
+			formats:      []string{formatJSONHCL},
+			expected:     true,
+		},
+		{
+			name:         "Mix of exact and regex patterns",
+			exportFormat: "json_hcl",
+			formats:      []string{"json", "/.*hcl.*/", "yaml"},
+			expected:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exporter := &GenesysCloudResourceExporter{
+				exportFormat: tt.exportFormat,
+			}
+			result := exporter.matchesExportFormat(tt.formats...)
+			if result != tt.expected {
+				t.Errorf("matchesExportFormat() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
 }

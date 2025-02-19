@@ -129,6 +129,10 @@ Optional:
 - `na_enabled` (Boolean) Specifies whether a not applicable answer is enabled. Defaults to `false`.
 - `visibility_condition` (Block List, Max: 1) Defines conditions where question would be visible (see [below for nested schema](#nestedblock--question_groups--visibility_condition))
 
+Read-Only:
+
+- `id` (String) The ID of the survey question group.
+
 <a id="nestedblock--question_groups--questions"></a>
 ### Nested Schema for `question_groups.questions`
 
@@ -146,6 +150,10 @@ Optional:
 - `type` (String) Valid Values: multipleChoiceQuestion, freeTextQuestion, npsQuestion, readOnlyTextBlockQuestion Defaults to `multipleChoiceQuestion`.
 - `visibility_condition` (Block List, Max: 1) Defines conditions where question would be visible (see [below for nested schema](#nestedblock--question_groups--questions--visibility_condition))
 
+Read-Only:
+
+- `id` (String) The ID of the survey question.
+
 <a id="nestedblock--question_groups--questions--answer_options"></a>
 ### Nested Schema for `question_groups.questions.answer_options`
 
@@ -156,14 +164,21 @@ Required:
 
 Optional:
 
-- `assistance_conditions` (Block List) Options from which to choose an answer for this question. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options--assistance_conditions))
+- `assistance_conditions` (Block Set) Options from which to choose an answer for this question. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options--assistance_conditions))
+
+Read-Only:
+
+- `id` (String) The ID of the survey answer option.
 
 <a id="nestedblock--question_groups--questions--answer_options--assistance_conditions"></a>
 ### Nested Schema for `question_groups.questions.answer_options.assistance_conditions`
 
-Optional:
+Required:
 
 - `operator` (String) List of assistance conditions which are combined together with a logical AND operator. Eg ( assistanceCondtion1 && assistanceCondition2 ) wherein assistanceCondition could be ( EXISTS topic1 || topic2 || ... ) or (NOTEXISTS topic3 || topic4 || ...).
+
+Optional:
+
 - `topic_ids` (List of String) List of topicIds within the assistance condition which would be combined together using logical OR operator. Eg ( topicId_1 || topicId_2 ) .
 
 

@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var internalProxy *outboundDnclistProxy
@@ -92,11 +92,7 @@ func (p *outboundDnclistProxy) uploadPhoneEntriesToDncList(dncList *platformclie
 }
 
 func createOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclist *platformclientv2.Dnclistcreate) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
-	list, resp, err := p.outboundApi.PostOutboundDnclists(*dnclist)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to create dnclist: %s", err)
-	}
-	return list, resp, nil
+	return p.outboundApi.PostOutboundDnclists(*dnclist)
 }
 
 func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
@@ -105,47 +101,33 @@ func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]p
 
 	dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, 1, true, "", "", "", []string{}, "", "")
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get dnclists: %v", err)
+		return nil, resp, fmt.Errorf("failed to get dnclists: %v", err)
 	}
 
 	if dnclists.Entities == nil || len(*dnclists.Entities) == 0 {
 		return &allDnclists, resp, nil
 	}
 
-	for _, dnclist := range *dnclists.Entities {
-		allDnclists = append(allDnclists, dnclist)
-	}
+	allDnclists = append(allDnclists, *dnclists.Entities...)
 
 	var response *platformclientv2.APIResponse
 	for pageNum := 2; pageNum <= *dnclists.PageCount; pageNum++ {
 		dnclists, resp, err := p.outboundApi.GetOutboundDnclists(false, false, pageSize, pageNum, true, "", "", "", []string{}, "", "")
 		if err != nil {
-			return nil, resp, fmt.Errorf("Failed to get dnclists: %v", err)
+			return nil, resp, fmt.Errorf("failed to get dnclists: %v", err)
 		}
 		response = resp
 		if dnclists.Entities == nil || len(*dnclists.Entities) == 0 {
 			break
 		}
 
-		for _, dnclist := range *dnclists.Entities {
-			log.Printf("Dealing with dnclist: %s", *dnclist.Id)
-			allDnclists = append(allDnclists, dnclist)
-		}
+		allDnclists = append(allDnclists, *dnclists.Entities...)
 	}
 	return &allDnclists, response, nil
 }
 
 func updateOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
-	dnclist, resp, err := p.outboundApi.GetOutboundDnclist(dnclistId, false, false)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get dnc list by id %s", err)
-	}
-
-	outboundDncList, resp, err := p.outboundApi.PutOutboundDnclist(dnclistId, *dnclist)
-	if err != nil {
-		return nil, resp, fmt.Errorf("error updating outbound dnc list %s", err)
-	}
-	return outboundDncList, resp, nil
+	return p.outboundApi.PutOutboundDnclist(dnclistId, *dnclist)
 }
 
 func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -161,7 +143,7 @@ func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformcli
 		// POST /api/v2/outbound/dnclists/{dncListId}/phonenumbers
 		response, err := p.outboundApi.PostOutboundDnclistPhonenumbers(*dncList.Id, phoneNumbers, entryMap["expiration_date"].(string))
 		if err != nil {
-			return response, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to upload phone numbers to Outbound DNC list %s: %s", *dncList.Name, err), response)
+			return response, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to upload phone numbers to Outbound DNC list %s: %s", *dncList.Name, err), response)
 		}
 		resp = response
 		log.Printf("Uploaded phone numbers to DNC list %s", *dncList.Name)
@@ -170,34 +152,23 @@ func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformcli
 }
 
 func deleteOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.APIResponse, error) {
-	resp, err := p.outboundApi.DeleteOutboundDnclist(dnclistId)
-	if err != nil {
-		return resp, fmt.Errorf("failed to delete dnc list %s", err)
-	}
-	return resp, nil
+	return p.outboundApi.DeleteOutboundDnclist(dnclistId)
 }
 
 func getOutboundDnclistByIdFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
-	dnclist, resp, err := p.outboundApi.GetOutboundDnclist(dnclistId, false, false)
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to retrieve dnc list by id %s: %s", dnclistId, err)
-	}
-	return dnclist, resp, nil
+	return p.outboundApi.GetOutboundDnclist(dnclistId, false, false)
 }
 
 func getOutboundDnclistByNameFn(ctx context.Context, p *outboundDnclistProxy, name string) (dnclistId string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	dnclists, resp, err := getAllOutboundDnclistFn(ctx, p)
 	if err != nil {
-		return "", false, resp, fmt.Errorf("Error searching outbound dnc list %s: %s", name, err)
+		return "", false, resp, fmt.Errorf("error searching outbound dnc list %s: %s", name, err)
 	}
-
-	var dnclist platformclientv2.Dnclist
 	for _, dnclistSdk := range *dnclists {
 		if *dnclistSdk.Name == name {
 			log.Printf("Retrieved the dnc list id %s by name %s", *dnclistSdk.Id, name)
-			dnclist = dnclistSdk
-			return *dnclist.Id, false, resp, nil
+			return *dnclistSdk.Id, false, resp, nil
 		}
 	}
-	return "", true, resp, fmt.Errorf("Unable to find dnc list with name %s", name)
+	return "", true, resp, fmt.Errorf("unable to find dnc list with name %s", name)
 }

@@ -31,9 +31,9 @@ func dataSourceIntegrationCustomAuthActionRead(ctx context.Context, d *schema.Re
 		integration, resp, getErr := cap.getIntegrationById(ctx, integrationId)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration %s | error: %s", d.Id(), getErr), resp))
 		}
 
 		// Get the custom auth action for the integration
@@ -41,9 +41,9 @@ func dataSourceIntegrationCustomAuthActionRead(ctx context.Context, d *schema.Re
 		authAction, resp, err := cap.getCustomAuthActionById(ctx, authActionId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("cannot find custom auth action of integration %s | error: %v", *integration.Name, err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("cannot find custom auth action of integration %s | error: %v", *integration.Name, err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting integration %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting integration %s | error: %s", d.Id(), err), resp))
 		}
 		d.SetId(*authAction.Id)
 		return nil

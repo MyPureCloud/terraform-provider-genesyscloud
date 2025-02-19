@@ -2,8 +2,11 @@ package architect_flow
 
 import (
 	"fmt"
+	"path/filepath"
+	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,12 +16,12 @@ import (
 
 func TestAccDataSourceFlow(t *testing.T) {
 	var (
-		flowDataSource    = "flow-data"
-		flowName          = "test_data_flow" + uuid.NewString()
-		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
+		flowDataSourceLabel = "flow-data"
+		flowName            = "test_data_flow" + uuid.NewString()
+		inboundcallConfig   = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 
-		flowResource = "test_flow"
-		filePath     = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
+		flowResourceLabel = "test_flow"
+		filePath          = filepath.Join(testrunner.RootDir, "examples", "resources", "genesyscloud_flow", "inboundcall_flow_example.yaml")
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -27,19 +30,24 @@ func TestAccDataSourceFlow(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: GenerateFlowResource(
-					flowResource,
+					flowResourceLabel,
 					filePath,
 					inboundcallConfig,
 					false,
 				) + generateFlowDataSource(
-					flowDataSource,
-					"genesyscloud_flow."+flowResource,
+					flowDataSourceLabel,
+					ResourceType+"."+flowResourceLabel,
 					flowName,
+					strconv.Quote("inboundcall"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(ResourceType+"."+flowResourceLabel, "id",
+						fmt.Sprintf("data.%s.%s", ResourceType, flowDataSourceLabel), "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_flow." + flowResource,
+				ResourceName:            ResourceType + "." + flowResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
@@ -50,12 +58,14 @@ func TestAccDataSourceFlow(t *testing.T) {
 }
 
 func generateFlowDataSource(
-	resourceID,
+	resourceLabel,
 	dependsOn,
-	name string) string {
-	return fmt.Sprintf(`data "genesyscloud_flow" "%s" {
+	name,
+	varType string) string {
+	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
+		type = %s
 		depends_on = [%s]
 	}
-	`, resourceID, name, dependsOn)
+	`, ResourceType, resourceLabel, name, varType, dependsOn)
 }

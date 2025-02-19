@@ -53,9 +53,11 @@ resource "genesyscloud_routing_email_route" "support-route" {
 
 ### Optional
 
+- `allow_multiple_actions` (Boolean) Control if multiple actions are allowed on this route. When true the disconnect has to be done manually. When false a conversation will be disconnected by the system after every action.
 - `auto_bcc` (Block Set) The recipients that should be automatically blind copied on outbound emails associated with this route. This should not be set if reply_email_address is specified. (see [below for nested schema](#nestedblock--auto_bcc))
 - `flow_id` (String) The flow to use for processing the email. This should not be set if a queue_id is specified.
 - `from_email` (String) The sender email to use for outgoing replies. This should not be set if reply_email_address is specified.
+- `history_inclusion` (String) The configuration to indicate how the history of a conversation has to be included in a draft. Defaults to `Optional`.
 - `language_id` (String) The language to use for routing.
 - `priority` (Number) The priority to use for routing.
 - `queue_id` (String) The queue to route the emails to. This should not be set if a flow_id is specified.

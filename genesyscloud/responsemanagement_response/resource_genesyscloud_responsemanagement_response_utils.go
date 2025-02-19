@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getResponseFromResourceData(d *schema.ResourceData) platformclientv2.Response {
@@ -54,6 +54,7 @@ func buildResponseTexts(responseTexts *schema.Set) *[]platformclientv2.Responset
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkResponseText.Content, responseTextMap, "content")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkResponseText.ContentType, responseTextMap, "content_type")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkResponseText.VarType, responseTextMap, "type")
 
 		sdkResponseTexts = append(sdkResponseTexts, sdkResponseText)
 	}
@@ -164,6 +165,7 @@ func flattenResponseTexts(responseTexts *[]platformclientv2.Responsetext) *schem
 
 		resourcedata.SetMapValueIfNotNil(responseTextMap, "content", responseText.Content)
 		resourcedata.SetMapValueIfNotNil(responseTextMap, "content_type", responseText.ContentType)
+		resourcedata.SetMapValueIfNotNil(responseTextMap, "type", responseText.VarType)
 
 		responseTextSet.Add(responseTextMap)
 	}

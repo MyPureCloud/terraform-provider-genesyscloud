@@ -4,8 +4,10 @@ import (
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
+const ResourceType = "genesyscloud_outbound_contact_list"
+
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterDataSource("genesyscloud_outbound_contact_list", DataSourceOutboundContactList())
-	regInstance.RegisterResource("genesyscloud_outbound_contact_list", ResourceOutboundContactList())
-	regInstance.RegisterExporter("genesyscloud_outbound_contact_list", OutboundContactListExporter())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundContactList())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundContactList())
+	regInstance.RegisterExporter(ResourceType, OutboundContactListExporter())
 }

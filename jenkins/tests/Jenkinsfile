@@ -4,9 +4,17 @@ final def CREDENTIALS_MAP = [
   'tca': 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET_TCA',
   'us-east-1': 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET'
 ]
+final def ENVIRONMENT_MAP = [
+    'tca':'test',
+    'us-east-1':'prod'
+]
 
 final def region = REGION
 def credentials = CREDENTIALS_MAP.get(region, 'GENESYSCLOUD_OAUTHCLIENT_ID_AND_SECRET')
+def env = ENVIRONMENT_MAP.get(region,'test')
+def triggerUTR = triggerUTR
+final def SERVICE_ID = 'CX-as-Code'
+final def GIT_CREDENTIALS_ID = '211a9bc8-96ae-4b0c-b9bf-ad1d4ff53f79'
 
 pipeline {
     agent {
@@ -28,9 +36,15 @@ pipeline {
         HTML_REPORT = 'report.html'
     }
     tools {
-        go 'Go 1.20'
+        go 'Go 1.23.1'
         terraform 'Terraform 1.0.10'
     }
+     triggers {
+        parameterizedCron('''
+            H 20 * * 0-4 %REGION=tca
+            H 23 * * 0-4 %REGION=us-east-1
+        ''')
+    }   
 
     stages {
       
@@ -48,6 +62,18 @@ pipeline {
                 sh 'go install gotest.tools/gotestsum@latest'
                 sh 'go install github.com/nezorflame/junit-merger@latest'
                 sh 'pip install xmltodict --user'
+                    
+        script {
+          def jenkinsCommon
+          def sourceBuildNumber
+          def description
+          dir('jenkins-deps') {
+            git url: 'git@bitbucket.org:inindca/publicapi-test-common.git', credentialsId: GIT_CREDENTIALS_ID
+            jenkinsCommon = load 'jenkinsfile-libs/test-steps.groovy'
+          }
+            jenkinsCommon.updateDescription(SERVICE_ID, sourceBuildNumber, 'Test Run-' + region)
+        }
+      
             }
         }
 
@@ -76,9 +102,9 @@ pipeline {
                           sh "gotestsum --junitfile unit.xml --format standard-verbose ./genesyscloud/...  -run 'Test|TestUnit' -skip 'TestAcc' -v -timeout 30m -count=1 -cover -coverprofile=coverageUnit.out"
 
                     }
-                }
             }
-        }
+            }
+         }
 
     stage('Architect Tests') {
             environment {
@@ -94,7 +120,7 @@ pipeline {
                     }
                 }
             }
-        }
+    }
 
         stage('Idp Tests') {
             environment {
@@ -198,6 +224,9 @@ pipeline {
             environment {
                 TF_ACC=1
                 TF_LOG="DEBUG"
+                TEST_DNC_GRYPHON_LICENSE_KEY="D7CE-E914-E4D4-4121-9428-36BD-07D8-9A41"
+                TEST_DNC_GRYPHON_PROD_LICENSE_KEY="4ADA-9A3B-5DAD-4FAD-95A7-4C31-425B-8594"
+                TEST_DNCCOM_LICENSE_KEY="96CAAC02650543056DF1ADA796A0082ED152561EDEE1"
             }
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -287,7 +316,7 @@ pipeline {
                     echo 'Attempting to Run Site Tests'
                     withCredentials([usernamePassword(credentialsId: CREDENTIALS_ID, usernameVariable: 'GENESYSCLOUD_OAUTHCLIENT_ID', passwordVariable: 'GENESYSCLOUD_OAUTHCLIENT_SECRET')]) {
                         echo 'Loading Genesys OAuth Credentials'
-                        sh 'gotestsum --junitfile site.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Site -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
+                        sh 'gotestsum --junitfile site.xml --format standard-verbose ./genesyscloud/... -run TestAcc.*Site -skip TestAcc.*Export -v -count=1 -timeout 120m -cover -coverprofile=coverageSite.out'
                     }
                 }
             }
@@ -517,201 +546,220 @@ pipeline {
 
     writeFile file: 'coverageReport.html', text: updatedHtmlFile
 
-                    // Generate manual report
-                    def xmlContent = readFile 'test-results.xml'
+def xmlContent = readFile 'test-results.xml'
 
-                    // Extract test case information using regular expressions
-                    def testCases = []
-                    def testCasePattern = /<testcase\s+classname="([^"]+)"\s+name="([^"]+)"\s+time="([^"]+)"/
-                    def failurePattern = /<failure[^>]*>([\s\S]*?)<\/failure>/
-                    def skippedPattern = /<skipped[^>]*>([\s\S]*?)<\/skipped>/
+// Extract test case information using regular expressions
+def testCases = []
+def testCasePattern = /<testcase\s+classname="([^"]+)"\s+name="([^"]+)"\s+time="([^"]+)"/
+def failurePattern = /<failure[^>]*>([\s\S]*?)<\/failure>/
+def skippedPattern = /<skipped\s+message="([^"]+)"/
 
-                    def matcher = xmlContent =~ testCasePattern
-                    while (matcher.find()) {
-                        def classname = matcher.group(1)
-                        def name = matcher.group(2)
-                        def time = matcher.group(3)
-                        def remainingText = xmlContent.substring(matcher.end())
+def matcher = xmlContent =~ testCasePattern
+while (matcher.find()) {
+    def classname = matcher.group(1)
+    def name = matcher.group(2)
+    def time = matcher.group(3)
+    def remainingText = xmlContent.substring(matcher.end())
 
-                        def endIndex = remainingText.indexOf('</testcase>')
-                        def details = endIndex != -1 ? remainingText.substring(0, endIndex) : ""
+    def endIndex = remainingText.indexOf('</testcase>')
+    def details = endIndex != -1 ? remainingText.substring(0, endIndex) : ""
 
-                        def result = [
-                            name: name,
-                            classname: classname,
-                            time: time,
-                            status: 'Passed', // Default to Passed
-                            reason: '',
-                            log: details
-                        ]
+    def result = [
+        name: name,
+        classname: classname,
+        time: time,
+        status: 'Passed', // Default to Passed
+        reason: '',
+        log: details
+    ]
 
-                        // Check for failure or skipped
-                        def failureMatcher = details =~ failurePattern
-                        def skippedMatcher = details =~ skippedPattern
-                        if (failureMatcher.find()) {
-                            result.status = 'Failed'
-                            result.log = failureMatcher.group(1).trim()
-                        } else if (skippedMatcher.find()) {
-                            result.status = 'Skipped'
-                            result.log = skippedMatcher.group(1).trim()
-                        }
+    // Check for failure or skipped
+    def failureMatcher = details =~ failurePattern
+    def skippedMatcher = details =~ skippedPattern
+    if (failureMatcher.find()) {
+        result.status = 'Failed'
+        result.log = failureMatcher.group(1).trim()
+        result.reason = extractReason(result.log)
+    } else if (skippedMatcher.find()) {
+        result.status = 'Skipped'
+        result.reason = skippedMatcher.group(1).trim() // Get the skipped reason directly
+    }
 
-                        // Extract reason
-                        if (result.status == 'Failed') {
-                            result.reason = extractReason(result.log)
-                        } else if (result.status == 'Skipped') {
-                            result.reason = extractReason(result.log)
-                        }
+    testCases << result
+}
 
-                        testCases << result
-                    }
+// Generate HTML report
+def html = new StringBuilder()
+html.append("""
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .passed { background-color: #d4edda; }
+        .failed { background-color: #f8d7da; }
+        .skipped { background-color: #fff3cd; }
+        .summary { margin-bottom: 20px; }
+        .summary div { margin: 5px 0; }
+        .link { color: #007bff; text-decoration: none; }
+        .reason-content { margin-top: 10px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; word-wrap: break-word; white-space: pre-wrap; }
+        .test-case { border-left: 4px solid #dc3545; padding-left: 10px; margin-top: 20px; background-color: #f8d7da; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Test Results</h2>
+    <div class="summary">
+        <div>Total Tests: ${testCases.size()}</div>
+        <div style="color: green;">Total Passed: ${testCases.count { it.status == 'Passed' }}</div>
+        <div style="color: red;">Total Failed: ${testCases.count { it.status == 'Failed' }}</div>
+        <div style="color: orange;">Total Skipped: ${testCases.count { it.status == 'Skipped' }}</div>
+    </div>
 
-                    // Generate HTML report
-                    def html = new StringBuilder()
-                    html.append("""
-                    <html>
-                    <head>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 20px; }
-                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                            th { background-color: #f2f2f2; }
-                            .passed { background-color: #d4edda; }
-                            .failed { background-color: #f8d7da; }
-                            .skipped { background-color: #fff3cd; }
-                            .summary { margin-bottom: 20px; }
-                            .summary div { margin: 5px 0; }
-                            .link { color: #007bff; text-decoration: none; }
-                            .reason-content { margin-top: 10px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9; word-wrap: break-word; white-space: pre-wrap; }
-                            .test-case { border-left: 4px solid #dc3545; padding-left: 10px; margin-top: 20px; background-color: #f8d7da; padding: 10px; border-radius: 5px; }
-                        </style>
-                    </head>
-                    <body>
-                        <h2>Test Results</h2>
-                        <div class="summary">
-                            <div>Total Tests: ${testCases.size()}</div>
-                            <div style="color: green;">Total Passed: ${testCases.count { it.status == 'Passed' }}</div>
-                            <div style="color: red;">Total Failed: ${testCases.count { it.status == 'Failed' }}</div>
-                            <div style="color: orange;">Total Skipped: ${testCases.count { it.status == 'Skipped' }}</div>
-                        </div>
+    <h3>Failed Tests</h3>
+    <table>
+        <tr>
+            <th>Status</th>
+            <th>Class Name</th>
+            <th>Test Name</th>
+            <th>Duration (s)</th>
+        </tr>
+""")
 
-                        <h3>Failed Tests</h3>
-                        <table>
-                            <tr>
-                                <th>Status</th>
-                                <th>Class Name</th>
-                                <th>Test Name</th>
-                                <th>Duration (s)</th>
-                            </tr>
-                    """)
+testCases.findAll { it.status == 'Failed' }.each { result ->
+    html.append("""
+    <tr class="failed">
+        <td>${result.status}</td>
+        <td>${result.classname}</td>
+        <td>
+            <a href="#${result.name}" class="link">${result.name}</a>
+        </td>
+        <td>${result.time}</td>
+    </tr>
+    """)
+}
 
-                    testCases.findAll { it.status == 'Failed' }.each { result ->
-                        html.append("""
-                        <tr class="failed">
-                            <td>${result.status}</td>
-                            <td>${result.classname}</td>
-                            <td>
-                                <a href="#${result.name}" class="link">${result.name}</a>
-                            </td>
-                            <td>${result.time}</td>
-                        </tr>
-                        """)
-                    }
+html.append("""
+    </table>
 
-                    html.append("""
-                        </table>
+    <h3>Skipped Tests</h3>
+    <table>
+        <tr>
+            <th>Status</th>
+            <th>Class Name</th>
+            <th>Test Name</th>
+            <th>Reason</th>
+        </tr>
+""")
 
-                        <h3>Skipped Tests</h3>
-                        <table>
-                            <tr>
-                                <th>Status</th>
-                                <th>Class Name</th>
-                                <th>Test Name</th>
-                            </tr>
-                    """)
+testCases.findAll { it.status == 'Skipped' }.each { result ->
+    html.append("""
+    <tr class="skipped">
+        <td>${result.status}</td>
+        <td>${result.classname}</td>
+        <td>${result.name}</td>
+        <td>${result.reason}</td>
+    </tr>
+    """)
+}
 
-                    testCases.findAll { it.status == 'Skipped' }.each { result ->
-                        html.append("""
-                        <tr class="skipped">
-                            <td>${result.status}</td>
-                            <td>${result.classname}</td>
-                            <td>${result.name}</td>
-                        </tr>
-                        """)
-                    }
+html.append("""
+    </table>
 
-                    html.append("""
-                        </table>
+    <h3>Passed Tests</h3>
+    <table>
+        <tr>
+            <th>Status</th>
+            <th>Class Name</th>
+            <th>Test Name</th>
+            <th>Duration (s)</th>
+""")
 
-                        <h3>Passed Tests</h3>
-                        <table>
-                            <tr>
-                                <th>Status</th>
-                                <th>Class Name</th>
-                                <th>Test Name</th>
-                                <th>Duration (s)</th>
-                            </tr>
-                    """)
+testCases.findAll { it.status == 'Passed' }.each { result ->
+    html.append("""
+    <tr class="passed">
+        <td>${result.status}</td>
+        <td>${result.classname}</td>
+        <td>${result.name}</td>
+        <td>${result.time}</td>
+    </tr>
+    """)
+}
 
-                    testCases.findAll { it.status == 'Passed' }.each { result ->
-                        html.append("""
-                        <tr class="passed">
-                            <td>${result.status}</td>
-                            <td>${result.classname}</td>
-                            <td>${result.name}</td>
-                            <td>${result.time}</td>
-                        </tr>
-                        """)
-                    }
+html.append("""
+    </table>
 
-                    html.append("""
-                        </table>
+    <h3>Test Details</h3>
+""")
 
-                        <h3>Test Details</h3>
-                    """)
+testCases.findAll { it.status == 'Failed' }.each { result ->
+    html.append("""
+    <div id="${result.name}" class="reason-detail">
+        <div class="test-case failed">
+            <h4>${result.classname}.${result.name}</h4>
+            <p>Status: ${result.status}</p>
+            <p>Duration: ${result.time}s</p>
+            <div class="reason-content">
+                ${result.log}
+            </div>
+        </div>
+    </div>
+    """)
+}
 
-                    testCases.findAll { it.status == 'Failed' }.each { result ->
-                        html.append("""
-                        <div id="${result.name}" class="reason-detail">
-                            <div class="test-case failed">
-                                <h4>${result.classname}.${result.name}</h4>
-                                <p>Status: ${result.status}</p>
-                                <p>Duration: ${result.time}s</p>
-                                <div class="reason-content">
-                                    ${result.log}
-                                </div>
-                            </div>
-                        </div>
-                        """)
-                    }
+html.append("""
+</body>
+</html>
+""")
 
-                    html.append("""
-                    </body>
-                    </html>
-                    """)
+// Save the HTML report to a file
+writeFile file: 'test-report.html', text: html.toString()
 
-                    // Save the HTML report to a file
-                    writeFile file: 'test-report.html', text: html.toString()
 
-                // Optionally, print the location of the HTML report
+                    // Optionally, print the location of the HTML report
                     echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
                 }
                 archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true   
            }
         }
     }
-}
+
+     post {
+
+        always {
+                    script {
+                        if(triggerUTR){
+                        echo "Sending acceptance to UTR..."
+                        testResultToKnex {
+                            files = "test-results.xml"
+                            aut = "CXasCodeTests"
+                            environment = env
+                            type = "acceptance"
+                            platform = "go"
+                            teams = "Developer Tooling"
+                            }
+                        echo "Sending Taneleer acceptance to UTR..."    
+                        testJobResultToTaneleer {
+                            aut = "CXasCodeTests"
+                            environment = env
+                            teams = "Developer Tooling"
+                            }    
+                        echo "Done sending results to Knex & Taneleer"        
+                        }
+                    }
+                }
+          }
+    }
  
- def extractReason(String log) {
-    // Extract reason from the log
+// Function to extract reason from the log for failed tests
+def extractReason(String log) {
     def reason = ""
-    def reasonPattern = /message="([^"]*)">/
+    // Extract the relevant part of the failed message
+    def reasonPattern = /_genesyscloud_.*?\.go:\d+: (.*?) ---/
     def matcher = log =~ reasonPattern
     if (matcher.find()) {
         reason = matcher.group(1).trim()
     }
     return reason
 }
-
-
-    

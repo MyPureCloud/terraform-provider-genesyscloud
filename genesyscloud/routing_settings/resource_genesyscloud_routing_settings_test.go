@@ -12,7 +12,7 @@ import (
 
 func TestAccResourceRoutingSettingsBasic(t *testing.T) {
 	var (
-		settingsResource = "settings-basic"
+		settingsResourceLabel = "settings-basic"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -21,28 +21,28 @@ func TestAccResourceRoutingSettingsBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateRoutingSettingsResource(settingsResource, util.FalseValue),
+				Config: generateRoutingSettingsResource(settingsResourceLabel, util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "reset_agent_on_presence_change", util.FalseValue),
 				),
 			},
 			{
 				// Update
-				Config: generateRoutingSettingsResource(settingsResource, util.TrueValue),
+				Config: generateRoutingSettingsResource(settingsResourceLabel, util.TrueValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "reset_agent_on_presence_change", util.TrueValue),
 				),
 			},
 			{
 				// Update
-				Config: generateRoutingSettingsResource(settingsResource, util.FalseValue),
+				Config: generateRoutingSettingsResource(settingsResourceLabel, util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "reset_agent_on_presence_change", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "reset_agent_on_presence_change", util.FalseValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_settings." + settingsResource,
+				ResourceName:      "genesyscloud_routing_settings." + settingsResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -52,7 +52,7 @@ func TestAccResourceRoutingSettingsBasic(t *testing.T) {
 
 func TestAccResourceRoutingSettingsContactCenter(t *testing.T) {
 	var (
-		settingsResource = "settings-contactCenter"
+		settingsResourceLabel = "settings-contactCenter"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -62,28 +62,28 @@ func TestAccResourceRoutingSettingsContactCenter(t *testing.T) {
 			{
 				// Create with contact center
 				Config: generateRoutingSettingsWithCustomAttrs(
-					settingsResource,
+					settingsResourceLabel,
 					util.TrueValue,
 					generateSettingsContactCenter(util.TrueValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "contactcenter.0.remove_skills_from_blind_transfer", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "contactcenter.0.remove_skills_from_blind_transfer", util.TrueValue),
 				),
 			},
 			{
 				// Update contact center
 				Config: generateRoutingSettingsWithCustomAttrs(
-					settingsResource,
+					settingsResourceLabel,
 					util.TrueValue,
 					generateSettingsContactCenter(util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "contactcenter.0.remove_skills_from_blind_transfer", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "contactcenter.0.remove_skills_from_blind_transfer", util.FalseValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_settings." + settingsResource,
+				ResourceName:      "genesyscloud_routing_settings." + settingsResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -93,11 +93,11 @@ func TestAccResourceRoutingSettingsContactCenter(t *testing.T) {
 
 func TestAccResourceRoutingSettingsTranscription(t *testing.T) {
 	var (
-		settingsResource = "settings-transcription"
-		transcription1   = "Disabled"
-		transcription2   = "EnabledQueueFlow"
-		confidence1      = "1"
-		confidence2      = "2"
+		settingsResourceLabel = "settings-transcription"
+		transcription1        = "Disabled"
+		transcription2        = "EnabledQueueFlow"
+		confidence1           = "1"
+		confidence2           = "2"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -107,34 +107,34 @@ func TestAccResourceRoutingSettingsTranscription(t *testing.T) {
 			{
 				// Create with transcription
 				Config: generateRoutingSettingsWithCustomAttrs(
-					settingsResource,
+					settingsResourceLabel,
 					util.TrueValue,
 					generateSettingsTranscription(transcription1, confidence1, util.TrueValue, util.TrueValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription", transcription1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription_confidence_threshold", confidence1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.low_latency_transcription_enabled", util.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.content_search_enabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.transcription", transcription1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.transcription_confidence_threshold", confidence1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.low_latency_transcription_enabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.content_search_enabled", util.TrueValue),
 				),
 			},
 			{
 				// Update transcription
 				Config: generateRoutingSettingsWithCustomAttrs(
-					settingsResource,
+					settingsResourceLabel,
 					util.TrueValue,
 					generateSettingsTranscription(transcription2, confidence2, util.FalseValue, util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription", transcription2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.transcription_confidence_threshold", confidence2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.low_latency_transcription_enabled", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResource, "transcription.0.content_search_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.transcription", transcription2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.transcription_confidence_threshold", confidence2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.low_latency_transcription_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_settings."+settingsResourceLabel, "transcription.0.content_search_enabled", util.FalseValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_settings." + settingsResource,
+				ResourceName:      "genesyscloud_routing_settings." + settingsResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -143,23 +143,23 @@ func TestAccResourceRoutingSettingsTranscription(t *testing.T) {
 }
 
 func generateRoutingSettingsResource(
-	resourceId string,
+	resourceLabel string,
 	resetAgentScoreOnPresenceChange string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_settings" "%s"{
 		reset_agent_on_presence_change = %s
 	}
-	`, resourceId, resetAgentScoreOnPresenceChange)
+	`, resourceLabel, resetAgentScoreOnPresenceChange)
 }
 
 func generateRoutingSettingsWithCustomAttrs(
-	resourceId string,
+	resourceLabel string,
 	resetAgentScoreOnPresenceChange string,
 	attrs ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_settings" "%s" {
 		reset_agent_on_presence_change = %s
 		%s
 	}
-	`, resourceId, resetAgentScoreOnPresenceChange, strings.Join(attrs, "\n"))
+	`, resourceLabel, resetAgentScoreOnPresenceChange, strings.Join(attrs, "\n"))
 }
 
 func generateSettingsContactCenter(removeSkillsFromBlindTransfer string) string {

@@ -1,17 +1,24 @@
-inboundCall:
-  name: Terraform Flow Test-0f374aca-4d2e-4959-b1bb-9b4fa37e6c73
-  description: test description 2
-  defaultLanguage: en-us
-  startUpRef: ./menus/menu[mainMenu]
-  initialGreeting:
-    tts: Archy says hi!!!!!
-  menus:
-    - menu:
-        name: Main Menu
-        audio:
-          tts: You are at the Main Menu, press 9 to disconnect.
-        refId: mainMenu
-        choices:
-          - menuDisconnect:
-              name: Disconnect
-              dtmf: digit_9
+inboundEmail:
+    name: Terraform Flow Test-3694edc7-baf6-4ef3-b3cf-02210611673d
+    division: New Home
+    startUpRef: "/inboundEmail/states/state[Initial State_10]"
+    defaultLanguage: en-us
+    supportedLanguages:
+        en-us:
+            defaultLanguageSkill:
+                noValue: true
+    settingsInboundEmailHandling:
+        emailHandling:
+            disconnect:
+                none: true
+    settingsErrorHandling:
+        errorHandling:
+            disconnect:
+                none: true
+    states:
+        - state:
+            name: Initial State
+            refId: Initial State_10
+            actions:
+                - disconnect:
+                    name: Disconnect

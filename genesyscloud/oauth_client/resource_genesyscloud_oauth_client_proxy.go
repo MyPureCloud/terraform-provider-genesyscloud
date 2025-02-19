@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var internalProxy *oauthClientProxy
@@ -22,6 +22,8 @@ type getIntegrationCredentialFunc func(context.Context, *oauthClientProxy, strin
 type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error)
 type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
+type updateIntegrationClientFunc func(context.Context, *oauthClientProxy, string, platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
+type getAllIntegrationCredentialFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 
 type oauthClientProxy struct {
 	clientConfig                    *platformclientv2.Configuration
@@ -33,6 +35,7 @@ type oauthClientProxy struct {
 	createdClientCacheLock          sync.Mutex
 	createOAuthClientAttr           createOAuthClientFunc
 	createIntegrationCredentialAttr createIntegrationClientFunc
+	updateIntegrationCredentialAttr updateIntegrationClientFunc
 	getOAuthClientAttr              getOAuthClientFunc
 	getParentOAuthClientTokenAttr   getParentOAuthClientTokenFunc
 	getTerraformUserAttr            getTerraformUserFunc
@@ -72,6 +75,7 @@ func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthCli
 		updateTerraformUserRolesAttr:    updateTerraformUserRolesFn,
 
 		getIntegrationCredentialAttr:    getIntegrationClientFn,
+		updateIntegrationCredentialAttr: updateIntegrationClientFn,
 		getAllOauthClientsAttr:          getAllOauthClientsFn,
 		deleteOAuthClientAttr:           deleteOAuthClientFn,
 		deleteIntegrationCredentialAttr: deleteIntegrationClientFn,
@@ -152,6 +156,10 @@ func (o *oauthClientProxy) createIntegrationClient(ctx context.Context, credenti
 	return o.createIntegrationCredentialAttr(ctx, o, credential)
 }
 
+func (o *oauthClientProxy) updateIntegrationClient(ctx context.Context, id string, credential platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
+	return o.updateIntegrationCredentialAttr(ctx, o, id, credential)
+}
+
 func (o *oauthClientProxy) updateOAuthClient(ctx context.Context, id string, client platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
 	return o.updateOAuthClientAttr(ctx, o, id, client)
 }
@@ -192,6 +200,10 @@ func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platform
 
 func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
 	return o.integrationApi.GetIntegrationsCredential(id)
+}
+
+func updateIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string, credential platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
+	return o.integrationApi.PutIntegrationsCredential(id, credential)
 }
 
 func deleteOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.APIResponse, error) {

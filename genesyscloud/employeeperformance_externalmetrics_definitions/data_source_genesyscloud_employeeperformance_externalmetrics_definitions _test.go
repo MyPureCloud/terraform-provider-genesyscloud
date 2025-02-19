@@ -13,9 +13,9 @@ import (
 func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T) {
 	t.Parallel()
 	var (
-		defintionRes  = "defintion"
-		defintionData = "defintion_data"
-		name          = "Defintion " + uuid.NewString()
+		definitionResourceLabel = "defintion"
+		definitionDataLabel     = "defintion_data"
+		name                    = "Defintion " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,21 +25,21 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 			{
 				// Search by name
 				Config: generateEmployeePerformanceExternalMetricsDefinitionsResource(
-					defintionRes,
+					definitionResourceLabel,
 					name,
 					"Seconds",
 					"1",
 					"TargetArea",
 					"true",
 				) + generateEmployeePerformanceExternalMetricsDefinitionsDataSource(
-					defintionData,
+					definitionDataLabel,
 					name,
-					"genesyscloud_employeeperformance_externalmetrics_definitions."+defintionRes,
+					"genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_employeeperformance_externalmetrics_definitions."+defintionData, "id",
-						"genesyscloud_employeeperformance_externalmetrics_definitions."+defintionRes, "id",
+						"data.genesyscloud_employeeperformance_externalmetrics_definitions."+definitionDataLabel, "id",
+						"genesyscloud_employeeperformance_externalmetrics_definitions."+definitionResourceLabel, "id",
 					),
 				),
 			},
@@ -47,10 +47,10 @@ func TestAccDataSourceEmployeePerformanceExternalMetricsDefinitions(t *testing.T
 	})
 }
 
-func generateEmployeePerformanceExternalMetricsDefinitionsDataSource(resourceID string, name string, dependsOnResource string) string {
+func generateEmployeePerformanceExternalMetricsDefinitionsDataSource(resourceLabel string, name string, dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_employeeperformance_externalmetrics_definitions" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceID, name, dependsOnResource)
+	`, resourceLabel, name, dependsOnResource)
 }

@@ -31,8 +31,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_outbound_ruleset"] = ResourceOutboundRuleset()
-	providerResources["genesyscloud_routing_queue"] = routingQueue.ResourceRoutingQueue()
+	providerResources[ResourceType] = ResourceOutboundRuleset()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -40,8 +40,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_outbound_ruleset"] = DataSourceOutboundRuleset()
-	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
+	providerDataSources[ResourceType] = DataSourceOutboundRuleset()
+	providerResources[obContactList.ResourceType] = obContactList.ResourceOutboundContactList()
 }
 
 // initTestResources initializes all test resources and data sources.
