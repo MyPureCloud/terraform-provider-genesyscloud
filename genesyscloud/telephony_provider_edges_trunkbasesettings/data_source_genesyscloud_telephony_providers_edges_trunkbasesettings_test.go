@@ -2,13 +2,11 @@ package telephony_provider_edges_trunkbasesettings
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
@@ -32,19 +30,6 @@ func TestAccDataSourceTrunkBaseSettings(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
-					trunkBaseSettingsResourceLabel,
-					name,
-					description,
-					trunkMetaBaseId,
-					trunkType,
-					managed,
-				),
-			},
-			{
-				PreConfig: func() {
-					time.Sleep(1 * time.Second)
-				},
 				Config: GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 					trunkBaseSettingsResourceLabel,
 					name,
