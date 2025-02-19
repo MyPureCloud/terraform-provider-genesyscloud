@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
@@ -199,7 +198,7 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	contactListId := resource.State.Attributes["id"]
 	exportFileName := fmt.Sprintf("%s.csv", contactListName)
 
-	fullDirectoryPath := path.Join(exportDirectory, subDirectory)
+	fullDirectoryPath := filepath.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullDirectoryPath, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", fullDirectoryPath, err)
 	}

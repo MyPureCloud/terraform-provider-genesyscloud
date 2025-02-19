@@ -107,6 +107,7 @@ import (
 
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	externalOrganization "terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	externalUser "terraform-provider-genesyscloud/genesyscloud/external_user"
 	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
 
@@ -232,6 +233,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
 	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
+	providerResources[externalUser.ResourceType] = externalUser.ResourceExternalUserIdentity()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
@@ -348,6 +350,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_open", cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
+	RegisterExporter(externalUser.ResourceType, externalUser.ExternalUserIdentityExporter())
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 

@@ -8,7 +8,7 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -25,7 +25,7 @@ var internalProxy *userProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createUserFunc func(ctx context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
-type getAllUserFunc func(ctx context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error)
+type GetAllUserFunc func(ctx context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error)
 type getUserIdByNameFunc func(ctx context.Context, p *userProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getUserByIdFunc func(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error)
 type updateUserFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
@@ -50,7 +50,7 @@ type userProxy struct {
 	routingApi                        *platformclientv2.RoutingApi
 	voicemailApi                      *platformclientv2.VoicemailApi
 	createUserAttr                    createUserFunc
-	getAllUserAttr                    getAllUserFunc
+	GetAllUserAttr                    GetAllUserFunc
 	getUserIdByNameAttr               getUserIdByNameFunc
 	getUserByIdAttr                   getUserByIdFunc
 	updateUserAttr                    updateUserFunc
@@ -82,7 +82,7 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		voicemailApi:                      voicemailApi,
 		userCache:                         userCache,
 		createUserAttr:                    createUserFn,
-		getAllUserAttr:                    getAllUserFn,
+		GetAllUserAttr:                    GetAllUserFn,
 		getUserIdByNameAttr:               getUserIdByNameFn,
 		getUserByIdAttr:                   getUserByIdFn,
 		updateUserAttr:                    updateUserFn,
@@ -103,7 +103,7 @@ it enables us to proxy our tests by allowing us to directly set the internalProx
 This ensures consistency and control in managing the internalProxy across our codebase, while also
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
-func getUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
+func GetUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 	if internalProxy == nil {
 		internalProxy = newUserProxy(clientConfig)
 	}
@@ -116,8 +116,8 @@ func (p *userProxy) createUser(ctx context.Context, createUser *platformclientv2
 }
 
 // getUser retrieves all Genesys Cloud User
-func (p *userProxy) getAllUser(ctx context.Context) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
-	return p.getAllUserAttr(ctx, p)
+func (p *userProxy) GetAllUser(ctx context.Context) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
+	return p.GetAllUserAttr(ctx, p)
 }
 
 // getUserIdByName returns a single Genesys Cloud User by a name
@@ -212,7 +212,7 @@ func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *plat
 }
 
 // getAllUserFn is the implementation for retrieving all user in Genesys Cloud
-func getAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
+func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 
 	//Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
@@ -281,7 +281,7 @@ func getAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 
 // getUserIdByNameFn is an implementation of the function to get a Genesys Cloud user by name
 func getUserIdByNameFn(ctx context.Context, p *userProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	users, apiResponse, err := getAllUserFn(ctx, p)
+	users, apiResponse, err := GetAllUserFn(ctx, p)
 	if err != nil {
 		return "", false, apiResponse, err
 	}

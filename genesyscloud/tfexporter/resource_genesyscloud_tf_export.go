@@ -15,6 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 type fileMeta struct {
@@ -98,12 +99,18 @@ func ResourceTfExport() *schema.Resource {
 				Default:     false,
 				ForceNew:    true,
 			},
-			"export_as_hcl": {
-				Description: "Export the config as HCL.",
-				Type:        schema.TypeBool,
+			"export_format": {
+				Description: "Export the config as hcl or json or json_hcl.",
+				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     false,
+				Default:     "json",
 				ForceNew:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"hcl",
+					"json",
+					"json_hcl",
+					"hcl_json",
+				}, true), // true enables case-insensitive matching
 			},
 			"split_files_by_resource": {
 				Description: "Split export files by resource type. This will also split the terraform provider and variable declarations into their own files.",

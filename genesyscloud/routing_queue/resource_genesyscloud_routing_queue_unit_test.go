@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -592,6 +592,7 @@ func generateCallbackMediaSettings() platformclientv2.Callbackmediasettings {
 		EnableAutoDialAndEnd: platformclientv2.Bool(true),
 		AutoDialDelaySeconds: platformclientv2.Int(10),
 		AutoEndDelaySeconds:  platformclientv2.Int(10),
+		Mode:                 platformclientv2.String("AgentFirst"),
 	}
 }
 
