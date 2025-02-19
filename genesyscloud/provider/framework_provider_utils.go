@@ -122,9 +122,11 @@ func (f GenesysCloudProvider) configureProxyAttributes(data GenesysCloudProvider
 		f.AttributeEnvValues = readProviderEnvVars()
 	}
 
-	if data.Proxy == nil {
+	if data.Proxy == nil || len(data.Proxy) == 0 {
 		return
 	}
+
+	dataProxyObject := data.Proxy[0]
 
 	var proxy Proxy
 	defer func() {
@@ -132,30 +134,31 @@ func (f GenesysCloudProvider) configureProxyAttributes(data GenesysCloudProvider
 	}()
 
 	// Configure Proxy Host
-	if data.Proxy.Host.ValueString() != "" {
-		proxy.Host = data.Proxy.Host.ValueString()
+	if dataProxyObject.Host.ValueString() != "" {
+		proxy.Host = dataProxyObject.Host.ValueString()
 	} else if f.AttributeEnvValues.proxyHost != "" {
 		proxy.Host = f.AttributeEnvValues.proxyHost
 	}
 
-	if data.Proxy.Port.ValueString() != "" {
-		proxy.Port = data.Proxy.Port.ValueString()
+	if dataProxyObject.Port.ValueString() != "" {
+		proxy.Port = dataProxyObject.Port.ValueString()
 	} else if f.AttributeEnvValues.proxyPort != "" {
 		proxy.Port = f.AttributeEnvValues.proxyPort
 	}
 
-	if data.Proxy.Auth == nil {
+	if dataProxyObject.Auth == nil || len(dataProxyObject.Auth) == 0 {
 		return
 	}
+	proxyAuthObject := dataProxyObject.Auth[0]
 
-	if data.Proxy.Auth.Username.ValueString() != "" {
-		proxy.Auth.Username = data.Proxy.Auth.Username.ValueString()
+	if proxyAuthObject.Username.ValueString() != "" {
+		proxy.Auth.Username = proxyAuthObject.Username.ValueString()
 	} else if f.AttributeEnvValues.proxyAuthUsername != "" {
 		proxy.Auth.Username = f.AttributeEnvValues.proxyAuthUsername
 	}
 
-	if data.Proxy.Auth.Password.ValueString() != "" {
-		proxy.Auth.Password = data.Proxy.Auth.Password.ValueString()
+	if proxyAuthObject.Password.ValueString() != "" {
+		proxy.Auth.Password = proxyAuthObject.Password.ValueString()
 	} else if f.AttributeEnvValues.proxyAuthPassword != "" {
 		proxy.Auth.Password = f.AttributeEnvValues.proxyAuthPassword
 	}
@@ -166,34 +169,35 @@ func (f GenesysCloudProvider) configureGatewayAttributes(data GenesysCloudProvid
 		f.AttributeEnvValues = readProviderEnvVars()
 	}
 
-	if data.Gateway == nil {
+	if data.Gateway == nil || len(data.Gateway) == 0 {
 		return
 	}
+	dataGatewayObject := data.Gateway[0]
 
 	var gateway Gateway
 	defer func() {
 		f.Gateway = &gateway
 	}()
 
-	if data.Gateway.Host.ValueString() != "" {
-		gateway.Host = data.Gateway.Host.ValueString()
+	if dataGatewayObject.Host.ValueString() != "" {
+		gateway.Host = dataGatewayObject.Host.ValueString()
 	} else if f.AttributeEnvValues.gatewayHost != "" {
 		gateway.Host = f.AttributeEnvValues.gatewayHost
 	}
 
-	if data.Gateway.Port.ValueString() != "" {
-		gateway.Port = data.Gateway.Port.ValueString()
+	if dataGatewayObject.Port.ValueString() != "" {
+		gateway.Port = dataGatewayObject.Port.ValueString()
 	} else if f.AttributeEnvValues.gatewayPort != "" {
 		gateway.Port = f.AttributeEnvValues.gatewayPort
 	}
 
-	if data.Gateway.Protocol.ValueString() != "" {
-		gateway.Protocol = data.Gateway.Protocol.ValueString()
+	if dataGatewayObject.Protocol.ValueString() != "" {
+		gateway.Protocol = dataGatewayObject.Protocol.ValueString()
 	} else if f.AttributeEnvValues.gatewayProtocol != "" {
 		gateway.Protocol = f.AttributeEnvValues.gatewayProtocol
 	}
 
-	for _, param := range data.Gateway.PathParams {
+	for _, param := range dataGatewayObject.PathParams {
 		pathName := ""
 		pathValue := ""
 
@@ -215,17 +219,19 @@ func (f GenesysCloudProvider) configureGatewayAttributes(data GenesysCloudProvid
 		})
 	}
 
-	if data.Gateway.Auth == nil {
+	if dataGatewayObject.Auth == nil || len(dataGatewayObject.Auth) == 0 {
 		return
 	}
-	if data.Gateway.Auth.Username.ValueString() != "" {
-		gateway.Auth.Username = data.Gateway.Auth.Username.ValueString()
+	dataGatewayAuthObject := dataGatewayObject.Auth[0]
+
+	if dataGatewayAuthObject.Username.ValueString() != "" {
+		gateway.Auth.Username = dataGatewayAuthObject.Username.ValueString()
 	} else if f.AttributeEnvValues.gatewayAuthUsername != "" {
 		gateway.Auth.Username = f.AttributeEnvValues.gatewayAuthUsername
 	}
 
-	if data.Gateway.Auth.Password.ValueString() != "" {
-		gateway.Auth.Password = data.Gateway.Auth.Password.ValueString()
+	if dataGatewayAuthObject.Password.ValueString() != "" {
+		gateway.Auth.Password = dataGatewayAuthObject.Password.ValueString()
 	} else if f.AttributeEnvValues.gatewayAuthPassword != "" {
 		gateway.Auth.Password = f.AttributeEnvValues.gatewayAuthPassword
 	}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"log"
 	"net/http"
 	"os"
@@ -75,6 +75,11 @@ func (f GenesysCloudProvider) frameworkPreFill() diag.Diagnostics {
 }
 
 func (f GenesysCloudProvider) InitClientConfig(config *platformclientv2.Configuration) diag.Diagnostics {
+	if f.AuthDetails == nil {
+		return diag.Diagnostics{
+			diag.NewErrorDiagnostic("AuthDetails object is still nil!!", "AuthDetails object is still nil!!"),
+		}
+	}
 	accessToken := f.AuthDetails.AccessToken
 	oauthclientID := f.AuthDetails.ClientId
 	oauthclientSecret := f.AuthDetails.ClientSecret

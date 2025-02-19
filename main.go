@@ -49,10 +49,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	frameworkServer := providerserver.NewProtocol6(provider.NewFrameWorkProvider(version)())
+	frameworkProvider := providerserver.NewProtocol6(provider.NewFrameWorkProvider(version)())
 
 	bothServers := []func() tfprotov6.ProviderServer{
-		frameworkServer,
+		frameworkProvider,
 		func() tfprotov6.ProviderServer { return upgradedSdkProvider },
 	}
 

@@ -13,8 +13,8 @@ type GenesysCloudProviderModel struct {
 	TokenPoolSize          types.Int32   `tfsdk:"token_pool_size"`
 	LogStackTraces         types.Bool    `tfsdk:"log_stack_traces"`
 	LogStackTracesFilePath types.String  `tfsdk:"log_stack_traces_file_path"`
-	Gateway                *GatewayModel `tfsdk:"gateway"`
-	Proxy                  *ProxyModel   `tfsdk:"proxy"`
+	Gateway                []GatewayModel `tfsdk:"gateway"`
+	Proxy                  []ProxyModel   `tfsdk:"proxy"`
 }
 
 type GatewayModel struct {
@@ -22,7 +22,7 @@ type GatewayModel struct {
 	Host       types.String     `tfsdk:"host"`
 	Protocol   types.String     `tfsdk:"protocol"`
 	PathParams []PathParamModel `tfsdk:"path_params"`
-	Auth       *AuthModel       `tfsdk:"auth"`
+	Auth       []AuthModel       `tfsdk:"auth"`
 }
 
 type PathParamModel struct {
@@ -39,5 +39,5 @@ type ProxyModel struct {
 	Port     types.String `tfsdk:"port"`
 	Host     types.String `tfsdk:"host"`
 	Protocol types.String `tfsdk:"protocol"`
-	Auth     *AuthModel   `tfsdk:"auth"`
+	Auth     []AuthModel   `tfsdk:"auth"`
 }

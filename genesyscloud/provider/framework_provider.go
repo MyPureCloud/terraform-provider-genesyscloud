@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var (
@@ -90,6 +90,92 @@ func (f GenesysCloudProvider) Metadata(_ context.Context, request provider.Metad
 
 func (f GenesysCloudProvider) Schema(_ context.Context, request provider.SchemaRequest, response *provider.SchemaResponse) {
 	response.Schema = schema.Schema{
+		Blocks: map[string]schema.Block{
+			"gateway": schema.SetNestedBlock{
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"auth": schema.SetNestedBlock{
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"username": schema.StringAttribute{
+										Required:            true,
+										MarkdownDescription: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", gatewayAuthUsernameEnvVar),
+									},
+									"password": schema.StringAttribute{
+										Optional:            true,
+										Sensitive:           true,
+										MarkdownDescription: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", gatewayAuthPasswordEnvVar),
+									},
+								},
+							},
+						},
+						"path_params": schema.SetNestedBlock{
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"path_name": schema.StringAttribute{
+										Required:            true,
+										MarkdownDescription: fmt.Sprintf("Path name for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsNameEnvVar),
+									},
+									"path_value": schema.StringAttribute{
+										Required:            true,
+										MarkdownDescription: fmt.Sprintf("Path value for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsValueEnvVar),
+									},
+								},
+							},
+						},
+					},
+					Attributes: map[string]schema.Attribute{
+						"port": schema.StringAttribute{
+							Optional:            true,
+							MarkdownDescription: fmt.Sprintf("Port for the gateway can be set with the `%s` environment variable.", gatewayPortEnvVar),
+						},
+						"host": schema.StringAttribute{
+							Optional:            true,
+							MarkdownDescription: fmt.Sprintf("Host for the gateway can be set with the `%s` environment variable.", gatewayHostEnvVar),
+						},
+						"protocol": schema.StringAttribute{
+							Optional:            true,
+							MarkdownDescription: fmt.Sprintf("Protocol for the gateway can be set with the `%s` environment variable.", gatewayProtocolEnvVar),
+						},
+					},
+				},
+			},
+			"proxy": schema.SetNestedBlock{
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"auth": schema.SetNestedBlock{
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"username": schema.StringAttribute{
+										Required:            true,
+										MarkdownDescription: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", proxyAuthUsernameEnvVar),
+									},
+									"password": schema.StringAttribute{
+										Optional:            true,
+										MarkdownDescription: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", proxyAuthPasswordEnvVar),
+										Sensitive:           true,
+									},
+								},
+							},
+						},
+					},
+					Attributes: map[string]schema.Attribute{
+						"port": schema.StringAttribute{
+							Optional:            true,
+							MarkdownDescription: fmt.Sprintf("Port for the proxy can be set with the `%s` environment variable.", proxyPortEnvVar),
+						},
+						"host": schema.StringAttribute{
+							Optional:            true,
+							MarkdownDescription: fmt.Sprintf("Host for the proxy can be set with the `%s` environment variable.", proxyHostEnvVar),
+						},
+						"protocol": schema.StringAttribute{
+							Optional:            true,
+							MarkdownDescription: fmt.Sprintf("Protocol for the proxy can be set with the `%s` environment variable.", proxyProtocolEnvVar),
+						},
+					},
+				},
+			},
+		},
 		Attributes: map[string]schema.Attribute{
 			"access_token": schema.StringAttribute{
 				Optional:            true,
@@ -149,83 +235,6 @@ If you encounter any stack traces, please report them so we can address the unde
 				MarkdownDescription: fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is genesyscloud_stack_traces.log", logStackTracesFilePathEnvVar),
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile(`^\S+\.log$`), "File path cannot be an empty string, contain whitespaces, and must end with the .log extension."),
-				},
-			},
-			"gateway": schema.SingleNestedAttribute{
-				Optional: true,
-				Attributes: map[string]schema.Attribute{
-					"port": schema.StringAttribute{
-						Optional:            true,
-						MarkdownDescription: fmt.Sprintf("Port for the gateway can be set with the `%s` environment variable.", gatewayPortEnvVar),
-					},
-					"host": schema.StringAttribute{
-						Optional:            true,
-						MarkdownDescription: fmt.Sprintf("Host for the gateway can be set with the `%s` environment variable.", gatewayHostEnvVar),
-					},
-					"protocol": schema.StringAttribute{
-						Optional:            true,
-						MarkdownDescription: fmt.Sprintf("Protocol for the gateway can be set with the `%s` environment variable.", gatewayProtocolEnvVar),
-					},
-					"path_params": schema.SetNestedAttribute{
-						Optional: true,
-						NestedObject: schema.NestedAttributeObject{
-							Attributes: map[string]schema.Attribute{
-								"path_name": schema.StringAttribute{
-									Required:            true,
-									MarkdownDescription: fmt.Sprintf("Path name for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsNameEnvVar),
-								},
-								"path_value": schema.StringAttribute{
-									Required:            true,
-									MarkdownDescription: fmt.Sprintf("Path value for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsValueEnvVar),
-								},
-							},
-						},
-					},
-					"auth": schema.SingleNestedAttribute{
-						Optional: true,
-						Attributes: map[string]schema.Attribute{
-							"username": schema.StringAttribute{
-								Optional:            true,
-								MarkdownDescription: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", gatewayAuthUsernameEnvVar),
-							},
-							"password": schema.StringAttribute{
-								Optional:            false,
-								Sensitive:           true,
-								MarkdownDescription: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", gatewayAuthPasswordEnvVar),
-							},
-						},
-					},
-				},
-			},
-			"proxy": schema.SingleNestedAttribute{
-				Optional: true,
-				Attributes: map[string]schema.Attribute{
-					"port": schema.StringAttribute{
-						Optional:            true,
-						MarkdownDescription: fmt.Sprintf("Port for the proxy can be set with the `%s` environment variable.", proxyPortEnvVar),
-					},
-					"host": schema.StringAttribute{
-						Optional:            true,
-						MarkdownDescription: fmt.Sprintf("Host for the proxy can be set with the `%s` environment variable.", proxyHostEnvVar),
-					},
-					"protocol": schema.StringAttribute{
-						Optional:            true,
-						MarkdownDescription: fmt.Sprintf("Protocol for the proxy can be set with the `%s` environment variable.", proxyProtocolEnvVar),
-					},
-					"auth": schema.SingleNestedAttribute{
-						Optional: true,
-						Attributes: map[string]schema.Attribute{
-							"username": schema.StringAttribute{
-								Required:            true,
-								MarkdownDescription: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", proxyAuthUsernameEnvVar),
-							},
-							"password": schema.StringAttribute{
-								Optional:            true,
-								MarkdownDescription: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", proxyAuthPasswordEnvVar),
-								Sensitive:           true,
-							},
-						},
-					},
 				},
 			},
 		},

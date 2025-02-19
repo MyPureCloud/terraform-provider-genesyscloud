@@ -24,7 +24,7 @@ provider "genesyscloud" {
 
 ### Optional
 
-- `access_token` (String) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
+- `access_token` (String, Sensitive) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
 - `aws_region` (String) AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable. Defaults to "us-east-1"
 - `gateway` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--gateway))
 - `log_stack_traces` (Boolean) If true, stack traces will be logged to a file instead of crashing the provider, whenever possible. 
@@ -54,10 +54,13 @@ Optional:
 <a id="nestedblock--gateway--auth"></a>
 ### Nested Schema for `gateway.auth`
 
+Required:
+
+- `username` (String) UserName for the Auth can be set with the `GENESYSCLOUD_GATEWAY_AUTH_USERNAME` environment variable.
+
 Optional:
 
 - `password` (String, Sensitive) Password for the Auth can be set with the `GENESYSCLOUD_GATEWAY_AUTH_PASSWORD` environment variable.
-- `username` (String) UserName for the Auth can be set with the `GENESYSCLOUD_GATEWAY_AUTH_USERNAME` environment variable.
 
 
 <a id="nestedblock--gateway--path_params"></a>
@@ -89,4 +92,4 @@ Required:
 
 Optional:
 
-- `password` (String) Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.
+- `password` (String, Sensitive) Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.
