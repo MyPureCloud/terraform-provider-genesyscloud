@@ -63,6 +63,13 @@ type unresolvableAttributeInfo struct {
 	Schema        *schema.Schema
 }
 
+const (
+	formatHCL     = "hcl"
+	formatJSON    = "json"
+	formatJSONHCL = "json_hcl"
+	formatHCLJSON = "hcl_json"
+)
+
 type GenesysCloudResourceExporter struct {
 	configExporter        Exporter
 	filterType            ExporterFilterType
@@ -484,31 +491,14 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		}
 	}
 
-	const (
-		formatHCL     = "hcl"
-		formatJSON    = "json"
-		formatJSONHCL = "json_hcl"
-		formatHCLJSON = "hcl_json"
-	)
-
 	var errDiag diag.Diagnostics
-	// Normalize json_hcl/hcl_json format to a single representation
-	if g.exportFormat == formatHCLJSON {
-		g.exportFormat = formatJSONHCL
-	}
 
-	// First validate the export format
-	if g.exportFormat != formatHCL && g.exportFormat != formatJSON && g.exportFormat != formatJSONHCL {
-		return diag.Errorf("unsupported export format: %s. Supported formats are: %s, %s, %s, %s",
-			g.exportFormat, formatHCL, formatJSON, formatJSONHCL, formatHCLJSON)
-	}
-
-	if g.exportFormat == formatHCL || g.exportFormat == formatJSONHCL {
+	if g.matchesExportFormat(formatHCL, formatJSONHCL) {
 		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
 		errDiag = hclExporter.exportHCLConfig()
 	}
 
-	if g.exportFormat == formatJSON || g.exportFormat == formatJSONHCL {
+	if g.matchesExportFormat(formatJSON, formatJSONHCL) {
 		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
 		errDiag = jsonExporter.exportJSONConfig()
 	}
@@ -1414,7 +1404,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			}
 		}
 
-		if strings.Contains(g.exportFormat, "hcl") && exporter.IsJsonEncodable(currAttr) {
+		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(currAttr) {
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr, currAttr)
 				if err != nil {
@@ -1715,7 +1705,7 @@ func matchRegex(regexStr string,
 func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {
 
 	if exists := featureToggles.StateComparisonTrue(); exists {
-		if strings.Contains(g.exportFormat, "hcl") { // ToDo the prvious condition was "if g.exportAsHCL {" need to check why HCL true alone taken why it is not aplicable for JSON case
+		if g.matchesExportFormat("/.*" + formatHCL + ".*/") {
 			tfstatePath, _ := getFilePath(g.d, defaultTfStateFile)
 			hclExporter := NewTfStateExportReader(tfstatePath, g.exportDirPath)
 			hclExporter.compareExportAndTFState()
@@ -1723,4 +1713,30 @@ func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {
 	}
 
 	return nil
+}
+
+func (g *GenesysCloudResourceExporter) matchesExportFormat(formats ...string) bool {
+	// Normalize format first
+	exportFormat := g.exportFormat
+	if exportFormat == formatHCLJSON {
+		exportFormat = formatJSONHCL
+	}
+
+	// Check against normalized format
+	for _, format := range formats {
+		if strings.HasPrefix(format, "/") && strings.HasSuffix(format, "/") {
+			pattern := strings.Trim(format, "/")
+			regex, err := regexp.Compile(pattern)
+			if err != nil {
+				log.Printf("Invalid regex pattern: %s", pattern)
+				continue
+			}
+			if regex.MatchString(exportFormat) {
+				return true
+			}
+		} else if exportFormat == format {
+			return true
+		}
+	}
+	return false
 }

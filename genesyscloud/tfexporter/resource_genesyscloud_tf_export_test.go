@@ -34,6 +34,7 @@ import (
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
+	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/google/uuid"
@@ -2226,6 +2227,41 @@ create_duration = "100s"
 	})
 }
 
+func TestAccResourceExporterFormat(t *testing.T) {
+	t.Parallel()
+	var (
+		exportTestDir        = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportResourceLabel1 = "exportFormatTest-export1"
+		jsonConfigFilePath   = filepath.Join(exportTestDir, defaultTfJSONFile)
+		hclConfigFilePath    = filepath.Join(exportTestDir, defaultTfHCLFile)
+	)
+
+	defer os.RemoveAll(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		CheckDestroy:      testVerifyExportsDestroyedFunc(exportTestDir),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportResource_exportFormat(
+					exportResourceLabel1,
+					"hcl_json",
+					[]string{"genesyscloud_journey_segment"},
+					exportTestDir,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_tf_export."+exportResourceLabel1, "export_format", "hcl_json"),
+					validateFileCreated(jsonConfigFilePath),
+					validateFileCreated(hclConfigFilePath),
+					validateConfigFile(jsonConfigFilePath),
+					validateHCLConfigFile(hclConfigFilePath),
+				),
+			},
+		},
+	})
+}
+
 func testUserExport(filePath, resourceType, resourceLabel string, expectedUser *UserExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)
@@ -2973,6 +3009,17 @@ func validateConfigFile(path string) resource.TestCheckFunc {
 	}
 }
 
+func validateHCLConfigFile(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		parser := hclparse.NewParser()
+		_, diag := parser.ParseHCLFile(filename)
+		if diag.HasErrors() {
+			return fmt.Errorf("Invalid HCL format: %v", diag)
+		}
+		return nil
+	}
+}
+
 func validateMediaSettings(resourceLabel string, settingsAttr string, alertingTimeout string, slPercent string, slDurationMs string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, settingsAttr+".0.alerting_timeout_sec", alertingTimeout),
@@ -3157,4 +3204,31 @@ func validateFlow(flowResourcePath, flowName string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func generateTfExportResource_exportFormat(
+	exportResourceLabel1 string,
+	exportFormat string,
+	includeResources []string,
+	path string) string {
+
+	includeResourceStr := "null"
+	if includeResources != nil {
+		includeResourceStr = "[" + strings.Join(formatStringArray(includeResources), ",") + "]"
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+        export_format = "%s"
+        include_filter_resources = %s
+        directory = "%s"
+    }
+    `, exportResourceLabel1, exportFormat, includeResourceStr, path)
+}
+
+func formatStringArray(arr []string) []string {
+	quotedStrings := make([]string, len(arr))
+	for i, s := range arr {
+		quotedStrings[i] = fmt.Sprintf(`"%s"`, s)
+	}
+	return quotedStrings
 }
