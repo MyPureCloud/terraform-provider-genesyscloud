@@ -266,7 +266,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		filterType:         IncludeResources,
 		resourceTypeFilter: IncludeFilterByResourceType,
 		resourceFilter:     IncludeFilterResourceByRegex,
-		exportAsHCL:        true,
+		exportFormat:       "hcl",
 		exporters: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
@@ -444,7 +444,7 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 
 	gre := &GenesysCloudResourceExporter{
-		exportAsHCL:          false,
+		exportFormat:         "json",
 		splitFilesByResource: true,
 	}
 
@@ -570,7 +570,7 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 
 func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExporter {
 	exportMap := map[string]interface{}{
-		"export_as_hcl":                false,
+		"export_format":                "json",
 		"split_files_by_resource":      false,
 		"log_permission_errors":        false,
 		"enable_dependency_resolution": false,
@@ -588,7 +588,7 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 		t.Errorf("%v", diagErr)
 	}
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.exportAsHCL = true
+	g.exportFormat = "hcl"
 	return g
 }
 
@@ -841,6 +841,82 @@ func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
 				if _, ok := tc.expectedState[key]; !ok {
 					t.Errorf("Unexpected attribute %s found in state", key)
 				}
+			}
+		})
+	}
+}
+
+func TestUnitMatchesFormat(t *testing.T) {
+	tests := []struct {
+		name         string
+		exportFormat string
+		formats      []string
+		expected     bool
+	}{
+		{
+			name:         "Exact match with single format",
+			exportFormat: "hcl",
+			formats:      []string{"hcl"},
+			expected:     true,
+		},
+		{
+			name:         "Exact match with multiple formats",
+			exportFormat: "hcl",
+			formats:      []string{"json", "hcl", "yaml"},
+			expected:     true,
+		},
+		{
+			name:         "No match with multiple formats",
+			exportFormat: "xml",
+			formats:      []string{"json", "hcl", "yaml"},
+			expected:     false,
+		},
+		{
+			name:         "Regex match contains",
+			exportFormat: "json_hcl",
+			formats:      []string{"/.*hcl.*/"},
+			expected:     true,
+		},
+		{
+			name:         "Regex match case insensitive",
+			exportFormat: "JSON_HCL",
+			formats:      []string{"/(?i).*hcl.*/"},
+			expected:     true,
+		},
+		{
+			name:         "Regex no match",
+			exportFormat: "json",
+			formats:      []string{"/.*hcl.*/"},
+			expected:     false,
+		},
+		{
+			name:         "Invalid regex pattern",
+			exportFormat: "hcl",
+			formats:      []string{"/[invalid/"},
+			expected:     false,
+		},
+		{
+			name:         "Format normalization HCLJSON to JSONHCL",
+			exportFormat: formatHCLJSON,
+			formats:      []string{formatJSONHCL},
+			expected:     true,
+		},
+		{
+			name:         "Mix of exact and regex patterns",
+			exportFormat: "json_hcl",
+			formats:      []string{"json", "/.*hcl.*/", "yaml"},
+			expected:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exporter := &GenesysCloudResourceExporter{
+				exportFormat: tt.exportFormat,
+			}
+			result := exporter.matchesExportFormat(tt.formats...)
+			if result != tt.expected {
+				t.Errorf("matchesExportFormat() = %v, want %v", result, tt.expected)
 			}
 		})
 	}
