@@ -5,6 +5,21 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
+	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectUserPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"terraform-provider-genesyscloud/genesyscloud/group"
+	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingSmsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	"terraform-provider-genesyscloud/genesyscloud/team"
+	"terraform-provider-genesyscloud/genesyscloud/user"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -578,24 +593,25 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                              {RefType: "genesyscloud_auth_division"},
-			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
-			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
-			"message_in_queue_flow_id":                 {RefType: "genesyscloud_flow"},
-			"whisper_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
-			"on_hold_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
-			"outbound_messaging_sms_address_id":        {},                               // Ref type not yet defined
-			"default_script_ids.*":                     {RefType: "genesyscloud_script"}, // Ref type not yet defined
-			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},
-			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"},
-			"bullseye_rings.skills_to_remove":          {RefType: "genesyscloud_routing_skill"},
-			"members.user_id":                          {RefType: "genesyscloud_user"},
-			"wrapup_codes":                             {RefType: "genesyscloud_routing_wrapupcode"},
-			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
-			"teams":                                    {RefType: "genesyscloud_team"},
-			"groups":                                   {RefType: "genesyscloud_group"},
+			"division_id":                              {RefType: authDivision.ResourceType},
+			"queue_flow_id":                            {RefType: architectFlow.ResourceType},
+			"email_in_queue_flow_id":                   {RefType: architectFlow.ResourceType},
+			"message_in_queue_flow_id":                 {RefType: architectFlow.ResourceType},
+			"whisper_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
+			"on_hold_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
+			"outbound_messaging_sms_address_id":        {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
+			"default_script_ids.*":                     {RefType: scripts.ResourceType},
+			"outbound_email_address.route_id":          {RefType: routingEmailRoute.ResourceType},
+			"outbound_email_address.domain_id":         {RefType: routingEmailDomain.ResourceType},
+			"bullseye_rings.skills_to_remove":          {RefType: routingSkill.ResourceType},
+			"members.user_id":                          {RefType: user.ResourceType},
+			"wrapup_codes":                             {RefType: routingWrapupcode.ResourceType},
+			"skill_groups":                             {RefType: routingSkillGroup.ResourceType},
+			"teams":                                    {RefType: team.ResourceType},
+			"groups":                                   {RefType: group.ResourceType},
 			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
 			"direct_routing.backup_queue_id":           {RefType: ResourceType},
+			"canned_response_libraries.library_ids.*":  {RefType: responseManagementLibrary.ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},
