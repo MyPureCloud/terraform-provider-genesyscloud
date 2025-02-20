@@ -73,26 +73,22 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Type:        schema.TypeString,
 					Optional:    true,
 					Sensitive:   true,
-					DefaultFunc: schema.EnvDefaultFunc(accessTokenEnvVar, nil),
 					Description: fmt.Sprintf("A string that the OAuth client uses to make requests. Can be set with the `%s` environment variable.", accessTokenEnvVar),
 				},
 				"oauthclient_id": {
 					Type:        schema.TypeString,
 					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc(clientIdEnvVar, nil),
 					Description: fmt.Sprintf("OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `%s` environment variable.", clientIdEnvVar),
 				},
 				"oauthclient_secret": {
 					Type:        schema.TypeString,
 					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc(clientSecretEnvVar, nil),
 					Description: fmt.Sprintf("OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `%s` environment variable.", clientSecretEnvVar),
 					Sensitive:   true,
 				},
 				"aws_region": {
 					Type:         schema.TypeString,
 					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc(regionEnvVar, awsRegionDefaultValue),
 					Description:  fmt.Sprintf("AWS region where org exists. e.g. us-east-1. Can be set with the `%s` environment variable. Defaults to \"%s\"", regionEnvVar, awsRegionDefaultValue),
 					ValidateFunc: validation.StringInSlice(getAllowedRegions(), true),
 				},
@@ -405,10 +401,12 @@ func GetRegionBasePath(region string) string {
 }
 
 func InitClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
-	accessToken := data.Get("access_token").(string)
-	oauthclientID := data.Get("oauthclient_id").(string)
-	oauthclientSecret := data.Get("oauthclient_secret").(string)
-	basePath := GetRegionBasePath(data.Get("aws_region").(string))
+	accessToken := determineProviderStringAttribute(data, "access_token", accessTokenEnvVar)
+	oauthclientID := determineProviderStringAttribute(data, "oauthclient_id", clientIdEnvVar)
+	oauthclientSecret := determineProviderStringAttribute(data, "oauthclient_secret", clientSecretEnvVar)
+	awsRegion := determineProviderStringAttributeWithDefaultFallback(data, "aws_region", regionEnvVar, awsRegionDefaultValue)
+	basePath := GetRegionBasePath(awsRegion)
+
 	config.BasePath = basePath
 
 	diagErr := setUpSDKLogging(data, config)
@@ -589,10 +587,21 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 		return sdkConfig, nil
 	}
 
-	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
+	awsRegion := os.Getenv(regionEnvVar)
+	if awsRegion == "" {
+		log.Printf("%s not set. Defaulting to \"%s\"", regionEnvVar, awsRegionDefaultValue)
+		awsRegion = awsRegionDefaultValue
+	}
+	clientId := os.Getenv(clientIdEnvVar)
+	clientSecret := os.Getenv(clientSecretEnvVar)
+	if clientId == "" || clientSecret == "" {
+		return nil, fmt.Errorf("%s, %s, and %s need to be set to non-empty values to Authorize the configuration", regionEnvVar, clientIdEnvVar, clientSecretEnvVar)
+	}
+
+	sdkConfig.BasePath = GetRegionBasePath(awsRegion)
 
 	diagErr := withRetries(context.Background(), time.Minute, func() *retry.RetryError {
-		err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+		err := sdkConfig.AuthorizeClientCredentials(clientId, clientSecret)
 		if err != nil {
 			if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
 				return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))

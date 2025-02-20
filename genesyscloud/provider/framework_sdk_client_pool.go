@@ -16,18 +16,20 @@ import (
 )
 
 var SdkClientPoolFrameWorkDiagErr diag.Diagnostics
+var frameWorkOnce sync.Once
 
-func (f GenesysCloudProvider) InitSDKClientPool() diag.Diagnostics {
-	Once.Do(func() {
-		log.Print("Initializing default SDK client.")
+func (f *GenesysCloudProvider) InitSDKClientPool() diag.Diagnostics {
+	frameWorkOnce.Do(func() {
+		log.Print("(Framework) Initializing default SDK client.")
 		// Initialize the default config for tests and anything else that doesn't use the Pool
 		err := f.InitClientConfig(platformclientv2.GetDefaultConfiguration())
 		if err != nil {
+			log.Println("(Framework) Caught error from InitClientConfig: ", err)
 			SdkClientPoolFrameWorkDiagErr = err
 			return
 		}
 
-		log.Printf("Initializing %d SDK clients in the Pool.", f.TokenPoolSize)
+		log.Printf("(Framework) Initializing %d SDK clients in the Pool.", f.TokenPoolSize)
 		f.SdkClientPool = SDKClientPool{
 			Pool: make(chan *platformclientv2.Configuration, f.TokenPoolSize),
 		}
@@ -36,7 +38,7 @@ func (f GenesysCloudProvider) InitSDKClientPool() diag.Diagnostics {
 	return SdkClientPoolFrameWorkDiagErr
 }
 
-func (f GenesysCloudProvider) frameworkPreFill() diag.Diagnostics {
+func (f *GenesysCloudProvider) frameworkPreFill() diag.Diagnostics {
 	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
 	var wg sync.WaitGroup
@@ -74,7 +76,21 @@ func (f GenesysCloudProvider) frameworkPreFill() diag.Diagnostics {
 	}
 }
 
-func (f GenesysCloudProvider) InitClientConfig(config *platformclientv2.Configuration) diag.Diagnostics {
+func AcquireSdkClient(ctx context.Context, client GenesysCloudProvider) (*platformclientv2.Configuration, error) {
+	clientConfig := client.SdkClientPool.acquire()
+	defer client.SdkClientPool.release(clientConfig)
+
+	// Check if the request has been cancelled
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err() // Error somewhere, terminate
+	default:
+	}
+
+	return clientConfig, nil
+}
+
+func (f *GenesysCloudProvider) InitClientConfig(config *platformclientv2.Configuration) diag.Diagnostics {
 	if f.AuthDetails == nil {
 		return diag.Diagnostics{
 			diag.NewErrorDiagnostic("AuthDetails object is still nil!!", "AuthDetails object is still nil!!"),
@@ -141,7 +157,7 @@ func (f GenesysCloudProvider) InitClientConfig(config *platformclientv2.Configur
 	return nil
 }
 
-func (f GenesysCloudProvider) setUpSDKLogging(config *platformclientv2.Configuration) diag.Diagnostics {
+func (f *GenesysCloudProvider) setUpSDKLogging(config *platformclientv2.Configuration) diag.Diagnostics {
 	var diagErrors diag.Diagnostics = make([]diag.Diagnostic, 0)
 
 	if f.SdkDebugInfo == nil {
@@ -173,7 +189,7 @@ func (f GenesysCloudProvider) setUpSDKLogging(config *platformclientv2.Configura
 	return nil
 }
 
-func (f GenesysCloudProvider) setupProxy(config *platformclientv2.Configuration) {
+func (f *GenesysCloudProvider) setupProxy(config *platformclientv2.Configuration) {
 	if f.Proxy == nil {
 		return
 	}
@@ -193,7 +209,7 @@ func (f GenesysCloudProvider) setupProxy(config *platformclientv2.Configuration)
 	config.ProxyConfiguration.Auth.Password = f.Proxy.Auth.Password
 }
 
-func (f GenesysCloudProvider) setupGateway(config *platformclientv2.Configuration) {
+func (f *GenesysCloudProvider) setupGateway(config *platformclientv2.Configuration) {
 	if f.Gateway == nil {
 		return
 	}

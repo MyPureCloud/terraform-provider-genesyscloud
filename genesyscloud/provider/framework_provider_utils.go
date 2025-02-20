@@ -12,7 +12,7 @@ import (
 // Parameters:
 //   - data: GenesysCloudProviderModel containing provider configuration values
 //   - providerEnvValues: Environment variables for provider configuration
-func (f GenesysCloudProvider) configureAuthInfo(data GenesysCloudProviderModel) {
+func (f *GenesysCloudProvider) configureAuthInfo(data GenesysCloudProviderModel) {
 	if f.AttributeEnvValues == nil {
 		f.AttributeEnvValues = readProviderEnvVars()
 	}
@@ -26,9 +26,9 @@ func (f GenesysCloudProvider) configureAuthInfo(data GenesysCloudProviderModel) 
 	}
 
 	if data.OAuthClientId.ValueString() != "" {
-		authDetails.AccessToken = data.OAuthClientId.ValueString()
+		authDetails.ClientId = data.OAuthClientId.ValueString()
 	} else if f.AttributeEnvValues.clientId != "" {
-		authDetails.AccessToken = f.AttributeEnvValues.clientId
+		authDetails.ClientId = f.AttributeEnvValues.clientId
 	}
 
 	if data.OAuthClientSecret.ValueString() != "" {
@@ -56,7 +56,7 @@ func (f GenesysCloudProvider) configureAuthInfo(data GenesysCloudProviderModel) 
 // Parameters:
 //   - data: GenesysCloudProviderModel containing provider configuration values
 //   - providerEnvValues: Environment variables for provider configuration
-func (f GenesysCloudProvider) configureSdkDebugInfo(data GenesysCloudProviderModel) {
+func (f *GenesysCloudProvider) configureSdkDebugInfo(data GenesysCloudProviderModel) {
 	if f.AttributeEnvValues == nil {
 		f.AttributeEnvValues = readProviderEnvVars()
 	}
@@ -86,7 +86,7 @@ func (f GenesysCloudProvider) configureSdkDebugInfo(data GenesysCloudProviderMod
 	f.SdkDebugInfo = &sdkDebugInfo
 }
 
-func (f GenesysCloudProvider) configureRootAttributes(data GenesysCloudProviderModel) {
+func (f *GenesysCloudProvider) configureRootAttributes(data GenesysCloudProviderModel) {
 	if f.AttributeEnvValues == nil {
 		f.AttributeEnvValues = readProviderEnvVars()
 	}
@@ -117,7 +117,7 @@ func (f GenesysCloudProvider) configureRootAttributes(data GenesysCloudProviderM
 	}
 }
 
-func (f GenesysCloudProvider) configureProxyAttributes(data GenesysCloudProviderModel) {
+func (f *GenesysCloudProvider) configureProxyAttributes(data GenesysCloudProviderModel) {
 	if f.AttributeEnvValues == nil {
 		f.AttributeEnvValues = readProviderEnvVars()
 	}
@@ -164,7 +164,7 @@ func (f GenesysCloudProvider) configureProxyAttributes(data GenesysCloudProvider
 	}
 }
 
-func (f GenesysCloudProvider) configureGatewayAttributes(data GenesysCloudProviderModel) {
+func (f *GenesysCloudProvider) configureGatewayAttributes(data GenesysCloudProviderModel) {
 	if f.AttributeEnvValues == nil {
 		f.AttributeEnvValues = readProviderEnvVars()
 	}

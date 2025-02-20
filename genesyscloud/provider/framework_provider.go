@@ -84,11 +84,11 @@ func NewFrameWorkProvider(version string) func() provider.Provider {
 	}
 }
 
-func (f GenesysCloudProvider) Metadata(_ context.Context, request provider.MetadataRequest, response *provider.MetadataResponse) {
+func (f *GenesysCloudProvider) Metadata(_ context.Context, request provider.MetadataRequest, response *provider.MetadataResponse) {
 	response.TypeName = "genesyscloud"
 }
 
-func (f GenesysCloudProvider) Schema(_ context.Context, request provider.SchemaRequest, response *provider.SchemaResponse) {
+func (f *GenesysCloudProvider) Schema(_ context.Context, request provider.SchemaRequest, response *provider.SchemaResponse) {
 	response.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
 			"gateway": schema.SetNestedBlock{
@@ -241,7 +241,9 @@ If you encounter any stack traces, please report them so we can address the unde
 	}
 }
 
-func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
+func (f *GenesysCloudProvider) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
+	const logPrefix = "(Framework) "
+	log.Println(logPrefix, "Calling genesyscloud provider")
 	var data GenesysCloudProviderModel
 
 	response.Diagnostics.Append(request.Config.Get(ctx, &data)...)
@@ -254,6 +256,7 @@ func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.Co
 
 	providerSourceRegistry := getRegistry(&platformInstance, f.Version)
 
+	log.Println(logPrefix, "Configuring provider schema attributes")
 	f.AttributeEnvValues = readProviderEnvVars()
 	f.configureAuthInfo(data)
 	f.configureSdkDebugInfo(data)
@@ -261,42 +264,47 @@ func (f GenesysCloudProvider) Configure(ctx context.Context, request provider.Co
 	f.configureProxyAttributes(data)
 	f.configureGatewayAttributes(data)
 
+	log.Println(logPrefix, "Initialising SDK client pool")
 	err := f.InitSDKClientPool()
-	if err != nil {
+	if err.HasError() {
 		response.Diagnostics.AddError(fmt.Sprintf("%v", err), "Failed to init SDK client pool")
-		return
 	}
 
+	log.Println(logPrefix, "Establishing current org")
 	defaultConfig := platformclientv2.GetDefaultConfiguration()
-
 	currentOrg, getOrgMeErr := getOrganizationMe(defaultConfig)
-	if getOrgMeErr != nil {
+	if getOrgMeErr != nil { // plugin sdk diagnostic error
 		response.Diagnostics.AddError(fmt.Sprintf("%v", getOrgMeErr), "Failed to establish current organisation.")
 	}
 
 	// probably not necessary because this is being called in the Plugin SDK configure function
 	//prl.InitPanicRecoveryLoggerInstance(data.LogStackTraces.ValueBool(), data.LogStackTracesFilePath.ValueString())
 
-	meta := &ProviderMeta{
-		Version:            f.Version,
-		Platform:           &platformInstance,
-		Registry:           providerSourceRegistry,
-		ClientConfig:       defaultConfig,
-		Domain:             getRegionDomain(f.AuthDetails.Region),
-		Organization:       currentOrg,
-		DefaultCountryCode: *currentOrg.DefaultCountryCode,
+	meta := ProviderMeta{
+		Version:      f.Version,
+		Platform:     &platformInstance,
+		Registry:     providerSourceRegistry,
+		ClientConfig: defaultConfig,
+		Domain:       getRegionDomain(f.AuthDetails.Region),
+		Organization: currentOrg,
 	}
 
-	f.Meta = *meta
+	if currentOrg != nil && currentOrg.DefaultCountryCode != nil {
+		meta.DefaultCountryCode = *currentOrg.DefaultCountryCode
+	}
+
+	f.Meta = meta
+
+	response.ResourceData = &f
 }
 
-func (f GenesysCloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+func (f *GenesysCloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		// TODO: add a datasource
 	}
 }
 
-func (f GenesysCloudProvider) Resources(_ context.Context) []func() resource.Resource {
+func (f *GenesysCloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		// TODO: add a resource
 	}

@@ -115,6 +115,24 @@ func determineTokenPoolSize(d *schema.ResourceData) int {
 	return tokenPoolSize
 }
 
+func determineProviderStringAttribute(d *schema.ResourceData, attrName, envVar string) string {
+	if schemaVal, ok := d.GetOk(attrName); ok {
+		return schemaVal.(string)
+	}
+	return os.Getenv(envVar)
+}
+
+func determineProviderStringAttributeWithDefaultFallback(d *schema.ResourceData, attrName, envVar, defaultValue string) string {
+	if schemaVal, ok := d.GetOk(attrName); ok {
+		return schemaVal.(string)
+	}
+	envVal, ok := os.LookupEnv(envVar)
+	if ok {
+		return envVal
+	}
+	return defaultValue
+}
+
 // Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially
 // within acceptance testing
 var (
