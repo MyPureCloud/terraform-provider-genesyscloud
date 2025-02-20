@@ -112,7 +112,7 @@ func setupCleanup() {
 }
 
 func configure(version string) schema.ConfigureContextFunc {
-	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	return func(ctx context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 
 		platform := platform.GetPlatform()
 		platformValidationErr := platform.Validate()
@@ -122,7 +122,7 @@ func configure(version string) schema.ConfigureContextFunc {
 
 		providerSourceRegistry := getRegistry(&platform, version)
 
-		err := InitSDKClientPool(context, version, data)
+		err := InitSDKClientPool(ctx, version, data)
 		if err != nil {
 			return nil, err
 		}
@@ -306,6 +306,7 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 		})
 	}
 
+	// Log SDK initialization only on default client config to avoid duplicate logging
 	if isDefaultConfig {
 		log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
 	}
