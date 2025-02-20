@@ -51,6 +51,12 @@ func NewTFStateWriter(ctx context.Context, resources []resourceExporter.Resource
 
 func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 
+	platform := platform.GetPlatform()
+	platformErr := platform.Validate()
+	if platformErr != nil {
+		log.Printf("Failed to validate platform: %v. Will use default values to run final state commands.", platformErr)
+	}
+
 	stateFilePath, diagErr := getFilePath(t.d, defaultTfStateFile)
 	if diagErr != nil {
 		return diagErr
@@ -140,57 +146,6 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 		log.Print(cliErrorPostscript)
 		// Don't fail everything even if this errors.
 
-		err := t.writeTfStateLegacy(stateFilePath)
-		if err != nil {
-			return nil
-		}
-		return nil
-	}
-	return nil
-}
-
-func (t *TFStateFileWriter) writeTfStateLegacy(stateFilePath string) error {
-	cliError := `Failed to run the terraform CLI to upgrade the generated state file.
-	The generated tfstate file will need to be upgraded manually by running the
-	following in the state file's directory:
-	'terraform state replace-provider registry.terraform.io/-/genesyscloud registry.terraform.io/mypurecloud/genesyscloud'`
-
-	tfpath, err := exec.LookPath("terraform")
-	if err != nil {
-		log.Println("Failed to find terraform path:", err)
-		log.Println(cliError)
-		return nil
-	}
-
-	// exec.CommandContext does not auto-resolve symlinks
-	fileInfo, err := os.Lstat(tfpath)
-	if err != nil {
-		log.Println("Failed to Lstat terraform path:", err)
-		log.Println(cliError)
-		return nil
-	}
-	if fileInfo.Mode()&os.ModeSymlink != 0 {
-		tfpath, err = filepath.EvalSymlinks(tfpath)
-		if err != nil {
-			log.Println("Failed to resolve terraform path symlink:", err)
-			log.Println(cliError)
-			return nil
-		}
-	}
-
-	cmd := exec.CommandContext(t.ctx, tfpath)
-	cmd.Args = append(cmd.Args, []string{
-		"state",
-		"replace-provider",
-		"-auto-approve",
-		"-state=" + stateFilePath,
-		"registry.terraform.io/-/genesyscloud",
-		t.providerRegistry,
-	}...)
-	log.Printf("Running 'terraform state replace-provider' on %s", stateFilePath)
-	if err = cmd.Run(); err != nil {
-		log.Println("Failed to run command:", err)
-		log.Println(cliError)
 		return nil
 	}
 	return nil
