@@ -3,7 +3,7 @@ package knowledgedocumentvariation
 import (
 	"fmt"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
@@ -56,7 +56,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -101,7 +101,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 			},
 			{
 				// Update
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -207,7 +207,7 @@ func TestAccResourceKnowledgeDocumentVariationDifferentTypes(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Type List
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -250,7 +250,7 @@ func TestAccResourceKnowledgeDocumentVariationDifferentTypes(t *testing.T) {
 			},
 			{
 				// Create Type Image
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -294,7 +294,7 @@ func TestAccResourceKnowledgeDocumentVariationDifferentTypes(t *testing.T) {
 			},
 			{
 				// Create Type Video
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -337,7 +337,7 @@ func TestAccResourceKnowledgeDocumentVariationDifferentTypes(t *testing.T) {
 			},
 			{
 				// Create Type Paragraph
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,

@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
@@ -41,6 +41,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 
 		divResourceLabel = "test-division"
 		divName          = "terraform-" + uuid.NewString()
+		description      = "Terraform test description"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -140,6 +141,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 					wrapupCodeResourceLabel,
 					wrapupCodeName,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + architect_flow.GenerateFlowResource(
 					flowResourceLabel,
 					outboundFlowFilePath,

@@ -316,6 +316,7 @@ Optional:
 
 Optional:
 
+- `customer_participation` (String) This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.
 - `date_ranges` (List of String)
 - `directions` (List of String)
 - `duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--conditions--duration))
@@ -996,6 +997,7 @@ Optional:
 
 Optional:
 
+- `customer_participation` (String) This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.
 - `date_ranges` (List of String)
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
@@ -1207,6 +1209,7 @@ Optional:
 
 Optional:
 
+- `customer_participation` (String) This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.
 - `date_ranges` (List of String)
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)

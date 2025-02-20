@@ -25,7 +25,17 @@ const (
 var RootDir string
 
 func init() {
-	RootDir = getRootDir()
+	if isRunningTests() {
+		RootDir = getRootDir()
+	}
+}
+
+func isRunningTests() bool {
+	if os.Getenv("TF_ACC") != "" {
+		return true
+	}
+
+	return false
 }
 
 // Helper function that retrieves the location of the root directory
@@ -56,15 +66,31 @@ func getRootDir() string {
 }
 
 func GetTestDataPath(elem ...string) string {
+	if !isRunningTests() {
+		return ""
+	}
 	basePath := filepath.Join(RootDir, "test", "data")
 	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
+	return NormalizePath(filepath.Join(basePath, subPath))
 }
 
 func GetTestTempPath(elem ...string) string {
+	if !isRunningTests() {
+		return ""
+	}
 	basePath := filepath.Join(RootDir, "test", "temp")
 	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
+	return NormalizePath(filepath.Join(basePath, subPath))
+}
+
+func NormalizePath(path string) string {
+	fullyQualifiedPath := path
+
+	if runtime.GOOS == "windows" {
+		// Convert single backslashes to dobule backslashes if necessary
+		fullyQualifiedPath = strings.ReplaceAll(path, "\\", "\\\\")
+	}
+	return fullyQualifiedPath
 }
 
 func GenerateDataJourneySourceTestSteps(resourceType string, testCaseName string, checkFuncs []resource.TestCheckFunc) []resource.TestStep {

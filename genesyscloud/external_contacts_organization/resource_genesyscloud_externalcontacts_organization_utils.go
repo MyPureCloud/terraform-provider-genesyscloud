@@ -9,7 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -35,10 +35,16 @@ func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData) (pl
 		Trustor:             buildTrustor(d.Get("trustor").([]interface{})),
 		ExternalDataSources: buildExternalDataSources(d.Get("external_data_sources").([]interface{})),
 	}
-	tags := lists.InterfaceListToStrings(d.Get("tags").([]interface{}))
-	websites := lists.InterfaceListToStrings(d.Get("websites").([]interface{}))
-	externalOrganization.Tags = &tags
-	externalOrganization.Websites = &websites
+
+	if v, ok := d.Get("tags").([]interface{}); ok && v != nil {
+		tags := lists.InterfaceListToStrings(v)
+		externalOrganization.Tags = &tags
+	}
+	if v, ok := d.Get("websites").([]interface{}); ok && v != nil {
+		websites := lists.InterfaceListToStrings(v)
+		externalOrganization.Websites = &websites
+	}
+
 	if d.Get("primary_contact_id").(string) != "" {
 		externalOrganization.PrimaryContactId = platformclientv2.String(d.Get("primary_contact_id").(string))
 	}
@@ -59,6 +65,10 @@ func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData) (pl
 
 // buildPhonenumberFromData is a helper method to map phone data to the GenesysCloud platformclientv2.PhoneNumber
 func buildPhonenumberFromData(phoneData []interface{}) *platformclientv2.Phonenumber {
+
+	if len(phoneData) == 0 {
+		return nil
+	}
 
 	phoneMap, ok := phoneData[0].(map[string]interface{})
 	if !ok {
@@ -143,6 +153,9 @@ func buildSdkAddress(d *schema.ResourceData, key string) *platformclientv2.Conta
 
 // flattenflattenSdkAddress converts a *platformclientv2.Contactaddress into a map and then into array for consumption by Terraform
 func flattenSdkAddress(address *platformclientv2.Contactaddress) []interface{} {
+	if address == nil {
+		return nil
+	}
 	addressInterface := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(addressInterface, "address1", address.Address1)
@@ -295,6 +308,9 @@ func flattenTickers(tickers *[]platformclientv2.Ticker) []interface{} {
 // flattenTwitterIds maps a Genesys Cloud *[]platformclientv2.Twitterid into a []interface{}
 // flattenSdkTwitterId maps a Genesys Cloud platformclientv2.Twitterid into a []interface{}
 func flattenSdkTwitterId(twitterId *platformclientv2.Twitterid) []interface{} {
+	if twitterId == nil {
+		return nil
+	}
 	twitterMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(twitterMap, "twitter_id", twitterId.Id)
 	resourcedata.SetMapValueIfNotNil(twitterMap, "name", twitterId.Name)
@@ -305,6 +321,9 @@ func flattenSdkTwitterId(twitterId *platformclientv2.Twitterid) []interface{} {
 
 // flattenTrustors maps a Genesys Cloud *[]platformclientv2.Trustor into a []interface{}
 func flattenTrustor(trustor *platformclientv2.Trustor) []interface{} {
+	if trustor == nil {
+		return nil
+	}
 	trustorMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(trustorMap, "enabled", trustor.Enabled)
 	return []interface{}{trustorMap}

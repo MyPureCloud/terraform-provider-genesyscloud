@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	// Provider environment variables
+	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
+	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
+
 	// Provider attribute keys
 	AttrTokenPoolSize       = "token_pool_size"
 	AttrTokenAcquireTimeout = "token_acquire_timeout"
@@ -91,6 +95,22 @@ func ProviderSchema() map[string]*schema.Schema {
 			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_INIT_TIMEOUT", DefaultInitTimeout.String()),
 			Description:  "Timeout for initializing the token pool. Can be set with the `GENESYSCLOUD_TOKEN_INIT_TIMEOUT` environment variable.",
 			ValidateFunc: validateDuration,
+		},
+		"log_stack_traces": {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			DefaultFunc: schema.EnvDefaultFunc(logStackTracesEnvVar, false),
+			Description: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.
+If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message
+"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.
+If you encounter any stack traces, please report them so we can address the underlying issues.`, logStackTracesEnvVar),
+		},
+		"log_stack_traces_file_path": {
+			Type:             schema.TypeString,
+			Optional:         true,
+			Description:      fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is genesyscloud_stack_traces.log", logStackTracesFilePathEnvVar),
+			DefaultFunc:      schema.EnvDefaultFunc(logStackTracesFilePathEnvVar, "genesyscloud_stack_traces.log"),
+			ValidateDiagFunc: validateLogFilePath,
 		},
 		"gateway": {
 			Type:     schema.TypeSet,

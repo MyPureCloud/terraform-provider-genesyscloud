@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -59,7 +59,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Type List
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -124,7 +124,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 						KnowledgeDocumentID := strings.Split(rs2.Primary.Attributes["knowledge_document_id"], ",")[0]
 
 						// Ensure IDs are equal
-						assert.Equal(t, resourceIDs.variationID, variationID, "Variation ID should be equal")
+						assert.Equal(t, resourceIDs.knowledgeDocumentVariationID, variationID, "Variation ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeBaseID, knowledgeBaseID, "Knowledge Base ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeDocumentID, KnowledgeDocumentID, "Knowledge Document ID should be equal")
 						return nil

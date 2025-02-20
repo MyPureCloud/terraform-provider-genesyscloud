@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"terraform-provider-genesyscloud/genesyscloud/platform"
@@ -19,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func init() {
@@ -117,7 +118,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		platform := platform.GetPlatform()
 		platformValidationErr := platform.Validate()
 		if platformValidationErr != nil {
-			return nil, diag.FromErr(platformValidationErr)
+			log.Printf("%v error during platform validation switching to defaults", platformValidationErr)
 		}
 
 		providerSourceRegistry := getRegistry(&platform, version)
@@ -138,6 +139,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		if v, ok := data.GetOk(AttrTokenPoolSize); ok {
 			maxClients = v.(int)
 		}
+		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
 		meta := &ProviderMeta{
 			Version:            version,
@@ -272,7 +274,7 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 			if err != nil {
 				log.Printf("WARNING: Unable to log RequestLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
 			sdkDebugResponse := newSDKDebugResponse(response)
@@ -281,7 +283,7 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 			if err != nil {
 				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 	}
 

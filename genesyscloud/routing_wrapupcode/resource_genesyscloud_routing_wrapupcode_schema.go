@@ -50,6 +50,11 @@ func ResourceRoutingWrapupCode() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"description": {
+				Description: "The wrap-up code description.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 }
