@@ -215,13 +215,6 @@ func getJourneySegmentByIdFn(ctx context.Context, p *journeySegmentProxy, id str
 		return nil, nil, fmt.Errorf("id cannot be empty")
 	}
 
-	// Check cache first
-	if p.segmentCache != nil {
-		if cachedSegment, found := p.segmentCache.Get(id); found {
-			return &cachedSegment, nil, nil
-		}
-	}
-
 	// Make API call if not in cache
 	if p.journeyApi == nil {
 		return nil, nil, fmt.Errorf("journey API client is nil")
@@ -234,11 +227,6 @@ func getJourneySegmentByIdFn(ctx context.Context, p *journeySegmentProxy, id str
 
 	if segment == nil {
 		return nil, resp, fmt.Errorf("retrieved journey segment is nil")
-	}
-
-	// Add to cache if cache exists
-	if p.segmentCache != nil {
-		p.segmentCache.Set(id, *segment)
 	}
 
 	return segment, resp, nil

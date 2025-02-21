@@ -1205,7 +1205,7 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
-	return &platformclientv2.Emailmediapolicyconditions{
+	emailPolicyConditions := &platformclientv2.Emailmediapolicyconditions{
 		ForUsers:    &forUsers,
 		DateRanges:  &dateRanges,
 		ForQueues:   &forQueues,
@@ -1213,6 +1213,13 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 		Languages:   &languages,
 		TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
 	}
+
+	customerParticipation := conditionsMap["customer_participation"].(string)
+	if customerParticipation != "" {
+		emailPolicyConditions.CustomerParticipation = &customerParticipation
+	}
+
+	return emailPolicyConditions
 }
 
 func flattenEmailMediaPolicyConditions(conditions *platformclientv2.Emailmediapolicyconditions) []interface{} {
@@ -1253,8 +1260,11 @@ func flattenEmailMediaPolicyConditions(conditions *platformclientv2.Emailmediapo
 		conditionsMap["language_ids"] = languageIds
 	}
 
-	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
+	if conditions.CustomerParticipation != nil {
+		conditionsMap["customer_participation"] = conditions.CustomerParticipation
+	}
 
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
 	return []interface{}{conditionsMap}
 }
 
@@ -1322,7 +1332,7 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
-	return &platformclientv2.Messagemediapolicyconditions{
+	messageConditions := &platformclientv2.Messagemediapolicyconditions{
 		ForUsers:    &forUsers,
 		DateRanges:  &dateRanges,
 		ForQueues:   &forQueues,
@@ -1330,6 +1340,14 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 		Languages:   &languages,
 		TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
 	}
+
+	customerParticipation := conditionsMap["customer_participation"].(string)
+	if customerParticipation != "" {
+		messageConditions.CustomerParticipation = &customerParticipation
+	}
+
+	return messageConditions
+
 }
 
 func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemediapolicyconditions) []interface{} {
@@ -1370,6 +1388,9 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 		conditionsMap["language_ids"] = languageIds
 	}
 
+	if conditions.CustomerParticipation != nil {
+		conditionsMap["customer_participation"] = conditions.CustomerParticipation
+	}
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
 
 	return []interface{}{conditionsMap}
