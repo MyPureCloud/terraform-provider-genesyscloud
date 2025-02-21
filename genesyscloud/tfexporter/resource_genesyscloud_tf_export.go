@@ -100,11 +100,12 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"export_as_hcl": {
-				Description: "Export the config as HCL. Deprecated use export_format instead ",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				ForceNew:    true,
+				Description:   "Export the config as HCL. Deprecated. Please use the export_format attribute instead",
+				Type:          schema.TypeBool,
+				Optional:      true,
+				ForceNew:      true,
+				Default:       false,
+				ConflictsWith: []string{"export_format"},
 			},
 			"export_format": {
 				Description: "Export the config as hcl or json or json_hcl.",
