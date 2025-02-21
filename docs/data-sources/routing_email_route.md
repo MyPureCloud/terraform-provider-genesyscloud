@@ -18,6 +18,7 @@ Data source for Genesys Cloud Routing Email Route. Select a routing email route 
 ### Required
 
 - `domain_id` (String) Domain of the route.
+- `from_name` (String) The sender name to use for outgoing replies.
 - `pattern` (String) Routing pattern.
 
 ### Read-Only
