@@ -9,46 +9,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
-func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) (*platformclientv2.APIResponse, error) {
-	allowedPermissions, resp, err := proxy.getAllowedPermissions(*policy.Domain)
-	if err != nil {
-		return resp, fmt.Errorf("error requesting org permissions: %s", err)
-	}
-	if len(*allowedPermissions) == 0 {
-		return resp, fmt.Errorf("domain %s not found", *policy.Domain)
-	}
-
-	if *policy.EntityName == "*" {
-		return resp, nil
-	}
-
-	// Check entity type (e.g. callableTimeSet) exists in the map of allowed permissions
-	if entityPermissions, ok := (*allowedPermissions)[*policy.EntityName]; ok {
-		// Check if the policy actions exist for the given domain permission e.g. callableTimeSet: add
-		for _, action := range *policy.ActionSet {
-			if action == "*" && len(entityPermissions) >= 1 {
-				break
-			}
-
-			var found bool
-			for _, entityPermission := range entityPermissions {
-				if action == *entityPermission.Action {
-					// action found, move to next action
-					found = true
-					break
-				}
-			}
-			if !found {
-				return resp, fmt.Errorf("action %s not found for domain %s, entity name %s", action, *policy.Domain, *policy.EntityName)
-			}
-		}
-		// All actions have been found, permission exists
-		return resp, nil
-	}
-
-	return resp, fmt.Errorf("entity_name %s not found for domain %s", *policy.EntityName, *policy.Domain)
-}
-
 func buildSdkRolePermissions(d *schema.ResourceData) *[]string {
 	if permConfig, ok := d.GetOk("permissions"); ok {
 		return lists.SetToStringList(permConfig.(*schema.Set))

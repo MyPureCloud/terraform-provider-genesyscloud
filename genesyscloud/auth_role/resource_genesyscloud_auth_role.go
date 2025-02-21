@@ -49,15 +49,6 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	// This is a workaround for a bug in the auth roles APIs
 	// Bug reported to auth team in ticket AUTHZ-315
 	policies := buildSdkRolePermPolicies(d)
-	if policies != nil {
-		for _, policy := range *policies {
-			resp, err := validatePermissionPolicy(proxy, policy)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
-			}
-		}
-	}
-
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	defaultRoleID := d.Get("default_role_id").(string)
@@ -137,14 +128,6 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	// This is a workaround for a bug in the auth roles APIs
 	// Bug reported to auth team in ticket AUTHZ-315
 	policies := buildSdkRolePermPolicies(d)
-	if policies != nil {
-		for _, policy := range *policies {
-			resp, err := validatePermissionPolicy(proxy, policy)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
-			}
-		}
-	}
 
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
