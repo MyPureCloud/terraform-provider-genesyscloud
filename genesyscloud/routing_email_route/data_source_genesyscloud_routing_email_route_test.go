@@ -45,6 +45,7 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 				) + generateRoutingEmailRouteDataSource(
 					routeResourceLabel,
 					routePattern1,
+					fromName1,
 					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					"genesyscloud_routing_email_route."+routeResourceLabel,
 				),
@@ -63,13 +64,15 @@ func TestAccDataSourceRoutingEmailRoute(t *testing.T) {
 func generateRoutingEmailRouteDataSource(
 	resourceLabel string,
 	pattern string,
+	fromName1 string,
 	domainId string,
 	dependsOn string) string {
 	return fmt.Sprintf(`
 		data "genesyscloud_routing_email_route" "%s" {
 			pattern = "%s"
+			from_name = "%s"
 			domain_id = "%s"
 			depends_on=[%s]
 		}
-	`, resourceLabel, pattern, domainId, dependsOn)
+	`, resourceLabel, pattern, fromName1, domainId, dependsOn)
 }

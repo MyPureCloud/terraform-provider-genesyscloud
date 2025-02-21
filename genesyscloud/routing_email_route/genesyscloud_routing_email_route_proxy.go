@@ -20,7 +20,7 @@ var internalProxy *routingEmailRouteProxy
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, inboundRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
 type getAllRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, name string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
-type getRoutingEmailRouteIdByPatternFunc func(ctx context.Context, p *routingEmailRouteProxy, pattern string, domainId string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getRoutingEmailRouteIdByPatternFunc func(ctx context.Context, p *routingEmailRouteProxy, pattern string, domainId string, fromName string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getRoutingEmailRouteByIdFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (inboundRoute *platformclientv2.Inboundroute, response *platformclientv2.APIResponse, err error)
 type updateRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, id string, domainId string, inboundRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
 type deleteRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (response *platformclientv2.APIResponse, err error)
@@ -72,8 +72,8 @@ func (p *routingEmailRouteProxy) getAllRoutingEmailRoute(ctx context.Context, do
 }
 
 // getRoutingEmailRouteIdByName returns a single Genesys Cloud routing email route by a pattern
-func (p *routingEmailRouteProxy) getRoutingEmailRouteIdByPattern(ctx context.Context, pattern string, domainId string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	return p.getRoutingEmailRouteIdByPatternAttr(ctx, p, pattern, domainId)
+func (p *routingEmailRouteProxy) getRoutingEmailRouteIdByPattern(ctx context.Context, pattern string, domainId string, fromName string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	return p.getRoutingEmailRouteIdByPatternAttr(ctx, p, pattern, domainId, fromName)
 }
 
 // getRoutingEmailRouteById returns a single Genesys Cloud routing email route by Id
@@ -195,7 +195,7 @@ func getRoutingEmailRouteByIdFn(ctx context.Context, p *routingEmailRouteProxy, 
 }
 
 // getRoutingEmailRouteIdByNameFn is an implementation of the function to get a Genesys Cloud routing email route by name
-func getRoutingEmailRouteIdByPatternFn(ctx context.Context, p *routingEmailRouteProxy, pattern string, domainId string) (string, bool, *platformclientv2.APIResponse, error) {
+func getRoutingEmailRouteIdByPatternFn(ctx context.Context, p *routingEmailRouteProxy, pattern string, domainId string, fromName string) (string, bool, *platformclientv2.APIResponse, error) {
 	inboundRoutesMap, resp, err := getAllRoutingEmailRouteFn(ctx, p, domainId, pattern)
 	if err != nil {
 		return "", false, resp, err
@@ -207,8 +207,8 @@ func getRoutingEmailRouteIdByPatternFn(ctx context.Context, p *routingEmailRoute
 
 	for _, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
-			if *inboundRoute.Pattern == pattern {
-				log.Printf("Retrieved the routing email route id %s by pattern %s", *inboundRoute.Id, pattern)
+			if *inboundRoute.Pattern == pattern && *inboundRoute.FromName == fromName {
+				log.Printf("Retrieved the routing email route id %s by pattern %s and fromName %s", *inboundRoute.Id, pattern, fromName)
 				return *inboundRoute.Id, false, resp, nil
 			}
 		}

@@ -175,6 +175,11 @@ func DataSourceRoutingEmailRoute() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"from_name": {
+				Description: "The sender name to use for outgoing replies.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
 		},
 	}
 }
