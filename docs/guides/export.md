@@ -21,7 +21,7 @@ resource "genesyscloud_tf_export" "export" {
 }
 ```
 
-The configuration can be exported as a `.tf` file by setting `export_as_hcl` to `true`.
+The configuration can be exported as a `.tf` file by setting `export_format` to `hcl`.
 
 You may choose specific resource types to export such as `genesyscloud_user`, or you can export all supported resources by not setting the `resource_types` attribute. You may also choose to export a `.tfstate` file along with the `.tf.json` or `.tf` config file by setting `include_state_file` to true. Generating a state file alongside the config will allow Terraform to begin managing your existing resources even though it did not create them. Excluding the state file will generate configuration that can be applied to a different org.
 
@@ -43,7 +43,7 @@ If you want to include resources that begin or end with “dev” or “test”,
 ```hcl
 resource "genesyscloud_tf_export" "include-filter" {
   directory = "./genesyscloud/include-filter"
-  export_as_hcl = true
+  export_format = "hcl"
   log_permission_errors = true
   include_filter_resources = ["genesyscloud_group::.*(?:dev|test)$"]
 }
@@ -56,7 +56,7 @@ To exclude certain resources, you can use a similar method:
 ```hcl
 resource "genesyscloud_tf_export" "exclude-filter" {
   directory = "./genesyscloud/exclude-filter"
-  export_as_hcl = true
+  export_format = "hcl"
   log_permission_errors = true
   exclude_filter_resources = ["genesyscloud_routing_queue"]
 }
@@ -74,7 +74,7 @@ resource "genesyscloud_tf_export" "export" {
     "genesyscloud_group::Test_Group"
   ]
   include_state_file     = true
-  export_as_hcl          = true
+  export_format          = "hcl"
   log_permission_errors  = true
   enable_dependency_resolution = false
 }

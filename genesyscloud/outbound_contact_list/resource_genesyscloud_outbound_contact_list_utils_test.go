@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *testing.T) {
@@ -598,7 +598,7 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 		// Mock the file download function
 		origDownloadFile := files.DownloadExportFileWithAccessToken
 		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) (*platformclientv2.APIResponse, error) {
-			fullPath := path.Join(directory, filename)
+			fullPath := filepath.Join(directory, filename)
 			if err := os.MkdirAll(directory, os.ModePerm); err != nil {
 				return nil, err
 			}
@@ -614,7 +614,7 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 		}
 
 		// Verify the filepath was set in configMap
-		expectedPath := path.Join(subDir, "contacts_test-contact-list.csv")
+		expectedPath := filepath.Join(subDir, "contacts_test-contact-list.csv")
 		if configMap["contacts_filepath"] != expectedPath {
 			t.Errorf("Expected filepath %s, got %s", expectedPath, configMap["filepath"])
 		}
