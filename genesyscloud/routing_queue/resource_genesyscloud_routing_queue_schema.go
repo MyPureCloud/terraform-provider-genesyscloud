@@ -10,8 +10,6 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingSmsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
@@ -601,8 +599,8 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"on_hold_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
 			"outbound_messaging_sms_address_id":        {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
 			"default_script_ids.*":                     {RefType: scripts.ResourceType},
-			"outbound_email_address.route_id":          {RefType: routingEmailRoute.ResourceType},
-			"outbound_email_address.domain_id":         {RefType: routingEmailDomain.ResourceType},
+			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
+			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
 			"bullseye_rings.skills_to_remove":          {RefType: routingSkill.ResourceType},
 			"members.user_id":                          {RefType: user.ResourceType},
 			"wrapup_codes":                             {RefType: routingWrapupcode.ResourceType},
