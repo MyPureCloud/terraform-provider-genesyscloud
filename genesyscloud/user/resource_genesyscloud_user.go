@@ -52,7 +52,6 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	proxy := GetUserProxy(sdkConfig)
 
 	email := d.Get("email").(string)
-	password := d.Get("password").(string)
 	divisionID := d.Get("division_id").(string)
 
 	addresses, addrErr := buildSdkAddresses(d)
@@ -76,11 +75,7 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		Addresses:  addresses,
 	}
 
-	// Optional attributes that should not be empty strings
-	if password != "" {
-		createUser.Password = &password
-	}
-
+	// Optional attribute that should not be empty strings
 	if divisionID != "" {
 		createUser.DivisionId = &divisionID
 	}

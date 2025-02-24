@@ -35,6 +35,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
+	// Gets all routing queues without a peer
 	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
@@ -44,6 +45,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		allQueues = append(allQueues, *queues...)
 	}
 
+	// Gets all routing queues with a peer
 	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)

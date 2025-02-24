@@ -90,6 +90,39 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				PreventPostDestroyRefresh: true,
 			},
 			{
+				// Update group
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + GenerateGroupResource(
+					groupResourceLabel1,
+					groupName,
+					strconv.Quote(groupDesc2),
+					strconv.Quote(typeOfficial), // Cannot change type
+					strconv.Quote(visMembers),
+					util.FalseValue,
+					"roles_enabled = true",
+					"owner_ids = []",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "type", typeOfficial),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "description", groupDesc2),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "visibility", visMembers),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "rules_visible", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "roles_enabled", util.TrueValue),
+					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResourceLabel1, "owner_ids.%"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResourceLabel]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResourceLabel)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
+				),
+
+				PreventPostDestroyRefresh: true,
+			},
+			{
 				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + GenerateGroupResource(
 					groupResourceLabel1,
 					groupName,
