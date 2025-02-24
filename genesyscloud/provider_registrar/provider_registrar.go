@@ -209,7 +209,7 @@ func registerResources() {
 	station.SetRegistrar(regInstance)                                      //Registering station
 	pat.SetRegistrar(regInstance)                                          //Registering process automation triggers
 	obs.SetRegistrar(regInstance)                                          //Resistering outbound ruleset
-	obMessagingCampaign.SetRegistrar(regInstance)                          //Registering outbound
+	obMessagingCampaign.SetRegistrar(regInstance)                          //Registering outbound messaging campaign
 	obwm.SetRegistrar(regInstance)                                         //Registering outbound wrapup code mappings
 	oAuthSettings.SetRegistrar(regInstance)                                //Registering organization authentication settings
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
