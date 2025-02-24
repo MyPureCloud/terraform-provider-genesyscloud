@@ -92,17 +92,21 @@ Optional:
 
 Optional:
 
+- `filter` (Boolean) Whether to filter contacts dynamically
 - `sort` (Boolean) Whether to sort contacts dynamically
 
 
 <a id="nestedblock--email_config"></a>
 ### Nested Schema for `email_config`
 
+Required:
+
+- `email_columns` (List of String) The contact list columns specifying the email address(es) of the contact.
+- `from_address` (Block List, Min: 1, Max: 1) The email address that will be used as the sender of the email. (see [below for nested schema](#nestedblock--email_config--from_address))
+
 Optional:
 
 - `content_template_id` (String) The content template used to formulate the email to send to the contact.
-- `email_columns` (Set of String) The contact list columns specifying the email address(es) of the contact.
-- `from_address` (Block List, Max: 1) The email address that will be used as the sender of the email. (see [below for nested schema](#nestedblock--email_config--from_address))
 - `reply_to_address` (Block List, Max: 1) The email address from which any reply will be sent. (see [below for nested schema](#nestedblock--email_config--reply_to_address))
 
 <a id="nestedblock--email_config--from_address"></a>

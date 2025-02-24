@@ -5,7 +5,11 @@ import (
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDigitalRuleSet "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	responseManagement "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,11 +36,15 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceOutboundMessagingcampaign()
-	providerResources["genesyscloud_outbound_contact_list"] = obContactList.ResourceOutboundContactList()
-	providerResources["genesyscloud_outbound_contactlistfilter"] = obContactListFilter.ResourceOutboundContactlistfilter()
-	providerResources["genesyscloud_outbound_callabletimeset"] = obCallableTimeset.ResourceOutboundCallabletimeset()
-	providerResources["genesyscloud_outbound_dnclist"] = obDnclist.ResourceOutboundDncList()
+	providerResources[ResourceType] = ResourceOutboundMessagingcampaign()
+	providerResources[obContactList.ResourceType] = obContactList.ResourceOutboundContactList()
+	providerResources[obContactListFilter.ResourceType] = obContactListFilter.ResourceOutboundContactlistfilter()
+	providerResources[obCallableTimeset.ResourceType] = obCallableTimeset.ResourceOutboundCallabletimeset()
+	providerResources[obDnclist.ResourceType] = obDnclist.ResourceOutboundDncList()
+	providerResources[obDigitalRuleSet.ResourceType] = obDigitalRuleSet.ResourceOutboundDigitalruleset()
+	providerResources[responseManagement.ResourceType] = responseManagement.ResourceResponsemanagementResponse()
+	providerResources[routingEmailRoute.ResourceType] = routingEmailRoute.ResourceRoutingEmailRoute()
+	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -44,8 +52,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceOutboundMessagingcampaign()
-	// TODO: Add references
+	providerDataSources[ResourceType] = DataSourceOutboundMessagingcampaign()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -33,8 +33,8 @@ func getOutboundMessagingcampaignFromResourceData(d *schema.ResourceData) platfo
 		Errors:                         buildRestErrorDetails(d.Get("errors").([]interface{})),
 		DynamicContactQueueingSettings: buildDynamicContactQueueingSettingss(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 		SmsConfig:                      buildSmsConfigs(d.Get("sms_config").(*schema.Set)),
-		//TODO: add email configs in future
-		// EmailConfig:                    buildEmailConfigs(d.Get("email_config").(*schema.Set)),
+		// TODO: add email configs in future as it is linked with contact list templates which isn't a resource yet
+		// EmailConfig: buildEmailConfigs(d.Get("email_config").(*schema.Set)),
 	}
 }
 
@@ -93,6 +93,9 @@ func buildDynamicContactQueueingSettingss(settings []interface{}) *platformclien
 	}
 	if sort, ok := dcqSetting["sort"].(bool); ok {
 		sdkDcqSettings.Sort = &sort
+	}
+	if filter, ok := dcqSetting["filter"].(bool); ok {
+		sdkDcqSettings.Filter = &filter
 	}
 	return &sdkDcqSettings
 }
@@ -232,6 +235,7 @@ func flattenDynamicContactQueueingSettingss(dynamicContactQueueingSettingss *pla
 	dynamicContactQueueingSettingsMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(dynamicContactQueueingSettingsMap, "sort", dynamicContactQueueingSettingss.Sort)
+	resourcedata.SetMapValueIfNotNil(dynamicContactQueueingSettingsMap, "filter", dynamicContactQueueingSettingss.Filter)
 
 	dynamicContactQueueingSettingsList = append(dynamicContactQueueingSettingsList, dynamicContactQueueingSettingsMap)
 

@@ -123,7 +123,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						resourceLabel,
 						digitalCampaignName,
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
-						"off",
+						strconv.Quote("off"),
 						"10",
 						util.FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceLabel+".id",
@@ -145,7 +145,10 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 							"DESC",
 							util.TrueValue,
 						),
-						generateDynamicContactQueueingSettingsBlock(util.FalseValue),
+						GenerateDynamicContactQueueingSettings(
+							util.FalseValue, // sort
+							util.FalseValue, // filter
+						),
 					) + generateOutboundMessagingCampaignDataSource(
 					dataSourceLabel,
 					digitalCampaignName,
@@ -153,7 +156,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_messagingcampaign."+dataSourceLabel, "id",
-						"genesyscloud_outbound_messagingcampaign."+resourceLabel, "id"),
+						ResourceType+"."+resourceLabel, "id"),
 				),
 			},
 		},

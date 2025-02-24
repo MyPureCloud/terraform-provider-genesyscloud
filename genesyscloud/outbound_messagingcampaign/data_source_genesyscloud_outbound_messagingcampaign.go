@@ -30,11 +30,11 @@ func dataSourceOutboundMessagingcampaignRead(ctx context.Context, d *schema.Reso
 		messagingCampaignId, retryable, resp, err := proxy.getOutboundMessagingcampaignIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching outbound messagingcampaign %s: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching outbound messagingcampaign %s: %s", name, err), resp))
 		}
 
 		if retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No outbound messagingcampaign found with name %s", name), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No outbound messagingcampaign found with name %s", name), resp))
 
 		}
 

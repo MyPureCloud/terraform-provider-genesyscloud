@@ -17,13 +17,13 @@ resource_genesycloud_outbound_messagingcampaign_schema.go holds four functions w
 3.  The datasource schema definitions for the outbound_messagingcampaign datasource.
 4.  The resource exporter configuration for the outbound_messagingcampaign exporter.
 */
-const resourceName = "genesyscloud_outbound_messagingcampaign"
+const ResourceType = "genesyscloud_outbound_messagingcampaign"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceOutboundMessagingcampaign())
-	regInstance.RegisterDataSource(resourceName, DataSourceOutboundMessagingcampaign())
-	regInstance.RegisterExporter(resourceName, OutboundMessagingcampaignExporter())
+	regInstance.RegisterResource(ResourceType, ResourceOutboundMessagingcampaign())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundMessagingcampaign())
+	regInstance.RegisterExporter(ResourceType, OutboundMessagingcampaignExporter())
 }
 
 var (
@@ -166,6 +166,11 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},
+			`filter`: {
+				Description: `Whether to filter contacts dynamically`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 
@@ -292,17 +297,16 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundMessagingcampaigns),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
 			`division_id`:                         {RefType: "genesyscloud_auth_division"},
 			`contact_list_id`:                     {RefType: "genesyscloud_outbound_contact_list"},
 			`contact_list_filter_ids`:             {RefType: "genesyscloud_outbound_contactlistfilter"},
 			`dnc_list_ids`:                        {RefType: "genesyscloud_outbound_dnclist"},
 			`callable_time_set_id`:                {RefType: "genesyscloud_outbound_callabletimeset"},
+			`rule_set_ids`:                        {RefType: "genesyscloud_outbound_digitalruleset"},
 			`email_config.from_address.route_id`:  {RefType: "genesyscloud_routing_email_route"},
 			`email_config.from_address.domain_id`: {RefType: "genesyscloud_routing_email_domain"},
-			// /api/v2/responsemanagement/responses/{responseId}
-			`sms_config.content_template_id`:   {},
-			`email_config.content_template_id`: {},
+			`sms_config.content_template_id`:      {RefType: "genesyscloud_responsemanagement_response"},
+			`email_config.content_template_id`:    {RefType: "genesyscloud_responsemanagement_response"},
 		},
 	}
 }

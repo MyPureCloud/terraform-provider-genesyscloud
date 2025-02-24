@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v133/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -102,7 +102,7 @@ func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 	var allMessagingCampaigns []platformclientv2.Messagingcampaign
 	const pageSize = 100
 
-	messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, 1, "", "", "", "", []string{}, "", "", []string{})
+	messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, 1, "", "", "", "", []string{}, "", "", []string{}, "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get messaging campaign: %v", err)
 	}
@@ -113,7 +113,7 @@ func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 	allMessagingCampaigns = append(allMessagingCampaigns, *messagingCampaigns.Entities...)
 
 	for pageNum := 2; pageNum <= *messagingCampaigns.PageCount; pageNum++ {
-		messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
+		messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{}, "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("Failed to get messaging campaign: %v", err)
 		}

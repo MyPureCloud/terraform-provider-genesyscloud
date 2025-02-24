@@ -1,7 +1,6 @@
 package provider_registrar
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	dt "terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -61,7 +60,6 @@ import (
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
-	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obCallResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
@@ -74,6 +72,7 @@ import (
 	obDigitalRuleSet "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
+	obMessagingCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	obSettings "terraform-provider-genesyscloud/genesyscloud/outbound_settings"
@@ -125,6 +124,8 @@ import (
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -208,7 +209,7 @@ func registerResources() {
 	station.SetRegistrar(regInstance)                                      //Registering station
 	pat.SetRegistrar(regInstance)                                          //Registering process automation triggers
 	obs.SetRegistrar(regInstance)                                          //Resistering outbound ruleset
-	ob.SetRegistrar(regInstance)                                           //Registering outbound
+	obMessagingCampaign.SetRegistrar(regInstance)                          //Registering outbound
 	obwm.SetRegistrar(regInstance)                                         //Registering outbound wrapup code mappings
 	oAuthSettings.SetRegistrar(regInstance)                                //Registering organization authentication settings
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud

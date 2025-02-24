@@ -210,7 +210,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[outboundContactListTemplate.ResourceType] = outboundContactListTemplate.ResourceOutboundContactListTemplate()
 	providerResources[outboundContactListContact.ResourceType] = outboundContactListContact.ResourceOutboundContactListContact()
 	providerResources[obContactListFilter.ResourceType] = obContactListFilter.ResourceOutboundContactlistfilter()
-	providerResources[ob.ResourceType] = ob.ResourceOutboundMessagingCampaign()
+	providerResources[obMessagingCampaign.ResourceType] = obMessagingCampaign.ResourceOutboundMessagingcampaign()
 	providerResources[obSequence.ResourceType] = obSequence.ResourceOutboundSequence()
 	providerResources[obDncList.ResourceType] = obDncList.ResourceOutboundDncList()
 	providerResources[obCampaignRule.ResourceType] = obCampaignRule.ResourceOutboundCampaignrule()
