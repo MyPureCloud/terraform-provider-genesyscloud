@@ -1441,7 +1441,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 
 func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	var (
-		exportTestDir = filepath.Join("..", "..", ".terraform"+uuid.NewString())
+		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
 		resourceLabel = "export"
 		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
 		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
@@ -1591,7 +1591,6 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 		},
 	)
 
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -1615,8 +1614,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 
 func validateStateFileHasPublishedAndUnpublished(filename string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		_, err := os.Stat(filename)
-		if err != nil {
+		if _, err := os.Stat(filename); err != nil {
 			return fmt.Errorf("failed to find file %s", filename)
 		}
 
@@ -1624,54 +1622,70 @@ func validateStateFileHasPublishedAndUnpublished(filename string) resource.TestC
 		if err != nil {
 			return err
 		}
+
+		modules, ok := stateData["modules"].([]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected structure for modules")
+		}
+
 		log.Println("Successfully loaded export config into map variable ")
 
-		// Check if resources exist in the exported data
-		if resources, ok := stateData["resources"].([]interface{}); ok {
-			log.Printf("checking that quality forms surveys exports published and unpublished in tf state")
+		resources := make([]interface{}, 0, len(modules))
+		for _, module := range modules {
+			m, ok := module.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if r, ok := m["resources"].([]interface{}); ok {
+				resources = append(resources, r...)
+			}
+		}
 
-			for _, r := range resources {
-				out, _ := r.(map[string]interface{})
+		log.Printf("checking that quality forms surveys exports published and unpublished in tf state")
 
-				instances, ok := out["instances"].([]interface{})
-				if !ok {
-					return fmt.Errorf("unexpected structure for form %s", filename)
-				}
+		for _, r := range resources {
+			out, ok := r.(map[string]interface{})
+			if !ok {
+				continue
+			}
 
-				res, ok := instances[0].(map[string]interface{})["attributes_flat"].(map[string]interface{})
-				if !ok {
-					return fmt.Errorf("unexpected structure attributes %s", filename)
-				}
+			instances, ok := out["instances"].([]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected structure for form %s", filename)
+			}
 
-				name, ok := res["name"].(string)
-				if !ok {
-					return fmt.Errorf("unexpected name structure for form %s", filename)
-				}
+			res, ok := instances[0].(map[string]interface{})["attributes_flat"].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected structure attributes %s", filename)
+			}
 
-				published, ok := res["published"].(string)
-				if !ok {
-					return fmt.Errorf("unexpected published structure for form %s", filename)
-				}
+			name, ok := res["name"].(string)
+			if !ok {
+				return fmt.Errorf("unexpected name structure for form %s", filename)
+			}
 
-				if name == "test-published-form" {
-					if published == "true" {
-						log.Printf("Form with name '%s' is correctly exported as published\n", name)
-					} else {
-						return fmt.Errorf("Form with name '%s' is not correctly exported as published\n", name)
-					}
-				}
+			published, ok := res["published"].(string)
+			if !ok {
+				return fmt.Errorf("unexpected published structure for form %s", filename)
+			}
 
-				if name == "test-unpublished-form" {
-					if published == "false" {
-						log.Printf("Form with name '%s' is correctly exported as unpublished\n", name)
-					} else {
-						return fmt.Errorf("Form with name '%s' is not correctly exported as unpublished\n", name)
-					}
+			if name == "test-published-form" {
+				if published == "true" {
+					log.Printf("Form with name '%s' is correctly exported as published\n", name)
+				} else {
+					return fmt.Errorf("Form with name '%s' is not correctly exported as published\n", name)
 				}
 			}
-		} else {
-			return fmt.Errorf("no resources found in exported data")
+
+			if name == "test-unpublished-form" {
+				if published == "false" {
+					log.Printf("Form with name '%s' is correctly exported as unpublished\n", name)
+				} else {
+					return fmt.Errorf("Form with name '%s' is not correctly exported as unpublished\n", name)
+				}
+			}
 		}
+
 		return nil
 	}
 }

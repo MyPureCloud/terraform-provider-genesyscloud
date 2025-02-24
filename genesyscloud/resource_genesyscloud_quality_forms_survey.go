@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
@@ -384,17 +383,13 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		var published = false
-		if tfexporter_state.IsExporterActive() {
-			for _, s := range *formVersions.Entities {
-				if *s.Published == true {
-					published = true
-				}
+		for _, s := range *formVersions.Entities {
+			if *s.Published == true {
+				published = true
 			}
-
-			_ = d.Set("published", published)
-		} else {
-			_ = d.Set("published", *surveyForm.Published)
 		}
+
+		_ = d.Set("published", published)
 
 		_ = d.Set("disabled", *surveyForm.Disabled)
 
