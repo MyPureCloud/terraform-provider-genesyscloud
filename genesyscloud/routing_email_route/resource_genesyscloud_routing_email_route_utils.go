@@ -185,3 +185,9 @@ func GenerateRoutingEmailRouteResource(
 	fmt.Println(hh)
 	return hh
 }
+
+func mergeIntoExistingMap(target, source map[string][]platformclientv2.Inboundroute) {
+	for key, routes := range source {
+		target[key] = append(target[key], routes...)
+	}
+}
