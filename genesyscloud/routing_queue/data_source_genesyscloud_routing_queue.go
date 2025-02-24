@@ -11,7 +11,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
