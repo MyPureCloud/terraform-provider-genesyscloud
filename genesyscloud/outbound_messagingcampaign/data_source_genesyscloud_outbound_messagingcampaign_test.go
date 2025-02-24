@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	obDigRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -83,6 +84,14 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 				),
 			),
 		)
+
+		// Ruleset
+		digRuleSetResourceLabel   = "ruleset"
+		ruleSetName               = "a tf test digitalruleset " + uuid.NewString()
+		digitalRulesetResource, _ = obDigRuleset.GenerateSimpleOutboundDigitalRuleSet(
+			digRuleSetResourceLabel,
+			ruleSetName,
+		)
 	)
 
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
@@ -103,14 +112,6 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 		//Do not delete the smsPhoneNumber
 	}
 
-	// Rule Set
-	testRuleSetId, err := GetOutboundDigitalRuleSets()
-
-	if err != nil || testRuleSetId == "" {
-		testRuleSetId = "cb0f5633-53db-4e52-933e-0538f15a08bc"
-		t.Log("Error retrieving Rule Set Id")
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -119,6 +120,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 				Config: contactListResource +
 					contactListFilterResource +
 					callableTimeSetResource +
+					digitalRulesetResource +
 					generateOutboundMessagingCampaignResource(
 						resourceLabel,
 						digitalCampaignName,
@@ -129,7 +131,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceLabel+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
-						[]string{}, // rule_set_ids
+						[]string{obDigRuleset.ResourceType + "." + digRuleSetResourceLabel + ".id"}, // rule_set_ids
 						generateOutboundMessagingCampaignSmsConfig(
 							column1,
 							column1,
