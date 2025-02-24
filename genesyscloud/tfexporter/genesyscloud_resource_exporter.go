@@ -145,7 +145,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	}
 
 	gre := &GenesysCloudResourceExporter{
-		exportFormat:         strings.ToLower(d.Get("export_format").(string)),
+		exportFormat:         identifyExportFormat(d),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
@@ -173,6 +173,12 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	return gre, nil
 }
 
+func identifyExportFormat(d *schema.ResourceData) string {
+	if d.Get("export_as_hcl").(bool) {
+		return formatHCL
+	}
+	return strings.ToLower(d.Get("export_format").(string))
+}
 func computeDependsOn(d *schema.ResourceData) bool {
 	addDependsOn := d.Get("enable_dependency_resolution").(bool)
 	if addDependsOn {

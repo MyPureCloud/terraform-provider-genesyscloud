@@ -100,7 +100,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue::.*-prod"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -160,7 +160,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabels(t *t
 			strconv.Quote("genesyscloud_routing_queue::include filter test - foo - bar me"),   // Unsanitized Label Resource
 			strconv.Quote("genesyscloud_routing_queue::include_filter_test_-_fu_-_barre_you"), // Sanitized Label Resource
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -232,7 +232,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 			strconv.Quote("genesyscloud_routing_queue::.*-prod"),
 			strconv.Quote("genesyscloud_routing_wrapupcode"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -307,7 +307,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -392,7 +392,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.TrueValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -470,7 +470,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -676,7 +676,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_user::" + userEmail1)},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_user." + userResourceLabel1)},
 				),
@@ -718,7 +718,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 						strconv.Quote("genesyscloud_routing_queue::" + queueName),
 					},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_user." + userResourceLabel1)},
 				),
@@ -764,7 +764,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueResourceLabel),
@@ -823,7 +823,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueResourceLabel),
@@ -879,7 +879,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -944,7 +944,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -1088,7 +1088,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
 					"",
-					"hcl",
+					strconv.Quote("hcl"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_quality_forms_evaluation." + formResourceLabel),
@@ -1194,7 +1194,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
 					"",
-					"hcl",
+					strconv.Quote("hcl"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueLabel),
@@ -1258,7 +1258,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.TrueValue,
 					[]string{}),
 				Check: resource.ComposeTestCheckFunc(
@@ -1282,7 +1282,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.TrueValue,
 					[]string{}),
 				ExpectError: regexp.MustCompile(otherErrorMessage),
@@ -1302,7 +1302,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{}),
 				ExpectError: regexp.MustCompile(logAttrInfo),
@@ -1372,7 +1372,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceLabel),
@@ -1409,7 +1409,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceLabel),
@@ -1478,7 +1478,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
 					},
-					"json", // export_format attribute
+					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
 					[]string{},
 				),
@@ -1539,7 +1539,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 			strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
 		},
-		"hcl",
+		strconv.Quote("hcl"),
 		util.TrueValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -1790,7 +1790,7 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 						strconv.Quote("genesyscloud_architect_user_prompt::" + hPromptNameAttr),
 						strconv.Quote("genesyscloud_architect_user_prompt::" + zPromptNameAttr),
 					},
-					"json", // export_format attribute
+					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + dPromptResourceLabel),
@@ -1930,9 +1930,9 @@ resource "genesyscloud_routing_queue" "queue" {
 				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
 					resourceLabel,
 					exportTestDir,
-					util.FalseValue, // include_state_file
-					"json",          // export_format attribute
-					util.TrueValue,  // enable_dependency_resolution
+					util.FalseValue,       // include_state_file
+					strconv.Quote("json"), // export_format attribute
+					util.TrueValue,        // enable_dependency_resolution
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
@@ -1959,9 +1959,9 @@ resource "genesyscloud_routing_queue" "queue" {
 				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
 					resourceLabel,
 					exportTestDir,
-					util.TrueValue, // include_state_file
-					"json",         // export_format attribute
-					util.TrueValue, // enable_dependency_resolution
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format attribute
+					util.TrueValue,        // enable_dependency_resolution
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
@@ -1988,9 +1988,9 @@ resource "genesyscloud_routing_queue" "queue" {
 				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
 					resourceLabel,
 					exportTestDir,
-					util.TrueValue,  // include_state_file
-					"json",          // export_format attribute
-					util.FalseValue, // enable_dependency_resolution
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format attribute
+					util.FalseValue,       // enable_dependency_resolution
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
@@ -2202,7 +2202,7 @@ create_duration = "100s"
 			[]string{
 				strconv.Quote("genesyscloud_flow::" + flowName),
 			},
-			"json",
+			strconv.Quote("json"),
 			util.FalseValue,
 			util.TrueValue,
 		)
@@ -2251,7 +2251,7 @@ func TestAccResourceExporterFormat(t *testing.T) {
 			{
 				Config: generateTfExportResource_exportFormat(
 					exportResourceLabel1,
-					"hcl_json",
+					strconv.Quote("hcl_json"),
 					[]string{"genesyscloud_journey_segment"},
 					exportTestDir,
 				),
