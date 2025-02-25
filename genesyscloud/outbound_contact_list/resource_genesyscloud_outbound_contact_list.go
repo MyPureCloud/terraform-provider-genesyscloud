@@ -14,18 +14,19 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllOutboundContactLists(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	proxy := getOutboundContactlistProxy(clientConfig)
+	proxy := GetOutboundContactlistProxy(clientConfig)
 
-	contactLists, resp, getErr := proxy.getAllOutboundContactlist(ctx)
+	contactLists, resp, getErr := proxy.GetAllOutboundContactlist(ctx)
 	if getErr != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get contact lists error: %s", getErr), resp)
 	}
@@ -44,9 +45,10 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
+	trimWhitespace := d.Get("trim_whitespace").(bool)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
@@ -57,6 +59,7 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
+		TrimWhitespace:               &trimWhitespace,
 	}
 
 	if name != "" {
@@ -78,6 +81,12 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	d.SetId(*outboundContactList.Id)
 
 	log.Printf("Created Outbound Contact List %s %s", name, *outboundContactList.Id)
+
+	diagErr := uploadOutboundContactListBulkContacts(ctx, d, meta)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	return readOutboundContactList(ctx, d, meta)
 }
 
@@ -88,9 +97,10 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
+	trimWhitespace := d.Get("trim_whitespace").(bool)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
@@ -101,6 +111,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
+		TrimWhitespace:               &trimWhitespace,
 	}
 
 	if name != "" {
@@ -126,19 +137,24 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		return diagErr
 	}
 
+	diagErr = uploadOutboundContactListBulkContacts(ctx, d, meta)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	log.Printf("Updated Outbound Contact List %s", name)
 	return readOutboundContactList(ctx, d, meta)
 }
 
 func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList(), constants.DefaultConsistencyChecks, ResourceType)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundContactList(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Contact List %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		sdkContactList, resp, getErr := proxy.getOutboundContactlistById(ctx, d.Id())
+		sdkContactList, resp, getErr := proxy.GetOutboundContactlistById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List %s | error: %s", d.Id(), getErr), resp))
@@ -179,6 +195,17 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		if sdkContactList.ColumnDataTypeSpecifications != nil {
 			_ = d.Set("column_data_type_specifications", flattenSdkOutboundContactListColumnDataTypeSpecifications(*sdkContactList.ColumnDataTypeSpecifications))
 		}
+		if sdkContactList.TrimWhitespace != nil {
+			_ = d.Set("trim_whitespace", *sdkContactList.TrimWhitespace)
+		}
+
+		if sdkContactList.Id != nil {
+			contactListRecordsCount, _, err := proxy.getOutboundContactlistContactRecordLength(ctx, *sdkContactList.Id)
+			if err != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List's records %s | error: %s", d.Id(), err), resp))
+			}
+			d.Set("contacts_record_count", contactListRecordsCount)
+		}
 
 		log.Printf("Read Outbound Contact List %s %s", d.Id(), *sdkContactList.Name)
 		return cc.CheckState(d)
@@ -187,7 +214,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 
 func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getOutboundContactlistProxy(sdkConfig)
+	proxy := GetOutboundContactlistProxy(sdkConfig)
 
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound Contact List")
@@ -202,7 +229,7 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getOutboundContactlistById(ctx, d.Id())
+		_, resp, err := proxy.GetOutboundContactlistById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Outbound Contact List deleted
@@ -214,4 +241,84 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound Contact List %s still exists", d.Id()), resp))
 	})
+}
+
+func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	filePath := d.Get("contacts_filepath").(string)
+	if filePath != "" {
+
+		sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+		cp := GetOutboundContactlistProxy(sdkConfig)
+
+		filePathHash, err := files.HashFileContent(filePath)
+		if err != nil {
+			return diag.Errorf("Failed to read file content hash: %v", err)
+		}
+
+		contactListId := d.Id()
+		contactListName := d.Get("name").(string)
+		contactsIdName := d.Get("contacts_id_name").(string)
+
+		if filePath == "" {
+			// Shouldn't happen because Terraform should detect this in the schema first
+			return diag.Errorf("File path is required")
+		}
+
+		if d.Get("contacts_file_content_hash") != filePathHash {
+			csvRecordsCount, err := files.GetCSVRecordCount(filePath)
+			if err != nil {
+				return diag.Errorf("Failed to get CSV record count: %v", err)
+			}
+
+			log.Printf("Clearing existing contacts on contact list %s in preparation for updating the latest contacts", contactListName)
+			resp, err := cp.clearContactListContacts(ctx, d.Id())
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear contacts on contact list %s error: %s", contactListName, err), resp)
+			}
+
+			_, diagErr := validateContactsRecordCount(ctx, cp, d.Id(), 0)
+			if diagErr != nil {
+				return diagErr
+			}
+
+			log.Printf("Uploading %d contact records to %s contact list", csvRecordsCount, contactListName)
+
+			if contactListId != "" {
+				_, err := cp.uploadContactListBulkContacts(ctx, contactListId, filePath, contactsIdName)
+				if err != nil {
+					return diag.Errorf("Failed to upload contact list bulk contacts: %v", err)
+				}
+			}
+
+			contactCount, diagErr := validateContactsRecordCount(ctx, cp, contactListId, csvRecordsCount)
+
+			d.Set("contacts_file_content_hash", filePathHash)
+			d.Set("contacts_record_count", contactCount)
+		}
+	}
+	return nil
+}
+
+// Validate number of contact records in a contact list
+func validateContactsRecordCount(ctx context.Context, cp *OutboundContactlistProxy, contactListId string, expectedRecordCount int) (recordCount int, err diag.Diagnostics) {
+	contactListContactsCount := 0
+	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+
+		// Sleep for 5 seconds before (re)trying as per documentation
+		// https://developer.genesys.cloud/routing/outbound/contactmanagement#manipulate-contact-list
+		time.Sleep(5 * time.Second)
+
+		contactListContactsCount, _, err := cp.getOutboundContactlistContactRecordLength(ctx, contactListId)
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
+		if expectedRecordCount != contactListContactsCount {
+			return retry.RetryableError(fmt.Errorf("Number of records in the CSV file (%d) does not match the number of records in the contact list via the API (%d). Retrying.", expectedRecordCount, contactListContactsCount))
+		}
+		return nil
+	})
+	if diagErr != nil {
+		return contactListContactsCount, diag.Errorf("Failed to validate number of records in the CSV file: %v", diagErr)
+	}
+	return contactListContactsCount, nil
 }

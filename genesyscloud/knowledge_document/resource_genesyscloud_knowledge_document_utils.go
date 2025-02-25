@@ -3,13 +3,25 @@ package knowledge_document
 import (
 	"context"
 	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
+
+const documentIDSeparator = ","
+
+func BuildDocumentResourceDataID(knowledgeDocumentId, knowledgeBaseId string) string {
+	return knowledgeDocumentId + documentIDSeparator + knowledgeBaseId
+}
+
+func parseDocumentResourceDataID(id string) (knowledgeDocumentID, knowledgeBaseID string) {
+	split := strings.Split(id, documentIDSeparator)
+	return split[0], split[1]
+}
 
 func buildDocumentAlternatives(requestIn map[string]interface{}) *[]platformclientv2.Knowledgedocumentalternative {
 	if alternativesIn, ok := requestIn["alternatives"].([]interface{}); ok {

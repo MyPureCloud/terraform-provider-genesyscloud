@@ -9,17 +9,23 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
+
+	"terraform-provider-genesyscloud/genesyscloud/platform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
-var orgDefaultCountryCode string
+const (
+	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
+	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
+)
 
 func init() {
 	// Set descriptions to support markdown syntax, this will be used in document generation
@@ -104,7 +110,7 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					Optional:     true,
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "sdk_debug.log"),
 					Description:  "Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log",
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
 				},
 				"token_pool_size": {
 					Type:         schema.TypeInt,
@@ -112,6 +118,22 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 					DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", 10),
 					Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 					ValidateFunc: validation.IntBetween(1, 20),
+				},
+				"log_stack_traces": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc(logStackTracesEnvVar, false),
+					Description: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible. 
+If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message 
+"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API. 
+If you encounter any stack traces, please report them so we can address the underlying issues.`, logStackTracesEnvVar),
+				},
+				"log_stack_traces_file_path": {
+					Type:             schema.TypeString,
+					Optional:         true,
+					Description:      fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is genesyscloud_stack_traces.log", logStackTracesFilePathEnvVar),
+					DefaultFunc:      schema.EnvDefaultFunc(logStackTracesFilePathEnvVar, "genesyscloud_stack_traces.log"),
+					ValidateDiagFunc: validateLogFilePath,
 				},
 				"gateway": {
 					Type:     schema.TypeSet,
@@ -237,14 +259,26 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 }
 
 type ProviderMeta struct {
-	Version      string
-	ClientConfig *platformclientv2.Configuration
-	Domain       string
-	Organization *platformclientv2.Organization
+	Version            string
+	Registry           string
+	Platform           *platform.Platform
+	ClientConfig       *platformclientv2.Configuration
+	Domain             string
+	Organization       *platformclientv2.Organization
+	DefaultCountryCode string
 }
 
 func configure(version string) schema.ConfigureContextFunc {
 	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+
+		platform := platform.GetPlatform()
+		platformValidationErr := platform.Validate()
+		if platformValidationErr != nil {
+			log.Printf("%v error during platform validation switching to defaults", platformValidationErr)
+		}
+
+		providerSourceRegistry := getRegistry(&platform, version)
+
 		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
 		if err != nil {
 			return nil, err
@@ -256,15 +290,63 @@ func configure(version string) schema.ConfigureContextFunc {
 		if err != nil {
 			return nil, err
 		}
-		orgDefaultCountryCode = *currentOrg.DefaultCountryCode
 
-		return &ProviderMeta{
-			Version:      version,
-			ClientConfig: defaultConfig,
-			Domain:       getRegionDomain(data.Get("aws_region").(string)),
-			Organization: currentOrg,
-		}, nil
+		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
+
+		meta := &ProviderMeta{
+			Version:            version,
+			Platform:           &platform,
+			Registry:           providerSourceRegistry,
+			ClientConfig:       defaultConfig,
+			Domain:             getRegionDomain(data.Get("aws_region").(string)),
+			Organization:       currentOrg,
+			DefaultCountryCode: *currentOrg.DefaultCountryCode,
+		}
+
+		setProviderMeta(meta)
+
+		return meta, nil
+
 	}
+}
+
+// getRegistry determines the appropriate registry URL based on the platform and version.
+// It handles special cases for developer versions (0.1.0) and platform-specific registries.
+//
+// Parameters:
+//
+//	platform: *platform.Platform - The platform configuration (must not be nil)
+//	version: string - The version string in semver format (e.g., "1.2.3")
+//
+// Returns:
+//
+//	string: The determined registry URL
+//	error: Any error encountered during processing
+//
+// Special cases:
+//   - Version "0.1.0" (development version) always returns "genesys.com"
+//   - If platform.GetProviderRegistry() returns empty, falls back to "registry.terraform.io"
+func getRegistry(platform *platform.Platform, version string) string {
+
+	defaultRegistry := "registry.terraform.io"
+	devRegistry := "genesys.com"
+
+	if platform == nil {
+		return defaultRegistry // Default fallback
+	}
+
+	// Accounting for custom builds, we return this convention
+	if version == "0.1.0" {
+		return devRegistry
+	}
+
+	// Otherwise allow the platform to determine the registry as the registry is directly
+	// tied to the specific platform (i.e., terraform vs opentofu)
+	registry := platform.GetProviderRegistry()
+	if registry == "" {
+		registry = defaultRegistry
+	}
+	return registry
 }
 
 func getOrganizationMe(defaultConfig *platformclientv2.Configuration) (*platformclientv2.Organization, diag.Diagnostics) {
@@ -343,7 +425,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log RequestLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
 			sdkDebugResponse := newSDKDebugResponse(response)
@@ -352,7 +434,7 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 			if err != nil {
 				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
-			log.Printf(jsonStr)
+			log.Println(jsonStr)
 		},
 	}
 

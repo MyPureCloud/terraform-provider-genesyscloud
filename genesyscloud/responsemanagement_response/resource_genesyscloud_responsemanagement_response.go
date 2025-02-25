@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -69,7 +69,7 @@ func createResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponsemanagementResponse(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Responsemanagement Response %s", d.Id())
 

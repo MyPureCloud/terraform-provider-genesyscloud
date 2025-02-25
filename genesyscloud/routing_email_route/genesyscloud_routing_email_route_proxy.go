@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -119,7 +120,7 @@ func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 	const pageSize = 100
 	var apiResponse *platformclientv2.APIResponse
 
-	domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, 1, false, "")
+	domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, 1, false, domainId)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
 	}
@@ -127,19 +128,20 @@ func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 		return &allInboundRoutes, resp, nil
 	}
 
-	// If domainID is given, we only return the routes for that specific domain
-	if domainId != "" {
-		return getAllRoutingEmailRouteByDomainIdFn(ctx, p, domains, name)
-	}
-
 	// DomainID not given so we must acquire every route for every domain
-
 	routes, _, err := getAllRoutingEmailRouteByDomainIdFn(ctx, p, domains, name)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
 	}
-	allInboundRoutes = *routes
 
+	allInboundRoutes = *routes
+	// If domainID is given, we only return the routes for that specific domain
+	if domainId != "" {
+		log.Printf("Returning routes for domain ID: %s", domainId)
+		return &allInboundRoutes, apiResponse, nil
+	}
+
+	// DomainID not given so we must acquire every route for every domain
 	for pageNum := 2; pageNum <= *domains.PageCount; pageNum++ {
 		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if err != nil {
@@ -153,8 +155,9 @@ func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 		if err != nil {
 			return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
 		}
-		allInboundRoutes = *routes
+		mergeIntoExistingMap(allInboundRoutes, *routes)
 	}
+	log.Printf("Returning routes for domains: %v", reflect.ValueOf(allInboundRoutes).MapKeys())
 	return &allInboundRoutes, apiResponse, nil
 }
 
@@ -208,7 +211,7 @@ func getRoutingEmailRouteIdByPatternFn(ctx context.Context, p *routingEmailRoute
 	for _, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
 			if *inboundRoute.Pattern == pattern {
-				log.Printf("Retrieved the routing email route id %s by pattern %s", *inboundRoute.Id, pattern)
+				log.Printf("Retrieved the routing email route id %s by pattern %s for DomainID %s", *inboundRoute.Id, pattern, domainId)
 				return *inboundRoute.Id, false, resp, nil
 			}
 		}

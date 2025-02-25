@@ -40,7 +40,7 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 
 ### Required
 
-- `column_names` (List of String) The names of the contact data columns. Changing the column_names attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
+- `column_names` (List of String) The names of the contact data columns. Changing the column_names attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID
 - `name` (String) The name for the contact list.
 
 ### Optional
@@ -48,15 +48,20 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 - `attempt_limit_id` (String) Attempt Limit for this ContactList.
 - `automatic_time_zone_mapping` (Boolean) Indicates if automatic time zone mapping is to be used for this ContactList. Changing the automatic_time_zone_mappings attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
 - `column_data_type_specifications` (Block List) The settings of the columns selected for dynamic queueing. If updated, the contact list is dropped and recreated with a new ID (see [below for nested schema](#nestedblock--column_data_type_specifications))
+- `contacts_filepath` (String) The path to a CSV file containing contacts to import into the contact list. When updated, existing contacts will be removed and replaced with contacts from the new file. If not specified, an empty contact list will be created.
+- `contacts_id_name` (String) The name of the column in the CSV file that contains the contact's unique contact id. If updated, the contact list is dropped and recreated with a new ID
 - `division_id` (String) The division this entity belongs to.
-- `email_columns` (Block Set) Indicates which columns are email addresses. Changing the email_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if phone_columns is empty (see [below for nested schema](#nestedblock--email_columns))
-- `phone_columns` (Block Set) Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID. Required if email_columns is empty (see [below for nested schema](#nestedblock--phone_columns))
+- `email_columns` (Block Set) Indicates which columns are email addresses. Changing the email_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if phone_columns is empty (see [below for nested schema](#nestedblock--email_columns))
+- `phone_columns` (Block Set) Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns is empty (see [below for nested schema](#nestedblock--phone_columns))
 - `preview_mode_accepted_values` (List of String) The values in the previewModeColumnName column that indicate a contact should always be dialed in preview mode.
 - `preview_mode_column_name` (String) A column to check if a contact should always be dialed in preview mode.
+- `trim_whitespace` (Boolean) Indicates if leading and trailing whitespace will be trimmed when importing a contactlist CSV file
 - `zip_code_column_name` (String) The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automaticTimeZoneMapping' is set to true. Changing the zip_code_column_name attribute will cause the outboundcontact_list object to be dropped and recreated with a new ID
 
 ### Read-Only
 
+- `contacts_file_content_hash` (String) The hash of the contacts file to import. This is retained as a computed value in the state in order to detect when a file's contents have changed.
+- `contacts_record_count` (Number) The number of contacts in the contact list. This is a read-only attribute and sanity check
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--column_data_type_specifications"></a>
@@ -65,12 +70,12 @@ resource "genesyscloud_outbound_contact_list" "contact-list" {
 Required:
 
 - `column_name` (String) The column name of a column selected for dynamic queueing.
-- `max_length` (Number) The maximum length of the text column selected for dynamic queueing.
 
 Optional:
 
 - `column_data_type` (String) The data type of the column selected for dynamic queueing (TEXT, NUMERIC or TIMESTAMP)
 - `max` (Number) The maximum length of the numeric column selected for dynamic queueing.
+- `max_length` (Number) The maximum length of the text column selected for dynamic queueing.
 - `min` (Number) The minimum length of the numeric column selected for dynamic queueing.
 
 

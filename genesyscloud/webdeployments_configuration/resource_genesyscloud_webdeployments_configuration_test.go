@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -69,6 +69,12 @@ type scConfig struct {
 	enabledCategories []scEnabledCategoryConfig
 	styleSetting      scStyleSettingConfig
 	feedbackEnabled   bool
+}
+
+type authSettings struct {
+	enabled             bool
+	integrationId       string
+	allowSessionUpgrade bool
 }
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
@@ -162,6 +168,18 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 		channels       = []string{strconv.Quote("Webmessaging")}
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
+
+		authenticationSettings1 = authSettings{
+			enabled:             true,
+			integrationId:       uuid.NewString(),
+			allowSessionUpgrade: true,
+		}
+
+		authenticationSettings2 = authSettings{
+			enabled:             false,
+			integrationId:       authenticationSettings1.integrationId,
+			allowSessionUpgrade: false,
+		}
 	)
 
 	cleanupWebDeploymentsConfiguration(t, "Test Configuration ")
@@ -171,7 +189,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel1,
 					kbName1,
 					kbDesc1,
@@ -184,12 +202,14 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						util.TrueValue,
 						util.TrueValue,
 						util.TrueValue,
+						util.TrueValue,
 						channels,
 						[]string{strconv.Quote("selector-one")},
 						[]string{strconv.Quote("selector-one")},
 						generatePauseCriteria("/sensitive", "Includes"),
 						generatePauseCriteria("/login", "Equals"),
 					),
+					generateAuthenticationSettings(authenticationSettings1),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", configName),
@@ -253,6 +273,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_control", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_navigation", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_draw", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.channels.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.channels.0", "Webmessaging"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.mask_selectors.#", "1"),
@@ -299,11 +320,15 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.0.percentage", "33"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.event_name", "scroll-depth-event-2"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.percentage", "66"),
+
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.enabled", strconv.FormatBool(authenticationSettings1.enabled)),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.integration_id", authenticationSettings1.integrationId),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.allow_session_upgrade", strconv.FormatBool(authenticationSettings1.allowSessionUpgrade)),
 				),
 			},
 			{
 				// Update cobrowse settings
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel1,
 					kbName1,
 					kbDesc1,
@@ -316,12 +341,14 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						util.FalseValue,
 						util.FalseValue,
 						util.FalseValue,
+						util.FalseValue,
 						channelsUpdate,
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
 						generatePauseCriteria("/sensitive", "Includes"),
 						generatePauseCriteria("/login", "Equals"),
 					),
+					generateAuthenticationSettings(authenticationSettings2),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", configName),
@@ -345,6 +372,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.enabled", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_control", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_navigation", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_draw", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.channels.#", "2"),
 					util.ValidateStringInArray(resourcePath, "cobrowse.0.channels", "Webmessaging"),
 					util.ValidateStringInArray(resourcePath, "cobrowse.0.channels", "Voice"),
@@ -393,6 +421,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.0.percentage", "33"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.event_name", "scroll-depth-event-2"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.scroll_depth_event.1.percentage", "66"),
+
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.enabled", strconv.FormatBool(authenticationSettings2.enabled)),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.integration_id", authenticationSettings2.integrationId),
+					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.allow_session_upgrade", strconv.FormatBool(authenticationSettings2.allowSessionUpgrade)),
 				),
 			},
 			{
@@ -683,7 +715,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel1,
 					kbName1,
 					kbDesc1,
@@ -785,7 +817,7 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 				),
 			},
 			{
-				Config: gcloud.GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					kbResourceLabel2,
 					kbName2,
 					kbDesc2,
@@ -1048,19 +1080,20 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 	`, name, description, kbId, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, pauseCriteriaBlocks ...string) string {
+func generateWebDeploymentConfigCobrowseSettings(cbEnabled, cbAllowAgentControl string, cbAllowAgentNavigation string, cbAllowDraw string, cbChannels []string, cbMaskSelectors []string, cbReadonlySelectors []string, pauseCriteriaBlocks ...string) string {
 
 	return fmt.Sprintf(`
 	cobrowse {
 		enabled = %s
 		allow_agent_control = %s
 		allow_agent_navigation = %s
+		allow_draw = %s
 		channels = [ %s ]
 		mask_selectors = [ %s ]
 		readonly_selectors = [ %s ]
 		%s
 	}
-`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "), strings.Join(pauseCriteriaBlocks, "\n"))
+`, cbEnabled, cbAllowAgentControl, cbAllowAgentNavigation, cbAllowDraw, strings.Join(cbChannels, ", "), strings.Join(cbMaskSelectors, ", "), strings.Join(cbReadonlySelectors, ", "), strings.Join(pauseCriteriaBlocks, "\n"))
 }
 
 func generatePauseCriteria(urlFragment, condition string) string {
@@ -1167,6 +1200,16 @@ func generateSupportCenterSettings(supportCenter scConfig) string {
 		styleSetting,
 		strconv.FormatBool(supportCenter.feedbackEnabled),
 	)
+}
+
+func generateAuthenticationSettings(authSettings authSettings) string {
+	return fmt.Sprintf(`
+		authentication_settings {
+    		enabled        = %s
+    		integration_id = "%s"
+			allow_session_upgrade = %s
+  		}
+	`, strconv.FormatBool(authSettings.enabled), authSettings.integrationId, strconv.FormatBool(authSettings.allowSessionUpgrade))
 }
 
 func verifyConfigurationDestroyed(state *terraform.State) error {

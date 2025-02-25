@@ -3,14 +3,16 @@ package outbound_campaign
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	location "terraform-provider-genesyscloud/genesyscloud/location"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
 
@@ -25,7 +27,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -55,7 +57,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		ruleSetResourceLabel     = "rule_set"
 		siteId                   = "site"
 		callableTimeSetId        = "time_set"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 
 		contactSortFieldName = "zipcode"
@@ -67,6 +69,10 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		callerAddressUpdated = "+353371112111"
 		divResourceLabel     = "test-division"
 		divName              = "terraform-" + uuid.NewString()
+
+		resourcePath = ResourceType + "." + resourceLabel
+
+		description = "Terraform test description"
 	)
 
 	emergencyNumber := "+13178793428"
@@ -108,6 +114,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		wrapupCodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
+		description,
 	) + architect_flow.GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
@@ -220,6 +227,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+					nil,
+					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
 					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
@@ -229,37 +238,37 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					generateDynamicContactQueueingSettingsBlock(util.TrueValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dialing_mode", dialingMode),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_name", callerName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_address", callerAddress),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "outbound_line_count", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "campaign_status", "off"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "abandon_rate", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "preview_time_out_seconds", "0"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "always_running", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "no_answer_timeout", "40"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "priority", "4"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.field_name", contactSortFieldName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.direction", contactSortDirection),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.numeric", contactSortNumeric),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dynamic_contact_queueing_settings.0.sort", util.TrueValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttr(resourcePath, "outbound_line_count", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "campaign_status", "off"),
+					resource.TestCheckResourceAttr(resourcePath, "abandon_rate", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "preview_time_out_seconds", "0"),
+					resource.TestCheckResourceAttr(resourcePath, "always_running", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "no_answer_timeout", "40"),
+					resource.TestCheckResourceAttr(resourcePath, "priority", "4"),
+					resource.TestCheckResourceAttr(resourcePath, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.field_name", contactSortFieldName),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.direction", contactSortDirection),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
+					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", util.TrueValue),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "callable_time_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_filter_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "dnc_list_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "dnc_list_ids.0",
 						"genesyscloud_outbound_dnclist."+dncListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "rule_set_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "rule_set_ids.0",
 						"genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "site_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_campaign."+resourceLabel),
+					provider.TestDefaultHomeDivision(resourcePath),
 				),
 			},
 			{
@@ -289,6 +298,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+					[]string{strconv.Quote("en-us")},
+					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
 					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
@@ -298,37 +309,37 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					generateDynamicContactQueueingSettingsBlock(util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dialing_mode", dialingMode),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_name", callerName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_address", callerAddress),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "outbound_line_count", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "campaign_status", "off"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "abandon_rate", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "preview_time_out_seconds", "0"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "always_running", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "no_answer_timeout", "40"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "priority", "4"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.field_name", contactSortFieldName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.direction", contactSortDirection),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.numeric", contactSortNumeric),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttr(resourcePath, "outbound_line_count", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "campaign_status", "off"),
+					resource.TestCheckResourceAttr(resourcePath, "abandon_rate", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "preview_time_out_seconds", "0"),
+					resource.TestCheckResourceAttr(resourcePath, "always_running", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "no_answer_timeout", "40"),
+					resource.TestCheckResourceAttr(resourcePath, "priority", "4"),
+					resource.TestCheckResourceAttr(resourcePath, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.field_name", contactSortFieldName),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.direction", contactSortDirection),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
+					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "callable_time_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_filter_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "dnc_list_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "dnc_list_ids.0",
 						"genesyscloud_outbound_dnclist."+dncListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "rule_set_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "rule_set_ids.0",
 						"genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "site_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_campaign."+resourceLabel),
+					provider.TestDefaultHomeDivision(resourcePath),
 				),
 			},
 			{
@@ -358,6 +369,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 					[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+					nil,
+					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
 					outbound.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
@@ -367,41 +380,41 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					generateDynamicContactQueueingSettingsBlock(util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", nameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dialing_mode", dialingMode),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_name", callerNameUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_address", callerAddressUpdated),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "outbound_line_count", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "abandon_rate", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "preview_time_out_seconds", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "always_running", util.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "no_answer_timeout", "30"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "priority", "3"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.field_name", contactSortFieldName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.direction", contactSortDirection),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.numeric", contactSortNumeric),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dynamic_contact_queueing_settings.0.sort", "false"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", nameUpdated),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerNameUpdated),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddressUpdated),
+					resource.TestCheckResourceAttr(resourcePath, "outbound_line_count", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "abandon_rate", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "preview_time_out_seconds", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "always_running", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "no_answer_timeout", "30"),
+					resource.TestCheckResourceAttr(resourcePath, "priority", "3"),
+					resource.TestCheckResourceAttr(resourcePath, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.field_name", contactSortFieldName),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.direction", contactSortDirection),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
+					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", "false"),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "callable_time_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_filter_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "dnc_list_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "dnc_list_ids.0",
 						"genesyscloud_outbound_dnclist."+dncListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "rule_set_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "rule_set_ids.0",
 						"genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "site_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_campaign."+resourceLabel),
+					provider.TestDefaultHomeDivision(resourcePath),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_outbound_campaign." + resourceLabel,
+				ResourceName:            resourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"queue_id"},
@@ -420,13 +433,16 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		carResourceLabel         = "car"
 		siteId                   = "site"
 		wrapupCodeResourceLabel  = "wrapupcode"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 		flowResourceLabel        = "flow"
 		wrapupcodeResourceLabel  = "wrapupcode"
 		locationResourceLabel    = "location"
 		divResourceLabel         = "test-division"
 		divName                  = "terraform-" + uuid.NewString()
+
+		resourcePath = ResourceType + "." + resourceLabel
+		description  = "Terraform test description"
 	)
 
 	emergencyNumber := "+13178793429"
@@ -458,6 +474,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		wrapupcodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
+		description,
 	) + architect_flow.GenerateFlowResource(
 		flowResourceLabel,
 		outboundFlowFilePath,
@@ -516,7 +533,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: referencedResources + fmt.Sprintf(`
-					resource "genesyscloud_outbound_campaign" "%s" {
+					resource "%s" "%s" {
 						name                          = "%s"
 						dialing_mode                  = "agentless"
 						caller_name                   = "Test Name"
@@ -530,15 +547,15 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 							column_name = "Cell"
 						}
 					}
-					`, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
+					`, ResourceType, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "campaign_status", "off"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "campaign_status", "off"),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "site_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
 					// Add contacts to the contact list (because we have access to the state and can pull out the contactlist ID to pass to the API)
 					addContactsToContactList,
@@ -546,7 +563,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 			},
 			{
 				Config: referencedResources + fmt.Sprintf(`
-					resource "genesyscloud_outbound_campaign" "%s" {
+					resource "%s" "%s" {
 						name                          = "%s"
 						dialing_mode                  = "agentless"
 						caller_name                   = "Test Name"
@@ -560,21 +577,21 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 							column_name = "Cell"
 						}
 					}
-					`, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
+					`, ResourceType, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "site_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
-					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceLabel, "campaign_status", []string{"on", "complete"}),
+					util.VerifyAttributeInArrayOfPotentialValues(resourcePath, "campaign_status", []string{"on", "complete"}),
 				),
 			},
 			{
 				Config: referencedResources + fmt.Sprintf(`
-				resource "genesyscloud_outbound_campaign" "%s" {
+				resource "%s" "%s" {
 					name                          = "%s"
 					dialing_mode                  = "agentless"
 					caller_name                   = "Test Name"
@@ -588,21 +605,21 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 						column_name = "Cell"
 					}
 				}
-				`, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
+				`, ResourceType, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceLabel, "campaign_status", []string{"off", "complete"}),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					util.VerifyAttributeInArrayOfPotentialValues(resourcePath, "campaign_status", []string{"off", "complete"}),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "site_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_outbound_campaign." + resourceLabel,
+				ResourceName:            resourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"campaign_status"},
@@ -620,13 +637,15 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 		contactListResourceLabel = "contact_list"
 		carResourceLabel         = "car"
 		siteId                   = "site"
-		outboundFlowFilePath     = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		flowName                 = "test flow " + uuid.NewString()
 		flowResourceLabel        = "flow"
 		wrapupcodeResourceLabel  = "wrapupcode"
 		locationResourceLabel    = "location"
 		divResourceLabel         = "test-outbound-campaign-division"
 		divName                  = "terraform-" + uuid.NewString()
+
+		resourcePath = ResourceType + "." + resourceLabel
 	)
 
 	emergencyNumber := "+13178793430"
@@ -686,14 +705,14 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 						divResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "site_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
 						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
-					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_campaign."+resourceLabel, "campaign_status", []string{"on", "complete"}),
+					util.VerifyAttributeInArrayOfPotentialValues(resourcePath, "campaign_status", []string{"on", "complete"}),
 					func(s *terraform.State) error {
 						time.Sleep(300 * time.Second) // Takes approx. 300 seconds for campaign to be completed / stopped
 						return nil
@@ -702,7 +721,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_outbound_campaign." + resourceLabel,
+				ResourceName:            resourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"campaign_status"},
@@ -731,6 +750,8 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 		contactSortFieldName = "zipcode"
 		contactSortDirection = "ASC"
 		contactSortNumeric   = util.FalseValue
+
+		resourcePath = ResourceType + "." + resourceLabel
 	)
 
 	scriptId, err := getPublishedScriptId()
@@ -807,18 +828,20 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{},
 						[]string{},
 						[]string{},
+						[]string{},
+						util.FalseValue,
 						generatePhoneColumnNoTypeBlock("Cell"),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dialing_mode", dialingMode),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_name", callerName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_address", callerAddress),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "script_id", scriptId),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttr(resourcePath, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr(resourcePath, "script_id", scriptId),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "queue_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
 				),
 			},
@@ -850,6 +873,8 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{"genesyscloud_outbound_dnclist." + dncListResourceLabel + ".id"},
 						[]string{"genesyscloud_outbound_ruleset." + ruleSetResourceLabel + ".id"},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
+						[]string{strconv.Quote("language")},
+						util.FalseValue, // auto_answer
 						generatePhoneColumnNoTypeBlock("Cell"),
 						outbound.GenerateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
@@ -858,42 +883,44 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dialing_mode", dialingMode),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_name", callerName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_address", callerAddress),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "abandon_rate", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "outbound_line_count", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "skip_preview_disabled", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "preview_time_out_seconds", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "always_running", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.field_name", contactSortFieldName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.direction", contactSortDirection),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "contact_sorts.0.numeric", contactSortNumeric),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "no_answer_timeout", "3"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "priority", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "script_id", scriptId),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_filter_ids.0",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttr(resourcePath, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr(resourcePath, "abandon_rate", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "outbound_line_count", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "skip_preview_disabled", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "preview_time_out_seconds", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "always_running", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.field_name", contactSortFieldName),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.direction", contactSortDirection),
+					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
+					resource.TestCheckResourceAttr(resourcePath, "no_answer_timeout", "3"),
+					resource.TestCheckResourceAttr(resourcePath, "priority", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "script_id", scriptId),
+					resource.TestCheckResourceAttr(resourcePath, "skill_columns.0", "language"),
+					resource.TestCheckResourceAttr(resourcePath, "auto_answer", "false"),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_filter_ids.0",
 						"genesyscloud_outbound_contactlistfilter."+clfResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "dnc_list_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "dnc_list_ids.0",
 						"genesyscloud_outbound_dnclist."+dncListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "queue_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "call_analysis_response_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "rule_set_ids.0",
+					resource.TestCheckResourceAttrPair(resourcePath, "rule_set_ids.0",
 						"genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "callable_time_set_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceLabel, "id"),
-					provider.TestDefaultHomeDivision("genesyscloud_outbound_campaign."+resourceLabel),
+					provider.TestDefaultHomeDivision(resourcePath),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_campaign." + resourceLabel,
+				ResourceName:      resourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -915,6 +942,8 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 		locationResourceLabel    = "location"
 		siteId                   = "site"
 		carResourceLabel         = "car"
+
+		resourcePath = ResourceType + "." + resourceLabel
 	)
 
 	emergencyNumber := "+13178793431"
@@ -977,24 +1006,26 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						[]string{},
 						[]string{},
 						[]string{},
+						[]string{},
+						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.FalseValue, "0"),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dialing_mode", dialingMode),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_name", callerName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_address", callerAddress),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "max_calls_per_agent", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "outbound_line_count", "1"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttr(resourcePath, "max_calls_per_agent", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttr(resourcePath, "outbound_line_count", "1"),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "queue_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel,
+					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.enabled", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel,
+					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.relative_weight", "0"),
 				),
 			},
@@ -1026,31 +1057,33 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						[]string{},
 						[]string{},
 						[]string{},
+						[]string{},
+						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.TrueValue, "15"),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "dialing_mode", dialingMode),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_name", callerName),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "caller_address", callerAddress),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "max_calls_per_agent", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel, "phone_columns.0.column_name", "Cell"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "contact_list_id",
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttr(resourcePath, "max_calls_per_agent", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "phone_columns.0.column_name", "Cell"),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "queue_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaign."+resourceLabel, "queue_id",
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
 						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel,
+					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.enabled", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_campaign."+resourceLabel,
+					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.relative_weight", "15"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_outbound_campaign." + resourceLabel,
+				ResourceName:      resourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -1116,30 +1149,32 @@ func addContactsToContactList(state *terraform.State) error {
 }
 
 func generateOutboundCampaign(
-	resourceLabel string,
-	name string,
-	dialingMode string, // required
-	callerName string, // required
-	callerAddress string, // required
-	contactListId string, // required
-	campaignStatus string,
-	divisionId string,
-	scriptId string,
-	queueId string,
-	siteId string,
-	abandonRate string,
-	maxCallsPerAgent string,
-	callableTimeSetId string,
-	callAnalysisResponseSetId string,
-	outboundLineCount string,
-	skipPreviewDisabled string,
-	previewTimeOutSeconds string,
-	alwaysRunning string,
-	noAnswerTimeout string,
+	resourceLabel,
+	name,
+	dialingMode, // required
+	callerName, // required
+	callerAddress, // required
+	contactListId, // required
+	campaignStatus,
+	divisionId,
+	scriptId,
+	queueId,
+	siteId,
+	abandonRate,
+	maxCallsPerAgent,
+	callableTimeSetId,
+	callAnalysisResponseSetId,
+	outboundLineCount,
+	skipPreviewDisabled,
+	previewTimeOutSeconds,
+	alwaysRunning,
+	noAnswerTimeout,
 	priority string,
-	dncListIds []string,
-	ruleSetIds []string,
-	contactListFilterIds []string,
+	dncListIds,
+	ruleSetIds,
+	contactListFilterIds,
+	skillColumns []string,
+	autoAnswer string,
 	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`
@@ -1167,11 +1202,13 @@ resource "genesyscloud_outbound_campaign" "%s" {
 	dnc_list_ids                  = [%s]
 	rule_set_ids 			      = [%s]
 	contact_list_filter_ids       = [%s]
+	skill_columns				  = [%s]
+	auto_answer                   = %s
 	%s
 }
 `, resourceLabel, name, dialingMode, callerName, callerAddress, contactListId, campaignStatus, divisionId, scriptId, queueId, siteId, abandonRate, maxCallsPerAgent, callableTimeSetId,
 		callAnalysisResponseSetId, outboundLineCount, skipPreviewDisabled, previewTimeOutSeconds, alwaysRunning, noAnswerTimeout,
-		priority, strings.Join(dncListIds, ", "), strings.Join(ruleSetIds, ", "), strings.Join(contactListFilterIds, ", "),
+		priority, strings.Join(dncListIds, ", "), strings.Join(ruleSetIds, ", "), strings.Join(contactListFilterIds, ", "), strings.Join(skillColumns, ", "), autoAnswer,
 		strings.Join(nestedBlocks, "\n"))
 }
 
@@ -1183,7 +1220,7 @@ func generateDynamicContactQueueingSettingsBlock(sort string) string {
 	`, sort)
 }
 
-func generateDynamicLineBalancingSettingsBlock(enabled string, weight string) string {
+func generateDynamicLineBalancingSettingsBlock(enabled, weight string) string {
 	return fmt.Sprintf(`
 	dynamic_line_balancing_settings {
 		enabled = %s
@@ -1206,7 +1243,7 @@ func getPublishedScriptId() (string, error) {
 func testVerifyOutboundCampaignDestroyed(state *terraform.State) error {
 	outboundAPI := platformclientv2.NewOutboundApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_outbound_campaign" {
+		if rs.Type != ResourceType {
 			continue
 		}
 		campaign, resp, err := outboundAPI.GetOutboundCampaign(rs.Primary.ID)

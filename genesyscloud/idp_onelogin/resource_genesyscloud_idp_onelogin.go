@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -72,7 +72,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Onelogin: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin(), constants.DefaultConsistencyChecks, ResourceType)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOnelogin(), constants.ConsistencyChecks(), ResourceType)
 
 		if oneLogin.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*oneLogin.Certificate}))

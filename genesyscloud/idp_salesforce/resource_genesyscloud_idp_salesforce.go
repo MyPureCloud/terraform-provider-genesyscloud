@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -53,7 +53,7 @@ func createIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIdpSalesforceProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpSalesforce(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading IDP Salesforce")
 

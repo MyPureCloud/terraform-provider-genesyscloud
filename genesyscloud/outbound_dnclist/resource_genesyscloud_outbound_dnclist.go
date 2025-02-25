@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllOutboundDncLists(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -39,12 +39,12 @@ func getAllOutboundDncLists(ctx context.Context, clientConfig *platformclientv2.
 func createOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	contactMethod := d.Get("contact_method").(string)
+	customExclusionColumn, _ := d.Get("custom_exclusion_column").(string)
 	loginId := d.Get("login_id").(string)
 	campaignId := d.Get("campaign_id").(string)
 	licenseId := d.Get("license_id").(string)
 	dncSourceType := d.Get("dnc_source_type").(string)
 	dncCodes := lists.InterfaceListToStrings(d.Get("dnc_codes").([]interface{}))
-	customExclusionColumn, _ := d.Get("custom_exclusion_column").(string)
 	entries := d.Get("entries").([]interface{})
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -174,7 +174,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
 

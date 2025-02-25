@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -103,7 +103,7 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading architect_datatable %s", d.Id())
 

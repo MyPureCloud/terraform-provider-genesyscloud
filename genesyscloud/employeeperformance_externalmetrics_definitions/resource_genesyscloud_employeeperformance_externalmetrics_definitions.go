@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -74,7 +74,7 @@ func createEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *
 func readEmployeeperformanceExternalmetricsDefinition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getEmployeeperformanceExternalmetricsDefinitionProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceEmployeeperformanceExternalmetricsDefinition(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading employeeperformance externalmetrics definition %s", d.Id())
 

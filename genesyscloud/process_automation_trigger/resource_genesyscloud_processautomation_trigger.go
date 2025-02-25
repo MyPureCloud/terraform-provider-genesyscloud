@@ -13,7 +13,7 @@ import (
 
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -208,7 +208,7 @@ func createProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData,
 func readProcessAutomationTrigger(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceProcessAutomationTrigger(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading process automation trigger %s", d.Id())
 

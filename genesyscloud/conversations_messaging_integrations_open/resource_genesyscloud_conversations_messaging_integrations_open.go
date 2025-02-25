@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -68,7 +68,7 @@ func readConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.R
 
 	log.Printf("Reading conversations messaging integrations open %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsOpen(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsOpen(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		openIntegrationRequest, resp, err := proxy.getConversationsMessagingIntegrationsOpenById(ctx, d.Id())
@@ -97,7 +97,9 @@ func readConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.R
 			webhookPropsStr := string(webhookProps)
 			webhookPropsPtr = &webhookPropsStr
 		}
-		_ = d.Set("webhook_headers", *webhookPropsPtr)
+		if webhookPropsPtr != nil {
+			_ = d.Set("webhook_headers", *webhookPropsPtr)
+		}
 
 		log.Printf("Read conversations messaging integrations open %s %s", d.Id(), *openIntegrationRequest.Name)
 		return cc.CheckState(d)

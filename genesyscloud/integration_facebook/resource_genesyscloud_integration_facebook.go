@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -77,7 +77,7 @@ func readIntegrationFacebook(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Reading integration facebook ")
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFacebook(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFacebook(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		facebookIntegrationRequest, resp, getErr := proxy.getIntegrationFacebookById(ctx, d.Id())

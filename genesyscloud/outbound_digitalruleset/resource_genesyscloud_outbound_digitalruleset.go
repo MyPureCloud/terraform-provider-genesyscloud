@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -76,7 +76,7 @@ func readOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, met
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read outbound digitalruleset %s: %s", d.Id(), getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDigitalruleset(), constants.DefaultConsistencyChecks, ResourceType)
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDigitalruleset(), constants.ConsistencyChecks(), ResourceType)
 
 		resourcedata.SetNillableValue(d, "name", digitalRuleSet.Name)
 		resourcedata.SetNillableReference(d, "contact_list_id", digitalRuleSet.ContactList)

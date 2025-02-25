@@ -335,6 +335,12 @@ var (
 				Optional:    true,
 				Computed:    true,
 			},
+			"allow_draw": {
+				Description: "Whether drawing is enabled or not",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"channels": {
 				Description: "List of channels through which cobrowse is available (for now only Webmessaging and Voice)",
 				Type:        schema.TypeList,
@@ -747,6 +753,11 @@ var (
 				Description: "The integration identifier which contains the auth settings required on the deployment.",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"allow_session_upgrade": {
+				Description: "Allow end-users to upgrade an anonymous session to authenticated conversation.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 		},
 	}

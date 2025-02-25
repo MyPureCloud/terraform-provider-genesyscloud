@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -54,7 +54,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	}
 
 	for _, cred := range *credentials {
-		log.Printf("Dealing with credential id : %s", *cred.Id)
+		log.Printf("Dealing with credential id : %s, credential name : %s", *cred.Id, util.StringOrNil(cred.Name))
 		if cred.Name != nil { // Credential is possible to have no name
 
 			// Export integration credential only if it matches the expected format: DEVTOOLING-310
@@ -65,7 +65,7 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 			}
 			// Verify that the integration entity itself exist before exporting the integration credentials associated to it: DEVTOOLING-282
 			integrationId := strings.Split(*cred.Name, "Integration-")[1]
-			_, resp, err := ip.getIntegrationById(ctx, integrationId)
+			integration, resp, err := ip.getIntegrationById(ctx, integrationId)
 			if err != nil {
 				if util.IsStatus404(resp) {
 					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", integrationId, *cred.Id)
@@ -74,7 +74,8 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
 				}
 			}
-			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: *cred.Name}
+			blockLabel := fmt.Sprintf("%s_%s", *integration.Name, *cred.Name)
+			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 		}
 	}
 	return resources, nil
@@ -127,7 +128,7 @@ func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, 
 func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationCredsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationCredential(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading credential %s", d.Id())
 

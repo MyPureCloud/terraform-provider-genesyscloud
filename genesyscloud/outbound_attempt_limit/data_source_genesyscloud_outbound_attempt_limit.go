@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func DataSourceOutboundAttemptLimit() *schema.Resource {
@@ -51,9 +51,9 @@ func dataSourceOutboundAttemptLimitRead(ctx context.Context, d *schema.ResourceD
 
 func GenerateOutboundAttemptLimitDataSource(dataSourceLabel string, attemptLimitName string, dependsOn string) string {
 	return fmt.Sprintf(`
-data "genesyscloud_outbound_attempt_limit" "%s" {
+data "%s" "%s" {
 	name = "%s"
 	depends_on = [%s]
 }
-`, dataSourceLabel, attemptLimitName, dependsOn)
+`, ResourceType, dataSourceLabel, attemptLimitName, dependsOn)
 }

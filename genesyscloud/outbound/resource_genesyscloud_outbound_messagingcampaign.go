@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -25,7 +25,7 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
+		sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{}, "", "")
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error requesting page of Outbound Messagingcampaign error: %s", getErr), resp)
 		}
@@ -185,7 +185,7 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	outboundApi := platformclientv2.NewOutboundApiWithConfig(sdkConfig)
-	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.DefaultConsistencyChecks, resourceType)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundMessagingCampaign(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound Messaging Campaign %s", d.Id())
 
@@ -231,7 +231,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		if sdkMessagingCampaign.DncLists != nil {
-			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*sdkMessagingCampaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*sdkMessagingCampaign.DncLists))
 		}
 
 		log.Printf("Read Outbound Messaging Campaign %s", d.Id())

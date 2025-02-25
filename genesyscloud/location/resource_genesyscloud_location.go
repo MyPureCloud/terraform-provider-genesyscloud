@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -31,7 +31,18 @@ func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configu
 	}
 
 	for _, location := range *locations {
-		resources[*location.Id] = &resourceExporter.ResourceMeta{BlockLabel: *location.Name}
+		blockLabel := *location.Name
+		if location.Path != nil && len(*location.Path) > 0 {
+			// Get parent location to render distinct block label
+			parentLocation, resp, err := proxy.getLocationById(ctx, (*location.Path)[0], nil)
+			if err != nil {
+				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get parent location %s error: %s", (*location.Path)[0], err), resp)
+			}
+			if parentLocation != nil {
+				blockLabel = *parentLocation.Name + "_" + blockLabel
+			}
+		}
+		resources[*location.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 
 	return resources, nil
@@ -69,7 +80,7 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getLocationProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceLocation(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceLocation(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading location %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

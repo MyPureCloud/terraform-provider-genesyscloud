@@ -2,11 +2,12 @@ package external_contacts
 
 import (
 	"fmt"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -29,8 +30,9 @@ func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2
 	otherEmail := d.Get("other_email").(string)
 	surveyOptOut := d.Get("survey_opt_out").(bool)
 	externalSystemUrl := d.Get("external_system_url").(string)
+	externalOrganizationId := d.Get("external_organization_id").(string)
 
-	return platformclientv2.Externalcontact{
+	externalContact := platformclientv2.Externalcontact{
 		FirstName:         &firstName,
 		MiddleName:        &middleName,
 		LastName:          &lastName,
@@ -51,6 +53,12 @@ func getExternalContactFromResourceData(d *schema.ResourceData) platformclientv2
 		SurveyOptOut:      &surveyOptOut,
 		ExternalSystemUrl: &externalSystemUrl,
 	}
+
+	if externalOrganizationId != "" {
+		externalContact.ExternalOrganization = &platformclientv2.Externalorganization{Id: &externalOrganizationId}
+	}
+
+	return externalContact
 }
 
 // buildPhonenumberFromData is a helper method to map phone data to the GenesysCloud platformclientv2.PhoneNumber
@@ -332,9 +340,10 @@ func hashFormattedPhoneNumber(val string) int {
 	return schema.HashString(formattedNumber)
 }
 
-func GenerateBasicExternalContactResource(resourceLabel string, title string) string {
+func GenerateBasicExternalContactResource(resourceLabel string, title string, extras ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_externalcontacts_contact" "%s" {
 		title = "%s"
+		%s
 	}
-	`, resourceLabel, title)
+	`, resourceLabel, title, strings.Join(extras, "\n"))
 }

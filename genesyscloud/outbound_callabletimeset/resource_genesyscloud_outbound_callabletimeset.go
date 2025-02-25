@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -83,7 +83,7 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 
 	log.Printf("Reading Outbound Callabletimeset %s", d.Id())
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundCallabletimeset(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		callableTimeset, resp, getErr := proxy.getOutboundCallabletimesetById(ctx, d.Id())

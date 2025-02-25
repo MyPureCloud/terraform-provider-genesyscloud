@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // getAllIvrConfigs retrieves all architect IVRs and is used for the exporter
@@ -32,7 +32,13 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 	}
 
 	for _, entity := range *allIvrs {
-		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: *entity.Name}
+		var blockLabel string
+		if entity.OpenHoursFlow != nil && entity.OpenHoursFlow.Name != nil {
+			blockLabel = *entity.OpenHoursFlow.Name + "_" + *entity.Name
+		} else {
+			blockLabel = *entity.Name
+		}
+		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 	return resources, nil
 }
@@ -66,7 +72,7 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ap := getArchitectIvrProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectIvrConfig(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading IVR config %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

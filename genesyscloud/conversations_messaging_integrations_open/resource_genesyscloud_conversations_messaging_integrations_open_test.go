@@ -3,10 +3,11 @@ package conversations_messaging_integrations_open
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -23,7 +24,6 @@ tests for conversations_messaging_integrations_open.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
-	t.Parallel()
 	var (
 		resourceLabel                                   = "test_messaging_open"
 		name                                            = "Terraform Integrations Messaging Open " + uuid.NewString()
@@ -85,9 +85,18 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"outbound_notification_webhook_signature_secret_token"},
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
+				),
 			},
 		},
-		CheckDestroy: testVerifyConversationsMessagingIntegrationsOpenDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifyConversationsMessagingIntegrationsOpenDestroyed(state)
+		},
 	})
 }
 

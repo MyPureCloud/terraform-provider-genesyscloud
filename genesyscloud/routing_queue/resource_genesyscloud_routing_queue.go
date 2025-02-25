@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -30,20 +30,32 @@ var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
 func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := GetRoutingQueueProxy(clientConfig)
+	var allQueues []platformclientv2.Queue
 
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
+	// Gets all routing queues without a peer
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
 
-	if queues == nil || len(*queues) == 0 {
-		return resources, nil
+	if queues != nil || len(*queues) != 0 {
+		allQueues = append(allQueues, *queues...)
 	}
 
-	for _, queue := range *queues {
+	// Gets all routing queues with a peer
+	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
+	}
+
+	if queues != nil || len(*queues) != 0 {
+		allQueues = append(allQueues, *queues...)
+	}
+
+	for _, queue := range allQueues {
 		resources[*queue.Id] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name}
 	}
 
@@ -89,6 +101,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -149,7 +162,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading queue %s", d.Id())
 
@@ -189,7 +202,6 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaEmailSetting)
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSetting)
 		}
-
 		_ = d.Set("outbound_messaging_sms_address_id", nil)
 		_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)
 		_ = d.Set("outbound_messaging_open_messaging_recipient_id", nil)
@@ -212,6 +224,9 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		if currentQueue.Bullseye != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
+		}
+		if currentQueue.CannedResponseLibraries != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -316,6 +331,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)

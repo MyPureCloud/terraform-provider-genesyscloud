@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourcePath string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -663,24 +663,15 @@ func testVerifyAllDivisionsAssigned(resourcePath string, attrName string) resour
 			allAuthDivisionIds = append(allAuthDivisionIds, id)
 		}
 
-		// Preventing a large n² comparison equation from executing
-		maxLengthForListItemComparision := 20
-		if len(allAuthDivisionIds) < maxLengthForListItemComparision {
-			// member_division_ids should not contain more than one item when the value of an item is "*"
-			if lists.ItemInSlice("*", skillGroupMemberDivisionIds) {
-				return nil
-			} else if lists.AreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
-				return nil
-			} else {
-				return fmt.Errorf("Expected %s to equal the list of all auth divisions", attrName)
-			}
-		}
-
-		if len(allAuthDivisionIds) == len(skillGroupMemberDivisionIds) {
+		// member_division_ids should not contain more than one item when the value of an item is "*"
+		if lists.ItemInSlice("*", skillGroupMemberDivisionIds) {
 			return nil
+		} else if lists.AreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
+			return nil
+		} else {
+			return fmt.Errorf("Expected %s to equal the list of all auth divisions", attrName)
 		}
 
-		return fmt.Errorf("Expected %s length to equal the number of all auth divisions", attrName)
 	}
 }
 

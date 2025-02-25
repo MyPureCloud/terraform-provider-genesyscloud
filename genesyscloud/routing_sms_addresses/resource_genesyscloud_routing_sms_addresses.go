@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 const ResourceType = "genesyscloud_routing_sms_address"
@@ -94,7 +94,7 @@ func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {

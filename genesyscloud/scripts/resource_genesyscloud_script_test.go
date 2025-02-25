@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -13,25 +12,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
    Testcases for the resources schema
 */
 
-func getTestDataPath(elem ...string) string {
-	basePath := filepath.Join("..", "..", "test", "data")
-	subPath := filepath.Join(elem...)
-	return filepath.Join(basePath, subPath)
-}
-
 func TestAccResourceScriptBasic(t *testing.T) {
 	var (
 		resourceLabel = "script"
 		name          = "testscriptname" + uuid.NewString()
 		nameUpdated   = "testscriptname" + uuid.NewString()
-		filePath      = getTestDataPath("resource", ResourceType, "test_script.json")
+		filePath      = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
 		substitutions = make(map[string]string)
 	)
 
@@ -86,7 +79,7 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 	var (
 		resourceLabel       = "script-subs"
 		name                = "testscriptname" + uuid.NewString()
-		filePath            = getTestDataPath("resource", ResourceType, "test_script.json")
+		filePath            = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
 		substitutions       = make(map[string]string)
 		substitutionsUpdate = make(map[string]string)
 
@@ -163,8 +156,6 @@ func getScriptId(scriptResourcePath string, id *string) resource.TestCheckFunc {
 }
 
 func generateScriptResource(resourceLabel, scriptName, filePath, substitutions string) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(filePath)
-	normalizeFilePath := testrunner.NormalizeSlash(filePath)
 	return fmt.Sprintf(`
 resource "%s" "%s" {
 	script_name       = "%s"
@@ -172,7 +163,7 @@ resource "%s" "%s" {
 	file_content_hash = filesha256("%s")
 	%s
 }
-	`, ResourceType, resourceLabel, scriptName, normalizeFilePath, fullyQualifiedPath, substitutions)
+	`, ResourceType, resourceLabel, scriptName, filePath, filePath, substitutions)
 }
 
 func testVerifyScriptDestroyed(state *terraform.State) error {

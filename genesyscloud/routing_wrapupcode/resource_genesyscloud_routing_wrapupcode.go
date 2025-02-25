@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -59,7 +59,7 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingWrapupcodeProxy(sdkConfig)
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading wrapupcode %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -75,6 +75,7 @@ func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta int
 		if wrapupcode.Division != nil && wrapupcode.Division.Id != nil {
 			_ = d.Set("division_id", *wrapupcode.Division.Id)
 		}
+		resourcedata.SetNillableValue(d, "description", wrapupcode.Description)
 
 		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
 		return cc.CheckState(d)
@@ -127,9 +128,11 @@ func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta i
 
 func buildWrapupCodeFromResourceData(d *schema.ResourceData) *platformclientv2.Wrapupcoderequest {
 	name := d.Get("name").(string)
+	description := d.Get("description").(string)
 	divisionId, _ := d.Get("division_id").(string)
 	wrapupCode := &platformclientv2.Wrapupcoderequest{
-		Name: &name,
+		Name:        &name,
+		Description: &description,
 	}
 	if divisionId != "" {
 		wrapupCode.Division = &platformclientv2.Writablestarrabledivision{Id: &divisionId}
@@ -137,10 +140,11 @@ func buildWrapupCodeFromResourceData(d *schema.ResourceData) *platformclientv2.W
 	return wrapupCode
 }
 
-func GenerateRoutingWrapupcodeResource(resourceLabel string, name string, divisionId string) string {
+func GenerateRoutingWrapupcodeResource(resourceLabel string, name string, divisionId string, description string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		division_id = %s
+		description = "%s"
 	}
-	`, ResourceType, resourceLabel, name, divisionId)
+	`, ResourceType, resourceLabel, name, divisionId, description)
 }

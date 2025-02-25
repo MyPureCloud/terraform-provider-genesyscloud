@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var (
@@ -263,7 +263,6 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 						return nil
 					},
 				),
-				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
@@ -274,7 +273,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {
-			time.Sleep(40 * time.Second)
+			time.Sleep(60 * time.Second)
 			return testVerifyGroupsAndUsersDestroyed(state)
 		},
 	})

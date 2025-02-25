@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -72,7 +72,7 @@ func readIdpOkta(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IDP Okta: %s", getErr), resp))
 		}
 
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.DefaultConsistencyChecks, "genesyscloud_idp_okta")
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpOkta(), constants.ConsistencyChecks(), "genesyscloud_idp_okta")
 
 		resourcedata.SetNillableValue(d, "name", okta.Name)
 		resourcedata.SetNillableValue(d, "disabled", okta.Disabled)

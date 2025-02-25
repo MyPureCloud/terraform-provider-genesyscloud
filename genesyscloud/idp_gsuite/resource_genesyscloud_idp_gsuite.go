@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -62,7 +62,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading idp gsuite")
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIdpGsuite(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 		gSuite, resp, getErr := proxy.getIdpGsuite(ctx)

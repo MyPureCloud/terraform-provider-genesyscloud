@@ -28,6 +28,7 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 		wrapupCode3Name          = "tf test wrapupcode" + uuid.NewString()
 		divResourceLabel         = "test-division"
 		divName                  = "terraform-" + uuid.NewString()
+		description              = "Terraform test description"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -41,6 +42,7 @@ func TestAccResourceOutboundWrapupCodeMapping(t *testing.T) {
 					wrapupCode1ResourceLabel,
 					wrapupCode1Name,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
@@ -68,63 +70,76 @@ resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
 					time.Sleep(30 * time.Second)
 				},
 				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceLabel, wrapupCode1Name, "genesyscloud_auth_division."+divResourceLabel+".id") +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceLabel, wrapupCode2Name, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceLabel, wrapupCode1Name, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceLabel, wrapupCode2Name, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
-	default_set = ["Right_Party_Contact", "Contact_UnCallable"]
+	default_set = ["Right_Party_Contact", "Contact_UnCallable", "Business_Success"]
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
 		flags          = ["Contact_UnCallable"]
 	}
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
-		flags          = ["Number_UnCallable", "Right_Party_Contact"]
+		flags          = ["Number_UnCallable", "Right_Party_Contact", "Business_Failure"]
 	}
 }
 `, resourceLabel, wrapupCode1ResourceLabel, wrapupCode2ResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds to get proper response
+						return nil
+					},
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Contact_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Right_Party_Contact"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Business_Success"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceLabel,
 						"genesyscloud_routing_wrapupcode."+wrapupCode1ResourceLabel, []string{"Contact_UnCallable"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceLabel,
-						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceLabel, []string{"Number_UnCallable", "Right_Party_Contact"}),
+						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceLabel, []string{"Number_UnCallable", "Right_Party_Contact", "Business_Failure"}),
 				),
 			},
 			// Update
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceLabel, wrapupCode1Name, "genesyscloud_auth_division."+divResourceLabel+".id") +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceLabel, wrapupCode2Name, "genesyscloud_auth_division."+divResourceLabel+".id") +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode3ResourceLabel, wrapupCode3Name, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode1ResourceLabel, wrapupCode1Name, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode2ResourceLabel, wrapupCode2Name, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCode3ResourceLabel, wrapupCode3Name, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					fmt.Sprintf(`
 resource "genesyscloud_outbound_wrapupcodemappings"	"%s" {
-	default_set = ["Right_Party_Contact", "Number_UnCallable", "Contact_UnCallable"]
+	default_set = ["Right_Party_Contact", "Number_UnCallable", "Contact_UnCallable", "Business_Neutral"]
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
 		flags          = ["Contact_UnCallable"]
 	}
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
-		flags          = ["Number_UnCallable", "Right_Party_Contact"]
+		flags          = ["Number_UnCallable", "Right_Party_Contact", "Business_Neutral"]
 	}
 	mappings {
 		wrapup_code_id = genesyscloud_routing_wrapupcode.%s.id
-		flags          = ["Number_UnCallable", "Contact_UnCallable", "Right_Party_Contact"]
+		flags          = ["Number_UnCallable", "Contact_UnCallable", "Right_Party_Contact", "Business_Success"]
 	}
 }
 `, resourceLabel, wrapupCode1ResourceLabel, wrapupCode2ResourceLabel, wrapupCode3ResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds to get proper response
+						return nil
+					},
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Contact_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Number_UnCallable"),
 					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Right_Party_Contact"),
+					util.ValidateStringInArray("genesyscloud_outbound_wrapupcodemappings."+resourceLabel, "default_set", "Business_Neutral"),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceLabel,
 						"genesyscloud_routing_wrapupcode."+wrapupCode1ResourceLabel, []string{"Contact_UnCallable"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceLabel,
-						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceLabel, []string{"Number_UnCallable", "Right_Party_Contact"}),
+						"genesyscloud_routing_wrapupcode."+wrapupCode2ResourceLabel, []string{"Number_UnCallable", "Right_Party_Contact", "Business_Neutral"}),
 					verifyWrapupCodeMappingsMappingValues("genesyscloud_outbound_wrapupcodemappings."+resourceLabel,
-						"genesyscloud_routing_wrapupcode."+wrapupCode3ResourceLabel, []string{"Number_UnCallable", "Right_Party_Contact", "Contact_UnCallable"}),
+						"genesyscloud_routing_wrapupcode."+wrapupCode3ResourceLabel, []string{"Number_UnCallable", "Contact_UnCallable", "Right_Party_Contact", "Business_Success"}),
 				),
 			},
 			{
@@ -183,7 +198,7 @@ func verifyWrapupCodeMappingsMappingValues(resourcePath string, wrapupCodeResour
 
 // attributeFlagsToList return a list of the mapping flags from the tf state attributes
 func attributeFlagsToList(flagPrefix string, attr map[string]string) []string {
-	const maxFlags = 3
+	const maxFlags = 4
 	ret := make([]string, 0)
 	for i := 0; i < maxFlags; i++ {
 		if flagVal, ok := attr[flagPrefix+"."+strconv.Itoa(i)]; ok {

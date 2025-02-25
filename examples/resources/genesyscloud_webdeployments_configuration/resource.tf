@@ -72,6 +72,7 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     enabled                = true
     allow_agent_control    = true
     allow_agent_navigation = true
+    allow_draw             = true
     channels               = ["Webmessaging", "Voice"]
     mask_selectors         = [".my-class", "#my-id"]
     readonly_selectors     = [".my-class", "#my-id"]
@@ -140,7 +141,8 @@ resource "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
     }
   }
   authentication_settings {
-    enabled        = true
-    integration_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    enabled               = true
+    integration_id        = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    allow_session_upgrade = true
   }
 }

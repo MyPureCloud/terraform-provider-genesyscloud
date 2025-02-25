@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllJourneyViews(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -76,7 +76,7 @@ func updateJourneyView(ctx context.Context, d *schema.ResourceData, meta interfa
 func readJourneyView(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	viewId := d.Id()
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyViews(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceJourneyViews(), constants.ConsistencyChecks(), ResourceType)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getJourneyViewProxy(sdkConfig)
 	log.Printf("Getting journeyView with viewId: %s", viewId)

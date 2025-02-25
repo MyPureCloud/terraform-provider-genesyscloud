@@ -23,18 +23,18 @@ type JsonExporter struct {
 	resourceTypesJSONMaps map[string]resourceJSONMaps
 	dataSourceTypesMaps   map[string]resourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
-	providerSource        string
+	providerRegistry      string
 	version               string
 	dirPath               string
 	splitFilesByResource  bool
 }
 
-func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerSource string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
+func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
 	jsonExporter := &JsonExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
 		dataSourceTypesMaps:   dataSourceTypesMaps,
 		unresolvedAttrs:       unresolvedAttrs,
-		providerSource:        providerSource,
+		providerRegistry:      providerRegistry,
 		version:               version,
 		dirPath:               dirPath,
 		splitFilesByResource:  splitFilesByResource,
@@ -46,7 +46,7 @@ func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSour
 This file contains all of the functions used to generate the JSON export.
 */
 func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
-	providerJsonMap := createProviderJsonMap(j.providerSource, j.version)
+	providerJsonMap := createProviderJsonMap(j.providerRegistry, j.version)
 	variablesJsonMap := createVariablesJsonMap(j.unresolvedAttrs)
 
 	if j.splitFilesByResource {
@@ -149,11 +149,11 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 	return nil
 }
 
-func createProviderJsonMap(providerSource string, version string) util.JsonMap {
+func createProviderJsonMap(providerRegistry string, version string) util.JsonMap {
 	return util.JsonMap{
 		"required_providers": util.JsonMap{
 			"genesyscloud": util.JsonMap{
-				"source":  providerSource,
+				"source":  fmt.Sprintf("%s/mypurecloud/genesyscloud", providerRegistry),
 				"version": version,
 			},
 		},
@@ -277,7 +277,8 @@ func determineVarType(s *schema.Schema) string {
 }
 
 func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
-	dataJSONBytes, err := json.MarshalIndent(jsonMap, "", "  ")
+	sortedJsonMap := sortJSONMap(jsonMap)
+	dataJSONBytes, err := json.MarshalIndent(sortedJsonMap, "", "  ")
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type detailedDiagnosticInfo struct {
@@ -19,29 +19,34 @@ type detailedDiagnosticInfo struct {
 }
 
 func convertResponseToWrapper(resourceType string, apiResponse *platformclientv2.APIResponse) *detailedDiagnosticInfo {
-	return &detailedDiagnosticInfo{
+	detailedDiagnosticInfo := &detailedDiagnosticInfo{
 		ResourceType:  resourceType,
-		Method:        apiResponse.Response.Request.Method,
-		Path:          apiResponse.Response.Request.URL.Path,
 		StatusCode:    apiResponse.StatusCode,
 		ErrorMessage:  apiResponse.ErrorMessage,
 		CorrelationID: apiResponse.CorrelationID,
 	}
+	if apiResponse.Response != nil && apiResponse.Response.Request != nil {
+		detailedDiagnosticInfo.Method = apiResponse.Response.Request.Method
+		if apiResponse.Response.Request.URL != nil {
+			detailedDiagnosticInfo.Path = apiResponse.Response.Request.URL.Path
+		}
+	}
+	return detailedDiagnosticInfo
 }
 
 func BuildAPIDiagnosticError(resourceType string, summary string, apiResponse *platformclientv2.APIResponse) diag.Diagnostics {
 	//Checking to make sure we have properly formed response
-	if apiResponse == nil || apiResponse.Response == nil || apiResponse.Response.Request == nil || apiResponse.Response.Request.URL == nil {
-		error := fmt.Errorf("Unable to build a message from the response because the APIResponse does not contain the appropriate data.%s", "")
-		return BuildDiagnosticError(resourceType, summary, error)
+	if apiResponse == nil {
+		err := fmt.Errorf("unable to build a message from the response because the APIResponse does not contain the appropriate data.%s", "")
+		return BuildDiagnosticError(resourceType, summary, err)
 	}
 	diagInfo := convertResponseToWrapper(resourceType, apiResponse)
 	diagInfoByte, err := json.Marshal(diagInfo)
 
 	//Checking to see if we can Marshall the data
 	if err != nil {
-		error := fmt.Errorf("Unable to unmarshal diagnostic info while building diagnostic error. Error: %s", err)
-		return BuildDiagnosticError(resourceType, summary, error)
+		err = fmt.Errorf("unable to unmarshal diagnostic info while building diagnostic error. Error: %w", err)
+		return BuildDiagnosticError(resourceType, summary, err)
 	}
 
 	dg := diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: string(diagInfoByte)}

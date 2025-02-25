@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -76,7 +76,7 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailDomainProxy(sdkConfig)
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailDomain(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading routing email domain %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -117,7 +117,10 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	mailFromDomain := d.Get("mail_from_domain").(string)
 	domainID := d.Get("domain_id").(string)
 
-	if !strings.Contains(mailFromDomain, domainID) || mailFromDomain == domainID {
+	if mailFromDomain == domainID {
+		return util.BuildDiagnosticError(ResourceType, "domain_id must be a subdomain of mail_from_domain", fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
+	}
+	if mailFromDomain != "" && !strings.Contains(mailFromDomain, domainID) {
 		return util.BuildDiagnosticError(ResourceType, "domain_id must be a subdomain of mail_from_domain", fmt.Errorf("domain_id must be a subdomain of mail_from_domain"))
 	}
 

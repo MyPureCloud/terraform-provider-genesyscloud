@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // Build Functions
@@ -151,12 +151,12 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
+		SubTypeSettings: buildSubTypeSettings(settingsMap["sub_type_settings"].([]interface{})),
 	}
 }
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
 	settingsMap := settings[0].(map[string]interface{})
-
 	return &platformclientv2.Callbackmediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		ServiceLevel: &platformclientv2.Servicelevel{
@@ -167,7 +167,48 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 		AutoEndDelaySeconds:  platformclientv2.Int(settingsMap["auto_end_delay_seconds"].(int)),
 		AutoDialDelaySeconds: platformclientv2.Int(settingsMap["auto_dial_delay_seconds"].(int)),
 		EnableAutoDialAndEnd: platformclientv2.Bool(settingsMap["enable_auto_dial_and_end"].(bool)),
+		Mode:                 platformclientv2.String(settingsMap["mode"].(string)),
 	}
+}
+
+func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Basemediasettings {
+
+	returnObj := make(map[string]platformclientv2.Basemediasettings)
+
+	for _, subTypeItem := range subTypeList {
+		if subTypeItem == nil {
+			continue
+		}
+		subTypeMap := subTypeItem.(map[string]interface{})
+		mediaType := subTypeMap["media_type"].(string)
+		enableAutoAnswer := subTypeMap["enable_auto_answer"].(bool)
+		baseMediaSettings := platformclientv2.Basemediasettings{
+			EnableAutoAnswer: &enableAutoAnswer,
+		}
+		returnObj[mediaType] = baseMediaSettings
+	}
+
+	if len(returnObj) > 0 {
+		return &returnObj
+	}
+	return nil
+
+}
+
+func buildCannedResponseLibraries(d *schema.ResourceData) *platformclientv2.Cannedresponselibraries {
+	var cannedResponseSdk platformclientv2.Cannedresponselibraries
+	cannedResponseList := d.Get("canned_response_libraries").([]interface{})
+	if len(cannedResponseList) > 0 {
+		cannedResponseMap := cannedResponseList[0].(map[string]interface{})
+		resourcedata.BuildSDKStringValueIfNotNil(&cannedResponseSdk.Mode, cannedResponseMap, "mode")
+		if libraryIds, exists := cannedResponseMap["library_ids"].([]interface{}); exists {
+			libraryIdList := lists.InterfaceListToStrings(libraryIds)
+			cannedResponseSdk.LibraryIds = &libraryIdList
+		}
+		return &cannedResponseSdk
+
+	}
+	return nil
 }
 
 func buildSdkRoutingRules(d *schema.ResourceData) *[]platformclientv2.Routingrule {
@@ -229,7 +270,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 		}
 
 		if memberGroupSet, ok := ruleSettings["groups"].(*schema.Set); ok {
-			sdkCGRRule.Groups = buildCGRGroups(memberGroupSet)
+			sdkCGRRule.Groups = BuildCGRGroups(memberGroupSet)
 		}
 		sdkCGRRules = append(sdkCGRRules, sdkCGRRule)
 	}
@@ -237,7 +278,7 @@ func buildSdkConditionalGroupRouting(d *schema.ResourceData) (*platformclientv2.
 	return &platformclientv2.Conditionalgrouprouting{Rules: &sdkCGRRules}, nil
 }
 
-func buildCGRGroups(groups *schema.Set) *[]platformclientv2.Membergroup {
+func BuildCGRGroups(groups *schema.Set) *[]platformclientv2.Membergroup {
 	groupList := groups.List()
 	if len(groupList) == 0 {
 		return nil
@@ -406,7 +447,6 @@ func flattenMediaEmailSetting(settings *platformclientv2.Emailmediasettings) []i
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
-
 	return []interface{}{settingsMap}
 }
 
@@ -417,8 +457,39 @@ func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{}
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
-
+	if settings.SubTypeSettings != nil {
+		settingsMap["sub_type_settings"] = flattenSubTypeSettings(*settings.SubTypeSettings)
+	}
 	return []interface{}{settingsMap}
+}
+
+func flattenSubTypeSettings(subType map[string]platformclientv2.Basemediasettings) []interface{} {
+	if subType == nil {
+		return nil
+	}
+	subTypeList := make([]interface{}, 0)
+	for key, value := range subType {
+		subTypeMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
+		subTypeList = append(subTypeList, subTypeMap)
+	}
+	return subTypeList
+}
+
+func flattenCannedResponse(cannedResponse *platformclientv2.Cannedresponselibraries) []interface{} {
+	if cannedResponse == nil {
+		return nil
+	}
+	cannedResponseList := make([]interface{}, 0)
+	cannedResponseMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(cannedResponseMap, "mode", cannedResponse.Mode)
+	if cannedResponse.LibraryIds != nil {
+		cannedResponseMap["library_ids"] = lists.StringListToInterfaceList(*cannedResponse.LibraryIds)
+	}
+	cannedResponseList = append(cannedResponseList, cannedResponseMap)
+
+	return cannedResponseList
 }
 
 func flattenDefaultScripts(sdkScripts map[string]platformclientv2.Script) map[string]interface{} {
@@ -482,7 +553,7 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
 	settingsMap["auto_end_delay_seconds"] = *settings.AutoEndDelaySeconds
 	settingsMap["auto_dial_delay_seconds"] = *settings.AutoDialDelaySeconds
-
+	settingsMap["mode"] = *settings.Mode
 	return []interface{}{settingsMap}
 }
 
@@ -521,7 +592,7 @@ func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interf
 		}
 
 		if rule.Groups != nil {
-			ruleSettings["groups"] = flattenCGRGroups(*rule.Groups)
+			ruleSettings["groups"] = FlattenCGRGroups(*rule.Groups)
 		}
 
 		rules[i] = ruleSettings
@@ -530,7 +601,7 @@ func flattenConditionalGroupRoutingRules(queue *platformclientv2.Queue) []interf
 	return rules
 }
 
-func flattenCGRGroups(sdkGroups []platformclientv2.Membergroup) *schema.Set {
+func FlattenCGRGroups(sdkGroups []platformclientv2.Membergroup) *schema.Set {
 	groupSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
 	for _, sdkGroup := range sdkGroups {
 		groupMap := make(map[string]interface{})
@@ -742,17 +813,18 @@ func GenerateAgentOwnedRouting(attrName string, enableAgentOwnedCallBacks string
 	`, attrName, enableAgentOwnedCallBacks, maxOwnedCallBackHours, maxOwnedCallBackDelayHours)
 }
 
-func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string) string {
+func GenerateMediaSettings(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`%s {
 		alerting_timeout_sec = %s
 		enable_auto_answer = %s
 		service_level_percentage = %s
 		service_level_duration_ms = %s
+		%s
 	}
-	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs)
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, strings.Join(nestedBlocks, "\n"))
 }
 
-func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableAutoDial string, autoEndDelay string, autoDailDelay string) string {
+func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableAutoDial string, autoEndDelay string, autoDailDelay string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`%s {
 		alerting_timeout_sec = %s
 		enable_auto_answer = %s
@@ -761,8 +833,9 @@ func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enab
 		enable_auto_dial_and_end = %s
 		auto_end_delay_seconds = %s
 		auto_dial_delay_seconds = %s
+		%s
 	}
-	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay)
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {

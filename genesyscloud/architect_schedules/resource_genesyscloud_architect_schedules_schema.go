@@ -49,7 +49,7 @@ func ResourceArchitectSchedules() *schema.Resource {
 				Optional:    true,
 			},
 			"start": {
-				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000.",
+				Description:      "Date time is represented as an ISO-8601 string without a timezone. For example: 2006-01-02T15:04:05.000000. The start date should be applicable to the schedule's recurrence rule.",
 				Type:             schema.TypeString,
 				Required:         true,
 				ValidateDiagFunc: validators.ValidateLocalDateTimes,

@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -93,7 +93,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.ConsistencyChecks(), ResourceType)
 	gp := getGroupProxy(sdkConfig)
 
 	log.Printf("Reading group %s", d.Id())
@@ -167,6 +167,15 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			RolesEnabled: &rolesEnabled,
 			OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
 		}
+
+		// If no owner IDs are provided, assign a list with an empty space, otherwise use the provided owner IDs
+		ownerIds := lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids")
+		if ownerIds == nil || len(*ownerIds) == 0 {
+			emptyList := []string{" "}
+			ownerIds = &emptyList
+		}
+		updateGroup.OwnerIds = ownerIds
+
 		_, resp, putErr := gp.updateGroup(ctx, d.Id(), updateGroup)
 		if putErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group %s: %s", d.Id(), putErr), resp)

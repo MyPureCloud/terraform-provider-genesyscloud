@@ -9,6 +9,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -19,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -131,7 +133,7 @@ func updateTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta i
 		trunkBase.Version = trunkBaseSettings.Version
 
 		log.Printf("Updating trunk base settings %s", name)
-		trunkBaseSettings, resp, err := proxy.UpdateTrunkBaseSetting(ctx, d.Id(), trunkBase)
+		_, resp, err := proxy.UpdateTrunkBaseSetting(ctx, d.Id(), trunkBase)
 		if err != nil {
 
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update trunk base settings %s error: %s", name, err), resp)
@@ -172,62 +174,51 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTrunkBaseSettingProxy(sdkConfig)
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTrunkBaseSettings(), constants.ConsistencyChecks(), ResourceType)
+	var response *platformclientv2.APIResponse
 
 	log.Printf("Reading trunk base settings %s", d.Id())
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	readErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		trunkBaseSettings, resp, getErr := proxy.GetTrunkBaseSettingById(ctx, d.Id())
+		response = resp
 
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(getErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read trunk base settings %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(getErr)
 		}
 
-		if trunkBaseSettings != nil && trunkBaseSettings.Name != nil {
-			d.Set("name", *trunkBaseSettings.Name)
+		if trunkBaseSettings == nil {
+			return retry.NonRetryableError(fmt.Errorf("succesfully read trunkbase setting '%s', but response body was nil", d.Id()))
 		}
 
-		if trunkBaseSettings != nil && trunkBaseSettings.State != nil {
-			d.Set("state", *trunkBaseSettings.State)
-		}
+		resourcedata.SetNillableValue(d, "name", trunkBaseSettings.Name)
+		resourcedata.SetNillableValue(d, "state", trunkBaseSettings.State)
+		resourcedata.SetNillableValue(d, "description", trunkBaseSettings.Description)
+		resourcedata.SetNillableValue(d, "managed", trunkBaseSettings.Managed)
+		resourcedata.SetNillableReference(d, "trunk_meta_base_id", trunkBaseSettings.TrunkMetabase)
+		resourcedata.SetNillableReference(d, "inbound_site_id", trunkBaseSettings.InboundSite)
+		resourcedata.SetNillableReference(d, "site_id", trunkBaseSettings.Site)
+		resourcedata.SetNillableValue(d, "trunk_type", trunkBaseSettings.TrunkType)
 
-		if trunkBaseSettings.Description != nil {
-			d.Set("description", *trunkBaseSettings.Description)
-		}
-		if trunkBaseSettings.Managed != nil {
-			d.Set("managed", *trunkBaseSettings.Managed)
-		}
-
-		// check if Id is null or not for both metabase and inboundsite
-		if trunkBaseSettings != nil && trunkBaseSettings.TrunkMetabase != nil && trunkBaseSettings.TrunkMetabase.Id != nil {
-			d.Set("trunk_meta_base_id", *trunkBaseSettings.TrunkMetabase.Id)
-		}
-
-		// check if Id is null or not for both metabase and inboundsite
-		if trunkBaseSettings != nil && trunkBaseSettings.InboundSite != nil {
-			d.Set("inbound_site_id", *trunkBaseSettings.InboundSite.Id)
-		}
-
-		if trunkBaseSettings != nil && trunkBaseSettings.Site != nil {
-			d.Set("site_id", *trunkBaseSettings.Site.Id)
-		}
-
-		if trunkBaseSettings != nil && trunkBaseSettings.TrunkType != nil {
-			d.Set("trunk_type", *trunkBaseSettings.TrunkType)
-		}
-		d.Set("properties", nil)
+		_ = d.Set("properties", nil)
 		if trunkBaseSettings.Properties != nil {
 			properties, err := util.FlattenTelephonyProperties(trunkBaseSettings.Properties)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			d.Set("properties", properties)
+			_ = d.Set("properties", properties)
 		}
 
 		return cc.CheckState(d)
 	})
+
+	if readErr != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to read trunkbase setting '%s' | error: %v", d.Id(), readErr), response)
+	}
+
+	return nil
 }
 
 func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -320,4 +311,23 @@ func GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 	}
 	`, trunkBaseSettingsResourceLabel, name, description, trunkMetaBaseId, trunkType, managed, strings.Join(otherAttrs, "\n"))
 	return resource
+}
+
+func shouldExportTrunkBaseSettingsAsDataSource(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (exportAsData bool, err error) {
+	defaultTbsNames := []string{
+		"Cloud Proxy Tie TrunkBase for EdgeGroup",
+		"Direct Tie TrunkBase for EdgeGroup",
+		"Genesys Cloud - CDM SIP Phone Trunk",
+		"Genesys Cloud - CDM WebRTC Phone Trunk",
+		"Indirect Tie TrunkBase for EdgeGroup",
+		"PureCloud Voice - AWS",
+		"Tie TrunkBase for EdgeGroup",
+	}
+	tbsName, ok := configMap["name"]
+	if ok {
+		if lists.ContainsAnySubStringSlice(tbsName, defaultTbsNames) {
+			return true, nil
+		}
+	}
+	return false, nil
 }

@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllJourneyActionTemplates(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -56,7 +56,7 @@ func createJourneyActionTemplate(ctx context.Context, data *schema.ResourceData,
 
 func readJourneyActionTemplate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
 	journeyApi := journeyApiConfig(i)
-	cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate(), constants.DefaultConsistencyChecks, ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, data, i, ResourceJourneyActionTemplate(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Journey Action Template %s", data.Id())
 	return util.WithRetriesForRead(ctx, data, func() *retry.RetryError {
