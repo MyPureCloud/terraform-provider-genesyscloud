@@ -1467,7 +1467,7 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_quality_forms_survey"),
 					},
-					util.FalseValue, // export_as_hcl
+					strconv.Quote("json"), // export_as_hcl
 					util.FalseValue,
 					[]string{},
 				),
