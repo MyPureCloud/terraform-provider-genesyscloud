@@ -41,6 +41,7 @@ import (
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
+	integrationFunctionAction "terraform-provider-genesyscloud/genesyscloud/integration_function_action"
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
@@ -235,6 +236,7 @@ func registerResources() {
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
+	integrationFunctionAction.SetRegistrar(regInstance)                    //Registering integrations actions
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
