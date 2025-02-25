@@ -16,11 +16,11 @@ import (
    Please make sure you register ALL resources and data sources your test cases will use.
 */
 
-// providerDataSources holds a map of all registered datasources
-var providerDataSources map[string]*schema.Resource
+// providerDataSource holds a map of all registered datasources
+var providerDataSource map[string]*schema.Resource
 
-// providerResources holds a map of all registered resources
-var providerResources map[string]*schema.Resource
+// providerResource holds a map of all registered resources
+var providerResource map[string]*schema.Resource
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -32,8 +32,8 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources["genesyscloud_integration_function_action"] = ResourceIntegrationFunctionAction()
-	providerResources["genesyscloud_integration"] = integration.ResourceIntegration()
+	providerResource["genesyscloud_integration_function_action"] = ResourceIntegrationFunctionAction()
+	providerResource["genesyscloud_integration"] = integration.ResourceIntegration()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -41,14 +41,14 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_integration_function_action"] = DataSourceIntegrationFunctionAction()
-	providerDataSources["genesyscloud_integration"] = integration.DataSourceIntegration()
+	providerDataSource["genesyscloud_integration_function_action"] = DataSourceIntegrationFunctionAction()
+	providerDataSource["genesyscloud_integration"] = integration.DataSourceIntegration()
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	providerDataSources = make(map[string]*schema.Resource)
-	providerResources = make(map[string]*schema.Resource)
+	providerDataSource = make(map[string]*schema.Resource)
+	providerResource = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 

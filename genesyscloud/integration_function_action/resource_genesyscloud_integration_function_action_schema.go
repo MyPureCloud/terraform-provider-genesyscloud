@@ -5,6 +5,7 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -18,13 +19,13 @@ resource_genesyscloud_integration_function_action_schema.go should hold four typ
 3.  The datasource schema definitions for the integration_function_action datasource.
 4.  The resource exporter configuration for the integration_function_action exporter.
 */
-const resourceName = "genesyscloud_integration_function_action"
+const ResourceName = "genesyscloud_integration_function_action"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(resourceName, DataSourceIntegrationFunctionAction())
-	l.RegisterResource(resourceName, ResourceIntegrationFunctionAction())
-	l.RegisterExporter(resourceName, IntegrationFunctionActionExporter())
+	l.RegisterDataSource(ResourceName, DataSourceIntegrationFunctionAction())
+	l.RegisterResource(ResourceName, ResourceIntegrationFunctionAction())
+	l.RegisterExporter(ResourceName, IntegrationFunctionActionExporter())
 }
 
 // ResourceIntegrationFunctionAction registers the genesyscloud_integration_function_action resource with Terraform
@@ -46,7 +47,6 @@ func ResourceIntegrationFunctionAction() *schema.Resource {
 				Description: "Velocity template to define request body sent to 3rd party service. Any instances of '${' must be properly escaped as '$${'",
 				Type:        schema.TypeString,
 				Optional:    true,
-				Computed:    true,
 			},
 			"headers": {
 				Description: "Map of headers in name, value pairs to include in request.",
@@ -83,15 +83,16 @@ func ResourceIntegrationFunctionAction() *schema.Resource {
 	functionConfig := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"srcZipFile": {
-				Description: "Full Local Path of Function Zip File.",
-				Type:        schema.TypeString,
-				Optional:    false,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description:  "Full Local Path of Function Zip File.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Elem:         &schema.Schema{Type: schema.TypeString},
+				ValidateFunc: validators.ValidatePath,
 			},
 			"zipFileName": {
 				Description: "Function Zip File Name",
 				Type:        schema.TypeString,
-				Optional:    false,
+				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"description": {
@@ -102,22 +103,22 @@ func ResourceIntegrationFunctionAction() *schema.Resource {
 			"handler": {
 				Description: "Function Handler Path With File Name",
 				Type:        schema.TypeString,
-				Optional:    false,
+				Required:    true,
 			},
 			"runtime": {
 				Description: "Function Runtime",
 				Type:        schema.TypeString,
-				Optional:    false,
+				Required:    true,
 			},
 			"timeOutSecs": {
 				Description: "Function Timeout In Seconds",
 				Type:        schema.TypeInt,
-				Optional:    false,
+				Required:    true,
 			},
 			"uploadUrlTtlSecs": {
 				Description: "Function Upload URL Time To Live In Seconds",
 				Type:        schema.TypeInt,
-				Optional:    false,
+				Required:    true,
 			},
 		},
 	}

@@ -56,12 +56,12 @@ type functionConfig struct {
 
 // getAllIntegrationActions retrieves all of the integration action via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrationFunctionActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	resources := make(resourceExporter.ResourceIDMetaMap)
+	Resource := make(resourceExporter.ResourceIDMetaMap)
 	iap := getIntegrationFunctionActionsProxy(clientConfig)
 
 	actions, resp, err := iap.getAllIntegrationFunctionActions(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get integration actions %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to get integration actions %s", err), resp)
 	}
 
 	for _, action := range *actions {
@@ -69,9 +69,9 @@ func getAllIntegrationFunctionActions(ctx context.Context, clientConfig *platfor
 		if strings.HasPrefix(*action.Id, "static") {
 			continue
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{Name: *action.Name}
+		Resource[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
 	}
-	return resources, nil
+	return Resource, nil
 }
 
 // createIntegrationFunctionAction is used by the integration actions resource to create Genesyscloud integration action
@@ -106,7 +106,7 @@ func createIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 		})
 
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create integration function action %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to create integration function action %s error: %s", name, err), resp)
 		}
 		d.SetId(*action.Id)
 
@@ -121,7 +121,7 @@ func createIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 
 		if putErr != nil {
 			deleteIntegrationFunctionAction(ctx, d, meta)
-			return putResp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to Update integration function draft action ID %s FunctionConfig %s error: %s ", *action.Id, funcConfig, putErr), putResp)
+			return putResp, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to Update integration function draft action ID %s FunctionConfig %s error: %s ", *action.Id, funcConfig, putErr), putResp)
 		}
 		log.Printf("Updated integration function runtime %s", *action.Id)
 
@@ -132,18 +132,18 @@ func createIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 
 		if uploadErr != nil {
 			deleteIntegrationFunctionAction(ctx, d, meta)
-			return apiResp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get upload presigned URL for integration function action ID %s error: %s", *action.Id, uploadErr), apiResp)
+			return apiResp, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to get upload presigned URL for integration function action ID %s error: %s", *action.Id, uploadErr), apiResp)
 		}
 
 		reader, _, err := files.DownloadOrOpenFile(*functionConfig.srcZipFile)
 		if err != nil {
 			deleteIntegrationFunctionAction(ctx, d, meta)
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to open upload file %s for integration function action ID %s error: %s", *functionConfig.srcZipFile, *action.Id, err), nil)
+			return nil, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to open upload file %s for integration function action ID %s error: %s", *functionConfig.srcZipFile, *action.Id, err), nil)
 		}
 
 		s3Uploader := files.NewS3Uploader(reader, nil, nil, *uploadResp.Headers, "PUT", *uploadResp.Url)
 		if _, uploadErr := s3Uploader.UploadWithRetries(ctx, *functionConfig.srcZipFile, 20*time.Second); uploadErr != nil {
-			return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to upload file %s for integration function action ID %s error: %s", *functionConfig.srcZipFile, *action.Id, err), nil)
+			return nil, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to upload file %s for integration function action ID %s error: %s", *functionConfig.srcZipFile, *action.Id, err), nil)
 		}
 
 		log.Printf("Uploaded integration function action ID %s", *action.Id)
@@ -160,17 +160,16 @@ func createIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 func readIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationFunctionActionsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFunctionAction(), constants.DefaultConsistencyChecks, resourceName)
-
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationFunctionAction(), constants.ConsistencyChecks(), ResourceName)
 	log.Printf("Reading integration action %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, err := iap.getIntegrationFunctionActionById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		// Retrieve config request/response templates
@@ -180,7 +179,7 @@ func readIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData, 
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("failed to read request template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		successTemp, resp, err := iap.getIntegrationFunctionActionTemplate(ctx, d.Id(), successTemplateFileName)
@@ -189,7 +188,7 @@ func readIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData, 
 				d.SetId("")
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("failed to read success template for integration action %s | error: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", action.Name)
@@ -250,7 +249,7 @@ func updateIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 		// Get the latest action version to send with PATCH
 		action, resp, err := iap.getIntegrationFunctionActionById(ctx, d.Id())
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to read integration function action %s error: %s", d.Id(), err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to read integration function action %s error: %s", d.Id(), err), resp)
 		}
 
 		_, resp, err = iap.updateIntegrationFunctionAction(ctx, d.Id(), &platformclientv2.Updateactioninput{
@@ -260,7 +259,7 @@ func updateIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 			Config:   BuildSdkActionConfig(d),
 		})
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update integration function action %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to update integration function action %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
@@ -287,7 +286,7 @@ func deleteIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 			log.Printf("Integration function action already deleted %s", d.Id())
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete Integration function action %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to delete Integration function action %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -298,8 +297,8 @@ func deleteIntegrationFunctionAction(ctx context.Context, d *schema.ResourceData
 				log.Printf("Deleted Integration function action %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("error deleting integration function action %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("error deleting integration function action %s | error: %s", d.Id(), err), resp))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("integration function action %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("integration function action %s still exists", d.Id()), resp))
 	})
 }
