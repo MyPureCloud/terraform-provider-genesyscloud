@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -68,27 +68,27 @@ func (p *conversationsMessagingIntegrationsWhatsappProxy) createConversationsMes
 }
 
 // getConversationsMessagingIntegrationsWhatsapp retrieves all Genesys Cloud conversations messaging integrations whatsapp
-func (p *conversationsMessagingIntegrationsWhatsappProxy) getAllConversationsMessagingIntegrationsWhatsapp(ctx context.Context) (*[]platformclientv2.Whatsappembeddedsignupintegrationrequest, error) {
+func (p *conversationsMessagingIntegrationsWhatsappProxy) getAllConversationsMessagingIntegrationsWhatsapp(ctx context.Context) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	return p.getAllConversationsMessagingIntegrationsWhatsappAttr(ctx, p)
 }
 
 // getConversationsMessagingIntegrationsWhatsappIdByName returns a single Genesys Cloud conversations messaging integrations whatsapp by a name
-func (p *conversationsMessagingIntegrationsWhatsappProxy) getConversationsMessagingIntegrationsWhatsappIdByName(ctx context.Context, name string) (id string, retryable bool, err error) {
+func (p *conversationsMessagingIntegrationsWhatsappProxy) getConversationsMessagingIntegrationsWhatsappIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getConversationsMessagingIntegrationsWhatsappIdByNameAttr(ctx, p, name)
 }
 
 // getConversationsMessagingIntegrationsWhatsappById returns a single Genesys Cloud conversations messaging integrations whatsapp by Id
-func (p *conversationsMessagingIntegrationsWhatsappProxy) getConversationsMessagingIntegrationsWhatsappById(ctx context.Context, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationrequest, statusCode int, err error) {
+func (p *conversationsMessagingIntegrationsWhatsappProxy) getConversationsMessagingIntegrationsWhatsappById(ctx context.Context, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 	return p.getConversationsMessagingIntegrationsWhatsappByIdAttr(ctx, p, id)
 }
 
 // updateConversationsMessagingIntegrationsWhatsapp updates a Genesys Cloud conversations messaging integrations whatsapp
-func (p *conversationsMessagingIntegrationsWhatsappProxy) updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappembeddedsignupintegrationrequest, error) {
+func (p *conversationsMessagingIntegrationsWhatsappProxy) updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	return p.updateConversationsMessagingIntegrationsWhatsappAttr(ctx, p, id, conversationsMessagingIntegrationsWhatsapp)
 }
 
 // deleteConversationsMessagingIntegrationsWhatsapp deletes a Genesys Cloud conversations messaging integrations whatsapp by Id
-func (p *conversationsMessagingIntegrationsWhatsappProxy) deleteConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string) (statusCode int, err error) {
+func (p *conversationsMessagingIntegrationsWhatsappProxy) deleteConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteConversationsMessagingIntegrationsWhatsappAttr(ctx, p, id)
 }
 
@@ -154,12 +154,7 @@ func getConversationsMessagingIntegrationsWhatsappIdByNameFn(ctx context.Context
 
 // getConversationsMessagingIntegrationsWhatsappByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations whatsapp by Id
 func getConversationsMessagingIntegrationsWhatsappByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
-	whatsAppEmbeddedSignupIntegrationRequest, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsWhatsappIntegrationId(id, "")
-	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to retrieve conversations messaging integrations whatsapp by id %s: %s", id, err)
-	}
-
-	return whatsAppEmbeddedSignupIntegrationRequest, resp, nil
+	return p.conversationsApi.GetConversationsMessagingIntegrationsWhatsappIntegrationId(id, "")
 }
 
 func updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {

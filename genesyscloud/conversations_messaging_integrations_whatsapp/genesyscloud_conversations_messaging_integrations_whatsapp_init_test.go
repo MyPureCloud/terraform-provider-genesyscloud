@@ -31,7 +31,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceConversationsMessagingIntegrationsWhatsapp()
+	providerResources[ResourceType] = ResourceConversationsMessagingIntegrationsWhatsapp()
 	providerResources[cmSupportedContent.ResourceType] = cmSupportedContent.ResourceSupportedContent()
 	providerResources[cmMessagingSetting.ResourceType] = cmMessagingSetting.ResourceConversationsMessagingSettings()
 }
@@ -41,7 +41,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceConversationsMessagingIntegrationsWhatsapp()
+	providerDataSources[ResourceType] = DataSourceConversationsMessagingIntegrationsWhatsapp()
 }
 
 // initTestResources initializes all test resources and data sources.

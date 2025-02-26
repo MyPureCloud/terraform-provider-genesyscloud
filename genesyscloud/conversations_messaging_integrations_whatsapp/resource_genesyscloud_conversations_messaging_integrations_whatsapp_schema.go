@@ -16,13 +16,13 @@ resource_genesycloud_conversations_messaging_integrations_whatsapp_schema.go hol
 3.  The datasource schema definitions for the conversations_messaging_integrations_whatsapp datasource.
 4.  The resource exporter configuration for the conversations_messaging_integrations_whatsapp exporter.
 */
-const resourceName = "genesyscloud_conversations_messaging_integrations_whatsapp"
+const ResourceType = "genesyscloud_conversations_messaging_integrations_whatsapp"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingIntegrationsWhatsapp())
-	regInstance.RegisterDataSource(resourceName, DataSourceConversationsMessagingIntegrationsWhatsapp())
-	regInstance.RegisterExporter(resourceName, ConversationsMessagingIntegrationsWhatsappExporter())
+	regInstance.RegisterResource(ResourceType, ResourceConversationsMessagingIntegrationsWhatsapp())
+	regInstance.RegisterDataSource(ResourceType, DataSourceConversationsMessagingIntegrationsWhatsapp())
+	regInstance.RegisterExporter(ResourceType, ConversationsMessagingIntegrationsWhatsappExporter())
 }
 
 // ResourceConversationsMessagingIntegrationsWhatsapp registers the genesyscloud_conversations_messaging_integrations_whatsapp resource with Terraform
