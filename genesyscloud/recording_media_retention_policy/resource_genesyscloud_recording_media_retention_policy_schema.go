@@ -245,7 +245,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Elem:        timeAllowed,
 			},
 			"customer_participation": {
-				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
+				Description:  "This condition is to filter out conversation with and without customer participation. Valid values: YES, NO.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"YES", "NO"}, false),

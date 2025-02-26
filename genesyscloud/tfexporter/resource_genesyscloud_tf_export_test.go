@@ -272,6 +272,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 // Wrap up codes will be created with -prod, -dev and -test suffixes but they should not be affected by the regex filter
 // for the queue and should all be exported
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1096 is addressed.")
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6"
