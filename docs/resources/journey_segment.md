@@ -64,6 +64,7 @@ resource "genesyscloud_journey_segment" "example_journey_segment_resource" {
 
 ### Optional
 
+- `assignment_expiration_days` (Number) Time, in days, from when the segment is assigned until it is automatically unassigned.
 - `context` (Block Set, Max: 1) The context of the segment. (see [below for nested schema](#nestedblock--context))
 - `description` (String) A description of the segment.
 - `is_active` (Boolean) Whether or not the segment is active. Defaults to `true`.
