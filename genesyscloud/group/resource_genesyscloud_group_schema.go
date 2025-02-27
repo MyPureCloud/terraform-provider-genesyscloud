@@ -127,6 +127,12 @@ func ResourceGroup() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
+			"calls_enabled": {
+				Description: "Allow calls to be placed to this group",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
 		},
 	}
 }
