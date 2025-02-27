@@ -159,6 +159,21 @@ var (
 			},
 		},
 	}
+	voicemailUserpoliciesResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alert_timeout_seconds": {
+				Description: "The number of seconds to ring the user's phone before a call is transferred to voicemail.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"send_email_notifications": {
+				Description: "Whether email notifications are sent to the user when a new voicemail is received.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
 )
 
 func ResourceUser() *schema.Resource {
@@ -388,6 +403,14 @@ func ResourceUser() *schema.Resource {
 					},
 				},
 			},
+			"voicemail_userpolicies": {
+				Description: "User's voicemail policies. If not set, default user policies will be applied.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        voicemailUserpoliciesResource,
+			},
 		},
 	}
 }
@@ -422,9 +445,10 @@ func UserExporter() *resourceExporter.ResourceExporter {
 			"locations.location_id":         {RefType: "genesyscloud_location"},
 		},
 		RemoveIfMissing: map[string][]string{
-			"routing_skills":    {"skill_id"},
-			"routing_languages": {"language_id"},
-			"locations":         {"location_id"},
+			"routing_skills":         {"skill_id"},
+			"routing_languages":      {"language_id"},
+			"locations":              {"location_id"},
+			"voicemail_userpolicies": {"alert_timeout_seconds"},
 		},
 		AllowEmptyArrays: []string{"routing_skills", "routing_languages"},
 		AllowZeroValues:  []string{"routing_skills.proficiency", "routing_languages.proficiency"},

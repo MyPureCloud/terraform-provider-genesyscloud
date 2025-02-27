@@ -45,6 +45,7 @@ resource "genesyscloud_organization_authentication_settings" "example-authentica
 - `ip_address_allowlist` (List of String) The list of IP addresses that will be allowed to authenticate with Genesys Cloud. Warning: Changing these will result in only allowing specified ip Addresses to log in and will invalidate credentials with a different ip address
 - `multifactor_authentication_required` (Boolean) Indicates whether multi-factor authentication is required.
 - `password_requirements` (Block List, Max: 1) The password requirements for the organization. (see [below for nested schema](#nestedblock--password_requirements))
+- `timeout_settings` (Block List, Max: 1) the time out settings for the tokens (see [below for nested schema](#nestedblock--timeout_settings))
 
 ### Read-Only
 
@@ -63,4 +64,13 @@ Optional:
 - `minimum_lower` (Number) The minimum number of lower case letters that must be included in passwords
 - `minimum_specials` (Number) The minimum number of special characters that must be included in passwords
 - `minimum_upper` (Number) The minimum number of upper case letters that must be included in passwords
+
+
+<a id="nestedblock--timeout_settings"></a>
+### Nested Schema for `timeout_settings`
+
+Required:
+
+- `enable_idle_token_timeout` (Boolean) Indicates whether the Token Timeout should be enabled or disabled.
+- `idle_token_timeout_seconds` (Number) Token timeout length in seconds. Must be at least 5 minutes and 8 hours or less (if HIPAA is disabled) or 15 minutes or less (if HIPAA is enabled).
 

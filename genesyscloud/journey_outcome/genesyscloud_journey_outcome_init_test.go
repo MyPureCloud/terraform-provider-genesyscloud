@@ -3,16 +3,16 @@ package journey_outcome
 import (
 	"log"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	"terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 var (
@@ -46,7 +46,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[architect_schedules.ResourceType] = architect_schedules.ResourceArchitectSchedules()
 	providerResources[architect_schedulegroups.ResourceType] = architect_schedulegroups.ResourceArchitectSchedulegroups()
 	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
-	providerResources["genesyscloud_journey_segment"] = gcloud.ResourceJourneySegment()
+	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 
 }
 

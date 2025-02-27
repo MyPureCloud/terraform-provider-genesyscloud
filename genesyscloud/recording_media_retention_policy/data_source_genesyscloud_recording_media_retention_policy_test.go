@@ -134,18 +134,18 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		},
 	}
 
+	const domainPrefix = "terraformmedia"
 	var (
 		domainResourceLabel = "routing-domain1"
-		domainId            = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId            = domainPrefix + strconv.Itoa(rand.Intn(1000)) + ".com"
 		divResourceLabel    = "test-division"
 		divName             = "terraform-" + uuid.NewString()
+		description         = "Terraform test description"
 	)
 
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
+	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
+		t.Logf("Failed to cleanup domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
-	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -177,7 +177,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routingLanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id") +
+					routingWrapupcode.GenerateRoutingWrapupcodeResource(wrapupCodeResourceLabel1, wrapupCodeName, "genesyscloud_auth_division."+divResourceLabel+".id", description) +
 					architect_flow.GenerateFlowResource(
 						flowResourceLabel1,
 						filePath1,

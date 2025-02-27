@@ -27,7 +27,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -71,6 +71,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		divName              = "terraform-" + uuid.NewString()
 
 		resourcePath = ResourceType + "." + resourceLabel
+
+		description = "Terraform test description"
 	)
 
 	emergencyNumber := "+13178793428"
@@ -112,6 +114,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		wrapupCodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
+		description,
 	) + architect_flow.GenerateFlowResource(
 		"flow",
 		outboundFlowFilePath,
@@ -439,6 +442,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		divName                  = "terraform-" + uuid.NewString()
 
 		resourcePath = ResourceType + "." + resourceLabel
+		description  = "Terraform test description"
 	)
 
 	emergencyNumber := "+13178793429"
@@ -470,6 +474,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		wrapupcodeResourceLabel,
 		"tf wrapup code"+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
+		description,
 	) + architect_flow.GenerateFlowResource(
 		flowResourceLabel,
 		outboundFlowFilePath,

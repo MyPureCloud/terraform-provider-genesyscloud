@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -25,7 +25,7 @@ func getAllOutboundMessagingcampaign(_ context.Context, clientConfig *platformcl
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{})
+		sdkMessagingcampaignEntityListing, resp, getErr := outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{}, "", "")
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error requesting page of Outbound Messagingcampaign error: %s", getErr), resp)
 		}

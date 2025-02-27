@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -111,6 +111,11 @@ func executeAllUpdates(ctx context.Context, d *schema.ResourceData, proxy *userP
 	}
 
 	diagErr = updateUserRoutingUtilization(d, proxy)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateUserVoicemailPolicies(d, proxy)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -265,6 +270,27 @@ func updateUserProfileSkills(d *schema.ResourceData, proxy *userProxy) diag.Diag
 			}
 		}
 	}
+	return nil
+}
+
+func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
+	if !d.HasChange("voicemail_userpolicies") {
+		return nil
+	}
+
+	voicemailUserpolicies := d.Get("voicemail_userpolicies").([]interface{})
+	reqBody := buildVoicemailUserpoliciesRequest(voicemailUserpolicies)
+	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(d.Id(), reqBody)
+		if putErr != nil {
+			return proxyPutResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update voicemail userpolicices for user %s error: %s", d.Id(), putErr), proxyPutResponse)
+		}
+		return nil, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+
 	return nil
 }
 
@@ -974,6 +1000,37 @@ func getSdkUtilizationTypes() []string {
 	return types
 }
 
+func buildVoicemailUserpoliciesRequest(voicemailUserpolicies []interface{}) platformclientv2.Voicemailuserpolicy {
+	var request platformclientv2.Voicemailuserpolicy
+	if extractMap, ok := voicemailUserpolicies[0].(map[string]interface{}); ok {
+		sendEmailNotifications := extractMap["send_email_notifications"].(bool)
+		request = platformclientv2.Voicemailuserpolicy{
+			SendEmailNotifications: &sendEmailNotifications,
+		}
+		// Optional
+		if alertTimeoutSeconds := extractMap["alert_timeout_seconds"].(int); alertTimeoutSeconds > 0 {
+			request.AlertTimeoutSeconds = &alertTimeoutSeconds
+		}
+	}
+	return request
+}
+
+func flattenVoicemailUserpolicies(d *schema.ResourceData, voicemail *platformclientv2.Voicemailuserpolicy) []interface{} {
+	if voicemail == nil {
+		return nil
+	}
+
+	voicemailUserpolicy := make(map[string]interface{})
+	if voicemail.AlertTimeoutSeconds != nil {
+		voicemailUserpolicy["alert_timeout_seconds"] = *voicemail.AlertTimeoutSeconds
+	}
+	if voicemail.SendEmailNotifications != nil {
+		voicemailUserpolicy["send_email_notifications"] = *voicemail.SendEmailNotifications
+	}
+
+	return []interface{}{voicemailUserpolicy}
+}
+
 func generateRoutingUtilMediaType(
 	mediaType string,
 	maxCapacity string,
@@ -1037,4 +1094,12 @@ func GenerateUserResource(resourceLabel string, email string, name string, state
 		certifications = [%s]
 	}
 	`, ResourceType, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}
+
+func GenerateVoicemailUserpolicies(timeout int, sendEmailNotifications bool) string {
+	return fmt.Sprintf(`voicemail_userpolicies {
+		alert_timeout_seconds = %d
+		send_email_notifications = %t
+	}
+	`, timeout, sendEmailNotifications)
 }

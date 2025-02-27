@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 type SurveyFormStruct struct {
@@ -207,7 +207,7 @@ func getAllSurveyForms(_ context.Context, clientConfig *platformclientv2.Configu
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		surveyForms, resp, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", "", "")
+		surveyForms, resp, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "publishHistory", "", "")
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get quality forms surveys error: %s", getErr), resp)
 		}
@@ -360,26 +360,38 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		if surveyForm.Name != nil {
-			d.Set("name", *surveyForm.Name)
+			_ = d.Set("name", *surveyForm.Name)
 		}
-		if surveyForm.Disabled != nil {
-			d.Set("disabled", *surveyForm.Disabled)
-		}
+
 		if surveyForm.Language != nil {
-			d.Set("language", *surveyForm.Language)
+			_ = d.Set("language", *surveyForm.Language)
 		}
 		if surveyForm.Header != nil {
-			d.Set("header", *surveyForm.Header)
+			_ = d.Set("header", *surveyForm.Header)
 		}
 		if surveyForm.Footer != nil {
-			d.Set("footer", *surveyForm.Footer)
-		}
-		if surveyForm.Published != nil {
-			d.Set("published", *surveyForm.Published)
+			_ = d.Set("footer", *surveyForm.Footer)
 		}
 		if surveyForm.QuestionGroups != nil {
-			d.Set("question_groups", flattenSurveyQuestionGroups(surveyForm.QuestionGroups))
+			_ = d.Set("question_groups", flattenSurveyQuestionGroups(surveyForm.QuestionGroups))
 		}
+
+		// Published is always set to false, Check each form for a published version and set published accordingly
+		formVersions, resp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to read survey form versions %s | error: %s", *surveyForm.Id, err), resp))
+		}
+
+		var published = false
+		for _, s := range *formVersions.Entities {
+			if *s.Published == true {
+				published = true
+			}
+		}
+
+		_ = d.Set("published", published)
+
+		_ = d.Set("disabled", *surveyForm.Disabled)
 
 		return cc.CheckState(d)
 	})
@@ -404,9 +416,9 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 		// Get the latest unpublished version of the form
-		formVersions, getResp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
+		formVersions, resp, err := qualityAPI.GetQualityFormsSurveyVersions(d.Id(), 25, 1)
 		if err != nil {
-			return getResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get survey form versions %s error: %s", name, err), getResp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to get survey form versions %s error: %s", name, err), resp)
 		}
 
 		versions := *formVersions.Entities
@@ -418,37 +430,43 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		log.Printf("Updating Survey Form %s", name)
-		form, putResp, err := qualityAPI.PutQualityFormsSurvey(latestUnpublishedVersion, platformclientv2.Surveyform{
+		form, resp, err := qualityAPI.PutQualityFormsSurvey(latestUnpublishedVersion, platformclientv2.Surveyform{
 			Name:           &name,
-			Disabled:       &disabled,
 			Language:       &language,
 			Header:         &header,
 			Footer:         &footer,
 			QuestionGroups: questionGroups,
 		})
 		if err != nil {
-			return putResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to update survey form %s error: %s", name, err), putResp)
+			return resp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to update survey form %s error: %s", name, err), resp)
 		}
-		log.Printf("Updated survey form %s %s", name, *form.Id)
 
 		// Set published property on survey form update.
 		if published {
-			_, postResp, err := qualityAPI.PostQualityPublishedformsSurveys(platformclientv2.Publishform{
+			_, resp, err := qualityAPI.PostQualityPublishedformsSurveys(platformclientv2.Publishform{
 				Id:        form.Id,
 				Published: &published,
 			})
 			if err != nil {
-				return postResp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to publish survey form %s error: %s", name, err), postResp)
+				return resp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to publish survey form %s error: %s", name, err), resp)
 			}
-		} else {
-			// If published property is reset to false, set the resource Id to the latest unpublished form
-			d.SetId(*form.Id)
 		}
-		return putResp, nil
+
+		if disabled {
+			_, resp, err := qualityAPI.PatchQualityFormsSurvey(d.Id(), platformclientv2.Surveyform{
+				Disabled: &disabled,
+			})
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Failed to disable survey form %s error: %s", name, err), resp)
+			}
+		}
+		return resp, nil
 	})
+
 	if diagErr != nil {
 		return diagErr
 	}
+	log.Printf("Updated survey form %s %s", name, d.Id())
 	return readSurveyForm(ctx, d, meta)
 }
 

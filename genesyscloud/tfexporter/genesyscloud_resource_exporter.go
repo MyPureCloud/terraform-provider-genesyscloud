@@ -33,7 +33,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -63,13 +63,20 @@ type unresolvableAttributeInfo struct {
 	Schema        *schema.Schema
 }
 
+const (
+	formatHCL     = "hcl"
+	formatJSON    = "json"
+	formatJSONHCL = "json_hcl"
+	formatHCLJSON = "hcl_json"
+)
+
 type GenesysCloudResourceExporter struct {
 	configExporter        Exporter
 	filterType            ExporterFilterType
 	resourceTypeFilter    ExporterResourceTypeFilter
 	resourceFilter        ExporterResourceFilter
 	filterList            *[]string
-	exportAsHCL           bool
+	exportFormat          string
 	splitFilesByResource  bool
 	logPermissionErrors   bool
 	addDependsOn          bool
@@ -138,7 +145,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	}
 
 	gre := &GenesysCloudResourceExporter{
-		exportAsHCL:          d.Get("export_as_hcl").(bool),
+		exportFormat:         identifyExportFormat(d),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
@@ -166,6 +173,12 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	return gre, nil
 }
 
+func identifyExportFormat(d *schema.ResourceData) string {
+	if d.Get("export_as_hcl").(bool) {
+		return formatHCL
+	}
+	return strings.ToLower(d.Get("export_format").(string))
+}
 func computeDependsOn(d *schema.ResourceData) bool {
 	addDependsOn := d.Get("enable_dependency_resolution").(bool)
 	if addDependsOn {
@@ -390,12 +403,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 		}
 
 		// Removes zero values and sets proper reference expressions
-		unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportAsHCL, true)
+		unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
 		if len(unresolved) > 0 {
 			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
 		}
-
-		g.customWriteAttributes(jsonResult, resource)
 
 		if isDataSource {
 			if g.dataSourceTypesMaps[resource.Type] == nil {
@@ -403,6 +414,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			}
 			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		} else {
+			g.customWriteAttributes(jsonResult, resource)
 			g.resourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		}
 
@@ -485,10 +497,13 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 	}
 
 	var errDiag diag.Diagnostics
-	if g.exportAsHCL {
+
+	if g.matchesExportFormat(formatHCL, formatJSONHCL) {
 		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
 		errDiag = hclExporter.exportHCLConfig()
-	} else {
+	}
+
+	if g.matchesExportFormat(formatJSON, formatJSONHCL) {
 		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
 		errDiag = jsonExporter.exportJSONConfig()
 	}
@@ -514,7 +529,7 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 }
 
 func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics {
-	zipFileName := "../archive_genesyscloud_tf_export" + uuid.NewString() + ".zip"
+	zipFileName := filepath.Join(g.exportDirPath, "..", "archive_genesyscloud_tf_export"+uuid.NewString()+".zip")
 	if compress := g.d.Get("compress").(bool); compress { //if true, compress directory name of where the export is going to occur
 		// read all the files
 		var files []fileMeta
@@ -1031,7 +1046,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				// This calls into the resource's ReadContext method which
 				// will block until it can acquire a pooled client config object.
 				ctyType := res.CoreConfigSchema().ImpliedType()
-				instanceState, err := getResourceState(ctx, res, id, resMeta, meta, exportComputed)
+				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
 
 				if err != nil {
 					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, err)
@@ -1149,7 +1164,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}, exportComputed bool) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
@@ -1244,7 +1259,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	prevAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter, //Map of all exporters
 	exportingState bool,
-	exportingAsHCL bool,
+	exportFormat string,
 	parentKey bool) ([]unresolvableAttributeInfo, bool) {
 	resourceType := resource.Type
 	resourceLabel := resource.BlockLabel
@@ -1297,13 +1312,13 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), currAttr, exporters, exportingState, exportingAsHCL, false)
+			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), currAttr, exporters, exportingState, exportFormat, false)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[key] = nil
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat); len(arr) > 0 {
 				configMap[key] = arr
 			} else {
 				// Remove empty arrays
@@ -1394,7 +1409,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			}
 		}
 
-		if exportingAsHCL && exporter.IsJsonEncodable(currAttr) {
+		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(currAttr) {
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr, currAttr)
 				if err != nil {
@@ -1499,7 +1514,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 	currAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter,
 	exportingState bool,
-	exportingAsHCL bool) []interface{} {
+	exportFormat string) []interface{} {
 	resourceType := resource.Type
 	exporter := exporters[resourceType]
 	result := []interface{}{}
@@ -1508,12 +1523,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, currMap, currAttr, exporters, exportingState, exportingAsHCL, false)
+			_, res := g.sanitizeConfigMap(resource, currMap, currAttr, exporters, exportingState, exportFormat, false)
 			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportingAsHCL); len(arr) > 0 {
+			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat); len(arr) > 0 {
 				result = append(result, arr)
 			}
 		case string:
@@ -1589,8 +1604,8 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	if exporters[refSettings.RefType] != nil {
 		// Get the sanitized label from the ID returned as a reference expression
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
-			if meta := idMetaMap[refID]; meta != nil && meta.BlockLabel != "" {
-
+			meta := idMetaMap[refID]
+			if meta != nil && meta.BlockLabel != "" {
 				if g.isDataSource(refSettings.RefType, meta.BlockLabel, meta.OriginalLabel) && g.resourceIdExists(refID, nil) {
 					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.BlockLabel)
 				}
@@ -1695,7 +1710,7 @@ func matchRegex(regexStr string,
 func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {
 
 	if exists := featureToggles.StateComparisonTrue(); exists {
-		if g.exportAsHCL {
+		if g.matchesExportFormat("/.*" + formatHCL + ".*/") {
 			tfstatePath, _ := getFilePath(g.d, defaultTfStateFile)
 			hclExporter := NewTfStateExportReader(tfstatePath, g.exportDirPath)
 			hclExporter.compareExportAndTFState()
@@ -1703,4 +1718,30 @@ func (g *GenesysCloudResourceExporter) verifyTerraformState() diag.Diagnostics {
 	}
 
 	return nil
+}
+
+func (g *GenesysCloudResourceExporter) matchesExportFormat(formats ...string) bool {
+	// Normalize format first
+	exportFormat := g.exportFormat
+	if exportFormat == formatHCLJSON {
+		exportFormat = formatJSONHCL
+	}
+
+	// Check against normalized format
+	for _, format := range formats {
+		if strings.HasPrefix(format, "/") && strings.HasSuffix(format, "/") {
+			pattern := strings.Trim(format, "/")
+			regex, err := regexp.Compile(pattern)
+			if err != nil {
+				log.Printf("Invalid regex pattern: %s", pattern)
+				continue
+			}
+			if regex.MatchString(exportFormat) {
+				return true
+			}
+		} else if exportFormat == format {
+			return true
+		}
+	}
+	return false
 }

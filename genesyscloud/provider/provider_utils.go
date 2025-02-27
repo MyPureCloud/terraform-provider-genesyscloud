@@ -2,7 +2,11 @@ package provider
 
 import (
 	"fmt"
+	"strings"
 	"sync"
+
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,7 +26,7 @@ func GetProviderFactories(providerResources map[string]*schema.Resource, provide
 	}
 }
 
-// Verify default division is home division
+// TestDefaultHomeDivision Verify default division is home division
 func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		homeDivID, err := getHomeDivisionID()
@@ -43,6 +47,34 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+// validateLogFilePath validates that a log file path is not empty, does
+// not contain any whitespaces, and that it ends with ".log"
+// (Keeping this inside validators causes import cycle)
+func validateLogFilePath(filepath any, _ cty.Path) (err diag.Diagnostics) {
+	defer func() {
+		if err != nil {
+			err = diag.Errorf("validateLogFilePath failed: %v", err)
+		}
+	}()
+
+	val, ok := filepath.(string)
+	if !ok {
+		return diag.Errorf("expected type of %v to be string, got %T", filepath, filepath)
+	}
+
+	// Check if the string is empty or contains any whitespace
+	if val == "" || strings.ContainsAny(val, " \t\n\r") {
+		return diag.Errorf("filepath must not be empty or contain whitespace, got: %s", val)
+	}
+
+	// Check if the file ends with .log
+	if !strings.HasSuffix(val, ".log") {
+		return diag.Errorf("%s must end with .log extension", val)
+	}
+
+	return err
 }
 
 // Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially

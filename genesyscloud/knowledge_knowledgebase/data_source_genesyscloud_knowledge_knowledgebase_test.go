@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge_knowledgebase
 
 import (
 	"fmt"
@@ -33,13 +33,13 @@ func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 					knowledgeBaseCoreLanguage1,
 				) + generateKnowledgeKnowledgebaseDataSource(
 					knowledgeBaseDataSourceLabel,
-					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1+".name",
-					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1+".core_language",
-					"genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1,
+					ResourceType+"."+knowledgeBaseResourceLabel1+".name",
+					ResourceType+"."+knowledgeBaseResourceLabel1+".core_language",
+					ResourceType+"."+knowledgeBaseResourceLabel1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_knowledgebase."+knowledgeBaseDataSourceLabel,
-						"id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id",
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+knowledgeBaseDataSourceLabel,
+						"id", ResourceType+"."+knowledgeBaseResourceLabel1, "id",
 					),
 				),
 			},

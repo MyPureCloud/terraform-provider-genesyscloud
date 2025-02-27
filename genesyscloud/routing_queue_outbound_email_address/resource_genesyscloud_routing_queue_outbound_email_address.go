@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -32,7 +32,7 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueOutboundEmailAddressProxy(clientConfig)
 
-	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "")
+	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, "failed to get outbound email addresses for routing queues", resp)
 	}
