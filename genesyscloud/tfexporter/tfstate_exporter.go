@@ -34,7 +34,7 @@ func NewTFStateWriter(ctx context.Context, resources []resourceExporter.Resource
 		return nil, fmt.Errorf("schema.ResourceData cannot be nil")
 	}
 	if len(resources) == 0 {
-		return nil, fmt.Errorf("resources cannot be empty")
+		return nil, fmt.Errorf("No resources found to export")
 	}
 	tfwriter := &TFStateFileWriter{
 		ctx:              ctx,

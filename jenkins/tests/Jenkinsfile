@@ -44,11 +44,11 @@ pipeline {
             H 20 * * 0-4 %REGION=tca
             H 23 * * 0-4 %REGION=us-east-1
         ''')
-    }   
+    }
 
     stages {
-      
-        
+
+
         stage('Install Dependencies & Build') {
             steps {
                 echo 'Installing dependencies'
@@ -62,7 +62,7 @@ pipeline {
                 sh 'go install gotest.tools/gotestsum@latest'
                 sh 'go install github.com/nezorflame/junit-merger@latest'
                 sh 'pip install xmltodict --user'
-                    
+
         script {
           def jenkinsCommon
           def sourceBuildNumber
@@ -73,7 +73,7 @@ pipeline {
           }
             jenkinsCommon.updateDescription(SERVICE_ID, sourceBuildNumber, 'Test Run-' + region)
         }
-      
+
             }
         }
 
@@ -84,7 +84,7 @@ pipeline {
 
             }
         }
-        
+
          stage('Unit Tests') {
 
             environment {
@@ -343,6 +343,7 @@ pipeline {
             environment {
                 TF_ACC=1
                 TF_LOG="DEBUG"
+                GENESYSCLOUD_SDK_CLIENT_POOL_DEBUG=true
             }
             steps {
                 sh 'go clean -i -cache'
@@ -375,10 +376,10 @@ pipeline {
         }
 
         stage('Generate & Upload Report') {
-            
+
         steps {
         sh 'GOBIN=$HOME/bin go install github.com/wadey/gocovmerge@latest'
-        
+
         // Generate merged coverage report
         sh '$HOME/bin/gocovmerge coverageArchitect.out coverageIdp.out coverageAuth.out coverageIntegration.out coverageFlow.out coverageJourney.out coverageKnowledge.out coverageOutbound.out coverageResponseManagement.out coverageRouting.out coverageExport.out coverageLocation.out coverageWebDeployment.out coverageRemaining.out coverageSite.out coverageRoleTeam.out coverageUnit.out > merged_coverage.out'
 
@@ -386,7 +387,7 @@ pipeline {
         sh 'go tool cover -html merged_coverage.out -o coverageReport.html'
 
         sh 'junit-merger -o test-results.xml unit.xml architect.xml idp.xml auth.xml integration.xml flow.xml journey.xml knowledge.xml outbound.xml response.xml routing.xml location.xml web.xml site.xml team.xml export.xml remaining.xml'
-      
+
   script {
     // Read the generated HTML file
     def htmlFile = readFile 'coverageReport.html'
@@ -720,7 +721,7 @@ writeFile file: 'test-report.html', text: html.toString()
                     // Optionally, print the location of the HTML report
                     echo "HTML report generated: \${env.WORKSPACE}/test-report.html"
                 }
-                archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true   
+                archiveArtifacts artifacts: 'coverageReport.html,test-report.html,test-results.xml', allowEmptyArchive: true
            }
         }
     }
@@ -739,19 +740,19 @@ writeFile file: 'test-report.html', text: html.toString()
                             platform = "go"
                             teams = "Developer Tooling"
                             }
-                        echo "Sending Taneleer acceptance to UTR..."    
+                        echo "Sending Taneleer acceptance to UTR..."
                         testJobResultToTaneleer {
                             aut = "CXasCodeTests"
                             environment = env
                             teams = "Developer Tooling"
-                            }    
-                        echo "Done sending results to Knex & Taneleer"        
+                            }
+                        echo "Done sending results to Knex & Taneleer"
                         }
                     }
                 }
           }
     }
- 
+
 // Function to extract reason from the log for failed tests
 def extractReason(String log) {
     def reason = ""

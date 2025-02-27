@@ -3,6 +3,7 @@ package tfexporter
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -450,6 +451,11 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		description      = "Terraform wrapup code description"
 	)
 	cleanupFunc := func() {
+		if provider.SdkClientPool != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_ = provider.SdkClientPool.Close(ctx)
+		}
 		if err := os.RemoveAll(exportTestDir); err != nil {
 			t.Logf("Error while cleaning up %v", err)
 		}
@@ -2947,7 +2953,7 @@ func generateTfExportByFilter(
 		include_state_file = %s
 		resource_types = [%s]
 		exclude_attributes = [%s]
-		export_format = %s
+		export_format = "%s"
 		log_permission_errors = %s
 		depends_on=[%s]
 	}
@@ -2967,7 +2973,7 @@ func generateTfExportByIncludeFilterResources(
 		directory = "%s"
 		include_state_file = %s
 		include_filter_resources = [%s]
-		export_format = %s
+		export_format = "%s"
 		split_files_by_resource = %s
 		depends_on = [%s]
 	}
@@ -2987,7 +2993,7 @@ func generateTfExportByFlowDependsOnResources(
 		directory = "%s"
 		include_state_file = %s
 		include_filter_resources = [%s]
-		export_format = %s
+		export_format = "%s"
 		split_files_by_resource = %s
 		enable_dependency_resolution = %s
 		depends_on = [time_sleep.wait_10_seconds]
@@ -3009,7 +3015,7 @@ func generateTfExportByExcludeFilterResources(
 		include_state_file = %s
 		exclude_filter_resources = [%s]
 		log_permission_errors=true
-		export_format = %s
+		export_format = "%s"
 		split_files_by_resource = %s
 		depends_on=[%s]
 	}
