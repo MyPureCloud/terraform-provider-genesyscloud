@@ -28,4 +28,5 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
       session_type = "web"
     }
   }
+  assignment_expiration_days = 2
 }

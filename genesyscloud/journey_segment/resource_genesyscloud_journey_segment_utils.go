@@ -18,6 +18,7 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
 	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeySegment.Context, flattenContext))
 	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeySegment.Journey, flattenJourney))
+	resourcedata.SetNillableValue(d, "assignment_expiration_days", journeySegment.AssignmentExpirationDays)
 }
 
 func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclientv2.Journeysegmentrequest {
@@ -29,16 +30,18 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
+	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	return &platformclientv2.Journeysegmentrequest{
-		IsActive:             &isActive,
-		DisplayName:          &displayName,
-		Description:          description,
-		Color:                &color,
-		Scope:                &scope,
-		ShouldDisplayToAgent: shouldDisplayToAgent,
-		Context:              sdkContext,
-		Journey:              journey,
+		IsActive:                 &isActive,
+		DisplayName:              &displayName,
+		Description:              description,
+		Color:                    &color,
+		Scope:                    &scope,
+		ShouldDisplayToAgent:     shouldDisplayToAgent,
+		Context:                  sdkContext,
+		Journey:                  journey,
+		AssignmentExpirationDays: assignmentExpirationDays,
 	}
 }
 
@@ -50,6 +53,7 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchJourney, false)
+	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	sdkPatchSegment := platformclientv2.Patchsegment{}
 	sdkPatchSegment.SetField("IsActive", &isActive)
@@ -59,6 +63,7 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
+	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
 	return &sdkPatchSegment
 }
 
