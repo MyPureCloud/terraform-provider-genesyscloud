@@ -72,7 +72,7 @@ var (
 			MaxItems:    1,
 			Elem:        journeyResource,
 		},
-		"assignmentExpirationDays": {
+		"assignment_expiration_days": {
 			Description:  "Time, in days, from when the segment is assigned until it is automatically unassigned.",
 			Type:         schema.TypeInt,
 			Optional:     true,
