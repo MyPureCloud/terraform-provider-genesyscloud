@@ -187,7 +187,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", util.NullValue),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2),
@@ -199,7 +198,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResourceLabel1, 1, routingRuleOpAny, "45", "15"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					func(s *terraform.State) error {
-						time.Sleep(3 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						time.Sleep(3 * time.Second) // Wait for 3 seconds for resources to get deleted properly
 						return nil
 					},
 				),
@@ -209,9 +208,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
-				//Check: resource.ComposeTestCheckFunc(
-				//	checkUserDeleted(userID),
-				//),
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
@@ -1700,22 +1699,22 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		if id == "" {
-			log.Printf("checkUserDeleted: skipping verification because no user ID was provided.")
-			return nil
-		}
-		maxAttempts := 30
+		maxAttempts := 5
 		for i := 0; i < maxAttempts; i++ {
+			log.Printf("Attempt %d of %d: Fetching user with ID: %s\n", i+1, maxAttempts, id)
 			deleted, err := isUserDeleted(id)
 			if err != nil {
 				return err
 			}
 			if deleted {
+				log.Printf("User %s no longer exists", id)
 				return nil
 			}
-			time.Sleep(10 * time.Second)
+
+			log.Printf("User %s still exists.", id)
+			log.Println("Sleeping for 2 seconds")
+			time.Sleep(2 * time.Second)
 		}
 		return fmt.Errorf("user %s was not deleted properly", id)
 	}

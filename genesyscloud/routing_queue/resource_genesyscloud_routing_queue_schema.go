@@ -144,14 +144,6 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
-			"mode": {
-				Description:  "The mode callbacks will use on this queue.",
-				Deprecated:   "This field is not relevant to this media settings type and will be removed from the schema on the next version 1.60.0",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
-			},
 		},
 	}
 
@@ -207,6 +199,7 @@ var (
 				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed: true,
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
 		},
