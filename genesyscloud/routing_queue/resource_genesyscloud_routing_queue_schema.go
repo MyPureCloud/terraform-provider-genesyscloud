@@ -105,6 +105,18 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
+			"auto_end_delay_seconds": {
+				Description: "Auto End Delay Seconds. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+			},
+			"auto_dial_delay_seconds": {
+				Description: "Auto Dial Delay Seconds. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+			},
 			"sub_type_settings": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
 				Type:        schema.TypeList,
@@ -115,6 +127,13 @@ var (
 				Description: "Auto-Answer for digital channels(Email, Message)",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Default:     false,
+			},
+			"enable_auto_dial_and_end": {
+				Description: "Auto Dail and End. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
 				Default:     false,
 			},
 			"service_level_percentage": {
@@ -235,7 +254,7 @@ var (
 				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				Computed:      true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
 		},
