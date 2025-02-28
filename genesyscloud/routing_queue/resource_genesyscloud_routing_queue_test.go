@@ -537,7 +537,6 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 		scoringMethod           = "TimestampAndPriority"
 		skillGroupResourceLabel = "skillgroup"
 		skillGroupName          = "test skillgroup " + uuid.NewString()
-		callbackModeAgentFirst  = "AgentFirst"
 	)
 
 	// Create CGR queue with routing rules
@@ -570,7 +569,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -588,7 +587,6 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),

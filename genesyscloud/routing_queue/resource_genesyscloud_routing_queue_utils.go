@@ -157,7 +157,7 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
 	settingsMap := settings[0].(map[string]interface{})
-	return &platformclientv2.Callbackmediasettings{
+	callbackmediasettings := &platformclientv2.Callbackmediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		ServiceLevel: &platformclientv2.Servicelevel{
 			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
@@ -167,8 +167,13 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 		AutoEndDelaySeconds:  platformclientv2.Int(settingsMap["auto_end_delay_seconds"].(int)),
 		AutoDialDelaySeconds: platformclientv2.Int(settingsMap["auto_dial_delay_seconds"].(int)),
 		EnableAutoDialAndEnd: platformclientv2.Bool(settingsMap["enable_auto_dial_and_end"].(bool)),
-		Mode:                 platformclientv2.String(settingsMap["mode"].(string)),
 	}
+
+	if *platformclientv2.String(settingsMap["mode"].(string)) != "" {
+		callbackmediasettings.Mode = platformclientv2.String(settingsMap["mode"].(string))
+	}
+
+	return callbackmediasettings
 }
 
 func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Basemediasettings {
