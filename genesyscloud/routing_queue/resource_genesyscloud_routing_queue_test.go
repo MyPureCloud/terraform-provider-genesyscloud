@@ -417,7 +417,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						conditionalGroupRouting2WaitSeconds,                     // wait_seconds
 						GenerateConditionalGroupRoutingRuleGroup(
 							"genesyscloud_group."+group1ResourceLabel+".id", // group_id
-							"GROUP",                                         // group_type
+							"GROUP", // group_type
 						),
 					),
 					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",

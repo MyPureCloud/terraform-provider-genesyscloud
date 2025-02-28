@@ -147,6 +147,60 @@ var (
 		},
 	}
 
+	queueMediaSettingsEmailResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"auto_end_delay_seconds": {
+				Description: "Auto End Delay Seconds. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+			},
+			"auto_dial_delay_seconds": {
+				Description: "Auto Dial Delay Seconds. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
+			},
+			"enable_auto_answer": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"enable_auto_dial_and_end": {
+				Description: "Auto Dail and End. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+				Default:     false,
+			},
+			"service_level_percentage": {
+				Description:  "The desired Service Level. A float value between 0 and 1.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				ValidateFunc: validation.FloatBetween(0, 1),
+			},
+			"service_level_duration_ms": {
+				Description:  "Service Level target in milliseconds. Must be >= 1000",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(1000),
+			},
+		},
+	}
+
 	queueMediaSettingsCallbackResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
@@ -199,7 +253,7 @@ var (
 				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				Computed: true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
 		},
@@ -338,7 +392,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsEmailResource,
 			},
 			"media_settings_message": {
 				Description: "Message media settings.",
