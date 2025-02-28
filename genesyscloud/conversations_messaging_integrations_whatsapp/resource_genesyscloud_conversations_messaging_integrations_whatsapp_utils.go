@@ -2,6 +2,7 @@ package conversations_messaging_integrations_whatsapp
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
@@ -32,6 +33,7 @@ func GenerateConversationsMessagingIntegrationsWhatsappResource(
 	supportedContent string,
 	messagingSetting string,
 	embeddedSignupAccessToken string,
+	nestedBlocks ...string,
 ) string {
 	return fmt.Sprintf(`
 		resource "%s" "%s" {
@@ -39,9 +41,21 @@ func GenerateConversationsMessagingIntegrationsWhatsappResource(
 			supported_content_id = %s
 			messaging_setting_id = %s
 			embedded_signup_access_token = "%s"
+			%s
 		}
-	`, ResourceType, resourceLabel, name, supportedContent, messagingSetting, embeddedSignupAccessToken)
+	`, ResourceType, resourceLabel, name, supportedContent, messagingSetting, embeddedSignupAccessToken, strings.Join(nestedBlocks, "\n"))
+}
 
+func GenerateActivateConversationsMessagingIntegrationsWhatsappResource(
+	phoneNumber string,
+	pin string,
+) string {
+	return fmt.Sprintf(`
+		activate_whatsapp {
+			phone_number = "%s"
+			pin = "%s"
+		}
+	`, phoneNumber, pin)
 }
 
 func GenerateConversationsMessagingIntegrationWhatsappDataSource(

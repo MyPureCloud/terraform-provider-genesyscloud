@@ -57,6 +57,13 @@ func createConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 
 	d.SetId(*whatsAppEmbeddedSignupIntegrationRequest.Id)
 	log.Printf("Created conversations messaging integrations whatsapp %s", *whatsAppEmbeddedSignupIntegrationRequest.Id)
+
+	//check if user wants to activate the whatsapp integration
+	if activateWhatsapp := d.Get("activate_whatsapp").(*schema.Set); activateWhatsapp != nil {
+		if activateWhatsapp.Len() > 0 {
+			return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta, activateWhatsapp)
+		}
+	}
 	return readConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
 }
 
@@ -96,6 +103,13 @@ func updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
 
+	// Activate WhatsApp integration if requested, otherwise proceed with update
+	if activateWhatsapp := d.Get("activate_whatsapp").(*schema.Set); activateWhatsapp != nil {
+		if activateWhatsapp.Len() > 0 {
+			return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta, activateWhatsapp)
+		}
+	}
+
 	supportedContentId := d.Get("supported_content_id").(string)
 	messagingSettingId := d.Get("messaging_setting_id").(string)
 
@@ -112,6 +126,40 @@ func updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 	}
 
 	log.Printf("Updated conversations messaging integrations whatsapp %s", *conversationsMessagingIntegrationsWhatsapp.Name)
+	return readConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
+}
+
+// activateConversationsMessagingIntegrationsWhatsapp is used by the conversations_messaging_integrations_whatsapp resource to activate a WhatsApp integration by submitting the phone number and pin for verification in Genesys Cloud
+func activateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *schema.ResourceData, meta interface{}, activateWhatsapp *schema.Set) diag.Diagnostics {
+	// Extract phone number and pin from the activation data
+	activateWhatsappMap := activateWhatsapp.List()[0].(map[string]interface{})
+	phoneNumber := activateWhatsappMap["phone_number"].(string)
+	pin := activateWhatsappMap["pin"].(string)
+
+	// Return if required fields are empty
+	if phoneNumber == "" || pin == "" {
+		return nil
+	}
+
+	// Get SDK configuration and proxy
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
+
+	// Construct activation request
+	activationRequest := platformclientv2.Whatsappembeddedsignupintegrationactivationrequest{
+		PhoneNumber: &phoneNumber,
+		Pin:         &pin,
+	}
+
+	// Call API for activating the WhatsApp integration
+	log.Printf("Activating conversations messaging integrations whatsapp %s", d.Id())
+	_, resp, err := proxy.updateConversationsMessagingIntegrationsWhatsappEmbeddedSignup(ctx, d.Id(), &activationRequest)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to activate conversations messaging integrations whatsapp %s: %s", d.Id(), err), resp)
+	}
+
+	log.Printf("Activated conversations messaging integrations whatsapp %s", d.Id())
+	// Read back the resource state after activation
 	return readConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
 }
 

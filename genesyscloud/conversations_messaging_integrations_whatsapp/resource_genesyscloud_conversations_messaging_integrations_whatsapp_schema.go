@@ -28,6 +28,21 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // ResourceConversationsMessagingIntegrationsWhatsapp registers the genesyscloud_conversations_messaging_integrations_whatsapp resource with Terraform
 func ResourceConversationsMessagingIntegrationsWhatsapp() *schema.Resource {
 
+	activateWhatsappIntegrationResource := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`phone_number`: {
+				Description: `Phone number to associate with the WhatsApp integration`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`pin`: {
+				Description: `Specify the two-step verification PIN for that phone number`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
 	return &schema.Resource{
 		Description: `Genesys Cloud conversations messaging integrations whatsapp`,
 
@@ -59,6 +74,12 @@ func ResourceConversationsMessagingIntegrationsWhatsapp() *schema.Resource {
 				Description: `The access token returned from the embedded signup flow`,
 				Required:    true,
 				Type:        schema.TypeString,
+			},
+			`activate_whatsapp`: {
+				Description: `Flag indicating whether to activate the WhatsApp Integration. If set to true, the integration will be activated during creation/update.`,
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Elem:        activateWhatsappIntegrationResource,
 			},
 		},
 	}

@@ -78,7 +78,7 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "embedded_signup_access_token", embeddedToken),
 				),
 			},
-			//update name
+			//update name and activate
 			{
 				Config: messagingSettingReference +
 					supportedContentReference +
@@ -88,6 +88,9 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 						cmSupportedContent.ResourceType+"."+resourceLabelSupportedContent+".id",
 						cmMessagingSetting.ResourceType+"."+resourceLabelMessagingSetting+".id",
 						embeddedToken,
+						GenerateActivateConversationsMessagingIntegrationsWhatsappResource(
+							"+13172222222",
+							"0000"),
 					),
 
 				Check: resource.ComposeTestCheckFunc(
@@ -95,6 +98,8 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "supported_content_id", cmSupportedContent.ResourceType+"."+resourceLabelSupportedContent, "id"),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "messaging_setting_id", cmMessagingSetting.ResourceType+"."+resourceLabelMessagingSetting, "id"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "embedded_signup_access_token", embeddedToken),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_number", "+13172222222"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "pin", "1234"),
 				),
 			},
 			{
