@@ -218,7 +218,6 @@ Optional:
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_call--sub_type_settings))
@@ -268,7 +267,6 @@ Optional:
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_chat--sub_type_settings))
@@ -289,11 +287,10 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
+- `auto_dial_delay_seconds` (Number, Deprecated) Auto Dial Delay Seconds. NOTE: This field is deprecated and will be removed in future release.
+- `auto_end_delay_seconds` (Number, Deprecated) Auto End Delay Seconds. NOTE: This field is deprecated and will be removed in future release.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
+- `enable_auto_dial_and_end` (Boolean, Deprecated) Auto Dail and End. NOTE: This field is deprecated and will be removed in future release. Defaults to `false`.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_email--sub_type_settings))
@@ -318,7 +315,6 @@ Optional:
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
