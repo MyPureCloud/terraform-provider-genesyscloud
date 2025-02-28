@@ -164,6 +164,7 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
+		AllowZeroValuesInMap: []string{"config_response.translation_map_defaults"},
 	}
 }
 
