@@ -162,8 +162,8 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 }
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
-	settingsMap, ok := settings[0].(map[string]interface{})
-	if !ok {
+	settingsMap, mapOk := settings[0].(map[string]interface{})
+	if !mapOk {
 		return nil
 	}
 	var callbackSettings platformclientv2.Callbackmediasettings
@@ -201,7 +201,7 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 		callbackSettings.EnableAutoDialAndEnd = &enableAutoDialAndEnd
 	}
 
-	if mode, ok := settingsMap["mode"].(string); ok {
+	if mode, ok := settingsMap["mode"].(string); ok && mode != "" {
 		callbackSettings.Mode = &mode
 	}
 
