@@ -41,10 +41,19 @@ resource "genesyscloud_conversations_messaging_integrations_whatsapp" "test_mess
 
 ### Optional
 
+- `activate_whatsapp` (Block Set) Flag indicating whether to activate the WhatsApp Integration. If set to true, the integration will be activated during creation/update. (see [below for nested schema](#nestedblock--activate_whatsapp))
 - `messaging_setting_id` (String) Messaging Setting for messaging platform integrations
 - `supported_content_id` (String) Reference to supported content profile associated with the integration
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--activate_whatsapp"></a>
+### Nested Schema for `activate_whatsapp`
+
+Required:
+
+- `phone_number` (String) Phone number to associate with the WhatsApp integration
+- `pin` (String) Specify the two-step verification PIN for that phone number
 
