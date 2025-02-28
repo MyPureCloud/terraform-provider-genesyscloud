@@ -146,6 +146,64 @@ var (
 			},
 			"mode": {
 				Description:  "The mode callbacks will use on this queue.",
+				Deprecated:   "This field is not relevant to this media settings type and will be removed from the schema on the next version 1.60.0",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
+			},
+		},
+	}
+
+	queueMediaSettingsCallbackResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"auto_end_delay_seconds": {
+				Description: "Auto End Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"auto_dial_delay_seconds": {
+				Description: "Auto Dial Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
+			},
+			"enable_auto_answer": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"enable_auto_dial_and_end": {
+				Description: "Auto Dail and End",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"service_level_percentage": {
+				Description:  "The desired Service Level. A float value between 0 and 1.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				ValidateFunc: validation.FloatBetween(0, 1),
+			},
+			"service_level_duration_ms": {
+				Description:  "Service Level target in milliseconds. Must be >= 1000",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(1000),
+			},
+			"mode": {
+				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
@@ -270,7 +328,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsCallbackResource,
 			},
 			"media_settings_chat": {
 				Description: "Chat media settings.",
