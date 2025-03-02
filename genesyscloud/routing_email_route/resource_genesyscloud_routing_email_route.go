@@ -22,10 +22,10 @@ import (
 )
 
 /*
-The resource_genesyscloud_routing_email_route.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_routing_email_route.go contains all the methods that perform the core logic for a resource.
 */
 
-// getAllAuthRoutingEmailRoute retrieves all of the routing email route via Terraform in the Genesys Cloud and is used for the exporter
+// getAllAuthRoutingEmailRoute retrieves all the routing email route via Terraform in the Genesys Cloud and is used for the exporter
 func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := newRoutingEmailRouteProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -33,6 +33,10 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, "Failed to get routing email route", respCode)
+	}
+
+	if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
+		return resources, nil
 	}
 
 	for domainId, inboundRoutes := range *inboundRoutesMap {
