@@ -108,24 +108,28 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		inboundRoutesMap, resp, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
 		if getErr != nil {
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr.Error()), resp)
 			if util.IsStatus404(resp) {
-				d.SetId("")
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(diagErr)
+		}
+
+		if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
+			return retry.RetryableError(fmt.Errorf("found no domain '%s'", domainId))
 		}
 
 		for _, inboundRoutes := range *inboundRoutesMap {
 			for _, queryRoute := range inboundRoutes {
 				if queryRoute.Id != nil && *queryRoute.Id == d.Id() {
-					route = &queryRoute
+					routeCopy := queryRoute
+					route = &routeCopy
 					break
 				}
 			}
 		}
 		if route == nil {
-			d.SetId("")
-			return nil
+			return retry.RetryableError(fmt.Errorf("no email route '%s' found in domain '%s'", d.Id(), domainId))
 		}
 
 		resourcedata.SetNillableValue(d, "pattern", route.Pattern)
