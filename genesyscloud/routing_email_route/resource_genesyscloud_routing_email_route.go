@@ -27,7 +27,7 @@ The resource_genesyscloud_routing_email_route.go contains all the methods that p
 
 // getAllAuthRoutingEmailRoute retrieves all the routing email route via Terraform in the Genesys Cloud and is used for the exporter
 func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newRoutingEmailRouteProxy(clientConfig)
+	proxy := getRoutingEmailRouteProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
