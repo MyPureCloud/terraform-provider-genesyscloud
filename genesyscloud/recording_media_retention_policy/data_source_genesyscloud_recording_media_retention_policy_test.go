@@ -134,19 +134,18 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		},
 	}
 
+	const domainPrefix = "terraformmedia"
 	var (
 		domainResourceLabel = "routing-domain1"
-		domainId            = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId            = domainPrefix + strconv.Itoa(rand.Intn(1000)) + ".com"
 		divResourceLabel    = "test-division"
 		divName             = "terraform-" + uuid.NewString()
 		description         = "Terraform test description"
 	)
 
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
+	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
+		t.Logf("Failed to cleanup domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
-	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

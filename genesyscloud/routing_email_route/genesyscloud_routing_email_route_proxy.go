@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
@@ -91,71 +92,65 @@ func (p *routingEmailRouteProxy) deleteRoutingEmailRoute(ctx context.Context, do
 	return p.deleteRoutingEmailRouteAttr(ctx, p, domainId, id)
 }
 
-func getAllRoutingEmailRouteByDomainIdFn(ctx context.Context, p *routingEmailRouteProxy, domains *platformclientv2.Inbounddomainentitylisting, name string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+func getAllRoutingEmailRouteByDomainIdFn(_ context.Context, p *routingEmailRouteProxy, domains []platformclientv2.Inbounddomain, pattern string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
 	var allInboundRoutes = make(map[string][]platformclientv2.Inboundroute)
 	var apiResponse *platformclientv2.APIResponse
-	for _, domain := range *domains.Entities {
-		var allDomainRoutes []platformclientv2.Inboundroute
+	for _, domain := range domains {
 
-		for pageNum := 1; pageNum <= *domains.PageCount; pageNum++ {
-			routes, resp, err := p.routingApi.GetRoutingEmailDomainRoutes(*domain.Id, 100, pageNum, name)
+		var allDomainRoutes = make([]platformclientv2.Inboundroute, 0)
+
+		for pageNum := 1; ; pageNum++ {
+			routes, resp, err := p.routingApi.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, pattern)
 			if err != nil {
 				apiResponse = resp
-				return nil, apiResponse, fmt.Errorf("Failed to get routing email route: %s", err)
+				return nil, apiResponse, fmt.Errorf("failed to get routing email route: %s", err.Error())
 			}
 			if routes.Entities == nil || len(*routes.Entities) == 0 {
 				break
 			}
 			allDomainRoutes = append(allDomainRoutes, *routes.Entities...)
-			allInboundRoutes[*domain.Id] = allDomainRoutes
 		}
+		allInboundRoutes[*domain.Id] = allDomainRoutes
 	}
 	return &allInboundRoutes, apiResponse, nil
 }
 
 // getAllRoutingEmailRouteFn is the implementation for retrieving all routing email route in Genesys Cloud
-func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, name string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
-	var allInboundRoutes = make(map[string][]platformclientv2.Inboundroute)
+func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, domainId, pattern string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var apiResponse *platformclientv2.APIResponse
 
-	domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, 1, false, "")
-	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
-	}
-	if domains.Entities == nil || len(*domains.Entities) == 0 {
-		return &allInboundRoutes, resp, nil
-	}
-
-	// If domainID is given, we only return the routes for that specific domain
-	if domainId != "" {
-		return getAllRoutingEmailRouteByDomainIdFn(ctx, p, domains, name)
-	}
-
-	// DomainID not given so we must acquire every route for every domain
-
-	routes, _, err := getAllRoutingEmailRouteByDomainIdFn(ctx, p, domains, name)
-	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
-	}
-	allInboundRoutes = *routes
-
-	for pageNum := 2; pageNum <= *domains.PageCount; pageNum++ {
-		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, "")
+	var allDomains = make([]platformclientv2.Inbounddomain, 0)
+	for pageNum := 1; ; pageNum++ {
+		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, domainId)
+		apiResponse = resp
 		if err != nil {
-			return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
+			return nil, resp, fmt.Errorf("failed to get routing email domains: %s", err.Error())
 		}
 		if domains.Entities == nil || len(*domains.Entities) == 0 {
-			return &allInboundRoutes, resp, nil
+			break
 		}
-
-		routes, _, err := getAllRoutingEmailRouteByDomainIdFn(ctx, p, domains, name)
-		if err != nil {
-			return nil, resp, fmt.Errorf("Failed to get routing email domains: %s", err)
-		}
-		allInboundRoutes = *routes
+		allDomains = append(allDomains, *domains.Entities...)
 	}
-	return &allInboundRoutes, apiResponse, nil
+
+	if len(allDomains) == 0 {
+		return nil, apiResponse, nil
+	}
+
+	// Get all routes for each domain
+	routes, resp, err := getAllRoutingEmailRouteByDomainIdFn(ctx, p, allDomains, pattern)
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to get routing email domains: %s", err.Error())
+	}
+
+	if routes == nil {
+		log.Printf("No routing email routes found. domainId: '%s', pattern: '%s'", domainId, pattern)
+		return nil, resp, nil
+	}
+
+	log.Printf("Returning routes for domains: %v", reflect.ValueOf(*routes).MapKeys())
+	return routes, resp, nil
 }
 
 // createRoutingEmailRouteFn is an implementation function for creating a Genesys Cloud routing email route
@@ -202,17 +197,17 @@ func getRoutingEmailRouteIdByPatternFn(ctx context.Context, p *routingEmailRoute
 	}
 
 	if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
-		return "", true, resp, fmt.Errorf("No routing email route found with pattern %s", pattern)
+		return "", true, resp, fmt.Errorf("no routing email route found with pattern %s", pattern)
 	}
 
 	for _, inboundRoutes := range *inboundRoutesMap {
 		for _, inboundRoute := range inboundRoutes {
 			if *inboundRoute.Pattern == pattern {
-				log.Printf("Retrieved the routing email route id %s by pattern %s", *inboundRoute.Id, pattern)
+				log.Printf("Retrieved the routing email route id %s by pattern %s for DomainID %s", *inboundRoute.Id, pattern, domainId)
 				return *inboundRoute.Id, false, resp, nil
 			}
 		}
 	}
 
-	return "", true, resp, fmt.Errorf("Unable to find routing email route with name %s", pattern)
+	return "", true, resp, fmt.Errorf("unable to find routing email route with name %s", pattern)
 }

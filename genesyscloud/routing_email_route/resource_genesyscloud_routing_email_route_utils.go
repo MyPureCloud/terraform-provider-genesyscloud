@@ -174,14 +174,17 @@ func GenerateRoutingEmailRouteResource(
 	pattern string,
 	fromName string,
 	otherAttrs ...string) string {
-	hh := fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
             domain_id = %s
             pattern = "%s"
             from_name = "%s"
             %s
         }
         `, resourceLabel, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
+}
 
-	fmt.Println(hh)
-	return hh
+func mergeIntoExistingMap(target, source map[string][]platformclientv2.Inboundroute) {
+	for key, routes := range source {
+		target[key] = append(target[key], routes...)
+	}
 }

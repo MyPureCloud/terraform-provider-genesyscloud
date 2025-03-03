@@ -115,10 +115,30 @@ func init() {
 	// Initialize the config once
 	platformConfigSingleton = &platformConfig{}
 
+	var path string
 	path, err := detectExecutingBinary()
 	if err != nil {
-		log.Printf(`Error detecting binary: %v`, err)
-		platformConfigSingleton.platform = PlatformTerraform // use default terraform binary. so it wont break regression
+		log.Printf("Could not detect binary from parent process: %v, attempting to detect the platform binary another way", err)
+
+		// Could not find binary by looking it up from parent process
+		// Let's see if we can find a Terraform binary on the system
+		path, err = directLookupPlatformBinary("terraform")
+
+		if path == "" {
+			// No Terraform binary found on the system
+			// Let's see if we can find a Tofu binary on the system
+			path, err = directLookupPlatformBinary("tofu")
+			if path == "" {
+				log.Printf("No valid platform binary found!")
+				platformConfigSingleton.platform = PlatformUnknown
+				return
+			}
+		}
+	}
+
+	if err := validateBinaryPath(path); err != nil {
+		log.Printf("Invalid binary path: %v", err)
+		platformConfigSingleton.platform = PlatformUnknown
 		return
 	}
 
@@ -180,19 +200,52 @@ func detectedPlatformLog() {
 func detectExecutingBinary() (string, error) {
 	ppid, err := os.FindProcess(os.Getppid())
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to find parent process: %w", err)
 	}
 	tfProcess, err := process.NewProcess(int32(ppid.Pid))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create process handle: %w", err)
 	}
 
 	exe, err := tfProcess.Exe()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get executable path: %w", err)
 	}
 
 	return exe, nil
+}
+
+// directLookupPlatformBinary returns the full path of the binary that is desired
+// Use this function if we cannot detect from the parent process
+//
+// Returns:
+//   - string: The path to the executing binary
+//   - error: An error if the process cannot be found or if the executable path cannot be determined
+func directLookupPlatformBinary(platform string) (string, error) {
+	platformPath, err := exec.LookPath(platform)
+	if err != nil {
+		return "", err
+	}
+	return platformPath, nil
+}
+
+func validateBinaryPath(path string) error {
+	if path == "" {
+		return fmt.Errorf("empty binary path")
+	}
+
+	// Convert to absolute path
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute path: %w", err)
+	}
+
+	// Check for directory traversal attempts
+	if strings.Contains(absPath, "..") {
+		return fmt.Errorf("path contains directory traversal")
+	}
+
+	return nil
 }
 
 // verifyBinary performs basic security checks on the provided binary path to ensure
@@ -204,15 +257,20 @@ func detectExecutingBinary() (string, error) {
 // Returns:
 //   - error: An error if any verification check fails, nil if all checks pass
 func verifyBinary(path string) error {
-	// Basic existence check
+	// Basic existence check (os.Stat() follows symlinks to get the )
 	info, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("failed to stat binary: %w", err)
+		return fmt.Errorf("failed to Lstat binary: %w", err)
 	}
 
 	// Ensure it's a regular file, not a symlink or directory
 	if !info.Mode().IsRegular() {
 		return fmt.Errorf("binary path is not a regular file")
+	}
+
+	// Get file size
+	if info.Size() == 0 {
+		return fmt.Errorf("binary file is empty")
 	}
 
 	// Check if we have execute permission based on OS
