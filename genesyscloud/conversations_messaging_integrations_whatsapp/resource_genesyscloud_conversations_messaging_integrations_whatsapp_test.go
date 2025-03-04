@@ -24,7 +24,7 @@ tests for conversations_messaging_integrations_whatsapp.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
-	t.Parallel()
+	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	var (
 		resourceLabel                 = "test_messaging_whatsapp"
 		resourceName                  = "Terraform Messaging Whatsapp-" + uuid.NewString()
