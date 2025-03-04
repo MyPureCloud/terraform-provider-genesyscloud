@@ -56,7 +56,7 @@ type functionConfig struct {
 
 // getAllIntegrationActions retrieves all of the integration action via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrationFunctionActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	Resource := make(resourceExporter.ResourceIDMetaMap)
+	resources := make(resourceExporter.ResourceIDMetaMap)
 	iap := getIntegrationFunctionActionsProxy(clientConfig)
 
 	actions, resp, err := iap.getAllIntegrationFunctionActions(ctx)
@@ -69,9 +69,9 @@ func getAllIntegrationFunctionActions(ctx context.Context, clientConfig *platfor
 		if strings.HasPrefix(*action.Id, "static") {
 			continue
 		}
-		Resource[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
 	}
-	return Resource, nil
+	return resources, nil
 }
 
 // createIntegrationFunctionAction is used by the integration actions resource to create Genesyscloud integration action
