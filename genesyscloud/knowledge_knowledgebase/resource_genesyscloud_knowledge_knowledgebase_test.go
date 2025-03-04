@@ -1,4 +1,4 @@
-package genesyscloud
+package knowledge_knowledgebase
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
@@ -34,9 +34,9 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 					knowledgeBaseCoreLanguage1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription1),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
 				),
 			},
 			{
@@ -48,14 +48,14 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 					knowledgeBaseCoreLanguage1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription2),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription2),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_knowledgebase." + knowledgeBaseResourceLabel1,
+				ResourceName:      ResourceType + "." + knowledgeBaseResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -67,7 +67,7 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_knowledge_knowledgebase" {
+		if rs.Type != ResourceType {
 			continue
 		}
 

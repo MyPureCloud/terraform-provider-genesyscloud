@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	location "terraform-provider-genesyscloud/genesyscloud/location"
@@ -23,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -166,6 +165,66 @@ func TestAccResourceUserBasic(t *testing.T) {
 			{
 				// Import/Read
 				ResourceName:      ResourceType + "." + userResourceLabel2,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccResourceUserVoicemailUserpolicies(t *testing.T) {
+	var (
+		userResourceLabel1     = "test-user1"
+		email1                 = "terraform-" + uuid.NewString() + "@user.com"
+		email2                 = "terraform-" + uuid.NewString() + "@user.com"
+		userName1              = "John Terraform"
+		userName2              = "Jim Terraform"
+		timeoutSeconds1        = 550
+		timeoutSeconds2        = 450
+		sendEmailNotification1 = true
+		sendEmailNotification2 = false
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email1,
+					userName1,
+					GenerateVoicemailUserpolicies(timeoutSeconds1, sendEmailNotification1),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds1)),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.send_email_notifications", strconv.FormatBool(sendEmailNotification1)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Update
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email2,
+					userName2,
+					GenerateVoicemailUserpolicies(timeoutSeconds2, sendEmailNotification2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds2)),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.send_email_notifications", strconv.FormatBool(sendEmailNotification2)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + userResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -1255,11 +1314,13 @@ func TestAccResourceUserPassword(t *testing.T) {
 
 	// Create our mock proxy with the authorized configuration
 	userProxyInstance := newUserProxy(sdkConfig)
+	originalUpdatePassword := userProxyInstance.updatePasswordAttr
 
 	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
 		passwordUpdateCalled = true
 		lastPasswordUpdate = password
-		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+		resp, err := originalUpdatePassword(ctx, p, id, password)
+		return resp, err
 	}
 
 	// Initialize internal proxy

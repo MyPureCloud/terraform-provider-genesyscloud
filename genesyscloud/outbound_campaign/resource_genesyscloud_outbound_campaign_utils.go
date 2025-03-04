@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v150/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
 
 /*
@@ -331,6 +331,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				wrapUpCodeResourceLabel,
 				"wrapupcode "+uuid.NewString(),
 				"genesyscloud_auth_division."+divResourceLabel+".id",
+				"Terraform test description",
 			) + architect_flow.GenerateFlowResource(
 				flowResourceLabel,
 				outboundFlowFilePath,

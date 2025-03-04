@@ -5,6 +5,19 @@ import (
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
+	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectUserPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"terraform-provider-genesyscloud/genesyscloud/group"
+	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingSmsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"terraform-provider-genesyscloud/genesyscloud/scripts"
+	"terraform-provider-genesyscloud/genesyscloud/team"
+	"terraform-provider-genesyscloud/genesyscloud/user"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -134,6 +147,118 @@ var (
 		},
 	}
 
+	queueMediaSettingsEmailResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"auto_end_delay_seconds": {
+				Description: "Auto End Delay Seconds. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+			},
+			"auto_dial_delay_seconds": {
+				Description: "Auto Dial Delay Seconds. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
+			},
+			"enable_auto_answer": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"enable_auto_dial_and_end": {
+				Description: "Auto Dail and End. NOTE: This field is deprecated and will be removed in future release.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Deprecated:  "Not Applicable",
+				Default:     false,
+			},
+			"service_level_percentage": {
+				Description:  "The desired Service Level. A float value between 0 and 1.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				ValidateFunc: validation.FloatBetween(0, 1),
+			},
+			"service_level_duration_ms": {
+				Description:  "Service Level target in milliseconds. Must be >= 1000",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(1000),
+			},
+		},
+	}
+
+	queueMediaSettingsCallbackResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"auto_end_delay_seconds": {
+				Description: "Auto End Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"auto_dial_delay_seconds": {
+				Description: "Auto Dial Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
+			},
+			"enable_auto_answer": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"enable_auto_dial_and_end": {
+				Description: "Auto Dail and End",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"service_level_percentage": {
+				Description:  "The desired Service Level. A float value between 0 and 1.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				ValidateFunc: validation.FloatBetween(0, 1),
+			},
+			"service_level_duration_ms": {
+				Description:  "Service Level target in milliseconds. Must be >= 1000",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(1000),
+			},
+			"mode": {
+				Description:  "The mode callbacks will use on this queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
+			},
+		},
+	}
+
 	queueMemberResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"user_id": {
@@ -251,7 +376,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsCallbackResource,
 			},
 			"media_settings_chat": {
 				Description: "Chat media settings.",
@@ -267,7 +392,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsEmailResource,
 			},
 			"media_settings_message": {
 				Description: "Message media settings.",
@@ -572,24 +697,25 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                              {RefType: "genesyscloud_auth_division"},
-			"queue_flow_id":                            {RefType: "genesyscloud_flow"},
-			"email_in_queue_flow_id":                   {RefType: "genesyscloud_flow"},
-			"message_in_queue_flow_id":                 {RefType: "genesyscloud_flow"},
-			"whisper_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
-			"on_hold_prompt_id":                        {RefType: "genesyscloud_architect_user_prompt"},
-			"outbound_messaging_sms_address_id":        {},                               // Ref type not yet defined
-			"default_script_ids.*":                     {RefType: "genesyscloud_script"}, // Ref type not yet defined
-			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},
-			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"},
-			"bullseye_rings.skills_to_remove":          {RefType: "genesyscloud_routing_skill"},
-			"members.user_id":                          {RefType: "genesyscloud_user"},
-			"wrapup_codes":                             {RefType: "genesyscloud_routing_wrapupcode"},
-			"skill_groups":                             {RefType: "genesyscloud_routing_skill_group"},
-			"teams":                                    {RefType: "genesyscloud_team"},
-			"groups":                                   {RefType: "genesyscloud_group"},
+			"division_id":                              {RefType: authDivision.ResourceType},
+			"queue_flow_id":                            {RefType: architectFlow.ResourceType},
+			"email_in_queue_flow_id":                   {RefType: architectFlow.ResourceType},
+			"message_in_queue_flow_id":                 {RefType: architectFlow.ResourceType},
+			"whisper_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
+			"on_hold_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
+			"outbound_messaging_sms_address_id":        {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
+			"default_script_ids.*":                     {RefType: scripts.ResourceType},
+			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
+			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
+			"bullseye_rings.skills_to_remove":          {RefType: routingSkill.ResourceType},
+			"members.user_id":                          {RefType: user.ResourceType},
+			"wrapup_codes":                             {RefType: routingWrapupcode.ResourceType},
+			"skill_groups":                             {RefType: routingSkillGroup.ResourceType},
+			"teams":                                    {RefType: team.ResourceType},
+			"groups":                                   {RefType: group.ResourceType},
 			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
 			"direct_routing.backup_queue_id":           {RefType: ResourceType},
+			"canned_response_libraries.library_ids.*":  {RefType: responseManagementLibrary.ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},

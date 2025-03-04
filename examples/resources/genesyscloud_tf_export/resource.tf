@@ -1,7 +1,7 @@
 
 resource "genesyscloud_tf_export" "include-filter" {
   directory                = "./genesyscloud/include-filter"
-  export_as_hcl            = true
+  export_format            = "hcl"
   log_permission_errors    = true
   include_state_file       = true
   include_filter_resources = ["genesyscloud_group::-(agent)$"]
@@ -10,7 +10,7 @@ resource "genesyscloud_tf_export" "include-filter" {
 
 resource "genesyscloud_tf_export" "exclude-filter" {
   directory              = "./genesyscloud/exclude-filter"
-  export_as_hcl          = true
+  export_format          = "hcl"
   log_permission_errors  = true
   include_state_file     = true
   enable_flow_depends_on = false
