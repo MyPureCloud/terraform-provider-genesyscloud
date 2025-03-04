@@ -3,6 +3,7 @@ package conversations_messaging_integrations_whatsapp
 import (
 	"fmt"
 	"strings"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
@@ -25,6 +26,16 @@ func getConversationsMessagingIntegrationsWhatsappFromResourceData(d *schema.Res
 		MessagingSetting:          &platformclientv2.Messagingsettingrequestreference{Id: &messagingSettingId},
 		EmbeddedSignupAccessToken: platformclientv2.String(d.Get("embedded_signup_access_token").(string)),
 	}
+}
+
+func flattenActivateWhatsapp(phoneNumber string, pin string) []interface{} {
+
+	activateInterface := make(map[string]interface{})
+
+	resourcedata.SetMapValueIfNotNil(activateInterface, "phone_number", &phoneNumber)
+	resourcedata.SetMapValueIfNotNil(activateInterface, "pin", &pin)
+
+	return []interface{}{activateInterface}
 }
 
 func GenerateConversationsMessagingIntegrationsWhatsappResource(

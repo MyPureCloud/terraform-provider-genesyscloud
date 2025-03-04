@@ -61,7 +61,7 @@ func createConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 	//check if user wants to activate the whatsapp integration
 	if activateWhatsapp := d.Get("activate_whatsapp").(*schema.Set); activateWhatsapp != nil {
 		if activateWhatsapp.Len() > 0 {
-			return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta, activateWhatsapp)
+			return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
 		}
 	}
 	return readConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
@@ -106,7 +106,7 @@ func updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 	// Activate WhatsApp integration if requested, otherwise proceed with update
 	if activateWhatsapp := d.Get("activate_whatsapp").(*schema.Set); activateWhatsapp != nil {
 		if activateWhatsapp.Len() > 0 {
-			return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta, activateWhatsapp)
+			return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
 		}
 	}
 
@@ -130,7 +130,10 @@ func updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 }
 
 // activateConversationsMessagingIntegrationsWhatsapp is used by the conversations_messaging_integrations_whatsapp resource to activate a WhatsApp integration by submitting the phone number and pin for verification in Genesys Cloud
-func activateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *schema.ResourceData, meta interface{}, activateWhatsapp *schema.Set) diag.Diagnostics {
+func activateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
+	activateWhatsapp := d.Get("activate_whatsapp").(*schema.Set)
+
 	// Extract phone number and pin from the activation data
 	activateWhatsappMap := activateWhatsapp.List()[0].(map[string]interface{})
 	phoneNumber := activateWhatsappMap["phone_number"].(string)
