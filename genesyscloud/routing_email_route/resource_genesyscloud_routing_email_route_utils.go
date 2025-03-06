@@ -118,7 +118,7 @@ func flattenReplyEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 
 func validateSdkReplyEmailAddress(d *schema.ResourceData) (bool, error) {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
-	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
+	if len(replyEmailAddress) > 0 {
 		settingsMap := replyEmailAddress[0].(map[string]interface{})
 
 		routeID := settingsMap["route_id"].(string)
@@ -138,8 +138,11 @@ func validateSdkReplyEmailAddress(d *schema.ResourceData) (bool, error) {
 
 func extractReplyEmailAddressValue(d *schema.ResourceData) (string, string, bool) {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
-	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
-		settingsMap := replyEmailAddress[0].(map[string]interface{})
+	if len(replyEmailAddress) > 0 {
+		settingsMap, ok := replyEmailAddress[0].(map[string]interface{})
+		if !ok {
+			return "", "", false
+		}
 
 		return settingsMap["domain_id"].(string), settingsMap["route_id"].(string), settingsMap["self_reference_route"].(bool)
 	}
@@ -149,8 +152,11 @@ func extractReplyEmailAddressValue(d *schema.ResourceData) (string, string, bool
 
 func isSelfReferenceRouteSet(d *schema.ResourceData) bool {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
-	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
-		settingsMap := replyEmailAddress[0].(map[string]interface{})
+	if len(replyEmailAddress) > 0 {
+		settingsMap, ok := replyEmailAddress[0].(map[string]interface{})
+		if !ok {
+			return false
+		}
 		return settingsMap["self_reference_route"].(bool)
 	}
 
@@ -181,10 +187,4 @@ func GenerateRoutingEmailRouteResource(
             %s
         }
         `, resourceLabel, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
-}
-
-func mergeIntoExistingMap(target, source map[string][]platformclientv2.Inboundroute) {
-	for key, routes := range source {
-		target[key] = append(target[key], routes...)
-	}
 }

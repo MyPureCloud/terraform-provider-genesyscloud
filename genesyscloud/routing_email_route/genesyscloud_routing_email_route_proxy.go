@@ -26,7 +26,7 @@ type getRoutingEmailRouteByIdFunc func(ctx context.Context, p *routingEmailRoute
 type updateRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, id string, domainId string, inboundRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
 type deleteRoutingEmailRouteFunc func(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (response *platformclientv2.APIResponse, err error)
 
-// routingEmailRouteProxy contains all of the methods that call genesys cloud APIs.
+// routingEmailRouteProxy contains all methods that call genesys cloud APIs.
 type routingEmailRouteProxy struct {
 	clientConfig                        *platformclientv2.Configuration
 	routingApi                          *platformclientv2.RoutingApi
@@ -38,7 +38,7 @@ type routingEmailRouteProxy struct {
 	deleteRoutingEmailRouteAttr         deleteRoutingEmailRouteFunc
 }
 
-// newRoutingEmailRouteProxy initializes the routing email route proxy with all of the data needed to communicate with Genesys Cloud
+// newRoutingEmailRouteProxy initializes the routing email route proxy with all data needed to communicate with Genesys Cloud
 func newRoutingEmailRouteProxy(clientConfig *platformclientv2.Configuration) *routingEmailRouteProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 	return &routingEmailRouteProxy{
@@ -154,37 +154,37 @@ func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 }
 
 // createRoutingEmailRouteFn is an implementation function for creating a Genesys Cloud routing email route
-func createRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, routingEmailRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+func createRoutingEmailRouteFn(_ context.Context, p *routingEmailRouteProxy, domainId string, routingEmailRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	inboundRoute, resp, err := p.routingApi.PostRoutingEmailDomainRoutes(domainId, *routingEmailRoute)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to create routing email route: %s", err)
+		return nil, resp, fmt.Errorf("failed to create routing email route: %s", err)
 	}
 	return inboundRoute, resp, nil
 }
 
 // updateRoutingEmailRouteFn is an implementation of the function to update a Genesys Cloud routing email route
-func updateRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, id string, domainId string, routingEmailRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+func updateRoutingEmailRouteFn(_ context.Context, p *routingEmailRouteProxy, id string, domainId string, routingEmailRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	inboundRoute, resp, err := p.routingApi.PutRoutingEmailDomainRoute(domainId, id, *routingEmailRoute)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to update routing email route: %s", err)
+		return nil, resp, fmt.Errorf("failed to update routing email route: %s", err)
 	}
 	return inboundRoute, resp, nil
 }
 
 // deleteRoutingEmailRouteFn is an implementation function for deleting a Genesys Cloud routing email route
-func deleteRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.APIResponse, error) {
+func deleteRoutingEmailRouteFn(_ context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.routingApi.DeleteRoutingEmailDomainRoute(domainId, id)
 	if err != nil {
-		return resp, fmt.Errorf("Failed to delete routing email route: %s", err)
+		return resp, fmt.Errorf("failed to delete routing email route: %s", err)
 	}
 	return resp, nil
 }
 
 // getRoutingEmailRouteByIdFn is an implementation of the function to get a Genesys Cloud routing email route by Id
-func getRoutingEmailRouteByIdFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+func getRoutingEmailRouteByIdFn(_ context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	inboundRoute, resp, err := p.routingApi.GetRoutingEmailDomainRoute(domainId, id)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to retrieve routing email route by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("failed to retrieve routing email route by id %s: %s", id, err)
 	}
 	return inboundRoute, resp, nil
 }
