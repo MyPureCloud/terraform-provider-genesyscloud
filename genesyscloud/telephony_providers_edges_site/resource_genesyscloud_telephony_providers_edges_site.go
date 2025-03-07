@@ -7,7 +7,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -110,21 +109,6 @@ func createSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diagErr
 	}
 
-	if !featureToggles.OutboundRoutesToggleExists() {
-		diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-			diagErr = updateSiteOutboundRoutes(ctx, sp, d)
-			if diagErr != nil {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to create site %s | error: %v", d.Id(), diagErr), nil))
-			}
-			return nil
-		})
-		if diagErr != nil {
-			return diagErr
-		}
-	} else {
-		log.Printf("%s is set, not managing outbound_routes attribute in site %s resource", featureToggles.OutboundRoutesToggleName(), d.Id())
-	}
-
 	log.Printf("Created site %s", *site.Id)
 
 	// Default site
@@ -186,14 +170,6 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 		if retryErr := readSiteNumberPlans(ctx, sp, d); retryErr != nil {
 			return retryErr
-		}
-
-		if !featureToggles.OutboundRoutesToggleExists() {
-			if retryErr := readSiteOutboundRoutes(ctx, sp, d); retryErr != nil {
-				return retryErr
-			}
-		} else {
-			log.Printf("%s is set, not managing outbound_routes attribute in site %s resource", featureToggles.OutboundRoutesToggleName(), d.Id())
 		}
 
 		defaultSiteId, resp, err := sp.getDefaultSiteId(ctx)
@@ -284,15 +260,6 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	diagErr = updateSiteNumberPlans(ctx, sp, d)
 	if diagErr != nil {
 		return diagErr
-	}
-
-	if !featureToggles.OutboundRoutesToggleExists() {
-		diagErr = updateSiteOutboundRoutes(ctx, sp, d)
-		if diagErr != nil {
-			return diagErr
-		}
-	} else {
-		log.Printf("%s is set, not managing outbound_routes attribute in site %s resource", featureToggles.OutboundRoutesToggleName(), d.Id())
 	}
 
 	if d.Get("set_as_default_site").(bool) {

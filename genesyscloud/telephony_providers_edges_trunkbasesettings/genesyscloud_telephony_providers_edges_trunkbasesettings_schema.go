@@ -1,4 +1,4 @@
-package telephony_provider_edges_trunkbasesettings
+package telephony_providers_edges_trunkbasesettings
 
 import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -107,8 +107,8 @@ func DataSourceTrunkBaseSettings() *schema.Resource {
 func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			//"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"}, TODO: decide how/if this will be included after DEVTOOLING-676 is resolved
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"},
 		},
 		JsonEncodeAttributes: []string{"properties"},
 		ExportAsDataFunc:     shouldExportTrunkBaseSettingsAsDataSource,
