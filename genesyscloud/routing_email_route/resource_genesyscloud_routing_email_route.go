@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -22,17 +22,21 @@ import (
 )
 
 /*
-The resource_genesyscloud_routing_email_route.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_routing_email_route.go contains all the methods that perform the core logic for a resource.
 */
 
-// getAllAuthRoutingEmailRoute retrieves all of the routing email route via Terraform in the Genesys Cloud and is used for the exporter
+// getAllAuthRoutingEmailRoute retrieves all the routing email route via Terraform in the Genesys Cloud and is used for the exporter
 func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newRoutingEmailRouteProxy(clientConfig)
+	proxy := getRoutingEmailRouteProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, "Failed to get routing email route", respCode)
+	}
+
+	if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
+		return resources, nil
 	}
 
 	for domainId, inboundRoutes := range *inboundRoutesMap {
@@ -104,35 +108,41 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		inboundRoutesMap, resp, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
 		if getErr != nil {
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr.Error()), resp)
 			if util.IsStatus404(resp) {
-				d.SetId("")
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(diagErr)
+		}
+
+		if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
+			return retry.RetryableError(fmt.Errorf("found no domain '%s'", domainId))
 		}
 
 		for _, inboundRoutes := range *inboundRoutesMap {
 			for _, queryRoute := range inboundRoutes {
 				if queryRoute.Id != nil && *queryRoute.Id == d.Id() {
-					route = &queryRoute
+					routeCopy := queryRoute
+					route = &routeCopy
 					break
 				}
 			}
 		}
 		if route == nil {
-			d.SetId("")
-			return nil
+			return retry.RetryableError(fmt.Errorf("no email route '%s' found in domain '%s'", d.Id(), domainId))
 		}
 
 		resourcedata.SetNillableValue(d, "pattern", route.Pattern)
 		resourcedata.SetNillableReference(d, "queue_id", route.Queue)
 		resourcedata.SetNillableValue(d, "priority", route.Priority)
+		resourcedata.SetNillableValue(d, "history_inclusion", route.HistoryInclusion)
 		resourcedata.SetNillableReference(d, "language_id", route.Language)
 		resourcedata.SetNillableValue(d, "from_name", route.FromName)
 		resourcedata.SetNillableValue(d, "from_email", route.FromEmail)
 		resourcedata.SetNillableReference(d, "flow_id", route.Flow)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "auto_bcc", route.AutoBcc, flattenAutoBccEmailAddress)
 		resourcedata.SetNillableReference(d, "spam_flow_id", route.SpamFlow)
+		resourcedata.SetNillableValue(d, "allow_multiple_actions", route.AllowMultipleActions)
 
 		if route.Skills != nil {
 			_ = d.Set("skill_ids", util.SdkDomainEntityRefArrToSet(*route.Skills))

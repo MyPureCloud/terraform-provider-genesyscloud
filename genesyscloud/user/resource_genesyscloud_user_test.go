@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -173,6 +173,66 @@ func TestAccResourceUserBasic(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserVoicemailUserpolicies(t *testing.T) {
+	var (
+		userResourceLabel1     = "test-user1"
+		email1                 = "terraform-" + uuid.NewString() + "@user.com"
+		email2                 = "terraform-" + uuid.NewString() + "@user.com"
+		userName1              = "John Terraform"
+		userName2              = "Jim Terraform"
+		timeoutSeconds1        = 550
+		timeoutSeconds2        = 450
+		sendEmailNotification1 = true
+		sendEmailNotification2 = false
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email1,
+					userName1,
+					GenerateVoicemailUserpolicies(timeoutSeconds1, sendEmailNotification1),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds1)),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.send_email_notifications", strconv.FormatBool(sendEmailNotification1)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Update
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel1,
+					email2,
+					userName2,
+					GenerateVoicemailUserpolicies(timeoutSeconds2, sendEmailNotification2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "email", email2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "name", userName2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.alert_timeout_seconds", strconv.Itoa(timeoutSeconds2)),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "voicemail_userpolicies.0.send_email_notifications", strconv.FormatBool(sendEmailNotification2)),
+					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + userResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func generateUserWithCustomAttrs(resourceLabel string, email string, name string, attrs ...string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
@@ -187,19 +247,35 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	var (
 		addrUserResourceLabel1      = "test-user-addr1"
 		addrUserResourceLabel2      = "test-user-addr2"
+		addrUserResourceLabel3      = "test-user-addr3"
+		addrUserResourceLabel4      = "test-user-addr4"
 		addrUserName1               = "Nancy Terraform"
 		addrUserName2               = "Oliver Tofu"
-		addrEmail1                  = "terraform-" + uuid.NewString() + "@user.com"
-		addrEmail2                  = "terraform-" + uuid.NewString() + "@user.com"
-		addrEmail3                  = "terraform-" + uuid.NewString() + "@user.com"
+		addrUserName3               = "Tony Bee"
+		addrUserName4               = "Scott Crav"
+		addrEmail1                  = "terraform1-" + uuid.NewString() + "@user.com"
+		addrEmail2                  = "terraform2-" + uuid.NewString() + "@user.com"
+		addrEmail3                  = "terraform3-" + uuid.NewString() + "@user.com"
+		addrEmail4                  = "terraform4-" + uuid.NewString() + "@user.com"
 		addrPhone1                  = "+13174269078"
 		addrPhone2                  = "+441434634996"
+		addrPhone3                  = "+13174222323"
+		addrPhone4_1                = "+13174265397"
+		addrPhone4_2                = "+13172347890"
 		addrPhoneExt1               = "1234"
 		addrPhoneExt2               = "1345"
+		addrPhoneExt3_1             = "3456"
+		addrPhoneExt3_2             = "7270"
+		addrPhoneExt4_1             = "2345"
+		addrPhoneExt4_2             = "9000"
+		addrPhoneExt4_3             = "98765"
 		phoneMediaType              = "PHONE"
 		smsMediaType                = "SMS"
 		addrTypeWork                = "WORK"
+		addrTypeWork2               = "WORK2"
+		addrTypeWork3               = "WORK3"
 		addrTypeHome                = "HOME"
+		addrTypeMobile              = "MOBILE"
 		extensionPoolResourceLabel1 = "test-extensionpool1" + uuid.NewString()
 		extensionPoolStartNumber1   = "8000"
 		extensionPoolEndNumber1     = "8999"
@@ -312,6 +388,146 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.extension", addrPhoneExt2),
 					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.address"),
 					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.type"),
+				),
+			},
+			{
+				// Add a user checking DEVTOOLING-739
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel3,
+					addrEmail3,
+					addrUserName3,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone3),
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeMobile),
+							strconv.Quote(addrPhoneExt3_1),
+						),
+						generateUserPhoneAddress(
+							util.NullValue,
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeWork3),
+							strconv.Quote(addrPhoneExt3_2),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Basic resource attributes
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel3, "email", addrEmail3),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel3, "name", addrUserName3),
+
+					// Check for the first phone address (with phone + extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel3,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"number":     addrPhone3,
+							"media_type": phoneMediaType,
+							"type":       addrTypeMobile,
+							"extension":  addrPhoneExt3_1,
+						},
+					),
+
+					// Check for the second phone address (with only extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel3,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"media_type": phoneMediaType,
+							"type":       addrTypeWork3,
+							"extension":  addrPhoneExt3_2,
+						},
+					),
+
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel3, "addresses.0.other_emails.0.address"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel3, "addresses.0.other_emails.0.type"),
+				),
+			},
+			{
+				// Add a user multiple phone addresses
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel4,
+					addrEmail4,
+					addrUserName4,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							util.NullValue,
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeHome),
+							strconv.Quote(addrPhoneExt4_1),
+						),
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone4_1),
+							util.NullValue, // Default to type PHONE
+							util.NullValue, // Default to type WORK
+							util.NullValue, // No extension
+						),
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone4_2),
+							strconv.Quote(smsMediaType),
+							strconv.Quote(addrTypeWork2),
+							strconv.Quote(addrPhoneExt4_2),
+						),
+						generateUserPhoneAddress(
+							util.NullValue,
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeWork3),
+							strconv.Quote(addrPhoneExt4_3),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Basic resource attributes
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "email", addrEmail4),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "name", addrUserName4),
+
+					// Check for the first phone address (with only extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"media_type": phoneMediaType,
+							"type":       addrTypeHome,
+							"extension":  addrPhoneExt4_1,
+						},
+					),
+
+					// Check for the second phone address (with only number)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"number":     addrPhone4_1,
+							"media_type": phoneMediaType,
+							"type":       addrTypeWork,
+						},
+					),
+
+					// Check for the third phone address (with both number and extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"number":     addrPhone4_2,
+							"media_type": smsMediaType,
+							"type":       addrTypeWork2,
+							"extension":  addrPhoneExt4_2,
+						},
+					),
+
+					// Check for the fourth phone address (with only extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"media_type": phoneMediaType,
+							"type":       addrTypeWork3,
+							"extension":  addrPhoneExt4_3,
+						},
+					),
+
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.0.other_emails.0.address"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.0.other_emails.0.type"),
 				),
 			},
 		},
@@ -528,7 +744,10 @@ func TestAccResourceUserSkills(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
 	})
 }
 
@@ -1132,7 +1351,10 @@ func TestAccResourceUserRestore(t *testing.T) {
 				),
 			},
 		},
-		CheckDestroy: testVerifyUsersDestroyed,
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
 	})
 }
 
@@ -1220,6 +1442,136 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 
 	// Success. All users destroyed
 	return nil
+}
+
+func TestAccResourceUserPassword(t *testing.T) {
+	t.Parallel()
+	var (
+		userResourceLabel = "test-user-password"
+		email             = "terraform-" + uuid.NewString() + "@user.com"
+		userName          = "Password Test User"
+		initialPassword   = "myInitialPassword123!@#"
+		updatedPassword   = "myUpdatedPassword456!@#"
+
+		// Track password updates
+		passwordUpdateCalled bool
+		lastPasswordUpdate   string
+	)
+
+	// Reset tracking variables
+	passwordUpdateCalled = false
+	lastPasswordUpdate = ""
+
+	// Get the authorized SDK configuration
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create our mock proxy with the authorized configuration
+	userProxyInstance := newUserProxy(sdkConfig)
+	originalUpdatePassword := userProxyInstance.updatePasswordAttr
+
+	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
+		passwordUpdateCalled = true
+		lastPasswordUpdate = password
+		resp, err := originalUpdatePassword(ctx, p, id, password)
+		return resp, err
+	}
+
+	// Initialize internal proxy
+	internalProxy = userProxyInstance
+	defer func() {
+		internalProxy = nil
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create user with initial password
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel,
+					email,
+					userName,
+					fmt.Sprintf(`password = "%s"`, initialPassword),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if !passwordUpdateCalled {
+							return fmt.Errorf("expected password update to be called for initial password")
+						}
+						if lastPasswordUpdate != initialPassword {
+							return fmt.Errorf("expected password to be %s, got %s", initialPassword, lastPasswordUpdate)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				// Update with new password
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel,
+					email,
+					userName,
+					fmt.Sprintf(`password = "%s"`, updatedPassword),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if !passwordUpdateCalled {
+							return fmt.Errorf("expected password update to be called for password update")
+						}
+						if lastPasswordUpdate != updatedPassword {
+							return fmt.Errorf("expected password to be %s, got %s", updatedPassword, lastPasswordUpdate)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				Config: generateUserWithCustomAttrs(
+					userResourceLabel,
+					email,
+					userName,
+					`password = ""`,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if passwordUpdateCalled {
+							return fmt.Errorf("expected password update to not be called for password update")
+						}
+						return nil
+					},
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {

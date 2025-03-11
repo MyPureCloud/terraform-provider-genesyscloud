@@ -3,11 +3,13 @@ package outbound_campaignrule
 import (
 	"fmt"
 	"math/rand"
+	"path/filepath"
 	"strconv"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -25,7 +27,7 @@ func TestAccDataSourceOutboundCampaignRule(t *testing.T) {
 
 		campaign1ResourceLabel = "campaign1"
 		campaign1Name          = "TF Test Campaign " + uuid.NewString()
-		outboundFlowFilePath   = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath   = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		campaign1FlowName      = "test flow " + uuid.NewString()
 		campaign1Resource      = outboundCampaign.GenerateOutboundCampaignBasic(
 			campaign1ResourceLabel,

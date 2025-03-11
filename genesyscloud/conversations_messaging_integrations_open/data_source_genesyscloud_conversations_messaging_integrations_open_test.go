@@ -3,6 +3,7 @@ package conversations_messaging_integrations_open
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	cmMessagingSetting "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cmSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 /*
@@ -18,7 +20,6 @@ Test Class for the conversations messaging integrations open Data Source
 */
 
 func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
-	t.Parallel()
 	var (
 		dataSourceLabel                                 = "data_test_messaging_open"
 		resourceLabel                                   = "test_messaging_open"
@@ -70,8 +71,16 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_open."+dataSourceLabel, "id", "genesyscloud_conversations_messaging_integrations_open."+resourceLabel, "id"),
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updation
+						return nil
+					},
 				),
 			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifyConversationsMessagingIntegrationsOpenDestroyed(state)
 		},
 	})
 }

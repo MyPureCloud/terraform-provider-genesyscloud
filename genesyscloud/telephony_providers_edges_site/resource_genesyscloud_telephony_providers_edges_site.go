@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -21,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -44,11 +43,6 @@ func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	}
 	for _, managedSite := range *managedSites {
 		resources[*managedSite.Id] = &resourceExporter.ResourceMeta{BlockLabel: *managedSite.Name}
-		// When exporting managed sites, they must automatically be exported as data source
-		// Managed sites are added to the ExportAsData []string in resource_exporter
-		if tfexporter_state.IsExporterActive() {
-			resourceExporter.AddDataSourceItems(ResourceType, *managedSite.Name)
-		}
 	}
 	return resources, nil
 }
@@ -153,7 +147,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 
 	log.Printf("Reading site %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
+		currentSite, resp, err := sp.GetSiteById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
@@ -161,23 +155,24 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read site %s | error: %s", d.Id(), err), resp))
 		}
 
-		_ = d.Set("name", *currentSite.Name)
+		resourcedata.SetNillableValue(d, "name", currentSite.Name)
 		_ = d.Set("location_id", nil)
 		if currentSite.Location != nil {
 			_ = d.Set("location_id", *currentSite.Location.Id)
 		}
-		_ = d.Set("media_model", *currentSite.MediaModel)
-		_ = d.Set("media_regions_use_latency_based", *currentSite.MediaRegionsUseLatencyBased)
+
+		resourcedata.SetNillableValue(d, "media_model", currentSite.MediaModel)
+		resourcedata.SetNillableValue(d, "media_regions_use_latency_based", currentSite.MediaRegionsUseLatencyBased)
 
 		resourcedata.SetNillableValue(d, "description", currentSite.Description)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "edge_auto_update_config", currentSite.EdgeAutoUpdateConfig, flattenSdkEdgeAutoUpdateConfig)
 		resourcedata.SetNillableValue(d, "media_regions", currentSite.MediaRegions)
 
-		d.Set("caller_id", nil)
+		_ = d.Set("caller_id", nil)
 		if currentSite.CallerId != nil && *currentSite.CallerId != "" {
 			_ = d.Set("caller_id", utilE164.FormatAsCalculatedE164Number(*currentSite.CallerId))
 		}
-		_ = d.Set("caller_name", currentSite.CallerName)
+		resourcedata.SetNillableValue(d, "caller_name", currentSite.CallerName)
 
 		if currentSite.PrimarySites != nil {
 			_ = d.Set("primary_sites", util.SdkDomainEntityRefArrToList(*currentSite.PrimarySites))
@@ -186,6 +181,8 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		if currentSite.SecondarySites != nil {
 			_ = d.Set("secondary_sites", util.SdkDomainEntityRefArrToList(*currentSite.SecondarySites))
 		}
+
+		resourcedata.SetNillableValue(d, "managed", currentSite.Managed)
 
 		if retryErr := readSiteNumberPlans(ctx, sp, d); retryErr != nil {
 			return retryErr
@@ -205,7 +202,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		}
 		_ = d.Set("set_as_default_site", defaultSiteId == *currentSite.Id)
 
-		log.Printf("Read site %s %s", d.Id(), *currentSite.Name)
+		log.Printf("Read site %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
@@ -266,7 +263,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current site version
-		currentSite, resp, err := sp.getSiteById(ctx, d.Id())
+		currentSite, resp, err := sp.GetSiteById(ctx, d.Id())
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read site %s error: %s", d.Id(), err), resp)
 		}
@@ -275,7 +272,7 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		log.Printf("Updating site %s", *site.Name)
 		site, resp, err = sp.updateSite(ctx, d.Id(), site)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update site %s error: %s", *site.Name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update site %s error: %s", *currentSite.Name, err), resp)
 		}
 
 		return resp, nil
@@ -319,7 +316,7 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Deleting site %s", d.Id())
 	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting site %s", d.Id())
-		resp, err := sp.deleteSite(ctx, d.Id())
+		resp, err := sp.DeleteSite(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Site already deleted %s", d.Id())
@@ -328,14 +325,14 @@ func deleteSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete site %s error: %s", d.Id(), err), resp)
 		}
 		return resp, nil
-	})
+	}, 400)
 
 	if diagErr != nil {
 		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		site, resp, err := sp.getSiteById(ctx, d.Id())
+		site, resp, err := sp.GetSiteById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Site deleted

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,7 +63,7 @@ func TestUnitTestAPIResponseDiagWithBadApiResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
 	json.Unmarshal([]byte(targetResponse), targetDiag)
 
 	diag := BuildAPIDiagnosticError(resourceType, sumErrMsg, apiResponse)
@@ -129,7 +129,7 @@ func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
 	}
 
 	targetDiag := &detailedDiagnosticInfo{}
-	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"errorMessage\":\"Unable to build a message from the response because the APIResponse does not contain the appropriate data.\"}"
+	targetResponse := "{\"resourceType\":\"genesyscloud_tf_exporter\",\"statusCode\":500,\"errorMessage\":\"DummyError\",\"correlationId\":\"e03b48a1-7063-4ae2-921a-f64c8e02702b\"}"
 	_ = json.Unmarshal([]byte(targetResponse), targetDiag)
 
 	diag := BuildWithRetriesApiDiagnosticError(resourceType, sumErrMsg, apiResponse)

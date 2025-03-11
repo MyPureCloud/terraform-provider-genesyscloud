@@ -7,7 +7,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	feature_toggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	unidecode "github.com/mozillazg/go-unidecode"
 )
@@ -29,7 +29,7 @@ type sanitizerOptimized struct{}
 func NewSanitizerProvider() *SanitizerProvider {
 
 	// Check if the environment variable is set
-	optimizedExists := feature_toggles.ExporterSanitizerOptimizedToggleExists()
+	optimizedExists := featureToggles.ExporterSanitizerOptimizedToggleExists()
 
 	//If the GENESYS_SANITIZER_TIME_OPTIMIZED is set use the updated time optimized sanitizer
 	if optimizedExists {
@@ -73,6 +73,9 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 				algorithm.Write([]byte(meta.BlockLabel))
 				sanitizedLabel = sanitizedLabel + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			}
+			if meta.OriginalLabel == "" {
+				meta.OriginalLabel = meta.BlockLabel
+			}
 			meta.BlockLabel = sanitizedLabel
 		}
 	}
@@ -108,6 +111,10 @@ func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 				hash := hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 
 				meta.BlockLabel = sanitizedLabel + "_" + hash
+				if meta.OriginalLabel == "" {
+					meta.OriginalLabel = meta.BlockLabel
+				}
+
 			} else {
 				sanitizedLabels[sanitizedLabel] = 1
 				meta.BlockLabel = sanitizedLabel

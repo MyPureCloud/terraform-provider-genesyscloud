@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 var (
@@ -231,7 +231,7 @@ func ResourceEvaluationForm() *schema.Resource {
 				Required:    true,
 			},
 			"published": {
-				Description: "Specifies if the evaluation form is published.",
+				Description: "Specifies if the evaluation form is published. **Note:** A form cannot be modified if published is set to true.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

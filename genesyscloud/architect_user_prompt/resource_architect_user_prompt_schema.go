@@ -22,6 +22,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllUserPrompts),
+		AllowEmptyArrays: []string{"resources"},
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: architectPromptAudioResolver,
@@ -49,7 +50,7 @@ var userPromptResource = &schema.Resource{
 		"language": {
 			Description:  "Language for the prompt resource. (eg. en-us)",
 			Type:         schema.TypeString,
-			Required:     true,
+			Optional:     true,
 			ValidateFunc: validation.StringInSlice(architectlanguages.Languages, false),
 		},
 		"tts_string": {

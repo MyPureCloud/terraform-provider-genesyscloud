@@ -201,21 +201,6 @@ func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int,
 	}
 }
 
-func (c *ConsistencyCheck) isComputed(d *schema.ResourceData, key string) bool {
-	schemaInterface := getUnexportedField(reflect.ValueOf(d).Elem().FieldByName("schema"))
-	resourceSchema := schemaInterface.(map[string]*schema.Schema)
-
-	k := key
-	if strings.Contains(key, ".") {
-		k = strings.Split(key, ".")[0]
-	}
-	if resourceSchema[k] == nil {
-		return false
-	}
-
-	return resourceSchema[k].Computed
-}
-
 func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.RetryError {
 	if c.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")

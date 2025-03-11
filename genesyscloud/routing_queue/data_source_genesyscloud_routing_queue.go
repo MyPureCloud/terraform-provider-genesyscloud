@@ -8,6 +8,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
@@ -42,20 +44,34 @@ func dataSourceRoutingQueueRead(ctx context.Context, d *schema.ResourceData, m i
 // hydrateRoutingQueueCacheFn for hydrating the cache with Genesys Cloud routing queues using the SDK
 func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
 	proxy := GetRoutingQueueProxy(c.ClientConfig)
+	var allQueues []platformclientv2.Queue
 
 	log.Printf("Hydrating cache for data source %s", ResourceType)
 
-	allQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "")
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
 	if err != nil {
-		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp.String())
+		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp)
 	}
 
-	if allQueues == nil || len(*allQueues) == 0 {
+	if queues != nil || len(*queues) != 0 {
+		allQueues = append(allQueues, *queues...)
+	}
+
+	trueQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "", true)
+	if err != nil {
+		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp)
+	}
+
+	if trueQueues != nil && len(*trueQueues) != 0 {
+		allQueues = append(allQueues, *trueQueues...)
+	}
+
+	if allQueues == nil || len(allQueues) == 0 {
 		log.Printf("No queues found. The cache will remain empty.")
 		return nil
 	}
 
-	for _, queue := range *allQueues {
+	for _, queue := range allQueues {
 		c.Cache[*queue.Name] = *queue.Id
 	}
 
@@ -69,7 +85,7 @@ func getQueueByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (
 	queueId := ""
 
 	diag := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		queueID, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name)
+		queueID, resp, retryable, getErr := proxy.getRoutingQueueByName(ctx, name, false)
 		if getErr != nil {
 			errMsg := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting queue %s | error %s", name, getErr), resp)
 			if !retryable {

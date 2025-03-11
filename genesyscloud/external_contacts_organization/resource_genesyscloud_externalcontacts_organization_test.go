@@ -3,7 +3,6 @@ package external_contacts_organization
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -11,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 func TestAccResourceExternalContacts(t *testing.T) {
@@ -111,58 +110,6 @@ func TestAccResourceExternalContacts(t *testing.T) {
 		},
 		CheckDestroy: testVerifyContactDestroyed,
 	})
-}
-
-func GenerateBasicExternalOrganizationResource(
-	resourceLabel,
-	name,
-	phoneDisplay,
-	phoneCountrycode,
-	address,
-	city,
-	state,
-	postalCode,
-	countryCode,
-	twitterId,
-	twitterName,
-	twitterScreenName,
-	symbol,
-	exchange string,
-	tags []string,
-	externalUrl string,
-) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-        name = "%s"
-        phone_number {
-          display = "%s"
-          country_code = "%s"
-        }
-        address {
-          address1 = "%s"
-          city = "%s"
-          state = "%s"
-          postal_code = "%s"
-          country_code = "%s"
-        }
-        twitter {
-          twitter_id = "%s"
-          name = "%s"
-          screen_name = "%s"
-        }
-		tickers{
-			symbol = "%s"
-			exchange = "%s"
-		}
-		tags = [%s]
-		external_system_url = "%s"
-    }
-    `, ResourceType, resourceLabel, name,
-		phoneDisplay, phoneCountrycode,
-		address, city, state, postalCode, countryCode,
-		twitterId, twitterName, twitterScreenName,
-		symbol, exchange,
-		strings.Join(tags, ", "),
-		externalUrl)
 }
 
 func testVerifyContactDestroyed(state *terraform.State) error {

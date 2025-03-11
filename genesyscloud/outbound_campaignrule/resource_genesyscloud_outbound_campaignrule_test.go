@@ -3,6 +3,7 @@ package outbound_campaignrule
 import (
 	"fmt"
 	"math/rand"
+	"path/filepath"
 	"strings"
 	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -13,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
@@ -25,7 +26,7 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 
 		campaign1ResourceLabel = "campaign1"
 		campaign1Name          = "TF Test Campaign " + uuid.NewString()
-		outboundFlowFilePath   = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath   = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		campaign1FlowName      = "test flow " + uuid.NewString()
 		campaign1Resource      = generateCampaignResourceForCampaignRuleTests(
 			campaign1ResourceLabel,
@@ -286,7 +287,7 @@ func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 
 		campaign1ResourceLabel = "campaign1"
 		campaign1Name          = "TF Test Campaign " + uuid.NewString()
-		outboundFlowFilePath   = "../../examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml"
+		outboundFlowFilePath   = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
 		campaign1FlowName      = "test flow " + uuid.NewString()
 		campaign1Resource      = generateCampaignResourceForCampaignRuleTests(
 			campaign1ResourceLabel,
@@ -597,8 +598,6 @@ func generateCampaignResourceForCampaignRuleTests(
 	carResourceLabel,
 	carName string) string {
 
-	fullyQualifiedPath, _ := testrunner.NormalizePath(flowFilePath)
-
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_campaign" "%s" {
 	name                          = "%s"
@@ -703,7 +702,7 @@ resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 		wrapupCodeName,
 		flowResourceLabel,
 		flowFilePath,
-		fullyQualifiedPath,
+		flowFilePath,
 		flowName,
 		flowDivisionName,
 		contactListResourceLabel, // genesyscloud_flow

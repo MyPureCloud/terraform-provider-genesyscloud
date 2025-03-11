@@ -3,11 +3,13 @@ package routing_queue
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -24,7 +26,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 var (
@@ -56,14 +58,16 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		queueSkillResourceLabel  = "test-queue-skill"
 		queueSkillName           = "Terraform Skill " + uuid.NewString()
 
-		bullseyeMemberGroupName = "test_membergroup_series6"
-		bullseyeMemberGroupType = "GROUP"
-		testUserResourceLabel   = "user_resource1"
-		testUserName            = "nameUser1" + uuid.NewString()
-		testUserEmail           = uuid.NewString() + "@examplestest.com"
-		callbackHours           = "7"
-		callbackHours2          = "7"
-		userID                  string
+		bullseyeMemberGroupLabel = "test_membergroup_series6"
+		bullseyeMemberGroupName  = "MySeries6Groupv20_" + uuid.NewString()
+		bullseyeMemberGroupType  = "GROUP"
+		testUserResourceLabel    = "user_resource1"
+		testUserName             = "nameUser1" + uuid.NewString()
+		testUserEmail            = uuid.NewString() + "@examplestest.com"
+		callbackHours            = "7"
+		callbackHours2           = "7"
+		callbackModeAgentFirst   = "AgentFirst"
+		userID                   string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -74,8 +78,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				// Create
 				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
 					group.GenerateGroupResource(
+						bullseyeMemberGroupLabel,
 						bullseyeMemberGroupName,
-						"MySeries6Groupv20",
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
@@ -100,11 +104,11 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettingsCallBack("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue, slDuration1, slDuration1),
+					GenerateMediaSettingsCallBack("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue, slDuration1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupName+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
+					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -118,6 +122,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -159,7 +164,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					GenerateMediaSettings("media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2, "mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings("media_settings_chat", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_email", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
@@ -182,6 +187,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2),
@@ -250,6 +256,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 		testUserResourceLabel                  = "user_resource1"
 		testUserName                           = "nameUser1" + uuid.NewString()
 		testUserEmail                          = uuid.NewString() + "@example.com"
+		callbackModeAgentFirst                 = "AgentFirst"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -293,7 +300,8 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						alertTimeout1,
 						util.TrueValue,
 						slPercent1,
-						slDuration1),
+						slDuration1,
+						"mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings(
 						"media_settings_chat",
 						alertTimeout1,
@@ -343,7 +351,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.groups.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.groups.0.member_group_type", "SKILLGROUP"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "id"),
-
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
@@ -387,7 +395,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,
 					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -443,7 +451,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.0.member_group_type", "GROUP"),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.1.groups.0.member_group_id", "genesyscloud_group."+group1ResourceLabel, "id"),
-
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -472,7 +480,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,
 					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -530,6 +538,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 		scoringMethod           = "TimestampAndPriority"
 		skillGroupResourceLabel = "skillgroup"
 		skillGroupName          = "test skillgroup " + uuid.NewString()
+		callbackModeAgentFirst  = "AgentFirst"
 	)
 
 	// Create CGR queue with routing rules
@@ -562,7 +571,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -580,7 +589,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
-
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -616,9 +625,9 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		queueFlowName1                   = "Terraform Flow Test-" + uuid.NewString()
 		queueFlowName2                   = "Terraform Flow Test-" + uuid.NewString()
 		queueFlowName3                   = "Terraform Flow Test-" + uuid.NewString()
-		queueFlowFilePath1               = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml"
-		queueFlowFilePath2               = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml"
-		queueFlowFilePath3               = "../../examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml"
+		queueFlowFilePath1               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		queueFlowFilePath2               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml")
+		queueFlowFilePath3               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml")
 
 		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
 		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
@@ -629,7 +638,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		userPromptDescription1      = "Test description"
 		userPromptResourceLang1     = "en-us"
 		userPromptResourceText1     = "This is a test greeting!"
-		userPromptResourceFileName2 = "../" + testrunner.GetTestDataPath("test-prompt-02.wav")
+		userPromptResourceFileName2 = testrunner.GetTestDataPath("resource", userPrompt.ResourceType, "test-prompt-02.wav")
 		userPromptResourceTTS1      = "This is a test greeting!"
 		userPromptAsset1            = architect_user_prompt.UserPromptResourceStruct{
 			Language:        userPromptResourceLang1,
@@ -899,7 +908,22 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
+				// Create users
+				Config: user.GenerateBasicUserResource(
+					queueMemberResourceLabel1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + user.GenerateBasicUserResource(
+					queueMemberResourceLabel2,
+					queueMemberEmail2,
+					queueMemberName2,
+				),
+			},
+			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
+				// Create queue also
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,
 					queueMemberEmail1,
@@ -918,10 +942,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
 				// Update with another queue member and modify rings
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,
@@ -1002,6 +1022,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 		wrapupCodeName3          = "Terraform Test Code3-" + uuid.NewString()
 		divResourceLabel         = "test-division"
 		divName                  = "terraform-" + uuid.NewString()
+		description              = "Terraform wrapup code description"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1019,10 +1040,12 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel1),
@@ -1043,14 +1066,17 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel1,
 					wrapupCodeName1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
 					wrapupCodeResourceLabel3,
 					wrapupCodeName3,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel1),
@@ -1068,6 +1094,7 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 					wrapupCodeResourceLabel2,
 					wrapupCodeName2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
+					description,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateQueueWrapupCode("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel2),

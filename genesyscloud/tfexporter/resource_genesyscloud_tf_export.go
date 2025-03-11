@@ -11,10 +11,11 @@ import (
 
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	tfExporterState "terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 type fileMeta struct {
@@ -99,11 +100,25 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"export_as_hcl": {
-				Description: "Export the config as HCL.",
-				Type:        schema.TypeBool,
+				Description:   "Export the config as HCL. Deprecated. Please use the export_format attribute instead",
+				Type:          schema.TypeBool,
+				Optional:      true,
+				ForceNew:      true,
+				Default:       false,
+				ConflictsWith: []string{"export_format"},
+			},
+			"export_format": {
+				Description: "Export the config as hcl or json or json_hcl.",
+				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     false,
+				Default:     "json",
 				ForceNew:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"hcl",
+					"json",
+					"json_hcl",
+					"hcl_json",
+				}, true), // true enables case-insensitive matching
 			},
 			"split_files_by_resource": {
 				Description: "Split export files by resource type. This will also split the terraform provider and variable declarations into their own files.",
@@ -148,7 +163,7 @@ func ResourceTfExport() *schema.Resource {
 				ForceNew:    true,
 			},
 			"export_computed": {
-				Description: "Export attributes that are marked as being Computed. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
+				Description: "Export attributes that are marked as being Computed and Optional. Does not attempt to export attributes that are explicitly marked as read-only by the provider. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
 				Default:     true,
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -159,7 +174,7 @@ func ResourceTfExport() *schema.Resource {
 }
 
 func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tfexporter_state.ActivateExporterState()
+	tfExporterState.ActivateExporterState()
 
 	if _, ok := d.GetOk("include_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)

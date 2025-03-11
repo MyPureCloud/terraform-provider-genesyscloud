@@ -4,22 +4,24 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
+
+	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 type S3Uploader struct {
@@ -179,25 +181,23 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
 
-	_, err := os.Stat(path)
-	if err != nil {
-		_, err = url.ParseRequestURI(path)
-		if err == nil {
-			resp, err := http.Get(path)
-			if err != nil {
-				return nil, nil, err
-			}
-			if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-				return nil, nil, fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
-			}
-			reader = resp.Body
-		} else {
-			return nil, nil, fmt.Errorf("invalid file path or URL: %v", path)
+	// Check if the path has a protocol scheme to call as an HTTP request
+	if u, err := url.ParseRequestURI(path); err == nil && u.Scheme != "" {
+		resp, err := http.Get(path)
+		if err != nil {
+			return nil, nil, err
 		}
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+			return nil, nil, fmt.Errorf("HTTP Error downloading file: %v", resp.StatusCode)
+		}
+		reader = resp.Body
 	} else {
 		file, err = os.Open(path)
 		if err != nil {
-			return nil, nil, err
+			if os.IsNotExist(err) {
+				return nil, nil, fmt.Errorf("could not %w", err)
+			}
+			return nil, nil, fmt.Errorf("error opening local file \"%s\": %v", path, err)
 		}
 		reader = file
 	}
@@ -205,26 +205,47 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	return reader, file, nil
 }
 
-// DownloadExportFile Download file from uri to directory/fileName
-func DownloadExportFile(directory, fileName, uri string) error {
-	resp, err := http.Get(uri)
+// DownloadExportFile is a variable that holds the function for downloading export files.
+// By default it points to downloadExportFile, but can be replaced with a mock implementation
+// during testing. This pattern enables unit testing of code that depends on file downloads
+// without actually downloading files.
+var DownloadExportFile = downloadExportFile
+
+func downloadExportFile(directory, fileName, uri string) (*platformclientv2.APIResponse, error) {
+	return downloadExportFileWithAccessToken(directory, fileName, uri, "")
+}
+
+var DownloadExportFileWithAccessToken = downloadExportFileWithAccessToken
+
+func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken string) (*platformclientv2.APIResponse, error) {
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.Println("TODO: see if we can get the file name from this: ")
-	log.Println(resp)
+	if accessToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Println("failed to close response body")
-		}
-	}(resp.Body)
-
-	out, err := os.Create(path.Join(directory, fileName))
+	resp, err := client.Do(req)
+	apiResp, apiErr := platformclientv2.NewAPIResponse(resp, nil)
 	if err != nil {
-		return err
+		return apiResp, err
+	}
+	if apiErr != nil {
+		return apiResp, apiErr
+	}
+	defer resp.Body.Close()
+
+	if err := os.MkdirAll(directory, 0755); err != nil {
+		return apiResp, fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	out, err := os.Create(filepath.Join(directory, fileName))
+	if err != nil {
+		return apiResp, err
 	}
 	defer func(out *os.File) {
 		err := out.Close()
@@ -234,10 +255,10 @@ func DownloadExportFile(directory, fileName, uri string) error {
 	}(out)
 
 	_, err = io.Copy(out, resp.Body)
-	return err
+	return apiResp, err
 }
 
-// Hash file content, used in stateFunc for "filepath" type attributes
+// HashFileContent Hash file content, used in stateFunc for "filepath" type attributes
 func HashFileContent(path string) (string, error) {
 	reader, file, err := DownloadOrOpenFile(path)
 	if err != nil {
@@ -261,62 +282,44 @@ func HashFileContent(path string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-// Read and upload input file path to S3 pre-signed URL
-func prepareAndUploadFile(filename string, substitutions map[string]interface{}, headers map[string]string, presignedUrl string) ([]byte, error) {
-	bodyBuf := &bytes.Buffer{}
-
-	reader, file, err := DownloadOrOpenFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	if file != nil {
-		defer file.Close()
-	}
-
-	_, err = io.Copy(bodyBuf, reader)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to copy file content to the handler. Error: %s ", err)
-	}
-
-	// Attribute specific to the flows resource
-	if len(substitutions) > 0 {
-		fileContents := bodyBuf.String()
-		for k, v := range substitutions {
-			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
-		}
-
-		bodyBuf.Reset()
-		bodyBuf.WriteString(fileContents)
-	}
-
-	req, _ := http.NewRequest("PUT", presignedUrl, bodyBuf)
-	for key, value := range headers {
-		req.Header.Set(key, value)
-	}
-
-	client := &http.Client{}
-
-	resp, err := client.Do(req)
-	if resp != nil && resp.Body != nil {
-		defer resp.Body.Close()
-	}
-
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to upload file to S3 bucket. Error: %s ", err)
-	}
-
-	response, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read response body when uploading file. %s", err)
-	}
-
-	return response, nil
-}
-
 func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 	err := os.WriteFile(path, bytes, os.ModePerm)
 	if err != nil {
 		return util.BuildDiagnosticError("File Writer", fmt.Sprintf("Error writing file with Path %s", path), err)
 	}
 	return nil
+}
+
+// getCSVRecordCount retrieves the number of records in a CSV file (i.e., number of lines in a file minus the header)
+func GetCSVRecordCount(filepath string) (int, error) {
+	// Open file up and read the record count
+	reader, file, err := DownloadOrOpenFile(filepath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	// Count the number of records in the CSV file
+	csvReader := csv.NewReader(reader)
+	csvReader.LazyQuotes = true
+	csvReader.TrimLeadingSpace = true
+	csvReader.FieldsPerRecord = 0
+	recordCount := 0
+	for {
+		_, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, err
+		}
+		recordCount++
+	}
+
+	// Subtract 1 to account for header row
+	if recordCount > 0 {
+		recordCount--
+	}
+
+	return recordCount, nil
 }

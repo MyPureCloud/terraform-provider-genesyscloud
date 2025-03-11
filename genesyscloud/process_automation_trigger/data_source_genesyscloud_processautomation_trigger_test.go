@@ -2,9 +2,11 @@ package process_automation_trigger
 
 import (
 	"fmt"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -25,7 +27,7 @@ func TestAccDataSourceProcessAutomationTrigger(t *testing.T) {
 		workflowTargetDataFormat1 = "Json"
 
 		flowResourceLabel1 = "test_flow1"
-		filePath1          = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		filePath1          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml")
 		flowName1          = "terraform-provider-test-" + uuid.NewString()
 	)
 	var homeDivisionName string

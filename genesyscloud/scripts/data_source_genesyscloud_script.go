@@ -7,6 +7,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -19,21 +21,36 @@ DataSource for the Scripts resource
 
 // dataSourceScriptRead provides the main terraform code needed to read a script resource by name
 func dataSourceScriptRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	scriptsProxy := getScriptsProxy(sdkConfig)
+	var (
+		sdkConfig    = m.(*provider.ProviderMeta).ClientConfig
+		scriptsProxy = getScriptsProxy(sdkConfig)
+		name         = d.Get("name").(string)
 
-	name := d.Get("name").(string)
+		apiResponse *platformclientv2.APIResponse
+		err         error
+		retryable   bool
+		scriptId    string
+	)
 
 	// Query for scripts by name. Retry in case new script is not yet indexed by search.
-	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		scriptId, retryable, resp, err := scriptsProxy.getScriptIdByName(ctx, name)
+	retryErr := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		scriptId, retryable, apiResponse, err = scriptsProxy.getScriptIdByName(ctx, name)
 		if err != nil {
 			if retryable {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Script %s", err), resp))
+				return retry.RetryableError(err)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get Script %s", err), resp))
+			return retry.NonRetryableError(err)
 		}
 		d.SetId(scriptId)
 		return nil
 	})
+
+	if retryErr != nil {
+		if apiResponse != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to find script with name %s: %s", name, err), apiResponse)
+		}
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to find script with name %s: %s", name, err), err)
+	}
+
+	return nil
 }

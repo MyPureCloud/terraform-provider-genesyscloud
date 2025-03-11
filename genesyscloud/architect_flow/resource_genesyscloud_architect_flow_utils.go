@@ -2,7 +2,6 @@ package architect_flow
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"os"
 	"path"
@@ -11,7 +10,8 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func isForceUnlockEnabled(d *schema.ResourceData) bool {
@@ -25,8 +25,6 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 }
 
 func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
-	fullyQualifiedPath, _ := testrunner.NormalizePath(srcFile)
-
 	if fileContent != "" {
 		updateFile(srcFile, fileContent)
 	}
@@ -37,7 +35,7 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 		force_unlock = %v
 		%s
 	}
-	`, resourceLabel, strconv.Quote(srcFile), strconv.Quote(fullyQualifiedPath), forceUnlock, strings.Join(substitutions, "\n"))
+	`, resourceLabel, strconv.Quote(srcFile), strconv.Quote(srcFile), forceUnlock, strings.Join(substitutions, "\n"))
 
 	return flowResourceStr
 }
@@ -62,7 +60,11 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 
 	filename := fmt.Sprintf("flow-%s.yml", flowId)
 	log.Printf("Downloading export flow '%s' to '%s' from download URL", flowId, fullPath)
-	if err := files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
+	if resp, err := files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
+		log.Printf("Failed to download flow file: %s", err.Error())
+		if resp != nil {
+			log.Printf("API Response: " + resp.String())
+		}
 		return err
 	}
 	log.Printf("Successfully downloaded export flow '%s' to '%s'", flowId, fullPath)

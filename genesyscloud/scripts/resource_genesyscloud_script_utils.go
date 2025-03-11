@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -18,7 +19,7 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 
 	exportFileName := fmt.Sprintf("script-%s.json", scriptId)
 
-	fullPath := path.Join(exportDirectory, subDirectory)
+	fullPath := filepath.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
@@ -28,13 +29,13 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 		return err
 	}
 
-	if err := files.DownloadExportFile(fullPath, exportFileName, url); err != nil {
+	if _, err := files.DownloadExportFile(fullPath, exportFileName, url); err != nil {
 		return err
 	}
 
 	// Update filepath field in configMap to point to exported script file
-	fileNameVal := path.Join(subDirectory, exportFileName)
-	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDirectory, exportFileName))
+	fileNameVal := filepath.Join(subDirectory, exportFileName)
+	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, filepath.Join(subDirectory, exportFileName))
 	configMap["filepath"] = fileNameVal
 	configMap["file_content_hash"] = fileContentVal
 

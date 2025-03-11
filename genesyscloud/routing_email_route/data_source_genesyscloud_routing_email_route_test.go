@@ -68,7 +68,7 @@ func generateRoutingEmailRouteDataSource(
 	return fmt.Sprintf(`
 		data "genesyscloud_routing_email_route" "%s" {
 			pattern = "%s"
-			domain_id = "%s"
+			domain_id = %s
 			depends_on=[%s]
 		}
 	`, resourceLabel, pattern, domainId, dependsOn)

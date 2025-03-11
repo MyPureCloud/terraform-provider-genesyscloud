@@ -3,17 +3,19 @@ package process_automation_trigger
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v146/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 func TestAccResourceProcessAutomationTrigger(t *testing.T) {
@@ -37,7 +39,7 @@ func TestAccResourceProcessAutomationTrigger(t *testing.T) {
 		workflowTargetSettingsDataFormat2 = "TopLevelPrimitives"
 
 		flowResourceLabel1 = "test_flow1"
-		filePath1          = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		filePath1          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml")
 		flowName1          = "terraform-provider-test-" + uuid.NewString()
 	)
 	var homeDivisionName string
@@ -288,7 +290,7 @@ func TestAccResourceProcessAutomationTriggerValues(t *testing.T) {
 		description                      = "description1"
 
 		flowResourceLabel = "test_flow"
-		filePath          = "../../examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml"
+		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_processautomation_trigger/trigger_workflow_example.yaml")
 		flowName          = "terraform-provider-test-" + uuid.NewString()
 	)
 	var homeDivisionName string
