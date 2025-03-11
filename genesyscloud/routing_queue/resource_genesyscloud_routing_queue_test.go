@@ -908,7 +908,22 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
+				// Create users
+				Config: user.GenerateBasicUserResource(
+					queueMemberResourceLabel1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + user.GenerateBasicUserResource(
+					queueMemberResourceLabel2,
+					queueMemberEmail2,
+					queueMemberName2,
+				),
+			},
+			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
+				// Create queue also
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,
 					queueMemberEmail1,
@@ -927,10 +942,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
 				// Update with another queue member and modify rings
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,
