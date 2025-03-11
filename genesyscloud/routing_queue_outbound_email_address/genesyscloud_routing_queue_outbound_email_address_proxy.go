@@ -66,13 +66,13 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 
 	queue = rc.GetCacheItem(p.routingQueueProxy.RoutingQueueCache, queueId)
 	if queue == nil {
-		queue, resp, err = p.routingApi.GetRoutingQueue(queueId, nil)
+		queue, resp, err = p.routingApi.GetRoutingQueue(queueId)
 		if err != nil {
 			return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 		}
 	}
 
-	queue, resp, err = p.routingApi.GetRoutingQueue(queueId, nil)
+	queue, resp, err = p.routingApi.GetRoutingQueue(queueId)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}
@@ -88,7 +88,7 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 // updateRoutingQueueOutboundEmailAddressFn is an implementation function for updating the outbound email address for a queue
 func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string, address *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
 	// Get the routing queue the rules belong to
-	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil)
+	queue, resp, err := p.routingApi.GetRoutingQueue(queueId)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}

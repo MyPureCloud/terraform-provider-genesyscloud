@@ -1371,7 +1371,7 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_routing_queue" {
 			continue
 		}
-		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID, nil)
+		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
 		if queue != nil {
 			return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
@@ -1391,7 +1391,7 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_routing_queue" {
-			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID, nil)
+			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
 			if queue != nil {
 				return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {

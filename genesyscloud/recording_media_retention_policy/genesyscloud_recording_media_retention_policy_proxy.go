@@ -169,7 +169,7 @@ func getAllPoliciesFn(ctx context.Context, p *policyProxy) (*[]platformclientv2.
 
 // createPolicyFn is the implementation for creating a media retention policy in Genesys Cloud
 func createPolicyFn(ctx context.Context, p *policyProxy, policyCreate *platformclientv2.Policycreate) (*platformclientv2.Policy, *platformclientv2.APIResponse, error) {
-	policy, resp, err := p.recordingApi.PostRecordingMediaretentionpolicies(*policyCreate, nil)
+	policy, resp, err := p.recordingApi.PostRecordingMediaretentionpolicies(*policyCreate)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -178,7 +178,7 @@ func createPolicyFn(ctx context.Context, p *policyProxy, policyCreate *platformc
 
 // getPolicyByIdFn is the implementation for getting a media retention policy in Genesys Cloud by id
 func getPolicyByIdFn(ctx context.Context, p *policyProxy, policyId string) (policy *platformclientv2.Policy, response *platformclientv2.APIResponse, err error) {
-	policy, resp, err := p.recordingApi.GetRecordingMediaretentionpolicy(policyId, nil)
+	policy, resp, err := p.recordingApi.GetRecordingMediaretentionpolicy(policyId)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -207,7 +207,7 @@ func getPolicyByNameFn(ctx context.Context, p *policyProxy, policyName string) (
 
 // updatePolicyFn is the implementation for updating a media retention policy in Genesys Cloud
 func updatePolicyFn(ctx context.Context, p *policyProxy, policyId string, policyBody *platformclientv2.Policy) (*platformclientv2.Policy, *platformclientv2.APIResponse, error) {
-	policy, resp, err := p.recordingApi.PutRecordingMediaretentionpolicy(policyId, *policyBody, nil)
+	policy, resp, err := p.recordingApi.PutRecordingMediaretentionpolicy(policyId, *policyBody)
 	if err != nil {
 		return nil, resp, err
 	}

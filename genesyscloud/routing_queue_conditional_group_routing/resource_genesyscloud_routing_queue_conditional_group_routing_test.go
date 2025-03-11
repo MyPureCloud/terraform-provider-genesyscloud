@@ -396,7 +396,7 @@ func verifyConditionalGroupRoutingExists(queueResourcePath string) resource.Test
 		queueID := queueResource.Primary.ID
 
 		routingApi := platformclientv2.NewRoutingApi()
-		queue, _, err := routingApi.GetRoutingQueue(queueID, nil)
+		queue, _, err := routingApi.GetRoutingQueue(queueID)
 		if err != nil {
 			return err
 		}

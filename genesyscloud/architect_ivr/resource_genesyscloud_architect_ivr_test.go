@@ -326,7 +326,7 @@ func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		ivrConfig, resp, err := architectApi.GetArchitectIvr(rs.Primary.ID, nil)
+		ivrConfig, resp, err := architectApi.GetArchitectIvr(rs.Primary.ID)
 		if ivrConfig != nil && ivrConfig.State != nil && *ivrConfig.State == "deleted" {
 			continue
 		}

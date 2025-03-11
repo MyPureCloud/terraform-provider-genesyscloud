@@ -195,7 +195,7 @@ func getUserByNameFn(ctx context.Context, p *userProxy, searchUser platformclien
 
 // deleteUserFn is an implementation function for deleting a Genesys Cloud user
 func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
-	data, resp, err := p.userApi.DeleteUser(id, false)
+	data, resp, err := p.userApi.DeleteUser(id)
 	if err != nil {
 		return nil, resp, err
 	}

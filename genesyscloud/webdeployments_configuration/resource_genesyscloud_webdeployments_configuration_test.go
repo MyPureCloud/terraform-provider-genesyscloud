@@ -1244,7 +1244,7 @@ func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
-	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations("100", "", "", false)
+	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
 	if getErr != nil {
 		t.Logf("failed to get page of configurations: %v %v", getErr, resp)
 		return

@@ -153,5 +153,5 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 
 // getRoutingQueueByIdFn is an implementation function for getting a queue by ID
 func getRoutingQueueByIdFn(_ context.Context, p *routingQueueConditionalGroupRoutingProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	return p.routingApi.GetRoutingQueue(id, nil)
+	return p.routingApi.GetRoutingQueue(id)
 }

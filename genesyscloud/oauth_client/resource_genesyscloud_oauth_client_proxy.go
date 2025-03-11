@@ -236,7 +236,7 @@ func getTerraformUserFn(ctx context.Context, o *oauthClientProxy) (*platformclie
 }
 
 func getTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
-	return o.usersApi.GetUserRoles(userId, false, false)
+	return o.usersApi.GetUserRoles(userId)
 }
 
 func updateTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId string, roles []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {

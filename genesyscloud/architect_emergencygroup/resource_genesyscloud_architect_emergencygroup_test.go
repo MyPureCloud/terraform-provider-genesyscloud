@@ -164,7 +164,7 @@ func testVerifyEmergencyGroupDestroyed(state *terraform.State) error {
 // TODO Remove the below function when emergency_group is moved to its own package
 func ivrExists(config *platformclientv2.Configuration, ivrId string) bool {
 	api := platformclientv2.NewArchitectApiWithConfig(config)
-	if _, _, err := api.GetArchitectIvr(ivrId, nil); err != nil {
+	if _, _, err := api.GetArchitectIvr(ivrId); err != nil {
 		return false
 	}
 	return true

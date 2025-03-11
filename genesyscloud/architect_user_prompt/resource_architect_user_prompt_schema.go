@@ -25,7 +25,7 @@ func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 		AllowEmptyArrays: []string{"resources"},
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
-			RetrieveAndWriteFilesFunc: architectPromptAudioResolver,
+			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
 			SubDirectory:              "audio_prompts",
 		},
 	}
