@@ -132,7 +132,7 @@ func deleteExternalUser(ctx context.Context, d *schema.ResourceData, meta interf
 
 	response, deleteErr := proxy.deleteExternalUserIdentity(ctx, userId, authorityName, externalKey)
 	if deleteErr != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external user %s: %s", d.Id(), err), response)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external user %s: %s", d.Id(), deleteErr), response)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
