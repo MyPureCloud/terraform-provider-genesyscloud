@@ -326,7 +326,6 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
-	return nil, fmt.Errorf("no client available")
 }
 
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
