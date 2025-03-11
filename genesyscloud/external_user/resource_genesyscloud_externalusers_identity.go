@@ -130,14 +130,13 @@ func deleteExternalUser(ctx context.Context, d *schema.ResourceData, meta interf
 		return util.BuildDiagnosticError(ResourceType, "failed to split compound key", err)
 	}
 
-	response, err := proxy.deleteExternalUserIdentity(ctx, userId, authorityName, externalKey)
-	if err != nil {
+	response, deleteErr := proxy.deleteExternalUserIdentity(ctx, userId, authorityName, externalKey)
+	if deleteErr != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external user %s: %s", d.Id(), err), response)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, response, err := proxy.getExternalUserIdentityById(ctx, userId, authorityName, externalKey)
-
 		if err != nil {
 			if util.IsStatus404ByInt(response.StatusCode) {
 				log.Printf("Deleted external user %s", d.Id())
