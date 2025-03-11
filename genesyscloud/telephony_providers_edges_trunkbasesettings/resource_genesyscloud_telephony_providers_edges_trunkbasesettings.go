@@ -1,4 +1,4 @@
-package telephony_provider_edges_trunkbasesettings
+package telephony_providers_edges_trunkbasesettings
 
 import (
 	"context"

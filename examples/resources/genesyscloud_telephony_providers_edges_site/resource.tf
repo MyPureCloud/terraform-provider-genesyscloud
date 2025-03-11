@@ -28,21 +28,4 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
       end   = "8"
     }
   }
-  outbound_routes {
-    name                    = "outboundRoute 1"
-    description             = "outboundRoute description"
-    classification_types    = ["International", "National"]
-    external_trunk_base_ids = [genesyscloud_telephony_providers_edges_trunkbasesettings.trunk-base-settings1.id]
-    distribution            = "RANDOM"
-    enabled                 = false
-  }
-
-  outbound_routes {
-    name                    = "outboundRoute 2"
-    description             = "outboundRoute description"
-    classification_types    = ["Network"]
-    external_trunk_base_ids = [genesyscloud_telephony_providers_edges_trunkbasesettings.trunk-base-settings2.id]
-    distribution            = "SEQUENTIAL"
-    enabled                 = true
-  }
 }
