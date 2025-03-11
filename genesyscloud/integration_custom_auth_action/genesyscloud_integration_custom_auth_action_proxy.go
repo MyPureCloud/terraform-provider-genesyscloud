@@ -151,7 +151,7 @@ func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActi
 
 // getCustomAuthActionByIdFn is the implementation for getting an integration custom auth actions by id in Genesys Cloud
 func getCustomAuthActionByIdFn(ctx context.Context, p *customAuthActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
-	action, resp, err := p.integrationsApi.GetIntegrationsAction(actionId, "", true)
+	action, resp, err := p.integrationsApi.GetIntegrationsAction(actionId, "", true, false)
 	if err != nil {
 		return nil, resp, err
 	}

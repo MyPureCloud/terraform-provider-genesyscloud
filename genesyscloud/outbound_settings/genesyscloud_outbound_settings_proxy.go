@@ -68,8 +68,8 @@ func getOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy) (*plat
 }
 
 // updateOutboundSettingsFn is an implementation of the function to update a Genesys Cloud outbound settings
-func updateOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
-	resp, err := p.outboundApi.PatchOutboundSettings(*outboundSettings)
+func updateOutboundSettingsFn(_ context.Context, p *outboundSettingsProxy, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
+	resp, err := p.outboundApi.PatchOutboundSettings(*outboundSettings, false)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to update outbound settings: %s", err)
 	}

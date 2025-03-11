@@ -120,7 +120,7 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 	cursor := ""
 	var response *platformclientv2.APIResponse
 	for {
-		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, cursor)
+		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, cursor, "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get external contacts: %v", err)
 		}
@@ -172,7 +172,7 @@ func getExternalContactByIdFn(ctx context.Context, p *externalContactsContactsPr
 func getExternalContactIdBySearchFn(ctx context.Context, p *externalContactsContactsProxy, search string) (externalContactId string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	const pageNum = 1
 	const pageSize = 100
-	contacts, resp, err := p.externalContactsApi.GetExternalcontactsContacts(pageSize, pageNum, search, "", nil)
+	contacts, resp, err := p.externalContactsApi.GetExternalcontactsContacts(pageSize, pageNum, search, "", nil, nil)
 	if err != nil {
 		return "", false, resp, fmt.Errorf("error searching external contact %s: %s", search, err)
 	}

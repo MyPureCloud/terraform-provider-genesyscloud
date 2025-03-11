@@ -110,7 +110,7 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 
 	cursor := ""
 	for {
-		externalContactsOrganization, response, err := p.externalContactsApi.GetExternalcontactsScanOrganizations(cursorSize, cursor)
+		externalContactsOrganization, response, err := p.externalContactsApi.GetExternalcontactsScanOrganizations(cursorSize, cursor, "")
 		if err != nil {
 			return nil, response, fmt.Errorf("failed to get external organization: %v", err)
 		}

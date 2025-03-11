@@ -258,7 +258,7 @@ func testVerifyIntegrationActionDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false)
+		action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false, false)
 		if action != nil {
 			return fmt.Errorf("Integration action (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {

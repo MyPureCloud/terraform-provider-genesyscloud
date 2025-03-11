@@ -369,7 +369,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"media_settings_email":                           flattenMediaEmailSetting(testRoutingQueue.MediaSettings.Email),
 		"media_settings_chat":                            flattenMediaSetting(testRoutingQueue.MediaSettings.Chat),
 		"media_settings_callback":                        flattenMediaSettingCallback(testRoutingQueue.MediaSettings.Callback),
-		"media_settings_message":                         flattenMediaSetting(testRoutingQueue.MediaSettings.Message),
+		"media_settings_message":                         flattenMediaSettingsMessage(testRoutingQueue.MediaSettings.Message),
 		"queue_flow_id":                                  *testRoutingQueue.QueueFlow.Id,
 		"email_in_queue_flow_id":                         *testRoutingQueue.EmailInQueueFlow.Id,
 		"message_in_queue_flow_id":                       *testRoutingQueue.MessageInQueueFlow.Id,
@@ -453,7 +453,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		callback = generateCallbackMediaSettings()
 		chat     = generateMediaSettings()
 		email    = generateMediaEmailSettings()
-		message  = GenerateMediaSettingsWithSubType()
+		message  = GenerateMediaSettingsMessageWithSubType()
 
 		mediaSettings = platformclientv2.Queuemediasettings{
 			Call:     &call,
@@ -553,13 +553,13 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 	}
 }
 
-func GenerateMediaSettingsWithSubType() platformclientv2.Mediasettings {
+func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasettings {
 	subTypeMap := make(map[string]platformclientv2.Basemediasettings)
 	baseMediaSettings := platformclientv2.Basemediasettings{
 		EnableAutoAnswer: platformclientv2.Bool(true),
 	}
 	subTypeMap["instagram"] = baseMediaSettings
-	return platformclientv2.Mediasettings{
+	return platformclientv2.Messagemediasettings{
 		EnableAutoAnswer:       platformclientv2.Bool(true),
 		AlertingTimeoutSeconds: platformclientv2.Int(20),
 		ServiceLevel: &platformclientv2.Servicelevel{
