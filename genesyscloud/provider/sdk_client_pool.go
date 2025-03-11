@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 const (
@@ -326,7 +326,6 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
-	return nil, fmt.Errorf("no client available")
 }
 
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
