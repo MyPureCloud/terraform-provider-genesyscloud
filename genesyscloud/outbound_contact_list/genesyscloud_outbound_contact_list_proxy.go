@@ -11,7 +11,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 /*

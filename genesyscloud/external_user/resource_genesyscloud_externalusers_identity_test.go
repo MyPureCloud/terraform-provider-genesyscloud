@@ -5,6 +5,7 @@ import (
 	userResource "terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -27,7 +28,19 @@ func TestAccResourceExternalUser(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
+				// Create user first
+				Config: userResource.GenerateBasicUserResource(
+					userResoureLabel,
+					userEmail,
+					userName,
+				),
+			},
+			{
+				// Give the user some time to register in the API
+				PreConfig: func() {
+					time.Sleep(5 * time.Second)
+				},
+				// Create external user identity
 				Config: userResource.GenerateBasicUserResource(
 					userResoureLabel,
 					userEmail,
@@ -37,7 +50,8 @@ func TestAccResourceExternalUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "external_key", externalKey),
 					resource.TestCheckResourceAttr(resourcePath, "authority_name", authorityName),
 				),
-			}, {
+			},
+			{
 				// Update
 
 				Config: userResource.GenerateBasicUserResource(
