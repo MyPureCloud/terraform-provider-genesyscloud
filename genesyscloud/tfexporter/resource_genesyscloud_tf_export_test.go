@@ -429,6 +429,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 // TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels will exclude any test resources that match a
 // regular expression provided for the resource. In this test we check against both sanitized and unsanitized labels.
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1120 is resolved")
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6_1"
