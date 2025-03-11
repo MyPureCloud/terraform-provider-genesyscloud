@@ -46,6 +46,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 						util.NullValue, // Default visibility
 						util.NullValue, // Default rules_visible
 						"roles_enabled = false",
+						"calls_enabled = false",
 						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -55,6 +56,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "visibility", visPublic),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "rules_visible", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "roles_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "calls_enabled", util.FalseValue),
 				),
 			},
 			{
@@ -67,6 +69,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					strconv.Quote(visMembers),
 					util.FalseValue,
 					"roles_enabled = true",
+					"calls_enabled = true",
 					GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -76,6 +79,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "visibility", visMembers),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "rules_visible", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "roles_enabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "calls_enabled", util.TrueValue),
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResourceLabel]
 						if !ok {
@@ -99,6 +103,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					strconv.Quote(visMembers),
 					util.FalseValue,
 					"roles_enabled = true",
+					"calls_enabled = true",
 					"owner_ids = []",
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -108,6 +113,7 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "visibility", visMembers),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "rules_visible", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "roles_enabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "calls_enabled", util.TrueValue),
 					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResourceLabel1, "owner_ids.%"),
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResourceLabel]
