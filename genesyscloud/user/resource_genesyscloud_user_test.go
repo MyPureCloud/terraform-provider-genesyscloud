@@ -247,19 +247,35 @@ func TestAccResourceUserAddresses(t *testing.T) {
 	var (
 		addrUserResourceLabel1      = "test-user-addr1"
 		addrUserResourceLabel2      = "test-user-addr2"
+		addrUserResourceLabel3      = "test-user-addr3"
+		addrUserResourceLabel4      = "test-user-addr4"
 		addrUserName1               = "Nancy Terraform"
 		addrUserName2               = "Oliver Tofu"
-		addrEmail1                  = "terraform-" + uuid.NewString() + "@user.com"
-		addrEmail2                  = "terraform-" + uuid.NewString() + "@user.com"
-		addrEmail3                  = "terraform-" + uuid.NewString() + "@user.com"
+		addrUserName3               = "Tony Bee"
+		addrUserName4               = "Scott Crav"
+		addrEmail1                  = "terraform1-" + uuid.NewString() + "@user.com"
+		addrEmail2                  = "terraform2-" + uuid.NewString() + "@user.com"
+		addrEmail3                  = "terraform3-" + uuid.NewString() + "@user.com"
+		addrEmail4                  = "terraform4-" + uuid.NewString() + "@user.com"
 		addrPhone1                  = "+13174269078"
 		addrPhone2                  = "+441434634996"
+		addrPhone3                  = "+13174222323"
+		addrPhone4_1                = "+13174265397"
+		addrPhone4_2                = "+13172347890"
 		addrPhoneExt1               = "1234"
 		addrPhoneExt2               = "1345"
+		addrPhoneExt3_1             = "3456"
+		addrPhoneExt3_2             = "7270"
+		addrPhoneExt4_1             = "2345"
+		addrPhoneExt4_2             = "9000"
+		addrPhoneExt4_3             = "98765"
 		phoneMediaType              = "PHONE"
 		smsMediaType                = "SMS"
 		addrTypeWork                = "WORK"
+		addrTypeWork2               = "WORK2"
+		addrTypeWork3               = "WORK3"
 		addrTypeHome                = "HOME"
+		addrTypeMobile              = "MOBILE"
 		extensionPoolResourceLabel1 = "test-extensionpool1" + uuid.NewString()
 		extensionPoolStartNumber1   = "8000"
 		extensionPoolEndNumber1     = "8999"
@@ -372,6 +388,146 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.extension", addrPhoneExt2),
 					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.address"),
 					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.other_emails.0.type"),
+				),
+			},
+			{
+				// Add a user checking DEVTOOLING-739
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel3,
+					addrEmail3,
+					addrUserName3,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone3),
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeMobile),
+							strconv.Quote(addrPhoneExt3_1),
+						),
+						generateUserPhoneAddress(
+							util.NullValue,
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeWork3),
+							strconv.Quote(addrPhoneExt3_2),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Basic resource attributes
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel3, "email", addrEmail3),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel3, "name", addrUserName3),
+
+					// Check for the first phone address (with phone + extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel3,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"number":     addrPhone3,
+							"media_type": phoneMediaType,
+							"type":       addrTypeMobile,
+							"extension":  addrPhoneExt3_1,
+						},
+					),
+
+					// Check for the second phone address (with only extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel3,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"media_type": phoneMediaType,
+							"type":       addrTypeWork3,
+							"extension":  addrPhoneExt3_2,
+						},
+					),
+
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel3, "addresses.0.other_emails.0.address"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel3, "addresses.0.other_emails.0.type"),
+				),
+			},
+			{
+				// Add a user multiple phone addresses
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel4,
+					addrEmail4,
+					addrUserName4,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							util.NullValue,
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeHome),
+							strconv.Quote(addrPhoneExt4_1),
+						),
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone4_1),
+							util.NullValue, // Default to type PHONE
+							util.NullValue, // Default to type WORK
+							util.NullValue, // No extension
+						),
+						generateUserPhoneAddress(
+							strconv.Quote(addrPhone4_2),
+							strconv.Quote(smsMediaType),
+							strconv.Quote(addrTypeWork2),
+							strconv.Quote(addrPhoneExt4_2),
+						),
+						generateUserPhoneAddress(
+							util.NullValue,
+							strconv.Quote(phoneMediaType),
+							strconv.Quote(addrTypeWork3),
+							strconv.Quote(addrPhoneExt4_3),
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Basic resource attributes
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "email", addrEmail4),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "name", addrUserName4),
+
+					// Check for the first phone address (with only extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"media_type": phoneMediaType,
+							"type":       addrTypeHome,
+							"extension":  addrPhoneExt4_1,
+						},
+					),
+
+					// Check for the second phone address (with only number)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"number":     addrPhone4_1,
+							"media_type": phoneMediaType,
+							"type":       addrTypeWork,
+						},
+					),
+
+					// Check for the third phone address (with both number and extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"number":     addrPhone4_2,
+							"media_type": smsMediaType,
+							"type":       addrTypeWork2,
+							"extension":  addrPhoneExt4_2,
+						},
+					),
+
+					// Check for the fourth phone address (with only extension)
+					resource.TestCheckTypeSetElemNestedAttrs(
+						ResourceType+"."+addrUserResourceLabel4,
+						"addresses.0.phone_numbers.*",
+						map[string]string{
+							"media_type": phoneMediaType,
+							"type":       addrTypeWork3,
+							"extension":  addrPhoneExt4_3,
+						},
+					),
+
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.0.other_emails.0.address"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.0.other_emails.0.type"),
 				),
 			},
 		},
