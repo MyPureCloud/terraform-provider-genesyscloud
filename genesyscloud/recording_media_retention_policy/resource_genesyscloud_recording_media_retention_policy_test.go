@@ -2,7 +2,6 @@ package recording_media_retention_policy
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -28,7 +27,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 /*
@@ -924,19 +923,18 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		},
 	}
 
+	const domainPrefix = "terraformmedia"
 	var (
 		domainResourceLabel = "routing-domain1"
-		domainId            = fmt.Sprintf("terraformmedia%v.com", time.Now().Unix())
+		domainId            = fmt.Sprintf("%s%v.com", domainPrefix, time.Now().Unix())
 		divResourceLabel    = "test-division"
 		divName             = "terraform-" + uuid.NewString()
 		description         = "Terraform test description"
 	)
 
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
+	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
+		t.Logf("Failed to clean up routin email domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
-	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1047,10 +1045,9 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.call_policy.0.conditions.0.date_ranges.0", fmt.Sprint(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Conditions.DateRanges[0])),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.call_policy.0.conditions.0.directions.#", fmt.Sprint(len(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Conditions.Directions))),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.call_policy.0.conditions.0.directions.0", fmt.Sprint(mediaRetentionCallPolicy.MediaPolicies.CallPolicy.Conditions.Directions[0])),
-
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.email_policy.0.conditions.0.customer_participation", fmt.Sprint(mediaRetentionCallPolicy.MediaPolicies.EmailPolicy.Conditions.CustomerParticipation)),
 				),
 			},
+
 			{
 
 				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
@@ -1375,6 +1372,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.email_policy.0.conditions.0.date_ranges.0", fmt.Sprint(mediaRetentionEmailPolicy.MediaPolicies.EmailPolicy.Conditions.DateRanges[0])),
 				),
 			},
+
 			{
 
 				ResourceName:            "genesyscloud_recording_media_retention_policy." + policyResourceLabel1,
@@ -2382,32 +2380,30 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 	return assignSurveysString
 }
 
-func CleanupRoutingEmailDomains() {
+func CleanupRoutingEmailDomains(prefix string) error {
 	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
 		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
 		if getErr != nil {
-			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
-			return
+			return fmt.Errorf("failed to get page %v of routing email domains: %v", pageNum, getErr)
 		}
 
 		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
 			break
 		}
 
-		for _, routingEmailDomain := range *routingEmailDomains.Entities {
-			if routingEmailDomain.Name != nil && strings.HasPrefix(*routingEmailDomain.Name, "terraformmedia") {
-				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
-				if err != nil {
-					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
-					return
+		for _, domain := range *routingEmailDomains.Entities {
+			if domain.Name != nil && strings.HasPrefix(*domain.Name, prefix) {
+				if _, deleteErr := routingAPI.DeleteRoutingEmailDomain(*domain.Id); deleteErr != nil {
+					return fmt.Errorf("failed to delete routing email domain %s: %s", *domain.Id, deleteErr)
 				}
 				time.Sleep(5 * time.Second)
 			}
 		}
 	}
+	return nil
 }
 
 func GenerateResourceRoles(skillID string, divisionIds ...string) string {

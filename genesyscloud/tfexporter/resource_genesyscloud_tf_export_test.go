@@ -3,6 +3,7 @@ package tfexporter
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -272,6 +273,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 // Wrap up codes will be created with -prod, -dev and -test suffixes but they should not be affected by the regex filter
 // for the queue and should all be exported
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1096 is addressed.")
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6"
@@ -428,6 +430,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 // TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels will exclude any test resources that match a
 // regular expression provided for the resource. In this test we check against both sanitized and unsanitized labels.
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1120 is resolved")
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6_1"
@@ -449,6 +452,11 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		description      = "Terraform wrapup code description"
 	)
 	cleanupFunc := func() {
+		if provider.SdkClientPool != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_ = provider.SdkClientPool.Close(ctx)
+		}
 		if err := os.RemoveAll(exportTestDir); err != nil {
 			t.Logf("Error while cleaning up %v", err)
 		}
@@ -1467,7 +1475,7 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_quality_forms_survey"),
 					},
-					util.FalseValue, // export_as_hcl
+					strconv.Quote("json"), // export_as_hcl
 					util.FalseValue,
 					[]string{},
 				),

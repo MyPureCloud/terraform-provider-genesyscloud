@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 var (
@@ -58,15 +58,16 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		queueSkillResourceLabel  = "test-queue-skill"
 		queueSkillName           = "Terraform Skill " + uuid.NewString()
 
-		bullseyeMemberGroupName = "test_membergroup_series6"
-		bullseyeMemberGroupType = "GROUP"
-		testUserResourceLabel   = "user_resource1"
-		testUserName            = "nameUser1" + uuid.NewString()
-		testUserEmail           = uuid.NewString() + "@examplestest.com"
-		callbackHours           = "7"
-		callbackHours2          = "7"
-		callbackModeAgentFirst  = "AgentFirst"
-		userID                  string
+		bullseyeMemberGroupLabel = "test_membergroup_series6"
+		bullseyeMemberGroupName  = "MySeries6Groupv20_" + uuid.NewString()
+		bullseyeMemberGroupType  = "GROUP"
+		testUserResourceLabel    = "user_resource1"
+		testUserName             = "nameUser1" + uuid.NewString()
+		testUserEmail            = uuid.NewString() + "@examplestest.com"
+		callbackHours            = "7"
+		callbackHours2           = "7"
+		callbackModeAgentFirst   = "AgentFirst"
+		userID                   string
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -77,8 +78,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				// Create
 				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
 					group.GenerateGroupResource(
+						bullseyeMemberGroupLabel,
 						bullseyeMemberGroupName,
-						"MySeries6Groupv20",
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
@@ -107,7 +108,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupName+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
+					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -907,7 +908,22 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
+				// Create users
+				Config: user.GenerateBasicUserResource(
+					queueMemberResourceLabel1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + user.GenerateBasicUserResource(
+					queueMemberResourceLabel2,
+					queueMemberEmail2,
+					queueMemberName2,
+				),
+			},
+			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
+				// Create queue also
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,
 					queueMemberEmail1,
@@ -926,10 +942,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
 				// Update with another queue member and modify rings
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,

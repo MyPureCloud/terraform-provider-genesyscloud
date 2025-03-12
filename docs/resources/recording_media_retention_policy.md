@@ -997,7 +997,7 @@ Optional:
 
 Optional:
 
-- `customer_participation` (String) This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.
+- `customer_participation` (String) This condition is to filter out conversation with and without customer participation. Valid values: YES, NO.
 - `date_ranges` (List of String)
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
