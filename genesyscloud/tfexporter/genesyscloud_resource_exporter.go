@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -400,6 +401,20 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			algorithm.Write([]byte(uuid.NewString()))
 			resource.BlockLabel = resource.BlockLabel + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			g.updateSanitizeMap(*g.exporters, resource)
+		}
+
+		// TODO: help
+		if resource.Type == architect_flow.ResourceType {
+			exporters := *g.exporters
+			flowExporter := exporters[resource.Type]
+			if g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+				flowExporter.CustomFileWriter = resourceExporter.CustomFileWriterSettings{}
+			} else {
+				delete(flowExporter.UnResolvableAttributes, "filepath")
+				delete(flowExporter.CustomFlowResolver, "file_content_hash")
+			}
+			exporters[architect_flow.ResourceType] = flowExporter
+			g.exporters = &exporters
 		}
 
 		// Removes zero values and sets proper reference expressions

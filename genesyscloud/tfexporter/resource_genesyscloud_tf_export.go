@@ -169,6 +169,13 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 			},
+			"use_legacy_architect_flow_exporter": {
+				Description: "When set to `false`, architect flow configuration files will be downloaded as part of the flow export process.",
+				Type: schema.TypeBool,
+				Default: true,
+				Optional: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
