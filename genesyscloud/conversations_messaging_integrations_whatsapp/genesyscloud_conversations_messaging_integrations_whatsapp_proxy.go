@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 )
@@ -37,11 +38,13 @@ type conversationsMessagingIntegrationsWhatsappProxy struct {
 	updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupAttr updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFunc
 	updateConversationsMessagingIntegrationsWhatsappAttr               updateConversationsMessagingIntegrationsWhatsappFunc
 	deleteConversationsMessagingIntegrationsWhatsappAttr               deleteConversationsMessagingIntegrationsWhatsappFunc
+	whatsappCache                                                      rc.CacheInterface[platformclientv2.Whatsappintegration]
 }
 
 // newConversationsMessagingIntegrationsWhatsappProxy initializes the conversations messaging integrations whatsapp proxy with all of the data needed to communicate with Genesys Cloud
 func newConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsWhatsappProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
+	whatsappCache := rc.NewResourceCache[platformclientv2.Whatsappintegration]()
 	return &conversationsMessagingIntegrationsWhatsappProxy{
 		clientConfig:     clientConfig,
 		conversationsApi: api,
@@ -52,6 +55,7 @@ func newConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformcl
 		updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupAttr: updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFn,
 		updateConversationsMessagingIntegrationsWhatsappAttr:               updateConversationsMessagingIntegrationsWhatsappFn,
 		deleteConversationsMessagingIntegrationsWhatsappAttr:               deleteConversationsMessagingIntegrationsWhatsappFn,
+		whatsappCache: whatsappCache,
 	}
 }
 
@@ -116,9 +120,8 @@ func getAllConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *
 	if whatsAppEmbeddedSignupIntegrationRequests.Entities == nil || len(*whatsAppEmbeddedSignupIntegrationRequests.Entities) == 0 {
 		return &allWhatsAppEmbeddedSignupIntegrationRequests, resp, nil
 	}
-	for _, whatsAppEmbeddedSignupIntegrationRequest := range *whatsAppEmbeddedSignupIntegrationRequests.Entities {
-		allWhatsAppEmbeddedSignupIntegrationRequests = append(allWhatsAppEmbeddedSignupIntegrationRequests, whatsAppEmbeddedSignupIntegrationRequest)
-	}
+
+	allWhatsAppEmbeddedSignupIntegrationRequests = append(allWhatsAppEmbeddedSignupIntegrationRequests, *whatsAppEmbeddedSignupIntegrationRequests.Entities...)
 
 	for pageNum := 2; pageNum <= *whatsAppEmbeddedSignupIntegrationRequests.PageCount; pageNum++ {
 		whatsAppEmbeddedSignupIntegrationRequests, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsWhatsapp(pageSize, pageNum, "", "", "")
@@ -130,9 +133,11 @@ func getAllConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *
 			break
 		}
 
-		for _, whatsAppEmbeddedSignupIntegrationRequest := range *whatsAppEmbeddedSignupIntegrationRequests.Entities {
-			allWhatsAppEmbeddedSignupIntegrationRequests = append(allWhatsAppEmbeddedSignupIntegrationRequests, whatsAppEmbeddedSignupIntegrationRequest)
-		}
+		allWhatsAppEmbeddedSignupIntegrationRequests = append(allWhatsAppEmbeddedSignupIntegrationRequests, *whatsAppEmbeddedSignupIntegrationRequests.Entities...)
+	}
+
+	for _, whatsappRequest := range allWhatsAppEmbeddedSignupIntegrationRequests {
+		rc.SetCache(p.whatsappCache, *whatsappRequest.Id, whatsappRequest)
 	}
 
 	return &allWhatsAppEmbeddedSignupIntegrationRequests, resp, nil
@@ -161,6 +166,10 @@ func getConversationsMessagingIntegrationsWhatsappIdByNameFn(ctx context.Context
 
 // getConversationsMessagingIntegrationsWhatsappByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations whatsapp by Id
 func getConversationsMessagingIntegrationsWhatsappByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsapp := rc.GetCacheItem(p.whatsappCache, id)
+	if whatsapp != nil {
+		return whatsapp, nil, nil
+	}
 	return p.conversationsApi.GetConversationsMessagingIntegrationsWhatsappIntegrationId(id, "")
 }
 
@@ -179,6 +188,6 @@ func deleteConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete conversations messaging integrations whatsapp: %s", err)
 	}
-
+	rc.DeleteCacheItem(p.whatsappCache, id)
 	return resp, nil
 }

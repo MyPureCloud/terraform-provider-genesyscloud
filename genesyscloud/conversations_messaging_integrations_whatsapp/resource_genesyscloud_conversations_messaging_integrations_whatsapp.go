@@ -104,9 +104,11 @@ func updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
 
 	// Activate WhatsApp integration if requested, otherwise proceed with update
-	if activateWhatsapp := d.Get("activate_whatsapp").(*schema.Set); activateWhatsapp != nil {
-		if activateWhatsapp.Len() > 0 {
-			return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
+	if d.HasChange("activate_whatsapp") {
+		if activateWhatsapp := d.Get("activate_whatsapp").(*schema.Set); activateWhatsapp != nil {
+			if activateWhatsapp.Len() > 0 {
+				return activateConversationsMessagingIntegrationsWhatsapp(ctx, d, meta)
+			}
 		}
 	}
 
