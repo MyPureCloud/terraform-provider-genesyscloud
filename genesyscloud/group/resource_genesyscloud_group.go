@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -47,6 +47,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	visibility := d.Get("visibility").(string)
 	rulesVisible := d.Get("rules_visible").(bool)
 	rolesEnabled := d.Get("roles_enabled").(bool)
+	callsEnabled := d.Get("calls_enabled").(bool)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getGroupProxy(sdkConfig)
@@ -63,6 +64,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		RulesVisible: &rulesVisible,
 		Addresses:    addresses,
 		RolesEnabled: &rolesEnabled,
+		CallsEnabled: &callsEnabled,
 		OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
 	}
 	log.Printf("Creating group %s", name)
@@ -114,6 +116,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "rules_visible", group.RulesVisible)
 		resourcedata.SetNillableValue(d, "description", group.Description)
 		resourcedata.SetNillableValue(d, "roles_enabled", group.RolesEnabled)
+		resourcedata.SetNillableValue(d, "calls_enabled", group.CallsEnabled)
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "owner_ids", group.Owners, flattenGroupOwners)
 
@@ -140,6 +143,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	visibility := d.Get("visibility").(string)
 	rulesVisible := d.Get("rules_visible").(bool)
 	rolesEnabled := d.Get("roles_enabled").(bool)
+	callsEnabled := d.Get("calls_enabled").(bool)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getGroupProxy(sdkConfig)
@@ -165,6 +169,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			RulesVisible: &rulesVisible,
 			Addresses:    addresses,
 			RolesEnabled: &rolesEnabled,
+			CallsEnabled: &callsEnabled,
 			OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
 		}
 

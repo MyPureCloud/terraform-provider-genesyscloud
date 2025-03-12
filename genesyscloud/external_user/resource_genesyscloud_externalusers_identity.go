@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -130,14 +130,13 @@ func deleteExternalUser(ctx context.Context, d *schema.ResourceData, meta interf
 		return util.BuildDiagnosticError(ResourceType, "failed to split compound key", err)
 	}
 
-	response, err := proxy.deleteExternalUserIdentity(ctx, userId, authorityName, externalKey)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external user %s: %s", d.Id(), err), response)
+	response, deleteErr := proxy.deleteExternalUserIdentity(ctx, userId, authorityName, externalKey)
+	if deleteErr != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete external user %s: %s", d.Id(), deleteErr), response)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, response, err := proxy.getExternalUserIdentityById(ctx, userId, authorityName, externalKey)
-
 		if err != nil {
 			if util.IsStatus404ByInt(response.StatusCode) {
 				log.Printf("Deleted external user %s", d.Id())
