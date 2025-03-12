@@ -27,6 +27,7 @@ type platformConfig struct {
 }
 
 var platformConfigSingleton *platformConfig
+var platformInitialized bool
 
 const (
 	PlatformUnknown Platform = iota
@@ -99,19 +100,25 @@ func IsValidPlatform(p Platform) bool {
 
 func (p Platform) Validate() error {
 	if !IsValidPlatform(p) {
-		return fmt.Errorf("Invalid platform value detected: %v. This is an error of the terraform-provider-genesyscloud provider. This may indicate the provider is running in an unsupported environment. Please ensure you're using a supported operating system and architecture.", p)
+		return fmt.Errorf("invalid platform value detected: %v. This is an error of the terraform-provider-genesyscloud provider. This may indicate the provider is running in an unsupported environment. Please ensure you're using a supported operating system and architecture", p)
 	}
 	if platformConfigSingleton == nil {
-		return fmt.Errorf("Platform configuration is not initialized. This is likely an internal provider error. Please file a bug report if this persists in the terraform-provider-genesyscloud issues list.")
+		return fmt.Errorf("platform configuration is not initialized. This is likely an internal provider error. Please file a bug report if this persists in the terraform-provider-genesyscloud issues list")
 	}
 	return nil
 }
 
 func GetPlatform() Platform {
+	if !platformInitialized {
+		InitializePlatform()
+	}
 	return platformConfigSingleton.platform
 }
 
-func init() {
+func InitializePlatform() {
+	if platformInitialized {
+		return
+	}
 	// Initialize the config once
 	platformConfigSingleton = &platformConfig{}
 
@@ -122,12 +129,12 @@ func init() {
 
 		// Could not find binary by looking it up from parent process
 		// Let's see if we can find a Terraform binary on the system
-		path, err = directLookupPlatformBinary("terraform")
+		path, _ = directLookupPlatformBinary("terraform")
 
 		if path == "" {
 			// No Terraform binary found on the system
 			// Let's see if we can find a Tofu binary on the system
-			path, err = directLookupPlatformBinary("tofu")
+			path, _ = directLookupPlatformBinary("tofu")
 			if path == "" {
 				log.Printf("No valid platform binary found!")
 				platformConfigSingleton.platform = PlatformUnknown
@@ -182,7 +189,7 @@ func init() {
 	}
 
 	platformConfigSingleton.platform = PlatformTerraform
-	return
+	platformInitialized = true
 
 }
 
