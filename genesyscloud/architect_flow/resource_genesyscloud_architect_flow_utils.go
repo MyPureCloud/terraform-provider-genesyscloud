@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -40,6 +40,19 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 	return flowResourceStr
 }
 
+// architectFlowResolver downloads and processes an architect flow from Genesys Cloud.
+// It creates a subdirectory, downloads the flow file, and updates the resource configuration.
+//
+// Parameters:
+//   - flowId: The ID of the architect flow to resolve
+//   - exportDirectory: The base directory where the flow will be exported
+//   - subDirectory: The subdirectory name to create within the export directory
+//   - configMap: Configuration map containing resource settings
+//   - meta: Provider metadata containing client configuration
+//   - resource: Resource information for the architect flow
+//
+// Returns:
+//   - error: Returns an error if any operation fails, nil otherwise
 func architectFlowResolver(flowId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) error {
 	var (
 		sdkConfig = meta.(*provider.ProviderMeta).ClientConfig
@@ -52,7 +65,7 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 	}
 
 	log.Printf("Creating subfolder '%s' inside '%s'", subDirectory, exportDirectory)
-	fullPath := path.Join(exportDirectory, subDirectory)
+	fullPath := filepath.Join(exportDirectory, subDirectory)
 	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
@@ -74,20 +87,30 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 	return nil
 }
 
-// setFileContentHashToNil This operation is required after a flow update fails because we want Terraform to detect changes
-// in the file content hash and re-attempt an update, should the user re-run terraform apply without making changes to the file contents
+// setFileContentHashToNil resets the file_content_hash in the resource data to nil.
+// This is necessary after a flow update fails to ensure Terraform detects changes
+// in the file content hash and attempts an update on the next terraform apply,
+// even if the file contents haven't changed.
+//
+// Parameters:
+//   - d: The schema.ResourceData containing the resource state
 func setFileContentHashToNil(d *schema.ResourceData) {
 	_ = d.Set("file_content_hash", nil)
 }
 
 // updateResourceConfigAndState updates filepath and file_content_hash in resource and state file to point to exported file
 func updateResourceConfigAndState(configMap map[string]any, resource resourceExporter.ResourceInfo, exportDir, subDir, filename string) {
-	configMap["filepath"] = path.Join(subDir, filename)
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, path.Join(subDir, filename))
+	var (
+		exportFilePath                       = filepath.Join(subDir, filename)
+		exportFilePathIncludingExportDirName = filepath.Join(exportDir, subDir, filename)
+	)
 
-	resource.State.Attributes["filepath"] = path.Join(subDir, filename)
+	configMap["filepath"] = exportFilePath
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilePath)
+
+	resource.State.Attributes["filepath"] = exportFilePath
 	// Update file_content_hash in exported state file with actual hash
-	hash, err := files.HashFileContent(path.Join(exportDir, subDir, filename))
+	hash, err := files.HashFileContent(exportFilePathIncludingExportDirName)
 	if err != nil {
 		log.Printf("Error Calculating Hash '%s' ", err)
 	} else {
