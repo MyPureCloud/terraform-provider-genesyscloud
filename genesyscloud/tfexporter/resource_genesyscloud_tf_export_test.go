@@ -2954,7 +2954,7 @@ func generateTfExportByFilter(
 		include_state_file = %s
 		resource_types = [%s]
 		exclude_attributes = [%s]
-		export_format = "%s"
+		export_format = %s
 		log_permission_errors = %s
 		depends_on=[%s]
 	}
@@ -2974,7 +2974,7 @@ func generateTfExportByIncludeFilterResources(
 		directory = "%s"
 		include_state_file = %s
 		include_filter_resources = [%s]
-		export_format = "%s"
+		export_format = %s
 		split_files_by_resource = %s
 		depends_on = [%s]
 	}
@@ -2994,7 +2994,7 @@ func generateTfExportByFlowDependsOnResources(
 		directory = "%s"
 		include_state_file = %s
 		include_filter_resources = [%s]
-		export_format = "%s"
+		export_format = %s
 		split_files_by_resource = %s
 		enable_dependency_resolution = %s
 		depends_on = [time_sleep.wait_10_seconds]
@@ -3016,7 +3016,7 @@ func generateTfExportByExcludeFilterResources(
 		include_state_file = %s
 		exclude_filter_resources = [%s]
 		log_permission_errors=true
-		export_format = "%s"
+		export_format = %s
 		split_files_by_resource = %s
 		depends_on=[%s]
 	}
