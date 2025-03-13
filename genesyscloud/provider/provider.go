@@ -269,15 +269,15 @@ type ProviderMeta struct {
 }
 
 func configure(version string) schema.ConfigureContextFunc {
-	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	return func(_ context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 
-		platform := platform.GetPlatform()
-		platformValidationErr := platform.Validate()
+		platformVar := platform.GetPlatform()
+		platformValidationErr := platformVar.Validate()
 		if platformValidationErr != nil {
 			log.Printf("%v error during platform validation switching to defaults", platformValidationErr)
 		}
 
-		providerSourceRegistry := getRegistry(&platform, version)
+		providerSourceRegistry := getRegistry(&platformVar, version)
 
 		err := InitSDKClientPool(data.Get("token_pool_size").(int), version, data)
 		if err != nil {
@@ -295,7 +295,7 @@ func configure(version string) schema.ConfigureContextFunc {
 
 		meta := &ProviderMeta{
 			Version:            version,
-			Platform:           &platform,
+			Platform:           &platformVar,
 			Registry:           providerSourceRegistry,
 			ClientConfig:       defaultConfig,
 			Domain:             getRegionDomain(data.Get("aws_region").(string)),
