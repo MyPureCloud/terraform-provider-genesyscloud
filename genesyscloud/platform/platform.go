@@ -29,6 +29,10 @@ type platformConfig struct {
 var platformConfigSingleton *platformConfig
 var platformInitialized bool
 
+var initialisePlatformAttemptsCount = 0
+
+const maxInitialisePlatformAttempts = 3
+
 const (
 	PlatformUnknown Platform = iota
 	PlatformTerraform
@@ -119,6 +123,11 @@ func InitializePlatform() {
 	if platformInitialized {
 		return
 	}
+	if initialisePlatformAttemptsCount == maxInitialisePlatformAttempts {
+		log.Printf("Reached max attempts %d of InitializePlatform function", maxInitialisePlatformAttempts)
+		return
+	}
+	initialisePlatformAttemptsCount++
 	// Initialize the config once
 	platformConfigSingleton = &platformConfig{}
 
@@ -129,12 +138,17 @@ func InitializePlatform() {
 
 		// Could not find binary by looking it up from parent process
 		// Let's see if we can find a Terraform binary on the system
-		path, _ = directLookupPlatformBinary("terraform")
-
+		path, err = directLookupPlatformBinary("terraform")
+		if err != nil {
+			log.Printf("failed to lookup platform \"terraform\" binary: %s", err.Error())
+		}
 		if path == "" {
 			// No Terraform binary found on the system
 			// Let's see if we can find a Tofu binary on the system
-			path, _ = directLookupPlatformBinary("tofu")
+			path, err = directLookupPlatformBinary("tofu")
+			if err != nil {
+				log.Printf("failed to lookup platform \"tofu\" binary: %s", err.Error())
+			}
 			if path == "" {
 				log.Printf("No valid platform binary found!")
 				platformConfigSingleton.platform = PlatformUnknown
@@ -167,6 +181,7 @@ func InitializePlatform() {
 	for _, pattern := range debugPatterns {
 		if strings.Contains(platformConfigSingleton.binaryPath, pattern) {
 			platformConfigSingleton.platform = PlatformDebugServer
+			platformInitialized = true
 			return
 		}
 	}
@@ -181,16 +196,12 @@ func InitializePlatform() {
 
 	if strings.Contains(strings.ToLower(versionOutput.Stdout), "go ") {
 		platformConfigSingleton.platform = PlatformGoLang
-		return
-	}
-	if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
+	} else if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
 		platformConfigSingleton.platform = PlatformOpenTofu
-		return
+	} else {
+		platformConfigSingleton.platform = PlatformTerraform
 	}
-
-	platformConfigSingleton.platform = PlatformTerraform
 	platformInitialized = true
-
 }
 
 func detectedPlatformLog() {
