@@ -248,9 +248,8 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 		return apiResp, err
 	}
 	defer func(out *os.File) {
-		err := out.Close()
-		if err != nil {
-			log.Println("failed to close file")
+		if err := out.Close(); err != nil {
+			log.Printf("failed to close file: %s", err.Error())
 		}
 	}(out)
 
