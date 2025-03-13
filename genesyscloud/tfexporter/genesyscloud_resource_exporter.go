@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -403,17 +403,13 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.updateSanitizeMap(*g.exporters, resource)
 		}
 
-		// TODO: help
-		if resource.Type == architect_flow.ResourceType {
+		// Change flow exporter configuration to the new archy export service
+		// depending on the value of use_legacy_architect_flow_exporter
+		if resource.Type == architectFlow.ResourceType {
 			exporters := *g.exporters
-			flowExporter := exporters[resource.Type]
-			if g.d.Get("use_legacy_architect_flow_exporter").(bool) {
-				flowExporter.CustomFileWriter = resourceExporter.CustomFileWriterSettings{}
-			} else {
-				delete(flowExporter.UnResolvableAttributes, "filepath")
-				delete(flowExporter.CustomFlowResolver, "file_content_hash")
+			if g.d.Get("use_legacy_architect_flow_exporter").(bool) == false {
+				exporters[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
 			}
-			exporters[architect_flow.ResourceType] = flowExporter
 			g.exporters = &exporters
 		}
 

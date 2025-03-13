@@ -27,26 +27,30 @@ const exportSubDirectoryName = "architect_flows"
 
 func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 
-	exporter := &resourceExporter.ResourceExporter{
+	legacyExporter := &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
-	}
-
-	// legacy
-	exporter.UnResolvableAttributes = map[string]*schema.Schema{
-		"filepath": ResourceArchitectFlow().Schema["filepath"],
-	}
-	exporter.CustomFlowResolver = map[string]*resourceExporter.CustomFlowResolver{
-		"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"filepath": ResourceArchitectFlow().Schema["filepath"],
+		},
+		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
+			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
+		},
 	}
 
 	// new feature
-	exporter.CustomFileWriter = resourceExporter.CustomFileWriterSettings{
-		RetrieveAndWriteFilesFunc: architectFlowResolver,
-		SubDirectory:              exportSubDirectoryName,
+	newExporter := &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlows),
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: architectFlowResolver,
+			SubDirectory:              exportSubDirectoryName,
+		},
 	}
 
-	return exporter
+	resourceExporter.SetNewFlowResourceExporter(newExporter)
+
+	return legacyExporter
 }
 
 func ResourceArchitectFlow() *schema.Resource {
