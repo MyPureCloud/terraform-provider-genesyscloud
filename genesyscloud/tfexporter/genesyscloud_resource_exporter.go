@@ -895,32 +895,17 @@ func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resource
 }
 
 func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
-	// Buffer error channel to prevent goroutine leaks or deadlocks
-	errorChan := make(chan diag.Diagnostics, len(exporters))
+	errorChan := make(chan diag.Diagnostics)
 	wgDone := make(chan bool)
-
 	// Cancel remaining goroutines if an error occurs
-	ctx, cancel := context.WithCancel(g.ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// Create semaphore to limit concurrent operations to the maximum number of clients
-	maxClients := g.meta.(*provider.ProviderMeta).MaxClients
-	sem := make(chan struct{}, maxClients)
 
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
 		wg.Add(1)
 		go func(resourceType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-
-			// Acquire semaphore
-			select {
-			case sem <- struct{}{}:
-				defer func() { <-sem }() // Release semaphore when done
-			case <-ctx.Done():
-				return
-			}
-
 			log.Printf("Getting all resources for type %s", resourceType)
 			exporter.FilterResource = g.resourceFilter
 
@@ -942,8 +927,8 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				select {
 				case <-ctx.Done():
 				case errorChan <- err:
-					cancel() // Cancel other operations on error
 				}
+				cancel()
 				return
 			}
 			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), resourceType)
@@ -961,10 +946,6 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	case <-wgDone:
 		return nil
 	case err := <-errorChan:
-		// Give other goroutines a chance to clean up
-		go func() {
-			<-wgDone // Wait for all goroutines to finish
-		}()
 		return err
 	}
 }
