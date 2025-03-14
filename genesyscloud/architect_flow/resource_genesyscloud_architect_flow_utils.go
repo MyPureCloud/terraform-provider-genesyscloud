@@ -1,6 +1,7 @@
 package architect_flow
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -53,11 +54,26 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 //
 // Returns:
 //   - error: Returns an error if any operation fails, nil otherwise
-func architectFlowResolver(flowId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) error {
+func architectFlowResolver(flowId, exportDirectory, subDirectory string, configMap map[string]any, meta any, resource resourceExporter.ResourceInfo) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("caught in architectFlowResolver: %w", err)
+		}
+	}()
+
 	var (
 		sdkConfig = meta.(*provider.ProviderMeta).ClientConfig
 		proxy     = newArchitectFlowProxy(sdkConfig)
+		ctx       = context.Background()
+		flowName  string
 	)
+
+	flow, resp, err := proxy.GetFlow(ctx, flowId)
+	if err != nil {
+		log.Printf("Failed to establish flow name. Error: %s. API Response: %s", err.Error(), resp)
+	} else if flow != nil && flow.Name != nil {
+		flowName = sanitizeFlowName(*flow.Name)
+	}
 
 	downloadUrl, err := proxy.generateDownloadUrl(flowId)
 	if err != nil {
@@ -71,7 +87,7 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 	}
 	log.Printf("Successfully created subfolder '%s' inside '%s'", subDirectory, exportDirectory)
 
-	filename := fmt.Sprintf("flow-%s.yml", flowId)
+	filename := fmt.Sprintf("%s-%s.yaml", flowName, flowId)
 	log.Printf("Downloading export flow '%s' to '%s' from download URL", flowId, fullPath)
 	if resp, err := files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
 		log.Printf("Failed to download flow file: %s", err.Error())
@@ -84,7 +100,21 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 
 	log.Printf("Updating resource config and state file for flow '%s'", flowId)
 	updateResourceConfigAndState(configMap, resource, exportDirectory, subDirectory, filename)
-	return nil
+	return err
+}
+
+// sanitizeFlowName will replace all forward slashes, backslashes and white spaces with an underscore
+func sanitizeFlowName(s string) string {
+	// First replace empty strings (multiple spaces) with a single underscore
+	noSpaces := strings.ReplaceAll(s, " ", "_")
+
+	// Replace forward slashes with underscore
+	noForwardSlash := strings.ReplaceAll(noSpaces, "/", "_")
+
+	// Replace backslashes with underscore
+	result := strings.ReplaceAll(noForwardSlash, "\\", "_")
+
+	return result
 }
 
 // setFileContentHashToNil resets the file_content_hash in the resource data to nil.

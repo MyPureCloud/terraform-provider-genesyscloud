@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -16,7 +17,7 @@ import (
 	"strings"
 	"sync"
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	userPromptResource "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -989,9 +990,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 }
 
 func TestAccResourceTfExportFormAsHCL(t *testing.T) {
-
-	//t.Parallel()
-
 	var (
 		exportTestDir     = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportedContents  string
@@ -2433,6 +2431,61 @@ func TestAccResourceExporterFormat(t *testing.T) {
 	})
 }
 
+func TestAccResourceArchitectFlowLegacy(t *testing.T) {
+	var (
+		exportResourceLabel = "export"
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportFullPath      = ResourceType + "." + exportResourceLabel
+
+		flowResourceLabel    = "flow"
+		flowNameAttr         = "test_flow_" + uuid.NewString()
+		flowFilePath         = filepath.Join(testrunner.RootDir, "examples", "resources", "genesyscloud_flow", "inboundcall_flow_example_name_substituted.yml")
+		flowResourceFullPath = architectFlow.ResourceType + "." + flowResourceLabel
+	)
+
+	config := fmt.Sprintf(`
+resource "%s" "%s" {
+	directory                = "%s"
+	export_as_hcl            = true
+	include_state_file       = true
+	include_filter_resources = ["%s::${%s}"]
+}
+`, ResourceType, exportResourceLabel, exportTestDir, architectFlow.ResourceType, flowResourceFullPath+".name")
+
+	config += fmt.Sprintf(`
+resource "%s" "%s" {
+	filepath = "%s"
+	file_content_hash = filesha256("%s")
+
+	substitutions = {
+		name = "%s"
+	}
+}
+`, architectFlow.ResourceType, flowResourceLabel, flowFilePath, flowFilePath, flowNameAttr)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("An error occured while removing directory '%s': %s", exportTestDir, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
+					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
+					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
 func testUserExport(filePath, resourceType, resourceLabel string, expectedUser *UserExport) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)
@@ -2699,7 +2752,7 @@ func getResourceDefinition(filePath, resourceType string) (map[string]*json.RawM
 // Create a directed graph of exported resources to their references. Report any potential graph cycles in this test.
 // Reference cycles can sometimes be broken by exporting a separate resource to update membership after the member
 // and container resources are created/updated (see genesyscloud_user_roles).
-func TestForExportCycles(t *testing.T) {
+func TestUnitTestForExportCycles(t *testing.T) {
 
 	// Assumes exporting all resource types
 	exporters := resourceExporter.GetResourceExporters()
@@ -3038,7 +3091,20 @@ func validateFileCreated(filename string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		_, err := os.Stat(filename)
 		if err != nil {
-			return fmt.Errorf("Failed to find file %s", filename)
+			return fmt.Errorf("failed to find file '%s'. Error: %w", filename, err)
+		}
+		return nil
+	}
+}
+
+func validateFileNotCreated(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err == nil {
+			return fmt.Errorf("expected '%s' to not exist", filename)
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("unexpected error while verifying file '%s' does not exist: %w", filename, err)
 		}
 		return nil
 	}
@@ -3333,7 +3399,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		"wrapupcode "+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
 		description,
-	) + architect_flow.GenerateFlowResource(
+	) + architectFlow.GenerateFlowResource(
 		flowResourceLabel,
 		outboundFlowFilePath,
 		"",

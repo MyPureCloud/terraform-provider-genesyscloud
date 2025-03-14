@@ -23,9 +23,10 @@ type fileMeta struct {
 	IsDir bool
 }
 
-func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource("genesyscloud_tf_export", ResourceTfExport())
+const ResourceType = "genesyscloud_tf_export"
 
+func SetRegistrar(l registrar.Registrar) {
+	l.RegisterResource(ResourceType, ResourceTfExport())
 }
 
 func ResourceTfExport() *schema.Resource {

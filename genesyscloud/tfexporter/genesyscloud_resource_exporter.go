@@ -403,14 +403,8 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			g.updateSanitizeMap(*g.exporters, resource)
 		}
 
-		// Change flow exporter configuration to the new archy export service
-		// depending on the value of use_legacy_architect_flow_exporter
-		if resource.Type == architectFlow.ResourceType {
-			exporters := *g.exporters
-			if g.d.Get("use_legacy_architect_flow_exporter").(bool) == false {
-				exporters[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
-			}
-			g.exporters = &exporters
+		if resource.Type == architectFlow.ResourceType && !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
 		}
 
 		// Removes zero values and sets proper reference expressions

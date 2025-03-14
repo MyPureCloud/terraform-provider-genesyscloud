@@ -196,23 +196,21 @@ func (a *architectFlowProxy) pollExportJobForDownloadUrl(jobId string) (download
 
 func getFlowIdByNameAndTypeFn(ctx context.Context, a *architectFlowProxy, name, varType string) (string, *platformclientv2.APIResponse, bool, error) {
 	var (
-		matchedFlows []platformclientv2.Flow
-		typeDetails  string
-		types        []string
+		matchedFlows    []platformclientv2.Flow
+		types           []string
+		noFlowsFoundErr = fmt.Errorf("no flows found with name '%s' and type '%s'", name, varType)
 	)
 
 	if varType != "" {
 		types = append(types, varType)
-		typeDetails = fmt.Sprintf("type '%s'", varType)
 	}
-
-	noFlowsFoundErr := fmt.Errorf("no flows found with name '%s' %s", name, typeDetails)
 
 	flows, resp, err := a.GetAllFlows(ctx, name, types)
 	if err != nil {
 		return "", resp, false, err
 	}
 
+	// no flows found with that name
 	if flows == nil || len(*flows) == 0 {
 		return "", nil, true, noFlowsFoundErr
 	}
@@ -223,15 +221,18 @@ func getFlowIdByNameAndTypeFn(ctx context.Context, a *architectFlowProxy, name, 
 		}
 	}
 
+	// if more than one flow is found, return the one that matches the type also
 	if len(matchedFlows) > 1 {
 		for _, flow := range matchedFlows {
 			if *flow.VarType == varType {
 				return *flow.Id, nil, false, nil
 			}
 		}
-		return "", nil, false, fmt.Errorf("found multiple flows with the name '%s', but none matched type '%s'", name, varType)
+		// none of the matches flows are of the specified type - return an error
+		return "", nil, true, fmt.Errorf("found multiple flows with the name '%s', but none matched type '%s'", name, varType)
 	}
 
+	// only one flow has that name - return it
 	if len(matchedFlows) == 1 {
 		return *matchedFlows[0].Id, nil, false, nil
 	}

@@ -23,7 +23,7 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(ResourceType, ArchitectFlowExporter())
 }
 
-const exportSubDirectoryName = "architect_flows"
+const ExportSubDirectoryName = "architect_flows"
 
 func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 
@@ -44,7 +44,7 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: architectFlowResolver,
-			SubDirectory:              exportSubDirectoryName,
+			SubDirectory:              ExportSubDirectoryName,
 		},
 	}
 
