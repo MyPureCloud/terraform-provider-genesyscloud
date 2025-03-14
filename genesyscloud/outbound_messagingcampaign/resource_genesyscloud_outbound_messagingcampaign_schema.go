@@ -229,7 +229,7 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 			`dnc_list_ids`: {
 				Description: `The dnc lists to check before sending a message for this messaging campaign.`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`always_running`: {
@@ -273,6 +273,7 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        dynamicContactQueueingSettingsResource,
+				Computed:    true,
 			},
 			`email_config`: {
 				Description: `Configuration for this messaging campaign to send Email messages.`,

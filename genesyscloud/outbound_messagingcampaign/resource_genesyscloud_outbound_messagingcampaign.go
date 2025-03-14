@@ -90,7 +90,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableReference(d, "callable_time_set_id", messagingCampaign.CallableTimeSet)
 		resourcedata.SetNillableReference(d, "contact_list_id", messagingCampaign.ContactList)
 		if messagingCampaign.DncLists != nil {
-			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToList(*messagingCampaign.DncLists))
+			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*messagingCampaign.DncLists))
 		}
 		resourcedata.SetNillableValue(d, "always_running", messagingCampaign.AlwaysRunning)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "contact_sorts", messagingCampaign.ContactSorts, flattenContactSorts)
