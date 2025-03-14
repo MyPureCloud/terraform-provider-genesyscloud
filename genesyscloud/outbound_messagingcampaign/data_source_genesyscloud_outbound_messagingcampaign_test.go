@@ -147,7 +147,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 							"DESC",
 							util.TrueValue,
 						),
-						GenerateDynamicContactQueueingSettings(
+						generateDynamicContactQueueingSettings(
 							util.FalseValue, // sort
 							util.FalseValue, // filter
 						),
