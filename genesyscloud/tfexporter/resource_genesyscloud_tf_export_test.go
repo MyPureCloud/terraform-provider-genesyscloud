@@ -2431,37 +2431,21 @@ func TestAccResourceExporterFormat(t *testing.T) {
 	})
 }
 
-func TestAccResourceArchitectFlowLegacy(t *testing.T) {
+// TestAccResourceArchitectFlowLegacyAndNew Exports a flow using the legacy exporter (creates a tfvars file but does not export flow config files)
+// and then exports using the new archy exporter by setting use_legacy_architect_flow_exporter to false
+func TestAccResourceArchitectFlowLegacyAndNew(t *testing.T) {
+	const (
+		systemFlowName             = "Default Voicemail Flow"
+		exportedSystemFlowFileName = "Default_Voicemail_Flow-de4c63f0-0be1-11ec-9a03-0242ac130003.yaml"
+	)
+
 	var (
 		exportResourceLabel = "export"
 		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportFullPath      = ResourceType + "." + exportResourceLabel
 
-		flowResourceLabel    = "flow"
-		flowNameAttr         = "test_flow_" + uuid.NewString()
-		flowFilePath         = filepath.Join(testrunner.RootDir, "examples", "resources", "genesyscloud_flow", "inboundcall_flow_example_name_substituted.yml")
-		flowResourceFullPath = architectFlow.ResourceType + "." + flowResourceLabel
+		pathToFolderHoldingExportedFlows = filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
 	)
-
-	config := fmt.Sprintf(`
-resource "%s" "%s" {
-	directory                = "%s"
-	export_as_hcl            = true
-	include_state_file       = true
-	include_filter_resources = ["%s::${%s}"]
-}
-`, ResourceType, exportResourceLabel, exportTestDir, architectFlow.ResourceType, flowResourceFullPath+".name")
-
-	config += fmt.Sprintf(`
-resource "%s" "%s" {
-	filepath = "%s"
-	file_content_hash = filesha256("%s")
-
-	substitutions = {
-		name = "%s"
-	}
-}
-`, architectFlow.ResourceType, flowResourceLabel, flowFilePath, flowFilePath, flowNameAttr)
 
 	defer func(path string) {
 		if err := os.RemoveAll(path); err != nil {
@@ -2474,11 +2458,38 @@ resource "%s" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config: generateTFExportResourceCustom(
+					exportResourceLabel,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("hcl"),
+					util.NullValue, // use_legacy_architect_flow_exporter - should default to true
+					[]string{
+						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
+					},
+				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
 					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
 					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
+				),
+			},
+			{
+				Config: generateTFExportResourceCustom(
+					exportResourceLabel,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("hcl"),
+					util.FalseValue, // use_legacy_architect_flow_exporter
+					[]string{
+						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),
+					validateFileNotCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
+					validateFileCreated(pathToFolderHoldingExportedFlows),
+					validateFileCreated(filepath.Join(pathToFolderHoldingExportedFlows, exportedSystemFlowFileName)),
 				),
 			},
 		},
@@ -3074,6 +3085,26 @@ func generateTfExportByExcludeFilterResources(
 		depends_on=[%s]
 	}
 	`, resourceLabel, directory, includeState, strings.Join(excludeFilterResources, ","), exportFormat, splitByResource, strings.Join(dependencies, ","))
+}
+
+func generateTFExportResourceCustom(
+	resourceLabel,
+	directory,
+	includeStateFile,
+	exportFormat,
+	useLegacyFlowExporter string,
+	includeResources []string,
+) string {
+	return fmt.Sprintf(`
+resource "%s" "%s" {
+	directory                          = "%s"
+	include_state_file                 = %s
+	export_format                      = %s
+	use_legacy_architect_flow_exporter = %s
+
+	include_filter_resources = [%s]
+}
+`, ResourceType, resourceLabel, directory, includeStateFile, exportFormat, useLegacyFlowExporter, strings.Join(includeResources, "\n"))
 }
 
 func getExportedFileContents(filename string, result *string) resource.TestCheckFunc {
