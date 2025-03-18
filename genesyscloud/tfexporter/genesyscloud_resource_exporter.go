@@ -1084,7 +1084,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
 					exportAsData, err := exporter.ExportAsDataFunc(g.ctx, sdkConfig, instanceState.Attributes)
 					if err != nil {
-						return fmt.Errorf("An error has occurred while trying to export as a data resource block for %s::%s : %v", resType, resMeta.BlockLabel, err)
+						return fmt.Errorf("an error has occurred while trying to export as a data resource block for %s::%s : %v", resType, resMeta.BlockLabel, err)
 					} else {
 						if exportAsData {
 							g.replaceWithDatasource = append(g.replaceWithDatasource, resType+"::"+resMeta.BlockLabel)
@@ -1282,6 +1282,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	parentKey bool) ([]unresolvableAttributeInfo, bool) {
 	resourceType := resource.Type
 	resourceLabel := resource.BlockLabel
+	resourceBlockType := resource.BlockType
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
 
 	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
@@ -1374,21 +1375,23 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		}
 
 		if attr, ok := attrInUnResolvableAttrs(key, exporter.UnResolvableAttributes); ok {
-			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, key)
-			unresolvableAttrs = append(unresolvableAttrs, unresolvableAttributeInfo{
-				ResourceType:  resourceType,
-				ResourceLabel: resourceLabel,
-				Name:          key,
-				Schema:        attr,
-			})
-			if properties, ok := attr.Elem.(*schema.Resource); ok {
-				propertiesMap := make(map[string]interface{})
-				for k := range properties.Schema {
-					propertiesMap[k] = fmt.Sprintf("${var.%s.%s}", varReference, k)
+			if resourceBlockType != "data" {
+				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, key)
+				unresolvableAttrs = append(unresolvableAttrs, unresolvableAttributeInfo{
+					ResourceType:  resourceType,
+					ResourceLabel: resourceLabel,
+					Name:          key,
+					Schema:        attr,
+				})
+				if properties, ok := attr.Elem.(*schema.Resource); ok {
+					propertiesMap := make(map[string]interface{})
+					for k := range properties.Schema {
+						propertiesMap[k] = fmt.Sprintf("${var.%s.%s}", varReference, k)
+					}
+					configMap[key] = propertiesMap
+				} else {
+					configMap[key] = fmt.Sprintf("${var.%s}", varReference)
 				}
-				configMap[key] = propertiesMap
-			} else {
-				configMap[key] = fmt.Sprintf("${var.%s}", varReference)
 			}
 		}
 
