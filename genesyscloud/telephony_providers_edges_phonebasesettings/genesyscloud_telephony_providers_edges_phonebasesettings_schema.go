@@ -77,6 +77,12 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
+			"station_persistent_webrtc_enabled": {
+				Description: "The station_persistent_webrtc_enabled attribute in the line's property",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 			"station_persistent_timeout": {
 				Description: "The station_persistent_timeout attribute in the line's property",
 				Type:        schema.TypeInt,

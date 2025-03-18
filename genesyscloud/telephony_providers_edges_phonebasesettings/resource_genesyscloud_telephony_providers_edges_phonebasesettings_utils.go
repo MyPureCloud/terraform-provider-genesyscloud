@@ -138,9 +138,14 @@ func BuildTelephonyLineBaseProperties(d *schema.ResourceData) *map[string]interf
 		lineBaseMap := lineBase[0].(map[string]interface{})
 
 		properties := map[string]interface{}{
-			"station_persistent_webrtc_enabled": &map[string]interface{}{
+			"station_persistent_enabled": &map[string]interface{}{
 				"value": &map[string]interface{}{
 					"instance": lineBaseMap["station_persistent_enabled"].(bool),
+				},
+			},
+			"station_persistent_webrtc_enabled": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": lineBaseMap["station_persistent_webrtc_enabled"].(bool),
 				},
 			},
 			"station_persistent_timeout": &map[string]interface{}{
@@ -164,15 +169,21 @@ func flattenTelephonyLineBaseProperties(lineBase *[]platformclientv2.Linebase) [
 	if propertiesObject == nil {
 		return []interface{}{lineBaseMap}
 	}
-	if enabledKey, ok := (*propertiesObject)["station_persistent_webrtc_enabled"].(map[string]interface{}); ok && enabledKey != nil {
-		enabledValue := enabledKey["value"].(map[string]interface{})["instance"]
-		if enabledValue != nil {
+	if enabledKey, ok := (*propertiesObject)["station_persistent_enabled"].(map[string]interface{}); ok && enabledKey != nil {
+		enabledValue, ok := enabledKey["value"].(map[string]interface{})["instance"]
+		if ok && enabledValue != nil {
 			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_enabled", &enabledValue)
 		}
 	}
+	if enabledKey, ok := (*propertiesObject)["station_persistent_webrtc_enabled"].(map[string]interface{}); ok && enabledKey != nil {
+		enabledValue, ok := enabledKey["value"].(map[string]interface{})["instance"]
+		if ok && enabledValue != nil {
+			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_webrtc_enabled", &enabledValue)
+		}
+	}
 	if timeOutKey, ok := (*propertiesObject)["station_persistent_timeout"].(map[string]interface{}); ok && timeOutKey != nil {
-		timeOutKey := timeOutKey["value"].(map[string]interface{})["instance"]
-		if timeOutKey != nil {
+		timeOutKey, ok := timeOutKey["value"].(map[string]interface{})["instance"]
+		if ok && timeOutKey != nil {
 			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_timeout", &timeOutKey)
 		}
 	}
