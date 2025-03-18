@@ -138,7 +138,7 @@ func BuildTelephonyLineBaseProperties(d *schema.ResourceData) *map[string]interf
 		lineBaseMap := lineBase[0].(map[string]interface{})
 
 		properties := map[string]interface{}{
-			"station_persistent_enabled": &map[string]interface{}{
+			"station_persistent_webrtc_enabled": &map[string]interface{}{
 				"value": &map[string]interface{}{
 					"instance": lineBaseMap["station_persistent_enabled"].(bool),
 				},
@@ -164,7 +164,7 @@ func flattenTelephonyLineBaseProperties(lineBase *[]platformclientv2.Linebase) [
 	if propertiesObject == nil {
 		return []interface{}{lineBaseMap}
 	}
-	if enabledKey, ok := (*propertiesObject)["station_persistent_enabled"].(map[string]interface{}); ok && enabledKey != nil {
+	if enabledKey, ok := (*propertiesObject)["station_persistent_webrtc_enabled"].(map[string]interface{}); ok && enabledKey != nil {
 		enabledValue := enabledKey["value"].(map[string]interface{})["instance"]
 		if enabledValue != nil {
 			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_enabled", &enabledValue)
