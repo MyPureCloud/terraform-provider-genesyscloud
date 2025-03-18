@@ -59,7 +59,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		queueSkillName           = "Terraform Skill " + uuid.NewString()
 
 		bullseyeMemberGroupLabel = "test-group"
-		bullseyeMemberGroupName  = "test_membergroup_series6"
 		bullseyeMemberGroupType  = "GROUP"
 		testUserResourceLabel    = "user_resource1"
 		testUserName             = "nameUser1" + uuid.NewString()
@@ -80,7 +79,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
 					group.GenerateGroupResource(
 						bullseyeMemberGroupLabel,
-						bullseyeMemberGroupName,
 						groupName,
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
@@ -420,7 +418,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						conditionalGroupRouting2WaitSeconds,                     // wait_seconds
 						GenerateConditionalGroupRoutingRuleGroup(
 							"genesyscloud_group."+group1ResourceLabel+".id", // group_id
-							"GROUP", // group_type
+							"GROUP",                                         // group_type
 						),
 					),
 					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
