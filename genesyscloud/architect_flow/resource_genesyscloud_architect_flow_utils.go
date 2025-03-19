@@ -65,14 +65,14 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		sdkConfig = meta.(*provider.ProviderMeta).ClientConfig
 		proxy     = newArchitectFlowProxy(sdkConfig)
 		ctx       = context.Background()
-		flowName  string
+		filename  = fmt.Sprintf("%s.yaml", flowId)
 	)
 
 	flow, resp, err := proxy.GetFlow(ctx, flowId)
 	if err != nil {
-		log.Printf("Failed to establish flow name. Error: %s. API Response: %s", err.Error(), resp)
-	} else if flow != nil && flow.Name != nil {
-		flowName = sanitizeFlowName(*flow.Name)
+		log.Printf("Failed to read flow '%s'. Flow name and type will not be included in the file name. Error: %s. API Response: %s", flowId, err.Error(), resp)
+	} else if flow != nil && flow.Name != nil && flow.VarType != nil {
+		filename = BuildExportFileName(*flow.Name, *flow.VarType, flowId)
 	}
 
 	downloadUrl, err := proxy.generateDownloadUrl(flowId)
@@ -87,8 +87,7 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 	}
 	log.Printf("Successfully created subfolder '%s' inside '%s'", subDirectory, exportDirectory)
 
-	filename := fmt.Sprintf("%s-%s.yaml", flowName, flowId)
-	log.Printf("Downloading export flow '%s' to '%s' from download URL", flowId, fullPath)
+	log.Printf("Downloading export flow '%s' to '%s' from download URL", flowId, filepath.Join(fullPath, filename))
 	if resp, err := files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
 		log.Printf("Failed to download flow file: %s", err.Error())
 		if resp != nil {
@@ -96,11 +95,15 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		}
 		return err
 	}
-	log.Printf("Successfully downloaded export flow '%s' to '%s'", flowId, fullPath)
+	log.Printf("Successfully downloaded export flow '%s' to '%s'", flowId, filepath.Join(fullPath, filename))
 
 	log.Printf("Updating resource config and state file for flow '%s'", flowId)
 	updateResourceConfigAndState(configMap, resource, exportDirectory, subDirectory, filename)
 	return err
+}
+
+func BuildExportFileName(flowName, flowType, flowId string) string {
+	return fmt.Sprintf("%s-%s-%s.yaml", sanitizeFlowName(flowName), flowType, flowId)
 }
 
 // sanitizeFlowName will replace all forward slashes, backslashes and white spaces with an underscore
