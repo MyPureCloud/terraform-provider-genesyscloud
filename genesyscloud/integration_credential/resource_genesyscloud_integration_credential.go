@@ -74,8 +74,8 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
 				}
 			}
-			blockLabel := fmt.Sprintf("%s_%s", *integration.Name, *cred.Name)
-			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
+			// Block Label: DEVTOOLING-1135
+			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: "Integration-" + *integration.Name}
 		}
 	}
 	return resources, nil

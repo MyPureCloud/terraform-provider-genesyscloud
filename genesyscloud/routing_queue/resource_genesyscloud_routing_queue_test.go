@@ -58,8 +58,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		queueSkillResourceLabel  = "test-queue-skill"
 		queueSkillName           = "Terraform Skill " + uuid.NewString()
 
-		bullseyeMemberGroupLabel = "test_membergroup_series6"
-		bullseyeMemberGroupName  = "MySeries6Groupv20_" + uuid.NewString()
+		bullseyeMemberGroupLabel = "test-group"
 		bullseyeMemberGroupType  = "GROUP"
 		testUserResourceLabel    = "user_resource1"
 		testUserName             = "nameUser1" + uuid.NewString()
@@ -68,6 +67,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		callbackHours2           = "7"
 		callbackModeAgentFirst   = "AgentFirst"
 		userID                   string
+		groupName                = "MySeries6Groupv20_" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -79,7 +79,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
 					group.GenerateGroupResource(
 						bullseyeMemberGroupLabel,
-						bullseyeMemberGroupName,
+						groupName,
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
@@ -122,7 +122,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -164,7 +164,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					GenerateMediaSettings("media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2, "mode="+strconv.Quote(callbackModeAgentFirst)),
+					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2, "mode = "+util.NullValue),
 					GenerateMediaSettings("media_settings_chat", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_email", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
@@ -199,7 +199,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResourceLabel1, 1, routingRuleOpAny, "45", "15"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						time.Sleep(3 * time.Second) // Wait for 3 seconds for resources to get deleted properly
 						return nil
 					},
 				),
@@ -1711,18 +1711,22 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
-		maxAttempts := 30
+		maxAttempts := 5
 		for i := 0; i < maxAttempts; i++ {
+			log.Printf("Attempt %d of %d: Fetching user with ID: %s\n", i+1, maxAttempts, id)
 			deleted, err := isUserDeleted(id)
 			if err != nil {
 				return err
 			}
 			if deleted {
+				log.Printf("User %s no longer exists", id)
 				return nil
 			}
-			time.Sleep(10 * time.Second)
+
+			log.Printf("User %s still exists.", id)
+			log.Println("Sleeping for 2 seconds")
+			time.Sleep(2 * time.Second)
 		}
 		return fmt.Errorf("user %s was not deleted properly", id)
 	}
