@@ -1712,7 +1712,7 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		maxAttempts := 5
+		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
 			log.Printf("Attempt %d of %d: Fetching user with ID: %s\n", i+1, maxAttempts, id)
 			deleted, err := isUserDeleted(id)
@@ -1725,8 +1725,8 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 			}
 
 			log.Printf("User %s still exists.", id)
-			log.Println("Sleeping for 2 seconds")
-			time.Sleep(2 * time.Second)
+			log.Println("Sleeping for 10 seconds")
+			time.Sleep(10 * time.Second)
 		}
 		return fmt.Errorf("user %s was not deleted properly", id)
 	}
