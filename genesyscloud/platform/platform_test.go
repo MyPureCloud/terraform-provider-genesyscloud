@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestPlatformString(t *testing.T) {
+func TestUnitPlatformString(t *testing.T) {
 	tests := []struct {
 		name     string
 		platform Platform
@@ -50,7 +50,7 @@ func TestPlatformString(t *testing.T) {
 	}
 }
 
-func TestPlatformValidate(t *testing.T) {
+func TestUnitPlatformValidate(t *testing.T) {
 	tests := []struct {
 		name        string
 		platform    Platform
@@ -69,7 +69,7 @@ func TestPlatformValidate(t *testing.T) {
 			platform:    Platform(99),
 			setBinPath:  "/usr/local/bin/terraform",
 			wantErr:     true,
-			errContains: "Invalid platform value",
+			errContains: "invalid platform value",
 		},
 		{
 			name:        "empty binary path",
@@ -83,8 +83,12 @@ func TestPlatformValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Save original and restore after test
-			origPath := platformConfigSingleton.binaryPath
-			defer func() { platformConfigSingleton.binaryPath = origPath }()
+			if platformConfigSingleton != nil {
+				origPath := platformConfigSingleton.binaryPath
+				defer func() { platformConfigSingleton.binaryPath = origPath }()
+			} else {
+				platformConfigSingleton = &platformConfig{}
+			}
 
 			platformConfigSingleton.binaryPath = tt.setBinPath
 			platformConfigSingleton.platform = tt.platform
@@ -103,7 +107,7 @@ func TestPlatformValidate(t *testing.T) {
 	}
 }
 
-func TestGetProviderRegistry(t *testing.T) {
+func TestUnitGetProviderRegistry(t *testing.T) {
 	tests := []struct {
 		name     string
 		platform Platform
@@ -140,7 +144,7 @@ func TestGetProviderRegistry(t *testing.T) {
 	}
 }
 
-func TestExecuteCommand(t *testing.T) {
+func TestUnitExecuteCommand(t *testing.T) {
 	// Create a test binary
 	tmpDir := t.TempDir()
 	testBinary := filepath.Join(tmpDir, "test-binary")
@@ -217,7 +221,7 @@ exit 0
 	}
 }
 
-func TestIsDevelopmentPlatform(t *testing.T) {
+func TestUnitIsDevelopmentPlatform(t *testing.T) {
 	tests := []struct {
 		name     string
 		platform Platform

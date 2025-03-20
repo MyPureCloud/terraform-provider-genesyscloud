@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 type customAuthActionResource struct {
@@ -253,7 +253,7 @@ func testVerifyIntegrationActionDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false)
+		action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false, false)
 		if action != nil {
 			return fmt.Errorf("Integration action (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {

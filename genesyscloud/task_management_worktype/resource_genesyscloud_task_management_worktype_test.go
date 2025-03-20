@@ -17,7 +17,7 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 /*
