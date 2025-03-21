@@ -14,4 +14,5 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
       }
     }
   }
+  assignment_expiration_days = 1
 }
