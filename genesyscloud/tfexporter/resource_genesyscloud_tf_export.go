@@ -187,36 +187,35 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	if _, ok := d.GetOk("include_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
 		diagErr := gre.Export()
-		if diagErr != nil {
+		if diagErr.HasError() {
 			return diagErr
 		}
 
 		d.SetId(gre.exportDirPath)
-		return nil
+		return diagErr
 	}
 
 	if _, ok := d.GetOk("exclude_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, ExcludeResources)
 		diagErr := gre.Export()
-		if diagErr != nil {
+		if diagErr.HasError() {
 			return diagErr
 		}
 
 		d.SetId(gre.exportDirPath)
-		return nil
+		return diagErr
 	}
 
 	//Dealing with the traditional resource
 	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude)
 	diagErr := gre.Export()
-
-	if diagErr != nil {
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	d.SetId(gre.exportDirPath)
 
-	return nil
+	return diagErr
 }
 
 // If the output directory doesn't exist or empty, mark the resource for creation.

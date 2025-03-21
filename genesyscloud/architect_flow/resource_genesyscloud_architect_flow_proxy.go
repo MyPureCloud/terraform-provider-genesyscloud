@@ -333,7 +333,7 @@ func createExportJobFn(a *architectFlowProxy, flowId string) (string, *platformc
 
 	createJob, resp, err := a.api.PostFlowsExportJobs(body)
 	if err != nil {
-		return "", resp, fmt.Errorf("failed to create export job for flow %s: %s", flowId, err.Error())
+		return "", resp, fmt.Errorf("failed to create export job for flow %s: %w", flowId, err)
 	}
 
 	if createJob == nil || createJob.Id == nil {

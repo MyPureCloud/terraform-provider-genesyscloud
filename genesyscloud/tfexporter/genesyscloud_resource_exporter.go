@@ -195,50 +195,49 @@ func computeDependsOn(d *schema.ResourceData) bool {
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// Step #1 Retrieve the exporters we are have registered and have been requested by the user
-	diagErr = g.retrieveExporters()
-	if diagErr != nil {
+	diagErr = append(diagErr, g.retrieveExporters()...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 	// Step #2 Retrieve all the individual resources we are going to export
-	diagErr = g.retrieveSanitizedResourceMaps()
-	if diagErr != nil {
+	diagErr = append(diagErr, g.retrieveSanitizedResourceMaps()...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	// Step #3 Retrieve the individual genesys cloud object instances
-	diagErr = g.retrieveGenesysCloudObjectInstances()
-	if diagErr != nil {
+	diagErr = append(diagErr, g.retrieveGenesysCloudObjectInstances()...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	// Step #4 export dependent resources for the flows
-	diagErr = g.buildAndExportDependsOnResourcesForFlows()
-	if diagErr != nil {
+	diagErr = append(diagErr, g.buildAndExportDependsOnResourcesForFlows()...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	// Step #5 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
-	diagErr = g.buildResourceConfigMap()
-	if diagErr != nil {
+	diagErr = append(diagErr, g.buildResourceConfigMap()...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	// Step #6 export dependents for other resources
-	diagErr = g.buildAndExportDependentResources()
-	if diagErr != nil {
+	diagErr = append(diagErr, g.buildAndExportDependentResources()...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	// Step #7 Write the terraform state file along with either the HCL or JSON
-	diagErr = g.generateOutputFiles()
-	if diagErr != nil {
+	diagErr = append(diagErr, g.generateOutputFiles()...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	// step #8 Verify the terraform state file with Exporter Resources
-	g.verifyTerraformState()
-
-	return nil
+	diagErr = append(diagErr, g.verifyTerraformState()...)
+	return diagErr
 }
 
 func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagnostics) {
@@ -379,7 +378,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 }
 
 // buildResourceConfigMap Builds a map of all the Terraform resources data returned for each resource
-func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics diag.Diagnostics) {
 	log.Printf("Build Genesys Cloud Resources Map")
 	g.resourceTypesMaps = make(map[string]resourceJSONMaps)
 	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
@@ -419,28 +418,37 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() diag.Diagnostics
 			}
 			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		} else {
-			g.customWriteAttributes(jsonResult, resource)
+			diagnostics = append(diagnostics, g.customWriteAttributes(jsonResult, resource)...)
+			if diagnostics.HasError() {
+				return diagnostics
+			}
 			g.resourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		}
 
 	}
 
-	return nil
+	return diagnostics
 }
 
 func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
-	resource resourceExporter.ResourceInfo) {
+	resource resourceExporter.ResourceInfo) (diagnostics diag.Diagnostics) {
 	exporters := *g.exporters
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 		exportDir, _ := getFilePath(g.d, "")
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
 			log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
+			diagnostics = append(diagnostics, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
+				Detail:   err.Error(),
+			})
 		}
 	}
 
 	if len(exporters[resource.Type].CustomFlowResolver) > 0 {
 		g.updateInstanceStateAttributes(jsonResult, resource)
 	}
+	return diagnostics
 }
 
 func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(jsonResult util.JsonMap, resource resourceExporter.ResourceInfo) {
@@ -689,13 +697,19 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	depExporters := g.copyExporters()
 
 	// this is done before the merge of exporters and this will make sure only dependency resources are resolved
-	g.buildResourceConfigMap()
-	g.exportAndResolveDependencyAttributes()
+	diagErr = append(diagErr, g.buildResourceConfigMap()...)
+	if diagErr.HasError() {
+		return diagErr
+	}
+	diagErr = append(diagErr, g.exportAndResolveDependencyAttributes()...)
+	if diagErr.HasError() {
+		return diagErr
+	}
 	g.appendResources(uniqueResources)
 	g.appendResources(existingResources)
 	g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
 
-	return nil
+	return diagErr
 }
 
 func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagErr diag.Diagnostics) {
@@ -713,7 +727,7 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 
 		// rebuild the config map
 		diagErr = g.buildResourceConfigMap()
-		if diagErr != nil {
+		if diagErr.HasError() {
 			return diagErr
 		}
 	}
@@ -858,7 +872,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		}
 
 		err = g.buildResourceConfigMap()
-		if err != nil {
+		if err.HasError() {
 			return err
 		}
 		//append the resources and exporters
