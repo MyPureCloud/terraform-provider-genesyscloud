@@ -25,7 +25,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ### Migration Details
 
-As of v1.60.0 of the provider, the Genesys Cloud Routing Queue resource type includes a schema migration that removes several vestigial attributes from the media settings blocks.
+As of v1.61.0 of the provider, the Genesys Cloud Routing Queue resource type includes a schema migration that removes several vestigial attributes from the media settings blocks.
 
 #### Removed Attributes
 
@@ -38,7 +38,7 @@ The following attributes have been removed from the following media settings blo
 
 #### Migration Process
 
-The migration of the state will automatically occur when running terraform init with version 1.60.0 or later of the provider. The migration process:
+The migration of the state will automatically occur when running terraform init with version 1.61.0 or later of the provider. The migration process:
 
 - Preserves all other existing attributes and their values
 - Removes the deprecated attributes listed above from the state
