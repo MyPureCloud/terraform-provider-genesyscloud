@@ -1,7 +1,6 @@
 package outbound_campaign
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -171,7 +170,28 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Description: `The order in which to sort contacts for dialing, based on up to four columns.`,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        outbound.OutboundmessagingcampaigncontactsortResource,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						`field_name`: {
+							Description: `The field name by which to sort contacts.`,
+							Required:    true,
+							Type:        schema.TypeString,
+						},
+						`direction`: {
+							Description:  `The direction in which to sort contacts.`,
+							Optional:     true,
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringInSlice([]string{`ASC`, `DESC`}, false),
+							Default:      `ASC`,
+						},
+						`numeric`: {
+							Description: `Whether or not the column contains numeric data.`,
+							Optional:    true,
+							Type:        schema.TypeBool,
+							Default:     false,
+						},
+					},
+				},
 			},
 			`no_answer_timeout`: {
 				Description: `How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.`,
