@@ -1,0 +1,329 @@
+{
+    "id": "dc42cc0b-2d8a-433e-b658-35af7cca8f7e",
+    "name": "TestScriptName",
+    "organizationId": "8d6f6281-c096-4dab-b194-a6f1667d7dd4",
+    "versionId": "4737c409-f9c5-4b24-9b34-a60646fead4e",
+    "startPageId": "7c56c521-4f7b-4ea4-9940-be10fe172035",
+    "pages": [
+        {
+            "id": "7c56c521-4f7b-4ea4-9940-be10fe172035",
+            "name": "Start Page",
+            "organizationId": "8d6f6281-c096-4dab-b194-a6f1667d7dd4",
+            "versionId": "4737c409-f9c5-4b24-9b34-a60646fead4e",
+            "scriptId": "dc42cc0b-2d8a-433e-b658-35af7cca8f7e",
+            "properties": {
+                "onLoadAction": {
+                    "typeName": "action",
+                    "value": {}
+                },
+                "backgroundColor": {
+                    "typeName": "null"
+                }
+            },
+            "dataVersion": 0,
+            "rootContainer": {
+                "type": "verticalStackContainer",
+                "properties": {
+                    "margin": {
+                        "typeName": "spacing",
+                        "value": 0
+                    },
+                    "alignment": {
+                        "typeName": "alignment",
+                        "value": "start"
+                    },
+                    "width": {
+                        "typeName": "sizing",
+                        "value": {
+                            "sizeType": "stretch",
+                            "size": 100
+                        }
+                    },
+                    "height": {
+                        "typeName": "sizing",
+                        "value": {
+                            "sizeType": "stretch",
+                            "size": 100
+                        }
+                    },
+                    "visible": {
+                        "typeName": "variable"
+                    },
+                    "backgroundColor": {
+                        "typeName": "null"
+                    },
+                    "padding": {
+                        "typeName": "spacing",
+                        "value": 10
+                    },
+                    "childArrangement": {
+                        "typeName": "childArrangement",
+                        "value": "start"
+                    },
+                    "border": {
+                        "typeName": "border",
+                        "value": {
+                            "width": 0,
+                            "style": "solid",
+                            "color": "000000"
+                        }
+                    }
+                },
+                "children": [
+                    {
+                        "type": "text",
+                        "properties": {
+                            "margin": {
+                                "typeName": "spacing",
+                                "value": [
+                                    5,
+                                    5,
+                                    5,
+                                    5
+                                ]
+                            },
+                            "alignment": {
+                                "typeName": "alignment",
+                                "value": "start"
+                            },
+                            "width": {
+                                "typeName": "sizing",
+                                "value": {
+                                    "sizeType": "stretch",
+                                    "size": 100
+                                }
+                            },
+                            "height": {
+                                "typeName": "sizing",
+                                "value": {
+                                    "sizeType": "auto"
+                                }
+                            },
+                            "visible": {
+                                "typeName": "variable"
+                            },
+                            "text": {
+                                "typeName": "interpolatedText",
+                                "value": "Hello, world."
+                            },
+                            "bold": {
+                                "typeName": "boolean",
+                                "value": false
+                            },
+                            "italic": {
+                                "typeName": "boolean",
+                                "value": false
+                            },
+                            "underline": {
+                                "typeName": "boolean",
+                                "value": false
+                            },
+                            "font": {
+                                "typeName": "font",
+                                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                            },
+                            "fontSize": {
+                                "typeName": "integer",
+                                "value": 10
+                            },
+                            "justification": {
+                                "typeName": "text",
+                                "value": "left"
+                            },
+                            "backgroundColor": {
+                                "typeName": "null"
+                            },
+                            "textColor": {
+                                "typeName": "null"
+                            },
+                            "padding": {
+                                "typeName": "spacing",
+                                "value": 0
+                            }
+                        }
+                    },
+                    {
+                        "type": "checkbox",
+                        "properties": {
+                            "margin": {
+                                "typeName": "spacing",
+                                "value": [
+                                    5,
+                                    5,
+                                    5,
+                                    5
+                                ]
+                            },
+                            "alignment": {
+                                "typeName": "alignment",
+                                "value": "start"
+                            },
+                            "width": {
+                                "typeName": "sizing",
+                                "value": {
+                                    "sizeType": "auto"
+                                }
+                            },
+                            "height": {
+                                "typeName": "sizing",
+                                "value": {
+                                    "sizeType": "auto"
+                                }
+                            },
+                            "visible": {
+                                "typeName": "variable"
+                            },
+                            "text": {
+                                "typeName": "interpolatedText",
+                                "value": ""
+                            },
+                            "bold": {
+                                "typeName": "boolean",
+                                "value": false
+                            },
+                            "italic": {
+                                "typeName": "boolean",
+                                "value": false
+                            },
+                            "underline": {
+                                "typeName": "boolean",
+                                "value": false
+                            },
+                            "font": {
+                                "typeName": "font",
+                                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                            },
+                            "fontSize": {
+                                "typeName": "integer",
+                                "value": 10
+                            },
+                            "justification": {
+                                "typeName": "text",
+                                "value": "left"
+                            },
+                            "textColor": {
+                                "typeName": "null"
+                            },
+                            "clickAction": {
+                                "typeName": "action",
+                                "value": {}
+                            },
+                            "value": {
+                                "typeName": "variable",
+                                "value": "MyCheckBox"
+                            },
+                            "changeAction": {
+                                "typeName": "action",
+                                "value": {}
+                            },
+                            "disabled": {
+                                "typeName": "variable"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "features": {
+        "dialer": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                },
+                "contactListId": {
+                    "typeName": "text",
+                    "value": ""
+                },
+                "onContactDataLoadAction": {
+                    "typeName": "action",
+                    "value": {}
+                }
+            }
+        },
+        "scripter": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": true
+                }
+            }
+        },
+        "screenPop": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "callback": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "chat": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "email": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "message": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "bridge": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "uuiData": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "customerSecuredData": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        },
+        "list": {
+            "properties": {
+                "enabled": {
+                    "typeName": "boolean",
+                    "value": false
+                }
+            }
+        }
+    },
+    "variables": [],
+    "customActions": [],
+    "dataVersion": 0
+}

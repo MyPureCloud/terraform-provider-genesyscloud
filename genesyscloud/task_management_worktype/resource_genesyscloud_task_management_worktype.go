@@ -107,6 +107,10 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 			resourcedata.SetNillableValue(d, "schema_version", worktype.Schema.Version)
 		}
 
+		if worktype.DefaultScript != nil {
+			resourcedata.SetNillableValue(d, "default_script_id", worktype.DefaultScript.Id)
+		}
+
 		log.Printf("Read task management worktype %s %s", d.Id(), *worktype.Name)
 		return cc.CheckState(d)
 	})

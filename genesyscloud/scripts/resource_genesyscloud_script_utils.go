@@ -49,3 +49,13 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 	}
 	return err
 }
+
+func GenerateScriptResourceBasic(resourceLabel, scriptName, filePath string) string {
+	return fmt.Sprintf(`
+		resource "%s" "%s" {
+			script_name       = "%s"
+			filepath          = "%s"
+			file_content_hash = filesha256("%s")
+		}
+	`, ResourceType, resourceLabel, scriptName, filePath, filePath)
+}
