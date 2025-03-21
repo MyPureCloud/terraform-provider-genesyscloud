@@ -84,19 +84,19 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 
 		resourcedata.SetNillableValue(d, "name", sdkResponse.Name)
 		if sdkResponse.Libraries != nil {
-			d.Set("library_ids", util.SdkDomainEntityRefArrToList(*sdkResponse.Libraries))
+			_ = d.Set("library_ids", util.SdkDomainEntityRefArrToSet(*sdkResponse.Libraries))
 		}
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "texts", sdkResponse.Texts, flattenResponseTexts)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "substitutions", sdkResponse.Substitutions, flattenResponseSubstitutions)
 		resourcedata.SetNillableValue(d, "interaction_type", sdkResponse.InteractionType)
 		if sdkResponse.SubstitutionsSchema != nil && sdkResponse.SubstitutionsSchema.Id != nil {
-			d.Set("substitutions_schema_id", *sdkResponse.SubstitutionsSchema.Id)
+			_ = d.Set("substitutions_schema_id", *sdkResponse.SubstitutionsSchema.Id)
 		}
 		if sdkResponse.ResponseType != nil {
-			d.Set("response_type", *sdkResponse.ResponseType)
+			_ = d.Set("response_type", *sdkResponse.ResponseType)
 		}
 		if sdkResponse.MessagingTemplate != nil {
-			d.Set("messaging_template", flattenMessagingTemplate(sdkResponse.MessagingTemplate))
+			_ = d.Set("messaging_template", flattenMessagingTemplate(sdkResponse.MessagingTemplate))
 		}
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "asset_ids", sdkResponse.Assets, flattenAddressableEntityRefs)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "footer", sdkResponse.Footer, flattenFooterTemplate)
