@@ -8,6 +8,7 @@ import (
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
+	script "terraform-provider-genesyscloud/genesyscloud/scripts"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
@@ -41,6 +42,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
+	providerResources[script.ResourceType] = script.ResourceScript()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

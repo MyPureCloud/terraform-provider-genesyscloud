@@ -124,6 +124,11 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeInt,
 			},
+			`default_script_id`: {
+				Description: `Id of the workitem schema.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 }
@@ -139,6 +144,7 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 			"default_queue_id":    {RefType: "genesyscloud_routing_queue"},
 			"default_skills_ids":  {RefType: "genesyscloud_routing_skill"},
 			"schema_id":           {RefType: "genesyscloud_task_management_workitem_schema"},
+			"default_script_id":   {RefType: "genesyscloud_script"},
 		},
 	}
 }
