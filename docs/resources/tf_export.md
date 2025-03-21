@@ -75,6 +75,7 @@ resource "genesyscloud_tf_export" "export" {
 - `replace_with_datasource` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
 - `resource_types` (List of String, Deprecated) Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types. NOTE: This field is deprecated and will be removed in future release.  Please use the include_filter_resources or exclude_filter_resources attribute.
 - `split_files_by_resource` (Boolean) Split export files by resource type. This will also split the terraform provider and variable declarations into their own files. Defaults to `false`.
+- `use_legacy_architect_flow_exporter` (Boolean) When set to `false`, architect flow configuration files will be downloaded as part of the flow export process. Defaults to `true`.
 
 ### Read-Only
 

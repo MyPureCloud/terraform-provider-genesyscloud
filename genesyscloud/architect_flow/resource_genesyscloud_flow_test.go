@@ -385,6 +385,67 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	})
 }
 
+func TestUnitSanitizeFlowName(t *testing.T) {
+	// Define test cases with input and expected output
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "Single space",
+			input:    "hello world",
+			expected: "hello_world",
+		},
+		{
+			name:     "Multiple spaces",
+			input:    "hello   world",
+			expected: "hello___world",
+		},
+		{
+			name:     "Forward slashes",
+			input:    "path/to/file",
+			expected: "path_to_file",
+		},
+		{
+			name:     "Back slashes",
+			input:    "path\\to\\file",
+			expected: "path_to_file",
+		},
+		{
+			name:     "Mixed slashes and spaces",
+			input:    "path/to\\file   name",
+			expected: "path_to_file___name",
+		},
+		{
+			name:     "Leading and trailing spaces",
+			input:    " hello world  ",
+			expected: "_hello_world__",
+		},
+		{
+			name:     "Complex mixed case",
+			input:    "  path/to\\file   name  with/\\spaces",
+			expected: "__path_to_file___name__with__spaces",
+		},
+	}
+
+	// Run all test cases
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sanitizeFlowName(tt.input)
+			if result != tt.expected {
+				t.Errorf("sanitizeFlowName(%q) = %q, want %q",
+					tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
 // Check if flow is published, then check if flow name and type are correct
 func validateFlow(flowResourcePath, name, description, flowType string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {

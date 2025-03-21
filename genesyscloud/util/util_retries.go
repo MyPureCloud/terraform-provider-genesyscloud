@@ -159,13 +159,6 @@ func IsStatus400(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 	return false
 }
 
-func GetBody(apiResponse *platformclientv2.APIResponse) string {
-	if apiResponse != nil {
-		return string(apiResponse.RawBody)
-	}
-	return ""
-}
-
 func IsStatus409(resp *platformclientv2.APIResponse, additionalCodes ...int) bool {
 	if resp != nil {
 		if resp.StatusCode == http.StatusConflict ||
@@ -185,15 +178,5 @@ func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 			return true
 		}
 	}
-	return false
-}
-
-func IsStatus412ByInt(respCode int, additionalCodes ...int) bool {
-	if respCode == http.StatusPreconditionFailed ||
-		respCode == http.StatusRequestTimeout ||
-		IsAdditionalCode(respCode, additionalCodes...) {
-		return true
-	}
-
 	return false
 }

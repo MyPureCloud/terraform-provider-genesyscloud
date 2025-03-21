@@ -239,7 +239,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
-	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
+	providerResources[ResourceType] = ResourceTfExport()
 }
 
 func (r *registerTestInstance) registerTestExporters() {

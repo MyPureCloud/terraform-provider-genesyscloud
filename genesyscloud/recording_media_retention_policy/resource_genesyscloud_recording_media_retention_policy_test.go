@@ -1393,7 +1393,7 @@ func testVerifyMediaRetentionPolicyDestroyed(state *terraform.State) error {
 		}
 
 		form, resp, err := recordingAPI.GetRecordingMediaretentionpolicy(rs.Primary.ID)
-		if form != nil {
+		if util.IsStatus404(resp) {
 			continue
 		}
 

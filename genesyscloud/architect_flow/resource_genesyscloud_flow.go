@@ -24,7 +24,7 @@ import (
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	p := getArchitectFlowProxy(clientConfig)
+	p := newArchitectFlowProxy(clientConfig)
 
 	flows, resp, err := p.GetAllFlows(ctx, "", nil)
 	if err != nil {
@@ -52,7 +52,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 
-	proxy := getArchitectFlowProxy(sdkConfig)
+	proxy := newArchitectFlowProxy(sdkConfig)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
