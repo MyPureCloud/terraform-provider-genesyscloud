@@ -1,37 +1,15 @@
 package routing_queue
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	architectUserPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/group"
-	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	routingSmsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"terraform-provider-genesyscloud/genesyscloud/scripts"
-	"terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	"context"
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const ResourceType = "genesyscloud_routing_queue"
-
-func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceType, ResourceRoutingQueue())
-	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingQueue())
-	regInstance.RegisterExporter(ResourceType, RoutingQueueExporter())
-}
-
 var (
-	memberGroupResource = &schema.Resource{
+	memberGroupResourceV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"member_group_id": {
 				Description: "ID (GUID) for Group, SkillGroup, Team",
@@ -46,13 +24,12 @@ var (
 			},
 		},
 	}
-	cannedResponseLibrariesResource = &schema.Resource{
+	cannedResponseLibrariesResourceV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"mode": {
 				Description:  "The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"All", "SelectedOnly", "None"}, false),
 			},
 			"library_ids": {
@@ -64,7 +41,7 @@ var (
 		},
 	}
 
-	agentOwnedRoutingResource = &schema.Resource{
+	agentOwnedRoutingResourceV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"enable_agent_owned_callbacks": {
 				Description: "Enable Agent Owned Callbacks",
@@ -83,7 +60,7 @@ var (
 			},
 		},
 	}
-	subTypeSettingsResource = &schema.Resource{
+	subTypeSettingsResourceV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"media_type": {
 				Description: "The name of the social media company",
@@ -97,7 +74,7 @@ var (
 			},
 		},
 	}
-	queueMediaSettingsResource = &schema.Resource{
+	queueMediaSettingsResourceV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
 				Description:  "Alerting timeout in seconds. Must be >= 7",
@@ -105,14 +82,30 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
+			"auto_end_delay_seconds": {
+				Description: "Auto End Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"auto_dial_delay_seconds": {
+				Description: "Auto Dial Delay Seconds.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 			"sub_type_settings": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        subTypeSettingsResource,
+				Elem:        subTypeSettingsResourceV1,
 			},
 			"enable_auto_answer": {
 				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"enable_auto_dial_and_end": {
+				Description: "Auto Dail and End",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -129,42 +122,16 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
-		},
-	}
-
-	queueCallbackMediaSettingsResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"alerting_timeout_sec":      queueMediaSettingsResource.Schema["alerting_timeout_sec"],
-			"sub_type_settings":         queueMediaSettingsResource.Schema["sub_type_settings"],
-			"enable_auto_answer":        queueMediaSettingsResource.Schema["enable_auto_answer"],
-			"service_level_percentage":  queueMediaSettingsResource.Schema["service_level_percentage"],
-			"service_level_duration_ms": queueMediaSettingsResource.Schema["service_level_duration_ms"],
 			"mode": {
 				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
-			"enable_auto_dial_and_end": {
-				Description: "Auto Dial and End",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"auto_dial_delay_seconds": {
-				Description: "Auto Dial Delay Seconds.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"auto_end_delay_seconds": {
-				Description: "Auto End Delay Seconds.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
 		},
 	}
 
-	queueMemberResource = &schema.Resource{
+	queueMemberResourceV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"user_id": {
 				Description: "User ID",
@@ -181,7 +148,7 @@ var (
 		},
 	}
 
-	directRoutingResource = &schema.Resource{
+	directRoutingResourceV1 = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"backup_queue_id": {
 				Description: "Direct Routing default backup queue id (if none supplied this queue will be used as backup).",
@@ -223,25 +190,9 @@ var (
 	}
 )
 
-func ResourceRoutingQueue() *schema.Resource {
+func resourceRoutingQueueV1() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Routing Queue",
-
-		CreateContext: provider.CreateWithPooledClient(createRoutingQueue),
-		ReadContext:   provider.ReadWithPooledClient(readRoutingQueue),
-		UpdateContext: provider.UpdateWithPooledClient(updateRoutingQueue),
-		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingQueue),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 2,
-		StateUpgraders: []schema.StateUpgrader{
-			{
-				Version: 1,
-				Type:    resourceRoutingQueueV1().CoreConfigSchema().ImpliedType(),
-				Upgrade: stateUpgraderRoutingQueueV1ToV2,
-			},
-		},
+		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Queue name.",
@@ -265,7 +216,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsResourceV1,
 			},
 			"agent_owned_routing": {
 				Description: "Agent Owned Routing.",
@@ -273,14 +224,14 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        agentOwnedRoutingResource,
+				Elem:        agentOwnedRoutingResourceV1,
 			},
 			"canned_response_libraries": {
 				Description: "Agent Owned Routing.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Elem:        cannedResponseLibrariesResource,
+				Elem:        cannedResponseLibrariesResourceV1,
 			},
 			"media_settings_callback": {
 				Description: "Callback media settings.",
@@ -288,7 +239,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueCallbackMediaSettingsResource,
+				Elem:        queueMediaSettingsResourceV1,
 			},
 			"media_settings_chat": {
 				Description: "Chat media settings.",
@@ -296,7 +247,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsResourceV1,
 			},
 			"media_settings_email": {
 				Description: "Email media settings.",
@@ -304,7 +255,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsResourceV1,
 			},
 			"media_settings_message": {
 				Description: "Message media settings.",
@@ -312,7 +263,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsResourceV1,
 			},
 			"routing_rules": {
 				Description: "The routing rules for the queue, used for routing to known or preferred agents.",
@@ -365,7 +316,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"member_groups": {
 							Type:     schema.TypeSet,
 							Optional: true,
-							Elem:     memberGroupResource,
+							Elem:     memberGroupResourceV1,
 						},
 					},
 				},
@@ -412,7 +363,7 @@ func ResourceRoutingQueue() *schema.Resource {
 							Required:    true,
 							MinItems:    1,
 							Description: "The group(s) to activate if the rule evaluates as true.",
-							Elem:        memberGroupResource,
+							Elem:        memberGroupResourceV1,
 						},
 					},
 				},
@@ -567,7 +518,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        queueMemberResource,
+				Elem:        queueMemberResourceV1,
 			},
 			"wrapup_codes": {
 				Description: "IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.",
@@ -581,7 +532,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Elem:        directRoutingResource,
+				Elem:        directRoutingResourceV1,
 			},
 			"skill_groups": {
 				Description: "List of skill group ids assigned to the queue.",
@@ -605,52 +556,19 @@ func ResourceRoutingQueue() *schema.Resource {
 	}
 }
 
-func RoutingQueueExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                              {RefType: authDivision.ResourceType},
-			"queue_flow_id":                            {RefType: architectFlow.ResourceType},
-			"email_in_queue_flow_id":                   {RefType: architectFlow.ResourceType},
-			"message_in_queue_flow_id":                 {RefType: architectFlow.ResourceType},
-			"whisper_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
-			"on_hold_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
-			"outbound_messaging_sms_address_id":        {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
-			"default_script_ids.*":                     {RefType: scripts.ResourceType},
-			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
-			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
-			"bullseye_rings.skills_to_remove":          {RefType: routingSkill.ResourceType},
-			"members.user_id":                          {RefType: user.ResourceType},
-			"wrapup_codes":                             {RefType: routingWrapupcode.ResourceType},
-			"skill_groups":                             {RefType: routingSkillGroup.ResourceType},
-			"teams":                                    {RefType: team.ResourceType},
-			"groups":                                   {RefType: group.ResourceType},
-			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
-			"direct_routing.backup_queue_id":           {RefType: ResourceType},
-			"canned_response_libraries.library_ids.*":  {RefType: responseManagementLibrary.ResourceType},
-		},
-		RemoveIfMissing: map[string][]string{
-			"outbound_email_address": {"route_id"},
-			"members":                {"user_id"},
-		},
-		AllowZeroValues: []string{"bullseye_rings.expansion_timeout_seconds"},
-		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
-		},
+func stateUpgraderRoutingQueueV1ToV2(ctx context.Context, rawState map[string]interface{}, meta interface{}) (map[string]interface{}, error) {
+	for key, value := range rawState {
+		if lists.ItemInSlice(key, []string{"media_settings_call", "media_settings_email", "media_settings_chat", "media_settings_message"}) {
+			// Delete the extraneous attributes from the value
+			if mediaSettings, ok := value.([]interface{}); ok && len(mediaSettings) > 0 {
+				if mediaSettingsMap, ok := mediaSettings[0].(map[string]interface{}); ok {
+					delete(mediaSettingsMap, "mode")
+					delete(mediaSettingsMap, "enable_auto_dial_and_end")
+					delete(mediaSettingsMap, "auto_dial_delay_seconds")
+					delete(mediaSettingsMap, "auto_end_delay_seconds")
+				}
+			}
+		}
 	}
-}
-
-func DataSourceRoutingQueue() *schema.Resource {
-	return &schema.Resource{
-		Description:        "Data source for Genesys Cloud Routing Queues. Select a queue by name.",
-		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceRoutingQueueRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Queue name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
+	return rawState, nil
 }
