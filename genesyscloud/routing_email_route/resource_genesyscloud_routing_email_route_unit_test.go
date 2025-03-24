@@ -3,8 +3,9 @@ package routing_email_route
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 // TestUnitGetAllRoutingEmailRoutes verifies that errors are returned properly and most importantly that no nil pointer

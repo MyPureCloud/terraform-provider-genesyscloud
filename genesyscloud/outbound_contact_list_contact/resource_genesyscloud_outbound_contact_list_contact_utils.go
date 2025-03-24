@@ -7,7 +7,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 // buildWritableContactFromResourceData used to build the request body for contact creation
@@ -165,7 +165,7 @@ func GenerateOutboundContactListContact(
 ) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		contact_list_id = %s
-		contact_id = "%s"
+		contact_id = %s
     callable        = %s
     %s
     %s

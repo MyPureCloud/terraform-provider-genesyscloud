@@ -27,6 +27,11 @@ type platformConfig struct {
 }
 
 var platformConfigSingleton *platformConfig
+var platformInitialized bool
+
+var initialisePlatformAttemptsCount = 0
+
+const maxInitialisePlatformAttempts = 3
 
 const (
 	PlatformUnknown Platform = iota
@@ -99,19 +104,30 @@ func IsValidPlatform(p Platform) bool {
 
 func (p Platform) Validate() error {
 	if !IsValidPlatform(p) {
-		return fmt.Errorf("Invalid platform value detected: %v. This is an error of the terraform-provider-genesyscloud provider. This may indicate the provider is running in an unsupported environment. Please ensure you're using a supported operating system and architecture.", p)
+		return fmt.Errorf("invalid platform value detected: %v. This is an error of the terraform-provider-genesyscloud provider. This may indicate the provider is running in an unsupported environment. Please ensure you're using a supported operating system and architecture", p)
 	}
 	if platformConfigSingleton == nil {
-		return fmt.Errorf("Platform configuration is not initialized. This is likely an internal provider error. Please file a bug report if this persists in the terraform-provider-genesyscloud issues list.")
+		return fmt.Errorf("platform configuration is not initialized. This is likely an internal provider error. Please file a bug report if this persists in the terraform-provider-genesyscloud issues list")
 	}
 	return nil
 }
 
 func GetPlatform() Platform {
+	if !platformInitialized {
+		InitializePlatform()
+	}
 	return platformConfigSingleton.platform
 }
 
-func init() {
+func InitializePlatform() {
+	if platformInitialized {
+		return
+	}
+	if initialisePlatformAttemptsCount == maxInitialisePlatformAttempts {
+		log.Printf("Reached max attempts %d of InitializePlatform function", maxInitialisePlatformAttempts)
+		return
+	}
+	initialisePlatformAttemptsCount++
 	// Initialize the config once
 	platformConfigSingleton = &platformConfig{}
 
@@ -123,11 +139,16 @@ func init() {
 		// Could not find binary by looking it up from parent process
 		// Let's see if we can find a Terraform binary on the system
 		path, err = directLookupPlatformBinary("terraform")
-
+		if err != nil {
+			log.Printf("failed to lookup platform \"terraform\" binary: %s", err.Error())
+		}
 		if path == "" {
 			// No Terraform binary found on the system
 			// Let's see if we can find a Tofu binary on the system
 			path, err = directLookupPlatformBinary("tofu")
+			if err != nil {
+				log.Printf("failed to lookup platform \"tofu\" binary: %s", err.Error())
+			}
 			if path == "" {
 				log.Printf("No valid platform binary found!")
 				platformConfigSingleton.platform = PlatformUnknown
@@ -160,6 +181,7 @@ func init() {
 	for _, pattern := range debugPatterns {
 		if strings.Contains(platformConfigSingleton.binaryPath, pattern) {
 			platformConfigSingleton.platform = PlatformDebugServer
+			platformInitialized = true
 			return
 		}
 	}
@@ -174,16 +196,12 @@ func init() {
 
 	if strings.Contains(strings.ToLower(versionOutput.Stdout), "go ") {
 		platformConfigSingleton.platform = PlatformGoLang
-		return
-	}
-	if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
+	} else if strings.Contains(strings.ToLower(versionOutput.Stdout), "tofu") {
 		platformConfigSingleton.platform = PlatformOpenTofu
-		return
+	} else {
+		platformConfigSingleton.platform = PlatformTerraform
 	}
-
-	platformConfigSingleton.platform = PlatformTerraform
-	return
-
+	platformInitialized = true
 }
 
 func detectedPlatformLog() {

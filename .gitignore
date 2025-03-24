@@ -54,3 +54,5 @@ cover_unit.html
 consistency-errors.log.json
 
 test/temp/*
+
+public/data/dependency_tree*

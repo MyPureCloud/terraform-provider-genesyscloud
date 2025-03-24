@@ -175,6 +175,13 @@ func GetProviderResources() (resources map[string]*schema.Resource, datasources 
 	return providerResources, providerDataSources
 }
 
+func GetResourceExporters() (exporters map[string]*resourceExporter.ResourceExporter) {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	return resourceExporters
+}
+
 func resourceMapsAreRegistered() bool {
 	if providerResources == nil || providerDataSources == nil || resourceExporters == nil {
 		return false

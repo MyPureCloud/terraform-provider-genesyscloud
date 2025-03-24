@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 var (
@@ -58,15 +58,16 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		queueSkillResourceLabel  = "test-queue-skill"
 		queueSkillName           = "Terraform Skill " + uuid.NewString()
 
-		bullseyeMemberGroupName = "test_membergroup_series6"
-		bullseyeMemberGroupType = "GROUP"
-		testUserResourceLabel   = "user_resource1"
-		testUserName            = "nameUser1" + uuid.NewString()
-		testUserEmail           = uuid.NewString() + "@examplestest.com"
-		callbackHours           = "7"
-		callbackHours2          = "7"
-		callbackModeAgentFirst  = "AgentFirst"
-		userID                  string
+		bullseyeMemberGroupLabel = "test-group"
+		bullseyeMemberGroupType  = "GROUP"
+		testUserResourceLabel    = "user_resource1"
+		testUserName             = "nameUser1" + uuid.NewString()
+		testUserEmail            = uuid.NewString() + "@examplestest.com"
+		callbackHours            = "7"
+		callbackHours2           = "7"
+		callbackModeAgentFirst   = "AgentFirst"
+		userID                   string
+		groupName                = "MySeries6Groupv20_" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -77,8 +78,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 				// Create
 				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
 					group.GenerateGroupResource(
-						bullseyeMemberGroupName,
-						"MySeries6Groupv20",
+						bullseyeMemberGroupLabel,
+						groupName,
 						strconv.Quote("TestGroupForSeries6"),
 						util.NullValue, // Default type
 						util.NullValue, // Default visibility
@@ -107,7 +108,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
-					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupName+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
+					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -121,7 +122,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -163,7 +164,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					GenerateMediaSettings("media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2, "mode="+strconv.Quote(callbackModeAgentFirst)),
+					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2, "mode = "+util.NullValue),
 					GenerateMediaSettings("media_settings_chat", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_email", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
@@ -198,7 +199,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResourceLabel1, 1, routingRuleOpAny, "45", "15"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to get deleted properly
+						time.Sleep(3 * time.Second) // Wait for 3 seconds for resources to get deleted properly
 						return nil
 					},
 				),
@@ -907,7 +908,22 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
+				// Create users
+				Config: user.GenerateBasicUserResource(
+					queueMemberResourceLabel1,
+					queueMemberEmail1,
+					queueMemberName1,
+				) + user.GenerateBasicUserResource(
+					queueMemberResourceLabel2,
+					queueMemberEmail2,
+					queueMemberName2,
+				),
+			},
+			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
+				// Create queue also
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,
 					queueMemberEmail1,
@@ -926,10 +942,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() {
-					// Wait for a specified duration to avoid runtime error
-					time.Sleep(30 * time.Second)
-				},
 				// Update with another queue member and modify rings
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,
@@ -1699,17 +1711,21 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 }
 
 func checkUserDeleted(id string) resource.TestCheckFunc {
-	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
 		maxAttempts := 30
 		for i := 0; i < maxAttempts; i++ {
+			log.Printf("Attempt %d of %d: Fetching user with ID: %s\n", i+1, maxAttempts, id)
 			deleted, err := isUserDeleted(id)
 			if err != nil {
 				return err
 			}
 			if deleted {
+				log.Printf("User %s no longer exists", id)
 				return nil
 			}
+
+			log.Printf("User %s still exists.", id)
+			log.Println("Sleeping for 10 seconds")
 			time.Sleep(10 * time.Second)
 		}
 		return fmt.Errorf("user %s was not deleted properly", id)
