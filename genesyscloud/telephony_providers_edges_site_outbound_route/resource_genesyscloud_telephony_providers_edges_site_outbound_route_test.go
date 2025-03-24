@@ -4,15 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
@@ -22,9 +20,6 @@ import (
 )
 
 func TestAccResourceSiteoutboundRoutes(t *testing.T) {
-
-	featureToggleCheck(t)
-
 	var (
 		outboundRouteResourceLabel1 = "outbound_route_1"
 		outboundRouteResourceLabel2 = "outbound_route_2"
@@ -60,7 +55,7 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -68,7 +63,7 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -76,7 +71,7 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings3 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings3 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings3",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -205,9 +200,6 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 }
 
 func TestAccResourceSiteoutboundRoutesDefaultOutboundRoute(t *testing.T) {
-
-	featureToggleCheck(t)
-
 	var (
 		outboundRouteResourceLabel1 = "outbound_route_1"
 		outboundRouteResourceLabel2 = "outbound_route_2"
@@ -243,7 +235,7 @@ func TestAccResourceSiteoutboundRoutesDefaultOutboundRoute(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -251,7 +243,7 @@ func TestAccResourceSiteoutboundRoutesDefaultOutboundRoute(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -376,9 +368,6 @@ func TestAccResourceSiteoutboundRoutesDefaultOutboundRoute(t *testing.T) {
 
 // Test to confirm that upon destroy if the site has already been removed, the site outbound route resource can be cleanly deleted too
 func TestAccResourceSiteoutboundRoutesWhenSiteResourceIsDeleted(t *testing.T) {
-
-	featureToggleCheck(t)
-
 	var (
 		outboundRouteResourceLabel1 = "outbound_route_1"
 		outboundRouteResourceLabel2 = "outbound_route_2"
@@ -414,7 +403,7 @@ func TestAccResourceSiteoutboundRoutesWhenSiteResourceIsDeleted(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -422,7 +411,7 @@ func TestAccResourceSiteoutboundRoutesWhenSiteResourceIsDeleted(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -547,20 +536,4 @@ func generateSiteOutboundRoutesResource(
 		enabled = %s
 	}
 	`, routesResourceLabel, siteId, name, description, classificationTypes, externalTrunkBaseIds, distribution, enabled)
-}
-
-func featureToggleCheck(t *testing.T) {
-	featureEnvSet := os.Getenv(featureToggles.OutboundRoutesToggleName())
-	if featureEnvSet == "" {
-		err := os.Setenv(featureToggles.OutboundRoutesToggleName(), "enabled")
-		if err != nil {
-			t.Errorf("%s is not set", featureToggles.OutboundRoutesToggleName())
-		}
-		defer func() {
-			err := os.Unsetenv(featureToggles.OutboundRoutesToggleName())
-			if err != nil {
-				log.Printf("%s", err)
-			}
-		}()
-	}
 }
