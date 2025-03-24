@@ -27,7 +27,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 
 		emailColumnKey        = "Email"
 		dataEmailValue        = "email@fake.com"
-		dataEmailValueUpdated = "fake@email.cmo"
+		dataEmailValueUpdated = "fake@email.com"
 
 		contactListResourceLabel     = "contact_list"
 		contactListFullResourceLabel = "genesyscloud_outbound_contact_list." + contactListResourceLabel

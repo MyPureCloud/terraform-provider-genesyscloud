@@ -52,6 +52,7 @@ var (
 				Description:  "The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"All", "SelectedOnly", "None"}, false),
 			},
 			"library_ids": {

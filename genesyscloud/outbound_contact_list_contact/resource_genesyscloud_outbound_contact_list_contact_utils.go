@@ -165,7 +165,7 @@ func GenerateOutboundContactListContact(
 ) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		contact_list_id = %s
-		contact_id = "%s"
+		contact_id = %s
     callable        = %s
     %s
     %s
