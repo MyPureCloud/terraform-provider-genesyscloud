@@ -298,26 +298,32 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 	return &totalFlows, nil, nil
 }
 
-func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (string, error) {
+func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl string, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("error in generateDownloadUrlFn: %w", err)
+		}
+	}()
 	log.Printf("Creating export job for flow %s", flowId)
 	jobId, resp, err := a.createExportJob(flowId)
 	if err != nil {
-		log.Println(err)
 		if resp != nil {
-			log.Printf("API Response: %s", resp.String())
+			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
 		}
+		log.Printf("Error in generateDownloadUrlFn: %s", err.Error())
 		return "", err
 	}
 	log.Printf("Successfully created export job '%s' for flow '%s'", jobId, flowId)
 
 	log.Printf("Polling job '%s' for download url", jobId)
-	downloadUrl, err := a.pollExportJobForDownloadUrl(jobId)
+	downloadUrl, err = a.pollExportJobForDownloadUrl(jobId)
 	if err != nil {
+		log.Printf("Error in generateDownloadUrlFn: %s", err.Error())
 		return "", err
 	}
 	log.Printf("Successfully read download URL. Export job: %s", jobId)
 
-	return downloadUrl, nil
+	return downloadUrl, err
 }
 
 func createExportJobFn(a *architectFlowProxy, flowId string) (string, *platformclientv2.APIResponse, error) {
