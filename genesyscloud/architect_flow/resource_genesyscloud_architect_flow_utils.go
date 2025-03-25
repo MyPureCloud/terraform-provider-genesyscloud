@@ -61,12 +61,10 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		}
 	}()
 
-	var (
-		sdkConfig = meta.(*provider.ProviderMeta).ClientConfig
-		proxy     = newArchitectFlowProxy(sdkConfig)
-		ctx       = context.Background()
-		filename  = fmt.Sprintf("%s.yaml", flowId)
-	)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := newArchitectFlowProxy(sdkConfig)
+	ctx := context.Background()
+	filename := fmt.Sprintf("%s.yaml", flowId)
 
 	flow, resp, err := proxy.GetFlow(ctx, flowId)
 	if err != nil {
@@ -82,17 +80,17 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 
 	log.Printf("Creating subfolder '%s' inside '%s'", subDirectory, exportDirectory)
 	fullPath := filepath.Join(exportDirectory, subDirectory)
-	if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+	if err = os.MkdirAll(fullPath, os.ModePerm); err != nil {
 		return err
 	}
 	log.Printf("Successfully created subfolder '%s' inside '%s'", subDirectory, exportDirectory)
 
 	log.Printf("Downloading export flow '%s' to '%s' from download URL", flowId, filepath.Join(fullPath, filename))
-	if resp, err := files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
-		log.Printf("Failed to download flow file: %s", err.Error())
+	if resp, err = files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
 		if resp != nil {
-			log.Printf("API Response: " + resp.String())
+			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
 		}
+		log.Printf("Failed to download flow file: %s", err.Error())
 		return err
 	}
 	log.Printf("Successfully downloaded export flow '%s' to '%s'", flowId, filepath.Join(fullPath, filename))

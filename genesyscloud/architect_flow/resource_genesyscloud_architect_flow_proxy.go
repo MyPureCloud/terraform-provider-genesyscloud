@@ -21,9 +21,9 @@ type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy, string,
 type getFlowIdByNameAndTypeFunc func(ctx context.Context, a *architectFlowProxy, name string, varType string) (id string, resp *platformclientv2.APIResponse, retryable bool, err error)
 
 type generateDownloadUrlFunc func(a *architectFlowProxy, flowId string) (string, error)
-type createExportJobFunc func(a *architectFlowProxy, flowId string) (jobId string, _ *platformclientv2.APIResponse, _ error)
+type createExportJobFunc func(a *architectFlowProxy, flowId string) (_ *platformclientv2.Registerarchitectexportjobresponse, _ *platformclientv2.APIResponse, _ error)
 type getExportJobStatusByIdFunc func(a *architectFlowProxy, jobId string) (*platformclientv2.Architectexportjobstateresponse, *platformclientv2.APIResponse, error)
-type pollExportJobForDownloadUrlFunc func(a *architectFlowProxy, jobId string) (downloadUrl string, err error)
+type pollExportJobForDownloadUrlFunc func(a *architectFlowProxy, jobId string, timeoutInSeconds float64) (downloadUrl string, err error)
 
 type architectFlowProxy struct {
 	clientConfig *platformclientv2.Configuration
@@ -94,6 +94,26 @@ func (a *architectFlowProxy) GetFlowsDeployJob(ctx context.Context, jobId string
 	return a.getArchitectFlowJobsAttr(ctx, a, jobId)
 }
 
+// GetAllFlows retrieves all architect flows that match the given criteria using pagination.
+//
+// The function fetches flows in batches of 100 items per page and aggregates them into a single slice.
+// Retrieved flows are cached using the proxy's flow cache for future reference.
+// Implementation function: getAllArchitectFlowsFn
+//
+// Parameters:
+//   - ctx: Context for the operation (currently unused but maintained for consistency)
+//   - p: Pointer to architectFlowProxy containing the API client and cache
+//   - name: Name filter for the flows. If empty, returns all flows
+//   - varType: Slice of flow types to filter by
+//
+// Returns:
+//   - *[]platformclientv2.Flow: Pointer to slice containing all retrieved flows
+//   - *platformclientv2.APIResponse: Response from the API call
+//   - error: Error if any occurred during the operation
+//
+// The function will return an error in the following cases:
+//   - Initial API call fails to retrieve the first page
+//   - Any subsequent page retrieval fails
 func (a *architectFlowProxy) GetAllFlows(ctx context.Context, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	return a.getAllArchitectFlowsAttr(ctx, a, name, varType)
 }
@@ -142,13 +162,13 @@ func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) 
 }
 
 // createExportJob creates an export job for a specified architect flow.
-//
+// Implementation function: createExportJobFn
 // Parameters:
 //   - a: *architectFlowProxy - The architect flow proxy instance
 //   - flowId: string - The ID of the flow to be exported
 //
 // Returns:
-//   - string: The ID of the created export job
+//   - *platformclientv2.Registerarchitectexportjobresponse: The response body from the POST request
 //   - *platformclientv2.APIResponse: The raw API response
 //   - error: An error if the job creation fails or if the response is invalid
 //
@@ -157,7 +177,7 @@ func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) 
 //   - The API call fails
 //   - The created job response is nil
 //   - The job ID in the response is nil
-func (a *architectFlowProxy) createExportJob(flowId string) (string, *platformclientv2.APIResponse, error) {
+func (a *architectFlowProxy) createExportJob(flowId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 	return a.createExportJobAttr(a, flowId)
 }
 
@@ -183,17 +203,19 @@ func (a *architectFlowProxy) getExportJobStatusById(jobId string) (*platformclie
 // Parameters:
 //   - a: *architectFlowProxy - The architect flow proxy instance
 //   - jobId: string - The ID of the export job to poll
+//   - timeoutInSeconds: float64 - The amount of seconds to poll for before timing out
 //
 // Returns:
 //   - string: The download URL for the exported flow
 //   - error: An error if the polling times out or if there's an issue getting the job status
 //
-// The function will timeout after 90 seconds if the job doesn't complete.
+// The function will time out after 90 seconds if the job doesn't complete.
 // It polls the job status every 1 second.
-func (a *architectFlowProxy) pollExportJobForDownloadUrl(jobId string) (downloadUrl string, err error) {
-	return a.pollExportJobForDownloadUrlAttr(a, jobId)
+func (a *architectFlowProxy) pollExportJobForDownloadUrl(jobId string, timeoutInSeconds float64) (downloadUrl string, err error) {
+	return a.pollExportJobForDownloadUrlAttr(a, jobId, timeoutInSeconds)
 }
 
+// getFlowIdByNameAndTypeFn is the implementation function for getFlowIdByNameAndType
 func getFlowIdByNameAndTypeFn(ctx context.Context, a *architectFlowProxy, name, varType string) (string, *platformclientv2.APIResponse, bool, error) {
 	var (
 		matchedFlows    []platformclientv2.Flow
@@ -266,7 +288,8 @@ func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId stri
 	return p.api.GetFlowsJob(jobId, []string{"messages"})
 }
 
-func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+// getAllArchitectFlowsFn is the implementation function for GetAllFlows
+func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var totalFlows []platformclientv2.Flow
 
@@ -281,7 +304,7 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 	totalFlows = append(totalFlows, *flows.Entities...)
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		flows, resp, err := p.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
+		flows, resp, err = p.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page %d of flows: %v", pageNum, err)
 		}
@@ -295,9 +318,10 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 		rc.SetCache(p.flowCache, *flow.Id, flow)
 	}
 
-	return &totalFlows, nil, nil
+	return &totalFlows, resp, nil
 }
 
+// generateDownloadUrlFn is the implementation function for the generateDownloadUrl method
 func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl string, err error) {
 	defer func() {
 		if err != nil {
@@ -305,7 +329,7 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 		}
 	}()
 	log.Printf("Creating export job for flow %s", flowId)
-	jobId, resp, err := a.createExportJob(flowId)
+	exportJob, resp, err := a.createExportJob(flowId)
 	if err != nil {
 		if resp != nil {
 			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
@@ -313,20 +337,27 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 		log.Printf("Error in generateDownloadUrlFn: %s", err.Error())
 		return "", err
 	}
-	log.Printf("Successfully created export job '%s' for flow '%s'", jobId, flowId)
 
-	log.Printf("Polling job '%s' for download url", jobId)
-	downloadUrl, err = a.pollExportJobForDownloadUrl(jobId)
+	if exportJob == nil || exportJob.Id == nil {
+		return "", fmt.Errorf("no export job flow ID returned for flow %s", flowId)
+	}
+
+	log.Printf("Successfully created export job '%s' for flow '%s'", exportJob, flowId)
+
+	log.Printf("Polling job '%s' for download url", exportJob)
+	const pollTimeoutInSeconds float64 = 90
+	downloadUrl, err = a.pollExportJobForDownloadUrl(*exportJob.Id, pollTimeoutInSeconds)
 	if err != nil {
 		log.Printf("Error in generateDownloadUrlFn: %s", err.Error())
 		return "", err
 	}
-	log.Printf("Successfully read download URL. Export job: %s", jobId)
+	log.Printf("Successfully read download URL. Export job: %s", exportJob)
 
 	return downloadUrl, err
 }
 
-func createExportJobFn(a *architectFlowProxy, flowId string) (string, *platformclientv2.APIResponse, error) {
+// createExportJobFn is the implementation function for the createExportJob method
+func createExportJobFn(a *architectFlowProxy, flowId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 	body := platformclientv2.Registerarchitectexportjob{
 		Flows: &[]platformclientv2.Exportdetails{
 			{
@@ -336,19 +367,10 @@ func createExportJobFn(a *architectFlowProxy, flowId string) (string, *platformc
 			},
 		},
 	}
-
-	createJob, resp, err := a.api.PostFlowsExportJobs(body)
-	if err != nil {
-		return "", resp, fmt.Errorf("failed to create export job for flow %s: %w", flowId, err)
-	}
-
-	if createJob == nil || createJob.Id == nil {
-		return "", resp, fmt.Errorf("no export job flow ID returned for flow %s", flowId)
-	}
-
-	return *createJob.Id, nil, nil
+	return a.api.PostFlowsExportJobs(body)
 }
 
+// getExportJobStatusByIdFn is the implementation function for getExportJobStatusById
 func getExportJobStatusByIdFn(a *architectFlowProxy, jobId string) (*platformclientv2.Architectexportjobstateresponse, *platformclientv2.APIResponse, error) {
 	jobStatus, resp, err := a.api.GetFlowsExportJob(jobId, []string{"messages"})
 	if err != nil {
@@ -362,13 +384,13 @@ func getExportJobStatusByIdFn(a *architectFlowProxy, jobId string) (*platformcli
 	return jobStatus, resp, nil
 }
 
-func pollExportJobForDownloadUrlFn(a *architectFlowProxy, jobId string) (string, error) {
-	const maxWaitTimeInSeconds float64 = 90
+// pollExportJobForDownloadUrlFn is the implementation function for pollExportJobForDownloadUrl
+func pollExportJobForDownloadUrlFn(a *architectFlowProxy, jobId string, timeoutInSeconds float64) (string, error) {
 	startTime := time.Now()
 
 	for {
 		elapsedTimeInSeconds := time.Since(startTime).Seconds()
-		if elapsedTimeInSeconds > maxWaitTimeInSeconds {
+		if elapsedTimeInSeconds > timeoutInSeconds {
 			return "", fmt.Errorf("timed out after %f seconds waiting for job %s to complete", elapsedTimeInSeconds, jobId)
 		}
 
@@ -388,9 +410,11 @@ func pollExportJobForDownloadUrlFn(a *architectFlowProxy, jobId string) (string,
 
 		if status == "Started" {
 			continue
-		} else if status == "Failure" {
+		}
+		if status == "Failure" {
 			return "", fmt.Errorf("job %s failed. Messages: %s", jobId, parseMessagesFromExportJobStateResponse(*exportJob))
-		} else if status != "Success" {
+		}
+		if status != "Success" {
 			return "", fmt.Errorf("unexpected job status %s for job %s", status, jobId)
 		}
 
