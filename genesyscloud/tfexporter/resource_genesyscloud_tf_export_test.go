@@ -2431,23 +2431,19 @@ func TestAccResourceExporterFormat(t *testing.T) {
 	})
 }
 
-// TestAccResourceArchitectFlowLegacyAndNew Exports a flow using the legacy exporter (creates a tfvars file but does not export flow config files)
+// TestAccResourceTfExportArchitectFlowExporterLegacyAndNew Exports a flow using the legacy exporter (creates a tfvars file but does not export flow config files)
 // and then exports using the new archy exporter by setting use_legacy_architect_flow_exporter to false
-func TestAccResourceArchitectFlowLegacyAndNew(t *testing.T) {
+func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 	const (
 		systemFlowName = "Default Voicemail Flow"
 		systemFlowType = "VOICEMAIL"
 		systemFlowId   = "de4c63f0-0be1-11ec-9a03-0242ac130003"
 	)
-	var exportedSystemFlowFileName = architectFlow.BuildExportFileName(systemFlowName, systemFlowType, systemFlowId)
-
-	var (
-		exportResourceLabel = "export"
-		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
-		exportFullPath      = ResourceType + "." + exportResourceLabel
-
-		pathToFolderHoldingExportedFlows = filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
-	)
+	exportedSystemFlowFileName := architectFlow.BuildExportFileName(systemFlowName, systemFlowType, systemFlowId)
+	exportResourceLabel := "export"
+	exportTestDir := testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+	exportFullPath := ResourceType + "." + exportResourceLabel
+	pathToFolderHoldingExportedFlows := filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
 
 	defer func(path string) {
 		if err := os.RemoveAll(path); err != nil {
