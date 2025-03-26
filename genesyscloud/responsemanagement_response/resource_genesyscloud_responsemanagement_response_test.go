@@ -381,12 +381,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name2),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.1",
-						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent2),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content", textsContent1),

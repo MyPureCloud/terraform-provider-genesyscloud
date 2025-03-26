@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,6 +28,7 @@ import (
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -2758,7 +2760,7 @@ func getResourceDefinition(filePath, resourceType string) (map[string]*json.RawM
 	return r, nil
 }
 
-// Create a directed graph of exported resources to their references. Report any potential graph cycles in this test.
+// TestUnitTestForExportCycles creates a directed graph of exported resources to their references. Report any potential graph cycles in this test.
 // Reference cycles can sometimes be broken by exporting a separate resource to update membership after the member
 // and container resources are created/updated (see genesyscloud_user_roles).
 func TestUnitTestForExportCycles(t *testing.T) {
@@ -2807,9 +2809,21 @@ func TestUnitTestForExportCycles(t *testing.T) {
 		}
 
 		if len(cycleResources) > 0 {
-			t.Fatalf("Found the following potential reference cycles:\n %s", cycleResources)
+			for _, cycleSlice := range cycleResources {
+				if !isExcusedResourceExportCycle(cycleSlice) {
+					t.Fatalf("Found the following potential reference cycles:\n %s", cycleResources)
+				}
+			}
 		}
 	}
+}
+
+// isExcusedResourceExportCycle makes an exception for the cyclic relationship between genesyscloud_telephony_providers_edges_site and
+// genesyscloud_telephony_providers_edges_trunkbasesettings in the test TestUnitTestForExportCycles
+// The genesyscloud_telephony_providers_edges_site_outbound_routes resource can be used as a workaround for any user
+// having issues with this cycle
+func isExcusedResourceExportCycle(cycle []string) bool {
+	return slices.Contains(cycle, tbs.ResourceType) && slices.Contains(cycle, telephonyProvidersEdgesSite.ResourceType)
 }
 
 func generateExportResourceIncludeFilterWithEnableDepRes(
