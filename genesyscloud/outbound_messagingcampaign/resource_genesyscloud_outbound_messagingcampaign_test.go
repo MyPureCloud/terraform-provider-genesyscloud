@@ -1,4 +1,4 @@
-package outbound
+package outbound_messagingcampaign
 
 import (
 	"fmt"
@@ -246,7 +246,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						),
 						generateDynamicContactQueueingSettings(
 							util.FalseValue, // sort
-							util.FalseValue, // filter
+							util.TrueValue,  // filter
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -264,7 +264,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contact_sorts.1.direction", "DESC"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contact_sorts.1.numeric", util.TrueValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.filter", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.filter", util.TrueValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "rule_set_ids.#", "2"),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceLabel, "id"),
@@ -316,7 +316,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						),
 						generateDynamicContactQueueingSettings(
 							util.FalseValue, // sort
-							util.FalseValue, // filter
+							util.TrueValue,  // filter
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -334,7 +334,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contact_sorts.1.direction", "DESC"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contact_sorts.1.numeric", util.TrueValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.filter", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.filter", util.TrueValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "rule_set_ids.#", "2"),
 					util.VerifyAttributeInArrayOfPotentialValues(ResourceType+"."+resourceLabel, "campaign_status", []string{"on", "complete"}),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "callable_time_set_id",
@@ -388,7 +388,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 						),
 						generateDynamicContactQueueingSettings(
 							util.FalseValue, // sort
-							util.FalseValue, // filter
+							util.TrueValue,  // filter
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -406,7 +406,7 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contact_sorts.1.direction", "ASC"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contact_sorts.1.numeric", util.FalseValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.filter", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "dynamic_contact_queueing_settings.0.filter", util.TrueValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "rule_set_ids.#", "0"),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "callable_time_set_id",
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceLabel, "id"),
@@ -520,7 +520,7 @@ func generateOutboundMessagingCampaignSmsConfig(
 `, smsConfigMessageColumn, smsConfigPhoneColumn, smsConfigSenderSMSPhoneNumber)
 }
 
-func generateDynamicContactQueueingSettings(sort, filter string) string {
+func generateDynamicContactQueueingSettings(sort string, filter string) string {
 	return fmt.Sprintf(`
 	dynamic_contact_queueing_settings {
 		sort   = %s
