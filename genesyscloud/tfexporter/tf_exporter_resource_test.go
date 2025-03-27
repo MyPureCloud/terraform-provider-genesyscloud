@@ -90,12 +90,12 @@ import (
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	phonebaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webdeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
@@ -239,7 +239,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
-	providerResources["genesyscloud_tf_export"] = ResourceTfExport()
+	providerResources[ResourceType] = ResourceTfExport()
 }
 
 func (r *registerTestInstance) registerTestExporters() {
