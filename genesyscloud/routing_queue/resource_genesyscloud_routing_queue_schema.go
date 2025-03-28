@@ -143,6 +143,7 @@ var (
 				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
 			"enable_auto_dial_and_end": {
@@ -159,6 +160,42 @@ var (
 			"auto_end_delay_seconds": {
 				Description: "Auto End Delay Seconds.",
 				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"auto_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for an auto-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"manual_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for a manual-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"pacing_modifier": {
+				Description:  "Controls the maximum number of outbound calls at one time when mode is CustomerFirst.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				ValidateFunc: validation.FloatAtLeast(1),
+			},
+			"live_voice_reaction_type": {
+				Description: "The action to take if a live voice is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"live_voice_flow_id": {
+				Description: "The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"answering_machine_reaction_type": {
+				Description: "The action to take if an answering machine is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"answering_machine_flow_id": {
+				Description: "The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.",
+				Type:        schema.TypeString,
 				Optional:    true,
 			},
 		},

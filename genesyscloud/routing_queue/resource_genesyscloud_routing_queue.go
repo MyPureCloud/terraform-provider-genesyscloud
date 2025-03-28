@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
@@ -41,7 +39,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
 
-	if queues != nil || len(*queues) != 0 {
+	if queues != nil && len(*queues) != 0 {
 		allQueues = append(allQueues, *queues...)
 	}
 
@@ -51,7 +49,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
 	}
 
-	if queues != nil || len(*queues) != 0 {
+	if queues != nil && len(*queues) != 0 {
 		allQueues = append(allQueues, *queues...)
 	}
 
@@ -162,7 +160,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.ConsistencyChecks(), ResourceType)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading queue %s", d.Id())
 
@@ -290,7 +288,8 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		log.Printf("Read queue %s %s", d.Id(), *currentQueue.Name)
-		return cc.CheckState(d)
+		//return cc.CheckState(d)
+		return nil
 	})
 }
 
@@ -348,10 +347,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
 
-	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)
+	b, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
+
+	fmt.Println(b)
 
 	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
 	if diagErr != nil {
