@@ -520,7 +520,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"whisper_prompt_id":                              *testRoutingQueue.WhisperPrompt.Id,
 		"on_hold_prompt_id":                              *testRoutingQueue.OnHoldPrompt.Id,
 		"default_script_ids":                             flattenDefaultScripts(*testRoutingQueue.DefaultScripts),
-		"canned_response_libraries":                      flattenCannedResponse(*&testRoutingQueue.CannedResponseLibraries),
+		"canned_response_libraries":                      flattenCannedResponse(testRoutingQueue.CannedResponseLibraries),
 	}
 	return resourceDataMap
 }
@@ -733,10 +733,12 @@ func generateCallbackMediaSettings() platformclientv2.Callbackmediasettings {
 			Percentage: platformclientv2.Float64(0.7),
 			DurationMs: platformclientv2.Int(10000),
 		},
-		EnableAutoDialAndEnd: platformclientv2.Bool(true),
-		AutoDialDelaySeconds: platformclientv2.Int(10),
-		AutoEndDelaySeconds:  platformclientv2.Int(10),
-		Mode:                 platformclientv2.String("AgentFirst"),
+		EnableAutoDialAndEnd:         platformclientv2.Bool(true),
+		AutoDialDelaySeconds:         platformclientv2.Int(10),
+		AutoEndDelaySeconds:          platformclientv2.Int(10),
+		Mode:                         platformclientv2.String("AgentFirst"),
+		AutoAnswerAlertToneSeconds:   platformclientv2.Float64(12),
+		ManualAnswerAlertToneSeconds: platformclientv2.Float64(10),
 	}
 }
 
