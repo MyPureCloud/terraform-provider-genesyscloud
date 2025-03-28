@@ -2,6 +2,7 @@ package resourcedata
 
 import (
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -174,10 +175,12 @@ func SetNillableTime(d *schema.ResourceData, key string, value *time.Time) {
 	SetNillableValue(d, key, timeValue)
 }
 
-func GetNillableValueFromMap[T any](targetMap map[string]interface{}, key string) *T {
-	if value, ok := targetMap[key]; ok {
-		v := value.(T)
-		return &v
+func GetNillableValueFromMap[T any](targetMap map[string]interface{}, key string, allowZeroValue bool) *T {
+	if value, ok := targetMap[key].(T); ok {
+		if !allowZeroValue && reflect.ValueOf(value).IsZero() {
+			return nil
+		}
+		return &value
 	}
 	return nil
 }

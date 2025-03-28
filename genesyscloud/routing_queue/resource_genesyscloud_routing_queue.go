@@ -41,7 +41,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
 
-	if queues != nil || len(*queues) != 0 {
+	if queues != nil && len(*queues) != 0 {
 		allQueues = append(allQueues, *queues...)
 	}
 
@@ -51,7 +51,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
 	}
 
-	if queues != nil || len(*queues) != 0 {
+	if queues != nil && len(*queues) != 0 {
 		allQueues = append(allQueues, *queues...)
 	}
 

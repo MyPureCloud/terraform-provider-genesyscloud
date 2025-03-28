@@ -66,7 +66,7 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		allQueues = append(allQueues, *trueQueues...)
 	}
 
-	if allQueues == nil || len(allQueues) == 0 {
+	if len(allQueues) == 0 {
 		log.Printf("No queues found. The cache will remain empty.")
 		return nil
 	}

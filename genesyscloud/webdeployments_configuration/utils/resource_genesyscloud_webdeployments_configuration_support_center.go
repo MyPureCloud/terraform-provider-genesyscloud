@@ -122,8 +122,8 @@ func buildModuleSettings(settings []interface{}) *[]platformclientv2.Supportcent
 		}
 
 		moduleSetting := platformclientv2.Supportcentermodulesetting{
-			VarType: resourcedata.GetNillableValueFromMap[string](settingMap, "type"),
-			Enabled: resourcedata.GetNillableValueFromMap[bool](settingMap, "enabled"),
+			VarType: resourcedata.GetNillableValueFromMap[string](settingMap, "type", true),
+			Enabled: resourcedata.GetNillableValueFromMap[bool](settingMap, "enabled", true),
 		}
 
 		if compactModActive, ok := settingMap["compact_category_module_template_active"].(bool); ok {

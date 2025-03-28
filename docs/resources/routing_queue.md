@@ -351,11 +351,18 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
+- `answering_machine_flow_id` (String) The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.
+- `answering_machine_reaction_type` (String) The action to take if an answering machine is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
+- `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
 - `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Auto Dial and End Defaults to `false`.
+- `live_voice_flow_id` (String) The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.
+- `live_voice_reaction_type` (String) The action to take if a live voice is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
+- `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
 - `mode` (String) The mode callbacks will use on this queue.
+- `pacing_modifier` (Number) Controls the maximum number of outbound calls at one time when mode is CustomerFirst.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_callback--sub_type_settings))
