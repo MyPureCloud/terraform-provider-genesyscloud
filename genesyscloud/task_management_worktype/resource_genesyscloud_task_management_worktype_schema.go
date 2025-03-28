@@ -125,7 +125,7 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeInt,
 			},
 			`default_script_id`: {
-				Description: `Id of the workitem schema.`,
+				Description: `The default script for Workitems created from the Worktype.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
