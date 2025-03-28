@@ -101,7 +101,7 @@ func SiteExporterOutboundRoute() *resourceExporter.ResourceExporter {
 	}
 }
 
-// DataSourceSite registers the genesyscloud_telephony_providers_edges_site_outbound_route data source
+// DataSourceSiteOutboundRoute registers the genesyscloud_telephony_providers_edges_site_outbound_route data source
 func DataSourceSiteOutboundRoute() *schema.Resource {
 	return &schema.Resource{
 		Description: "Data source for Genesys Cloud Site Outbound Routes. Select a Site Outbound Route by name.",
