@@ -83,7 +83,7 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	outboundRouteId := buildSiteAndOutboundRouteId(siteId, *newOutboundRoute.Id)
-	d.Set("route_id", *newOutboundRoute.Id)
+	_ = d.Set("route_id", *newOutboundRoute.Id)
 	d.SetId(outboundRouteId)
 	log.Printf("created outbound route %s for site %s", *newOutboundRoute.Id, siteId)
 	return readSiteOutboundRoute(ctx, d, meta)
@@ -116,7 +116,7 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 			resourcedata.SetNillableValue(d, "distribution", outboundRoute.Distribution)
 
 			if outboundRoute.ClassificationTypes != nil {
-				d.Set("classification_types", lists.StringListToInterfaceList(*outboundRoute.ClassificationTypes))
+				_ = d.Set("classification_types", lists.StringListToInterfaceList(*outboundRoute.ClassificationTypes))
 			}
 
 			if len(*outboundRoute.ExternalTrunkBases) > 0 {
@@ -124,7 +124,7 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 				for _, externalTrunkBase := range *outboundRoute.ExternalTrunkBases {
 					externalTrunkBaseIds = append(externalTrunkBaseIds, *externalTrunkBase.Id)
 				}
-				d.Set("external_trunk_base_ids", lists.StringListToInterfaceList(externalTrunkBaseIds))
+				_ = d.Set("external_trunk_base_ids", lists.StringListToInterfaceList(externalTrunkBaseIds))
 			}
 		}
 
