@@ -646,25 +646,27 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                              {RefType: authDivision.ResourceType},
-			"queue_flow_id":                            {RefType: architectFlow.ResourceType},
-			"email_in_queue_flow_id":                   {RefType: architectFlow.ResourceType},
-			"message_in_queue_flow_id":                 {RefType: architectFlow.ResourceType},
-			"whisper_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
-			"on_hold_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
-			"outbound_messaging_sms_address_id":        {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
-			"default_script_ids.*":                     {RefType: scripts.ResourceType},
-			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
-			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
-			"bullseye_rings.skills_to_remove":          {RefType: routingSkill.ResourceType},
-			"members.user_id":                          {RefType: user.ResourceType},
-			"wrapup_codes":                             {RefType: routingWrapupcode.ResourceType},
-			"skill_groups":                             {RefType: routingSkillGroup.ResourceType},
-			"teams":                                    {RefType: team.ResourceType},
-			"groups":                                   {RefType: group.ResourceType},
-			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
-			"direct_routing.backup_queue_id":           {RefType: ResourceType},
-			"canned_response_libraries.library_ids.*":  {RefType: responseManagementLibrary.ResourceType},
+			"division_id":                                       {RefType: authDivision.ResourceType},
+			"queue_flow_id":                                     {RefType: architectFlow.ResourceType},
+			"email_in_queue_flow_id":                            {RefType: architectFlow.ResourceType},
+			"message_in_queue_flow_id":                          {RefType: architectFlow.ResourceType},
+			"whisper_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
+			"on_hold_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
+			"outbound_messaging_sms_address_id":                 {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
+			"default_script_ids.*":                              {RefType: scripts.ResourceType},
+			"outbound_email_address.route_id":                   {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
+			"outbound_email_address.domain_id":                  {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
+			"bullseye_rings.skills_to_remove":                   {RefType: routingSkill.ResourceType},
+			"members.user_id":                                   {RefType: user.ResourceType},
+			"wrapup_codes":                                      {RefType: routingWrapupcode.ResourceType},
+			"skill_groups":                                      {RefType: routingSkillGroup.ResourceType},
+			"teams":                                             {RefType: team.ResourceType},
+			"groups":                                            {RefType: group.ResourceType},
+			"conditional_group_routing_rules.queue_id":          {RefType: ResourceType},
+			"direct_routing.backup_queue_id":                    {RefType: ResourceType},
+			"canned_response_libraries.library_ids.*":           {RefType: responseManagementLibrary.ResourceType},
+			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
+			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},
