@@ -15,6 +15,7 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
   default_language_id = genesyscloud_routing_language.language_skill.id
   default_queue_id    = genesyscloud_routing_queue.my_queue.id
   default_skills_ids  = [genesyscloud_routing_skill.skill_1.id, genesyscloud_routing_skill.skill_2.id]
+  default_script_id   = genesyscloud_script.script.id
 
   assignment_enabled = true
 }
