@@ -5,8 +5,8 @@ import (
 	"sync"
 	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"testing"
 
 	gcloud "terraform-provider-genesyscloud/genesyscloud"
@@ -45,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceSiteOutboundRoute()
-	providerResources[telephony_provider_edges_trunkbasesettings.ResourceType] = telephony_provider_edges_trunkbasesettings.ResourceTrunkBaseSettings()
+	providerResources[tbs.ResourceType] = tbs.ResourceTrunkBaseSettings()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[telephony_providers_edges_site.ResourceType] = telephony_providers_edges_site.ResourceSite()
 }

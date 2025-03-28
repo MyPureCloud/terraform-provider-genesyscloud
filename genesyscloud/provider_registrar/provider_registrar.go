@@ -108,7 +108,6 @@ import (
 	workitemOnCreateRule "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_oncreate_rule"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
@@ -119,6 +118,7 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	siteOutboundRoutes "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -269,7 +269,7 @@ func registerResources() {
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	externalUser.SetRegistrar(regInstance)                                 //Registering external user identity
 	team.SetRegistrar(regInstance)                                         //Registering team
-	telephony_provider_edges_trunkbasesettings.SetRegistrar(regInstance)   //Registering telephony_provider_edges_trunkbasesettings package
+	telephony_providers_edges_trunkbasesettings.SetRegistrar(regInstance)  //Registering telephony_providers_edges_trunkbasesettings package
 	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy

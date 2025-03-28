@@ -3,7 +3,7 @@ package telephony_providers_edges_edge_group
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 

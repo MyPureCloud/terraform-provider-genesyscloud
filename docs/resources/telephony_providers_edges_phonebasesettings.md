@@ -102,4 +102,5 @@ Optional:
 
 - `station_persistent_enabled` (Boolean) The station_persistent_enabled attribute in the line's property Defaults to `false`.
 - `station_persistent_timeout` (Number) The station_persistent_timeout attribute in the line's property Defaults to `600`.
+- `station_persistent_webrtc_enabled` (Boolean) The station_persistent_webrtc_enabled attribute in the line's property Defaults to `false`.
 
