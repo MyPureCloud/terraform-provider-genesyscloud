@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -705,17 +705,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: architect_flow.GenerateFlowResource(
+				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel1,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel1,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel1,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
@@ -742,17 +742,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			},
 			{
 				// Update the flows
-				Config: architect_flow.GenerateFlowResource(
+				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel2,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel2,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel2,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,

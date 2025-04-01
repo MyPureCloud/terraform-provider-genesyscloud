@@ -78,3 +78,10 @@ func SdkDomainEntityRefArrToList(entityRefs []platformclientv2.Domainentityref) 
 	}
 	return interfaceList
 }
+
+func GetNillableDomainEntityRefFromMap(m map[string]any, key string) *platformclientv2.Domainentityref {
+	if v, ok := m[key].(string); ok && v != "" {
+		return &platformclientv2.Domainentityref{Id: &v}
+	}
+	return nil
+}

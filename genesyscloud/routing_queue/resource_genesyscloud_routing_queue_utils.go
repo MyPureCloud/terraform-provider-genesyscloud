@@ -209,16 +209,16 @@ func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemedia
 }
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
+	if len(settings) == 0 {
+		return nil
+	}
 	settingsMap, mapOk := settings[0].(map[string]interface{})
 	fmt.Printf("%v", settingsMap)
 	if !mapOk {
 		return nil
 	}
-	var callbackSettings platformclientv2.Callbackmediasettings
 
-	if alertingTimeoutSeconds, ok := settingsMap["alerting_timeout_sec"].(int); ok {
-		callbackSettings.AlertingTimeoutSeconds = &alertingTimeoutSeconds
-	}
+	var callbackSettings platformclientv2.Callbackmediasettings
 
 	if serviceLevelPercentage, ok := settingsMap["service_level_percentage"].(float64); ok {
 		callbackSettings.ServiceLevel = &platformclientv2.Servicelevel{
@@ -233,25 +233,19 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 		callbackSettings.ServiceLevel.DurationMs = &serviceLevelDurationMs
 	}
 
-	if enableAutoAnswer, ok := settingsMap["enable_auto_answer"].(bool); ok {
-		callbackSettings.EnableAutoAnswer = &enableAutoAnswer
-	}
-
-	if autoEndDelaySeconds, ok := settingsMap["auto_end_delay_seconds"].(int); ok {
-		callbackSettings.AutoEndDelaySeconds = &autoEndDelaySeconds
-	}
-
-	if autoDialDelaySeconds, ok := settingsMap["auto_dial_delay_seconds"].(int); ok {
-		callbackSettings.AutoDialDelaySeconds = &autoDialDelaySeconds
-	}
-
-	if enableAutoDialAndEnd, ok := settingsMap["enable_auto_dial_and_end"].(bool); ok {
-		callbackSettings.EnableAutoDialAndEnd = &enableAutoDialAndEnd
-	}
-
-	if mode, ok := settingsMap["mode"].(string); ok && mode != "" {
-		callbackSettings.Mode = &mode
-	}
+	callbackSettings.AlertingTimeoutSeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "alerting_timeout_sec", true)
+	callbackSettings.EnableAutoAnswer = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_auto_answer", true)
+	callbackSettings.AutoEndDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "auto_end_delay_seconds", true)
+	callbackSettings.AutoDialDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "auto_dial_delay_seconds", true)
+	callbackSettings.EnableAutoDialAndEnd = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_auto_dial_and_end", true)
+	callbackSettings.Mode = resourcedata.GetNillableValueFromMap[string](settingsMap, "mode", false)
+	callbackSettings.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", true)
+	callbackSettings.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", true)
+	callbackSettings.PacingModifier = resourcedata.GetNillableValueFromMap[float64](settingsMap, "pacing_modifier", false)
+	callbackSettings.LiveVoiceReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "live_voice_reaction_type", false)
+	callbackSettings.LiveVoiceFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "live_voice_flow_id")
+	callbackSettings.AnsweringMachineReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "answering_machine_reaction_type", false)
+	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
 
 	if liveVoiceFlowId, ok := settingsMap["live_voice_flow_id"].(string); ok && liveVoiceFlowId != "" {
 		callbackSettings.LiveVoiceFlow = util.BuildSdkDomainEntityRefFromVal(liveVoiceFlowId)
@@ -673,10 +667,14 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_end_delay_seconds", settings.AutoEndDelaySeconds)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_dial_delay_seconds", settings.AutoDialDelaySeconds)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "mode", settings.Mode)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "pacing_modifier", settings.PacingModifier)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "live_voice_reaction_type", settings.LiveVoiceReactionType)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "live_voice_flow_id", settings.LiveVoiceFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "answering_machine_reaction_type", settings.AnsweringMachineReactionType)
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
-	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "live_voice_flow_id", settings.LiveVoiceFlow)
+
 
 	return []interface{}{settingsMap}
 }
