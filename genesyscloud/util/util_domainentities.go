@@ -15,6 +15,10 @@ func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformcli
 	return &platformclientv2.Domainentityref{Id: &idVal}
 }
 
+func BuildSdkDomainEntityRefFromVal(idVal string) *platformclientv2.Domainentityref {
+	return &platformclientv2.Domainentityref{Id: &idVal}
+}
+
 func BuildSdkWebdeploymentFlowEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Webdeploymentflowentityref {
 	idVal := d.Get(idAttr).(string)
 	if idVal == "" {

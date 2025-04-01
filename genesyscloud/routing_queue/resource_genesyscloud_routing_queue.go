@@ -132,8 +132,10 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	if sourceQueueId != "" {
 		createQueue.SourceQueueId = &sourceQueueId
 	}
-
 	log.Printf("Creating Routing Queue %s", *createQueue.Name)
+
+	fmt.Printf("Creating Routing Queue %v", &createQueue)
+	fmt.Printf("Creating Routing Queue %v", createQueue)
 
 	queue, resp, err := proxy.createRoutingQueue(ctx, &createQueue)
 	if err != nil {
