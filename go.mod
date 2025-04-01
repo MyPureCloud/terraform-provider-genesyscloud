@@ -2,6 +2,8 @@ module terraform-provider-genesyscloud
 
 go 1.23.0
 
+toolchain go1.24.1
+
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
@@ -15,7 +17,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v154 v154.0.0
 	github.com/nyaruka/phonenumbers v1.6.0
 	github.com/rjNemo/underscore v0.7.0
-	github.com/shirou/gopsutil/v4 v4.25.2
+	github.com/shirou/gopsutil/v4 v4.25.3
 	github.com/zclconf/go-cty v1.16.2
 	gonum.org/v1/gonum v0.16.0
 )
