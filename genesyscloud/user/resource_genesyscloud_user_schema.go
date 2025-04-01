@@ -33,18 +33,18 @@ var (
 				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"media_type": {
-				Description:  "Media type of phone number (SMS | PHONE).",
+				Description:  "Media type of phone number (SMS | PHONE | EMAIL).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "PHONE",
-				ValidateFunc: validation.StringInSlice([]string{"PHONE", "SMS"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"PHONE", "SMS", "EMAIL"}, false),
 			},
 			"type": {
-				Description:  "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE | OTHER).",
+				Description:  "Type of number (PRIMARY | WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE | MAIN | OTHER).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "WORK",
-				ValidateFunc: validation.StringInSlice([]string{"WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE", "OTHER"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"PRIMARY", "WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE", "MAIN", "OTHER"}, false),
 			},
 			"extension": {
 				Description: "Phone number extension",
