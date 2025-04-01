@@ -8,8 +8,8 @@ import (
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"terraform-provider-genesyscloud/genesyscloud/location"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
 	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	outboundMessagingcampaign "terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -230,7 +230,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					nil,
 					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -301,7 +301,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{strconv.Quote("en-us")},
 					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -372,7 +372,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					nil,
 					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
@@ -876,7 +876,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{strconv.Quote("language")},
 						util.FalseValue, // auto_answer
 						generatePhoneColumnNoTypeBlock("Cell"),
-						outbound.GenerateOutboundMessagingCampaignContactSort(
+						outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
 							contactSortDirection,
 							contactSortNumeric,
