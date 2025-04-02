@@ -80,27 +80,27 @@ func ValidateStringInArray(resourcePath string, attrName string, value string) r
 	}
 }
 
-// The 'TestCheckResourceAttrPair' version of ValidateStringInArray
+// ValidateResourceAttributeInArray is the 'TestCheckResourceAttrPair' equivalent of ValidateStringInArray
 func ValidateResourceAttributeInArray(resource1Name string, arrayAttrName, resource2Name string, valueAttrName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		valueResourceState, ok := state.RootModule().Resources[resource2Name]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resource2Name)
+			return fmt.Errorf("failed to find resourceState %s in state", resource2Name)
 		}
 		resourceID := valueResourceState.Primary.ID
 		value, ok := valueResourceState.Primary.Attributes[valueAttrName]
 		if !ok {
-			return fmt.Errorf("No %s found for %s in state", valueAttrName, resourceID)
+			return fmt.Errorf("no %s found for %s in state", valueAttrName, resourceID)
 		}
 
 		arrayResourceState, ok := state.RootModule().Resources[resource1Name]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resource1Name)
+			return fmt.Errorf("failed to find resourceState %s in state", resource1Name)
 		}
 		resource2ID := arrayResourceState.Primary.ID
 		numAttr, ok := arrayResourceState.Primary.Attributes[arrayAttrName+".#"]
 		if !ok {
-			return fmt.Errorf("No %s found for %s in state", arrayAttrName, resource2ID)
+			return fmt.Errorf("no %s found for %s in state", arrayAttrName, resource2ID)
 		}
 
 		numValues, _ := strconv.Atoi(numAttr)
@@ -111,7 +111,7 @@ func ValidateResourceAttributeInArray(resource1Name string, arrayAttrName, resou
 			}
 		}
 
-		return fmt.Errorf("%s %s not found for group %s in state", arrayAttrName, value, resourceID)
+		return fmt.Errorf("%s %s not found for resource %s in state", arrayAttrName, value, resourceID)
 	}
 }
 
