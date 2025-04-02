@@ -126,16 +126,16 @@ func deleteOrganizationPresenceDefinition(ctx context.Context, d *schema.Resourc
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		organizationPresenceDefinition, resp, err := proxy.getOrganizationPresenceDefinitionById(ctx, d.Id())
 
-		if err == nil {
-			// A delete for this api is actually just a deactivation
-			if *organizationPresenceDefinition.Deactivated {
-				log.Printf("Deleted organization presence definition %s", d.Id())
-				return nil
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting organization presence definition %s: %s", d.Id(), err), resp))
+		if err != nil {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("organization presence definition %s still exists", d.Id()), resp))
+		}
+		// A delete for this api is actually just a deactivation
+		if organizationPresenceDefinition != nil && *organizationPresenceDefinition.Deactivated {
+			log.Printf("Deleted organization presence definition %s", d.Id())
+			return nil
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("organization presence definition %s still exists", d.Id()), resp))
+		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting organization presence definition %s: %s", d.Id(), "unknown error"), resp))
 	})
 }
 
