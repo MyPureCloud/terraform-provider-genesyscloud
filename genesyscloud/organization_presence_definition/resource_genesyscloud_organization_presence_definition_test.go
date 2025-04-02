@@ -23,9 +23,10 @@ func TestAccResourceOrganizationPresenceDefinition(t *testing.T) {
 	var (
 		codeResourceLabel1 = "organization-presence-definition1"
 		languageLabelEnus  = "From Keyboard " + uuid.NewString()
+		languageLabelEs    = "del teclado " + uuid.NewString()
 		languageLabels1    = map[string]string{"en_US": strconv.Quote(languageLabelEnus)}
 		languageLabelsStr1 = util.GenerateMapAttrWithMapProperties("language_labels", languageLabels1)
-		languageLabels2    = map[string]string{"en_US": strconv.Quote(languageLabelEnus), "es": strconv.Quote("del teclado")}
+		languageLabels2    = map[string]string{"en_US": strconv.Quote(languageLabelEnus), "es": strconv.Quote(languageLabelEs)}
 		languageLabelsStr2 = util.GenerateMapAttrWithMapProperties("language_labels", languageLabels2)
 		systemPresence     = "Away"
 	)
@@ -44,7 +45,7 @@ func TestAccResourceOrganizationPresenceDefinition(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.%", "1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.en_US", "From Keyboard"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.en_US", languageLabelEnus),
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "system_presence", systemPresence),
 				),
 			},
@@ -59,8 +60,8 @@ func TestAccResourceOrganizationPresenceDefinition(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.%", "2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.en_US", "From Keyboard"),
-					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.es", "del teclado"),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.en_US", languageLabelEnus),
+					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "language_labels.es", languageLabelEs),
 					resource.TestCheckResourceAttr(ResourceType+"."+codeResourceLabel1, "system_presence", systemPresence),
 				),
 			},
