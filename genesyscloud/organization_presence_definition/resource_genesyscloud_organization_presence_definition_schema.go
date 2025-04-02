@@ -1,8 +1,6 @@
 package organization_presence_definition
 
 import (
-	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -11,6 +9,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -86,7 +85,7 @@ func ResourceOrganizationPresenceDefinition() *schema.Resource {
 				Type:             schema.TypeMap,
 				Required:         true,
 				Elem:             &schema.Schema{Type: schema.TypeString},
-				ValidateDiagFunc: StringInMap(validLanguageLabels, true),
+				ValidateDiagFunc: validators.ValidateStringInMap(validLanguageLabels, true),
 			},
 			`system_presence`: {
 				Description:  `System presence to create presence definition for. Once presence definition is created, this cannot be changed. Valid presences: ` + strings.Join(validSystemPresences, `, `),
@@ -107,22 +106,6 @@ func ResourceOrganizationPresenceDefinition() *schema.Resource {
 			},
 		},
 	}
-}
-
-// Custom validator for language_labels
-func StringInMap(valid []string, ignoreCase bool) schema.SchemaValidateDiagFunc {
-	// Create the regular expression pattern
-	pattern := strings.Join(valid, "|")
-	if ignoreCase {
-		pattern = fmt.Sprintf(`(?i)^(%s)$`, pattern)
-	} else {
-		pattern = fmt.Sprintf(`^(%s)$`, pattern)
-	}
-
-	return validation.MapKeyMatch(
-		regexp.MustCompile(pattern),
-		fmt.Sprintf(`expected key to be one of ["%s"], got`, strings.Join(valid, `", "`)),
-	)
 }
 
 // OrganizationPresenceDefinitionExporter returns the resourceExporter object used to hold the genesyscloud_organization_presence_definition exporter's config
