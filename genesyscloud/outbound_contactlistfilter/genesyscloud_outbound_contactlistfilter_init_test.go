@@ -2,7 +2,7 @@ package outbound_contactlistfilter
 
 import (
 	"sync"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

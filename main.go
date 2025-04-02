@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	providerRegistrar "terraform-provider-genesyscloud/genesyscloud/provider_registrar"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )

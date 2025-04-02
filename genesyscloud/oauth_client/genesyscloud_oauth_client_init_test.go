@@ -2,7 +2,7 @@ package oauth_client
 
 import (
 	"sync"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

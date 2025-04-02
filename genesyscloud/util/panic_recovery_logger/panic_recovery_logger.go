@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
-	tfExporterState "terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	tfExporterState "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 )
 
 type PanicRecoveryLogger struct {

@@ -2,8 +2,8 @@ package orgauthorization_pairing
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/group"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

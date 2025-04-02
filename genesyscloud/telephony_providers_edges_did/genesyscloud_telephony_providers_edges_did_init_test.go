@@ -2,8 +2,8 @@ package telephony_providers_edges_did
 
 import (
 	"sync"
-	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
-	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

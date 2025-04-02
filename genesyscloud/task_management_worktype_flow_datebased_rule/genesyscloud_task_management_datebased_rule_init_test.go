@@ -2,8 +2,8 @@ package task_management_worktype_flow_datebased_rule
 
 import (
 	"sync"
-	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

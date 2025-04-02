@@ -3,7 +3,7 @@ package panic_recovery_logger
 import (
 	"fmt"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"testing"
 )
 

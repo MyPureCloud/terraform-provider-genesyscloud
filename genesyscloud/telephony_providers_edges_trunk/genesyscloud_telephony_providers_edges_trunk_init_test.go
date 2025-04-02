@@ -2,10 +2,10 @@ package telephony_providers_edges_trunk
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

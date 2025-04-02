@@ -2,7 +2,7 @@ package flow_milestone
 
 import (
 	"sync"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"

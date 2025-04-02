@@ -2,9 +2,9 @@ package routing_queue_outbound_email_address
 
 import (
 	"sync"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 

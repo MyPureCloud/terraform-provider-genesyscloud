@@ -15,16 +15,17 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	rRegistrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
 	"github.com/google/uuid"
@@ -238,6 +239,44 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// step #8 Verify the terraform state file with Exporter Resources
 	diagErr = append(diagErr, g.verifyTerraformState()...)
 	return diagErr
+}
+
+func (g *GenesysCloudResourceExporter) ExportForMrMo() (_ map[string]resourceJSONMaps, diags diag.Diagnostics) {
+	exporters := make(map[string]*resourceExporter.ResourceExporter)
+	exporters["genesyscloud_group"] = providerRegistrar.GetResourceExporterByResourceType()
+	g.exporters = &exporters
+
+	// Step #2 Retrieve all the individual resources we are going to export
+	diags = append(diags, g.retrieveSanitizedResourceMaps()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// Step #3 Retrieve the individual genesys cloud object instances
+	diags = append(diags, g.retrieveGenesysCloudObjectInstances()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// Step #4 export dependent resources for the flows
+	diags = append(diags, g.buildAndExportDependsOnResourcesForFlows()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// Step #5 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
+	diags = append(diags, g.buildResourceConfigMap()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	//// Step #6 export dependents for other resources
+	//diags = append(diags, g.buildAndExportDependentResources()...)
+	//if diags.HasError() {
+	//	return diags
+	//}
+
+	return g.resourceTypesMaps, diags
 }
 
 func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagnostics) {

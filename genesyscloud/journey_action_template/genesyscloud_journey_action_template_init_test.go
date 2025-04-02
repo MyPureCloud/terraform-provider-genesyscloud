@@ -3,9 +3,9 @@ package journey_action_template
 import (
 	"log"
 	"sync"
-	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
-	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
+	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

@@ -2,7 +2,7 @@ package webdeployments_deployment
 
 import (
 	"sync"
-	webDeployConfig "terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
+	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

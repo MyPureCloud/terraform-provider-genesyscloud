@@ -2,9 +2,9 @@ package integration
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/group"
-	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

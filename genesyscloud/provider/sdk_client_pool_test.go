@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 	"time"
 

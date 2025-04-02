@@ -3,7 +3,7 @@ package telephony_providers_edges_did
 import (
 	"context"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )

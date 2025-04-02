@@ -2,10 +2,10 @@ package routing_skill_group
 
 import (
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
