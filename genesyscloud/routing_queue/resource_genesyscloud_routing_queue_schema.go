@@ -627,7 +627,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"groups":                                   {RefType: group.ResourceType},
 			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
 			"direct_routing.backup_queue_id":           {RefType: ResourceType},
-			"canned_response_libraries.library_ids":    {RefType: responseManagementLibrary.ResourceType},
+			"canned_response_libraries.library_ids.*":  {RefType: responseManagementLibrary.ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},
