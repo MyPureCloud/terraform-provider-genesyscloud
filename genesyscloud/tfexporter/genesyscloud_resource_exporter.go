@@ -4,6 +4,16 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"hash/fnv"
 	"io"
 	"log"
@@ -15,17 +25,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
 	"github.com/google/uuid"
@@ -241,9 +240,9 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	return diagErr
 }
 
-func (g *GenesysCloudResourceExporter) ExportForMrMo() (_ map[string]resourceJSONMaps, diags diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *resourceExporter.ResourceExporter) (_ map[string]resourceJSONMaps, diags diag.Diagnostics) {
 	exporters := make(map[string]*resourceExporter.ResourceExporter)
-	exporters["genesyscloud_group"] = providerRegistrar.GetResourceExporterByResourceType()
+	exporters[resType] = exporter
 	g.exporters = &exporters
 
 	// Step #2 Retrieve all the individual resources we are going to export
@@ -331,7 +330,7 @@ func formatFilter(filter []string) []string {
 	return newFilter
 }
 
-// retrieveSanitizedResourceMaps will retrieve a list of all of the resources to be exported.  It will also apply a filter (e.g the :: ) and only return the specific Genesys Cloud
+// retrieveSanitizedResourceMaps will retrieve a list of all resources to be exported.  It will also apply a filter (e.g the :: ) and only return the specific Genesys Cloud
 // resources that are specified via :: delimiter
 func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr diag.Diagnostics) {
 	log.Printf("Retrieving map of Genesys Cloud resources to export")
@@ -355,18 +354,20 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 		}
 	}
 
-	//Retrieve a map of all of the objects we are going to build.  Apply the filter that will remove specific classes of an object
+	//Retrieve a map of all objects we are going to build.  Apply the filter that will remove specific classes of an object
+	log.Println("Building sanitized resource maps")
 	diagErr = g.buildSanitizedResourceMaps(*g.exporters, newFilter, g.logPermissionErrors)
-	if diagErr != nil {
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	//Check to see if we found any exporters.  If we did find the exporter
 	if len(*g.exporters) == 0 {
-		return diag.Errorf("No valid resource types to export.")
+		diagErr = append(diagErr, diag.Errorf("No valid resource types to export.")...)
+		return diagErr
 	}
 
-	return nil
+	return diagErr
 }
 
 // retrieveGenesysCloudObjectInstances will take a list of exporters and then return the actual terraform Genesys Cloud data
@@ -965,11 +966,17 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	maxClients := g.meta.(*provider.ProviderMeta).MaxClients
 	sem := make(chan struct{}, maxClients)
 
+	fmt.Println("1a")
+
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
+		fmt.Println("2a")
 		wg.Add(1)
+		fmt.Println("3a")
 		go func(resourceType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
+
+			fmt.Println("4a")
 
 			// Acquire semaphore
 			select {
@@ -978,6 +985,8 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			case <-ctx.Done():
 				return
 			}
+
+			fmt.Println("5a")
 
 			log.Printf("Getting all resources for type %s", resourceType)
 			exporter.FilterResource = g.resourceFilter
@@ -1007,6 +1016,8 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), resourceType)
 		}(resourceType, exporter)
 	}
+
+	fmt.Println("6a")
 
 	go func() {
 		wg.Wait()
