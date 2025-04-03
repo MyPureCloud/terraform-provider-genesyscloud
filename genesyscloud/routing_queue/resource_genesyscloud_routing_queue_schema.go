@@ -664,7 +664,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"groups":                                            {RefType: group.ResourceType},
 			"conditional_group_routing_rules.queue_id":          {RefType: ResourceType},
 			"direct_routing.backup_queue_id":                    {RefType: ResourceType},
-			"canned_response_libraries.library_ids.*":           {RefType: responseManagementLibrary.ResourceType},
+			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
 		},
