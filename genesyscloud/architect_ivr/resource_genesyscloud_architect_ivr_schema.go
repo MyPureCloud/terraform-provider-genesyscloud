@@ -65,7 +65,7 @@ func ResourceArchitectIvrConfig() *schema.Resource {
 				Description: fmt.Sprintf("The phone number(s) to contact the IVR by. Each phone number in the array must be in an E.164 number format. (Note: An array with a length greater than %v will be broken into chunks and uploaded in subsequent PUT requests.)", maxDnisPerRequest),
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    false,
 				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePhoneNumber},
 			},
 			"open_hours_flow_id": {
