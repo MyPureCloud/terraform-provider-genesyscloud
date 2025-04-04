@@ -139,6 +139,28 @@ var (
 			"enable_auto_answer":        queueMediaSettingsResource.Schema["enable_auto_answer"],
 			"service_level_percentage":  queueMediaSettingsResource.Schema["service_level_percentage"],
 			"service_level_duration_ms": queueMediaSettingsResource.Schema["service_level_duration_ms"],
+			"live_voice_reaction_type": {
+				Description:  "The action to take if a live voice is detected during the outbound call of a customer first callback.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"HangUp", "TransferToQueue", "TransferToFlow"}, false),
+			},
+			"answering_machine_reaction_type": {
+				Description:  "The action to take if an answering machine is detected during the outbound call of a customer first callback.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"HangUp", "TransferToQueue", "TransferToFlow"}, false),
+			},
+			"live_voice_flow_id": {
+				Description: "The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"answering_machine_flow_id": {
+				Description: "The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"mode": {
 				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,

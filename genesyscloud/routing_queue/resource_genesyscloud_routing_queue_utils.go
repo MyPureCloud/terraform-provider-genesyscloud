@@ -213,6 +213,7 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 		return nil
 	}
 	settingsMap, mapOk := settings[0].(map[string]interface{})
+	fmt.Printf("%v", settingsMap)
 	if !mapOk {
 		return nil
 	}
@@ -245,6 +246,22 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.LiveVoiceFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "live_voice_flow_id")
 	callbackSettings.AnsweringMachineReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "answering_machine_reaction_type", false)
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
+
+	if liveVoiceFlowId, ok := settingsMap["live_voice_flow_id"].(string); ok && liveVoiceFlowId != "" {
+		callbackSettings.LiveVoiceFlow = util.BuildSdkDomainEntityRefFromVal(liveVoiceFlowId)
+	}
+
+	if answeringMachineFlowId, ok := settingsMap["answering_machine_flow_id"].(string); ok && answeringMachineFlowId != "" {
+		callbackSettings.AnsweringMachineFlow = util.BuildSdkDomainEntityRefFromVal(answeringMachineFlowId)
+	}
+
+	if liveVoiceReactionType, ok := settingsMap["live_voice_reaction_type"].(string); ok && liveVoiceReactionType != "" {
+		callbackSettings.LiveVoiceReactionType = &liveVoiceReactionType
+	}
+
+	if answeringMachineReactionType, ok := settingsMap["answering_machine_reaction_type"].(string); ok && answeringMachineReactionType != "" {
+		callbackSettings.AnsweringMachineReactionType = &answeringMachineReactionType
+	}
 
 	return &callbackSettings
 }
@@ -642,7 +659,6 @@ func flattenAgentOwnedRouting(settings *platformclientv2.Agentownedrouting) []in
 
 func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
-
 	resourcedata.SetMapValueIfNotNil(settingsMap, "alerting_timeout_sec", settings.AlertingTimeoutSeconds)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
@@ -658,6 +674,7 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "live_voice_flow_id", settings.LiveVoiceFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "answering_machine_reaction_type", settings.AnsweringMachineReactionType)
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
+
 
 	return []interface{}{settingsMap}
 }
@@ -1011,6 +1028,25 @@ func GenerateQueueWrapupCodes(wrapupCodes ...string) string {
 	return fmt.Sprintf(`
 		wrapup_codes = [%s]
 	`, strings.Join(wrapupCodes, ", "))
+}
+
+func GenerateMediaSettingsCallBackOptions(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableAutoDial string, autoEndDelay string, autoDailDelay string, answeringMachineReactionType string, liveVoiceType string, liveVoiceFlowId string, nestedBlocks ...string) string {
+	msg := fmt.Sprintf(`%s {
+		alerting_timeout_sec = %s
+		enable_auto_answer = %s
+		service_level_percentage = %s
+		service_level_duration_ms = %s
+		enable_auto_dial_and_end = %s
+		auto_end_delay_seconds = %s
+		auto_dial_delay_seconds = %s
+		answering_machine_reaction_type = "%s"
+		live_voice_reaction_type = "%s"
+		live_voice_flow_id = %s
+		%s
+	}
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay, answeringMachineReactionType, liveVoiceType, liveVoiceFlowId, strings.Join(nestedBlocks, "\n"))
+	fmt.Printf(msg)
+	return msg
 }
 
 func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Queue {

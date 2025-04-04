@@ -1257,6 +1257,200 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueCallBackOptions(t *testing.T) {
+	var (
+		queueResourceLabel1         = "test-queue"
+		queueName1                  = "Terraform Test Queue1-" + uuid.NewString()
+		queueName2                  = "Terraform Test Queue2-" + uuid.NewString()
+		queueDesc1                  = "This is a test"
+		queueDesc2                  = "This is still a test"
+		alertTimeout1               = "7"
+		alertTimeout2               = "100"
+		slPercent1                  = "0.5"
+		slPercent2                  = "0.9"
+		slDuration1                 = "1000"
+		slDuration2                 = "10000"
+		wrapupPromptOptional        = "OPTIONAL"
+		wrapupPromptMandTimeout     = "MANDATORY_TIMEOUT"
+		routingRuleOpAny            = "ANY"
+		routingRuleOpMeetsThresh    = "MEETS_THRESHOLD"
+		skillEvalAll                = "ALL"
+		skillEvalBest               = "BEST"
+		callingPartyName            = "Acme"
+		callingPartyNumber          = "3173416548"
+		scoringMethod               = "TimestampAndPriority"
+		queueSkillResourceLabel     = "test-queue-skill"
+		queueSkillName              = "Terraform Skill " + uuid.NewString()
+		queueFlowResourceLabel1     = "test_flow1"
+		bullseyeMemberGroupLabel    = "test-group"
+		bullseyeMemberGroupType     = "GROUP"
+		testUserResourceLabel       = "user_resource1"
+		testUserName                = "nameUser1" + uuid.NewString()
+		testUserEmail               = uuid.NewString() + "@examplestest.com"
+		callbackHours               = "7"
+		callbackHours2              = "7"
+		callbackModeCustomerFirst   = "CustomerFirst"
+		userID                      string
+		groupName                   = "MySeries6Groupv20_" + uuid.NewString()
+		queueFlowName1              = "Terraform Flow Test-" + uuid.NewString()
+		queueFlowFilePath1          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		queueFlowInboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
+		voiceFlowRef                = "genesyscloud_flow." + queueFlowResourceLabel1 + ".id"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: architect_flow.GenerateFlowResource(
+					queueFlowResourceLabel1,
+					queueFlowFilePath1,
+					queueFlowInboundcallConfig1,
+					false,
+				) + generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + routingSkill.GenerateRoutingSkillResource(queueSkillResourceLabel, queueSkillName) +
+					group.GenerateGroupResource(
+						bullseyeMemberGroupLabel,
+						groupName,
+						strconv.Quote("TestGroupForSeries6"),
+						util.NullValue, // Default type
+						util.NullValue, // Default visibility
+						util.NullValue, // Default rules_visible
+						group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					) + GenerateRoutingQueueResource(
+					queueResourceLabel1,
+					queueName1,
+					queueDesc1,
+					util.NullValue,               // MANDATORY_TIMEOUT
+					"200000",                     // acw_timeout
+					util.NullValue,               // ALL
+					util.NullValue,               // auto_answer_only true
+					util.NullValue,               // No calling party name
+					util.NullValue,               // No calling party number
+					util.NullValue,               // enable_audio_monitoring false
+					util.FalseValue,              // suppress_in_queue_call_recording false
+					util.NullValue,               // enable_manual_assignment false
+					util.NullValue,               // enable_transcription false
+					strconv.Quote(scoringMethod), // scoring Method
+					util.NullValue,
+					util.NullValue,
+					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
+					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettingsCallBackOptions("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue, slDuration1, slDuration1, "HangUp", "TransferToFlow", voiceFlowRef, "mode="+strconv.Quote(callbackModeCustomerFirst)),
+					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
+					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
+					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "name", queueName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "description", queueDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "acw_wrapup_prompt", wrapupPromptMandTimeout),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "acw_timeout_ms", "200000"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "skill_evaluation_method", skillEvalAll),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "auto_answer_only", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeCustomerFirst),
+					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
+					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResourceLabel1, "media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResourceLabel1, "media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
+					validateMediaSettings(queueResourceLabel1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					validateBullseyeSettings(queueResourceLabel1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResourceLabel),
+					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpAny, "50", "5"),
+					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResourceLabel]
+						if !ok {
+							return fmt.Errorf("not found: %s", "genesyscloud_user."+testUserResourceLabel)
+						}
+						userID = rs.Primary.ID
+						log.Printf("User ID: %s\n", userID) // Print user ID
+						return nil
+					},
+				),
+			},
+			{
+				// Update
+				Config: GenerateRoutingQueueResource(
+					queueResourceLabel1,
+					queueName2,
+					queueDesc2,
+					strconv.Quote(wrapupPromptOptional),
+					util.NullValue, // acw_timeout
+					strconv.Quote(skillEvalBest),
+					util.FalseValue, // auto_answer_only false
+					strconv.Quote(callingPartyName),
+					strconv.Quote(callingPartyNumber),
+					util.TrueValue, // suppress_in_queue_call_recording true
+					util.TrueValue, // enable_audio_monitoring true
+					util.TrueValue, // enable_manual_assignment true
+					util.TrueValue, // enable_transcription true
+					strconv.Quote(scoringMethod),
+					util.NullValue,
+					util.NullValue,
+					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
+					GenerateMediaSettings("media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2, "mode = "+util.NullValue),
+					GenerateMediaSettings("media_settings_chat", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_email", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					GenerateMediaSettings("media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					GenerateBullseyeSettings(alertTimeout2),
+					GenerateBullseyeSettings(alertTimeout2),
+					GenerateBullseyeSettings(alertTimeout2),
+					GenerateRoutingRules(routingRuleOpMeetsThresh, "90", "30"),
+					GenerateRoutingRules(routingRuleOpAny, "45", "15"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "name", queueName2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "description", queueDesc2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "acw_wrapup_prompt", wrapupPromptOptional),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "skill_evaluation_method", skillEvalBest),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "auto_answer_only", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_name", callingPartyName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_number", callingPartyNumber),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "scoring_method", scoringMethod),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", "AgentFirst"),
+					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
+					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResourceLabel1, "media_settings_chat", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResourceLabel1, "media_settings_email", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					validateMediaSettings(queueResourceLabel1, "media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					validateBullseyeSettings(queueResourceLabel1, 3, alertTimeout2, ""),
+					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpMeetsThresh, "90", "30"),
+					validateRoutingRules(queueResourceLabel1, 1, routingRuleOpAny, "45", "15"),
+					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
+					func(s *terraform.State) error {
+						time.Sleep(3 * time.Second) // Wait for 3 seconds for resources to get deleted properly
+						return nil
+					},
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					checkUserDeleted(userID),
+				),
+			},
+		},
+		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
+	})
+}
+
 // TestAccResourceRoutingQueueMembersOutsideOfConfig
 // Creates a queue and a user, and then adds the user to that queue outside Terraform.
 // On the next apply, we expect an empty plan and therefore no errors (achieved through 'members' being a computed field)
