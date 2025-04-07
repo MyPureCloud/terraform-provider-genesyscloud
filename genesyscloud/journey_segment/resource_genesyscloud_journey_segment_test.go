@@ -16,6 +16,9 @@ import (
 )
 
 func TestAccResourceJourneySegment(t *testing.T) {
+	if !assignmentExpirationFeatureToggleIsEnabled() {
+		t.Skip("assignmentExpirationDays is still behind a feature toggle")
+	}
 	runResourceJourneySegmentTestCase(t, "basic_attributes")
 }
 
@@ -105,4 +108,48 @@ func testVerifyJourneySegmentsDestroyed(state *terraform.State) error {
 	}
 	// Success. All Journey segment destroyed
 	return nil
+}
+
+// assignmentExpirationFeatureToggleIsEnabled checks if the assignmentExpirationDays field is still behind
+// a feature toggle by attempting to create a journey segment with only this field.
+//
+// The function works by:
+// 1. Making a POST request to create a journey segment with only assignmentExpirationDays field
+// 2. If the feature toggle is disabled (field is restricted):
+//   - The request will return a 501 status code (Not Implemented)
+//   - Function returns false
+//
+// 3. If the feature toggle is enabled (field is available):
+//   - The request will return a different status code (likely 400 for invalid request)
+//   - Function returns true
+//
+// 4. If the request somehow succeeds, the created segment is cleaned up and function returns true
+//
+// Returns:
+//   - bool: true if the feature toggle is enabled (field is not restricted), false otherwise
+//
+// Note: This function uses an intentionally invalid request body to test the feature toggle.
+// When the toggle is disabled, the API returns 501 instead of 400
+func assignmentExpirationFeatureToggleIsEnabled() bool {
+	journeyApi := platformclientv2.NewJourneyApiWithConfig(sdkConfig)
+	body := platformclientv2.Journeysegmentrequest{
+		AssignmentExpirationDays: platformclientv2.Int(2),
+	}
+
+	log.Printf("Checking if assignmentExpirationDays is still behind a feature toggle")
+	data, response, postErr := journeyApi.PostJourneySegments(body)
+	if postErr != nil && response != nil {
+		log.Printf("Received status code %d. Error: %s", response.StatusCode, postErr.Error())
+		return response.StatusCode != 501
+	}
+
+	if data != nil && data.Id != nil {
+		log.Printf("Deleting journey %s", *data.Id)
+		_, deleteErr := journeyApi.DeleteJourneySegment(*data.Id)
+		if deleteErr != nil {
+			log.Printf("Failed to delete journey %s: %s", *data.Id, deleteErr.Error())
+		}
+	}
+
+	return true
 }
