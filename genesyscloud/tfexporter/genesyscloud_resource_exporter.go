@@ -246,13 +246,13 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *r
 	g.exporters = &exporters
 
 	// Step #2 Retrieve all the individual resources we are going to export
-	diags = append(diags, g.retrieveSanitizedResourceMaps()...)
+	diags = append(diags, g.retrieveSanitizedResourceMapsForMrMo()...)
 	if diags.HasError() {
 		return nil, diags
 	}
 
 	// Step #3 Retrieve the individual genesys cloud object instances
-	diags = append(diags, g.retrieveGenesysCloudObjectInstances()...)
+	diags = append(diags, g.retrieveGenesysCloudObjectInstancesForMrMo()...)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -370,6 +370,45 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 	return diagErr
 }
 
+// retrieveSanitizedResourceMapsForMrMo will retrieve a list of all resources to be exported.
+func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMapsForMrMo() (diagErr diag.Diagnostics) {
+	log.Printf("Retrieving map of Genesys Cloud resources to export")
+	var filter []string
+	if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	newFilter := make([]string, 0)
+	for _, f := range filter {
+		if strings.Contains(f, "::") {
+			newFilter = append(newFilter, f)
+		}
+	}
+
+	//Retrieve a map of all objects we are going to build.  Apply the filter that will remove specific classes of an object
+	log.Println("Building sanitized resource maps")
+	diagErr = g.buildSanitizedResourceMapsForMrMo(*g.exporters, newFilter, g.logPermissionErrors)
+	if diagErr.HasError() {
+		return diagErr
+	}
+
+	//Check to see if we found any exporters.  If we did find the exporter
+	if len(*g.exporters) == 0 {
+		diagErr = append(diagErr, diag.Errorf("No valid resource types to export.")...)
+		return diagErr
+	}
+
+	return diagErr
+}
+
 // retrieveGenesysCloudObjectInstances will take a list of exporters and then return the actual terraform Genesys Cloud data
 func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() diag.Diagnostics {
 	log.Printf("Retrieving Genesys Cloud objects from Genesys Cloud")
@@ -414,6 +453,20 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		return err
 	}
 
+	return nil
+}
+
+// retrieveGenesysCloudObjectInstancesForMrMo will take a list the exporter and then return the actual terraform Genesys Cloud data
+func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstancesForMrMo() diag.Diagnostics {
+	log.Printf("Retrieving Genesys Cloud objects from Genesys Cloud")
+	for resType, exporter := range *g.exporters {
+		log.Printf("Getting exported resources for [%s]", resType)
+		typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
+		if err != nil {
+			return err
+		}
+		g.resources = append(g.resources, typeResources...)
+	}
 	return nil
 }
 
@@ -1036,6 +1089,31 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 		}()
 		return err
 	}
+}
+
+func (g *GenesysCloudResourceExporter) buildSanitizedResourceMapsForMrMo(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+	for resourceType, exporter := range exporters {
+		log.Printf("Getting all resources for type %s", resourceType)
+		exporter.FilterResource = g.resourceFilter
+
+		err := exporter.LoadSanitizedResourceMap(g.ctx, resourceType, filter)
+		if err == nil {
+			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), resourceType)
+			continue
+		}
+
+		if !containsPermissionsErrorOnly(err) {
+			return err
+		}
+
+		if logErrors {
+			log.Println(err)
+			log.Printf("Logging permission error for %s. Resuming export...", resourceType)
+			continue
+		}
+		return err
+	}
+	return nil
 }
 
 func mergeExporters(m1, m2 map[string]*resourceExporter.ResourceExporter) *map[string]*resourceExporter.ResourceExporter {
