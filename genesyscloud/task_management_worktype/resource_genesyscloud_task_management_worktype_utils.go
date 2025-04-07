@@ -27,10 +27,11 @@ type worktypeConfig struct {
 	defaultPriority     int
 	defaultTtlS         int
 
-	defaultLanguageId string
-	defaultQueueId    string
-	defaultSkillIds   []string
-	assignmentEnabled bool
+	defaultLanguageId            string
+	defaultQueueId               string
+	defaultSkillIds              []string
+	assignmentEnabled            bool
+	disableDefaultStatusCreation bool
 
 	schemaId      string
 	schemaVersion int
@@ -39,13 +40,13 @@ type worktypeConfig struct {
 // getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
 func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypecreate {
 	worktype := platformclientv2.Worktypecreate{
-		Name:                         platformclientv2.String(d.Get("name").(string)),
-		DivisionId:                   platformclientv2.String(d.Get("division_id").(string)),
-		Description:                  platformclientv2.String(d.Get("description").(string)),
-		DisableDefaultStatusCreation: platformclientv2.Bool(false),
-		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
-		SchemaId:                     resourcedata.GetNillableValue[string](d, "schema_id"),
-		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),
+		Name:        platformclientv2.String(d.Get("name").(string)),
+		DivisionId:  platformclientv2.String(d.Get("division_id").(string)),
+		Description: platformclientv2.String(d.Get("description").(string)),
+		DisableDefaultStatusCreation: platformclientv2.Bool(d.Get("disable_default_status_creation").(bool)),
+		DefaultWorkbinId: platformclientv2.String(d.Get("default_workbin_id").(string)),
+		SchemaId:         resourcedata.GetNillableValue[string](d, "schema_id"),
+		SchemaVersion:    resourcedata.GetNillableValue[int](d, "schema_version"),
 
 		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
 

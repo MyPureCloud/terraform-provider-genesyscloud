@@ -58,17 +58,17 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 
 		// Worktype
 		wtRes = worktypeConfig{
-			resourceLabel:    "worktype_1",
-			name:             "tf_worktype_" + uuid.NewString(),
-			description:      "worktype created for CX as Code test case",
-			divisionId:       fmt.Sprintf("data.genesyscloud_auth_division_home.%s.id", divDataLabel),
-			defaultWorkbinId: fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-
-			defaultDurationS:    86400,
-			defaultExpirationS:  86400,
-			defaultDueDurationS: 86400,
-			defaultPriority:     100,
-			defaultTtlS:         86400,
+			resourceLabel:                "worktype_1",
+			name:                         "tf_worktype_" + uuid.NewString(),
+			description:                  "worktype created for CX as Code test case",
+			divisionId:                   fmt.Sprintf("data.genesyscloud_auth_division_home.%s.id", divDataLabel),
+			defaultWorkbinId:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+			disableDefaultStatusCreation: true,
+			defaultDurationS:             86400,
+			defaultExpirationS:           86400,
+			defaultDueDurationS:          86400,
+			defaultPriority:              100,
+			defaultTtlS:                  86400,
 
 			defaultLanguageId: fmt.Sprintf("genesyscloud_routing_language.%s.id", langResourceLabel),
 			defaultQueueId:    fmt.Sprintf("genesyscloud_routing_queue.%s.id", queueResourceLabel),

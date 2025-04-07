@@ -1,4 +1,4 @@
-package task_management_worktype_status
+package task_management_worktype_status_transition
 
 import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
@@ -10,31 +10,31 @@ import (
 )
 
 /*
-resource_genesycloud_task_management_worktype_status_schema.go holds four functions within it:
+resource_genesycloud_task_management_worktype_status_transition_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the task_management_worktype_status resource.
-3.  The datasource schema definitions for the task_management_worktype_status datasource.
-4.  The resource exporter configuration for the task_management_worktype_status exporter.
+2.  The resource schema definitions for the task_management_worktype_status_transition resource.
+3.  The datasource schema definitions for the task_management_worktype_status_transition datasource.
+4.  The resource exporter configuration for the task_management_worktype_status_transition exporter.
 */
-const ResourceType = "genesyscloud_task_management_worktype_status"
+const ResourceType = "genesyscloud_task_management_worktype_status_transition"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceType, ResourceTaskManagementWorktypeStatus())
-	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementWorktypeStatus())
-	regInstance.RegisterExporter(ResourceType, TaskManagementWorktypeStatusExporter())
+	regInstance.RegisterResource(ResourceType, ResourceTaskManagementWorktypeStatusTransition())
+	regInstance.RegisterDataSource(ResourceType, DataSourceTaskManagementWorktypeStatusTransition())
+	regInstance.RegisterExporter(ResourceType, TaskManagementWorktypeStatusTransitionExporter())
 }
 
-// ResourceTaskManagementWorktypeStatus registers the genesyscloud_task_management_worktype_status resource with Terraform
-func ResourceTaskManagementWorktypeStatus() *schema.Resource {
+// ResourceTaskManagementWorktypeStatus registers the genesyscloud_task_management_worktype_status_transition resource with Terraform
+func ResourceTaskManagementWorktypeStatusTransition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management worktype status`,
 
-		CreateContext: provider.CreateWithPooledClient(createTaskManagementWorktypeStatus),
-		ReadContext:   provider.ReadWithPooledClient(readTaskManagementWorktypeStatus),
-		UpdateContext: provider.UpdateWithPooledClient(updateTaskManagementWorktypeStatus),
-		DeleteContext: provider.DeleteWithPooledClient(deleteTaskManagementWorktypeStatus),
+		CreateContext: provider.CreateWithPooledClient(createTaskManagementWorkTypeStatusTransition),
+		ReadContext:   provider.ReadWithPooledClient(readTaskManagementWorkTypeStatusTransition),
+		UpdateContext: provider.UpdateWithPooledClient(updateTaskManagementWorkTypeStatusTransition),
+		DeleteContext: provider.DeleteWithPooledClient(deleteTaskManagementWorkTypeStatusTransition),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -46,24 +46,11 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
-			`name`: {
+			`status_id`: {
 				Description:  `Name of the status.`,
 				Required:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringLenBetween(3, 256),
-			},
-			`category`: {
-				Description:  `The Category of the Status. Changing the category will cause the resource to be dropped and recreated with a new id.`,
-				Required:     true,
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"Open", "Waiting", "Closed", "InProgress"}, false),
-				ForceNew:     true,
-			},
-			`description`: {
-				Description:  `The description of the Status.`,
-				Optional:     true,
-				Type:         schema.TypeString,
-				ValidateFunc: validation.StringLenBetween(0, 4096),
 			},
 			`destination_status_ids`: {
 				Description: `A list of destination Statuses where a Workitem with this Status can transition to. If the list is empty Workitems with this Status can transition to all other Statuses defined on the Worktype. A Status can have a maximum of 24 destinations.`,
@@ -71,14 +58,14 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem: &schema.Schema{
 					Type:      schema.TypeString,
-					StateFunc: ModifyStatusIdStateValue,
+					StateFunc: modifyStatusIdStateValue,
 				},
 				MaxItems: 24,
 			},
 			`default_destination_status_id`: {
 				Description: `Default destination status to which this Status will transition to if auto status transition enabled.`,
 				Optional:    true,
-				StateFunc:   ModifyStatusIdStateValue,
+				StateFunc:   modifyStatusIdStateValue,
 				Type:        schema.TypeString,
 			},
 			`status_transition_delay_seconds`: {
@@ -92,27 +79,24 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`default`: {
-				Description: `This status is the default status for Workitems created from this Worktype. Only one status can be set as the default status at a time. Once set there must always be a default status. The default can not be deleted.`,
-				Optional:    true,
-				Type:        schema.TypeBool,
-			},
 		},
 	}
 }
 
-// TaskManagementWorktypeStatusExporter returns the resourceExporter object used to hold the genesyscloud_task_management_worktype_status exporter's config
-func TaskManagementWorktypeStatusExporter() *resourceExporter.ResourceExporter {
+// TaskManagementWorktypeStatusTransitionExporter returns the resourceExporter object used to hold the genesyscloud_task_management_worktype_status exporter's config
+func TaskManagementWorktypeStatusTransitionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorktypeStatuss),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorkTypeStatusTransition),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
+			"destination_status_ids.*": {RefType: "genesyscloud_task_management_worktype_status"},
+			"default_destination_status_id": {RefType: "genesyscloud_task_management_worktype_status"},
 		},
 	}
 }
 
-// DataSourceTaskManagementWorktypeStatus registers the genesyscloud_task_management_worktype_status data source
-func DataSourceTaskManagementWorktypeStatus() *schema.Resource {
+// DataSourceTaskManagementWorktypeStatusTransition registers the genesyscloud_task_management_worktype_status data source
+func DataSourceTaskManagementWorktypeStatusTransition() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud task management worktype status data source. Select an task management worktype status by name`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorktypeStatusRead),

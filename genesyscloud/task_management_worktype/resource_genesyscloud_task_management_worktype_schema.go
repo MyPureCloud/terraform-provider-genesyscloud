@@ -124,6 +124,13 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeInt,
 			},
+			`disable_default_status_creation`: {
+				Description: `Optionally set this flag to disable Default Status creation`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+				Default:     false,
+				Computed: true,
+			},
 		},
 	}
 }

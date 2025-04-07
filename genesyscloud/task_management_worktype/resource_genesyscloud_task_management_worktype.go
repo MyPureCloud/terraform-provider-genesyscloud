@@ -135,7 +135,7 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 func deleteTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetTaskManagementWorktypeProxy(sdkConfig)
-
+	fmt.Println("deletingg wtype")
 	resp, err := proxy.deleteTaskManagementWorktype(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management worktype %s error: %s", d.Id(), err), resp)

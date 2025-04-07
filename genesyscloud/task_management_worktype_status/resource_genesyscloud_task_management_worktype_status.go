@@ -166,6 +166,7 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 		}
 		resourcedata.SetNillableValue(d, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
 		resourcedata.SetNillableValue(d, "status_transition_time", workitemStatus.StatusTransitionTime)
+		//resourcedata.SetNillableReference(d, "disable_default_status_creation", nil)
 
 		// Check if this status is the default on the worktype
 		worktype, resp, err := proxy.worktypeProxy.GetTaskManagementWorktypeById(ctx, worktypeId)
@@ -259,7 +260,6 @@ func deleteTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
-
 	// Check if worktype exists before trying to check the status. If the worktype is gone then so it the status
 	_, resp, err := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
 	if err != nil {
