@@ -1,9 +1,10 @@
-package outbound
+package outbound_messagingcampaign
 
 import (
 	"fmt"
 	"os"
 	"strconv"
+	obDigRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -83,6 +84,14 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 				),
 			),
 		)
+
+		// Ruleset
+		digRuleSetResourceLabel   = "ruleset"
+		ruleSetName               = "a tf test digitalruleset " + uuid.NewString()
+		digitalRulesetResource, _ = obDigRuleset.GenerateSimpleOutboundDigitalRuleSet(
+			digRuleSetResourceLabel,
+			ruleSetName,
+		)
 	)
 
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
@@ -111,17 +120,18 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 				Config: contactListResource +
 					contactListFilterResource +
 					callableTimeSetResource +
+					digitalRulesetResource +
 					generateOutboundMessagingCampaignResource(
 						resourceLabel,
 						digitalCampaignName,
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
-						util.NullValue,
+						strconv.Quote("off"),
 						"10",
 						util.FalseValue,
 						"genesyscloud_outbound_callabletimeset."+callableTimeSetResourceLabel+".id",
 						[]string{},
 						[]string{"genesyscloud_outbound_contactlistfilter." + clfResourceLabel + ".id"},
-						[]string{}, // rule_set_ids
+						[]string{obDigRuleset.ResourceType + "." + digRuleSetResourceLabel + ".id"}, // rule_set_ids
 						generateOutboundMessagingCampaignSmsConfig(
 							column1,
 							column1,
@@ -137,6 +147,10 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 							"DESC",
 							util.TrueValue,
 						),
+						generateDynamicContactQueueingSettings(
+							util.FalseValue, // sort
+							util.FalseValue, // filter
+						),
 					) + generateOutboundMessagingCampaignDataSource(
 					dataSourceLabel,
 					digitalCampaignName,
@@ -144,7 +158,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_outbound_messagingcampaign."+dataSourceLabel, "id",
-						"genesyscloud_outbound_messagingcampaign."+resourceLabel, "id"),
+						ResourceType+"."+resourceLabel, "id"),
 				),
 			},
 		},

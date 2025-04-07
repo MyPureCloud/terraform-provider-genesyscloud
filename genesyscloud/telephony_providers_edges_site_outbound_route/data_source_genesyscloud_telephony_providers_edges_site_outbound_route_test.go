@@ -3,10 +3,10 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"fmt"
 	"strconv"
-	location "terraform-provider-genesyscloud/genesyscloud/location"
+	"terraform-provider-genesyscloud/genesyscloud/location"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -17,9 +17,6 @@ import (
 )
 
 func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
-
-	featureToggleCheck(t)
-
 	t.Parallel()
 	var (
 		outboundRouteResourceLabel1 = "outbound_route_1"
@@ -56,7 +53,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 			"46278",
 		))
 
-	trunkBaseSettings1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings1 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings1",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -64,7 +61,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 		"EXTERNAL",
 		false)
 
-	trunkBaseSettings2 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	trunkBaseSettings2 := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		"trunkBaseSettings2",
 		"test trunk base settings "+uuid.NewString(),
 		"test description",
@@ -144,9 +141,6 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 This test expects that the org has a product called "voice" enabled on it. If the test org does not have this product on it, the test can be skipped or ignored.
 */
 func TestAccDataSourceSiteManaged(t *testing.T) {
-	//t.Parallel()
-	featureToggleCheck(t)
-
 	var (
 		dataResourceLabel = "managed-site-data"
 		siteName          = "PureCloud Voice - AWS"

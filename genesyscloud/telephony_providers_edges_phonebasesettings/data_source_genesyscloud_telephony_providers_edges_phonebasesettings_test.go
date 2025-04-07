@@ -17,7 +17,6 @@ func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 		name                               = "test phone base settings " + uuid.NewString()
 		description                        = "test description"
 		phoneMetaBaseId                    = "generic_sip.json"
-		stationPersistTimeout              = "2000"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -29,7 +28,7 @@ func TestAccDataSourcePhoneBaseSettings(t *testing.T) {
 					phoneBaseSettingsResourceLabel,
 					name,
 					description,
-					phoneMetaBaseId, generateLineBase(stationPersistTimeout),
+					phoneMetaBaseId,
 				) + generatePhoneBaseSettingsDataSource(
 					phoneBaseSettingsDataResourceLabel,
 					name,

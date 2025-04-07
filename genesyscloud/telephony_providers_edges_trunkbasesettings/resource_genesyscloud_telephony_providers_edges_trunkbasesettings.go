@@ -1,4 +1,4 @@
-package telephony_provider_edges_trunkbasesettings
+package telephony_providers_edges_trunkbasesettings
 
 import (
 	"context"
@@ -222,23 +222,31 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var (
+		err  error
+		resp *platformclientv2.APIResponse
+	)
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTrunkBaseSettingProxy(sdkConfig)
-	log.Printf("Deleting trunk base settings for id %s\n", d.Id())
-	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
-		resp, err := proxy.DeleteTrunkBaseSetting(ctx, d.Id())
+	log.Printf("Deleting trunk base settings for id %s\n", d.Id())
+	deleteWithRetriesErr := util.WithRetries(ctx, 50*time.Second, func() *retry.RetryError {
+		resp, err = proxy.DeleteTrunkBaseSetting(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// trunk base settings not found, goal achieved!
-				return nil, nil
+				return nil
 			}
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete trunk base settings %s error: %s", d.Id(), err), resp)
+			if util.IsStatus400(resp) {
+				return retry.RetryableError(fmt.Errorf("failed to delete trunkbase setting %s due to 400 error: %w", d.Id(), err))
+			}
+			return retry.NonRetryableError(fmt.Errorf("failed to delete trunkbase setting %s: %w", d.Id(), err))
 		}
-		return resp, nil
+		return nil
 	})
-	if diagErr != nil {
-		return diagErr
+	if deleteWithRetriesErr.HasError() {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete trunk base settings %s error: %v", d.Id(), deleteWithRetriesErr), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

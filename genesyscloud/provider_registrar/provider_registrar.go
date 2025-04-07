@@ -60,7 +60,6 @@ import (
 	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
-	ob "terraform-provider-genesyscloud/genesyscloud/outbound"
 	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obCallResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
@@ -73,6 +72,7 @@ import (
 	obDigitalRuleSet "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDncList "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	obfst "terraform-provider-genesyscloud/genesyscloud/outbound_filespecificationtemplate"
+	obMessagingCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	obs "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	obSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	obSettings "terraform-provider-genesyscloud/genesyscloud/outbound_settings"
@@ -109,7 +109,6 @@ import (
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	worktypeStatusTransition "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status_transition"
 	"terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
@@ -120,6 +119,7 @@ import (
 	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	siteOutboundRoutes "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
+	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	tfexp "terraform-provider-genesyscloud/genesyscloud/tfexporter"
 	"terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -217,7 +217,7 @@ func registerResources() {
 	station.SetRegistrar(regInstance)                                      //Registering station
 	pat.SetRegistrar(regInstance)                                          //Registering process automation triggers
 	obs.SetRegistrar(regInstance)                                          //Resistering outbound ruleset
-	ob.SetRegistrar(regInstance)                                           //Registering outbound
+	obMessagingCampaign.SetRegistrar(regInstance)                          //Registering outbound messaging campaign
 	obwm.SetRegistrar(regInstance)                                         //Registering outbound wrapup code mappings
 	oAuthSettings.SetRegistrar(regInstance)                                //Registering organization authentication settings
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
@@ -271,7 +271,7 @@ func registerResources() {
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	externalUser.SetRegistrar(regInstance)                                 //Registering external user identity
 	team.SetRegistrar(regInstance)                                         //Registering team
-	telephony_provider_edges_trunkbasesettings.SetRegistrar(regInstance)   //Registering telephony_provider_edges_trunkbasesettings package
+	telephony_providers_edges_trunkbasesettings.SetRegistrar(regInstance)  //Registering telephony_providers_edges_trunkbasesettings package
 	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy

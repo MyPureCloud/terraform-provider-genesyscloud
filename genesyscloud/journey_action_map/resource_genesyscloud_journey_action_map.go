@@ -45,7 +45,7 @@ func createJourneyActionMap(ctx context.Context, d *schema.ResourceData, meta in
 	actionMapResponse, proxyResponse, err := proxy.createJourneyActionMap(ctx, actionMap)
 	if err != nil {
 		input, _ := util.InterfaceToJson(*actionMap)
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create journey action map %s: %s\n(input: %+v)", *actionMapResponse.DisplayName, err, input), proxyResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create journey action map %s: %s\n(input: %+v)", *actionMap.DisplayName, err, input), proxyResponse)
 	}
 
 	d.SetId(*actionMapResponse.Id)
