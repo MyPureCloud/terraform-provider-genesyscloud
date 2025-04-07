@@ -279,12 +279,11 @@ func buildCannedResponseLibraries(d *schema.ResourceData) *platformclientv2.Cann
 	if len(cannedResponseList) > 0 {
 		cannedResponseMap := cannedResponseList[0].(map[string]interface{})
 		resourcedata.BuildSDKStringValueIfNotNil(&cannedResponseSdk.Mode, cannedResponseMap, "mode")
-		if libraryIds, exists := cannedResponseMap["library_ids"].([]interface{}); exists {
-			libraryIdList := lists.InterfaceListToStrings(libraryIds)
+		if libraryIds, exists := cannedResponseMap["library_ids"].(*schema.Set); exists {
+			libraryIdList := lists.InterfaceListToStrings(libraryIds.List())
 			cannedResponseSdk.LibraryIds = &libraryIdList
 		}
 		return &cannedResponseSdk
-
 	}
 	return nil
 }
@@ -582,7 +581,7 @@ func flattenCannedResponse(cannedResponse *platformclientv2.Cannedresponselibrar
 	cannedResponseMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(cannedResponseMap, "mode", cannedResponse.Mode)
 	if cannedResponse.LibraryIds != nil {
-		cannedResponseMap["library_ids"] = lists.StringListToInterfaceList(*cannedResponse.LibraryIds)
+		cannedResponseMap["library_ids"] = lists.StringListToSet(*cannedResponse.LibraryIds)
 	}
 	cannedResponseList = append(cannedResponseList, cannedResponseMap)
 
