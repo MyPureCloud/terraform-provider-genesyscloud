@@ -31,12 +31,11 @@ func modifyStatusIdStateValue(id interface{}) string {
 // <worktypeId>/<statusId> into just the worktypeId and statusId string
 func splitWorktypeStatusTerraformId(id string) (worktypeId string, statusId string) {
 	idWithoutSuffix := strings.TrimSuffix(id, " transition")
-	//if (strings.Contains(idWithoutSuffix, "/") {
-	//
-	//} else
-	//return
-	fmt.Printf(idWithoutSuffix)
-	return strings.Split(idWithoutSuffix, "/")[0], strings.Split(idWithoutSuffix, "/")[1]
+	if strings.Contains(idWithoutSuffix, "/") {
+		return strings.Split(idWithoutSuffix, "/")[0], strings.Split(idWithoutSuffix, "/")[1]
+	} else {
+		return "", idWithoutSuffix
+	}
 }
 
 func fetchWorktypeStatusTerraformId(id string) (statusId string) {

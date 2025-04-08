@@ -166,7 +166,6 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 		}
 		resourcedata.SetNillableValue(d, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
 		resourcedata.SetNillableValue(d, "status_transition_time", workitemStatus.StatusTransitionTime)
-		//resourcedata.SetNillableReference(d, "disable_default_status_creation", nil)
 
 		// Check if this status is the default on the worktype
 		worktype, resp, err := proxy.worktypeProxy.GetTaskManagementWorktypeById(ctx, worktypeId)
