@@ -72,11 +72,11 @@ func TestAccDataSourceTaskManagementWorktypeStatus(t *testing.T) {
 						statusDataSourceLabel,
 						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						statusName,
-						ResourceType+"."+statusResourceLabel,
+						"genesyscloud_task_management_worktype_status"+"."+statusResourceLabel,
 					),
 				Check: resource.ComposeTestCheckFunc(
 					ValidateStatusIds(
-						fmt.Sprintf("data.%s.%s", ResourceType, statusDataSourceLabel), "id", fmt.Sprintf("%s.%s", ResourceType, statusResourceLabel), "id",
+						fmt.Sprintf("data.%s.%s", "genesyscloud_task_management_worktype_status", statusDataSourceLabel), "id", fmt.Sprintf("%s.%s", "genesyscloud_task_management_worktype_status", statusResourceLabel), "id",
 					),
 				),
 			},
@@ -90,7 +90,7 @@ func generateWorktypeStatusDataSource(dataSourceLabel string, worktypeId string,
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, ResourceType, dataSourceLabel, worktypeId, name, dependsOnResource)
+	`, "genesyscloud_task_management_worktype_status", dataSourceLabel, worktypeId, name, dependsOnResource)
 }
 
 func generateWorktypeStatusDataSourceForTransition(dataSourceLabel string, worktypeId string, name string) string {

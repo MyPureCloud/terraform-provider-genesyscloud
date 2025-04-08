@@ -89,7 +89,7 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 						"",
 						util.NullValue,
 						"",
-						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s", statusResourceLabel1),
+						"genesyscloud_task_management_worktype_status"+"."+statusResourceLabel1,
 						"default = false",
 					),
 				Check: resource.ComposeTestCheckFunc(
@@ -137,7 +137,7 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_task_management_worktype_status_transition" + statusResourceLabel1 + "transition",
+				ResourceName:      "genesyscloud_task_management_worktype_status_transition." + statusResourceLabel1 + "transition",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
