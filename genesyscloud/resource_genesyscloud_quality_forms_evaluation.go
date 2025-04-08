@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -266,12 +268,10 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	// Make sure form is properly created
 	time.Sleep(2 * time.Second)
 
-	formId := form.Id
-
 	// Publishing
 	if published {
-		_, resp, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
-			Id:        formId,
+		_, resp, err = qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
+			Id:        form.Id,
 			Published: &published,
 		})
 		if err != nil {
@@ -279,7 +279,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
-	d.SetId(*formId)
+	d.SetId(*form.Id)
 
 	log.Printf("Created evaluation form %s %s", name, *form.Id)
 	return readEvaluationForm(ctx, d, meta)
@@ -320,11 +320,9 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			_ = d.Set("published", *evaluationForm.Published)
 		}
 
-		if evaluationForm.Name != nil {
-			d.Set("name", *evaluationForm.Name)
-		}
+		resourcedata.SetNillableValue(d, "name", evaluationForm.Name)
 		if evaluationForm.QuestionGroups != nil {
-			d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
+			_ = d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
 		}
 
 		return cc.CheckState(d)
@@ -338,16 +336,33 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
-	// Get the latest unpublished version of the form
-	formVersions, resp, err := qualityAPI.GetQualityFormsEvaluationVersions(d.Id(), 25, 1, "desc")
-	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get evaluation form versions %s error: %s", name, err), resp)
+	var formId string
+	found := false
+	for i := 0; i < 3; i++ {
+		// Get the latest unpublished version of the form
+		formVersions, resp, err := qualityAPI.GetQualityFormsEvaluationVersions(d.Id(), 25, 1, "desc")
+		if err != nil {
+			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get evaluation form versions %s error: %s", name, err), resp)
+		}
+		if formVersions == nil || formVersions.Entities == nil || len(*formVersions.Entities) == 0 {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if (*formVersions.Entities)[0].Id != nil {
+			formId = *(*formVersions.Entities)[0].Id
+			found = true
+			break
+		}
 	}
 
-	unpublishedForm := (*formVersions.Entities)[0]
+	if !found {
+		fmt.Printf("Could not find latest unpublished form via GET api/v2/quality/forms/evaluations/%s/versions. Using %s for the update.\n", d.Id(), d.Id())
+		formId = d.Id()
+	}
 
 	log.Printf("Updating Evaluation Form %s", name)
-	form, resp, err := qualityAPI.PutQualityFormsEvaluation(*unpublishedForm.Id, platformclientv2.Evaluationform{
+	form, resp, err := qualityAPI.PutQualityFormsEvaluation(formId, platformclientv2.Evaluationform{
 		Name:           &name,
 		QuestionGroups: buildSdkQuestionGroups(d),
 	})
@@ -357,15 +372,12 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// Set published property on evaluation form update.
 	if published {
-		_, resp, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
-			Id:        form.Id,
-			Published: &published,
-		})
+		resp, err = publishEvaluation(*form.Id, published, qualityAPI)
 		if err != nil {
-			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to publish evaluation form %s error: %s", name, err), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("failed to publish evaluation '%s'", *form.Id), resp)
 		}
 	} else {
-		// If published property is reset to false, set the resource Id to the latest unpublished form
+		// If published property is reset to false, set the resource ID to the latest unpublished form
 		d.SetId(*form.Id)
 	}
 
@@ -382,19 +394,21 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	// Get the latest unpublished version of the form
 	formVersions, resp, err := qualityAPI.GetQualityFormsEvaluationVersions(d.Id(), 25, 1, "desc")
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to get evaluation form versions %s error: %s", name, err), resp)
+		log.Printf("Failed to get evaluation form versions %s error: %s", name, err)
+	} else if formVersions != nil && formVersions.Entities != nil && len(*formVersions.Entities) > 0 {
+		latestFormVersion := (*formVersions.Entities)[0]
+		d.SetId(*latestFormVersion.Id)
+	} else {
+		log.Printf("Could not establish the latest unpublished version of the form '%s'", d.Id())
 	}
 
-	latestFormVersion := (*formVersions.Entities)[0]
-	d.SetId(*latestFormVersion.Id)
-
 	log.Printf("Deleting evaluation form %s", name)
-	if resp, err := qualityAPI.DeleteQualityFormsEvaluation(d.Id()); err != nil {
+	if resp, err = qualityAPI.DeleteQualityFormsEvaluation(d.Id()); err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to delete evaluation form %s error: %s", name, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := qualityAPI.GetQualityFormsEvaluation(d.Id())
+		_, resp, err = qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Evaluation form deleted
@@ -406,6 +420,21 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluationn", fmt.Sprintf("Evaluation form %s still exists", d.Id()), resp))
 	})
+}
+
+func publishEvaluation(formId string, published bool, qualityAPI *platformclientv2.QualityApi) (*platformclientv2.APIResponse, error) {
+	_, resp, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
+		Id:        &formId,
+		Published: &published,
+	})
+	if err == nil {
+		return resp, nil
+	}
+	if resp != nil && util.IsStatus409(resp) && strings.Contains(resp.ErrorMessage, "has already been published") {
+		log.Printf("Could not publish evaluation '%s' because it has already been published. Error: %s", formId, err.Error())
+		return resp, nil
+	}
+	return resp, err
 }
 
 func buildSdkQuestionGroups(d *schema.ResourceData) *[]platformclientv2.Evaluationquestiongroup {

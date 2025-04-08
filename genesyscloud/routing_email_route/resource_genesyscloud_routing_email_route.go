@@ -214,6 +214,10 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	resp, err := proxy.deleteRoutingEmailRoute(ctx, domainId, d.Id())
 	if err != nil {
+		if resp != nil && util.IsStatus404(resp) {
+			log.Printf("Failed to delete route '%s' (domain: '%s') due to a 404 error response. Assuming it to be deleted already.", d.Id(), domainId)
+			return nil
+		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete routing email route %s error: %s", d.Id(), err), resp)
 	}
 
