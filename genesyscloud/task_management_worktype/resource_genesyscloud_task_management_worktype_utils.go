@@ -21,19 +21,19 @@ type worktypeConfig struct {
 	divisionId       string
 	defaultWorkbinId string
 
-	defaultDurationS    int
-	defaultExpirationS  int
-	defaultDueDurationS int
-	defaultPriority     int
-	defaultTtlS         int
+	defaultDurationS             int
+	defaultExpirationS           int
+	defaultDueDurationS          int
+	defaultPriority              int
+	defaultTtlS                  int
 	defaultLanguageId            string
 	defaultQueueId               string
 	defaultSkillIds              []string
 	assignmentEnabled            bool
-  defaultScriptId   string
+	defaultScriptId              string
 	disableDefaultStatusCreation bool
-	schemaId      string
-	schemaVersion int
+	schemaId                     string
+	schemaVersion                int
 }
 
 // getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
@@ -56,7 +56,6 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		DefaultDueDurationSeconds:    resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"),
 		DefaultTtlSeconds:            resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
 		DefaultScriptId:              resourcedata.GetNillableValue[string](d, "default_script_id"),
-    DisableDefaultStatusCreation: platformclientv2.Bool(d.Get("disable_default_status_creation").(bool)),
 	}
 
 	return worktype

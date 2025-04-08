@@ -128,9 +128,8 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Description: `Optionally set this flag to disable Default Status creation`,
 				Optional:    true,
 				Type:        schema.TypeBool,
-				Default:     false,
-				Computed: true,
-      },
+				Computed:    true,
+			},
 			`default_script_id`: {
 				Description: `The default script for Workitems created from the Worktype.`,
 				Optional:    true,
