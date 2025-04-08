@@ -100,7 +100,7 @@ func generateWorktypeStatusDataSourceForTransition(dataSourceLabel string, workt
 	}
 	`, "genesyscloud_task_management_worktype_status", dataSourceLabel, worktypeId, name)
 }
-func generateWorktype(dataSourceLabel string,  name string) string {
+func generateWorktype(dataSourceLabel string, name string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 	}

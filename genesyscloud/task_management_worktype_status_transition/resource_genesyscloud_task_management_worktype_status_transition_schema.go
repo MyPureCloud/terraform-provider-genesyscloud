@@ -88,8 +88,8 @@ func TaskManagementWorktypeStatusTransitionExporter() *resourceExporter.Resource
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorkTypeStatusTransition),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
-			"destination_status_ids.*": {RefType: "genesyscloud_task_management_worktype_status"},
+			"worktype_id":                   {RefType: "genesyscloud_task_management_worktype"},
+			"destination_status_ids.*":      {RefType: "genesyscloud_task_management_worktype_status"},
 			"default_destination_status_id": {RefType: "genesyscloud_task_management_worktype_status"},
 		},
 	}

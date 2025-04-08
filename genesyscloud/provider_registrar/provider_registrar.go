@@ -263,7 +263,7 @@ func registerResources() {
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
 	worktypeStatus.SetRegistrar(regInstance)                               //Registering task management worktype status
-	worktypeStatusTransition.SetRegistrar(regInstance)					   //Registering task management worktype status Transition
+	worktypeStatusTransition.SetRegistrar(regInstance)                     //Registering task management worktype status Transition
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	workitemOnCreateRule.SetRegistrar(regInstance)                         //Registering task management oncreate rule
 	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule

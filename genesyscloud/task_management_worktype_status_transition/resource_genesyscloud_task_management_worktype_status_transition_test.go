@@ -97,7 +97,7 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 					resource.TestCheckResourceAttr(statusResourceType+"."+statusResourceLabel1, "name", status1Name1),
 					resource.TestCheckResourceAttr(statusResourceType+"."+statusResourceLabel1, "category", status1Category),
 					resource.TestCheckResourceAttr(statusResourceType+"."+statusResourceLabel1, "description", ""),
-					),
+				),
 			},
 			{
 				// Update worktype status and add another status so we can test destination_status_ids and default_destination_status_id
@@ -133,7 +133,7 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 					resource.TestCheckResourceAttr(statusResourceType+"."+statusResourceLabel1, "name", status1Name1),
 					resource.TestCheckResourceAttr(statusResourceType+"."+statusResourceLabel1, "category", status1Category),
 					resource.TestCheckResourceAttr(statusResourceType+"."+statusResourceLabel1, "description", ""),
-					),
+				),
 			},
 			{
 				// Import/Read
