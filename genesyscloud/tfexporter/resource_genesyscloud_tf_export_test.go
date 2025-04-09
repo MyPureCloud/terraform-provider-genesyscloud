@@ -718,6 +718,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					strconv.Quote("QueueMembersOnly"),
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -763,6 +764,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					strconv.Quote("QueueMembersOnly"),
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -821,6 +823,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					strconv.Quote("QueueMembersOnly"),
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -3335,6 +3338,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
 			strconv.Quote("TimestampAndPriority"),
+			strconv.Quote("QueueMembersOnly"),
 			util.NullValue,
 			util.NullValue,
 		)

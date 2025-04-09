@@ -601,6 +601,13 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"last_agent_routing_mode": {
+				Description:  "The Last Agent Routing Mode for the queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "AnyAgent",
+				ValidateFunc: validation.StringInSlice([]string{"Disabled", "QueueMembersOnly", "AnyAgent"}, false),
+			},
 		},
 	}
 }

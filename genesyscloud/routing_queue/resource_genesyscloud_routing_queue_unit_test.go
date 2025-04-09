@@ -59,6 +59,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
 		assert.Equal(t, testRoutingQueue.CannedResponseLibraries, routingQueue.CannedResponseLibraries, "Canned Response Libraries not equal")
+		assert.Equal(t, testRoutingQueue.LastAgentRoutingMode, "routingQueue.LastAgentRoutingMode", "Last Agent Routing Mode Not Equal")
 		return queue, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
@@ -193,6 +194,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 	assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 	assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+	assert.Equal(t, testRoutingQueue.LastAgentRoutingMode, routingQueue.LastAgentRoutingMode, "Last Agent Routing Mode Not Equal")
 }
 
 func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
@@ -240,6 +242,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+		assert.Equal(t, testRoutingQueue.LastAgentRoutingMode, routingQueue.LastAgentRoutingMode, "Last Agent Routing Mode Not Equal")
 
 		return nil, nil, nil
 	}
@@ -377,6 +380,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"on_hold_prompt_id":                              *testRoutingQueue.OnHoldPrompt.Id,
 		"default_script_ids":                             flattenDefaultScripts(*testRoutingQueue.DefaultScripts),
 		"canned_response_libraries":                      flattenCannedResponse(*&testRoutingQueue.CannedResponseLibraries),
+		"last_agent_routing_mode":                        *testRoutingQueue.LastAgentRoutingMode,
 	}
 	return resourceDataMap
 }
@@ -391,6 +395,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		peerId                = "5696a54c-4009-4e63-826c-311679deeb97"
 		sourceQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		backupQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
+		lastAgentRoutingMode  = "QueueMembersOnly"
 
 		acwWrapupPrompt = "MANDATORY_TIMEOUT"
 		acwTimeoutMs    = 300000
@@ -508,6 +513,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		DefaultScripts:               &defaultScripts,
 		OutboundMessagingAddresses:   &messagingAddress,
 		CannedResponseLibraries:      &cannedResponseLibraries,
+		LastAgentRoutingMode:         &lastAgentRoutingMode,
 	}
 }
 
@@ -539,6 +545,7 @@ func convertCreateQueuetoQueue(req platformclientv2.Createqueuerequest) *platfor
 		OnHoldPrompt:                 req.OnHoldPrompt,
 		DefaultScripts:               req.DefaultScripts,
 		CannedResponseLibraries:      req.CannedResponseLibraries,
+		LastAgentRoutingMode:         req.LastAgentRoutingMode,
 	}
 }
 
