@@ -83,7 +83,7 @@ func getWhatsappByNameFn(c *rc.DataSourceCache, name string, ctx context.Context
 			if !retryable {
 				return retry.NonRetryableError(errMsg)
 			}
-			return retry.NonRetryableError(errMsg)
+			return retry.RetryableError(errMsg)
 		}
 
 		whatsappId = whatsappID
