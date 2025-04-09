@@ -287,8 +287,7 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSites),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"location_id": {RefType: "genesyscloud_location"},
-			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
+			"location_id":     {RefType: "genesyscloud_location"},
 			"primary_sites":   {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"secondary_sites": {RefType: "genesyscloud_telephony_providers_edges_site"},
 		},

@@ -60,10 +60,11 @@ resource "genesyscloud_journey_segment" "example_journey_segment_resource" {
 
 - `color` (String) The hexadecimal color value of the segment.
 - `display_name` (String) The display name of the segment.
-- `scope` (String) The target entity that a segment applies to. Valid values: Session
+- `scope` (String, Deprecated) The target entity that a segment applies to. Valid values: Session
 
 ### Optional
 
+- `assignment_expiration_days` (Number) Time, in days, from when the segment is assigned until it is automatically unassigned.
 - `context` (Block Set, Max: 1) The context of the segment. (see [below for nested schema](#nestedblock--context))
 - `description` (String) A description of the segment.
 - `is_active` (Boolean) Whether or not the segment is active. Defaults to `true`.

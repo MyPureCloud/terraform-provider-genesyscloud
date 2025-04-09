@@ -30,6 +30,7 @@ type worktypeConfig struct {
 	defaultLanguageId string
 	defaultQueueId    string
 	defaultSkillIds   []string
+	defaultScriptId   string
 	assignmentEnabled bool
 
 	schemaId      string
@@ -46,18 +47,16 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
 		SchemaId:                     resourcedata.GetNillableValue[string](d, "schema_id"),
 		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),
-
-		DefaultPriority: platformclientv2.Int(d.Get("default_priority").(int)),
-
-		DefaultLanguageId: resourcedata.GetNillableValue[string](d, "default_language_id"),
-		DefaultQueueId:    resourcedata.GetNillableValue[string](d, "default_queue_id"),
-		DefaultSkillIds:   lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"),
-		AssignmentEnabled: platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
-
-		DefaultDurationSeconds:    resourcedata.GetNillableValue[int](d, "default_duration_seconds"),
-		DefaultExpirationSeconds:  resourcedata.GetNillableValue[int](d, "default_expiration_seconds"),
-		DefaultDueDurationSeconds: resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"),
-		DefaultTtlSeconds:         resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
+		DefaultPriority:              platformclientv2.Int(d.Get("default_priority").(int)),
+		DefaultLanguageId:            resourcedata.GetNillableValue[string](d, "default_language_id"),
+		DefaultQueueId:               resourcedata.GetNillableValue[string](d, "default_queue_id"),
+		DefaultSkillIds:              lists.BuildSdkStringListFromInterfaceArray(d, "default_skills_ids"),
+		AssignmentEnabled:            platformclientv2.Bool(d.Get("assignment_enabled").(bool)),
+		DefaultDurationSeconds:       resourcedata.GetNillableValue[int](d, "default_duration_seconds"),
+		DefaultExpirationSeconds:     resourcedata.GetNillableValue[int](d, "default_expiration_seconds"),
+		DefaultDueDurationSeconds:    resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"),
+		DefaultTtlSeconds:            resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
+		DefaultScriptId:              resourcedata.GetNillableValue[string](d, "default_script_id"),
 	}
 
 	return worktype
@@ -105,14 +104,21 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 	if d.HasChange("default_duration_seconds") {
 		worktype.SetField("DefaultDurationSeconds", resourcedata.GetNillableValue[int](d, "default_duration_seconds"))
 	}
+
 	if d.HasChange("default_expiration_seconds") {
 		worktype.SetField("DefaultExpirationSeconds", resourcedata.GetNillableValue[int](d, "default_duration_seconds"))
 	}
+
 	if d.HasChange("default_due_duration_seconds") {
 		worktype.SetField("DefaultDueDurationSeconds", resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"))
 	}
+
 	if d.HasChange("default_ttl_seconds") {
 		worktype.SetField("DefaultTtlSeconds", resourcedata.GetNillableValue[int](d, "default_ttl_seconds"))
+	}
+
+	if d.HasChange("default_script_id") {
+		worktype.SetField("DefaultScriptId", resourcedata.GetNillableValue[string](d, "default_script_id"))
 	}
 
 	return worktype

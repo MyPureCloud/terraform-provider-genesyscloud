@@ -34,8 +34,8 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 		outboundRouteId := buildSiteAndOutboundRouteId(siteId, routeId)
 
 		d.SetId(outboundRouteId)
-		d.Set("site_id", siteId)
-		d.Set("route_id", routeId)
+		_ = d.Set("site_id", siteId)
+		_ = d.Set("route_id", routeId)
 		return nil
 	})
 }
