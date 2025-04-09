@@ -356,6 +356,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"customer_participation": {
 				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
 				Type:         schema.TypeString,
@@ -1049,6 +1055,7 @@ func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 			"media_policies.message_policy.actions.assign_evaluations.user_id":                            {RefType: "genesyscloud_user"},
 			"media_policies.email_policy.actions.assign_evaluations.user_id":                              {RefType: "genesyscloud_user"},
 			"actions.assign_evaluations.user_id":                                                          {RefType: "genesyscloud_user"},
+			"conditions.team_ids":                                                                         {RefType: "genesyscloud_team"},
 		},
 		AllowZeroValues: []string{"order"},
 		RemoveIfMissing: map[string][]string{

@@ -1664,6 +1664,18 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 			forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 		}
 
+		teamsId := conditionsMap["team_ids"].([]interface{})
+		teamsIdStrings := make([]string, 0)
+		for _, id := range teamsId {
+			teamsIdStrings = append(teamsIdStrings, fmt.Sprintf("%v", id))
+		}
+
+		teams := make([]platformclientv2.Team, 0)
+		for _, id := range teamsIdStrings {
+			teamId := id
+			teams = append(teams, platformclientv2.Team{Id: &teamId})
+		}
+
 		return &platformclientv2.Policyconditions{
 			ForUsers:    &forUsers,
 			Directions:  &directions,
@@ -1673,6 +1685,7 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 			Duration:    buildDurationCondition(conditionsMap["duration"].([]interface{})),
 			WrapupCodes: &wrapupCodes,
 			TimeAllowed: buildTimeAllowed(conditionsMap["time_allowed"].([]interface{})),
+			Teams:       &teams,
 		}
 	}
 
@@ -1715,6 +1728,14 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 	}
 
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
+
+	if conditions.Teams != nil {
+		teamIds := make([]string, 0)
+		for _, team := range *conditions.Teams {
+			teamIds = append(teamIds, *team.Id)
+		}
+		conditionsMap["team_ids"] = teamIds
+	}
 
 	return []interface{}{conditionsMap}
 }
