@@ -525,6 +525,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"on_hold_prompt_id":                              *testRoutingQueue.OnHoldPrompt.Id,
 		"default_script_ids":                             flattenDefaultScripts(*testRoutingQueue.DefaultScripts),
 		"canned_response_libraries":                      flattenCannedResponse(testRoutingQueue.CannedResponseLibraries),
+		"last_agent_routing_mode":                        *testRoutingQueue.LastAgentRoutingMode,
 	}
 	return resourceDataMap
 }
@@ -539,6 +540,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		peerId                = "5696a54c-4009-4e63-826c-311679deeb97"
 		sourceQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		backupQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
+		lastAgentRoutingMode  = "QueueMembersOnly"
 
 		acwWrapupPrompt = "MANDATORY_TIMEOUT"
 		acwTimeoutMs    = 300000
@@ -656,6 +658,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		DefaultScripts:               &defaultScripts,
 		OutboundMessagingAddresses:   &messagingAddress,
 		CannedResponseLibraries:      &cannedResponseLibraries,
+		LastAgentRoutingMode:         &lastAgentRoutingMode,
 	}
 }
 
