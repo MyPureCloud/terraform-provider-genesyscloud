@@ -59,7 +59,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
 		assert.Equal(t, testRoutingQueue.CannedResponseLibraries, routingQueue.CannedResponseLibraries, "Canned Response Libraries not equal")
-		assert.Equal(t, testRoutingQueue.LastAgentRoutingMode, "routingQueue.LastAgentRoutingMode", "Last Agent Routing Mode Not Equal")
+		assert.Equal(t, testRoutingQueue.LastAgentRoutingMode, routingQueue.LastAgentRoutingMode, "Last Agent Routing Mode Not Equal")
 		return queue, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
