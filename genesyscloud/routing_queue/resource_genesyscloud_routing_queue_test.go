@@ -125,7 +125,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode.0.mode", lastAgentRoutingMode),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingMode),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
