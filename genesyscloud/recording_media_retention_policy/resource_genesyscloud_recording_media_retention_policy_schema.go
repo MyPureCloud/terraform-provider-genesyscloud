@@ -144,6 +144,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"duration": {
 				Description: "",
 				Type:        schema.TypeList,
@@ -193,6 +199,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        timeAllowed,
+			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"duration": {
 				Description: "",
@@ -244,6 +256,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"customer_participation": {
 				Description:  "This condition is to filter out conversation with and without customer participation. Valid values: YES, NO.",
 				Type:         schema.TypeString,
@@ -292,6 +310,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        timeAllowed,
+			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"customer_participation": {
 				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
@@ -1056,6 +1080,10 @@ func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 			"media_policies.email_policy.actions.assign_evaluations.user_id":                              {RefType: "genesyscloud_user"},
 			"actions.assign_evaluations.user_id":                                                          {RefType: "genesyscloud_user"},
 			"conditions.team_ids":                                                                         {RefType: "genesyscloud_team"},
+			"media_policies.message_policy.conditions.team_ids":                                           {RefType: "genesyscloud_team"},
+			"media_policies.call_policy.conditions.team_ids":                                              {RefType: "genesyscloud_team"},
+			"media_policies.chat_policy.conditions.team_ids":                                              {RefType: "genesyscloud_team"},
+			"media_policies.email_policy.conditions.team_ids":                                             {RefType: "genesyscloud_team"},
 		},
 		AllowZeroValues: []string{"order"},
 		RemoveIfMissing: map[string][]string{
