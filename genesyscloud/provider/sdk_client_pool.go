@@ -49,19 +49,19 @@ type SDKClientPool struct {
 }
 
 type SDKClientPoolConfig struct {
-	MaxClients     int
 	AcquireTimeout time.Duration
 	InitTimeout    time.Duration
+	MaxClients     int
 	DebugLogging   bool
 }
 
 type poolMetrics struct {
-	mu              sync.RWMutex
+	activeClients   int64
+	acquireTimeouts int64
 	totalAcquires   int64
 	totalReleases   int64
-	acquireTimeouts int64
 	lastAcquireTime time.Time
-	activeClients   int64
+	mu              sync.RWMutex
 }
 
 func (m *poolMetrics) recordAcquire() {
