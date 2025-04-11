@@ -123,3 +123,18 @@ func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclie
 	}
 	return schema.NewSet(schema.HashString, interfaceList), nil
 }
+
+func GenerateTeamResource(
+	teamResource string,
+	name string,
+	divisionId string,
+	description string,
+	memberIds ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_team" "%s" {
+		name = "%s"
+		division_id = %s
+		description = "%s"
+		%s
+	}
+	`, teamResource, name, divisionId, description, strings.Join(memberIds, "\n"))
+}

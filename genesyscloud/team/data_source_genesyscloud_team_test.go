@@ -31,7 +31,7 @@ func TestAccDataSourceResourceTeam(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 
-				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + generateTeamResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateTeamResource(
 					teamResourceLabel,
 					name,
 					"genesyscloud_auth_division."+divResourceLabel+".id",

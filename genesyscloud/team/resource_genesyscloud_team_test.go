@@ -40,7 +40,7 @@ func TestAccResourceTeam(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Team
-				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + generateTeamResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateTeamResource(
 					resourceLabel,
 					name1,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
@@ -54,7 +54,7 @@ func TestAccResourceTeam(t *testing.T) {
 			},
 			{
 				// Update Team
-				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + generateTeamResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateTeamResource(
 					resourceLabel,
 					name2,
 					"genesyscloud_auth_division."+divResourceLabel+".id",
@@ -98,7 +98,7 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 			{
 				// Create Team
 				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					generateTeamResource(
+					GenerateTeamResource(
 						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResourceLabel+".id",
@@ -114,7 +114,7 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 				// Update Team with one member
 				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
 					generateUserWithDivisionId(testUserResourceLabel1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResourceLabel+".id") +
-					generateTeamResource(
+					GenerateTeamResource(
 						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResourceLabel+".id",
@@ -164,7 +164,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 				// Create Team with member
 				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
 					generateUserWithDivisionId(testUserResourceLabel1, testUserName1, testUserEmail1, "genesyscloud_auth_division."+divResourceLabel+".id") +
-					generateTeamResource(
+					GenerateTeamResource(
 						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResourceLabel+".id",
@@ -184,7 +184,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 			{
 				// Update Team with no members
 				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
-					generateTeamResource(
+					GenerateTeamResource(
 						resourceLabel,
 						name1,
 						"genesyscloud_auth_division."+divResourceLabel+".id",
@@ -207,21 +207,6 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 		},
 		CheckDestroy: testVerifyTeamDestroyed,
 	})
-}
-
-func generateTeamResource(
-	teamResource string,
-	name string,
-	divisionId string,
-	description string,
-	memberIds ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_team" "%s" {
-		name = "%s"
-		division_id = %s
-		description = "%s"
-		%s
-	}
-	`, teamResource, name, divisionId, description, strings.Join(memberIds, "\n"))
 }
 
 func generateMemberIdsArray(memberIds []string) string {
