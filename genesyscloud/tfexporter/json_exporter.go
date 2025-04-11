@@ -3,11 +3,11 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"path/filepath"
 	"strings"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -274,6 +274,20 @@ func determineVarType(s *schema.Schema) string {
 	}
 
 	return varType
+}
+
+func WriteConfigForMrMo(jsonMap map[string]interface{}, path string) diag.Diagnostics {
+	sortedJsonMap := sortJSONMap(jsonMap)
+	dataJSONBytes, err := json.MarshalIndent(sortedJsonMap, "", "  ")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf("Writing export config file to %s", path)
+	if err := files.WriteToFile(postProcessJsonBytes(dataJSONBytes), path); err != nil {
+		return err
+	}
+	return nil
 }
 
 func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {

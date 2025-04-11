@@ -240,7 +240,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	return diagErr
 }
 
-func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *resourceExporter.ResourceExporter) (_ map[string]resourceJSONMaps, diags diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *resourceExporter.ResourceExporter, resourceId string) (_ util.JsonMap, diags diag.Diagnostics) {
 	exporters := make(map[string]*resourceExporter.ResourceExporter)
 	exporters[resType] = exporter
 	g.exporters = &exporters
@@ -251,7 +251,13 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *r
 		return nil, diags
 	}
 
-	// Step #3 Retrieve the individual genesys cloud object instances
+	// Step #3 Filter out all resources from the resType exporters SanitizedResourceMap besides the one at index "{resourceId}"
+	diags = append(diags, g.filterResourceMetaMapBasedOnID(resType, resourceId)...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// Step #3 Retrieve the individual genesys cloud object instance
 	diags = append(diags, g.retrieveGenesysCloudObjectInstancesForMrMo()...)
 	if diags.HasError() {
 		return nil, diags
@@ -269,13 +275,40 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *r
 		return nil, diags
 	}
 
-	//// Step #6 export dependents for other resources
-	//diags = append(diags, g.buildAndExportDependentResources()...)
-	//if diags.HasError() {
-	//	return diags
-	//}
+	// Step #6 export dependents for other resources
+	diags = append(diags, g.buildAndExportDependentResources()...)
+	if diags.HasError() {
+		return nil, diags
+	}
 
-	return g.resourceTypesMaps, diags
+	return util.JsonMap{
+		"resource": g.resourceTypesMaps,
+	}, diags
+}
+
+// filterResourceMetaMapBasedOnID works on behalf of Mr Mo to filter SanitizedResourceMap to only include the ResourceIDMetaMap at key entityID.
+// In other words, it filters the resource map so that it only includes the entity Mr Mo is handling.
+func (g *GenesysCloudResourceExporter) filterResourceMetaMapBasedOnID(resType, entityId string) (diags diag.Diagnostics) {
+	defer func() {
+		if r := recover(); r != nil {
+			diags = diag.Errorf("Recovered in filterResourceMetaMapBasedOnID: %v", r)
+		}
+	}()
+
+	exporter := (*g.exporters)[resType]
+
+	var newMetMap = make(resourceExporter.ResourceIDMetaMap)
+	for k, m := range exporter.SanitizedResourceMap {
+		if k == entityId {
+			newMetMap[k] = m
+		}
+	}
+
+	exporter.SanitizedResourceMap = newMetMap
+
+	(*g.exporters)[resType] = exporter
+
+	return diags
 }
 
 func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagnostics) {
@@ -426,7 +459,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
 
-			log.Printf("Getting exported resources for [%s]", resType)
+			log.Printf("Getting exported resources for [%s] -_-", resType)
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
@@ -460,7 +493,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstancesForMrMo() diag.Diagnostics {
 	log.Printf("Retrieving Genesys Cloud objects from Genesys Cloud")
 	for resType, exporter := range *g.exporters {
-		log.Printf("Getting exported resources for [%s]", resType)
+		log.Printf("Getting exported resources for [%s] o0o", resType)
 		typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 		if err != nil {
 			return err
@@ -1019,18 +1052,11 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	maxClients := g.meta.(*provider.ProviderMeta).MaxClients
 	sem := make(chan struct{}, maxClients)
 
-	fmt.Println("1a")
-
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
-		fmt.Println("2a")
 		wg.Add(1)
-		fmt.Println("3a")
 		go func(resourceType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-
-			fmt.Println("4a")
-
 			// Acquire semaphore
 			select {
 			case sem <- struct{}{}:
@@ -1038,8 +1064,6 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			case <-ctx.Done():
 				return
 			}
-
-			fmt.Println("5a")
 
 			log.Printf("Getting all resources for type %s", resourceType)
 			exporter.FilterResource = g.resourceFilter
@@ -1069,8 +1093,6 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), resourceType)
 		}(resourceType, exporter)
 	}
-
-	fmt.Println("6a")
 
 	go func() {
 		wg.Wait()

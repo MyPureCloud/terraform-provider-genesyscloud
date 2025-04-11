@@ -1,7 +1,6 @@
 package provider_registrar
 
 import (
-	"sync"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -124,6 +123,7 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -182,8 +182,11 @@ func GetResourceExporters() (exporters map[string]*resourceExporter.ResourceExpo
 	return resourceExporters
 }
 
-func GetResourceExporterByResourceType() *resourceExporter.ResourceExporter {
-	return group.GroupExporter()
+func GetResourceExporterByResourceType(resourceType string) *resourceExporter.ResourceExporter {
+	if providerResources == nil {
+		registerResources()
+	}
+	return resourceExporters[resourceType]
 }
 
 func resourceMapsAreRegistered() bool {

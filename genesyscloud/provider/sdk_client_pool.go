@@ -3,13 +3,14 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"log"
 	"math"
 	"sync"
 	"sync/atomic"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -505,6 +506,13 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
+		if mrmo.IsActive() {
+			clientConfig := mrmo.GetClientConfig()
+			newMeta := *meta.(*ProviderMeta)
+			newMeta.ClientConfig = clientConfig
+			return method(ctx, r, &newMeta)
+		}
+
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
 			return diag.FromErr(err)
@@ -529,8 +537,15 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 	}
 }
 
-// Inject a pooled SDK client connection into an exporter's getAll* method
+// GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
+	if mrmo.IsActive() {
+		clientConfig := mrmo.GetClientConfig()
+		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+			return method(ctx, clientConfig)
+		}
+	}
+
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
