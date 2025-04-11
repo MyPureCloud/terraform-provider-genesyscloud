@@ -172,13 +172,21 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
 	log.Printf("Updating ring number for queue %s user %s", queueID, userID)
-	resp, err := proxy.updateRoutingQueueMember(ctx, queueID, userID, platformclientv2.Queuemember{
-		Id:         &userID,
-		RingNumber: &ringNum,
+	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := proxy.updateRoutingQueueMember(ctx, queueID, userID, platformclientv2.Queuemember{
+			Id:         &userID,
+			RingNumber: &ringNum,
+		})
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
+		}
+		return resp, nil
 	})
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
+
+	if diagErr != nil {
+		return diagErr
 	}
+
 	return nil
 }
 
