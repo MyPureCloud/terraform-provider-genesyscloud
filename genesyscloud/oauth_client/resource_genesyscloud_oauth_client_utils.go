@@ -93,7 +93,7 @@ func updateMetaCache(client *platformclientv2.Oauthclient, cacheFile string) {
 	}
 }
 
-func fetchOauthClientSecret(sdkConfig *platformclientv2.Configuration, id string) map[string]string{
+func fetchOauthClientSecret(sdkConfig *platformclientv2.Configuration, id string) map[string]string {
 	fields := make(map[string]string)
 	fields["client_id"] = id
 	RetrieveCachedOauthClientSecret(sdkConfig, fields)
@@ -135,7 +135,6 @@ func FetchFieldsFromMetaDataCache(fields map[string]string, cacheFile string) er
 
 	return nil
 }
-
 
 func readMetaDataFromProviderCache(cacheFile string) (*provider.IntegrationMeta, error) {
 	data, err := os.ReadFile(cacheFile)

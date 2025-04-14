@@ -22,7 +22,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
- var CacheFile = "/tmp/shared-cache.json"
+var CacheFile = "/tmp/shared-cache.json"
 
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -334,8 +334,6 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create credential %s error: %s", *credentialName, err), resp)
 		}
-
-
 
 		resourcedata.SetNillableValue(d, "client_id", client.Id)
 		_ = d.Set("client_secret", "")
