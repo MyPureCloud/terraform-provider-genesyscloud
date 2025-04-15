@@ -3,10 +3,10 @@ package tfexporter
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
@@ -554,7 +554,7 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 	resolverFunc = func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
 		return "", "", nil, false
 	}
-	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.dataSourceTypesMaps = make(map[string]ResourceJSONMaps)
 	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
 	exporter = &resourceExporter.ResourceExporter{
 		CustomAttributeResolver: attrCustomResolver,
@@ -587,7 +587,7 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 	if diagErr != nil {
 		t.Errorf("%v", diagErr)
 	}
-	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.dataSourceTypesMaps = make(map[string]ResourceJSONMaps)
 	g.exportFormat = "hcl"
 	return g
 }

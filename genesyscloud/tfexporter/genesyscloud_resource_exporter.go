@@ -89,8 +89,8 @@ type GenesysCloudResourceExporter struct {
 	exportDirPath         string
 	exporters             *map[string]*resourceExporter.ResourceExporter
 	resources             []resourceExporter.ResourceInfo
-	resourceTypesMaps     map[string]resourceJSONMaps
-	dataSourceTypesMaps   map[string]resourceJSONMaps
+	resourceTypesMaps     map[string]ResourceJSONMaps
+	dataSourceTypesMaps   map[string]ResourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
 	d                     *schema.ResourceData
 	ctx                   context.Context
@@ -506,8 +506,8 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstancesForMrM
 // buildResourceConfigMap Builds a map of all the Terraform resources data returned for each resource
 func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics diag.Diagnostics) {
 	log.Printf("Build Genesys Cloud Resources Map")
-	g.resourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.resourceTypesMaps = make(map[string]ResourceJSONMaps)
+	g.dataSourceTypesMaps = make(map[string]ResourceJSONMaps)
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
 	for _, resource := range g.resources {
@@ -518,7 +518,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		}
 
 		if g.resourceTypesMaps[resource.Type] == nil {
-			g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			g.resourceTypesMaps[resource.Type] = make(ResourceJSONMaps)
 		}
 
 		if len(g.resourceTypesMaps[resource.Type][resource.BlockLabel]) > 0 || len(g.dataSourceTypesMaps[resource.Type][resource.BlockLabel]) > 0 {
@@ -540,7 +540,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 
 		if isDataSource {
 			if g.dataSourceTypesMaps[resource.Type] == nil {
-				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+				g.dataSourceTypesMaps[resource.Type] = make(ResourceJSONMaps)
 			}
 			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		} else {
@@ -1643,7 +1643,7 @@ func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resour
 	}
 
 	if g.dataSourceTypesMaps[dataSourceType] == nil {
-		g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
+		g.dataSourceTypesMaps[dataSourceType] = make(ResourceJSONMaps)
 	}
 
 	// add the data source to the export if it hasn't already been added
