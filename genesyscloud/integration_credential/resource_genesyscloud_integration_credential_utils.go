@@ -43,7 +43,6 @@ func getFieldsFromResource(d *schema.ResourceData) map[string]string {
 			for k, v := range fieldMap {
 				results[k] = v.(string)
 			}
-			fmt.Printf("%v fields", results)
 		}
 	}
 

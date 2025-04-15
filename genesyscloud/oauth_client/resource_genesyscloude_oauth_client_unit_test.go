@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testCacheFile = "/tmp/test-cache.json"
+var testCacheFile = "test-cache.json"
 
 /** This is a unit test to ensure that we populate the internal oAuthCredential cache.  This is to test the fix for DEVTOOLING-448 **/
 func TestUnitCreateOAuthClientWithCache(t *testing.T) {

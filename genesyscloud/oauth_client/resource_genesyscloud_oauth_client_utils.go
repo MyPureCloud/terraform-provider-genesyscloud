@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -86,7 +87,8 @@ func updateMetaCache(client *platformclientv2.Oauthclient, cacheFile string) {
 	if err != nil {
 		log.Printf("failed to convert to Json: %v", err)
 	} else {
-		err = os.WriteFile(cacheFile, data, 0644)
+		cachePath := filepath.Join(os.TempDir(), cacheFile)
+		err = os.WriteFile(cachePath, data, 0644)
 		if err != nil {
 			log.Printf("failed to write to cache file: %v", err)
 		}
@@ -137,7 +139,8 @@ func FetchFieldsFromMetaDataCache(fields map[string]string, cacheFile string) er
 }
 
 func readMetaDataFromProviderCache(cacheFile string) (*provider.IntegrationMeta, error) {
-	data, err := os.ReadFile(cacheFile)
+	cachePath := filepath.Join(os.TempDir(), cacheFile)
+	data, err := os.ReadFile(cachePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read cache file: %v", err)
 	}

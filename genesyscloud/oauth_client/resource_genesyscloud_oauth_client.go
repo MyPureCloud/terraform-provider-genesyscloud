@@ -22,7 +22,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
-var CacheFile = "/tmp/shared-cache.json"
+var CacheFile = "/shared-cache.json"
 
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
