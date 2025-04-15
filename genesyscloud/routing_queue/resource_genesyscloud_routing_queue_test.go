@@ -990,7 +990,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResourceLabel,
 					queueName,
-					"members = []",
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
@@ -1252,72 +1251,6 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
-			},
-		},
-		CheckDestroy: testVerifyQueuesDestroyed,
-	})
-}
-
-// TestAccResourceRoutingQueueMembersOutsideOfConfig
-// Creates a queue and a user, and then adds the user to that queue outside Terraform.
-// On the next apply, we expect an empty plan and therefore no errors (achieved through 'members' being a computed field)
-// Although members should not be a computed field, it was always computed in the past. As a result, some CX as Code users got used
-// to the behaviour described above, so we don't want to break that behaviour.
-func TestAccResourceRoutingQueueMembersOutsideOfConfig(t *testing.T) {
-	var (
-		userResourceLabel  = "user"
-		userEmail          = fmt.Sprintf("user%s@test.com", strings.Replace(uuid.NewString(), "-", "", -1))
-		queueResourceLabel = "queue"
-		queueName          = "tf test queue " + uuid.NewString()
-		userID             string
-	)
-
-	queueResource := fmt.Sprintf(`
-resource "genesyscloud_routing_queue" "%s" {
-	name = "%s"
-}
-`, queueResourceLabel, queueName)
-
-	userResource := fmt.Sprintf(`
-resource "genesyscloud_user" "%s" {
-	name  = "tf test user"
-	email = "%s"
-}
-`, userResourceLabel, userEmail)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				Config: queueResource + userResource,
-				Check: resource.ComposeTestCheckFunc(
-					addMemberToQueue("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_user."+userResourceLabel),
-				),
-			},
-			{
-				Config:             queueResource + userResource,
-				ExpectNonEmptyPlan: false,
-				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_user."+userResourceLabel]
-						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_user."+userResourceLabel)
-						}
-						userID = rs.Primary.ID
-						log.Printf("User ID: %s\n", userID) // Print user ID
-						return nil
-					},
-				),
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel,
-				ImportState:       true,
-				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -1784,7 +1717,6 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 						queueResourceLabel,
 						"genesyscloud_routing_skill_group."+skillGroupResourceLabel,
 						queueName,
-						"members = []",
 						"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
 						"groups = [genesyscloud_group."+groupResourceLabel+".id]",
 						GenerateBullseyeSettings("10"),
