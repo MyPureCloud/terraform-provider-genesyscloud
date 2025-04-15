@@ -1542,24 +1542,27 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredEvaluations))),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.0.max_number_evaluations", fmt.Sprint(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredEvaluations[0].MaxNumberEvaluations)),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.0.evaluator_ids.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredEvaluations[0].Evaluators))),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.0.evaluator_ids.0", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.0.evaluator_ids", "genesyscloud_user."+userResourceLabel1, "id"),
+
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.0.evaluation_form_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.0.time_interval.0.days", fmt.Sprint(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredEvaluations[0].TimeInterval.Days)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_evaluations.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredEvaluations))),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredAssignmentByAgent))),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.0.max_number_evaluations", fmt.Sprint(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredAssignmentByAgent[0].MaxNumberEvaluations)),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.0.evaluator_ids.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredAssignmentByAgent[0].Evaluators))),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.0.evaluator_ids.0", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.0.evaluator_ids", "genesyscloud_user."+userResourceLabel1, "id"),
+
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.0.evaluation_form_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.0.time_interval.0.days", fmt.Sprint(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredAssignmentByAgent[0].TimeInterval.Days)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_metered_assignment_by_agent.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignMeteredAssignmentByAgent))),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignCalibrations))),
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.0.calibrator_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.0.evaluator_ids.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.AssignCalibrations[0].Evaluators))),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.0.evaluator_ids.0", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.0.evaluator_ids", "genesyscloud_user."+userResourceLabel1, "id"),
+
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.0.evaluation_form_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.assign_calibrations.0.expert_evaluator_id", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
 
@@ -1574,24 +1577,23 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.initiate_screen_recording.0.delete_retention.0.days", fmt.Sprint(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.InitiateScreenRecording.DeleteRetention.Days)),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.actions.0.initiate_screen_recording.0.record_acw", strconv.FormatBool(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Actions.InitiateScreenRecording.RecordACW)),
 
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.for_queue_ids.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.ForQueues))),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.for_queue_ids.0", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.for_queue_ids", "genesyscloud_routing_queue."+queueResourceLabel1, "id"),
 
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.for_user_ids.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.ForUsers))),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.for_user_ids.0", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.for_user_ids", "genesyscloud_user."+userResourceLabel1, "id"),
 
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.wrapup_code_ids.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.WrapupCodes))),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.wrapup_code_ids.0", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.wrapup_code_ids", "genesyscloud_routing_wrapupcode."+wrapupCodeResourceLabel1, "id"),
 
-					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.language_ids.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.Languages))),
-					resource.TestMatchResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.language_ids.0", regexp.MustCompile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")),
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.language_ids", "genesyscloud_routing_language."+languageResourceLabel1, "id"),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.time_allowed.0.time_zone_id", mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.TimeAllowed.TimeZoneId),
+
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.time_allowed.0.time_slots.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.TimeAllowed.TimeSlots))),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.time_allowed.0.time_slots.0.start_time", mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.TimeAllowed.TimeSlots[0].StartTime),
 
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.date_ranges.#", fmt.Sprint(len(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.DateRanges))),
 					resource.TestCheckResourceAttr("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.date_ranges.0", fmt.Sprint(mediaRetentionMessagePolicy2.MediaPolicies.MessagePolicy.Conditions.DateRanges[0])),
+
+					util.ValidateResourceAttributeInArray("genesyscloud_recording_media_retention_policy."+policyResourceLabel1, "media_policies.0.message_policy.0.conditions.0.team_ids", "genesyscloud_team."+teamIdResourceLabel1, "id"),
 				),
 			},
 			{
@@ -1823,13 +1825,7 @@ func generateConditions(conditions *Policyconditions) string {
 		wrapupCodeIdsString += fmt.Sprintf("genesyscloud_routing_wrapupcode.%s.id", wrapupCodeResourceLabel1)
 	}
 
-	teamIdsString := ""
-	for i := range conditions.Teams {
-		if i > 0 {
-			teamIdsString += ","
-		}
-		teamIdsString += fmt.Sprintf("genesyscloud_team.%s.id", teamIdResourceLabel1)
-	}
+	teamIdsString := generateTeamIds(conditions.Teams)
 
 	conditionsString := fmt.Sprintf(`
         conditions {
@@ -2054,13 +2050,7 @@ func generateEmailMediaPolicyConditions(conditions *Emailmediapolicyconditions) 
 		wrapupCodeIdsString += fmt.Sprintf("genesyscloud_routing_wrapupcode.%s.id", wrapupCodeResourceLabel1)
 	}
 
-	teamIdsString := ""
-	for i := range conditions.Teams {
-		if i > 0 {
-			teamIdsString += ","
-		}
-		teamIdsString += fmt.Sprintf("genesyscloud_team.%s.id", teamIdResourceLabel1)
-	}
+	teamIdsString := generateTeamIds(conditions.Teams)
 
 	conditionsString := fmt.Sprintf(`
         conditions {
@@ -2130,13 +2120,7 @@ func generateMessageMediaPolicyConditions(conditions *Messagemediapolicyconditio
 		wrapupCodeIdsString += fmt.Sprintf("genesyscloud_routing_wrapupcode.%s.id", wrapupCodeResourceLabel1)
 	}
 
-	teamIdsString := ""
-	for i := range conditions.Teams {
-		if i > 0 {
-			teamIdsString += ","
-		}
-		teamIdsString += fmt.Sprintf("genesyscloud_team.%s.id", teamIdResourceLabel1)
-	}
+	teamIdsString := generateTeamIds(conditions.Teams)
 
 	conditionsString := fmt.Sprintf(`
         conditions {
@@ -2206,13 +2190,7 @@ func generateChatMediaPolicyConditions(conditions *Chatmediapolicyconditions) st
 		wrapupCodeIdsString += fmt.Sprintf("genesyscloud_routing_wrapupcode.%s.id", wrapupCodeResourceLabel1)
 	}
 
-	teamIdsString := ""
-	for i := range conditions.Teams {
-		if i > 0 {
-			teamIdsString += ","
-		}
-		teamIdsString += fmt.Sprintf("genesyscloud_team.%s.id", teamIdResourceLabel1)
-	}
+	teamIdsString := generateTeamIds(conditions.Teams)
 
 	conditionsString := fmt.Sprintf(`
         conditions {
@@ -2592,13 +2570,7 @@ func generateCallMediaPolicyConditions(conditions *Callmediapolicyconditions) st
 		wrapupCodeIdsString += fmt.Sprintf("genesyscloud_routing_wrapupcode.%s.id", wrapupCodeResourceLabel1)
 	}
 
-	teamIdsString := ""
-	for i := range conditions.Teams {
-		if i > 0 {
-			teamIdsString += ","
-		}
-		teamIdsString += fmt.Sprintf("genesyscloud_team.%s.id", teamIdResourceLabel1)
-	}
+	teamIdsString := generateTeamIds(conditions.Teams)
 
 	conditionsString := fmt.Sprintf(`
         conditions {
@@ -2649,6 +2621,19 @@ func generateAssignSurveys(assignSurveys *[]Surveyassignment) string {
 	}
 
 	return assignSurveysString
+}
+
+func generateTeamIds(teamIds []Teams) string {
+	teamIdsString := ""
+	if len(teamIds) > 0 {
+		for i := range teamIds {
+			if i > 0 {
+				teamIdsString += ","
+			}
+			teamIdsString += fmt.Sprintf("genesyscloud_team.%s.id", teamIdResourceLabel1)
+		}
+	}
+	return teamIdsString
 }
 
 func CleanupRoutingEmailDomains(prefix string) error {

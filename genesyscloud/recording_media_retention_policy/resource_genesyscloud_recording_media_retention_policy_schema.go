@@ -146,7 +146,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 			},
 			"team_ids": {
 				Description: "Teams to match conversations against",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -202,7 +202,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 			},
 			"team_ids": {
 				Description: "Teams to match conversations against",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -258,7 +258,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 			},
 			"team_ids": {
 				Description: "Teams to match conversations against",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -313,7 +313,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 			},
 			"team_ids": {
 				Description: "Teams to match conversations against",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -382,7 +382,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 			},
 			"team_ids": {
 				Description: "Teams to match conversations against",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},

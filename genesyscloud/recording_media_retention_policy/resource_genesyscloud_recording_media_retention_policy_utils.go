@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -966,17 +967,7 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
-	teamsId := conditionsMap["team_ids"].([]interface{})
-	teamsIdStrings := make([]string, 0)
-	for _, id := range teamsId {
-		teamsIdStrings = append(teamsIdStrings, fmt.Sprintf("%v", id))
-	}
-
-	teams := make([]platformclientv2.Team, 0)
-	for _, id := range teamsIdStrings {
-		teamId := id
-		teams = append(teams, platformclientv2.Team{Id: &teamId})
-	}
+	teams := buildTeamIds(conditionsMap["team_ids"].(*schema.Set))
 
 	return &platformclientv2.Callmediapolicyconditions{
 		ForUsers:    &forUsers,
@@ -1031,11 +1022,7 @@ func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapoli
 	}
 
 	if conditions.Teams != nil {
-		teamIds := make([]string, 0)
-		for _, team := range *conditions.Teams {
-			teamIds = append(teamIds, *team.Id)
-		}
-		conditionsMap["team_ids"] = teamIds
+		conditionsMap["team_ids"] = flattenTeamIds(conditions.Teams)
 	}
 
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
@@ -1107,17 +1094,7 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
-	teamsId := conditionsMap["team_ids"].([]interface{})
-	teamsIdStrings := make([]string, 0)
-	for _, id := range teamsId {
-		teamsIdStrings = append(teamsIdStrings, fmt.Sprintf("%v", id))
-	}
-
-	teams := make([]platformclientv2.Team, 0)
-	for _, id := range teamsIdStrings {
-		teamId := id
-		teams = append(teams, platformclientv2.Team{Id: &teamId})
-	}
+	teams := buildTeamIds(conditionsMap["team_ids"].(*schema.Set))
 
 	return &platformclientv2.Chatmediapolicyconditions{
 		ForUsers:    &forUsers,
@@ -1170,11 +1147,7 @@ func flattenChatMediaPolicyConditions(conditions *platformclientv2.Chatmediapoli
 	}
 
 	if conditions.Teams != nil {
-		teamIds := make([]string, 0)
-		for _, team := range *conditions.Teams {
-			teamIds = append(teamIds, *team.Id)
-		}
-		conditionsMap["team_ids"] = teamIds
+		conditionsMap["team_ids"] = flattenTeamIds(conditions.Teams)
 	}
 
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
@@ -1247,17 +1220,7 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
-	teamsId := conditionsMap["team_ids"].([]interface{})
-	teamsIdStrings := make([]string, 0)
-	for _, id := range teamsId {
-		teamsIdStrings = append(teamsIdStrings, fmt.Sprintf("%v", id))
-	}
-
-	teams := make([]platformclientv2.Team, 0)
-	for _, id := range teamsIdStrings {
-		teamId := id
-		teams = append(teams, platformclientv2.Team{Id: &teamId})
-	}
+	teams := buildTeamIds(conditionsMap["team_ids"].(*schema.Set))
 
 	emailPolicyConditions := &platformclientv2.Emailmediapolicyconditions{
 		ForUsers:    &forUsers,
@@ -1320,11 +1283,7 @@ func flattenEmailMediaPolicyConditions(conditions *platformclientv2.Emailmediapo
 	}
 
 	if conditions.Teams != nil {
-		teamIds := make([]string, 0)
-		for _, team := range *conditions.Teams {
-			teamIds = append(teamIds, *team.Id)
-		}
-		conditionsMap["team_ids"] = teamIds
+		conditionsMap["team_ids"] = flattenTeamIds(conditions.Teams)
 	}
 
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
@@ -1395,17 +1354,7 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 		forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 	}
 
-	teamsId := conditionsMap["team_ids"].([]interface{})
-	teamsIdStrings := make([]string, 0)
-	for _, id := range teamsId {
-		teamsIdStrings = append(teamsIdStrings, fmt.Sprintf("%v", id))
-	}
-
-	teams := make([]platformclientv2.Team, 0)
-	for _, id := range teamsIdStrings {
-		teamId := id
-		teams = append(teams, platformclientv2.Team{Id: &teamId})
-	}
+	teams := buildTeamIds(conditionsMap["team_ids"].(*schema.Set))
 
 	messageConditions := &platformclientv2.Messagemediapolicyconditions{
 		ForUsers:    &forUsers,
@@ -1469,11 +1418,7 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 	}
 
 	if conditions.Teams != nil {
-		teamIds := make([]string, 0)
-		for _, team := range *conditions.Teams {
-			teamIds = append(teamIds, *team.Id)
-		}
-		conditionsMap["team_ids"] = teamIds
+		conditionsMap["team_ids"] = flattenTeamIds(conditions.Teams)
 	}
 
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
@@ -1749,17 +1694,7 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 			forQueues = append(forQueues, platformclientv2.Queue{Id: &queueId})
 		}
 
-		teamsId := conditionsMap["team_ids"].([]interface{})
-		teamsIdStrings := make([]string, 0)
-		for _, id := range teamsId {
-			teamsIdStrings = append(teamsIdStrings, fmt.Sprintf("%v", id))
-		}
-
-		teams := make([]platformclientv2.Team, 0)
-		for _, id := range teamsIdStrings {
-			teamId := id
-			teams = append(teams, platformclientv2.Team{Id: &teamId})
-		}
+		teams := buildTeamIds(conditionsMap["team_ids"].(*schema.Set))
 
 		return &platformclientv2.Policyconditions{
 			ForUsers:    &forUsers,
@@ -1815,11 +1750,7 @@ func flattenConditions(conditions *platformclientv2.Policyconditions) []interfac
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
 
 	if conditions.Teams != nil {
-		teamIds := make([]string, 0)
-		for _, team := range *conditions.Teams {
-			teamIds = append(teamIds, *team.Id)
-		}
-		conditionsMap["team_ids"] = teamIds
+		conditionsMap["team_ids"] = flattenTeamIds(conditions.Teams)
 	}
 
 	return []interface{}{conditionsMap}
@@ -2006,4 +1937,26 @@ func flattenPolicyErrors(policyErrors *platformclientv2.Policyerrors) []interfac
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(policyErrorsMap, "policy_error_messages", policyErrors.PolicyErrorMessages, flattenPolicyErrorMessages)
 
 	return []interface{}{policyErrorsMap}
+}
+
+func buildTeamIds(teamIds *schema.Set) []platformclientv2.Team {
+	teams := make([]platformclientv2.Team, 0)
+	if teamIds != nil {
+		teamsIdStrings := lists.InterfaceListToStrings(teamIds.List())
+		for _, id := range teamsIdStrings {
+			teamId := id
+			teams = append(teams, platformclientv2.Team{Id: &teamId})
+		}
+	}
+	return teams
+}
+
+func flattenTeamIds(teamIds *[]platformclientv2.Team) []string {
+	teamIdsStr := make([]string, 0)
+	if teamIds != nil {
+		for _, team := range *teamIds {
+			teamIdsStr = append(teamIdsStr, *team.Id)
+		}
+	}
+	return teamIdsStr
 }
