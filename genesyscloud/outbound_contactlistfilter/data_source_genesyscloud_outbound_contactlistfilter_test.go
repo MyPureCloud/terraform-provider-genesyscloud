@@ -2,9 +2,9 @@ package outbound_contactlistfilter
 
 import (
 	"fmt"
-	"strconv"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"

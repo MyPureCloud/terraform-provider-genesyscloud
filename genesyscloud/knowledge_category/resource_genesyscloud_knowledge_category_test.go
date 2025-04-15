@@ -2,10 +2,10 @@ package knowledge_category
 
 import (
 	"fmt"
-	"strings"
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

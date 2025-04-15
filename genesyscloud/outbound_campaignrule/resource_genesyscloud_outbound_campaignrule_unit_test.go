@@ -3,8 +3,8 @@ package outbound_campaignrule
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"

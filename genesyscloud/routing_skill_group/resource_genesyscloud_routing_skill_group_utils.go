@@ -2,9 +2,9 @@ package routing_skill_group
 
 import (
 	"context"
-	"log"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

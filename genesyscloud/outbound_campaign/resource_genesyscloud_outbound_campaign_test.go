@@ -3,9 +3,6 @@ package outbound_campaign
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
@@ -13,6 +10,9 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 

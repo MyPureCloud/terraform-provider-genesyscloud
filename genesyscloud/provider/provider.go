@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"log"
 	"net/http"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"

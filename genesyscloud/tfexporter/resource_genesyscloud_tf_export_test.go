@@ -7,15 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"log"
-	"math/rand"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"sync"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	userPromptResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
@@ -29,6 +20,15 @@ import (
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"io"
+	"log"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -2503,10 +2503,8 @@ func TestAccResourceTfExportMrMoStyle(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             []resource.TestStep{
-
-		},
-		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+		Steps:             []resource.TestStep{},
+		CheckDestroy:      testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 }
 

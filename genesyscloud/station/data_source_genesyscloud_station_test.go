@@ -2,13 +2,13 @@ package station
 
 import (
 	"fmt"
-	"strconv"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	edgePhone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	phoneBaseSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"

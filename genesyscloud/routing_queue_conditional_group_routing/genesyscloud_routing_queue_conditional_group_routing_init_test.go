@@ -1,11 +1,11 @@
 package routing_queue_conditional_group_routing
 
 import (
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

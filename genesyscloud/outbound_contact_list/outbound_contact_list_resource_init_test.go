@@ -1,9 +1,9 @@
 package outbound_contact_list
 
 import (
-	"sync"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	obAttemptLimit "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

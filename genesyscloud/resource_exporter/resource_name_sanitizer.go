@@ -3,11 +3,11 @@ package resource_exporter
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	unidecode "github.com/mozillazg/go-unidecode"
 )

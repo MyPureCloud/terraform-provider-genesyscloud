@@ -1,8 +1,6 @@
 package telephony_providers_edges_phone
 
 import (
-	"log"
-	"sync"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -10,6 +8,8 @@ import (
 	phoneBaseSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"log"
+	"sync"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"

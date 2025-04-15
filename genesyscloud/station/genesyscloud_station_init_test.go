@@ -1,9 +1,9 @@
 package station
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"log"
 	"sync"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"

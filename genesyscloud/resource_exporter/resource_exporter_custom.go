@@ -3,10 +3,10 @@ package resource_exporter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"regexp"
 	"strings"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )

@@ -3,15 +3,15 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"log"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

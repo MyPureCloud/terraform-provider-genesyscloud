@@ -2,10 +2,10 @@ package external_contacts
 
 import (
 	"fmt"
-	"strconv"
 	externalContactOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"

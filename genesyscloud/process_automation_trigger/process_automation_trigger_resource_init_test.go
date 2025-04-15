@@ -1,8 +1,8 @@
 package process_automation_trigger
 
 import (
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 

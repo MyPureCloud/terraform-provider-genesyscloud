@@ -1,8 +1,8 @@
 package architect_datatable_row
 
 import (
-	"sync"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 

@@ -2,11 +2,11 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	obDigRuleset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"os"
+	"strconv"
 	"testing"
 
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"

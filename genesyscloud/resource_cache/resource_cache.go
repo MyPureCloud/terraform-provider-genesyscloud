@@ -1,8 +1,8 @@
 package resource_cache
 
 import (
-	"log"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	"log"
 )
 
 type CacheInterface[T any] interface {

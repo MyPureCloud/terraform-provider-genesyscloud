@@ -2,10 +2,10 @@ package integration_action
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
+	"strings"
 	"testing"
 
 	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"

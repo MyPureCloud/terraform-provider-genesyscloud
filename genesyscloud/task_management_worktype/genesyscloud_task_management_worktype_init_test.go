@@ -1,9 +1,9 @@
 package task_management_worktype
 
 import (
-	"sync"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	"sync"
 	"testing"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"

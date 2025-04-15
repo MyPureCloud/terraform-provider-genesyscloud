@@ -2,10 +2,10 @@ package outbound_contact_list_contact
 
 import (
 	"context"
-	"log"
 	contactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )

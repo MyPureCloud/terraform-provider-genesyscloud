@@ -3,10 +3,10 @@ package webdeployments_deployment
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 

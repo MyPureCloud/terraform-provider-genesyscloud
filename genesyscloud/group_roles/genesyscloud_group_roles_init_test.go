@@ -1,11 +1,11 @@
 package group_roles
 
 import (
-	"sync"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

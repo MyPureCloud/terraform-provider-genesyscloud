@@ -2,10 +2,10 @@ package journey_action_template
 
 import (
 	"fmt"
-	"log"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
+	"strings"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"

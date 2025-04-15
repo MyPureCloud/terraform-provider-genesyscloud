@@ -2,11 +2,11 @@ package responsemanagement_responseasset
 
 import (
 	"fmt"
-	"log"
-	"path/filepath"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/uuid"

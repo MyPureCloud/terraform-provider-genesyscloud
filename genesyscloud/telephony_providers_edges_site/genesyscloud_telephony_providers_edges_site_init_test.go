@@ -1,11 +1,11 @@
 package telephony_providers_edges_site
 
 import (
-	"log"
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
+	"log"
+	"sync"
 	"testing"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"

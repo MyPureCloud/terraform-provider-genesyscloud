@@ -2,9 +2,9 @@ package routing_utilization_label
 
 import (
 	"fmt"
-	"regexp"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"regexp"
 	"testing"
 
 	"github.com/google/uuid"

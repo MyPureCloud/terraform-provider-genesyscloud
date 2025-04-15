@@ -2,11 +2,11 @@ package architect_flow
 
 import (
 	"fmt"
-	"path/filepath"
-	"strconv"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"

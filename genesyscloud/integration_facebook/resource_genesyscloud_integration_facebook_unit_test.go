@@ -3,8 +3,8 @@ package integration_facebook
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"net/http"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

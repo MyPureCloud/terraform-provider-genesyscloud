@@ -2,11 +2,11 @@ package auth_role
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
+	"strings"
 	"testing"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"

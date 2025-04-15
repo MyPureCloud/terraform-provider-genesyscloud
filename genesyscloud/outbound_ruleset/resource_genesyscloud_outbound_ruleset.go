@@ -3,11 +3,11 @@ package outbound_ruleset
 import (
 	"context"
 	"fmt"
-	"log"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"

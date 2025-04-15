@@ -2,10 +2,10 @@ package outbound_contact_list_contact
 
 import (
 	"fmt"
-	"strconv"
 	outboundContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"

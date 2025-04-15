@@ -1,8 +1,8 @@
 package user
 
 import (
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	"sync"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"

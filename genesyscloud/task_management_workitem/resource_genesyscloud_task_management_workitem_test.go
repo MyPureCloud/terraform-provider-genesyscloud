@@ -2,13 +2,13 @@ package task_management_workitem
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	"strconv"
+	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 

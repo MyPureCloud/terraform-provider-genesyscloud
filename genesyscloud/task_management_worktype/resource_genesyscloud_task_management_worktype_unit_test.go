@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"net/http"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"

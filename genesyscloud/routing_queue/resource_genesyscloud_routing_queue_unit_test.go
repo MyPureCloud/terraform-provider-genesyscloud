@@ -3,9 +3,9 @@ package routing_queue
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"

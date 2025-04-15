@@ -6,8 +6,8 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
-	"strings"
 	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"

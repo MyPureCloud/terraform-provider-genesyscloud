@@ -3,9 +3,9 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 	"os"
 	"path/filepath"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 

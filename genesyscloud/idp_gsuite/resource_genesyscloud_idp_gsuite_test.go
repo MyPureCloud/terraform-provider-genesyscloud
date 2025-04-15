@@ -2,9 +2,9 @@ package idp_gsuite
 
 import (
 	"fmt"
-	"strconv"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"

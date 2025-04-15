@@ -3,8 +3,8 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
-	"log"
 	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"log"
 	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"

@@ -1,14 +1,14 @@
 package journey_outcome
 
 import (
-	"log"
-	"sync"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"log"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
