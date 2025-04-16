@@ -170,6 +170,7 @@ func (sod *sanitizerOptimized) SanitizeResourceHash(originalBlockLabel string) s
 
 // Sanitize sanitizes all resource label using the BCP specific algorithm which includes
 // adding hashes to the end of all resource block labels to ensure consistent uniqueness
+// See DEVTOOLING-1182 for details on why this sanitizer was necessary
 func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 	sanitizedLabels := make(map[string][]string)
 

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSanitizeResourceBlockLabel(t *testing.T) {
+func TestUnitSanitizeResourceBlockLabel(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		input                string
@@ -102,7 +102,7 @@ func TestSanitizeResourceBlockLabel(t *testing.T) {
 		})
 	}
 }
-func TestSanitize(t *testing.T) {
+func TestUnitSanitize(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		input                ResourceIDMetaMap
@@ -143,7 +143,8 @@ func TestSanitize(t *testing.T) {
 			},
 			// Never appends a hash to all of the labels that have the same original BlockLabel.
 			// This can cause issues with mixing up the state file unfortunately, and require
-			// extra logic in the buildResourceConfigMap() function to check for this
+			// extra logic in the buildResourceConfigMap() function to check for this.
+			// See DEVTOOLING-1183 for ideas on improving this
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap) {
 				assert.Equal(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 				assert.Equal(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
@@ -158,6 +159,7 @@ func TestSanitize(t *testing.T) {
 			// Never appends a hash to all of the labels that have the same original BlockLabel.
 			// This can cause issues with mixing up the state file unfortunately, and require
 			// extra logic in the buildResourceConfigMap() function to check for this
+			// See DEVTOOLING-1183 for ideas on improving this
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap) {
 				assert.Equal(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 				assert.Equal(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
@@ -172,6 +174,7 @@ func TestSanitize(t *testing.T) {
 			// Appends a hash to every label processed to ensures consistency so that output
 			// is more consistent across runs and between export comparisons across orgs.
 			// A _DUPLICATE_INSTANCE_# value is appended to alert on this rare edge case
+			// See DEVTOOLING-1183 for ideas on improving this
 			validateBCPOptimized: func(t *testing.T, result ResourceIDMetaMap) {
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
@@ -254,10 +257,14 @@ func TestSanitize(t *testing.T) {
 				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "test_user_foo_com_"))
 				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "test_user_foo_com_"))
 				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, len(result["id1"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id2"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id3"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id4"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
+				assert.True(t, len(result["id1"].BlockLabel) > len("test_user_foo_com_"))           // Hash appended
+				assert.True(t, len(result["id2"].BlockLabel) > len("test_user_foo_com_"))           // Hash appended
+				assert.True(t, len(result["id3"].BlockLabel) > len("test_user_foo_com_"))           // Hash appended
+				assert.True(t, len(result["id4"].BlockLabel) > len("test_user_foo_com_"))           // Hash appended
+				assert.False(t, strings.Contains(result["id1"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended
+				assert.False(t, strings.Contains(result["id2"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended
+				assert.False(t, strings.Contains(result["id3"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended
+				assert.False(t, strings.Contains(result["id4"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended
 			},
 		},
 		{
@@ -372,7 +379,7 @@ func makeInputCopy(input ResourceIDMetaMap) ResourceIDMetaMap {
 	return inputCopy
 }
 
-func TestNewSanitizerProvider(t *testing.T) {
+func TestUnitNewSanitizerProvider(t *testing.T) {
 	// Test with default settings (no environment variable)
 	provider := NewSanitizerProvider()
 	assert.IsType(t, &sanitizerOriginal{}, provider.S)
@@ -390,7 +397,7 @@ func TestNewSanitizerProvider(t *testing.T) {
 	os.Unsetenv(feature_toggles.ExporterSanitizerBCPOptimizedName())
 }
 
-func TestOriginalLabelPreservation(t *testing.T) {
+func TestUnitOriginalLabelPreservation(t *testing.T) {
 	testCases := []struct {
 		name      string
 		sanitizer Sanitizer
