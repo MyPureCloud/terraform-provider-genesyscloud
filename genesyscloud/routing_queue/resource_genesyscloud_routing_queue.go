@@ -75,6 +75,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	teams := buildMemberGroupList(d, "teams", "TEAM")
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
+	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
@@ -131,6 +132,9 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if sourceQueueId != "" {
 		createQueue.SourceQueueId = &sourceQueueId
+	}
+	if lastAgentRoutingMode != "" {
+		createQueue.LastAgentRoutingMode = &lastAgentRoutingMode
 	}
 
 	log.Printf("Creating Routing Queue %s", *createQueue.Name)
@@ -245,6 +249,7 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
 		resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
+		resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
 
 		if currentQueue.DefaultScripts != nil {
 			_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
@@ -305,6 +310,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 	peerId := d.Get("peer_id").(string)
+	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
 	updateQueue := platformclientv2.Queuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
@@ -344,6 +350,9 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if peerId != "" {
 		updateQueue.PeerId = &peerId
+	}
+	if lastAgentRoutingMode != "" {
+		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
