@@ -18,6 +18,7 @@ import (
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
+	cMessagingWhatsapp "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -307,6 +308,7 @@ func registerResources() {
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
 	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
+	cMessagingWhatsapp.SetRegistrar(regInstance)                           //Registering conversations messaging whatsapp
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledgeDocumentVariation.SetRegistrar(regInstance)                   //Registering knowledge document variation
