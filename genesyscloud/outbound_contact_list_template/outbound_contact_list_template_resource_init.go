@@ -1,7 +1,7 @@
 package outbound_contact_list_template
 
 import (
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 const (

@@ -3,10 +3,10 @@ package telephony_providers_edges_did
 import (
 	"context"
 	"fmt"
-	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"

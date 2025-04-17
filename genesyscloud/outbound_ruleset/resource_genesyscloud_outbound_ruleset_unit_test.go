@@ -3,7 +3,7 @@ package outbound_ruleset
 import (
 	"testing"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/stretchr/testify/assert"
 

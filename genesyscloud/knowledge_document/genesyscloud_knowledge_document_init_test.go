@@ -1,10 +1,10 @@
 package knowledge_document
 
 import (
+	knowledgeCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_category"
+	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
+	knowledgeLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"sync"
-	knowledgeCategory "terraform-provider-genesyscloud/genesyscloud/knowledge_category"
-	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
-	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

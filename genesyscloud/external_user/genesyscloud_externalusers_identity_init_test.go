@@ -1,8 +1,8 @@
 package external_user
 
 import (
+	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"sync"
-	userResource "terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

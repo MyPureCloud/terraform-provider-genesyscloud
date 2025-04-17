@@ -1,7 +1,7 @@
 package resource_cache
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"testing"
 )
 

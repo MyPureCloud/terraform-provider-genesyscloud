@@ -1,15 +1,15 @@
 package outbound_messagingcampaign
 
 import (
+	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDigitalRuleSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
+	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	responseManagement "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"sync"
-	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
-	obDigitalRuleSet "terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
-	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
-	responseManagement "terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

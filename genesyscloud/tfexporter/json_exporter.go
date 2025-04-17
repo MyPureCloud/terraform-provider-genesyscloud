@@ -3,13 +3,13 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"path/filepath"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -17,11 +17,11 @@ import (
 
 const resourceJSONFileExt = "tf.json"
 
-type resourceJSONMaps map[string]util.JsonMap
+type ResourceJSONMaps map[string]util.JsonMap
 
 type JsonExporter struct {
-	resourceTypesJSONMaps map[string]resourceJSONMaps
-	dataSourceTypesMaps   map[string]resourceJSONMaps
+	resourceTypesJSONMaps map[string]ResourceJSONMaps
+	dataSourceTypesMaps   map[string]ResourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
 	providerRegistry      string
 	version               string
@@ -29,7 +29,7 @@ type JsonExporter struct {
 	splitFilesByResource  bool
 }
 
-func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
+func NewJsonExporter(resourceTypesJSONMaps map[string]ResourceJSONMaps, dataSourceTypesMaps map[string]ResourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
 	jsonExporter := &JsonExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
 		dataSourceTypesMaps:   dataSourceTypesMaps,
@@ -274,6 +274,19 @@ func determineVarType(s *schema.Schema) string {
 	}
 
 	return varType
+}
+
+func WriteConfigForMrMo(jsonMap map[string]interface{}, path string) (diags diag.Diagnostics) {
+	sortedJsonMap := sortJSONMap(jsonMap)
+	dataJSONBytes, err := json.MarshalIndent(sortedJsonMap, "", "  ")
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return
+	}
+
+	log.Printf("Writing export config file to %s", path)
+	diags = append(diags, files.WriteToFile(postProcessJsonBytes(dataJSONBytes), path)...)
+	return
 }
 
 func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {

@@ -1,12 +1,12 @@
 package outbound_callanalysisresponseset
 
 import (
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

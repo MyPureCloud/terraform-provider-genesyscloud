@@ -1,17 +1,17 @@
 package outbound_campaignrule
 
 import (
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	obResponseSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
+	outboundCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	outboundContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	outboundSequence "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
-	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
-	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	outboundSequence "terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

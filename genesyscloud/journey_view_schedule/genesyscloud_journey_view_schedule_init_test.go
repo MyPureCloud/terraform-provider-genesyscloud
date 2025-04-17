@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	journeyViews "terraform-provider-genesyscloud/genesyscloud/journey_views"
+	journeyViews "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_views"
 )
 
 var providerResources map[string]*schema.Resource

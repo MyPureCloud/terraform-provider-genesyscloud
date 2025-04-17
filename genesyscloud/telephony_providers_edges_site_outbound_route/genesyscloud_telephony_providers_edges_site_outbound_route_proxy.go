@@ -3,8 +3,8 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )

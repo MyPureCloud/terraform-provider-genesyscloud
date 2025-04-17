@@ -1,23 +1,23 @@
 package task_management_workitem
 
 import (
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"sync"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
-	"terraform-provider-genesyscloud/genesyscloud/user_roles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	externalContacts "terraform-provider-genesyscloud/genesyscloud/external_contacts"
-	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
-	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
-	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
+	worktypeStatus "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

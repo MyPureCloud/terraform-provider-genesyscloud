@@ -1,7 +1,7 @@
 package process_automation_trigger
 
 import (
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {

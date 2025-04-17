@@ -1,8 +1,8 @@
 package outbound_contact_list_contact
 
 import (
+	outboundContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"sync"
-	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

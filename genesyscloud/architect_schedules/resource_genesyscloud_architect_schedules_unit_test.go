@@ -1,7 +1,7 @@
 package architect_schedules
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 	"time"
 )

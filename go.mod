@@ -1,4 +1,4 @@
-module terraform-provider-genesyscloud
+module github.com/mypurecloud/terraform-provider-genesyscloud
 
 go 1.23.0
 

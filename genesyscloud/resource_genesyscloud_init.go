@@ -1,7 +1,7 @@
 package genesyscloud
 
 import (
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 func SetRegistrar(l registrar.Registrar) {

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	testrunner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/stretchr/testify/assert"
 )
