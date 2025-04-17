@@ -14,13 +14,14 @@ import (
 )
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
+	formNameAttr := "TF Test Form " + uuid.NewString()
 	formResourceLabel1 := "test-evaluation-form-1"
 	answer1Text := "Yes"
 	answer1Value := 1
 
 	// Most basic evaluation form
 	evaluationForm1 := EvaluationFormStruct{
-		Name: "terraform-form-evaluations-" + uuid.NewString(),
+		Name: formNameAttr,
 		QuestionGroups: []EvaluationFormQuestionGroupStruct{
 			{
 				Name:   "Test Question Group 1",
@@ -46,7 +47,7 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 
 	// Duplicate form with additional questions
 	evaluationForm2 := evaluationForm1
-	evaluationForm2.Name = "New Form Name"
+	evaluationForm2.Name = formNameAttr + " updated"
 	evaluationForm2.QuestionGroups = append(evaluationForm2.QuestionGroups, EvaluationFormQuestionGroupStruct{
 		Name:   "Test Question Group 2",
 		Weight: 2,

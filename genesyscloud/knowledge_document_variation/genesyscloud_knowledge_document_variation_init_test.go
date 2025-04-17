@@ -1,4 +1,4 @@
-package knowledgedocumentvariation
+package knowledge_document_variation
 
 import (
 	knowledgeDocument "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document"

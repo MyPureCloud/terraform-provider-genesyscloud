@@ -57,14 +57,23 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Creating IVR config %s", *ivrBody.Name)
-	ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create IVR config %s error: %s", *ivrBody.Name, err), resp)
+
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create IVR config %s error: %s", *ivrBody.Name, err), resp)
+		}
+
+		d.SetId(*ivrConfig.Id)
+		log.Printf("Created IVR config %s %s", *ivrBody.Name, *ivrConfig.Id)
+
+		return resp, nil
+	})
+
+	if diagErr != nil {
+		return diagErr
 	}
 
-	d.SetId(*ivrConfig.Id)
-
-	log.Printf("Created IVR config %s %s", *ivrBody.Name, *ivrConfig.Id)
 	return readIvrConfig(ctx, d, meta)
 }
 
@@ -139,7 +148,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		return resp, nil
-	})
+	}, 400)
 
 	if diagErr != nil {
 		return diagErr
