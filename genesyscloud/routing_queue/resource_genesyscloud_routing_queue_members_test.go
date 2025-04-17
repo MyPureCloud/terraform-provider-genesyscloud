@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUpdateQueueUserRingNum(t *testing.T) {
+func TestUnitUpdateQueueUserRingNum(t *testing.T) {
 
 	// Minimize the number of retries
 	previousRetries := util.SetMaxRetriesForTests(3)
