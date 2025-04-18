@@ -294,7 +294,6 @@ func TestUnitSanitize(t *testing.T) {
 
 			},
 		},
-		// ADD TESTS HERE FOR BLOCK_HASH FIELD
 		{
 			name: "duplicates with block hash",
 			input: ResourceIDMetaMap{
