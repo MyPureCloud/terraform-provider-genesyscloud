@@ -3505,3 +3505,128 @@ func formatStringArray(arr []string) []string {
 	}
 	return quotedStrings
 }
+
+// TestAccResourceTfExportIntegrationActionDuplicateNames verifies that integration actions with
+// the same name are all exported in the tf files as well as the tfstate file
+func TestAccResourceTfExportIntegrationActionDuplicateNames(t *testing.T) {
+	var (
+		exportTestDir   = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		integrationName = "TF Test Integration " + uuid.NewString()
+		actionName      = "TF Test Action " + uuid.NewString()
+		credentialName  = "TF Test Cred" + uuid.NewString()
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("Failed to cleanup export directory '%s'. Error: %s", exportTestDir, err.Error())
+		}
+	}(exportTestDir)
+
+	theConfig := fmt.Sprintf(`
+resource "genesyscloud_tf_export" "export" {
+  directory          = "%s"
+  include_state_file = true
+  include_filter_resources = [
+    "genesyscloud_integration_action::${local.shared_action_name}"
+  ]
+  export_format = "json"
+
+  depends_on = [
+    genesyscloud_integration_action.action_1,
+    genesyscloud_integration_action.action_2
+  ]
+}
+
+locals {
+  shared_action_name = "%s"
+  integration_name   = "%s"
+}
+
+resource "genesyscloud_integration_action" "action_1" {
+  name           = local.shared_action_name
+  category       = local.integration_name
+  integration_id = genesyscloud_integration.integration.id
+  secure         = false
+  config_request {
+    request_template     = "$${input.rawRequest}"
+    request_type         = "POST"
+    request_url_template = "/api/v2/conversations/$${input.conversationId}/disconnect"
+  }
+  contract_output = jsonencode({
+    "properties" : {},
+    "type" : "object"
+  })
+  config_response {
+    success_template = "$${rawResult}"
+  }
+  contract_input = jsonencode({
+    "properties" : {
+      "conversationId" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object"
+  })
+}
+
+resource "genesyscloud_integration_action" "action_2" {
+  name           = local.shared_action_name
+  category       = local.integration_name
+  integration_id = genesyscloud_integration.integration.id
+  secure         = false
+  config_request {
+    request_template     = "$${input.rawRequest}"
+    request_type         = "POST"
+    request_url_template = "/api/v2/conversations/$${input.conversationId}/disconnect"
+  }
+  contract_output = jsonencode({
+    "properties" : {},
+    "type" : "object"
+  })
+  config_response {
+    success_template = "$${rawResult}"
+  }
+  contract_input = jsonencode({
+    "properties" : {
+      "conversationId" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object"
+  })
+}
+
+resource "genesyscloud_integration" "integration" {
+  config {
+    advanced = jsonencode({})
+    credentials = {
+      pureCloudOAuthClient = genesyscloud_integration_credential.credential.id
+    }
+    name       = "Genesys Cloud Data 1804"
+    properties = jsonencode({})
+  }
+  integration_type = "purecloud-data-actions"
+  intended_state   = "ENABLED"
+}
+
+resource "genesyscloud_integration_credential" "credential" {
+  name                 = "%s"
+  credential_type_name = "pureCloudOAuthClient"
+  fields = {
+    clientId     = "someUserName"
+    clientSecret = "$tr0ngP@s$w0rd"
+  }
+}
+`, exportTestDir, actionName, integrationName, credentialName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: theConfig,
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
