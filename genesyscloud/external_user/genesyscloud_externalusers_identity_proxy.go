@@ -9,7 +9,7 @@ import (
 	"strings"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v156/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
