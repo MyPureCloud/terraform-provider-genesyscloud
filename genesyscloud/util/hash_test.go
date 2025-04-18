@@ -147,6 +147,19 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 			wantErr:      false,
 			expectedHash: "e63ec7734b9ca5fb",
 		},
+		{
+			name: "Multiple Mix of Inputs with some as nil",
+			value: []interface{}{
+				[]string{"test1", "test2"},
+				map[string]string{"foo": "bar"},
+				[]string{"test3", "test4"},
+				nil,
+				testStruct{Field1: "test5", Field2: 987},
+				nil,
+			},
+			wantErr:      false,
+			expectedHash: "e63ec7734b9ca5fb",
+		},
 	}
 
 	for _, tt := range tests {
