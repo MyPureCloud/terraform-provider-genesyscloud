@@ -3,8 +3,8 @@ package util
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/gob"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sync"
 )
@@ -29,13 +29,12 @@ func QuickHashFields(values ...interface{}) (string, error) {
 	buf.Reset()
 	defer bufferPool.Put(buf)
 
-	enc := gob.NewEncoder(buf)
+	enc := json.NewEncoder(buf)
 	for _, val := range values {
-		if val != nil {
-			if err := enc.Encode(val); err != nil {
-				return "", fmt.Errorf("failed to encode value: %v", err)
-			}
+		if err := enc.Encode(val); err != nil {
+			return "", fmt.Errorf("failed to encode value: %v", err)
 		}
+
 	}
 
 	h := sha256.New()

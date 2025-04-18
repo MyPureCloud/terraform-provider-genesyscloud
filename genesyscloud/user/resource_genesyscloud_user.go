@@ -44,7 +44,7 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		if user.Id == nil || user.Email == nil {
 			continue
 		}
-		hashedUniqueFields, err := util.QuickHashFields(*user.Name, *user.Department, *user.PrimaryContactInfo, *user.Addresses)
+		hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department, user.PrimaryContactInfo, user.Addresses)
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}

@@ -5,6 +5,12 @@ import (
 )
 
 func TestUnitQuickHashFields(t *testing.T) {
+	str := "test"
+	strPtr := &str
+	var nilStrPtr *string
+	num := 123
+	numPtr := &num
+
 	tests := []struct {
 		name    string
 		values  []interface{}
@@ -26,6 +32,26 @@ func TestUnitQuickHashFields(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "String pointer input",
+			values:  []interface{}{strPtr},
+			wantErr: false,
+		},
+		{
+			name:    "Nil string pointer input",
+			values:  []interface{}{nilStrPtr},
+			wantErr: false,
+		},
+		{
+			name:    "Single int input",
+			values:  []interface{}{123},
+			wantErr: false,
+		},
+		{
+			name:    "Single int pointer input",
+			values:  []interface{}{numPtr},
+			wantErr: false,
+		},
+		{
 			name:    "Multiple string inputs",
 			values:  []interface{}{"test1", "test2", "test3"},
 			wantErr: false,
@@ -38,6 +64,17 @@ func TestUnitQuickHashFields(t *testing.T) {
 		{
 			name:    "Multiple nil inputs",
 			values:  []interface{}{nil, nil, nil},
+			wantErr: false,
+		},
+		{
+			name: "Mixed pointer and value types",
+			values: []interface{}{
+				"test",
+				str,
+				num,
+				nilStrPtr,
+				nil,
+			},
 			wantErr: false,
 		},
 	}
@@ -80,7 +117,11 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 	type testStruct struct {
 		Field1 string
 		Field2 int
+		Field3 *string
 	}
+
+	str := "test"
+	var nilStr *string
 
 	tests := []struct {
 		name         string
@@ -94,7 +135,23 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				testStruct{Field1: "test", Field2: 123},
 			},
 			wantErr:      false,
-			expectedHash: "72bb3bf6e605a43a",
+			expectedHash: "ef1a14bd9bd591c3",
+		},
+		{
+			name: "Struct input with nil pointer",
+			value: []interface{}{
+				testStruct{Field1: "test", Field2: 123, Field3: nilStr},
+			},
+			wantErr:      false,
+			expectedHash: "ef1a14bd9bd591c3",
+		},
+		{
+			name: "Struct input with valid pointer",
+			value: []interface{}{
+				testStruct{Field1: "test", Field2: 123, Field3: &str},
+			},
+			wantErr:      false,
+			expectedHash: "caf965b7315c3dd6",
 		},
 		{
 			name: "Multiple Struct input",
@@ -103,13 +160,13 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				testStruct{Field1: "test2", Field2: 456},
 			},
 			wantErr:      false,
-			expectedHash: "a3eb3d4830f9153a",
+			expectedHash: "f901b0dc6747c4c3",
 		},
 		{
 			name:         "Map input",
 			value:        []interface{}{map[string]string{"key": "value"}},
 			wantErr:      false,
-			expectedHash: "aaaaa8b65ed3ff7b",
+			expectedHash: "cbdea9ab8317fcd1",
 		},
 		{
 			name: "Multiple Map input",
@@ -118,13 +175,29 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				map[string]string{"foo": "bar"},
 			},
 			wantErr:      false,
-			expectedHash: "fe443377ca878d7d",
+			expectedHash: "92422f54645bb2d7",
+		},
+		{
+			name: "Map with pointer values",
+			value: []interface{}{
+				map[string]*string{"key": &str, "nil_key": nilStr},
+			},
+			wantErr:      false,
+			expectedHash: "00b5d32006713baa",
 		},
 		{
 			name:         "Slice input",
 			value:        []interface{}{[]string{"test1", "test2"}},
 			wantErr:      false,
-			expectedHash: "0c1efb7496fa5b19",
+			expectedHash: "45a7a10579268d62",
+		},
+		{
+			name: "Slice with pointer values",
+			value: []interface{}{
+				[]*string{&str, nilStr, &str},
+			},
+			wantErr:      false,
+			expectedHash: "1492c421fc01e363",
 		},
 		{
 			name: "Multiple Slice input",
@@ -134,7 +207,7 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				[]string{"test2", "test1"},
 			},
 			wantErr:      false,
-			expectedHash: "0590d72ff80ff5e3",
+			expectedHash: "758cf2b128d714ab",
 		},
 		{
 			name: "Multiple Mix of Inputs",
@@ -145,10 +218,21 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				testStruct{Field1: "test5", Field2: 987},
 			},
 			wantErr:      false,
-			expectedHash: "e63ec7734b9ca5fb",
+			expectedHash: "17f7261250799f2d",
 		},
 		{
-			name: "Multiple Mix of Inputs with some as nil",
+			name: "Mixed complex types with nil pointers",
+			value: []interface{}{
+				testStruct{Field1: "test", Field2: 123, Field3: nilStr},
+				map[string]*string{"key": nilStr, "nil_key": nilStr},
+				[]*string{nilStr, nilStr, nilStr},
+				[]*string{&str, nilStr, &str},
+			},
+			wantErr:      false,
+			expectedHash: "84e42603d87047fe",
+		},
+		{
+			name: "Multiple mixed types with some nils",
 			value: []interface{}{
 				[]string{"test1", "test2"},
 				map[string]string{"foo": "bar"},
@@ -158,7 +242,7 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				nil,
 			},
 			wantErr:      false,
-			expectedHash: "e63ec7734b9ca5fb",
+			expectedHash: "173cb74d538c5b23",
 		},
 	}
 
