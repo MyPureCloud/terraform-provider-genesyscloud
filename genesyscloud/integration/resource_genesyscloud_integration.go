@@ -51,7 +51,7 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 
 	for _, integration := range *integrations {
 		log.Printf("Dealing with integration id : %s, integration Name : %s", *integration.Id, *integration.Name)
-		blockHash, err := util.QuickHashFields(integration.IntegrationType.Id, integration.Notes)
+		blockHash, err := util.QuickHashFields(integration.IntegrationType.Id)
 		if err != nil {
 			return nil, diag.Errorf("failed to generate quick hash for integration %s: %v", *integration.Name, err)
 		}

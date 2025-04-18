@@ -186,9 +186,9 @@ func TestUnitSanitize(t *testing.T) {
 				assert.True(t, len(result["id1"].BlockLabel) > 8) // Hash appended
 				assert.True(t, len(result["id2"].BlockLabel) > 8) // Hash appended
 				assert.True(t, len(result["id3"].BlockLabel) > 8) // Hash appended
-				id1Hash := sanitizer.SanitizeResourceHash(*result["id1"])
-				id2Hash := sanitizer.SanitizeResourceHash(*result["id2"])
-				id3Hash := sanitizer.SanitizeResourceHash(*result["id3"])
+				id1Hash := sanitizer.SanitizeResourceHash(result["id1"].OriginalLabel)
+				id2Hash := sanitizer.SanitizeResourceHash(result["id2"].OriginalLabel)
+				id3Hash := sanitizer.SanitizeResourceHash(result["id3"].OriginalLabel)
 				assert.True(t, strings.Contains(result["id1"].BlockLabel, id1Hash))                // Hash included
 				assert.True(t, strings.Contains(result["id2"].BlockLabel, id2Hash))                // Hash included
 				assert.True(t, strings.Contains(result["id3"].BlockLabel, id3Hash))                // Hash included
@@ -279,10 +279,10 @@ func TestUnitSanitize(t *testing.T) {
 				assert.True(t, len(result["id2"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
 				assert.True(t, len(result["id3"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
 				assert.True(t, len(result["id4"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				id1Hash := sanitizer.SanitizeResourceHash(*result["id1"])
-				id2Hash := sanitizer.SanitizeResourceHash(*result["id2"])
-				id3Hash := sanitizer.SanitizeResourceHash(*result["id3"])
-				id4Hash := sanitizer.SanitizeResourceHash(*result["id4"])
+				id1Hash := sanitizer.SanitizeResourceHash(result["id1"].OriginalLabel)
+				id2Hash := sanitizer.SanitizeResourceHash(result["id2"].OriginalLabel)
+				id3Hash := sanitizer.SanitizeResourceHash(result["id3"].OriginalLabel)
+				id4Hash := sanitizer.SanitizeResourceHash(result["id4"].OriginalLabel)
 				assert.True(t, strings.Contains(result["id1"].BlockLabel, id1Hash))                 // Hash included
 				assert.True(t, strings.Contains(result["id2"].BlockLabel, id2Hash))                 // Hash included
 				assert.True(t, strings.Contains(result["id3"].BlockLabel, id3Hash))                 // Hash included
@@ -411,9 +411,10 @@ func TestUnitSanitize(t *testing.T) {
 				}
 				assert.Equal(t, 1, lengthOfBlockLabelCount, "Exactly one Block Label should have no hash appended")
 			},
-			// Checks for a BlockHash and appends the hash content to the label to create distinct labels
-			// Also includes a hash of the original BlockLabel to every label processed to ensures consistency so that output
-			// is more consistent across runs and between export comparisons across orgs. See DEVTOOLING-1182 and DEVTOOLING-1183
+			// Always includes a hash of the original BlockLabel to every label processed. Also checks for duplicates after
+			// appending the hash of the original BlockLabel and if so adds a BlockHash (if available) to append the hash
+			// content to the label to create distinct labels to ensures consistency so that output is more consistent across
+			// runs and between export comparisons across orgs. See DEVTOOLING-1182 and DEVTOOLING-1183.
 			validateBCPOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerBCPOptimized) {
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
@@ -436,32 +437,32 @@ func TestUnitSanitize(t *testing.T) {
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id6"].BlockLabel)
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id7"].BlockLabel)
 				assert.NotEqual(t, result["id6"].BlockLabel, result["id7"].BlockLabel)
-				id1Hash := sanitizer.SanitizeResourceHash(*result["id1"])
-				id2Hash := sanitizer.SanitizeResourceHash(*result["id2"])
-				id3Hash := sanitizer.SanitizeResourceHash(*result["id3"])
-				id4Hash := sanitizer.SanitizeResourceHash(*result["id4"])
-				id5Hash := sanitizer.SanitizeResourceHash(*result["id5"])
-				id6Hash := sanitizer.SanitizeResourceHash(*result["id6"])
-				id7Hash := sanitizer.SanitizeResourceHash(*result["id7"])
+				id1Hash := sanitizer.SanitizeResourceHash(result["id1"].OriginalLabel)
+				id2Hash := sanitizer.SanitizeResourceHash(result["id2"].OriginalLabel)
+				id3Hash := sanitizer.SanitizeResourceHash(result["id3"].OriginalLabel)
+				id4Hash := sanitizer.SanitizeResourceHash(result["id4"].OriginalLabel)
+				id5Hash := sanitizer.SanitizeResourceHash(result["id5"].OriginalLabel)
+				id6Hash := sanitizer.SanitizeResourceHash(result["id6"].OriginalLabel)
+				id7Hash := sanitizer.SanitizeResourceHash(result["id7"].OriginalLabel)
 
 				assert.NotEqual(t, id3Hash, id4Hash)
 				assert.NotEqual(t, id3Hash, id5Hash)
 				assert.NotEqual(t, id3Hash, id6Hash)
 				assert.NotEqual(t, id3Hash, id7Hash)
-				assert.NotEqual(t, id4Hash, id5Hash)
+				assert.Equal(t, id4Hash, id5Hash)
 				assert.NotEqual(t, id4Hash, id6Hash)
 				assert.NotEqual(t, id4Hash, id7Hash)
 				assert.NotEqual(t, id5Hash, id6Hash)
 				assert.NotEqual(t, id5Hash, id7Hash)
 				assert.Equal(t, id6Hash, id7Hash)
 
-				assert.Equal(t, result["id1"].BlockLabel, fmt.Sprintf("test_distinct_user_foo_com__%s", id1Hash))
-				assert.Equal(t, result["id2"].BlockLabel, fmt.Sprintf("test_distinct_user2_foo_com__%s", id2Hash))
-				assert.Equal(t, result["id3"].BlockLabel, fmt.Sprintf("test_user_foo_com__%s", id3Hash))
-				assert.Equal(t, result["id4"].BlockLabel, fmt.Sprintf("test_user_foo_com__%s", id4Hash))
-				assert.Equal(t, result["id5"].BlockLabel, fmt.Sprintf("test_user_foo_com__%s", id5Hash))
-				assert.True(t, strings.HasPrefix(result["id6"].BlockLabel, fmt.Sprintf("test_user_foo_com__%s", id6Hash)))
-				assert.True(t, strings.HasPrefix(result["id7"].BlockLabel, fmt.Sprintf("test_user_foo_com__%s", id6Hash)))
+				assert.Equal(t, result["id1"].BlockLabel, fmt.Sprintf("test_distinct_user_foo_com__BLH%s", id1Hash))
+				assert.Equal(t, result["id2"].BlockLabel, fmt.Sprintf("test_distinct_user2_foo_com__BLH%s", id2Hash))
+				assert.Equal(t, result["id3"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s", id3Hash))
+				assert.Equal(t, result["id4"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id4Hash, result["id4"].BlockHash))
+				assert.Equal(t, result["id5"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id5Hash, result["id5"].BlockHash))
+				assert.True(t, strings.HasPrefix(result["id6"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id6Hash, result["id6"].BlockHash)))
+				assert.True(t, strings.HasPrefix(result["id7"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id6Hash, result["id7"].BlockHash)))
 				assert.False(t, strings.Contains(result["id1"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended
 				assert.False(t, strings.Contains(result["id2"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended
 				assert.False(t, strings.Contains(result["id3"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended

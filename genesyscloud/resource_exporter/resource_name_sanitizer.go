@@ -172,23 +172,52 @@ func (sod *sanitizerOptimized) SanitizeResourceHash(originalBlockLabel string) s
 // adding hashes to the end of all resource block labels to ensure consistent uniqueness
 // See DEVTOOLING-1182 for details on why this sanitizer was necessary
 func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
-	sanitizedLabels := make(map[string][]string)
+	// Maps to track labels at each stage
+	baseLabels := make(map[string]string)   // id -> base sanitized label
+	labelToIDs := make(map[string][]string) // label -> []id
+	needsUFH := make(map[string]bool)       // id -> needs UFH
 
-	// First pass to generate sanitized labels and group them
+	// First pass - basic sanitization and identify duplicates
 	for id, meta := range idMetaMap {
 		meta.OriginalLabel = meta.BlockLabel
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
-		hash := sod.SanitizeResourceHash(*meta)
-		sanitizedLabel = sanitizedLabel + "__" + hash
+		baseHash := sod.SanitizeResourceHash(meta.OriginalLabel)
+		labelWithBLH := sanitizedLabel + "__BLH" + baseHash
 
-		sanitizedLabels[sanitizedLabel] = append(sanitizedLabels[sanitizedLabel], id)
+		baseLabels[id] = labelWithBLH
+		labelToIDs[labelWithBLH] = append(labelToIDs[labelWithBLH], id)
 	}
 
-	// Second pass to update labels
+	// Identify which need the UFH (Unique Fields Hash) suffix
+	for _, ids := range labelToIDs {
+		if len(ids) > 1 {
+			for _, id := range ids {
+				needsUFH[id] = true
+			}
+		}
+	}
+
+	// Clear map for reuse
+	labelToIDs = make(map[string][]string)
+
+	// Apply UFH where needed
 	for id, meta := range idMetaMap {
-		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
-		hash := sod.SanitizeResourceHash(*meta)
-		sanitizedLabel = sanitizedLabel + "__" + hash
+		baseLabel := baseLabels[id]
+		finalLabel := baseLabel
+
+		if needsUFH[id] && meta.BlockHash != "" {
+			finalLabel = baseLabel + "_UFH" + meta.BlockHash
+		}
+
+		labelToIDs[finalLabel] = append(labelToIDs[finalLabel], id)
+	}
+
+	// Final pass - handle any remaining duplicates
+	for label, ids := range labelToIDs {
+		if len(ids) == 1 {
+			idMetaMap[ids[0]].BlockLabel = label
+			continue
+		}
 
 		// This should never/rarely happen as the sanitizer is specifically designed to prevent duplicates
 		// through the BLH (Block Label Hash) and UFH (Unique Fields Hash) strategies.
@@ -202,19 +231,9 @@ func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 		//    - The complete resource configurations
 		//    - The generated hashes (both BLH and UFH)
 		// Reference DEVTOOLING-1183 for more details on BlockHash implementation
-		if len(sanitizedLabels[sanitizedLabel]) > 1 {
-
-			instanceNum := 0
-			for i, storedId := range sanitizedLabels[sanitizedLabel] {
-				if storedId == id {
-					instanceNum = i + 1
-					break
-				}
-			}
-			sanitizedLabel = fmt.Sprintf("%s_DUPLICATE_INSTANCE_PLEASE_REPORT_%d", sanitizedLabel, instanceNum)
+		for i, id := range ids {
+			idMetaMap[id].BlockLabel = fmt.Sprintf("%s_DUPLICATE_INSTANCE_PLEASE_REPORT_%d", label, i+1)
 		}
-
-		meta.BlockLabel = sanitizedLabel
 	}
 }
 
@@ -237,16 +256,8 @@ func (sod *sanitizerBCPOptimized) SanitizeResourceBlockLabel(inputLabel string) 
 	return label
 }
 
-func (sod *sanitizerBCPOptimized) SanitizeResourceHash(meta ResourceMeta) string {
+func (sod *sanitizerBCPOptimized) SanitizeResourceHash(originalLabel string) string {
 	h := sha256.New()
-	h.Write([]byte(meta.OriginalLabel))
-	labelHash := hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
-
-	// BLH prefix = "block label hash"
-	labelHashAppendage := "_BLH" + labelHash
-	if meta.BlockHash != "" {
-		// UFH prefix = "unique fields hash"
-		labelHashAppendage = labelHashAppendage + "_UFH" + meta.BlockHash
-	}
-	return labelHashAppendage
+	h.Write([]byte(originalLabel))
+	return hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 }

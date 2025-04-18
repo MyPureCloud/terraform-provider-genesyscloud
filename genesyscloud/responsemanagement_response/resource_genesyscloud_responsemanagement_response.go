@@ -33,7 +33,11 @@ func getAllAuthResponsemanagementResponses(ctx context.Context, clientConfig *pl
 	}
 
 	for _, response := range *responseManagementResponses {
-		hashedUniqueFields, err := util.QuickHashFields(*response.Libraries, *response.Texts)
+		libraryNames := []string{}
+		for _, library := range *response.Libraries {
+			libraryNames = append(libraryNames, *library.Name)
+		}
+		hashedUniqueFields, err := util.QuickHashFields(libraryNames)
 		if err != nil {
 			return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to hash unique fields of response management response %s error: %s", *response.Id, err), err)
 		}

@@ -33,7 +33,7 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 
 	for _, didPool := range *didPools {
 		if didPool.State != nil && *didPool.State != "deleted" {
-			blockHash, err := util.QuickHashFields(didPool.StartPhoneNumber, didPool.EndPhoneNumber, didPool.Description, didPool.Comments, didPool.Provider)
+			blockHash, err := util.QuickHashFields(didPool.StartPhoneNumber, didPool.EndPhoneNumber, didPool.Provider)
 			if err != nil {
 				return nil, diag.FromErr(err)
 			}
