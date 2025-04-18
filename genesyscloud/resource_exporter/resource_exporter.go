@@ -26,6 +26,17 @@ type ResourceMeta struct {
 	// Prefix to add to the ID when reading state
 	IdPrefix string
 
+	// BlockHash represents a unique identifier generated from the resource's distinguishing attributes.
+	// Important:
+	//   * Use util.QuickHashFields() to generate this hash
+	//   * Only include fields that uniquely identify the resource WITHOUT using its ID
+	//   * Do NOT include fields that are calculated (i.e., createdDate)
+	//   * ID fields and calculated field must be excluded from the hash calculation because:
+	//       - IDs and calculated values prevent correlation of resources across different exports and
+	//         make it impossible to compare equivalent resources between environments
+	BlockHash string
+
+	// Represents the unsanitized version of the BlockLabel
 	OriginalLabel string
 }
 

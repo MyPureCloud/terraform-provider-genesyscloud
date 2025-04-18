@@ -176,9 +176,10 @@ func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 
 	// First pass to generate sanitized labels and group them
 	for id, meta := range idMetaMap {
+		meta.OriginalLabel = meta.BlockLabel
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
-		hash := sod.SanitizeResourceHash(meta.BlockLabel)
-		sanitizedLabel = sanitizedLabel + "_" + hash
+		hash := sod.SanitizeResourceHash(*meta)
+		sanitizedLabel = sanitizedLabel + "__" + hash
 
 		sanitizedLabels[sanitizedLabel] = append(sanitizedLabels[sanitizedLabel], id)
 	}
@@ -186,11 +187,21 @@ func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 	// Second pass to update labels
 	for id, meta := range idMetaMap {
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
-		hash := sod.SanitizeResourceHash(meta.BlockLabel)
-		sanitizedLabel = sanitizedLabel + "_" + hash
+		hash := sod.SanitizeResourceHash(*meta)
+		sanitizedLabel = sanitizedLabel + "__" + hash
 
-		// This should never/rarely happen, but handle this scenario inside the sanitizer just in case
-		// Really a better approach would be what is detailed in DEVTOOLING-1183
+		// This should never/rarely happen as the sanitizer is specifically designed to prevent duplicates
+		// through the BLH (Block Label Hash) and UFH (Unique Fields Hash) strategies.
+		// If you encounter this, it most likely means the resource type needs a BlockHash (UFH) configured.
+		// To resolve:
+		// 1. Check if the resource type has a BlockHash configured in its exporter
+		// 2. If not, add a BlockHash using unique identifying fields for the resource type. Details on this
+		//    be found in the ResourceMeta.BlockHash documentation with directions to use util.QuickHashFields().
+		// 3. If BlockHash is already configured, file a bug report with:
+		//    - The original resource labels that caused the collision
+		//    - The complete resource configurations
+		//    - The generated hashes (both BLH and UFH)
+		// Reference DEVTOOLING-1183 for more details on BlockHash implementation
 		if len(sanitizedLabels[sanitizedLabel]) > 1 {
 
 			instanceNum := 0
@@ -200,12 +211,9 @@ func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 					break
 				}
 			}
-			sanitizedLabel = fmt.Sprintf("%s_DUPLICATE_INSTANCE_%d", sanitizedLabel, instanceNum)
+			sanitizedLabel = fmt.Sprintf("%s_DUPLICATE_INSTANCE_PLEASE_REPORT_%d", sanitizedLabel, instanceNum)
 		}
 
-		if meta.OriginalLabel == "" {
-			meta.OriginalLabel = meta.BlockLabel
-		}
 		meta.BlockLabel = sanitizedLabel
 	}
 }
@@ -229,8 +237,16 @@ func (sod *sanitizerBCPOptimized) SanitizeResourceBlockLabel(inputLabel string) 
 	return label
 }
 
-func (sod *sanitizerBCPOptimized) SanitizeResourceHash(originalBlockLabel string) string {
+func (sod *sanitizerBCPOptimized) SanitizeResourceHash(meta ResourceMeta) string {
 	h := sha256.New()
-	h.Write([]byte(originalBlockLabel))
-	return hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
+	h.Write([]byte(meta.OriginalLabel))
+	labelHash := hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
+
+	// BLH prefix = "block label hash"
+	labelHashAppendage := "_BLH" + labelHash
+	if meta.BlockHash != "" {
+		// UFH prefix = "unique fields hash"
+		labelHashAppendage = labelHashAppendage + "_UFH" + meta.BlockHash
+	}
+	return labelHashAppendage
 }
