@@ -47,6 +47,7 @@ resource "genesyscloud_oauth_client" "example-client" {
 ### Optional
 
 - `access_token_validity_seconds` (Number) The number of seconds, between 5mins and 48hrs, until tokens created with this client expire. Only clients using Genesys Cloud SCIM (Identity Management) can have a maximum duration of 38880000secs/450 days. Defaults to `86400`.
+- `client_secret` (String, Sensitive) Place holder that can be referred in integration_credential fields. Sensitive info
 - `description` (String) The description of the OAuth client.
 - `integration_credential_name` (String) Optionally, a Name of a Integration Credential (with credential type pureCloudOAuthClient) to be created using this new OAuth Client.
 - `registered_redirect_uris` (Set of String) List of allowed callbacks for this client. For example: https://myapp.example.com/auth/callback.
@@ -56,6 +57,7 @@ resource "genesyscloud_oauth_client" "example-client" {
 
 ### Read-Only
 
+- `client_id` (String) Place holder that can be referred in integration_credential fields.
 - `id` (String) The ID of this resource.
 - `integration_credential_id` (String) The Id of the created Integration Credential using this new OAuth Client.
 
