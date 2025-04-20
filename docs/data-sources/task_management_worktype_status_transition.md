@@ -3,12 +3,12 @@
 page_title: "genesyscloud_task_management_worktype_status_transition Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud task management worktype status data source. Select an task management worktype status by name
+  Genesys Cloud task management worktype status transition data source. Select an task management worktype status by name
 ---
 
 # genesyscloud_task_management_worktype_status_transition (Data Source)
 
-Genesys Cloud task management worktype status data source. Select an task management worktype status by name
+Genesys Cloud task management worktype status transition data source. Select an task management worktype status by name
 
 
 
