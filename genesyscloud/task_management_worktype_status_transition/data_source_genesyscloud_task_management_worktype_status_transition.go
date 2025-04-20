@@ -20,7 +20,7 @@ import (
 */
 
 // dataSourceTaskManagementWorktypeStatusRead retrieves by name the id in question
-func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceTaskManagementWorktypeStatusTransitionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 

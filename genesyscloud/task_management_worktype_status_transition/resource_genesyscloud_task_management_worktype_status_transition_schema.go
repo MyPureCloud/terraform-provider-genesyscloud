@@ -98,8 +98,8 @@ func TaskManagementWorktypeStatusTransitionExporter() *resourceExporter.Resource
 // DataSourceTaskManagementWorktypeStatusTransition registers the genesyscloud_task_management_worktype_status data source
 func DataSourceTaskManagementWorktypeStatusTransition() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud task management worktype status data source. Select an task management worktype status by name`,
-		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorktypeStatusRead),
+		Description: `Genesys Cloud task management worktype status transition data source. Select an task management worktype status by name`,
+		ReadContext: provider.ReadWithPooledClient(dataSourceTaskManagementWorktypeStatusTransitionRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

@@ -27,9 +27,9 @@ func modifyStatusIdStateValue(id interface{}) string {
 	return statusId
 }
 
-// SplitWorktypeStatusTerraformId will split the status resource id which is in the form
+// splitWorktypeStatusTerraformTransitionId will split the status resource id which is in the form
 // <worktypeId>/<statusId> into just the worktypeId and statusId string
-func splitWorktypeStatusTerraformId(id string) (worktypeId string, statusId string) {
+func splitWorktypeStatusTerraformTransitionId(id string) (worktypeId string, statusId string) {
 	idWithoutSuffix := strings.TrimSuffix(id, " transition")
 	if strings.Contains(idWithoutSuffix, "/") {
 		return strings.Split(idWithoutSuffix, "/")[0], strings.Split(idWithoutSuffix, "/")[1]
@@ -163,12 +163,12 @@ func ValidateStatusIds(statusResource1 string, key1 string, statusResource2 stri
 
 		status1KeyValue := status1.Primary.Attributes[key1]
 		if strings.Contains(status1KeyValue, "/") {
-			_, status1KeyValue = splitWorktypeStatusTerraformId(status1KeyValue)
+			_, status1KeyValue = splitWorktypeStatusTerraformTransitionId(status1KeyValue)
 		}
 
 		status2KeyValue := status2.Primary.Attributes[key2]
 		if strings.Contains(status2KeyValue, "/") {
-			_, status2KeyValue = splitWorktypeStatusTerraformId(status2KeyValue)
+			_, status2KeyValue = splitWorktypeStatusTerraformTransitionId(status2KeyValue)
 		}
 
 		if status1KeyValue != status2KeyValue {

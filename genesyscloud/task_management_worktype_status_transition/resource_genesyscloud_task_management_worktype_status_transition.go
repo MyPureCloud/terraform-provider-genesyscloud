@@ -65,6 +65,7 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 	worktypeId := d.Get("worktype_id").(string)
+	log.Printf("%v status during transition create", d.Get("status_id").(string))
 	statusId := fetchWorktypeStatusTerraformId(d.Get("status_id").(string))
 	destinationStatusIds := lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids")
 	defaultDestinationStatusId := resourcedata.GetNillableValue[string](d, "default_destination_status_id")
@@ -102,14 +103,14 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	if destinationStatusIds != nil && len(*destinationStatusIds) > 0 {
 		for i, destinationStatusId := range *destinationStatusIds {
 			if strings.Contains(destinationStatusId, "/") {
-				_, id := splitWorktypeStatusTerraformId(destinationStatusId)
+				_, id := splitWorktypeStatusTerraformTransitionId(destinationStatusId)
 				(*destinationStatusIds)[i] = id
 			}
 		}
 	}
 
 	if defaultDestinationStatusId != nil && strings.Contains(*defaultDestinationStatusId, "/") {
-		_, id := splitWorktypeStatusTerraformId(*defaultDestinationStatusId)
+		_, id := splitWorktypeStatusTerraformTransitionId(*defaultDestinationStatusId)
 		defaultDestinationStatusId = &id
 	}
 
@@ -149,7 +150,7 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 func readTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
-	worktypeId, statusId := splitWorktypeStatusTerraformId(d.Id())
+	worktypeId, statusId := splitWorktypeStatusTerraformTransitionId(d.Id())
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementWorktypeStatusTransition(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading task management worktype %s status %s", worktypeId, statusId)
@@ -164,7 +165,7 @@ func readTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.R
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
 		}
 		resourcedata.SetNillableValue(d, "worktype_id", workitemStatus.Worktype.Id)
-		resourcedata.SetNillableValue(d, "status_id", workitemStatus.Id)
+		_ = d.Set("status_id", *workitemStatus.Worktype.Id+"/"+*workitemStatus.Id)
 		if workitemStatus.DestinationStatuses != nil {
 			destinationStatuses := make([]interface{}, len(*workitemStatus.DestinationStatuses))
 			for i, v := range *workitemStatus.DestinationStatuses {
@@ -179,10 +180,11 @@ func readTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.R
 		}
 		resourcedata.SetNillableValue(d, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
 		resourcedata.SetNillableValue(d, "status_transition_time", workitemStatus.StatusTransitionTime)
-		log.Printf("Read task management worktype %s status %s %s", worktypeId, *workitemStatus.Id, *workitemStatus.Name)
+		log.Printf("Read task management worktype %s status transition %s %s", worktypeId, *workitemStatus.Id, *workitemStatus.Name)
 		return cc.CheckState(d)
 	})
 }
+
 
 // updateTaskManagementWorkTypeStatusTransition is used by the task_management_worktype_status resource to update an task management worktype status in Genesys Cloud
 func updateTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -193,8 +195,8 @@ func updateTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
-	worktypeId := d.Get("worktype_id").(string)
-	_, statusId := splitWorktypeStatusTerraformId(d.Get("status_id").(string))
+
+	worktypeId, statusId := splitWorktypeStatusTerraformTransitionId(d.Id())
 	destinationStatusIds := &[]string{}
 
 	err := validateSchema(d)
@@ -232,7 +234,7 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	if destinationStatusIds != nil && len(*destinationStatusIds) > 0 {
 		for i, destinationStatusId := range *destinationStatusIds {
 			if strings.Contains(destinationStatusId, "/") {
-				_, id := splitWorktypeStatusTerraformId(destinationStatusId)
+				_, id := splitWorktypeStatusTerraformTransitionId(destinationStatusId)
 				(*destinationStatusIds)[i] = id
 			}
 		}
@@ -261,6 +263,6 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	if diagErr != nil {
 		return diagErr
 	}
-	log.Printf("%s task management worktype %s status %s %s, completed", "delete", worktypeId, *workitemStatus.Id, *workitemStatus.Name)
+	log.Printf("%s task management worktype %s status  transition %s %s, completed", "delete", worktypeId, *workitemStatus.Id, *workitemStatus.Name)
 	return nil
 }
