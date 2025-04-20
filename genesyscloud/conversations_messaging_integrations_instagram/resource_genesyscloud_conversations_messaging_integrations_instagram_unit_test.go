@@ -3,8 +3,8 @@ package conversations_messaging_integrations_instagram
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/google/uuid"

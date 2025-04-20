@@ -2,9 +2,9 @@ package responsemanagement_response
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"

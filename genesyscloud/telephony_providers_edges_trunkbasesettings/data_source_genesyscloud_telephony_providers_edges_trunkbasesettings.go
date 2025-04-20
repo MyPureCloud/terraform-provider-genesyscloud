@@ -3,8 +3,8 @@ package telephony_providers_edges_trunkbasesettings
 import (
 	"context"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"

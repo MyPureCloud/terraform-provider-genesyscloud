@@ -4,11 +4,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	unidecode "github.com/mozillazg/go-unidecode"
 )

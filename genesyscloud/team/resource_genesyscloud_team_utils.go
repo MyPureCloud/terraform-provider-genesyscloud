@@ -7,10 +7,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )

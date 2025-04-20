@@ -1,9 +1,9 @@
 package resource_exporter
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"os"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

@@ -1,9 +1,9 @@
 package architect_schedulegroups
 
 import (
+	architectSchedules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"sync"
-	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

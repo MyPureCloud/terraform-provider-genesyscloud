@@ -2,16 +2,16 @@ package outbound_sequence
 
 import (
 	"fmt"
+	outboundCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"path/filepath"
 	"strconv"
-	outboundCampaign "terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

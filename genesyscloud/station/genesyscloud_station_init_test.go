@@ -1,17 +1,17 @@
 package station
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"log"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	edgePhone "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
-	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	edgePhone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
+	phoneBaseSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

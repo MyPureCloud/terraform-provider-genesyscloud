@@ -3,11 +3,11 @@ package oauth_client
 import (
 	"context"
 	"encoding/json"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"sort"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/google/uuid"

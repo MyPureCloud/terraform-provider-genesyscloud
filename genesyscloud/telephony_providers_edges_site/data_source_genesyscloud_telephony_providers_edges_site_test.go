@@ -2,10 +2,10 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
+	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
-	location "terraform-provider-genesyscloud/genesyscloud/location"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
