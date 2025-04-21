@@ -45,9 +45,6 @@ func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData) (pl
 		externalOrganization.Websites = &websites
 	}
 
-	if d.Get("primary_contact_id").(string) != "" {
-		externalOrganization.PrimaryContactId = platformclientv2.String(d.Get("primary_contact_id").(string))
-	}
 	schema, err := BuildOrganizationSchema(d.Get("schema").([]interface{}))
 	if err != nil {
 		return externalOrganization, err

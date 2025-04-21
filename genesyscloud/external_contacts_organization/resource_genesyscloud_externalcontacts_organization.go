@@ -87,7 +87,6 @@ func readExternalContactsOrganization(ctx context.Context, d *schema.ResourceDat
 		resourcedata.SetNillableValue(d, "name", externalOrganization.Name)
 		resourcedata.SetNillableValue(d, "company_type", externalOrganization.CompanyType)
 		resourcedata.SetNillableValue(d, "industry", externalOrganization.Industry)
-		resourcedata.SetNillableValue(d, "primary_contact_id", externalOrganization.PrimaryContactId)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "address", externalOrganization.Address, flattenSdkAddress)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_number", externalOrganization.PhoneNumber, flattenPhoneNumber)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "fax_number", externalOrganization.FaxNumber, flattenPhoneNumber)

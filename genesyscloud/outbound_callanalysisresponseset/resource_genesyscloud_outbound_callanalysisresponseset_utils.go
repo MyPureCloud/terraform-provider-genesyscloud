@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v156/platformclientv2"
 )
 
 func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Responseset {
@@ -15,6 +15,11 @@ func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Res
 		BeepDetectionEnabled: platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
 	}
 
+	liveSpeakerDetectionMode := d.Get("live_speaker_detection_mode").(string)
+
+	if len(liveSpeakerDetectionMode) > 0 {
+		sdkResponseSet.LiveSpeakerDetectionMode = platformclientv2.String(liveSpeakerDetectionMode)
+	}
 	responses := d.Get("responses").([]interface{})
 	if responses != nil && len(responses) > 0 {
 		sdkResponseSet.Responses = buildSdkOutboundCallAnalysisResponseSetReaction(responses)
