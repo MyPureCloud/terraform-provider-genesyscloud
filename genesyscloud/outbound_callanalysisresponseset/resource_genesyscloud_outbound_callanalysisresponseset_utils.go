@@ -134,13 +134,12 @@ func GenerateCarsResponse(identifier string, reactionType string, name string, d
 `, identifier, reactionType, name, data)
 }
 
-func GenerateOutboundCallAnalysisResponseSetResourceWithLiveSpeaker(resourceLabel, name, beepDetectionEnabled, liveSpeakerDetectionMode, responsesBlock string) string {
+func GenerateOutboundCallAnalysisResponseSetResourceWithLiveSpeaker(resourceLabel, name, liveSpeakerDetectionMode, responseBlock string) string {
 	return fmt.Sprintf(`
-resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
+	resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name                   = "%s"
-	beep_detection_enabled = %s
 	live_speaker_detection_mode = "%s"
 	%s
 }
-`, resourceLabel, name, beepDetectionEnabled, liveSpeakerDetectionMode, responsesBlock)
+`, resourceLabel, name, liveSpeakerDetectionMode, responseBlock)
 }

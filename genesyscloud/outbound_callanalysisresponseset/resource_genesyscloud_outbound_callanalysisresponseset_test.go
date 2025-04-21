@@ -180,6 +180,58 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	})
 }
 
+func TestAccResourceOutboundCallAnalysisResponseSetWithLiveDetection(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel            = "test_car"
+		name                     = "Terraform test CAR " + uuid.NewString()
+		liveSpeakerDetectionMode = "Medium"
+		identifier1              = "callable_person"
+		identifier2              = "callable_fax"
+		identifier3              = "callable_machine"
+		reactionType             = "transfer"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateOutboundCallAnalysisResponseSetResourceWithLiveSpeaker(
+					resourceLabel,
+					name,
+					liveSpeakerDetectionMode,
+					GenerateCarsResponsesBlock(
+						GenerateCarsResponse(
+							identifier1,
+							reactionType,
+							"",
+							"",
+						),
+						GenerateCarsResponse(
+							identifier2,
+							reactionType,
+							"",
+							"",
+						),
+						GenerateCarsResponse(
+							identifier3,
+							reactionType,
+							"",
+							"",
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "live_speaker_detection_mode", liveSpeakerDetectionMode),
+				),
+			},
+		},
+		CheckDestroy: testVerifyCallAnalysisResponseSetDestroyed,
+	})
+}
+
 func testVerifyCallAnalysisResponseSetDestroyed(state *terraform.State) error {
 	outboundAPI := platformclientv2.NewOutboundApi()
 	for _, rs := range state.RootModule().Resources {

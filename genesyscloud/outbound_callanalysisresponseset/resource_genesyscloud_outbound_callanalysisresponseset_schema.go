@@ -155,7 +155,8 @@ func ResourceOutboundCallanalysisresponseset() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				Type:        schema.TypeBool,
-			}, `amd_speech_distinguish_enabled`: {
+			},
+			`amd_speech_distinguish_enabled`: {
 				Description: `Whether to enable answering machine detection`,
 				Optional:    true,
 				Default:     true,
