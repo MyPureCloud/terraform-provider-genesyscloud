@@ -105,7 +105,7 @@ func getTaskManagementWorktypeStatusIdByNameFn(ctx context.Context, p *taskManag
 	}
 
 	if statuses == nil || len(*statuses) == 0 {
-		return "", resp, true, err
+		return "", resp, true, fmt.Errorf("Unable to find task management worktype status with name %s", name)
 	}
 
 	for _, workitemStatus := range *statuses {
