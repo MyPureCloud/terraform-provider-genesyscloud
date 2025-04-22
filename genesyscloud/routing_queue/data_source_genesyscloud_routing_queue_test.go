@@ -42,7 +42,7 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue, //suppressCall_record_false
 					util.NullValue, // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					strconv.Quote("QueueMembersOnly"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 				) + generateRoutingQueueDataSource(
