@@ -60,6 +60,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
 		assert.Equal(t, testRoutingQueue.CannedResponseLibraries, routingQueue.CannedResponseLibraries, "Canned Response Libraries not equal")
+		assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, *routingQueue.LastAgentRoutingMode, "LastAgentRoutingMode Not Equal")
 		return queue, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
@@ -196,6 +197,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 	assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 	assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+	assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, *routingQueue.LastAgentRoutingMode, "LastAgentRoutingMode Not Equal")
 }
 
 func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
@@ -244,6 +246,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+		assert.Equal(t, testRoutingQueue.LastAgentRoutingMode, routingQueue.LastAgentRoutingMode, "LastAgentRoutingMode Not Equal")
 
 		return nil, nil, nil
 	}
@@ -690,6 +693,7 @@ func convertCreateQueuetoQueue(req platformclientv2.Createqueuerequest) *platfor
 		OnHoldPrompt:                 req.OnHoldPrompt,
 		DefaultScripts:               req.DefaultScripts,
 		CannedResponseLibraries:      req.CannedResponseLibraries,
+		LastAgentRoutingMode:         req.LastAgentRoutingMode,
 	}
 }
 
