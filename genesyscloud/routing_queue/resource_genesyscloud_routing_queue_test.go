@@ -13,6 +13,7 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"terraform-provider-genesyscloud/genesyscloud/group"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
@@ -68,6 +69,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		callbackModeAgentFirst   = "AgentFirst"
 		userID                   string
 		groupName                = "MySeries6Groupv20_" + uuid.NewString()
+		lastAgentRoutingMode     = "QueueMembersOnly"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -100,6 +102,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,               // enable_manual_assignment false
 					util.NullValue,               // enable_transcription false
 					strconv.Quote(scoringMethod), // scoring Method
+					strconv.Quote(lastAgentRoutingMode),
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -123,6 +126,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingMode),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -160,6 +164,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.TrueValue, // enable_manual_assignment true
 					util.TrueValue, // enable_transcription true
 					strconv.Quote(scoringMethod),
+					strconv.Quote(lastAgentRoutingMode),
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
@@ -183,6 +188,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_name", callingPartyName),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_number", callingPartyNumber),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "scoring_method", scoringMethod),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingMode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.TrueValue),
@@ -539,6 +545,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 		skillGroupResourceLabel = "skillgroup"
 		skillGroupName          = "test skillgroup " + uuid.NewString()
 		callbackModeAgentFirst  = "AgentFirst"
+		lastAgentRoutingMode    = "QueueMembersOnly"
 	)
 
 	// Create CGR queue with routing rules
@@ -567,6 +574,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 					util.NullValue, // enable_manual_assignment false
 					strconv.Quote(scoringMethod),
+					strconv.Quote(lastAgentRoutingMode),
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -591,6 +599,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingMode),
 					validateMediaSettings(queueResourceLabel1, "media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -1511,6 +1520,118 @@ resource "genesyscloud_user" "%s" {
 				Check: resource.ComposeTestCheckFunc(
 					checkUserDeleted(userID),
 				),
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
+func TestAccResourceRoutingQueueCannedResponseLibraryIds(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel = "queue_with_lib_ids"
+		queueNameAttr = "tf test queue" + uuid.NewString()
+		queueFullPath = ResourceType + "." + resourceLabel
+
+		library1Label        = "lib1"
+		library1NameAttr     = "tf test library " + uuid.NewString()
+		lib1FullResourcePath = responseManagementLibrary.ResourceType + "." + library1Label
+
+		library2Label        = "lib2"
+		library2NameAttr     = "tf test library " + uuid.NewString()
+		lib2FullResourcePath = responseManagementLibrary.ResourceType + "." + library2Label
+
+		library3Label        = "lib3"
+		library3NameAttr     = "tf test library " + uuid.NewString()
+		lib3FullResourcePath = responseManagementLibrary.ResourceType + "." + library3Label
+	)
+
+	lib1Config := responseManagementLibrary.GenerateResponseManagementLibraryResource(library1Label, library1NameAttr)
+	lib2Config := responseManagementLibrary.GenerateResponseManagementLibraryResource(library2Label, library2NameAttr)
+	lib3Config := responseManagementLibrary.GenerateResponseManagementLibraryResource(library3Label, library3NameAttr)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: lib1Config + lib2Config + lib3Config + fmt.Sprintf(`
+resource "%s" "%s" {
+	name = "%s"
+	canned_response_libraries {
+		mode        = "SelectedOnly"
+		library_ids = [
+			%s,
+			%s,
+			%s
+		]
+	}
+}
+`, ResourceType, resourceLabel, queueNameAttr, lib1FullResourcePath+".id", lib2FullResourcePath+".id", lib3FullResourcePath+".id"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(queueFullPath, "name", queueNameAttr),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.mode", "SelectedOnly"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.library_ids.#", "3"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib1FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib2FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib3FullResourcePath, "id"),
+				),
+			},
+			// update just the description
+			{
+				Config: lib1Config + lib2Config + lib3Config + fmt.Sprintf(`
+resource "%s" "%s" {
+	name        = "%s"
+	description = "Foobar"
+	canned_response_libraries {
+		mode        = "SelectedOnly"
+		library_ids = [
+			%s,
+			%s,
+			%s
+		]
+	}
+}
+`, ResourceType, resourceLabel, queueNameAttr, lib1FullResourcePath+".id", lib2FullResourcePath+".id", lib3FullResourcePath+".id"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(queueFullPath, "name", queueNameAttr),
+					resource.TestCheckResourceAttr(queueFullPath, "description", "Foobar"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.mode", "SelectedOnly"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.library_ids.#", "3"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib1FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib2FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib3FullResourcePath, "id"),
+				),
+			},
+			// update description and library_ids
+			{
+				Config: lib1Config + lib2Config + lib3Config + fmt.Sprintf(`
+resource "%s" "%s" {
+	name        = "%s"
+	description = "Foo"
+	canned_response_libraries {
+		mode        = "SelectedOnly"
+		library_ids = [
+			%s,
+			%s
+		]
+	}
+}
+`, ResourceType, resourceLabel, queueNameAttr, lib1FullResourcePath+".id", lib2FullResourcePath+".id"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(queueFullPath, "name", queueNameAttr),
+					resource.TestCheckResourceAttr(queueFullPath, "description", "Foo"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.mode", "SelectedOnly"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.library_ids.#", "2"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib1FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib2FullResourcePath, "id"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      queueFullPath,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,

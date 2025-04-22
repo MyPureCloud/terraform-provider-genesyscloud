@@ -53,7 +53,6 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchJourney, false)
-	assignmentExpirationDays := resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
 
 	sdkPatchSegment := platformclientv2.Patchsegment{}
 	sdkPatchSegment.SetField("IsActive", &isActive)
@@ -63,7 +62,8 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
-	sdkPatchSegment.SetField("AssignmentExpirationDays", assignmentExpirationDays)
+	sdkPatchSegment.AssignmentExpirationDays = resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
+
 	return &sdkPatchSegment
 }
 

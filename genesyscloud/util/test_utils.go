@@ -80,38 +80,49 @@ func ValidateStringInArray(resourcePath string, attrName string, value string) r
 	}
 }
 
-// The 'TestCheckResourceAttrPair' version of ValidateStringInArray
-func ValidateResourceAttributeInArray(resource1Name string, arrayAttrName, resource2Name string, valueAttrName string) resource.TestCheckFunc {
+// ValidateResourceAttributeInArray validates that a specific attribute value from one resource
+// exists within an array attribute of another resource in the Terraform state.
+//
+// Parameters:
+//   - arrayResourceName: The name of the resource containing the array to search in
+//   - arrayFieldName: The name of the array field to search in
+//   - sourceResourceName: The name of the resource containing the value to find
+//   - sourceFieldName: The field name whose value should exist in the array
+//
+// Returns:
+//   - A TestCheckFunc that returns nil if the value is found in the array
+//   - An error if either resource is not found in state or if the value is not found in the array
+func ValidateResourceAttributeInArray(arrayResourceName string, arrayFieldName, sourceResourceName string, sourceFieldName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		valueResourceState, ok := state.RootModule().Resources[resource2Name]
+		sourceResource, ok := state.RootModule().Resources[sourceResourceName]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resource2Name)
+			return fmt.Errorf("failed to find resource %s in state", sourceResourceName)
 		}
-		resourceID := valueResourceState.Primary.ID
-		value, ok := valueResourceState.Primary.Attributes[valueAttrName]
+		sourceID := sourceResource.Primary.ID
+		sourceValue, ok := sourceResource.Primary.Attributes[sourceFieldName]
 		if !ok {
-			return fmt.Errorf("No %s found for %s in state", valueAttrName, resourceID)
-		}
-
-		arrayResourceState, ok := state.RootModule().Resources[resource1Name]
-		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resource1Name)
-		}
-		resource2ID := arrayResourceState.Primary.ID
-		numAttr, ok := arrayResourceState.Primary.Attributes[arrayAttrName+".#"]
-		if !ok {
-			return fmt.Errorf("No %s found for %s in state", arrayAttrName, resource2ID)
+			return fmt.Errorf("no %s found for %s in state", sourceFieldName, sourceID)
 		}
 
-		numValues, _ := strconv.Atoi(numAttr)
+		arrayResource, ok := state.RootModule().Resources[arrayResourceName]
+		if !ok {
+			return fmt.Errorf("failed to find resource %s in state", arrayResourceName)
+		}
+		arrayResourceID := arrayResource.Primary.ID
+		arraySize, ok := arrayResource.Primary.Attributes[arrayFieldName+".#"]
+		if !ok {
+			return fmt.Errorf("no %s found for %s in state", arrayFieldName, arrayResourceID)
+		}
+
+		numValues, _ := strconv.Atoi(arraySize)
 		for i := 0; i < numValues; i++ {
-			if arrayResourceState.Primary.Attributes[arrayAttrName+"."+strconv.Itoa(i)] == value {
+			if arrayResource.Primary.Attributes[arrayFieldName+"."+strconv.Itoa(i)] == sourceValue {
 				// Found value
 				return nil
 			}
 		}
 
-		return fmt.Errorf("%s %s not found for group %s in state", arrayAttrName, value, resourceID)
+		return fmt.Errorf("%s %s not found for resource %s in state", arrayFieldName, sourceValue, sourceID)
 	}
 }
 

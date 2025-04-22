@@ -58,7 +58,7 @@ var (
 			"library_ids": {
 				Description: "Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.",
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -660,6 +660,13 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"last_agent_routing_mode": {
+				Description:  "The Last Agent Routing Mode for the queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "AnyAgent",
+				ValidateFunc: validation.StringInSlice([]string{"Disabled", "QueueMembersOnly", "AnyAgent"}, false),
+			},
 		},
 	}
 }
@@ -686,7 +693,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"groups":                                            {RefType: group.ResourceType},
 			"conditional_group_routing_rules.queue_id":          {RefType: ResourceType},
 			"direct_routing.backup_queue_id":                    {RefType: ResourceType},
-			"canned_response_libraries.library_ids.*":           {RefType: responseManagementLibrary.ResourceType},
+			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
 		},

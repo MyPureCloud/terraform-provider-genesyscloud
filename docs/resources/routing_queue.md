@@ -217,6 +217,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `enable_manual_assignment` (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
 - `enable_transcription` (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
 - `groups` (Set of String) List of group ids assigned to the queue
+- `last_agent_routing_mode` (String) The Last Agent Routing Mode for the queue. Defaults to `AnyAgent`.
 - `media_settings_call` (Block List, Max: 1) Call media settings. (see [below for nested schema](#nestedblock--media_settings_call))
 - `media_settings_callback` (Block List, Max: 1) Callback media settings. (see [below for nested schema](#nestedblock--media_settings_callback))
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
@@ -282,7 +283,7 @@ Required:
 
 Optional:
 
-- `library_ids` (List of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
+- `library_ids` (Set of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
 - `mode` (String) The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.
 
 

@@ -86,7 +86,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 	internalProxy = queueProxy
 	defer func() {
 		internalProxy = nil
-		err := unsetRoutingQueueUnitTestsEnvVar()
+		err = unsetRoutingQueueUnitTestsEnvVar()
 		if err != nil {
 			t.Logf("Failed to unset env variable %s: %s", unitTestsAreActiveEnv, err.Error())
 		}
@@ -96,6 +96,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceRoutingQueue().Schema
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 	resourceDataMap := buildRoutingQueueResourceMap(tId, *testRoutingQueue.Name, testRoutingQueue)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
@@ -110,6 +111,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "unit test routing queue"
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 
 	queueProxy := &RoutingQueueProxy{}
 	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -200,6 +202,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "updated queue name"
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 
 	queueProxy := &RoutingQueueProxy{}
 	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -295,6 +298,7 @@ func TestUnitResourceRoutingQueueDelete(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "unit test routing queue"
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 
 	queueProxy := &RoutingQueueProxy{}
 	queueProxy.deleteRoutingQueueAttr = func(ctx context.Context, p *RoutingQueueProxy, queueId string, forceDelete bool) (*platformclientv2.APIResponse, error) {
@@ -521,6 +525,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"on_hold_prompt_id":                              *testRoutingQueue.OnHoldPrompt.Id,
 		"default_script_ids":                             flattenDefaultScripts(*testRoutingQueue.DefaultScripts),
 		"canned_response_libraries":                      flattenCannedResponse(testRoutingQueue.CannedResponseLibraries),
+		"last_agent_routing_mode":                        *testRoutingQueue.LastAgentRoutingMode,
 	}
 	return resourceDataMap
 }
@@ -535,6 +540,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		peerId                = "5696a54c-4009-4e63-826c-311679deeb97"
 		sourceQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		backupQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
+		lastAgentRoutingMode  = "QueueMembersOnly"
 
 		acwWrapupPrompt = "MANDATORY_TIMEOUT"
 		acwTimeoutMs    = 300000
@@ -652,6 +658,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		DefaultScripts:               &defaultScripts,
 		OutboundMessagingAddresses:   &messagingAddress,
 		CannedResponseLibraries:      &cannedResponseLibraries,
+		LastAgentRoutingMode:         &lastAgentRoutingMode,
 	}
 }
 
