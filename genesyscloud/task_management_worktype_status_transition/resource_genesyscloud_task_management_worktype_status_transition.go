@@ -185,7 +185,6 @@ func readTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.R
 	})
 }
 
-
 // updateTaskManagementWorkTypeStatusTransition is used by the task_management_worktype_status resource to update an task management worktype status in Genesys Cloud
 func updateTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return modifyTaskManagementWorkTypeStatusTransition(ctx, d, meta, "update")
