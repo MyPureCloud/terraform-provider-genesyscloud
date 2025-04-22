@@ -71,6 +71,25 @@ func ResourceIntegrationActionDraft() *schema.Resource {
 		},
 	}
 
+	actionDraftContract := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"contract_input": {
+				Description:      "JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changing the contract_input attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
+			},
+			"contract_output": {
+				Description:      "JSON schema that defines the transformed, successful result that will be sent back to the caller. Changing the contract_output attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
+			},
+		},
+	}
+
 	return &schema.Resource{
 		Description: "Genesys Cloud Integration Action Drafts. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
 
@@ -114,19 +133,13 @@ func ResourceIntegrationActionDraft() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.IntBetween(1, 60),
 			},
-			"contract_input": {
-				Description:      "JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changing the contract_input attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
-				Type:             schema.TypeString,
+			"contract": {
+				Description:      "Contract Definition",
+				Type:             schema.TypeList,
 				Required:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
-			},
-			"contract_output": {
-				Description:      "JSON schema that defines the transformed, successful result that will be sent back to the caller. Changing the contract_output attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
+				Elem:             actionDraftContract,
 			},
 			"config_request": {
 				Description: "Configuration of outbound request.",

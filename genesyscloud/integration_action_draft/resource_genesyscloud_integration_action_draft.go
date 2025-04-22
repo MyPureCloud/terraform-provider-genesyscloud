@@ -2,7 +2,6 @@ package integration_action_draft
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -101,37 +100,25 @@ func readIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, met
 		resourcedata.SetNillableValue(d, "secure", draft.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", draft.Config.TimeoutSeconds)
 
-		log.Println(draft.Contract.Input.String())
-		if draft.Contract != nil && draft.Contract.Input != nil {
-			input, err := flattenActionDraftContract(*draft.Contract.Input)
+		if draft.Contract != nil {
+			contract, err := flattenActionDraftContract(*draft.Contract)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			_ = d.Set("contract_input", input)
-		} else {
-			_ = d.Set("contract_input", nil)
-		}
-
-		if draft.Contract != nil && draft.Contract.Output != nil && draft.Contract.Output.SuccessSchema != nil {
-			output, err := flattenActionDraftContract(*draft.Contract.Output.SuccessSchema)
-			if err != nil {
-				return retry.NonRetryableError(fmt.Errorf("%v", err))
-			}
-			_ = d.Set("contract_output", output)
-		} else {
-			_ = d.Set("contract_output", nil)
+			log.Println("Flattened contract", contract)
+			_ = d.Set("contract", contract)
 		}
 
 		if draft.Config != nil && draft.Config.Request != nil {
 			draft.Config.Request.RequestTemplate = reqTemp
-			_ = d.Set("config_request", FlattenActionDraftConfigRequest(*draft.Config.Request))
+			_ = d.Set("config_request", FlattenActionConfigRequest(*draft.Config.Request))
 		} else {
 			_ = d.Set("config_request", nil)
 		}
 
 		if draft.Config != nil && draft.Config.Response != nil {
 			draft.Config.Response.SuccessTemplate = successTemp
-			_ = d.Set("config_response", FlattenActionDraftConfigResponse(*draft.Config.Response))
+			_ = d.Set("config_response", FlattenActionConfigResponse(*draft.Config.Response))
 		} else {
 			_ = d.Set("config_response", nil)
 		}
@@ -146,16 +133,17 @@ func updateIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 	iap := getIntegrationActionsProxy(sdkConfig)
 	name := d.Get("name").(string)
 
-	log.Printf("Updating integration action draft %s", name)
+	fmt.Printf("Starting update for action draft %s\n", name)
 
 	draftRequest := buildActionDraftFromResourceDataForUpdate(d)
+	fmt.Printf("Update request payload: %s\n", draftRequest.String())
 
 	_, resp, err := iap.updateIntegrationActionDraft(ctx, d.Id(), *draftRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action draft %s error: %s", name, err), resp)
 	}
 
-	log.Printf("Updated integration action draft %s", name)
+	fmt.Printf("Update successful for action draft %s\n", name)
 	return readIntegrationActionDraft(ctx, d, meta)
 }
 
@@ -187,233 +175,4 @@ func deleteIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("integration action draft %s still exists", d.Id()), resp))
 	})
-}
-
-// Helper Functions
-
-const (
-	reqTemplateFileName     = "requesttemplate.vm"
-	successTemplateFileName = "successtemplate.vm"
-)
-
-func buildActionDraftFromResourceData(d *schema.ResourceData) *platformclientv2.Postactioninput {
-	return &platformclientv2.Postactioninput{
-		Name:          platformclientv2.String(d.Get("name").(string)),
-		Category:      platformclientv2.String(d.Get("category").(string)),
-		IntegrationId: platformclientv2.String(d.Get("integration_id").(string)),
-		Secure:        platformclientv2.Bool(d.Get("secure").(bool)),
-		Contract:      buildDraftContract(d),
-		Config:        buildSdkActionConfig(d),
-	}
-}
-
-// buildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
-func buildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
-	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
-	ActionConfig := &platformclientv2.Actionconfig{
-		Request:  BuildSdkActionConfigRequest(d),
-		Response: BuildSdkActionConfigResponse(d),
-	}
-
-	if ConfigTimeoutSeconds > 0 {
-		ActionConfig.TimeoutSeconds = &ConfigTimeoutSeconds
-	}
-
-	return ActionConfig
-}
-
-// buildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
-func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
-	if configRequest := d.Get("config_request"); configRequest != nil {
-		if configList := configRequest.([]interface{}); len(configList) > 0 {
-			configMap := configList[0].(map[string]interface{})
-
-			urlTemplate := configMap["request_url_template"].(string)
-			template := configMap["request_template"].(string)
-			reqType := configMap["request_type"].(string)
-			headers := map[string]string{}
-			if headerVal, ok := configMap["headers"]; ok && headerVal != nil {
-				for key, val := range headerVal.(map[string]interface{}) {
-					headers[key] = val.(string)
-				}
-			}
-
-			return &platformclientv2.Requestconfig{
-				RequestUrlTemplate: &urlTemplate,
-				RequestTemplate:    &template,
-				RequestType:        &reqType,
-				Headers:            &headers,
-			}
-		}
-	}
-	return &platformclientv2.Requestconfig{}
-}
-
-// buildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
-func BuildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
-	if configResponse := d.Get("config_response"); configResponse != nil {
-		if configList := configResponse.([]interface{}); len(configList) > 0 {
-			configMap := configList[0].(map[string]interface{})
-
-			transMap := map[string]string{}
-			if mapVal, ok := configMap["translation_map"]; ok && mapVal != nil {
-				for key, val := range mapVal.(map[string]interface{}) {
-					transMap[key] = val.(string)
-				}
-			}
-			transMapDefaults := map[string]string{}
-			if mapVal, ok := configMap["translation_map_defaults"]; ok && mapVal != nil {
-				for key, val := range mapVal.(map[string]interface{}) {
-					transMapDefaults[key] = val.(string)
-				}
-			}
-			var successTemplate string
-			if tempVal, ok := configMap["success_template"]; ok {
-				successTemplate = tempVal.(string)
-			}
-
-			return &platformclientv2.Responseconfig{
-				TranslationMap:         &transMap,
-				TranslationMapDefaults: &transMapDefaults,
-				SuccessTemplate:        &successTemplate,
-			}
-		}
-	}
-	return &platformclientv2.Responseconfig{}
-}
-
-func buildDraftContract(d *schema.ResourceData) *platformclientv2.Actioncontractinput {
-	contractInput := d.Get("contract_input")
-	//contractOutput := d.Get("contract_output").(string)
-
-	var input platformclientv2.Postinputcontract
-	var output platformclientv2.Postoutputcontract
-
-	if contractInput != nil {
-		// First check if it's a string
-		if inputStr, ok := contractInput.(string); ok {
-			// Convert string to map[string]interface{}
-			var inputMap map[string]interface{}
-			err := json.Unmarshal([]byte(inputStr), &inputMap)
-			if err != nil {
-				log.Printf("ERROR: failed to unmarshal contract_input: %v", err)
-				return nil
-			}
-			input = *buildPostActionInput(inputMap)
-		} else if inputMap, ok := contractInput.(map[string]interface{}); ok {
-			input = *buildPostActionInput(inputMap)
-		} else {
-			log.Printf("ERROR: contract_input must be a string or map[string]interface{}")
-			return nil
-		}
-	}
-
-	log.Println(contractInput)
-	log.Println(input)
-	contract := &platformclientv2.Actioncontractinput{
-		Input:  &input,
-		Output: &output,
-	}
-	log.Println(contract.Input.String())
-	return contract
-}
-
-func buildPostActionInput(input interface{}) *platformclientv2.Postinputcontract {
-	if input == nil {
-		return nil
-	}
-
-	inputSchema := &platformclientv2.Postinputcontract{}
-	schema := &platformclientv2.Jsonschemadocument{}
-
-	// Convert input to map[string]interface{}
-	inputMap, ok := input.(map[string]interface{})
-	if !ok {
-		log.Println("ERROR1")
-		return nil
-	}
-
-	if schemaStr, ok := inputMap["$schema"].(string); ok {
-		schema.Schema = &schemaStr
-	}
-
-	if title, ok := inputMap["title"].(string); ok {
-		schema.Title = &title
-	}
-
-	if description, ok := inputMap["description"].(string); ok {
-		schema.Description = &description
-	}
-
-	if typeStr, ok := inputMap["type"].(string); ok {
-		schema.VarType = &typeStr
-	}
-
-	// Handle required array
-	if required, ok := inputMap["required"].([]interface{}); ok {
-		requiredStr := make([]string, len(required))
-		for i, r := range required {
-			requiredStr[i] = r.(string)
-		}
-		schema.Required = &requiredStr
-	}
-
-	// Handle properties map
-	if inputMap["properties"] != "" {
-		properties := inputMap["properties"].(map[string]interface{})
-		schema.Properties = &properties
-	}
-
-	// Handle additionalProperties
-	if additionalProps, ok := inputMap["additionalProperties"].(interface{}); ok {
-		schema.AdditionalProperties = &additionalProps
-	}
-
-	inputSchema.InputSchema = schema
-	return inputSchema
-}
-
-// flattenActionDraftContract converts the custom ActionContract into a JSON-encoded string
-func flattenActionDraftContract(schema interface{}) (string, diag.Diagnostics) {
-	if schema == nil {
-		return "", nil
-	}
-	schemaBytes, err := json.Marshal(schema)
-	if err != nil {
-		return "", util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error marshalling action contract %v", schema), err)
-	}
-	return string(schemaBytes), nil
-}
-
-// flattenActionDraftConfigRequest converts the platformclientv2.Requestconfig into a map
-func FlattenActionDraftConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
-	requestMap := make(map[string]interface{})
-
-	resourcedata.SetMapValueIfNotNil(requestMap, "request_url_template", sdkRequest.RequestUrlTemplate)
-	resourcedata.SetMapValueIfNotNil(requestMap, "request_type", sdkRequest.RequestType)
-	resourcedata.SetMapValueIfNotNil(requestMap, "request_template", sdkRequest.RequestTemplate)
-	resourcedata.SetMapValueIfNotNil(requestMap, "headers", sdkRequest.Headers)
-
-	return []interface{}{requestMap}
-}
-
-// FlattenActionDraftConfigResponse converts the the platformclientv2.Responseconfig into a map
-func FlattenActionDraftConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
-	responseMap := make(map[string]interface{})
-
-	resourcedata.SetMapValueIfNotNil(responseMap, "translation_map", sdkResponse.TranslationMap)
-	resourcedata.SetMapValueIfNotNil(responseMap, "translation_map_defaults", sdkResponse.TranslationMapDefaults)
-	resourcedata.SetMapValueIfNotNil(responseMap, "success_template", sdkResponse.SuccessTemplate)
-
-	return []interface{}{responseMap}
-}
-
-func buildActionDraftFromResourceDataForUpdate(d *schema.ResourceData) *platformclientv2.Updatedraftinput {
-	return &platformclientv2.Updatedraftinput{
-		Name:     platformclientv2.String(d.Get("name").(string)),
-		Category: platformclientv2.String(d.Get("category").(string)),
-		Secure:   platformclientv2.Bool(d.Get("secure").(bool)),
-		Contract: buildDraftContract(d),
-		Config:   buildSdkActionConfig(d),
-	}
 }

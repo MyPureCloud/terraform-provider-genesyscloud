@@ -217,11 +217,18 @@ func generateIntegrationActionDraftResource(resourceLabel, name, category, integ
         integration_id = %s
         secure = %s
 		config_timeout_seconds = %s
-        contract_input = %s
-        contract_output = %s
+        %s
         %s
 	}
-	`, resourceLabel, name, category, integId, secure, timeout, contractIn, contractOut, strings.Join(blocks, "\n"))
+	`, resourceLabel, name, category, integId, secure, timeout, generateActionDraftContract(contractIn, contractOut), strings.Join(blocks, "\n"))
+}
+
+func generateActionDraftContract(input, output string) string {
+	return fmt.Sprintf(`contract {
+        contract_input = %s
+        contract_output = %s
+	}
+	`, input, output)
 }
 
 func generateIntegrationActionDraftConfigRequest(reqUrlTemplate, reqType, reqTemp, headers string) string {
