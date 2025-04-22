@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -217,11 +217,23 @@ func generateIntegrationActionDraftResource(resourceLabel, name, category, integ
         integration_id = %s
         secure = %s
 		config_timeout_seconds = %s
+<<<<<<< HEAD
 		contract_input = %s
         contract_output = %s
+=======
+        %s
+>>>>>>> cf7b3af0 (rebase)
         %s
 	}
-	`, resourceLabel, name, category, integId, secure, timeout, contractIn, contractOut, strings.Join(blocks, "\n"))
+	`, resourceLabel, name, category, integId, secure, timeout, generateActionDraftContract(contractIn, contractOut), strings.Join(blocks, "\n"))
+}
+
+func generateActionDraftContract(input, output string) string {
+	return fmt.Sprintf(`contract {
+        contract_input = %s
+        contract_output = %s
+	}
+	`, input, output)
 }
 
 func generateIntegrationActionDraftConfigRequest(reqUrlTemplate, reqType, reqTemp, headers string) string {

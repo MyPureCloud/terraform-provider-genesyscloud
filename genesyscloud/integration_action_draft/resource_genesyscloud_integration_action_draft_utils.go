@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -21,6 +22,7 @@ func buildActionDraftFromResourceData(d *schema.ResourceData) *platformclientv2.
 	if err != nil {
 		log.Fatalf("Error building contract: %v", err)
 	}
+
 	return &platformclientv2.Postactioninput{
 		Name:          platformclientv2.String(d.Get("name").(string)),
 		Category:      platformclientv2.String(d.Get("category").(string)),
