@@ -29,7 +29,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // ResourceTaskManagementWorktypeStatus registers the genesyscloud_task_management_worktype_status_transition resource with Terraform
 func ResourceTaskManagementWorktypeStatusTransition() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud task management worktype status`,
+		Description: `Genesys Cloud task management worktype status Transition`,
 
 		CreateContext: provider.CreateWithPooledClient(createTaskManagementWorkTypeStatusTransition),
 		ReadContext:   provider.ReadWithPooledClient(readTaskManagementWorkTypeStatusTransition),

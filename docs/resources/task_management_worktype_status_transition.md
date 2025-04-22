@@ -2,11 +2,11 @@
 page_title: "genesyscloud_task_management_worktype_status_transition Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud task management worktype status
+  Genesys Cloud task management worktype status Transition
 ---
 # genesyscloud_task_management_worktype_status_transition (Resource)
 
-Genesys Cloud task management worktype status
+Genesys Cloud task management worktype status Transition
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
