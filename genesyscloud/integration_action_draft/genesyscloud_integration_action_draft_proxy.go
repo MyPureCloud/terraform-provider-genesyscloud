@@ -3,7 +3,7 @@ package integration_action_draft
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
 var internalProxy *integrationActionsProxy
@@ -116,7 +116,7 @@ func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsPr
 }
 
 func getIntegrationActionDraftByIdFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
-	return p.integrationsApi.GetIntegrationsActionDraft(actionId, "contract", true)
+	return p.integrationsApi.GetIntegrationsActionDraft(actionId, "contract", false, true)
 }
 
 func getIntegrationActionDraftByNameFn(ctx context.Context, p *integrationActionsProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {

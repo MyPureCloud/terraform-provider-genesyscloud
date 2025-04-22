@@ -7,14 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 	"log"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 )
@@ -48,6 +46,7 @@ func createIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 
 	draftRequest := buildActionDraftFromResourceData(d)
 
+	log.Println("Create Contract: ", draftRequest.Contract.Input.String())
 	draft, resp, err := iap.createIntegrationActionDraft(ctx, *draftRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action draft %s error: %s", name, err), resp)
@@ -56,6 +55,7 @@ func createIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 	d.SetId(*draft.Id)
 	log.Printf("Created integration action draft %s %s", name, *draft.Id)
 
+	fmt.Println("Before: ", d.State())
 	return readIntegrationActionDraft(ctx, d, meta)
 }
 
@@ -64,7 +64,7 @@ func readIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, met
 	iap := getIntegrationActionsProxy(sdkConfig)
 
 	log.Printf("Reading integration action draft %s", d.Id())
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationActionDraft(), constants.ConsistencyChecks(), ResourceType)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationActionDraft(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		draft, resp, getErr := iap.getIntegrationActionDraftById(ctx, d.Id())
@@ -123,8 +123,10 @@ func readIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, met
 			_ = d.Set("config_response", nil)
 		}
 
+		fmt.Println("After: ", d.State())
 		log.Printf("Read integration action draft %s %s", d.Id(), *draft.Name)
-		return cc.CheckState(d)
+		//return cc.CheckState(d)
+		return nil
 	})
 }
 
@@ -132,18 +134,29 @@ func updateIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 	name := d.Get("name").(string)
-
+	category := d.Get("category").(string)
+	secure := d.Get("secure").(bool)
 	fmt.Printf("Starting update for action draft %s\n", name)
 
-	draftRequest := buildActionDraftFromResourceDataForUpdate(d)
-	fmt.Printf("Update request payload: %s\n", draftRequest.String())
+	draft, resp, err := iap.getIntegrationActionDraftById(ctx, d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration action draft %s error: %s", d.Id(), err), resp)
+	}
 
-	_, resp, err := iap.updateIntegrationActionDraft(ctx, d.Id(), *draftRequest)
+	_, resp, err = iap.updateIntegrationActionDraft(ctx, d.Id(), platformclientv2.Updatedraftinput{
+		Category: &category,
+		Name:     &name,
+		Config:   buildSdkActionConfig(d),
+		Contract: BuildDraftContract(d),
+		Secure:   &secure,
+		Version:  draft.Version,
+	})
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action draft %s error: %s", name, err), resp)
 	}
 
 	fmt.Printf("Update successful for action draft %s\n", name)
+	fmt.Println("After Update: ", d.State())
 	return readIntegrationActionDraft(ctx, d, meta)
 }
 

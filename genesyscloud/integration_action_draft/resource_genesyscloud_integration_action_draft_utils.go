@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 	"log"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -148,9 +148,11 @@ func flattenActionDraftContract(contract platformclientv2.Actioncontract) ([]int
 	log.Println("Starting Flatten", contract)
 	contractMap := make(map[string]interface{})
 
+	log.Println(contract.String())
 	log.Println("Contract Input String", contract.Input.String())
-	a := contract.Input.String()
-	b := contract.Output.String()
+	a := contract.Input.InputSchema.String()
+	log.Println("a", a)
+	b := contract.Output.SuccessSchema.String()
 	contractMap["contract_input"] = a
 	contractMap["contract_output"] = b
 
@@ -180,10 +182,12 @@ func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []
 	return []interface{}{responseMap}
 }
 
-func buildActionDraftFromResourceDataForUpdate(d *schema.ResourceData) *platformclientv2.Updatedraftinput {
+func buildActionDraftFromResourceDataForUpdate(d *schema.ResourceData, version *int) *platformclientv2.Updatedraftinput {
+	log.Println(d.State().String())
 	return &platformclientv2.Updatedraftinput{
 		Name:     platformclientv2.String(d.Get("name").(string)),
 		Category: platformclientv2.String(d.Get("category").(string)),
+		Version:  version,
 		Secure:   platformclientv2.Bool(d.Get("secure").(bool)),
 		Contract: BuildDraftContract(d),
 		Config:   buildSdkActionConfig(d),
