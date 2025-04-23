@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v156/platformclientv2"
 )
 
 func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
@@ -173,6 +173,58 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0.callable_person.0.name", outboundFlowName),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0.callable_person.0.data",
 						"genesyscloud_flow."+flowResourceLabel, "id"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyCallAnalysisResponseSetDestroyed,
+	})
+}
+
+func TestAccResourceOutboundCallAnalysisResponseSetWithLiveDetection(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel            = "test_car"
+		name                     = "Terraform test CAR " + uuid.NewString()
+		liveSpeakerDetectionMode = "Medium"
+		identifier1              = "callable_person"
+		identifier2              = "callable_fax"
+		identifier3              = "callable_machine"
+		reactionType             = "transfer"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateOutboundCallAnalysisResponseSetResourceWithLiveSpeaker(
+					resourceLabel,
+					name,
+					liveSpeakerDetectionMode,
+					GenerateCarsResponsesBlock(
+						GenerateCarsResponse(
+							identifier1,
+							reactionType,
+							"",
+							"",
+						),
+						GenerateCarsResponse(
+							identifier2,
+							reactionType,
+							"",
+							"",
+						),
+						GenerateCarsResponse(
+							identifier3,
+							reactionType,
+							"",
+							"",
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "live_speaker_detection_mode", liveSpeakerDetectionMode),
 				),
 			},
 		},

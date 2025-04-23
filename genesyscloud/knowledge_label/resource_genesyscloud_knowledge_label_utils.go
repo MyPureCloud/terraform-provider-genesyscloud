@@ -1,7 +1,7 @@
 package knowledge_label
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v156/platformclientv2"
 )
 
 func buildKnowledgeLabel(labelIn map[string]interface{}) platformclientv2.Labelcreaterequest {

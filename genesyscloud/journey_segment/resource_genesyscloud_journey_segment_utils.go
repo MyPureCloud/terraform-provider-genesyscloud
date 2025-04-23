@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v156/platformclientv2"
 )
 
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {

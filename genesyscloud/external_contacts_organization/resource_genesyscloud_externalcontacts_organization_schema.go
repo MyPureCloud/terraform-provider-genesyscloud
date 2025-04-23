@@ -240,11 +240,6 @@ func ResourceExternalContactsOrganization() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`primary_contact_id`: {
-				Description: ``,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
 			`address`: {
 				Description: ``,
 				Optional:    true,
