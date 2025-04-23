@@ -20,13 +20,12 @@ type integrationActionsProxy struct {
 	clientConfig    *platformclientv2.Configuration
 	integrationsApi *platformclientv2.IntegrationsApi
 
-	getAllIntegrationActionDraftsAttr   getAllIntegrationActionDraftsFunc
-	createIntegrationActionDraftAttr    createIntegrationActionDraftFunc
-	getIntegrationActionDraftByIdAttr   getIntegrationActionDraftByIdFunc
-	getIntegrationActionDraftByNameAttr getIntegrationActionDraftByNameFunc
-	updateIntegrationActionDraftAttr    updateIntegrationActionDraftFunc
-	deleteIntegrationActionDraftAttr    deleteIntegrationActionDraftFunc
-
+	getAllIntegrationActionDraftsAttr     getAllIntegrationActionDraftsFunc
+	createIntegrationActionDraftAttr      createIntegrationActionDraftFunc
+	getIntegrationActionDraftByIdAttr     getIntegrationActionDraftByIdFunc
+	getIntegrationActionDraftByNameAttr   getIntegrationActionDraftByNameFunc
+	updateIntegrationActionDraftAttr      updateIntegrationActionDraftFunc
+	deleteIntegrationActionDraftAttr      deleteIntegrationActionDraftFunc
 	getIntegrationActionDraftTemplateAttr getIntegrationActionDraftTemplateFunc
 }
 
@@ -34,15 +33,14 @@ type integrationActionsProxy struct {
 func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *integrationActionsProxy {
 	api := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 	return &integrationActionsProxy{
-		clientConfig:                        clientConfig,
-		integrationsApi:                     api,
-		getAllIntegrationActionDraftsAttr:   getAllIntegrationActionDraftsFn,
-		createIntegrationActionDraftAttr:    createIntegrationActionDraftFn,
-		getIntegrationActionDraftByIdAttr:   getIntegrationActionDraftByIdFn,
-		getIntegrationActionDraftByNameAttr: getIntegrationActionDraftByNameFn,
-		updateIntegrationActionDraftAttr:    updateIntegrationActionDraftFn,
-		deleteIntegrationActionDraftAttr:    deleteIntegrationActionDraftFn,
-
+		clientConfig:                          clientConfig,
+		integrationsApi:                       api,
+		getAllIntegrationActionDraftsAttr:     getAllIntegrationActionDraftsFn,
+		createIntegrationActionDraftAttr:      createIntegrationActionDraftFn,
+		getIntegrationActionDraftByIdAttr:     getIntegrationActionDraftByIdFn,
+		getIntegrationActionDraftByNameAttr:   getIntegrationActionDraftByNameFn,
+		updateIntegrationActionDraftAttr:      updateIntegrationActionDraftFn,
+		deleteIntegrationActionDraftAttr:      deleteIntegrationActionDraftFn,
 		getIntegrationActionDraftTemplateAttr: getIntegrationActionDraftTemplateFn,
 	}
 }
@@ -142,7 +140,11 @@ func updateIntegrationActionDraftFn(ctx context.Context, p *integrationActionsPr
 }
 
 func deleteIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.APIResponse, error) {
-	return p.integrationsApi.DeleteIntegrationsActionDraft(actionId)
+	resp, err := p.integrationsApi.DeleteIntegrationsActionDraft(actionId)
+	if err != nil {
+		return resp, fmt.Errorf("failed to delete integration action draft: %s", err)
+	}
+	return resp, nil
 }
 
 func getIntegrationActionDraftTemplateFn(ctx context.Context, p *integrationActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error) {

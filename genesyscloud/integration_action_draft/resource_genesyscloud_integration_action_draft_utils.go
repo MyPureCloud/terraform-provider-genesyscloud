@@ -2,10 +2,12 @@ package integration_action_draft
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 	"log"
+	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -15,12 +17,16 @@ const (
 )
 
 func buildActionDraftFromResourceData(d *schema.ResourceData) *platformclientv2.Postactioninput {
+	contract, err := buildDraftContract(d)
+	if err != nil {
+		log.Fatalf("Error building contract: %v", err)
+	}
 	return &platformclientv2.Postactioninput{
 		Name:          platformclientv2.String(d.Get("name").(string)),
 		Category:      platformclientv2.String(d.Get("category").(string)),
 		IntegrationId: platformclientv2.String(d.Get("integration_id").(string)),
 		Secure:        platformclientv2.Bool(d.Get("secure").(bool)),
-		Contract:      BuildDraftContract(d),
+		Contract:      contract,
 		Config:        buildSdkActionConfig(d),
 	}
 }
@@ -29,19 +35,18 @@ func buildActionDraftFromResourceData(d *schema.ResourceData) *platformclientv2.
 func buildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
 	ActionConfig := &platformclientv2.Actionconfig{
-		Request:  BuildSdkActionConfigRequest(d),
-		Response: BuildSdkActionConfigResponse(d),
+		Request:  buildSdkActionConfigRequest(d),
+		Response: buildSdkActionConfigResponse(d),
 	}
 
 	if ConfigTimeoutSeconds > 0 {
 		ActionConfig.TimeoutSeconds = &ConfigTimeoutSeconds
 	}
-
 	return ActionConfig
 }
 
 // buildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
-func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
+func buildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
 	if configRequest := d.Get("config_request"); configRequest != nil {
 		if configList := configRequest.([]interface{}); len(configList) > 0 {
 			configMap := configList[0].(map[string]interface{})
@@ -68,7 +73,7 @@ func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Reque
 }
 
 // buildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
-func BuildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
+func buildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
 	if configResponse := d.Get("config_response"); configResponse != nil {
 		if configList := configResponse.([]interface{}); len(configList) > 0 {
 			configMap := configList[0].(map[string]interface{})
@@ -100,37 +105,22 @@ func BuildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Resp
 	return &platformclientv2.Responseconfig{}
 }
 
-func BuildDraftContract(d *schema.ResourceData) *platformclientv2.Actioncontractinput {
-	// Get the contract map first
-	contract := d.Get("contract").([]interface{})
-	contractMap := contract[0].(map[string]interface{})
-
-	// Extract input and output from the contract map
-	contractInput, ok := contractMap["contract_input"].(string)
-	if !ok {
-		log.Printf("Error: contract_input is not a string")
-		return nil
-	}
-	contractOutput, ok := contractMap["contract_output"].(string)
-	if !ok {
-		log.Printf("Error: contract_output is not a string")
-		return nil
-	}
+func buildDraftContract(d *schema.ResourceData) (*platformclientv2.Actioncontractinput, diag.Diagnostics) {
+	configInput := d.Get("contract_input").(string)
+	configOutput := d.Get("contract_output").(string)
 
 	// Parse input schema with proper error handling
 	var inputSchema platformclientv2.Jsonschemadocument
-	err := json.Unmarshal([]byte(contractInput), &inputSchema)
+	err := json.Unmarshal([]byte(configInput), &inputSchema)
 	if err != nil {
-		log.Printf("Error parsing input schema: %v", err)
-		return nil
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
 	}
 
 	// Parse output schema with proper error handling
 	var outputSchema platformclientv2.Jsonschemadocument
-	err = json.Unmarshal([]byte(contractOutput), &outputSchema)
+	err = json.Unmarshal([]byte(configOutput), &outputSchema)
 	if err != nil {
-		log.Printf("Error parsing output schema: %v", err)
-		return nil
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract output %s", configOutput), err)
 	}
 
 	return &platformclientv2.Actioncontractinput{
@@ -140,27 +130,20 @@ func BuildDraftContract(d *schema.ResourceData) *platformclientv2.Actioncontract
 		Output: &platformclientv2.Postoutputcontract{
 			SuccessSchema: &outputSchema,
 		},
-	}
+	}, nil
 }
 
 // flattenActionDraftContract converts the custom ActionContract into a JSON-encoded string
-func flattenActionDraftContract(contract platformclientv2.Actioncontract) ([]interface{}, diag.Diagnostics) {
-	log.Println("Starting Flatten", contract)
-	contractMap := make(map[string]interface{})
-
-	log.Println(contract.String())
-	log.Println("Contract Input String", contract.Input.String())
-	a := contract.Input.InputSchema.String()
-	log.Println("a", a)
-	b := contract.Output.SuccessSchema.String()
-	contractMap["contract_input"] = a
-	contractMap["contract_output"] = b
-
-	return []interface{}{contractMap}, nil
+func flattenActionDraftContract(schema platformclientv2.Jsonschemadocument) (string, diag.Diagnostics) {
+	schemaBytes, err := json.Marshal(schema)
+	if err != nil {
+		return "", util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error marshalling action contract %v", schema), err)
+	}
+	return string(schemaBytes), nil
 }
 
 // FlattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
-func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
+func flattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_url_template", sdkRequest.RequestUrlTemplate)
@@ -172,7 +155,7 @@ func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []int
 }
 
 // FlattenActionConfigResponse converts the the platformclientv2.Responseconfig into a map
-func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
+func flattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
 	responseMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(responseMap, "translation_map", sdkResponse.TranslationMap)
@@ -180,16 +163,4 @@ func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []
 	resourcedata.SetMapValueIfNotNil(responseMap, "success_template", sdkResponse.SuccessTemplate)
 
 	return []interface{}{responseMap}
-}
-
-func buildActionDraftFromResourceDataForUpdate(d *schema.ResourceData, version *int) *platformclientv2.Updatedraftinput {
-	log.Println(d.State().String())
-	return &platformclientv2.Updatedraftinput{
-		Name:     platformclientv2.String(d.Get("name").(string)),
-		Category: platformclientv2.String(d.Get("category").(string)),
-		Version:  version,
-		Secure:   platformclientv2.Bool(d.Get("secure").(bool)),
-		Contract: BuildDraftContract(d),
-		Config:   buildSdkActionConfig(d),
-	}
 }

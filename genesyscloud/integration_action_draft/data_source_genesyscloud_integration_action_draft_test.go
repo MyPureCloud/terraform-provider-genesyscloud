@@ -47,7 +47,8 @@ func TestAccDataSourceIntegrationActionDraft(t *testing.T) {
 					"genesyscloud_integration."+integResourceLabel1+".id",
 					util.NullValue, // Secure default (false)
 					util.NullValue, // Timeout default
-					generateActionDraftContract(inputAttr1, outputAttr1),
+					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionDraftConfigRequest(
 						reqUrlTemplate1,
 						reqType1,
@@ -72,8 +73,6 @@ func TestAccDataSourceIntegrationActionDraft(t *testing.T) {
 func generateIntegrationActionDataSource(
 	resourceLabel string,
 	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_integration_action_draft" "%s" {
 		name = "%s"

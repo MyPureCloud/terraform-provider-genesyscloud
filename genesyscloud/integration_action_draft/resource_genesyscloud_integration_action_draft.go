@@ -3,6 +3,8 @@ package integration_action_draft
 import (
 	"context"
 	"fmt"
+	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -37,16 +39,14 @@ func getAllIntegrationActionDrafts(ctx context.Context, clientConfig *platformcl
 }
 
 func createIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	name := d.Get("name").(string)
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
+	name := d.Get("name").(string)
 
 	log.Printf("Creating integration action draft %s", name)
 
 	draftRequest := buildActionDraftFromResourceData(d)
 
-	log.Println("Create Contract: ", draftRequest.Contract.Input.String())
 	draft, resp, err := iap.createIntegrationActionDraft(ctx, *draftRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action draft %s error: %s", name, err), resp)
@@ -55,16 +55,15 @@ func createIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 	d.SetId(*draft.Id)
 	log.Printf("Created integration action draft %s %s", name, *draft.Id)
 
-	fmt.Println("Before: ", d.State())
 	return readIntegrationActionDraft(ctx, d, meta)
 }
 
 func readIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationActionDraft(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading integration action draft %s", d.Id())
-	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationActionDraft(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		draft, resp, getErr := iap.getIntegrationActionDraftById(ctx, d.Id())
@@ -100,33 +99,42 @@ func readIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, met
 		resourcedata.SetNillableValue(d, "secure", draft.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", draft.Config.TimeoutSeconds)
 
-		if draft.Contract != nil {
-			contract, err := flattenActionDraftContract(*draft.Contract)
+		if draft.Contract != nil && draft.Contract.Input != nil && draft.Contract.Input.InputSchema != nil {
+			input, err := flattenActionDraftContract(*draft.Contract.Input.InputSchema)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			log.Println("Flattened contract", contract)
-			_ = d.Set("contract", contract)
+			_ = d.Set("contract_input", input)
+		} else {
+			_ = d.Set("contract_input", nil)
+		}
+
+		if draft.Contract != nil && draft.Contract.Output != nil && draft.Contract.Output.SuccessSchema != nil {
+			output, err := flattenActionDraftContract(*draft.Contract.Output.SuccessSchema)
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			_ = d.Set("contract_output", output)
+		} else {
+			_ = d.Set("contract_output", nil)
 		}
 
 		if draft.Config != nil && draft.Config.Request != nil {
 			draft.Config.Request.RequestTemplate = reqTemp
-			_ = d.Set("config_request", FlattenActionConfigRequest(*draft.Config.Request))
+			_ = d.Set("config_request", flattenActionConfigRequest(*draft.Config.Request))
 		} else {
 			_ = d.Set("config_request", nil)
 		}
 
 		if draft.Config != nil && draft.Config.Response != nil {
 			draft.Config.Response.SuccessTemplate = successTemp
-			_ = d.Set("config_response", FlattenActionConfigResponse(*draft.Config.Response))
+			_ = d.Set("config_response", flattenActionConfigResponse(*draft.Config.Response))
 		} else {
 			_ = d.Set("config_response", nil)
 		}
 
-		fmt.Println("After: ", d.State())
 		log.Printf("Read integration action draft %s %s", d.Id(), *draft.Name)
-		//return cc.CheckState(d)
-		return nil
+		return cc.CheckState(d)
 	})
 }
 
@@ -136,18 +144,25 @@ func updateIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	category := d.Get("category").(string)
 	secure := d.Get("secure").(bool)
-	fmt.Printf("Starting update for action draft %s\n", name)
 
+	fmt.Printf("Updating integration action draft %s\n", name)
+
+	// retrieve the latest draft version to send with PATCH
 	draft, resp, err := iap.getIntegrationActionDraftById(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration action draft %s error: %s", d.Id(), err), resp)
+	}
+
+	contract, diagErr := buildDraftContract(d)
+	if diagErr != nil {
+		return diag.Errorf("Failed to build contract %s", err)
 	}
 
 	_, resp, err = iap.updateIntegrationActionDraft(ctx, d.Id(), platformclientv2.Updatedraftinput{
 		Category: &category,
 		Name:     &name,
 		Config:   buildSdkActionConfig(d),
-		Contract: BuildDraftContract(d),
+		Contract: contract,
 		Secure:   &secure,
 		Version:  draft.Version,
 	})
@@ -156,21 +171,21 @@ func updateIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	fmt.Printf("Update successful for action draft %s\n", name)
-	fmt.Println("After Update: ", d.State())
 	return readIntegrationActionDraft(ctx, d, meta)
 }
 
 // deleteIntegrationActionDraft is used by the integration action resource to delete an action from Genesys cloud.
 func deleteIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	name := d.Get("name").(string)
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
+	name := d.Get("name").(string)
 
 	log.Printf("Deleting integration action draft %s", name)
+
 	resp, err := iap.deleteIntegrationActionDraft(ctx, d.Id())
 	if err != nil {
 		if util.IsStatus404(resp) {
+			// Parent integration was probably deleted which caused the action draft to be deleted
 			log.Printf("Integration action draft already deleted %s", d.Id())
 			return nil
 		}
