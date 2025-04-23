@@ -31,7 +31,11 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 	}
 
 	for _, asset := range *assets {
-		resources[*asset.Id] = &resourceExporter.ResourceMeta{BlockLabel: *asset.Name}
+		blockHash, err := util.QuickHashFields(asset.ContentLength)
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+		resources[*asset.Id] = &resourceExporter.ResourceMeta{BlockLabel: *asset.Name, BlockHash: blockHash}
 	}
 
 	return resources, nil

@@ -49,8 +49,20 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 			return nil, util.BuildAPIDiagnosticError(ResourceType, err.Error(), response)
 		}
 		for _, knowledgeDocument := range *partialEntities {
+			blockHash := ""
+			if knowledgeDocument.Category != nil && knowledgeDocument.Category.Id != nil {
+				category, _, err := proxy.getKnowledgeKnowledgebaseCategory(ctx, *knowledgeBase.Id, *knowledgeDocument.Category.Id)
+				if err != nil {
+					return nil, diag.Errorf("error reading knowledge document %s category %s: %s", *knowledgeDocument.Id, *knowledgeDocument.Category.Id, err)
+
+				}
+				blockHash, err = util.QuickHashFields(*category.Name)
+				if err != nil {
+					return nil, diag.Errorf("error hashing knowledge document %s: %s", *knowledgeDocument.Id, err)
+				}
+			}
 			id := BuildDocumentResourceDataID(*knowledgeDocument.Id, *knowledgeBase.Id)
-			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeDocument.Title}
+			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeDocument.Title, BlockHash: blockHash}
 		}
 
 	}
