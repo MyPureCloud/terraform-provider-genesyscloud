@@ -172,41 +172,68 @@ func (sod *sanitizerOptimized) SanitizeResourceHash(originalBlockLabel string) s
 // adding hashes to the end of all resource block labels to ensure consistent uniqueness
 // See DEVTOOLING-1182 for details on why this sanitizer was necessary
 func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
-	sanitizedLabels := make(map[string][]string)
+	// Maps to track labels at each stage
+	baseLabels := make(map[string]string)   // id -> base sanitized label
+	labelToIDs := make(map[string][]string) // label -> []id
+	needsUFH := make(map[string]bool)       // id -> needs UFH
 
-	// First pass to generate sanitized labels and group them
+	// First pass - basic sanitization and identify duplicates
 	for id, meta := range idMetaMap {
+		meta.OriginalLabel = meta.BlockLabel
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
-		hash := sod.SanitizeResourceHash(meta.BlockLabel)
-		sanitizedLabel = sanitizedLabel + "_" + hash
+		baseHash := sod.SanitizeResourceHash(meta.OriginalLabel)
+		labelWithBLH := sanitizedLabel + "__BLH" + baseHash
 
-		sanitizedLabels[sanitizedLabel] = append(sanitizedLabels[sanitizedLabel], id)
+		baseLabels[id] = labelWithBLH
+		labelToIDs[labelWithBLH] = append(labelToIDs[labelWithBLH], id)
 	}
 
-	// Second pass to update labels
-	for id, meta := range idMetaMap {
-		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
-		hash := sod.SanitizeResourceHash(meta.BlockLabel)
-		sanitizedLabel = sanitizedLabel + "_" + hash
-
-		// This should never/rarely happen, but handle this scenario inside the sanitizer just in case
-		// Really a better approach would be what is detailed in DEVTOOLING-1183
-		if len(sanitizedLabels[sanitizedLabel]) > 1 {
-
-			instanceNum := 0
-			for i, storedId := range sanitizedLabels[sanitizedLabel] {
-				if storedId == id {
-					instanceNum = i + 1
-					break
-				}
+	// Identify which need the UFH (Unique Fields Hash) suffix
+	for _, ids := range labelToIDs {
+		if len(ids) > 1 {
+			for _, id := range ids {
+				needsUFH[id] = true
 			}
-			sanitizedLabel = fmt.Sprintf("%s_DUPLICATE_INSTANCE_%d", sanitizedLabel, instanceNum)
+		}
+	}
+
+	// Clear map for reuse
+	labelToIDs = make(map[string][]string)
+
+	// Apply UFH where needed
+	for id, meta := range idMetaMap {
+		baseLabel := baseLabels[id]
+		finalLabel := baseLabel
+
+		if needsUFH[id] && meta.BlockHash != "" {
+			finalLabel = baseLabel + "_UFH" + meta.BlockHash
 		}
 
-		if meta.OriginalLabel == "" {
-			meta.OriginalLabel = meta.BlockLabel
+		labelToIDs[finalLabel] = append(labelToIDs[finalLabel], id)
+	}
+
+	// Final pass - handle any remaining duplicates
+	for label, ids := range labelToIDs {
+		if len(ids) == 1 {
+			idMetaMap[ids[0]].BlockLabel = label
+			continue
 		}
-		meta.BlockLabel = sanitizedLabel
+
+		// This should never/rarely happen as the sanitizer is specifically designed to prevent duplicates
+		// through the BLH (Block Label Hash) and UFH (Unique Fields Hash) strategies.
+		// If you encounter this, it most likely means the resource type needs a BlockHash (UFH) configured.
+		// To resolve:
+		// 1. Check if the resource type has a BlockHash configured in its exporter
+		// 2. If not, add a BlockHash using unique identifying fields for the resource type. Details on this
+		//    be found in the ResourceMeta.BlockHash documentation with directions to use util.QuickHashFields().
+		// 3. If BlockHash is already configured, file a bug report with:
+		//    - The original resource labels that caused the collision
+		//    - The complete resource configurations
+		//    - The generated hashes (both BLH and UFH)
+		// Reference DEVTOOLING-1183 for more details on BlockHash implementation
+		for i, id := range ids {
+			idMetaMap[id].BlockLabel = fmt.Sprintf("%s_DUPLICATE_INSTANCE_PLEASE_REPORT_%d", label, i+1)
+		}
 	}
 }
 
@@ -229,8 +256,8 @@ func (sod *sanitizerBCPOptimized) SanitizeResourceBlockLabel(inputLabel string) 
 	return label
 }
 
-func (sod *sanitizerBCPOptimized) SanitizeResourceHash(originalBlockLabel string) string {
+func (sod *sanitizerBCPOptimized) SanitizeResourceHash(originalLabel string) string {
 	h := sha256.New()
-	h.Write([]byte(originalBlockLabel))
+	h.Write([]byte(originalLabel))
 	return hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 }

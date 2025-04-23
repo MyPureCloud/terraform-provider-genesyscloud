@@ -57,7 +57,11 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		if strings.HasPrefix(*action.Id, "static") {
 			continue
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
+		blockHash, err := util.QuickHashFields(action.Category)
+		if err != nil {
+			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
+		}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name, BlockHash: blockHash}
 	}
 	return resources, nil
 }
