@@ -31,10 +31,14 @@ func TestExampleResources(t *testing.T) {
 	resources := []string{
 		//"genesyscloud_architect_datatable",
 		//"genesyscloud_architect_datatable_row",
-		// TODO"genesyscloud_architect_emergencygroup",
+		// TODO "genesyscloud_architect_emergencygroup",
 		//"genesyscloud_architect_grammar",
 		//"genesyscloud_architect_grammar_language",
+		// "genesyscloud_architect_ivr",
+		// "genesyscloud_architect_schedulegroups",
+		// "genesyscloud_architect_schedules",
 		//"genesyscloud_flow",
+		// "genesyscloud_telephony_providers_edges_did_pool",
 	}
 
 	planOnly, err := strconv.ParseBool(os.Getenv("TF_PLAN_ONLY"))
@@ -59,18 +63,17 @@ func TestExampleResources(t *testing.T) {
 				t.Fatal(err)
 			}
 			if len(files) == 0 {
-				t.Fatal("No tf files found in example directory")
+				t.Fatal("No tf files found in example directory " + exampleDir)
 			}
 
 			// Check for "resource.tf" in files and load it up
 			if !lists.SubStringInSlice("resource.tf", files) {
-				t.Fatal("resource.tf not found in example directory")
+				t.Fatal("resource.tf not found in example directory " + exampleDir)
 			}
 			resourceExampleContent, err := os.ReadFile(filepath.Join(exampleDir, "resource.tf"))
 			if err != nil {
 				t.Fatal(err)
 			}
-			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
 
 			resourceHCLFile, diagErr := hclsyntax.ParseConfig(resourceExampleContent, "resource.tf", hcl.Pos{Line: 1, Column: 1})
 			if diagErr != nil && diagErr.HasErrors() {
@@ -81,7 +84,10 @@ func TestExampleResources(t *testing.T) {
 			resourceAttributes := resourceHCLFile.Body.(*hclsyntax.Body).Blocks[0].Body.Attributes
 
 			// Check for optional "dependencies.tf" in files and load it up
+			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
 			resourceExampleContent = append(resourceExampleContent, checkForDependencies(t, exampleDir)...)
+
+			fmt.Fprintln(os.Stdout, string(resourceExampleContent))
 
 			// Add checks for the existence of each attribute defined in the example
 			checks := []resource.TestCheckFunc{}
@@ -165,11 +171,14 @@ func checkForDependencies(t *testing.T, examplesDir string) []byte {
 					t.Fatal(err)
 				}
 				content = append(content, dependencyExampleContent...)
+				content = append(content, []byte("\n")...)
 
 				dependencyBasePath := filepath.Dir(filepath.Join(examplesDir, dependency))
-				dependencyContent := checkForDependencies(t, dependencyBasePath)
-				content = append(content, dependencyContent...)
-				content = append(content, []byte("\n")...)
+				if examplesDir != dependencyBasePath {
+					dependencyContent := checkForDependencies(t, dependencyBasePath)
+					content = append(content, dependencyContent...)
+					content = append(content, []byte("\n")...)
+				}
 			}
 		}
 		// Supports constructing a correct reference to the existing examples directory for referencing a filepath
@@ -181,9 +190,10 @@ func checkForDependencies(t *testing.T, examplesDir string) []byte {
 			}
 			// Write a locals output with the working directory pointing to the examples dir
 			workingDirContent := fmt.Sprintf(`locals {
-					working_dir = "%s"
-						}`, filepath.Join(wd, examplesDir, depConfig.Locals.WorkingDir))
+			  working_dir = "%s"
+			}`, filepath.Join(wd, examplesDir, depConfig.Locals.WorkingDir))
 			content = append(content, []byte(workingDirContent)...)
+			content = append(content, []byte("\n")...)
 		}
 	}
 
