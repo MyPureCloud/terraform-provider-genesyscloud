@@ -1,0 +1,3 @@
+locals {
+  working_dir = "."
+}

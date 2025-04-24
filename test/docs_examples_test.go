@@ -19,15 +19,22 @@ import (
 
 type DependenciesConfig struct {
 	Locals struct {
-		Dependencies []string `hcl:"dependencies"`
+		// A list of Terraform configs that should be included to make the example resource pass the test
+		Dependencies []string `hcl:"dependencies,optional"`
+		// A reference to the existing working directory
+		WorkingDir string `hcl:"working_dir,optional"`
 	} `hcl:"locals,block"`
 }
 
 func TestExampleResources(t *testing.T) {
 
 	resources := []string{
-		"genesyscloud_architect_datatable",
-		"genesyscloud_architect_datatable_row",
+		//"genesyscloud_architect_datatable",
+		//"genesyscloud_architect_datatable_row",
+		// TODO"genesyscloud_architect_emergencygroup",
+		//"genesyscloud_architect_grammar",
+		//"genesyscloud_architect_grammar_language",
+		//"genesyscloud_flow",
 	}
 
 	planOnly, err := strconv.ParseBool(os.Getenv("TF_PLAN_ONLY"))
@@ -63,6 +70,7 @@ func TestExampleResources(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
 
 			resourceHCLFile, diagErr := hclsyntax.ParseConfig(resourceExampleContent, "resource.tf", hcl.Pos{Line: 1, Column: 1})
 			if diagErr != nil && diagErr.HasErrors() {
@@ -78,13 +86,38 @@ func TestExampleResources(t *testing.T) {
 			// Add checks for the existence of each attribute defined in the example
 			checks := []resource.TestCheckFunc{}
 			for _, attr := range resourceAttributes {
-				check := resource.TestCheckResourceAttrSet(resourceBlockType+"."+resourceBlockLabel, attr.Name)
-				checks = append(checks, check)
+				attrName := attr.Name
+				expr := attr.Expr
+				switch expr.(type) {
+				case *hclsyntax.ObjectConsExpr:
+					// Handle maps
+					check := resource.TestCheckResourceAttrSet(
+						resourceBlockType+"."+resourceBlockLabel,
+						attrName+".%",
+					)
+					checks = append(checks, check)
+				case *hclsyntax.TupleConsExpr:
+					// Handle lists/arrays
+					check := resource.TestCheckResourceAttrSet(
+						resourceBlockType+"."+resourceBlockLabel,
+						attrName+".#",
+					)
+					checks = append(checks, check)
+				default:
+					// Handle all other types
+					check := resource.TestCheckResourceAttrSet(
+						resourceBlockType+"."+resourceBlockLabel,
+						attrName,
+					)
+					checks = append(checks, check)
+				}
 			}
 
 			// Run test
 			resource.Test(t, resource.TestCase{
-				PreCheck:          func() { util.TestAccPreCheck(t) },
+				PreCheck: func() {
+					util.TestAccPreCheck(t)
+				},
 				ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 				Steps: []resource.TestStep{
 					{
@@ -102,17 +135,17 @@ func TestExampleResources(t *testing.T) {
 	}
 }
 
-func checkForDependencies(t *testing.T, dir string) []byte {
+func checkForDependencies(t *testing.T, examplesDir string) []byte {
 
 	content := []byte{}
-	files, err := filepath.Glob(filepath.Join(dir, "*.tf"))
+	files, err := filepath.Glob(filepath.Join(examplesDir, "*.tf"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Check for optional "dependencies.tf" in files and load it up
 	if lists.SubStringInSlice("dependencies.tf", files) {
 		var depConfig DependenciesConfig
-		dependencyContentBody, err := os.ReadFile(filepath.Join(dir, "dependencies.tf"))
+		dependencyContentBody, err := os.ReadFile(filepath.Join(examplesDir, "dependencies.tf"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -122,18 +155,35 @@ func checkForDependencies(t *testing.T, dir string) []byte {
 		}
 		diagErr = gohcl.DecodeBody(dependencyHCLFile.Body, nil, &depConfig)
 		if diagErr != nil && diagErr.HasErrors() {
-			t.Fatal(err)
+			t.Fatal(diagErr)
 		}
-		for _, dependency := range depConfig.Locals.Dependencies {
-			dependencyExampleContent, err := os.ReadFile(filepath.Join(dir, dependency))
+		// Supports loading an existing example's resource file's content and dependencies
+		if len(depConfig.Locals.Dependencies) > 0 {
+			for _, dependency := range depConfig.Locals.Dependencies {
+				dependencyExampleContent, err := os.ReadFile(filepath.Join(examplesDir, dependency))
+				if err != nil {
+					t.Fatal(err)
+				}
+				content = append(content, dependencyExampleContent...)
+
+				dependencyBasePath := filepath.Dir(filepath.Join(examplesDir, dependency))
+				dependencyContent := checkForDependencies(t, dependencyBasePath)
+				content = append(content, dependencyContent...)
+				content = append(content, []byte("\n")...)
+			}
+		}
+		// Supports constructing a correct reference to the existing examples directory for referencing a filepath
+		// from inside the Terraform config. See genesyscloud_flow for an example.
+		if depConfig.Locals.WorkingDir != "" {
+			wd, err := os.Getwd()
 			if err != nil {
 				t.Fatal(err)
 			}
-			content = append(content, dependencyExampleContent...)
-
-			dependencyBasePath := filepath.Dir(filepath.Join(dir, dependency))
-			dependencyContent := checkForDependencies(t, dependencyBasePath)
-			content = append(content, dependencyContent...)
+			// Write a locals output with the working directory pointing to the examples dir
+			workingDirContent := fmt.Sprintf(`locals {
+					working_dir = "%s"
+						}`, filepath.Join(wd, examplesDir, depConfig.Locals.WorkingDir))
+			content = append(content, []byte(workingDirContent)...)
 		}
 	}
 

@@ -11,6 +11,6 @@ resource "genesyscloud_architect_ivr" "sample_ivr" {
 resource "genesyscloud_flow" "holiday-hours" {
   name              = "Holiday_Flow"
   type              = "INBOUNDCALL"
-  file_content_hash = filesha256(holiday_flow.yaml)
+  file_content_hash = filesha256("holiday_flow.yaml")
   filepath          = "holiday_flow.yaml"
 }

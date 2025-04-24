@@ -23,8 +23,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_flow" "flow" {
-  filepath          = "the flow configuration file path"
-  file_content_hash = filesha256("the flow configuration file path")
+  filepath          = "${local.working_dir}/inboundcall_flow_example_substitutions.yaml"
+  file_content_hash = "${local.working_dir}/inboundcall_flow_example_substitutions.yaml"
   // Example flow configuration using substitutions:
   /*
   inboundCall:
