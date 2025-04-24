@@ -12,7 +12,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   enable_audio_monitoring           = true
   enable_manual_assignment          = true
   calling_party_name                = "Example Inc."
-  outbound_messaging_sms_address_id = "c1bb045e-254d-4316-9d78-cea6849a3db4"
+  outbound_messaging_sms_address_id = genesyscloud_routing_sms_address.example_routing_sms_address.id
   outbound_email_address {
     domain_id = genesyscloud_routing_email_domain.main.id
     route_id  = genesyscloud_routing_email_route.support.id

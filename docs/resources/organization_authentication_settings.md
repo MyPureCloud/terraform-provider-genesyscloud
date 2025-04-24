@@ -18,11 +18,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_organization_authentication_settings" "example-authentication-settings" {
-  multifactorAuthenticationRequired = true
-  domainAllowlistEnabled            = true
-  domainAllowlist                   = ["example.com", "example2.com"]
-  ipAddressAllowlist                = ["0.0.0.0/32"]
-  passwordRequirements {
+  multifactor_authentication_required = true
+  domain_allowlist_enabled            = true
+  domain_allowlist                    = ["example.com", "example2.com"]
+  ip_address_allowlist                = ["0.0.0.0/32"]
+  password_requirements {
     minimumLength     = 8
     minimumDigits     = 5
     minimumLetters    = 2
