@@ -31,6 +31,7 @@ testunit:
 
 # Generate docs
 docs:
+	TF_PLAN_ONLY=true go test ./test/docs_examples_test.go
 	go generate
 
 coverageacc:
