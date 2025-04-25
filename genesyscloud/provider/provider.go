@@ -82,6 +82,11 @@ type ProviderMeta struct {
 	MaxClients         int
 }
 
+type IntegrationMeta struct {
+	ClientSecret string
+	ClientId     string
+}
+
 var (
 	cleanupOnce sync.Once
 	sigChan     chan os.Signal

@@ -31,7 +31,7 @@ type oauthClientProxy struct {
 	integrationApi                  *platformclientv2.IntegrationsApi
 	tokenApi                        *platformclientv2.TokensApi
 	usersApi                        *platformclientv2.UsersApi
-	createdClientCache              map[string]platformclientv2.Oauthclient //Being added for DEVTOOLING-448
+	createdClientCache              map[string]*platformclientv2.Oauthclient //Being added for DEVTOOLING-448
 	createdClientCacheLock          sync.Mutex
 	createOAuthClientAttr           createOAuthClientFunc
 	createIntegrationCredentialAttr createIntegrationClientFunc
@@ -54,7 +54,7 @@ func newOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthCli
 	oAuthApi := platformclientv2.NewOAuthApiWithConfig(clientConfig)
 	intApi := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
-	createdClientCache := make(map[string]platformclientv2.Oauthclient)
+	createdClientCache := make(map[string]*platformclientv2.Oauthclient)
 	tokenApi := platformclientv2.NewTokensApiWithConfig(clientConfig)
 
 	return &oauthClientProxy{
@@ -132,7 +132,7 @@ func (o *oauthClientProxy) getIntegrationCredential(ctx context.Context, id stri
 	return o.getIntegrationCredentialAttr(ctx, o, id)
 }
 
-func (o *oauthClientProxy) GetCachedOAuthClient(clientId string) platformclientv2.Oauthclient {
+func (o *oauthClientProxy) GetCachedOAuthClient(clientId string) *platformclientv2.Oauthclient {
 	o.createdClientCacheLock.Lock()
 	defer o.createdClientCacheLock.Unlock()
 	return o.createdClientCache[clientId]
@@ -147,8 +147,10 @@ func (o *oauthClientProxy) createOAuthClient(ctx context.Context, oauthClient pl
 	//Being added for DEVTOOLING-448.  This is one of the few places where we want to use a cache outside the export
 	o.createdClientCacheLock.Lock()
 	defer o.createdClientCacheLock.Unlock()
-	o.createdClientCache[*oauthClientResult.Id] = *oauthClientResult
+	o.createdClientCache[*oauthClientResult.Id] = oauthClientResult
 	log.Printf("Successfully added oauth client %s to cache", *oauthClientResult.Id)
+	updateMetaCache(oauthClientResult, CacheFile)
+
 	return oauthClientResult, response, err
 }
 
