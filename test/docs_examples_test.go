@@ -17,28 +17,51 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+// Example:
+//
+//	locals {
+//	  dependencies = [ ... ]
+//	  working_dir = {
+//	    auth_role = "./genesyscloud_auth_role/"
+//	    user = "./genesyscloud_user/"
+//	  }
+//	}
 type DependenciesConfig struct {
 	Locals struct {
 		// A list of Terraform configs that should be included to make the example resource pass the test
 		Dependencies []string `hcl:"dependencies,optional"`
 		// A reference to the existing working directory
-		WorkingDir string `hcl:"working_dir,optional"`
+		WorkingDir map[string]string `hcl:"working_dir,optional"`
 	} `hcl:"locals,block"`
 }
 
 func TestExampleResources(t *testing.T) {
 
 	resources := []string{
-		//"genesyscloud_architect_datatable",
-		//"genesyscloud_architect_datatable_row",
-		// TODO "genesyscloud_architect_emergencygroup",
-		//"genesyscloud_architect_grammar",
-		//"genesyscloud_architect_grammar_language",
+		// "genesyscloud_architect_datatable",
+		// "genesyscloud_architect_datatable_row",
+		// // TODO "genesyscloud_architect_emergencygroup",
+		// "genesyscloud_architect_grammar",
+		// "genesyscloud_architect_grammar_language",
 		// "genesyscloud_architect_ivr",
 		// "genesyscloud_architect_schedulegroups",
 		// "genesyscloud_architect_schedules",
-		//"genesyscloud_flow",
+		//"genesyscloud_architect_user_prompt",
+		// "genesyscloud_auth_division",
+		// "genesyscloud_auth_role",
+		// "genesyscloud_flow",
+		"genesyscloud_group",
+		// "genesyscloud_location",
+		// "genesyscloud_routing_language",
+		// "genesyscloud_routing_queue",
+		// "genesyscloud_routing_skill",
+		// "genesyscloud_routing_sms_address",
+		// "genesyscloud_routing_utilization",
+		// "genesyscloud_routing_utilization_label",
+		// "genesyscloud_routing_wrapupcode",
+		// "genesyscloud_script",
 		// "genesyscloud_telephony_providers_edges_did_pool",
+		// "genesyscloud_user",
 	}
 
 	planOnly, err := strconv.ParseBool(os.Getenv("TF_PLAN_ONLY"))
@@ -52,6 +75,10 @@ func TestExampleResources(t *testing.T) {
 	}
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
+	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
+
+	// Add some extra built in providers to be able to be used
+	providerFactories = provider.CombineProviderFactories(providerFactories, RandomProviderFactory())
 
 	for _, example := range resources {
 		exampleDir := filepath.Join("..", "examples", "resources", example)
@@ -85,8 +112,14 @@ func TestExampleResources(t *testing.T) {
 
 			// Check for optional "dependencies.tf" in files and load it up
 			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
-			resourceExampleContent = append(resourceExampleContent, checkForDependencies(t, exampleDir)...)
+			dependenciesContent, workingDirs, _ := checkForDependencies(t, exampleDir, []string{})
 
+			resourceExampleContent = append(resourceExampleContent, dependenciesContent...)
+			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
+			resourceExampleContent = append(resourceExampleContent, constructLocals(workingDirs)...)
+
+			// Uncomment to display the full output of the content being passed to Terraform
+			// Retained for debugging purposes
 			fmt.Fprintln(os.Stdout, string(resourceExampleContent))
 
 			// Add checks for the existence of each attribute defined in the example
@@ -124,7 +157,7 @@ func TestExampleResources(t *testing.T) {
 				PreCheck: func() {
 					util.TestAccPreCheck(t)
 				},
-				ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+				ProviderFactories: providerFactories,
 				Steps: []resource.TestStep{
 					{
 						Config: string(resourceExampleContent),
@@ -141,9 +174,9 @@ func TestExampleResources(t *testing.T) {
 	}
 }
 
-func checkForDependencies(t *testing.T, examplesDir string) []byte {
+func checkForDependencies(t *testing.T, examplesDir string, dependencyFilesInput []string) (content []byte, workingDirs map[string]string, dependencyFilesOutput []string) {
+	workingDirs = make(map[string]string)
 
-	content := []byte{}
 	files, err := filepath.Glob(filepath.Join(examplesDir, "*.tf"))
 	if err != nil {
 		t.Fatal(err)
@@ -166,37 +199,55 @@ func checkForDependencies(t *testing.T, examplesDir string) []byte {
 		// Supports loading an existing example's resource file's content and dependencies
 		if len(depConfig.Locals.Dependencies) > 0 {
 			for _, dependency := range depConfig.Locals.Dependencies {
-				dependencyExampleContent, err := os.ReadFile(filepath.Join(examplesDir, dependency))
-				if err != nil {
-					t.Fatal(err)
-				}
-				content = append(content, dependencyExampleContent...)
-				content = append(content, []byte("\n")...)
-
-				dependencyBasePath := filepath.Dir(filepath.Join(examplesDir, dependency))
-				if examplesDir != dependencyBasePath {
-					dependencyContent := checkForDependencies(t, dependencyBasePath)
-					content = append(content, dependencyContent...)
+				dependencyPath := filepath.Join(examplesDir, dependency)
+				if !lists.ItemInSlice(dependencyPath, dependencyFilesInput) {
+					dependencyFilesInput = append(dependencyFilesInput, dependencyPath)
+					dependencyExampleContent, err := os.ReadFile(dependencyPath)
+					if err != nil {
+						t.Fatal(err)
+					}
+					content = append(content, dependencyExampleContent...)
 					content = append(content, []byte("\n")...)
+
+					dependencyBasePath := filepath.Dir(dependencyPath)
+					if examplesDir != dependencyBasePath {
+						dependencyContent, depWorkingDirs, depPaths := checkForDependencies(t, dependencyBasePath, dependencyFilesInput)
+						content = append(content, dependencyContent...)
+						content = append(content, []byte("\n")...)
+						for k, v := range depWorkingDirs {
+							workingDirs[k] = v
+						}
+						dependencyFilesInput = depPaths
+					}
 				}
 			}
 		}
 		// Supports constructing a correct reference to the existing examples directory for referencing a filepath
 		// from inside the Terraform config. See genesyscloud_flow for an example.
-		if depConfig.Locals.WorkingDir != "" {
+		if depConfig.Locals.WorkingDir != nil {
 			wd, err := os.Getwd()
 			if err != nil {
 				t.Fatal(err)
 			}
 			// Write a locals output with the working directory pointing to the examples dir
-			workingDirContent := fmt.Sprintf(`locals {
-			  working_dir = "%s"
-			}`, filepath.Join(wd, examplesDir, depConfig.Locals.WorkingDir))
-			content = append(content, []byte(workingDirContent)...)
-			content = append(content, []byte("\n")...)
+			for k, v := range depConfig.Locals.WorkingDir {
+				workingDirs[k] = filepath.Join(wd, examplesDir, v)
+			}
 		}
 	}
 
-	return content
+	return content, workingDirs, dependencyFilesInput
 
+}
+
+func constructLocals(workingDirs map[string]string) []byte {
+	locals := []byte{}
+	locals = append(locals, []byte("locals {\n")...)
+	locals = append(locals, []byte("  working_dir = {\n")...)
+	for k, v := range workingDirs {
+		locals = append(locals, []byte(fmt.Sprintf("    %s = \"%s\"\n", k, v))...)
+	}
+	locals = append(locals, []byte("  }\n")...)
+	locals = append(locals, []byte("}\n")...)
+	return locals
 }

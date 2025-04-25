@@ -1,5 +1,7 @@
 locals {
-  working_dir = "."
+  working_dir = {
+    architect_ivr = "."
+  }
   dependencies = [
     "./flows.tf",
     "../genesyscloud_architect_schedulegroups/resource.tf",

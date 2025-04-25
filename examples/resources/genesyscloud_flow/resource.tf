@@ -1,6 +1,6 @@
-resource "genesyscloud_flow" "flow" {
-  filepath          = "${local.working_dir}/inboundcall_flow_example_substitutions.yaml"
-  file_content_hash = "${local.working_dir}/inboundcall_flow_example_substitutions.yaml"
+resource "genesyscloud_flow" "inbound_call_flow" {
+  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml"
+  file_content_hash = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml"
   // Example flow configuration using substitutions:
   /*
   inboundCall:

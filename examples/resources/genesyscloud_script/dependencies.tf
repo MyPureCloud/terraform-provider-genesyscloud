@@ -1,5 +1,5 @@
 locals {
   working_dir = {
-    flow = "."
+    script = "."
   }
 }
