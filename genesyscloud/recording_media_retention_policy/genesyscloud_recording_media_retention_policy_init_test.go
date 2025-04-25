@@ -8,6 +8,7 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsSurvey "terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -56,7 +57,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
+	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
 	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
 	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()

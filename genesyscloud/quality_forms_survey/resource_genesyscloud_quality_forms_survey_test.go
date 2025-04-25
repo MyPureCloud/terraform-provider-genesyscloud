@@ -1,4 +1,4 @@
-package genesyscloud
+package quality_forms_survey
 
 import (
 	"fmt"
@@ -95,45 +95,45 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 				// Create
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "name", surveyForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm1.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.0.text", surveyForm1.QuestionGroups[0].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(surveyForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", surveyForm1.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.text", surveyForm1.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(surveyForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
 				),
 			},
 			{
 				// Update and add some questions
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "name", surveyForm2.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.name", surveyForm2.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm2.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.0.text", surveyForm2.QuestionGroups[0].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.questions.0.text", surveyForm2.QuestionGroups[1].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.questions.1.text", surveyForm2.QuestionGroups[1].Questions[1].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(surveyForm2.QuestionGroups[0].Questions[0].AnswerOptions))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.questions.0.answer_options.#", fmt.Sprint(len(surveyForm2.QuestionGroups[1].Questions[0].AnswerOptions))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.questions.1.answer_options.#", fmt.Sprint(len(surveyForm2.QuestionGroups[1].Questions[1].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", surveyForm2.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", surveyForm2.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm2.QuestionGroups))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.text", surveyForm2.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.0.text", surveyForm2.QuestionGroups[1].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.1.text", surveyForm2.QuestionGroups[1].Questions[1].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(surveyForm2.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.0.answer_options.#", fmt.Sprint(len(surveyForm2.QuestionGroups[1].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.1.answer_options.#", fmt.Sprint(len(surveyForm2.QuestionGroups[1].Questions[1].AnswerOptions))),
 				),
 			},
 			{
 				// Publish Survey Form
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm3),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "name", surveyForm3.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.TrueValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.name", surveyForm3.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm3.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.0.text", surveyForm3.QuestionGroups[0].Questions[0].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(surveyForm3.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", surveyForm3.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", surveyForm3.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm3.QuestionGroups))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.text", surveyForm3.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(surveyForm3.QuestionGroups[0].Questions[0].AnswerOptions))),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_quality_forms_survey." + formResourceLabel1,
+				ResourceName:      ResourceType + "." + formResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -222,26 +222,26 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 				// Create
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "name", surveyForm1.Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].NaEnabled)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.visibility_condition.0.combining_operation", surveyForm1.QuestionGroups[1].VisibilityCondition.CombiningOperation),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.visibility_condition.0.predicates.0", surveyForm1.QuestionGroups[1].VisibilityCondition.Predicates[0]),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm1.QuestionGroups))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.1.text", surveyForm1.QuestionGroups[0].Questions[1].Text),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.1.help_text", surveyForm1.QuestionGroups[0].Questions[1].HelpText),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.1.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].Questions[1].NaEnabled)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.1.max_response_characters", fmt.Sprint(surveyForm1.QuestionGroups[0].Questions[1].MaxResponseCharacters)),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.1.explanation_prompt", surveyForm1.QuestionGroups[0].Questions[1].ExplanationPrompt),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.0.questions.1.answer_options.#", fmt.Sprint(len(surveyForm1.QuestionGroups[0].Questions[1].AnswerOptions))),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.questions.0.visibility_condition.0.combining_operation", surveyForm1.QuestionGroups[1].Questions[0].VisibilityCondition.CombiningOperation),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "question_groups.1.questions.0.visibility_condition.0.predicates.0", surveyForm1.QuestionGroups[1].Questions[0].VisibilityCondition.Predicates[0]),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", surveyForm1.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.visibility_condition.0.combining_operation", surveyForm1.QuestionGroups[1].VisibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.visibility_condition.0.predicates.0", surveyForm1.QuestionGroups[1].VisibilityCondition.Predicates[0]),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.text", surveyForm1.QuestionGroups[0].Questions[1].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.help_text", surveyForm1.QuestionGroups[0].Questions[1].HelpText),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].Questions[1].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.max_response_characters", fmt.Sprint(surveyForm1.QuestionGroups[0].Questions[1].MaxResponseCharacters)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.explanation_prompt", surveyForm1.QuestionGroups[0].Questions[1].ExplanationPrompt),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.answer_options.#", fmt.Sprint(len(surveyForm1.QuestionGroups[0].Questions[1].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.0.visibility_condition.0.combining_operation", surveyForm1.QuestionGroups[1].Questions[0].VisibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.0.visibility_condition.0.predicates.0", surveyForm1.QuestionGroups[1].Questions[0].VisibilityCondition.Predicates[0]),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_quality_forms_survey." + formResourceLabel1,
+				ResourceName:      ResourceType + "." + formResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -292,19 +292,19 @@ func TestAccResourceSurveyFormPublishing(t *testing.T) {
 				// Not Published
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
 				),
 			},
 			{
 				// Published
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm2),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.TrueValue),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_quality_forms_survey." + formResourceLabel1,
+				ResourceName:      ResourceType + "." + formResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -316,7 +316,7 @@ func TestAccResourceSurveyFormPublishing(t *testing.T) {
 func testVerifySurveyFormDestroyed(state *terraform.State) error {
 	qualityAPI := platformclientv2.NewQualityApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_quality_forms_survey" {
+		if rs.Type != ResourceType {
 			continue
 		}
 
