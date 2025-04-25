@@ -116,6 +116,7 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 	log.Printf("Deleting Extension pool with starting number %s", startNumber)
+	time.Sleep(time.Second * 2)
 	if resp, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id()); err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete extension pool %s error: %s", startNumber, err), resp)
 	}

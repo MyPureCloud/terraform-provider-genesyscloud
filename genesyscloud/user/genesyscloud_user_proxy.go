@@ -36,6 +36,7 @@ type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platfo
 type updateVoicemailUserpoliciesFunc func(ctx context.Context, p *userProxy, id string, policy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type getVoicemailUserpoliciesByIdFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error)
+type getTelephonyExtensionPoolByExtensionFunc func(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 
 /*
 The userProxy struct holds all the methods responsible for making calls to
@@ -45,23 +46,25 @@ enabling this terraform provider software to perform tasks like retrieving data,
 or triggering actions within the Genesys Cloud environment.
 */
 type userProxy struct {
-	clientConfig                      *platformclientv2.Configuration
-	userApi                           *platformclientv2.UsersApi
-	routingApi                        *platformclientv2.RoutingApi
-	voicemailApi                      *platformclientv2.VoicemailApi
-	createUserAttr                    createUserFunc
-	GetAllUserAttr                    GetAllUserFunc
-	getUserIdByNameAttr               getUserIdByNameFunc
-	getUserByIdAttr                   getUserByIdFunc
-	updateUserAttr                    updateUserFunc
-	deleteUserAttr                    deleteUserFunc
-	patchUserWithStateAttr            patchUserWithStateFunc
-	hydrateUserCacheAttr              hydrateUserCacheFunc
-	getUserByNameAttr                 getUserByNameFunc
-	updateVoicemailUserpoliciesAttr   updateVoicemailUserpoliciesFunc
-	getVoicemailUserpolicicesByIdAttr getVoicemailUserpoliciesByIdFunc
-	updatePasswordAttr                updatePasswordFunc
-	userCache                         rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
+	clientConfig                             *platformclientv2.Configuration
+	userApi                                  *platformclientv2.UsersApi
+	routingApi                               *platformclientv2.RoutingApi
+	voicemailApi                             *platformclientv2.VoicemailApi
+	extensionPoolApi                         *platformclientv2.TelephonyProvidersEdgeApi
+	createUserAttr                           createUserFunc
+	GetAllUserAttr                           GetAllUserFunc
+	getUserIdByNameAttr                      getUserIdByNameFunc
+	getUserByIdAttr                          getUserByIdFunc
+	updateUserAttr                           updateUserFunc
+	deleteUserAttr                           deleteUserFunc
+	patchUserWithStateAttr                   patchUserWithStateFunc
+	hydrateUserCacheAttr                     hydrateUserCacheFunc
+	getUserByNameAttr                        getUserByNameFunc
+	updateVoicemailUserpoliciesAttr          updateVoicemailUserpoliciesFunc
+	getVoicemailUserpolicicesByIdAttr        getVoicemailUserpoliciesByIdFunc
+	updatePasswordAttr                       updatePasswordFunc
+	getTelephonyExtensionPoolByExtensionAttr getTelephonyExtensionPoolByExtensionFunc
+	userCache                                rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
 }
 
 /*
@@ -74,25 +77,28 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 	userApi := platformclientv2.NewUsersApiWithConfig(clientConfig)      // NewUsersApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
 	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewRoutingApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
 	voicemailApi := platformclientv2.NewVoicemailApiWithConfig(clientConfig)
+	extensionPoolApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	userCache := rc.NewResourceCache[platformclientv2.User]() // Create Cache for User resource
 	return &userProxy{
-		clientConfig:                      clientConfig,
-		userApi:                           userApi,
-		routingApi:                        routingApi,
-		voicemailApi:                      voicemailApi,
-		userCache:                         userCache,
-		createUserAttr:                    createUserFn,
-		GetAllUserAttr:                    GetAllUserFn,
-		getUserIdByNameAttr:               getUserIdByNameFn,
-		getUserByIdAttr:                   getUserByIdFn,
-		updateUserAttr:                    updateUserFn,
-		deleteUserAttr:                    deleteUserFn,
-		patchUserWithStateAttr:            patchUserWithStateFn,
-		hydrateUserCacheAttr:              hydrateUserCacheFn,
-		getUserByNameAttr:                 getUserByNameFn,
-		updateVoicemailUserpoliciesAttr:   updateVoicemailUserpoliciesFn,
-		getVoicemailUserpolicicesByIdAttr: getVoicemailUserpoliciesByUserIdFn,
-		updatePasswordAttr:                updatePasswordFn,
+		clientConfig:                             clientConfig,
+		userApi:                                  userApi,
+		routingApi:                               routingApi,
+		voicemailApi:                             voicemailApi,
+		extensionPoolApi:                         extensionPoolApi,
+		userCache:                                userCache,
+		createUserAttr:                           createUserFn,
+		GetAllUserAttr:                           GetAllUserFn,
+		getUserIdByNameAttr:                      getUserIdByNameFn,
+		getUserByIdAttr:                          getUserByIdFn,
+		updateUserAttr:                           updateUserFn,
+		deleteUserAttr:                           deleteUserFn,
+		patchUserWithStateAttr:                   patchUserWithStateFn,
+		hydrateUserCacheAttr:                     hydrateUserCacheFn,
+		getUserByNameAttr:                        getUserByNameFn,
+		updateVoicemailUserpoliciesAttr:          updateVoicemailUserpoliciesFn,
+		getVoicemailUserpolicicesByIdAttr:        getVoicemailUserpoliciesByUserIdFn,
+		updatePasswordAttr:                       updatePasswordFn,
+		getTelephonyExtensionPoolByExtensionAttr: getTelephonyExtensionPoolByExtensionFn,
 	}
 }
 
@@ -171,6 +177,10 @@ func (p *userProxy) getVoicemailUserpoliciesById(ctx context.Context, id string)
 // updatePassword
 func (p *userProxy) updatePassword(ctx context.Context, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
 	return p.updatePasswordAttr(ctx, p, userId, newPassword)
+}
+
+func (p *userProxy) getTelephonyExtensionPoolByExtension(ctx context.Context, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	return p.getTelephonyExtensionPoolByExtensionAttr(ctx, p, extNum)
 }
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
@@ -313,4 +323,29 @@ func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassw
 	return p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
 		NewPassword: &newPassword,
 	})
+}
+
+func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	var allPools []platformclientv2.Extensionpool
+	extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(100, 1, "", "")
+	if err != nil {
+		return nil, apiResponse, err
+	}
+	allPools = append(allPools, *extensionPoolList.Entities...)
+
+	for pageNumber := 2; pageNumber <= *extensionPoolList.PageCount; pageNumber++ {
+		extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(100, pageNumber, "", "")
+		if err != nil {
+			return nil, apiResponse, err
+		}
+		allPools = append(allPools, *extensionPoolList.Entities...)
+	}
+
+	for _, pool := range allPools {
+		if extNum > *pool.StartNumber && extNum < *pool.EndNumber {
+			return &pool, apiResponse, nil
+		}
+	}
+
+	return nil, apiResponse, fmt.Errorf("Unable to find corresponding extension pool")
 }

@@ -51,6 +51,12 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"extension_pool_id": {
+				Description: "Id of the extension pool",
+				Type:        schema.TypeString,
+				Computed:    true,
+				ForceNew:    true,
+			},
 		},
 	}
 
@@ -438,11 +444,12 @@ func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"manager":                       {RefType: ResourceType},
-			"division_id":                   {RefType: "genesyscloud_auth_division"},
-			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},
-			"routing_languages.language_id": {RefType: "genesyscloud_routing_language"},
-			"locations.location_id":         {RefType: "genesyscloud_location"},
+			"manager":                                   {RefType: ResourceType},
+			"division_id":                               {RefType: "genesyscloud_auth_division"},
+			"routing_skills.skill_id":                   {RefType: "genesyscloud_routing_skill"},
+			"routing_languages.language_id":             {RefType: "genesyscloud_routing_language"},
+			"locations.location_id":                     {RefType: "genesyscloud_location"},
+			"addresses.phone_numbers.extension_pool_id": {RefType: "genesyscloud_telephony_providers_edges_extension_pool"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"routing_skills":         {"skill_id"},
