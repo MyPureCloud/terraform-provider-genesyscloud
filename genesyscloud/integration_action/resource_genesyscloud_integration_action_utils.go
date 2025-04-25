@@ -67,7 +67,7 @@ func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 	}, nil
 }
 
-// buildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
+// BuildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
 func BuildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
 	ActionConfig := &platformclientv2.Actionconfig{
@@ -82,7 +82,7 @@ func BuildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig
 	return ActionConfig
 }
 
-// buildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
+// BuildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
 func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
 	if configRequest := d.Get("config_request"); configRequest != nil {
 		if configList := configRequest.([]interface{}); len(configList) > 0 {
@@ -109,7 +109,7 @@ func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Reque
 	return &platformclientv2.Requestconfig{}
 }
 
-// buildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
+// BuildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
 func BuildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
 	if configResponse := d.Get("config_response"); configResponse != nil {
 		if configList := configResponse.([]interface{}); len(configList) > 0 {
@@ -154,7 +154,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 	return string(schemaBytes), nil
 }
 
-// flattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
+// FlattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
 func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
 
@@ -166,7 +166,7 @@ func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []int
 	return []interface{}{requestMap}
 }
 
-// FlattenActionConfigResponse converts the the platformclientv2.Responseconfig into a map
+// FlattenActionConfigResponse converts the platformclientv2.Responseconfig into a map
 func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
 	responseMap := make(map[string]interface{})
 
@@ -175,4 +175,36 @@ func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []
 	resourcedata.SetMapValueIfNotNil(responseMap, "success_template", sdkResponse.SuccessTemplate)
 
 	return []interface{}{responseMap}
+}
+
+// allActionNamesAreUnique checks if all integration actions in the provided slice are unique
+// based on a combination of their Name and Category fields. An action is considered
+// a duplicate if another action exists with the same Name and Category combination.
+//
+// Parameters:
+//   - actions: A slice of platformclientv2.Action to validate
+//
+// Returns:
+//   - bool: true if all actions are unique or if the slice is empty,
+//     false if any duplicate Name+Category combination is found
+func allActionNamesAreUnique(actions []platformclientv2.Action) bool {
+	if len(actions) == 0 {
+		return true
+	}
+
+	// Use a map to track seen items
+	seen := make(map[string]string)
+
+	// Iterate through each item in the slice
+	for _, action := range actions {
+		// Check if we've seen this item before
+		if _, exists := seen[*action.Name]; exists {
+			return false // Found a duplicate
+		}
+		// Mark item as seen
+		seen[*action.Name] = ""
+	}
+
+	// No duplicates found
+	return true
 }

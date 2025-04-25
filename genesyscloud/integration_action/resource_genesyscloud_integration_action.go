@@ -42,7 +42,7 @@ Two things to note:
 utils function in the package.  This will keep the code manageable and easy to work through.
 */
 
-// getAllIntegrationActions retrieves all of the integration action via Terraform in the Genesys Cloud and is used for the exporter
+// getAllIntegrationActions retrieves all integration actions via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	iap := getIntegrationActionsProxy(clientConfig)
@@ -52,16 +52,28 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration actions %s", err), resp)
 	}
 
+	// Establish if any data actions share the same name.
+	allNamesAreUnique := allActionNamesAreUnique(*actions)
+
 	for _, action := range *actions {
 		// Don't include "static" actions
 		if strings.HasPrefix(*action.Id, "static") {
 			continue
 		}
-		blockHash, err := util.QuickHashFields(action.Id)
+		blockHash, err := util.QuickHashFields(action.Category)
 		if err != nil {
 			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name, BlockHash: blockHash}
+
+		// It is more convenient for labels to not be org-specific, so if possible we will use the name alone as the label.
+		// If any actions share the same name, we will use the ID in the label.
+		var blockLabel string
+		if allNamesAreUnique {
+			blockLabel = *action.Name
+		} else {
+			blockLabel = *action.Name + "_" + *action.Id
+		}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel, BlockHash: blockHash}
 	}
 	return resources, nil
 }
