@@ -57,11 +57,15 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		if strings.HasPrefix(*action.Id, "static") {
 			continue
 		}
-		blockHash, err := util.QuickHashFields(action.Id)
+		blockHash, err := util.QuickHashFields(action.Category)
 		if err != nil {
 			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name, BlockHash: blockHash}
+		// Actions have no identifiable fields (or combination of fields) besides the GUID
+		// So even though it is org-specific, we need to use the ID in the block label so that the
+		// state file resourceKey does not get overwritten
+		blockLabel := *action.Name + "_" + *action.Id
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel, BlockHash: blockHash}
 	}
 	return resources, nil
 }
