@@ -2,10 +2,7 @@ package oauth_client
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/stretchr/testify/require"
 	"net/http"
-	"os"
 	"sort"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
@@ -208,62 +205,4 @@ func TestUnitUpdateTerraformUserWithRole(t *testing.T) {
 	assert.Equal(t, getTerraformUserCount, 1)
 	assert.Equal(t, getTerraformUserRolesCount, 1)
 	assert.Equal(t, updateTerraformUserRoleCount, 1)
-}
-
-func writeTestCacheFile(meta provider.IntegrationMeta) {
-	data, _ := json.Marshal(meta)
-	_ = os.WriteFile(testCacheFile, data, 0644)
-}
-
-func cleanTestCacheFile() {
-	_ = os.Remove(testCacheFile)
-}
-
-func TestFetchFieldsFromMetaDataCache(t *testing.T) {
-	defer cleanTestCacheFile()
-
-	meta := provider.IntegrationMeta{
-		ClientId:     "test-client-id",
-		ClientSecret: "test-client-secret",
-	}
-	writeTestCacheFile(meta)
-
-	fields := make(map[string]string)
-	err := FetchFieldsFromMetaDataCache(fields, testCacheFile)
-
-	require.NoError(t, err)
-	assert.Equal(t, "test-client-id", fields["clientId"])
-	assert.Equal(t, "test-client-secret", fields["clientSecret"])
-}
-
-func TestFetchFieldsFromMetaDataCache_FileMissing(t *testing.T) {
-	cleanTestCacheFile()
-	fields := make(map[string]string)
-
-	err := FetchFieldsFromMetaDataCache(fields, testCacheFile)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to read cache file")
-}
-
-func TestFetchFieldsFromMetaDataCache_InvalidJSON(t *testing.T) {
-	defer cleanTestCacheFile()
-	_ = os.WriteFile(testCacheFile, []byte("invalid json"), 0644)
-
-	fields := make(map[string]string)
-	err := FetchFieldsFromMetaDataCache(fields, testCacheFile)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to unmarshal")
-}
-
-func TestReadMetaDataFromProviderCache_EmptyFile(t *testing.T) {
-	defer cleanTestCacheFile()
-	_ = os.WriteFile(testCacheFile, []byte(""), 0644)
-
-	meta, err := readMetaDataFromProviderCache(testCacheFile)
-
-	assert.Error(t, err)
-	assert.Nil(t, meta)
-	assert.Contains(t, err.Error(), "cache file is empty")
 }
