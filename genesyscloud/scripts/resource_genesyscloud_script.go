@@ -99,6 +99,9 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		if script.Name != nil {
 			_ = d.Set("script_name", *script.Name)
 		}
+		if script.Division != nil && script.Division.Id != nil {
+			_ = d.Set("division_id", *script.Division.Id)
+		}
 
 		log.Printf("Read script %s %s", d.Id(), *script.Name)
 		return cc.CheckState(d)
