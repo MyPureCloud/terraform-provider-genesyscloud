@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -21,7 +20,7 @@ type getKnowledgeKnowledgebaseCategoryFunc func(ctx context.Context, p *knowledg
 type getKnowledgeKnowledgebaseCategoriesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryName string) (*platformclientv2.Categoryresponselisting, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseLabelsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelName string) (*platformclientv2.Labellisting, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseLabelFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error)
-type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
+type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type GetAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type GetAllKnowledgeDocumentEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
@@ -102,8 +101,8 @@ func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseLabel(ctx context.Cont
 	return p.getKnowledgeKnowledgebaseLabelAttr(ctx, p, knowledgeBaseId, labelId)
 }
 
-func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, documentId string, expand []string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-	return p.getKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, documentId, expand)
+func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+	return p.getKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, documentId, expand, state)
 }
 
 func (p *knowledgeDocumentProxy) GetAllKnowledgebaseEntities(ctx context.Context, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
@@ -162,19 +161,21 @@ func getKnowledgeKnowledgebaseLabelFn(ctx context.Context, p *knowledgeDocumentP
 	return p.KnowledgeApi.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, labelId)
 }
 
-func getKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func getKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	id := fmt.Sprintf("%s,%s", knowledgeBaseId, documentId)
 	if knowledgeDocument := rc.GetCacheItem(p.knowledgeDocumentCache, id); knowledgeDocument != nil {
 		return knowledgeDocument, nil, nil
 	}
-	state := "Draft"
-	published, er := fetchPublished(p, knowledgeBaseId, documentId)
-	if er != nil {
-		return nil, nil, er
-	}
-	log.Printf("published %v", published)
-	if published {
-		state = "Published"
+
+	if state == "" {
+		state = "Draft"
+		published, er := fetchPublished(p, knowledgeBaseId, documentId)
+		if er != nil {
+			return nil, nil, er
+		}
+		if published {
+			state = "Published"
+		}
 	}
 	return p.KnowledgeApi.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId, expand, state)
 }

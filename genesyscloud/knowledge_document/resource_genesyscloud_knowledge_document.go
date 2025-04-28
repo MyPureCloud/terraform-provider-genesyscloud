@@ -99,10 +99,15 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.ConsistencyChecks(), "genesyscloud_knowledge_document")
 
+	state := ""
+	if !d.Get("published").(bool) {
+		state = "Draft"
+	}
+
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 
-		knowledgeDocument, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil)
+		knowledgeDocument, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr), resp))
@@ -152,7 +157,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	if diagErr != nil {
 		return diagErr
 	}
-
+	_ = d.Set("published", false)
 	log.Printf("Updated Knowledge document %s", knowledgeDocumentId)
 	return readKnowledgeDocument(ctx, d, meta)
 }
@@ -172,7 +177,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil)
+		_, resp, err := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, "")
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Knowledge document deleted
