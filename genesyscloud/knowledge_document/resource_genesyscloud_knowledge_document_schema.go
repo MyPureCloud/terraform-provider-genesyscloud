@@ -106,7 +106,7 @@ func ResourceKnowledgeDocument() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
-				Deprecated:  "By Default a document created will be in Draft. Inorder to Publish a document, use knowledge_document_variation instead.",
+				Deprecated:  "By Default a document created will be in Draft. In order to Publish a document, use knowledge_document_variation instead.",
 			},
 		},
 	}
