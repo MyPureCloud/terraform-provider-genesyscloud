@@ -104,7 +104,8 @@ func ResourceKnowledgeDocument() *schema.Resource {
 			"published": {
 				Description: "If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.",
 				Type:        schema.TypeBool,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -20,13 +21,14 @@ type getKnowledgeKnowledgebaseCategoryFunc func(ctx context.Context, p *knowledg
 type getKnowledgeKnowledgebaseCategoriesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryName string) (*platformclientv2.Categoryresponselisting, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseLabelsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelName string) (*platformclientv2.Labellisting, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseLabelFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error)
-type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
+type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type GetAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type GetAllKnowledgeDocumentEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
 type deleteKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error)
 type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
+type getAllVariationsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId, documentId string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error)
 
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
@@ -42,9 +44,11 @@ type knowledgeDocumentProxy struct {
 	createKnowledgebaseDocumentVersionsAttr  createKnowledgebaseDocumentVersionsFunc
 	deleteKnowledgeKnowledgebaseDocumentAttr deleteKnowledgeKnowledgebaseDocumentFunc
 	updateKnowledgeKnowledgebaseDocumentAttr updateKnowledgeKnowledgebaseDocumentFunc
+	getAllVariationsAttr                     getAllVariationsFunc
 	knowledgeDocumentCache                   rc.CacheInterface[platformclientv2.Knowledgedocumentresponse]
 	knowledgeLabelCache                      rc.CacheInterface[platformclientv2.Labelresponse]
 	knowledgeCategoryCache                   rc.CacheInterface[platformclientv2.Categoryresponse]
+	knowledgeVariationCache                  rc.CacheInterface[platformclientv2.Documentvariationresponse]
 }
 
 func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *knowledgeDocumentProxy {
@@ -52,6 +56,7 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 	knowledgeDocumentCache := rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
 	knowledgeLabelCache := rc.NewResourceCache[platformclientv2.Labelresponse]()
 	knowledgeCategoryCache := rc.NewResourceCache[platformclientv2.Categoryresponse]()
+	knowledgeVariationCache := rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
 	return &knowledgeDocumentProxy{
 		clientConfig:                             clientConfig,
 		KnowledgeApi:                             api,
@@ -69,6 +74,7 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 		knowledgeDocumentCache:                   knowledgeDocumentCache,
 		knowledgeLabelCache:                      knowledgeLabelCache,
 		knowledgeCategoryCache:                   knowledgeCategoryCache,
+		knowledgeVariationCache:                  knowledgeVariationCache,
 	}
 }
 
@@ -96,8 +102,8 @@ func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseLabel(ctx context.Cont
 	return p.getKnowledgeKnowledgebaseLabelAttr(ctx, p, knowledgeBaseId, labelId)
 }
 
-func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-	return p.getKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, documentId, expand, state)
+func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, documentId string, expand []string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+	return p.getKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, documentId, expand)
 }
 
 func (p *knowledgeDocumentProxy) GetAllKnowledgebaseEntities(ctx context.Context, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
@@ -143,6 +149,11 @@ func getKnowledgeKnowledgebaseLabelsFn(ctx context.Context, p *knowledgeDocument
 	return labels, resp, err
 }
 
+// getVariationRequest retrieves all Genesys Cloud variation request
+func (p *knowledgeDocumentProxy) getAllVariations(ctx context.Context, knowledgeBaseId, documentId string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
+	return p.getAllVariationsAttr(ctx, p, knowledgeBaseId, documentId, expand)
+}
+
 func getKnowledgeKnowledgebaseLabelFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
 	id := fmt.Sprintf("%s,%s", knowledgeBaseId, labelId)
 	if knowledgeLabel := rc.GetCacheItem(p.knowledgeLabelCache, id); knowledgeLabel != nil {
@@ -151,12 +162,40 @@ func getKnowledgeKnowledgebaseLabelFn(ctx context.Context, p *knowledgeDocumentP
 	return p.KnowledgeApi.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, labelId)
 }
 
-func getKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func getKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	id := fmt.Sprintf("%s,%s", knowledgeBaseId, documentId)
 	if knowledgeDocument := rc.GetCacheItem(p.knowledgeDocumentCache, id); knowledgeDocument != nil {
 		return knowledgeDocument, nil, nil
 	}
+	state := "Draft"
+	published, er := fetchPublished(p, knowledgeBaseId, documentId)
+	if er != nil {
+		return nil, nil, er
+	}
+	log.Printf("published %v", published)
+	if published {
+		state = "Published"
+	}
 	return p.KnowledgeApi.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId, expand, state)
+}
+
+func fetchPublished(p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (bool, error) {
+	// get the variations for each document
+
+	knowledgeDocumentVariations, _, getErr := getAllVariations(p, knowledgeBaseId, documentId, nil)
+	if getErr != nil {
+		return false, getErr
+	}
+
+	if knowledgeDocumentVariations == nil || len(*knowledgeDocumentVariations) == 0 {
+		return false, nil
+	}
+	for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations {
+		if knowledgeDocumentVariation.DocumentVersion != nil && knowledgeDocumentVariation.DocumentVersion.Id != nil && len(*knowledgeDocumentVariation.DocumentVersion.Id) > 0 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
@@ -277,6 +316,89 @@ func GetAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocument
 	cacheKnowledgeCategoryEntities(p, *knowledgeBase.Id)
 
 	return &entities, nil, nil
+}
+
+// getAllVariations fetches all variations (both Draft and Published) for a document
+func getAllVariations(p *knowledgeDocumentProxy, knowledgeBaseId, documentId string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
+	var (
+		allVariations []platformclientv2.Documentvariationresponse
+		resp          *platformclientv2.APIResponse
+	)
+
+	// Get draft variations
+	draftVariations, draftResp, err := getVariationsByStatus(p, knowledgeBaseId, documentId, "Draft", expand)
+	if err != nil {
+		return nil, draftResp, err
+	}
+	allVariations = append(allVariations, draftVariations...)
+	resp = draftResp
+
+	// Get published variations
+	publishedVariations, publishedResp, err := getVariationsByStatus(p, knowledgeBaseId, documentId, "Published", expand)
+	if err != nil {
+		return nil, publishedResp, err
+	}
+	allVariations = append(allVariations, publishedVariations...)
+	resp = publishedResp
+
+	return &allVariations, resp, nil
+}
+
+// getVariationsByStatus fetches variations for a specific status
+func getVariationsByStatus(
+	p *knowledgeDocumentProxy,
+	knowledgeBaseId string,
+	documentId string,
+	status string,
+	expand []string,
+) ([]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
+	var (
+		variations []platformclientv2.Documentvariationresponse
+		after      string
+		resp       *platformclientv2.APIResponse
+	)
+	const pageSize = "100"
+	for {
+		result, apiResp, err := p.KnowledgeApi.GetKnowledgeKnowledgebaseDocumentVariations(
+			knowledgeBaseId,
+			documentId,
+			"",
+			after,
+			pageSize,
+			string(status),
+			expand,
+		)
+
+		// Check if variations is not found (deleted)
+		if apiResp != nil && apiResp.StatusCode == 404 {
+			break
+		}
+
+		if err != nil {
+			return nil, apiResp, err
+		}
+		resp = apiResp
+
+		if result.Entities == nil || len(*result.Entities) == 0 {
+			break
+		}
+
+		variations = append(variations, *result.Entities...)
+
+		if result.NextUri == nil || *result.NextUri == "" {
+			break
+		}
+
+		after, err = util.GetQueryParamValueFromUri(*result.NextUri, "after")
+		if err != nil {
+			return nil, resp, err
+		}
+		if after == "" {
+			break
+		}
+	}
+
+	return variations, resp, nil
 }
 
 func cacheKnowledgeLabelEntities(p *knowledgeDocumentProxy, knowledgeBaseId string) (*[]platformclientv2.Labelresponse, diag.Diagnostics) {
