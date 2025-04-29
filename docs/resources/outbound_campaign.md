@@ -109,6 +109,7 @@ Optional:
 
 Required:
 
+- `filter` (Boolean) Whether to filter contacts dynamically.
 - `sort` (Boolean) Whether to sort contacts dynamically.
 
 
