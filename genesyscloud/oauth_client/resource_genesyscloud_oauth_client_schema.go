@@ -123,6 +123,11 @@ func ResourceOAuthClient() *schema.Resource {
 				Description: "Place holder that can be referred in integration_credential fields. Sensitive info",
 				StateFunc:   ModifyStatusIdStateValue,
 			},
+			"directory_client_secret": {
+				Description: "Directory where the secret can be stored.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 }

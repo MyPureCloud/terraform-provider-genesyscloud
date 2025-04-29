@@ -323,3 +323,19 @@ func GetCSVRecordCount(filepath string) (int, error) {
 
 	return recordCount, nil
 }
+
+// Get a string path to the target export directory
+func GetDirPath(directory string) (string, diag.Diagnostics) {
+	if strings.HasPrefix(directory, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", diag.Errorf("Failed to evaluate home directory: %v", err)
+		}
+		directory = strings.Replace(directory, "~", homeDir, 1)
+	}
+	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+		return "", diag.FromErr(err)
+	}
+
+	return directory, nil
+}
