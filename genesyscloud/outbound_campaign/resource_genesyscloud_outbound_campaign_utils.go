@@ -140,6 +140,9 @@ func buildSettings(settings []interface{}) *platformclientv2.Dynamiccontactqueue
 	if sort, ok := dcqSetting["sort"].(bool); ok {
 		sdkDcqSettings.Sort = &sort
 	}
+	if filter, ok := dcqSetting["filter"].(bool); ok {
+		sdkDcqSettings.Filter = &filter
+	}
 	return &sdkDcqSettings
 }
 
@@ -182,6 +185,7 @@ func buildLineBalancingSettings(settings []interface{}) *platformclientv2.Dynami
 func flattenSettings(settings *platformclientv2.Dynamiccontactqueueingsettings) []interface{} {
 	settingsMap := make(map[string]interface{}, 0)
 	settingsMap["sort"] = *settings.Sort
+	settingsMap["filter"] = *settings.Filter
 	return []interface{}{settingsMap}
 }
 

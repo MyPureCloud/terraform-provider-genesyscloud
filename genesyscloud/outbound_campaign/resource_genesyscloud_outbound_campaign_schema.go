@@ -248,6 +248,12 @@ func ResourceOutboundCampaign() *schema.Resource {
 							Required:    true,
 							ForceNew:    true,
 						},
+						"filter": {
+							Description: "Whether to filter contacts dynamically.",
+							Type:        schema.TypeBool,
+							Required:    true,
+							ForceNew:    true,
+						},
 					},
 				},
 			},
