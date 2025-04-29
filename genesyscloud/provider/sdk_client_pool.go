@@ -3,13 +3,13 @@ package provider
 import (
 	"context"
 	"fmt"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"log"
 	"math"
 	"sync"
 	"sync/atomic"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"

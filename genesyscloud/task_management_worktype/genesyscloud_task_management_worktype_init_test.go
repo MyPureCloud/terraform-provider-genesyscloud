@@ -1,16 +1,16 @@
 package task_management_worktype
 
 import (
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"sync"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	script "terraform-provider-genesyscloud/genesyscloud/scripts"
-	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	script "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

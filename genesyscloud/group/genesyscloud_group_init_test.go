@@ -1,8 +1,8 @@
 package group
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

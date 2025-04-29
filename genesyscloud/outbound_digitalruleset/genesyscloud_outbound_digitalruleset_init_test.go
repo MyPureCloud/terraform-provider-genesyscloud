@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

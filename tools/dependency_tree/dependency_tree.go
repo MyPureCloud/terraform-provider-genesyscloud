@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	providerRegistrar "terraform-provider-genesyscloud/genesyscloud/provider_registrar"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"

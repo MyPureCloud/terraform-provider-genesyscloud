@@ -1,9 +1,9 @@
 package telephony_providers_edges_did
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/validators"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

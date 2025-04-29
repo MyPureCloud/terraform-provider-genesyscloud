@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -2,9 +2,9 @@ package conversations_messaging_settings_default
 
 import (
 	"fmt"
-	conversationsMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	conversationsMessagingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

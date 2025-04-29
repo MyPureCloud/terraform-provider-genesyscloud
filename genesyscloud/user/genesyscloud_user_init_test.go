@@ -1,16 +1,16 @@
 package user
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud"
 
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
-	extensionPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

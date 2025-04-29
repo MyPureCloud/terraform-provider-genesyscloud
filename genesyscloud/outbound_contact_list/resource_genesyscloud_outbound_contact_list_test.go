@@ -2,16 +2,16 @@ package outbound_contact_list
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
 	"regexp"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	testrunner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	obAttemptLimit "terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
+	obAttemptLimit "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

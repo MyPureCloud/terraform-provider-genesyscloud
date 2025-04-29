@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	cmSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
+	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

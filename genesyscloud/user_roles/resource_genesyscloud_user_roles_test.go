@@ -2,14 +2,14 @@ package user_roles
 
 import (
 	"fmt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"strconv"
 	"strings"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"

@@ -1,13 +1,13 @@
 package process_automation_trigger
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	//obRuleset "terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"testing"
 )
 

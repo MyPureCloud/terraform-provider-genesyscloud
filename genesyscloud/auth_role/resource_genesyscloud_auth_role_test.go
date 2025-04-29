@@ -2,14 +2,14 @@ package auth_role
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

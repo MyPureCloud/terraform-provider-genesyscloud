@@ -1,10 +1,10 @@
 package resource_exporter
 
 import (
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"os"
 	"regexp"
 	"strings"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 )
 

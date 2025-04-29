@@ -2,14 +2,14 @@ package integration_custom_auth_action
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
-	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
+	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
+	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

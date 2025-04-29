@@ -1,10 +1,10 @@
 package task_management_worktype_flow_onattributechange_rule
 
 import (
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	worktypeStatus "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"sync"
-	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	worktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
-	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

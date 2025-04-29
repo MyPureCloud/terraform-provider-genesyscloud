@@ -2,12 +2,12 @@ package tfexporter
 
 import (
 	"encoding/json"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/hcl/v2/hclsyntax"

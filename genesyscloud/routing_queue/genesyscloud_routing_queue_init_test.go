@@ -1,17 +1,17 @@
 package routing_queue
 
 import (
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/group"
-	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"terraform-provider-genesyscloud/genesyscloud/user"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
