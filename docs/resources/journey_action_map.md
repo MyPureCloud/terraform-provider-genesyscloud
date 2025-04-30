@@ -54,7 +54,7 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 - `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
 - `page_url_conditions` (Block Set) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
 - `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
-- `trigger_with_outcome_probability_conditions` (Block Set, Deprecated) Probability conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_probability_conditions))
+- `trigger_with_outcome_probability_conditions` (Block Set, Deprecated) *DEPRECATED: Use trigger_with_outcome_quantile_conditions attribute instead.* Probability conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_probability_conditions))
 - `trigger_with_outcome_quantile_conditions` (Block Set) Quantile conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_quantile_conditions))
 - `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 - `weight` (Number) Weight of the action map with higher number denoting higher weight. Low=1, Medium=2, High=3. Defaults to `2`.

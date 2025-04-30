@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 // Example:
@@ -50,13 +51,19 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_architect_user_prompt",
 		// "genesyscloud_auth_division",
 		// "genesyscloud_auth_role",
+		// Requires Instagram Product "genesyscloud_conversations_messaging_integrations_instagram",
 		"genesyscloud_conversations_messaging_integrations_instagram",
 		"genesyscloud_conversations_messaging_integrations_open",
+		// Requires Whatsapp Product "genesyscloud_conversations_messaging_integrations_whatsapp",
 		"genesyscloud_conversations_messaging_integrations_whatsapp",
 		"genesyscloud_conversations_messaging_settings",
 		"genesyscloud_conversations_messaging_settings_default",
 		"genesyscloud_conversations_messaging_supportedcontent",
 		"genesyscloud_conversations_messaging_supportedcontent_default",
+		"genesyscloud_employeeperformance_externalmetrics_definitions",
+		// "genesyscloud_externalcontacts_contact",
+		// "genesyscloud_externalcontacts_external_source",
+		// "genesyscloud_externalcontacts_organization",
 		// "genesyscloud_flow",
 		// "genesyscloud_group",
 		// "genesyscloud_location",
@@ -84,9 +91,6 @@ func TestExampleResources(t *testing.T) {
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
-
-	// Add some extra built in providers to be able to be used
-	providerFactories = provider.CombineProviderFactories(providerFactories, RandomProviderFactory())
 
 	// providerMeta := provider.GetProviderMeta()
 
@@ -137,16 +141,31 @@ func TestExampleResources(t *testing.T) {
 			// Creates a list of Test Checks for the existence of each attribute defined in the example
 			checks := buildAttributeTestChecks(resourceBlockType, resourceBlockLabel, resourceAttributes)
 
+			if !planOnly {
+				// Add arbitrary sleep to allow API to catch up before attempting to delete
+				checks = append(checks, func(s *terraform.State) error {
+					time.Sleep(1 * time.Second)
+					return nil
+				})
+			}
+
 			// Run test
 			resource.Test(t, resource.TestCase{
 				PreCheck: func() {
 					util.TestAccPreCheck(t)
 				},
 				ProviderFactories: providerFactories,
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"random": {
+						Source:            "hashicorp/random",
+						VersionConstraint: "3.7.2",
+					},
+				},
 				Steps: []resource.TestStep{
 					{
 						Config: string(resourceExampleContent),
 						Check: resource.ComposeTestCheckFunc(
+							// arbitrary check with sleep
 							checks...,
 						),
 						PlanOnly:           planOnly,
@@ -156,7 +175,7 @@ func TestExampleResources(t *testing.T) {
 			})
 
 			if !planOnly {
-				// Pause for five seconds to allow GC API to finish processing
+				// Pause for five seconds to allow GC API to finish processing delete
 				time.Sleep(time.Second * 5)
 			}
 

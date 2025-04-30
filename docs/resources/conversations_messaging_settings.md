@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_conversations_messaging_settings" "example-messaging-settings" {
+resource "genesyscloud_conversations_messaging_settings" "example_settings" {
   name = "Sample Messaging Settings"
   content {
     story {
