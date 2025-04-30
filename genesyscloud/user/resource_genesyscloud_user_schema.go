@@ -54,8 +54,7 @@ var (
 			"extension_pool_id": {
 				Description: "Id of the extension pool",
 				Type:        schema.TypeString,
-				Computed:    true,
-				ForceNew:    true,
+				Optional:    true,
 			},
 		},
 	}
