@@ -243,15 +243,15 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"sort": {
-							Description: "Whether to sort contacts dynamically.",
+							Description: "Whether to sort contacts dynamically. Note: Changing the sort value will cause the outbound campaign to be dropped and recreated with a new ID",
 							Type:        schema.TypeBool,
-							Required:    true,
+							Optional:    true,
 							ForceNew:    true,
 						},
 						"filter": {
-							Description: "Whether to filter contacts dynamically.",
+							Description: "Whether to filter contacts dynamically. Note: Changing the filter value will cause the outbound campaign to be dropped and recreated with a new ID",
 							Type:        schema.TypeBool,
-							Required:    true,
+							Optional:    true,
 							ForceNew:    true,
 						},
 					},
