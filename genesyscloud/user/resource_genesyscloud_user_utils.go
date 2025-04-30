@@ -726,7 +726,7 @@ func fetchExtensionPoolId(ctx context.Context, extNum string) string {
 
 	ext, getErr, err := userProxy.getTelephonyExtensionPoolByExtension(ctx, extNum)
 	if getErr.StatusCode != 200 {
-		fmt.Errorf("Error fetching extension pool for extension %s Error: %s", extNum, getErr.ErrorMessage)
+		fmt.Printf("Error fetching extension pool for extension %s Error: %s", extNum, getErr.ErrorMessage)
 		return ""
 	}
 	if err != nil {

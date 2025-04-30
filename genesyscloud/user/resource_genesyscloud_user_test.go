@@ -320,7 +320,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone1),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.address", addrEmail2),
@@ -381,7 +381,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "email", addrEmail2),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "name", addrUserName2),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.number", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.type", addrTypeHome),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.extension", addrPhoneExt2),
@@ -580,7 +580,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -603,7 +603,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone2),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -626,7 +626,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -1572,35 +1572,34 @@ func TestAccResourceUserPassword(t *testing.T) {
 	})
 }
 
-func TestAccUserPhoneExtensionPool(t *testing.T) {
+func TestAccUserAddressWithExtensionPool(t *testing.T) {
 	var (
-		addrUserResourceLabel1      = "test-user-ext-pool"
+		addrUserResourceLabel1      = "test-user-addr-ext-pool"
 		addrUserName                = "Tim Cheese"
 		addrEmail1                  = "terraform-" + uuid.NewString() + "@user.com"
-		addrExt1                    = "3532"
-		addrExt2                    = "4004"
+		addrExt1                    = "4105"
+		addrExt2                    = "4225"
 		phoneMediaType              = "PHONE"
 		addrTypeWork                = "WORK"
 		extensionPoolResourceLabel1 = "test-extensionpool" + uuid.NewString()
-		extensionPoolStartNumber1   = "3000"
-		extensionPoolEndNumber1     = "4000"
-		extensionPoolResourceLabel2 = "test-extensionpool2" + uuid.NewString()
-		extensionPoolStartNumber2   = "4001"
-		extensionPoolEndNumber2     = "4100"
+		extensionPoolStartNumber1   = "4100"
+		extensionPoolEndNumber1     = "4199"
+		extensionPoolResourceLabel2 = "test2-extensionpool" + uuid.NewString()
+		extensionPoolStartNumber2   = "4200"
+		extensionPoolEndNumber2     = "4299"
 	)
 
-	extensionPoolResource := extensionPool.ExtensionPoolStruct{
+	extensionPoolResource1 := extensionPool.ExtensionPoolStruct{
 		ResourceLabel: extensionPoolResourceLabel1,
 		StartNumber:   extensionPoolStartNumber1,
 		EndNumber:     extensionPoolEndNumber1,
-		Description:   util.NullValue,
+		Description:   util.NullValue, // No description
 	}
-
 	extensionPoolResource2 := extensionPool.ExtensionPoolStruct{
 		ResourceLabel: extensionPoolResourceLabel2,
 		StartNumber:   extensionPoolStartNumber2,
 		EndNumber:     extensionPoolEndNumber2,
-		Description:   util.NullValue,
+		Description:   util.NullValue, // No description
 	}
 
 	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
@@ -1610,9 +1609,6 @@ func TestAccUserPhoneExtensionPool(t *testing.T) {
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
-			{
-				Config: extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
-			},
 			{
 				// Create
 				Config: generateUserWithCustomAttrs(
@@ -1625,14 +1621,14 @@ func TestAccUserPhoneExtensionPool(t *testing.T) {
 							util.NullValue,          // Default to type PHONE
 							util.NullValue,          // Default to type WORK
 							strconv.Quote(addrExt1), // extension
+							fmt.Sprintf("extension_pool_id = %s.%s.id", extensionPool.ResourceType, extensionPoolResourceLabel1),
 						),
 					),
-					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceType, extensionPoolResourceLabel1),
-				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -1648,18 +1644,18 @@ func TestAccUserPhoneExtensionPool(t *testing.T) {
 					addrUserName,
 					generateUserAddresses(
 						generateUserPhoneAddress(
-							util.NullValue,          // number
+							util.NullValue,
 							util.NullValue,          // Default to type PHONE
 							util.NullValue,          // Default to type WORK
-							strconv.Quote(addrExt2), // update extension
+							strconv.Quote(addrExt2), // extension
+							fmt.Sprintf("extension_pool_id = %s.%s.id", extensionPool.ResourceType, extensionPoolResourceLabel2),
 						),
 					),
-					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceType, extensionPoolResourceLabel2),
-				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource2),
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource1) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", ""),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt2),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -1827,14 +1823,15 @@ func generateUserRoutingUtil(nestedBlocks ...string) string {
 	`, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateUserPhoneAddress(phoneNum string, phoneMediaType string, phoneType string, extension string) string {
+func generateUserPhoneAddress(phoneNum string, phoneMediaType string, phoneType string, extension string, extras ...string) string {
 	return fmt.Sprintf(`phone_numbers {
 				number = %s
 				media_type = %s
 				type = %s
 				extension = %s
+				%s
 			}
-			`, phoneNum, phoneMediaType, phoneType, extension)
+			`, phoneNum, phoneMediaType, phoneType, extension, strings.Join(extras, "\n"))
 }
 
 func generateUserEmailAddress(emailAddress string, emailType string) string {
