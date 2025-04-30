@@ -49,14 +49,21 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_architect_schedules",
 		// "genesyscloud_architect_user_prompt",
 		// "genesyscloud_auth_division",
-		"genesyscloud_auth_role",
+		// "genesyscloud_auth_role",
+		"genesyscloud_conversations_messaging_integrations_instagram",
+		"genesyscloud_conversations_messaging_integrations_open",
+		"genesyscloud_conversations_messaging_integrations_whatsapp",
+		"genesyscloud_conversations_messaging_settings",
+		"genesyscloud_conversations_messaging_settings_default",
+		"genesyscloud_conversations_messaging_supportedcontent",
+		"genesyscloud_conversations_messaging_supportedcontent_default",
 		// "genesyscloud_flow",
 		// "genesyscloud_group",
 		// "genesyscloud_location",
 		// "genesyscloud_routing_language",
-		"genesyscloud_routing_queue",
+		// "genesyscloud_routing_queue",
 		// "genesyscloud_routing_skill",
-		"genesyscloud_routing_sms_address",
+		// "genesyscloud_routing_sms_address",
 		// "genesyscloud_routing_utilization",
 		// "genesyscloud_routing_utilization_label",
 		// "genesyscloud_routing_wrapupcode",
@@ -81,8 +88,11 @@ func TestExampleResources(t *testing.T) {
 	// Add some extra built in providers to be able to be used
 	providerFactories = provider.CombineProviderFactories(providerFactories, RandomProviderFactory())
 
+	// providerMeta := provider.GetProviderMeta()
+
 	for _, example := range resources {
-		exampleDir := filepath.Join("..", "examples", "resources", example)
+		exampleDir := filepath.Join("..", "..", "examples", "resources", example)
+		// testName := fmt.Sprintf("%s/%s", *providerMeta.Organization.ThirdPartyOrgName, exampleDir)
 		t.Run(exampleDir, func(t *testing.T) {
 
 			// Get all tf files in the example directory
