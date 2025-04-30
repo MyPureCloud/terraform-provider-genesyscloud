@@ -235,7 +235,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`dynamic_contact_queueing_settings`: {
-				Description: `Settings for dynamic queueing of contacts.`,
+				Description: `Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied`,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
