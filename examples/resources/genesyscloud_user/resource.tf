@@ -1,12 +1,12 @@
 resource "genesyscloud_user" "example_user" {
-  email           = "johnny@example.com"
+  email           = "johnny${random_uuid.uuid.result}@example.com"
   name            = "Johnny Doe"
   password        = "initialP@ssW0rd"
   division_id     = data.genesyscloud_auth_division_home.home.id
   state           = "active"
   department      = "Development"
   title           = "Senior Director"
-  manager         = genesyscloud_user.example_user_manager.id
+  manager         = genesyscloud_user.example_user2.id
   acd_auto_answer = true
   profile_skills  = ["Java", "Go"]
   certifications  = ["Certified Developer"]
@@ -76,8 +76,8 @@ resource "genesyscloud_user" "example_user" {
   }
 }
 
-resource "genesyscloud_user" "example_user_manager" {
-  email = "bobby@example.com"
+resource "genesyscloud_user" "example_user2" {
+  email = "bobby${random_uuid.uuid.result}@example.com"
   name  = "Bobby Drop Tables"
   title = "CEO"
   state = "active"

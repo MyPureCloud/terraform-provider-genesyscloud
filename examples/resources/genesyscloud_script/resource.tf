@@ -7,5 +7,3 @@ resource "genesyscloud_script" "email" {
     foo = "bar"
   }
 }
-resource "random_uuid" "uuid" {
-}

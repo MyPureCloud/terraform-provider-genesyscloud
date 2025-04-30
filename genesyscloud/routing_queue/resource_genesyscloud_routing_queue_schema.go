@@ -12,7 +12,6 @@ import (
 	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	routingSmsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	"terraform-provider-genesyscloud/genesyscloud/team"
@@ -657,7 +656,6 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"message_in_queue_flow_id":                          {RefType: architectFlow.ResourceType},
 			"whisper_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
 			"on_hold_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
-			"outbound_messaging_sms_address_id":                 {RefType: routingSmsAddresses.ResourceType},
 			"default_script_ids.*":                              {RefType: scripts.ResourceType},
 			"outbound_email_address.route_id":                   {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
 			"outbound_email_address.domain_id":                  {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle

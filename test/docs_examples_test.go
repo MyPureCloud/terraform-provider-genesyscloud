@@ -10,6 +10,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -46,16 +47,16 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_architect_ivr",
 		// "genesyscloud_architect_schedulegroups",
 		// "genesyscloud_architect_schedules",
-		//"genesyscloud_architect_user_prompt",
+		// "genesyscloud_architect_user_prompt",
 		// "genesyscloud_auth_division",
-		// "genesyscloud_auth_role",
+		"genesyscloud_auth_role",
 		// "genesyscloud_flow",
-		"genesyscloud_group",
+		// "genesyscloud_group",
 		// "genesyscloud_location",
 		// "genesyscloud_routing_language",
-		// "genesyscloud_routing_queue",
+		"genesyscloud_routing_queue",
 		// "genesyscloud_routing_skill",
-		// "genesyscloud_routing_sms_address",
+		"genesyscloud_routing_sms_address",
 		// "genesyscloud_routing_utilization",
 		// "genesyscloud_routing_utilization_label",
 		// "genesyscloud_routing_wrapupcode",
@@ -113,44 +114,18 @@ func TestExampleResources(t *testing.T) {
 			// Check for optional "dependencies.tf" in files and load it up
 			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
 			dependenciesContent, workingDirs, _ := checkForDependencies(t, exampleDir, []string{})
-
 			resourceExampleContent = append(resourceExampleContent, dependenciesContent...)
+
+			// Build locals {} block
 			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
 			resourceExampleContent = append(resourceExampleContent, constructLocals(workingDirs)...)
 
 			// Uncomment to display the full output of the content being passed to Terraform
 			// Retained for debugging purposes
-			fmt.Fprintln(os.Stdout, string(resourceExampleContent))
+			// fmt.Fprintln(os.Stdout, string(resourceExampleContent))
 
-			// Add checks for the existence of each attribute defined in the example
-			checks := []resource.TestCheckFunc{}
-			for _, attr := range resourceAttributes {
-				attrName := attr.Name
-				expr := attr.Expr
-				switch expr.(type) {
-				case *hclsyntax.ObjectConsExpr:
-					// Handle maps
-					check := resource.TestCheckResourceAttrSet(
-						resourceBlockType+"."+resourceBlockLabel,
-						attrName+".%",
-					)
-					checks = append(checks, check)
-				case *hclsyntax.TupleConsExpr:
-					// Handle lists/arrays
-					check := resource.TestCheckResourceAttrSet(
-						resourceBlockType+"."+resourceBlockLabel,
-						attrName+".#",
-					)
-					checks = append(checks, check)
-				default:
-					// Handle all other types
-					check := resource.TestCheckResourceAttrSet(
-						resourceBlockType+"."+resourceBlockLabel,
-						attrName,
-					)
-					checks = append(checks, check)
-				}
-			}
+			// Creates a list of Test Checks for the existence of each attribute defined in the example
+			checks := buildAttributeTestChecks(resourceBlockType, resourceBlockLabel, resourceAttributes)
 
 			// Run test
 			resource.Test(t, resource.TestCase{
@@ -170,10 +145,17 @@ func TestExampleResources(t *testing.T) {
 				},
 			})
 
+			if !planOnly {
+				// Pause for five seconds to allow GC API to finish processing
+				time.Sleep(time.Second * 5)
+			}
+
 		})
 	}
 }
 
+// Recursive function that checks for a "dependencies.tf" file in the example directory and pulls in any extra dependent files.
+// Any files referenced will check for a sibling "dependencies.tf" to load as well.
 func checkForDependencies(t *testing.T, examplesDir string, dependencyFilesInput []string) (content []byte, workingDirs map[string]string, dependencyFilesOutput []string) {
 	workingDirs = make(map[string]string)
 
@@ -240,6 +222,8 @@ func checkForDependencies(t *testing.T, examplesDir string, dependencyFilesInput
 
 }
 
+// Constructs the "locals {}" block based off of a map of merged working directories. This is to
+// prevent duplication of attributes, which Terraform forbids.
 func constructLocals(workingDirs map[string]string) []byte {
 	locals := []byte{}
 	locals = append(locals, []byte("locals {\n")...)
@@ -250,4 +234,37 @@ func constructLocals(workingDirs map[string]string) []byte {
 	locals = append(locals, []byte("  }\n")...)
 	locals = append(locals, []byte("}\n")...)
 	return locals
+}
+
+// Creates a list of Test Checks for the existence of each attribute defined in the example
+func buildAttributeTestChecks(resourceBlockType, resourceBlockLabel string, resourceAttributes hclsyntax.Attributes) []resource.TestCheckFunc {
+	checks := []resource.TestCheckFunc{}
+	for _, attr := range resourceAttributes {
+		attrName := attr.Name
+		expr := attr.Expr
+		switch expr.(type) {
+		case *hclsyntax.ObjectConsExpr:
+			// Handle maps
+			check := resource.TestCheckResourceAttrSet(
+				resourceBlockType+"."+resourceBlockLabel,
+				attrName+".%",
+			)
+			checks = append(checks, check)
+		case *hclsyntax.TupleConsExpr:
+			// Handle lists/arrays
+			check := resource.TestCheckResourceAttrSet(
+				resourceBlockType+"."+resourceBlockLabel,
+				attrName+".#",
+			)
+			checks = append(checks, check)
+		default:
+			// Handle all other types
+			check := resource.TestCheckResourceAttrSet(
+				resourceBlockType+"."+resourceBlockLabel,
+				attrName,
+			)
+			checks = append(checks, check)
+		}
+	}
+	return checks
 }
