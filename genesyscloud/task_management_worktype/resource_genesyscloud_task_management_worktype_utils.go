@@ -41,10 +41,10 @@ type worktypeConfig struct {
 func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypecreate {
 	worktype := platformclientv2.Worktypecreate{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
-		DivisionId:                   platformclientv2.String(d.Get("division_id").(string)),
-		Description:                  platformclientv2.String(d.Get("description").(string)),
+		DivisionId:                   resourcedata.GetNonZeroPointer[string](d, "division_id"),
+		Description:                  resourcedata.GetNonZeroPointer[string](d, "description"),
 		DisableDefaultStatusCreation: platformclientv2.Bool(false),
-		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
+		DefaultWorkbinId:             resourcedata.GetNonZeroPointer[string](d, "default_workbin_id"),
 		SchemaId:                     resourcedata.GetNillableValue[string](d, "schema_id"),
 		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),
 		DefaultPriority:              platformclientv2.Int(d.Get("default_priority").(int)),
