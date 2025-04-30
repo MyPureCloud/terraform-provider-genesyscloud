@@ -580,7 +580,9 @@ func phoneNumberHash(val interface{}) int {
 	// Copy map to avoid modifying state
 	phoneMap := make(map[string]interface{})
 	for k, v := range val.(map[string]interface{}) {
-		phoneMap[k] = v
+		if k != "extension_pool_id" {
+			phoneMap[k] = v
+		}
 	}
 	if num, ok := phoneMap["number"]; ok {
 		// Attempt to format phone numbers before hashing
