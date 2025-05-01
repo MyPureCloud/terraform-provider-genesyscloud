@@ -344,7 +344,7 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 
 	extNumInt, err := strconv.Atoi(extNum)
 	if err != nil {
-		log.Println(err)
+		return nil, nil, fmt.Errorf("invalid extension number: %s", err)
 	}
 	for _, pool := range allPools {
 		startNum, err := strconv.Atoi(*pool.StartNumber)
