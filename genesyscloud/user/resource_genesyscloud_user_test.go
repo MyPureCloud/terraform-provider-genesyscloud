@@ -1572,7 +1572,7 @@ func TestAccResourceUserPassword(t *testing.T) {
 	})
 }
 
-func TestAccUserAddressWithExtensionPool(t *testing.T) {
+func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 	var (
 		addrUserResourceLabel1      = "test-user-addr-ext-pool"
 		addrUserName                = "Tim Cheese"

@@ -173,7 +173,7 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			d.Set("manager", nil)
 		}
 
-		d.Set("addresses", flattenUserAddresses(ctx, currentUser.Addresses))
+		d.Set("addresses", flattenUserAddresses(ctx, currentUser.Addresses, proxy))
 		d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
 		d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
 		d.Set("locations", flattenUserLocations(currentUser.Locations))

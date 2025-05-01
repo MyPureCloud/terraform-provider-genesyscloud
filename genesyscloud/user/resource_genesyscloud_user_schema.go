@@ -52,7 +52,7 @@ var (
 				Optional:    true,
 			},
 			"extension_pool_id": {
-				Description: "Id of the extension pool",
+				Description: "Id of the extension pool which contains this extension.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

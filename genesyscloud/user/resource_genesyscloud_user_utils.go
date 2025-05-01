@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
-	"github.com/nyaruka/phonenumbers"
 	"log"
 	"net/mail"
 	"sort"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/nyaruka/phonenumbers"
 )
 
 var (
@@ -720,23 +720,20 @@ func getNumbers(d *schema.ResourceData, index int) (bool, bool) {
 	return isNumber, isExtension
 }
 
-func fetchExtensionPoolId(ctx context.Context, extNum string) string {
-	clientConfig, _ := provider.AuthorizeSdk()
-	userProxy := GetUserProxy(clientConfig)
-
-	ext, getErr, err := userProxy.getTelephonyExtensionPoolByExtension(ctx, extNum)
-	if getErr.StatusCode != 200 {
-		fmt.Printf("Error fetching extension pool for extension %s Error: %s", extNum, getErr.ErrorMessage)
-		return ""
-	}
+func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) string {
+	ext, getErr, err := proxy.getTelephonyExtensionPoolByExtension(ctx, extNum)
 	if err != nil {
-		log.Printf("Failed to fetch extension pool id for extension %s Error: %s", extNum, err)
+		if getErr != nil {
+			log.Printf("Failed to fetch extension pools. Status: %d. Error: %s", getErr.StatusCode, getErr.ErrorMessage)
+			return ""
+		}
+		log.Printf("Failed to fetch extension pool id for extension %s. Error: %s", extNum, err)
 		return ""
 	}
 	return *ext.Id
 }
 
-func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Contact) []interface{} {
+func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Contact, proxy *userProxy) []interface{} {
 	if addresses == nil || len(*addresses) == 0 {
 		return nil
 	}
@@ -769,8 +766,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 						if *address.Extension == *address.Display {
 							extensionNum := strings.Trim(*address.Extension, "()")
 							phoneNumber["extension"] = extensionNum
-							log.Printf("HERE NOW")
-							phoneNumber["extension_pool_id"] = fetchExtensionPoolId(ctx, extensionNum)
+							phoneNumber["extension_pool_id"] = fetchExtensionPoolId(ctx, extensionNum, proxy)
 						}
 					}
 				}

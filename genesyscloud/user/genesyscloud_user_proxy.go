@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"time"
 
@@ -341,11 +342,26 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 		allPools = append(allPools, *extensionPoolList.Entities...)
 	}
 
+	extNumInt, err := strconv.Atoi(extNum)
+	if err != nil {
+		log.Println(err)
+	}
 	for _, pool := range allPools {
-		if extNum > *pool.StartNumber && extNum < *pool.EndNumber {
+		startNum, err := strconv.Atoi(*pool.StartNumber)
+		if err != nil {
+			log.Printf("invalid start number: %v", err)
+			continue
+		}
+		endNum, err := strconv.Atoi(*pool.EndNumber)
+		if err != nil {
+			log.Printf("invalid end number: %v", err)
+			continue
+		}
+
+		if extNumInt > startNum && extNumInt < endNum {
 			return &pool, apiResponse, nil
 		}
 	}
 
-	return nil, apiResponse, fmt.Errorf("Unable to find corresponding extension pool")
+	return nil, nil, fmt.Errorf("unable to find corresponding extension pool")
 }
