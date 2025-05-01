@@ -15,27 +15,11 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	zclCty "github.com/zclconf/go-cty/cty"
 )
-
-// Example:
-//
-//	locals {
-//	  dependencies = [ ... ]
-//	  working_dir = {
-//	    auth_role = "./genesyscloud_auth_role/"
-//	    user = "./genesyscloud_user/"
-//	  }
-//	}
-type DependenciesConfig struct {
-	Locals struct {
-		// A list of Terraform configs that should be included to make the example resource pass the test
-		Dependencies []string `hcl:"dependencies,optional"`
-		// A reference to the existing working directory
-		WorkingDir map[string]string `hcl:"working_dir,optional"`
-	} `hcl:"locals,block"`
-}
 
 func TestExampleResources(t *testing.T) {
 
@@ -66,8 +50,15 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_flow_loglevel",
 		// "genesyscloud_flow_milestone",
 		// // No DELETE? "genesyscloud_flow_outcome",
-		"genesyscloud_group",
-		"genesyscloud_group_roles",
+		// "genesyscloud_group",
+		// "genesyscloud_group_roles",
+		// "genesyscloud_idp_adfs",
+		"genesyscloud_idp_generic",
+		// "genesyscloud_idp_gsuite",
+		// "genesyscloud_idp_okta",
+		// "genesyscloud_idp_onelogin",
+		// "genesyscloud_idp_ping",
+		// "genesyscloud_idp_salesforce",
 		// "genesyscloud_location",
 		// "genesyscloud_routing_language",
 		// "genesyscloud_routing_queue",
@@ -94,7 +85,8 @@ func TestExampleResources(t *testing.T) {
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
 
-	// providerMeta := provider.GetProviderMeta()
+	// Add some extra built in providers to be able to be used
+	providerFactories = provider.CombineProviderFactories(providerFactories, UtilsProviderFactory())
 
 	for _, example := range resources {
 		exampleDir := filepath.Join("..", "..", "examples", "resources", example)
@@ -127,14 +119,14 @@ func TestExampleResources(t *testing.T) {
 			resourceBlockLabel := resourceHCLFile.Body.(*hclsyntax.Body).Blocks[0].Labels[1]
 			resourceAttributes := resourceHCLFile.Body.(*hclsyntax.Body).Blocks[0].Body.Attributes
 
-			// Check for optional "dependencies.tf" in files and load it up
+			// Check for optional "locals.tf" in files and load it up
 			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
-			dependenciesContent, workingDirs, _ := checkForDependencies(t, exampleDir, []string{})
-			resourceExampleContent = append(resourceExampleContent, dependenciesContent...)
+			localsAndDependenciesContent, workingDirs, _, remainingLocalAttrs := checkForLocals(t, exampleDir, []string{}, map[string]interface{}{})
+			resourceExampleContent = append(resourceExampleContent, localsAndDependenciesContent...)
 
 			// Build locals {} block
 			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
-			resourceExampleContent = append(resourceExampleContent, constructLocals(workingDirs)...)
+			resourceExampleContent = append(resourceExampleContent, constructLocals(workingDirs, remainingLocalAttrs)...)
 
 			// Uncomment to display the full output of the content being passed to Terraform
 			// Retained for debugging purposes
@@ -185,23 +177,45 @@ func TestExampleResources(t *testing.T) {
 	}
 }
 
-// Recursive function that checks for a "dependencies.tf" file in the example directory and pulls in any extra dependent files.
-// Any files referenced will check for a sibling "dependencies.tf" to load as well.
-func checkForDependencies(t *testing.T, examplesDir string, dependencyFilesInput []string) (content []byte, workingDirs map[string]string, dependencyFilesOutput []string) {
+// "locals.tf" file example:
+//
+//	locals {
+//	  dependencies = [ ... ]
+//	  working_dir = {
+//	    auth_role = "./genesyscloud_auth_role/"
+//	    user = "./genesyscloud_user/"
+//	  }
+//	}
+type DependenciesConfig struct {
+	Locals struct {
+		// A list of Terraform configs that should be included to make the example resource pass the test
+		Dependencies []string `hcl:"dependencies,optional"`
+		// A reference to the existing working directory
+		WorkingDir map[string]string `hcl:"working_dir,optional"`
+		// Any extra remain attributes defined
+		Remain map[string]interface{} `hcl:",remain"`
+	} `hcl:"locals,block"`
+}
+
+// Recursive function that checks for a "locals.tf" file in the example directory and pulls in any extra dependent files.
+// Any files referenced will check for a sibling "locals.tf" to load as well.
+func checkForLocals(t *testing.T, examplesDir string, dependencyFilesInput []string, remainingAttrsInput map[string]interface{}) (content []byte, workingDirs map[string]string, dependencyFilesOutput []string, remainingAttrsOutput map[string]interface{}) {
 	workingDirs = make(map[string]string)
 
 	files, err := filepath.Glob(filepath.Join(examplesDir, "*.tf"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Check for optional "dependencies.tf" in files and load it up
-	if lists.SubStringInSlice("dependencies.tf", files) {
+	// Check for optional "locals.tf" in files and load it up
+	if lists.SubStringInSlice("locals.tf", files) {
 		var depConfig DependenciesConfig
-		dependencyContentBody, err := os.ReadFile(filepath.Join(examplesDir, "dependencies.tf"))
+
+		// Parse the locals.tf file into the depConfig object
+		dependencyContentBody, err := os.ReadFile(filepath.Join(examplesDir, "locals.tf"))
 		if err != nil {
 			t.Fatal(err)
 		}
-		dependencyHCLFile, diagErr := hclsyntax.ParseConfig(dependencyContentBody, "dependencies.tf", hcl.Pos{Line: 1, Column: 1})
+		dependencyHCLFile, diagErr := hclsyntax.ParseConfig(dependencyContentBody, "locals.tf", hcl.Pos{Line: 1, Column: 1})
 		if diagErr != nil && diagErr.HasErrors() {
 			t.Fatal(diagErr)
 		}
@@ -209,6 +223,7 @@ func checkForDependencies(t *testing.T, examplesDir string, dependencyFilesInput
 		if diagErr != nil && diagErr.HasErrors() {
 			t.Fatal(diagErr)
 		}
+
 		// Supports loading an existing example's resource file's content and dependencies
 		if len(depConfig.Locals.Dependencies) > 0 {
 			for _, dependency := range depConfig.Locals.Dependencies {
@@ -224,7 +239,8 @@ func checkForDependencies(t *testing.T, examplesDir string, dependencyFilesInput
 
 					dependencyBasePath := filepath.Dir(dependencyPath)
 					if examplesDir != dependencyBasePath {
-						dependencyContent, depWorkingDirs, depPaths := checkForDependencies(t, dependencyBasePath, dependencyFilesInput)
+						dependencyContent, depWorkingDirs, depPaths, depRemaining := checkForLocals(t, dependencyBasePath, dependencyFilesInput, remainingAttrsInput)
+						remainingAttrsInput = updateRemainingAttrs(remainingAttrsInput, depRemaining)
 						content = append(content, dependencyContent...)
 						content = append(content, []byte("\n")...)
 						for k, v := range depWorkingDirs {
@@ -242,29 +258,58 @@ func checkForDependencies(t *testing.T, examplesDir string, dependencyFilesInput
 			if err != nil {
 				t.Fatal(err)
 			}
-			// Write a locals output with the working directory pointing to the examples dir
+			// Set the working directory pointing to the examples dir
 			for k, v := range depConfig.Locals.WorkingDir {
 				workingDirs[k] = filepath.Join(wd, examplesDir, v)
 			}
 		}
+
+		if depConfig.Locals.Remain != nil {
+			remainingAttrsInput = updateRemainingAttrs(remainingAttrsInput, depConfig.Locals.Remain)
+		}
 	}
 
-	return content, workingDirs, dependencyFilesInput
+	return content, workingDirs, dependencyFilesInput, remainingAttrsInput
 
+}
+
+// Update the remaining local attributes
+func updateRemainingAttrs(allLocalAttributes map[string]interface{}, remainingAttrs map[string]interface{}) map[string]interface{} {
+	for k, v := range remainingAttrs {
+		allLocalAttributes[k] = v
+	}
+	return allLocalAttributes
 }
 
 // Constructs the "locals {}" block based off of a map of merged working directories. This is to
 // prevent duplication of attributes, which Terraform forbids.
-func constructLocals(workingDirs map[string]string) []byte {
-	locals := []byte{}
-	locals = append(locals, []byte("locals {\n")...)
-	locals = append(locals, []byte("  working_dir = {\n")...)
+func constructLocals(workingDirs map[string]string, remainingLocalAttrs map[string]interface{}) []byte {
+
+	f := hclwrite.NewEmptyFile()
+	rootBody := f.Body()
+
+	// Create the local block
+	localsBlock := rootBody.AppendNewBlock("locals", []string{})
+
+	// Create the working_dir objects
+	workingDirObj := map[string]zclCty.Value{}
 	for k, v := range workingDirs {
-		locals = append(locals, []byte(fmt.Sprintf("    %s = \"%s\"\n", k, v))...)
+		workingDirObj[k] = zclCty.StringVal(v)
 	}
-	locals = append(locals, []byte("  }\n")...)
-	locals = append(locals, []byte("}\n")...)
-	return locals
+
+	// Add working_dir attribute to locals
+	localsBlock.Body().SetAttributeValue("working_dir", zclCty.ObjectVal(workingDirObj))
+
+	// Add remaining attributes
+	for k, attr := range remainingLocalAttrs {
+		hclAttr := attr.(*hcl.Attribute)
+
+		// Add hclAttr to locals block without trying to evaluate them
+		localsBlock.Body().SetAttributeTraversal(k, hclAttr.Expr.Variables()[0])
+	}
+
+	return f.Bytes()
+
 }
 
 // Creates a list of Test Checks for the existence of each attribute defined in the example
