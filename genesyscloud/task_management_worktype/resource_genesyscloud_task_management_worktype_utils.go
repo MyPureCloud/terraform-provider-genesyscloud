@@ -21,29 +21,35 @@ type worktypeConfig struct {
 	divisionId       string
 	defaultWorkbinId string
 
-	defaultDurationS    int
-	defaultExpirationS  int
-	defaultDueDurationS int
-	defaultPriority     int
-	defaultTtlS         int
-
-	defaultLanguageId string
-	defaultQueueId    string
-	defaultSkillIds   []string
-	defaultScriptId   string
-	assignmentEnabled bool
-
-	schemaId      string
-	schemaVersion int
+	defaultDurationS             int
+	defaultExpirationS           int
+	defaultDueDurationS          int
+	defaultPriority              int
+	defaultTtlS                  int
+	defaultLanguageId            string
+	defaultQueueId               string
+	defaultSkillIds              []string
+	assignmentEnabled            bool
+	defaultScriptId              string
+	disableDefaultStatusCreation bool
+	schemaId                     string
+	schemaVersion                int
 }
 
 // getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
 func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypecreate {
+	DisableDefaultStatusCreation := platformclientv2.Bool(func() bool {
+		if v, ok := d.GetOk("disable_default_status_creation"); ok {
+			return v.(bool)
+		}
+		return false
+	}())
+
 	worktype := platformclientv2.Worktypecreate{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		DivisionId:                   resourcedata.GetNonZeroPointer[string](d, "division_id"),
 		Description:                  resourcedata.GetNonZeroPointer[string](d, "description"),
-		DisableDefaultStatusCreation: platformclientv2.Bool(false),
+		DisableDefaultStatusCreation: DisableDefaultStatusCreation,
 		DefaultWorkbinId:             resourcedata.GetNonZeroPointer[string](d, "default_workbin_id"),
 		SchemaId:                     resourcedata.GetNillableValue[string](d, "schema_id"),
 		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),

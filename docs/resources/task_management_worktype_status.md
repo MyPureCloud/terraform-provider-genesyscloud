@@ -47,11 +47,11 @@ resource "genesyscloud_task_management_worktype_status" "worktype_status" {
 ### Optional
 
 - `default` (Boolean) This status is the default status for Workitems created from this Worktype. Only one status can be set as the default status at a time. Once set there must always be a default status. The default can not be deleted.
-- `default_destination_status_id` (String) Default destination status to which this Status will transition to if auto status transition enabled.
+- `default_destination_status_id` (String, Deprecated) Default destination status to which this Status will transition to if auto status transition enabled.
 - `description` (String) The description of the Status.
-- `destination_status_ids` (List of String) A list of destination Statuses where a Workitem with this Status can transition to. If the list is empty Workitems with this Status can transition to all other Statuses defined on the Worktype. A Status can have a maximum of 24 destinations.
-- `status_transition_delay_seconds` (Number) Delay in seconds for auto status transition. Required if default_destination_status_id is provided.
-- `status_transition_time` (String) Time is represented as an ISO-8601 string without a timezone. For example: HH:mm:ss
+- `destination_status_ids` (List of String, Deprecated) A list of destination Statuses where a Workitem with this Status can transition to. If the list is empty Workitems with this Status can transition to all other Statuses defined on the Worktype. A Status can have a maximum of 24 destinations.
+- `status_transition_delay_seconds` (Number, Deprecated) Delay in seconds for auto status transition. Required if default_destination_status_id is provided.
+- `status_transition_time` (String, Deprecated) Time is represented as an ISO-8601 string without a timezone. For example: HH:mm:ss
 
 ### Read-Only
 

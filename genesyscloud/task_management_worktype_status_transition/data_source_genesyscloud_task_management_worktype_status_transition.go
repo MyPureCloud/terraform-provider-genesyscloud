@@ -1,4 +1,4 @@
-package task_management_worktype_status
+package task_management_worktype_status_transition
 
 import (
 	"context"
@@ -15,12 +15,12 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_task_management_worktype_status.go contains the data source implementation
+   The data_source_genesyscloud_task_management_worktype_status_transition.go contains the data source implementation
    for the resource.
 */
 
 // dataSourceTaskManagementWorktypeStatusRead retrieves by name the id in question
-func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceTaskManagementWorktypeStatusTransitionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 
@@ -38,7 +38,7 @@ func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.R
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No task management worktype %s status found with name %s", worktypeId, name), resp))
 		}
 
-		d.SetId(worktypeId + "/" + worktypeStatusId)
+		d.SetId(worktypeStatusId)
 		return nil
 	})
 }
