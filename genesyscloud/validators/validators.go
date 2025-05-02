@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
@@ -443,4 +444,21 @@ func ValidateCSVWithColumns(filePathAttr string, columnNamesAttr string) schema.
 		}
 		return nil
 	}
+}
+
+// ValidateStringInMap returns a SchemaValidateDiagFunc that validates if a string
+// included in a map is in a list of acceptable values
+func ValidateStringInMap(valid []string, ignoreCase bool) schema.SchemaValidateDiagFunc {
+	// Create the regular expression pattern
+	pattern := strings.Join(valid, "|")
+	if ignoreCase {
+		pattern = fmt.Sprintf(`(?i)^(%s)$`, pattern)
+	} else {
+		pattern = fmt.Sprintf(`^(%s)$`, pattern)
+	}
+
+	return validation.MapKeyMatch(
+		regexp.MustCompile(pattern),
+		fmt.Sprintf(`expected key to be one of ["%s"], got`, strings.Join(valid, `", "`)),
+	)
 }
