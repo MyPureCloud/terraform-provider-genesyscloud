@@ -68,13 +68,19 @@ func TestExampleResources(t *testing.T) {
 
 		// // JOURNEY RESOURCE REQUIRE "journeyManagement" product
 		// // Available with Cloud CX4 ?
-		// "genesyscloud_journey_action_map",
-		// "genesyscloud_journey_action_template",
-		// "genesyscloud_journey_outcome",
-		// "genesyscloud_journey_outcome_predictor",
-		"genesyscloud_journey_segment",
-		// "genesyscloud_journey_view_schedule",
-		// "genesyscloud_journey_views",
+		// // "genesyscloud_journey_action_map",
+		// // "genesyscloud_journey_action_template",
+		// // "genesyscloud_journey_outcome",
+		// // "genesyscloud_journey_outcome_predictor",
+		// // "genesyscloud_journey_segment",
+		// // "genesyscloud_journey_view_schedule",
+		// // "genesyscloud_journey_views",
+
+		// "genesyscloud_knowledge_category",
+		// "genesyscloud_knowledge_document",
+		"genesyscloud_knowledge_document_variation",
+		// "genesyscloud_knowledge_knowledgebase",
+		// "genesyscloud_knowledge_label",
 
 		// "genesyscloud_location",
 		// "genesyscloud_routing_language",
@@ -132,9 +138,6 @@ func TestExampleResources(t *testing.T) {
 			if diagErr != nil && diagErr.HasErrors() {
 				t.Fatal(diagErr)
 			}
-			resourceBlockType := resourceHCLFile.Body.(*hclsyntax.Body).Blocks[0].Labels[0]
-			resourceBlockLabel := resourceHCLFile.Body.(*hclsyntax.Body).Blocks[0].Labels[1]
-			resourceAttributes := resourceHCLFile.Body.(*hclsyntax.Body).Blocks[0].Body.Attributes
 
 			// Check for optional "locals.tf" in files and load it up
 			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
@@ -145,16 +148,22 @@ func TestExampleResources(t *testing.T) {
 			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
 			resourceExampleContent = append(resourceExampleContent, constructLocals(workingDirs, remainingLocalAttrs)...)
 
-			// Uncomment to display the full output of the content being passed to Terraform
-			// Retained for debugging purposes
-			// fmt.Fprintln(os.Stdout, string(resourceExampleContent))
+			// Creates a list of Test Checks for the existence of each attribute defined in the example resources
+			var checks []resource.TestCheckFunc
+			for _, block := range resourceHCLFile.Body.(*hclsyntax.Body).Blocks {
+				if block.Type == "resource" {
 
-			// Creates a list of Test Checks for the existence of each attribute defined in the example
-			checks := buildAttributeTestChecks(resourceBlockType, resourceBlockLabel, resourceAttributes)
+					resourceBlockType := block.Labels[0]
+					resourceBlockLabel := block.Labels[1]
+					resourceAttributes := block.Body.Attributes
+
+					checks = append(checks, buildAttributeTestChecks(resourceBlockType, resourceBlockLabel, resourceAttributes)...)
+				}
+			}
 
 			if !planOnly {
 				// Add arbitrary sleep to allow API to catch up before attempting to delete
-				// Also provides a great place to place a breakpoint if needing to pause before cleanup
+				// Also provides a great place to place a breakpoint if needing to pause after Terraform Create and before Delete
 				checks = append(checks, func(s *terraform.State) error {
 					time.Sleep(2 * time.Second)
 					return nil
@@ -165,6 +174,10 @@ func TestExampleResources(t *testing.T) {
 			resource.Test(t, resource.TestCase{
 				PreCheck: func() {
 					util.TestAccPreCheck(t)
+					// Uncomment to display the full output of the content being passed to Terraform with line numbers
+					// 12 is the number of lines the provider block (not shown) takes up before outputting the rest of the config
+					// Retained for debugging purposes, allows the line numbers in error messages to line up.
+					// util.PrintBytesWithLineNumbers(resourceExampleContent, 12)
 				},
 				ProviderFactories: providerFactories,
 				ExternalProviders: map[string]resource.ExternalProvider{
@@ -210,7 +223,8 @@ type DependenciesConfig struct {
 		Dependencies []string `hcl:"dependencies,optional"`
 		// A reference to the existing working directory
 		WorkingDir map[string]string `hcl:"working_dir,optional"`
-		// Any extra remain attributes defined
+		// Any extra remaining attributes defined, compliments of hcl.Body.PartialContent()
+		// which is called in gohcl.DecodeBody()
 		Remain map[string]interface{} `hcl:",remain"`
 	} `hcl:"locals,block"`
 }
@@ -229,7 +243,8 @@ func checkForLocals(t *testing.T, examplesDir string, dependencyFilesInput []str
 		var depConfig DependenciesConfig
 
 		// Parse the locals.tf file into the depConfig object
-		dependencyContentBody, err := os.ReadFile(filepath.Join(examplesDir, "locals.tf"))
+		localsTfPath := filepath.Join(examplesDir, "locals.tf")
+		dependencyContentBody, err := os.ReadFile(localsTfPath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -250,7 +265,7 @@ func checkForLocals(t *testing.T, examplesDir string, dependencyFilesInput []str
 					dependencyFilesInput = append(dependencyFilesInput, dependencyPath)
 					dependencyExampleContent, err := os.ReadFile(dependencyPath)
 					if err != nil {
-						t.Fatal(err)
+						t.Fatalf("Cannot find the file \"%s\" referenced by the \"%s\" file.", dependencyPath, localsTfPath)
 					}
 					content = append(content, dependencyExampleContent...)
 					content = append(content, []byte("\n")...)
@@ -299,8 +314,8 @@ func updateRemainingAttrs(allLocalAttributes map[string]interface{}, remainingAt
 	return allLocalAttributes
 }
 
-// Constructs the "locals {}" block based off of a map of merged working directories. This is to
-// prevent duplication of attributes, which Terraform forbids.
+// Constructs a single "locals {}" block based off of a map of merged working directories with locals.tf file.
+// This is to prevent defining multiple locals {} blocks, which Terraform forbids.
 func constructLocals(workingDirs map[string]string, remainingLocalAttrs map[string]interface{}) []byte {
 
 	f := hclwrite.NewEmptyFile()
