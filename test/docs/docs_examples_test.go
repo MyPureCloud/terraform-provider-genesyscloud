@@ -26,7 +26,7 @@ func TestExampleResources(t *testing.T) {
 	resources := []string{
 		// "genesyscloud_architect_datatable",
 		// "genesyscloud_architect_datatable_row",
-		// // TODO "genesyscloud_architect_emergencygroup",
+		// "genesyscloud_architect_emergencygroup",
 		// "genesyscloud_architect_grammar",
 		// "genesyscloud_architect_grammar_language",
 		// "genesyscloud_architect_ivr",
@@ -60,10 +60,21 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_idp_ping",
 		// "genesyscloud_idp_salesforce",
 		// "genesyscloud_integration_credential",
-		"genesyscloud_integration",
+		// "genesyscloud_integration",
 		// "genesyscloud_integration_action",
 		// "genesyscloud_integration_custom_auth_action",
+		// "genesyscloud_integration_custom_auth_action",
 		// "genesyscloud_integration_facebook",
+
+		// // JOURNEY RESOURCE REQUIRE "journeyManagement" product
+		// // Available with Cloud CX4 ?
+		// "genesyscloud_journey_action_map",
+		// "genesyscloud_journey_action_template",
+		// "genesyscloud_journey_outcome",
+		// "genesyscloud_journey_outcome_predictor",
+		"genesyscloud_journey_segment",
+		// "genesyscloud_journey_view_schedule",
+		// "genesyscloud_journey_views",
 
 		// "genesyscloud_location",
 		// "genesyscloud_routing_language",
@@ -97,7 +108,7 @@ func TestExampleResources(t *testing.T) {
 	for _, example := range resources {
 		exampleDir := filepath.Join("..", "..", "examples", "resources", example)
 		// testName := fmt.Sprintf("%s/%s", *providerMeta.Organization.ThirdPartyOrgName, exampleDir)
-		t.Run(exampleDir, func(t *testing.T) {
+		t.Run(example, func(t *testing.T) {
 
 			// Get all tf files in the example directory
 			files, err := filepath.Glob(filepath.Join(exampleDir, "*.tf"))
@@ -143,8 +154,9 @@ func TestExampleResources(t *testing.T) {
 
 			if !planOnly {
 				// Add arbitrary sleep to allow API to catch up before attempting to delete
+				// Also provides a great place to place a breakpoint if needing to pause before cleanup
 				checks = append(checks, func(s *terraform.State) error {
-					time.Sleep(1 * time.Second)
+					time.Sleep(2 * time.Second)
 					return nil
 				})
 			}

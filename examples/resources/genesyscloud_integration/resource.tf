@@ -20,7 +20,34 @@ resource "genesyscloud_integration" "example_rest_integration" {
   integration_type = "custom-rest-actions"
   config {
     credentials = {
-      basicAuth = genesyscloud_integration_credential.example_credential.id
+      basicAuth = genesyscloud_integration_credential.example_userDefinedOAuth_credential.id
+    }
+  }
+}
+
+resource "genesyscloud_integration" "example_imap_integration" {
+  intended_state   = "DISABLED"
+  integration_type = "imap-server"
+  config {
+    credentials = {
+      basicAuth = genesyscloud_integration_credential.example_basicauth_credential.id
+    }
+    name = "example imap integration name"
+    properties = jsonencode({
+      "imapHost" = "mail.example.com"
+      "imapPort" = 993
+    })
+    advanced = jsonencode({})
+    notes    = "Test config notes"
+  }
+}
+
+resource "genesyscloud_integration" "example_gc_data_integration" {
+  intended_state   = "ENABLED"
+  integration_type = "purecloud-data-actions"
+  config {
+    credentials = {
+      pureCloudOAuthClient = genesyscloud_integration_credential.example_purecloudoauth_credential.id
     }
   }
 }
