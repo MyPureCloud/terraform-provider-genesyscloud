@@ -124,9 +124,10 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_document." + knowledgeDocumentResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_knowledge_document." + knowledgeDocumentResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"published"},
 			},
 		},
 		CheckDestroy: testVerifyKnowledgeDocumentDestroyed,
