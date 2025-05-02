@@ -19,7 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_idp_salesforce" "salesforce" {
-  certificates = ["MIIDgjCCAmoCCQCY7/3Fvy+CmDA..."]
+  name         = "Salesforce"
+  certificates = [local.salesforce_certificate]
   issuer_uri   = "https://example.com"
   target_uri   = "https://example.com/login"
 }
