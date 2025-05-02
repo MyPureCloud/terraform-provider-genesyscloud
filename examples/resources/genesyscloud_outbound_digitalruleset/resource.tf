@@ -1,7 +1,6 @@
 resource "genesyscloud_outbound_digitalruleset" "test_ruleset_sample" {
   name            = "Test Digital RuleSet - 13"
-  version         = 1
-  contact_list_id = genesyscloud_outbound_contact_list.contact-list.id
+  contact_list_id = genesyscloud_outbound_contact_list.contact_list.id
   rules {
     name     = "Rule-1"
     order    = 0

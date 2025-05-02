@@ -51,9 +51,12 @@ resource "genesyscloud_outbound_contact_list_contact" "contact" {
   contact_list_id = genesyscloud_outbound_contact_list.contact_list.id
   callable        = true
   data = {
-    Cell  = "+1111111"
-    Home  = "+2222222"
-    Email = "example@email.com"
+    "First Name" = "John"
+    "Last Name"  = "Doe"
+    Cell         = "+1111111"
+    Home         = "+2222222"
+    Email        = "example@email.com"
+    Zipcode      = "12345"
   }
   phone_number_status {
     key      = "Cell"
@@ -82,6 +85,11 @@ resource "genesyscloud_outbound_contact_list_contact" "contact" {
       column      = "Email"
       contactable = true
     }
+  }
+
+  contactable_status {
+    contactable = false
+    media_type  = "WhatsApp"
   }
 }
 ```

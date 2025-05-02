@@ -86,6 +86,26 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_oauth_client",
 		// "genesyscloud_organization_authentication_settings",
 		// "genesyscloud_orgauthorization_pairing",
+		// "genesyscloud_outbound_attempt_limit",
+		// "genesyscloud_outbound_callabletimeset",
+		// "genesyscloud_outbound_callanalysisresponseset",
+
+		// "genesyscloud_outbound_campaign",
+		// "genesyscloud_outbound_campaignrule",
+		// "genesyscloud_outbound_contact_list",
+		// "genesyscloud_outbound_contact_list_contact",
+		// "genesyscloud_outbound_contact_list_template",
+		// "genesyscloud_outbound_contactlistfilter",
+		// "genesyscloud_outbound_digitalruleset",
+
+		// STOPPED HERE
+		// "genesyscloud_outbound_dnclist",
+		// "genesyscloud_outbound_filespecificationtemplate",
+		// "genesyscloud_outbound_messagingcampaign",
+		// "genesyscloud_outbound_ruleset",
+		// "genesyscloud_outbound_sequence",
+		// "genesyscloud_outbound_settings",
+		// "genesyscloud_outbound_wrapupcodemappings",
 
 		// "genesyscloud_routing_language",
 		// "genesyscloud_routing_queue",

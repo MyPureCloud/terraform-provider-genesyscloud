@@ -29,3 +29,13 @@ resource "genesyscloud_flow" "inbound_call_flow" {
     menu_disconnect_name = "Disconnect"
   }
 }
+resource "genesyscloud_flow" "outbound_call_flow" {
+  filepath          = "${local.working_dir.flow}/outboundcall_flow_example.yaml"
+  file_content_hash = "${local.working_dir.flow}/outboundcall_flow_example.yaml"
+  substitutions = {
+    flow_name          = "An example outbound flow"
+    home_division_name = data.genesyscloud_auth_division_home.home.name
+    contact_list_name  = genesyscloud_outbound_contact_list.contact_list.name
+    wrapup_code_name   = genesyscloud_routing_wrapupcode.win.name
+  }
+}
