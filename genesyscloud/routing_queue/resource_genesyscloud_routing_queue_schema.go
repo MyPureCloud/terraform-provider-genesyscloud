@@ -602,7 +602,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
 			},
@@ -637,6 +636,12 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"last_agent_routing_mode": {
+				Description:  "The Last Agent Routing Mode for the queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Disabled", "QueueMembersOnly", "AnyAgent"}, false),
 			},
 		},
 	}

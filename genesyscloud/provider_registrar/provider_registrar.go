@@ -18,6 +18,7 @@ import (
 	authorizatioProduct "terraform-provider-genesyscloud/genesyscloud/authorization_product"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
+	cMessagingWhatsapp "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 	cMessageSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -107,6 +108,7 @@ import (
 	workitemOnAttributeChangeRule "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_onattributechange_rule"
 	workitemOnCreateRule "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_oncreate_rule"
 	worktypeStatus "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
+	worktypeStatusTransition "terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status_transition"
 	"terraform-provider-genesyscloud/genesyscloud/team"
 	did "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
@@ -262,6 +264,7 @@ func registerResources() {
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
 	worktypeStatus.SetRegistrar(regInstance)                               //Registering task management worktype status
+	worktypeStatusTransition.SetRegistrar(regInstance)                     //Registering task management worktype status Transition
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	workitemOnCreateRule.SetRegistrar(regInstance)                         //Registering task management oncreate rule
 	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule
@@ -307,6 +310,7 @@ func registerResources() {
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
 	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
+	cMessagingWhatsapp.SetRegistrar(regInstance)                           //Registering conversations messaging whatsapp
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledgeDocumentVariation.SetRegistrar(regInstance)                   //Registering knowledge document variation

@@ -718,6 +718,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					strconv.Quote("TimestampAndPriority"),
 					util.NullValue,
 					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByFilter(
 					exportResourceLabel1,
 					exportTestDir,
@@ -761,6 +762,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -819,6 +821,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -1126,9 +1129,6 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 }
 
 func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
-
-	//t.Parallel()
-
 	var (
 		exportTestDir  = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportContents string
@@ -1171,6 +1171,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		util.TrueValue,
 		util.FalseValue,
 		strconv.Quote("TimestampAndPriority"),
+		util.NullValue,
 		util.NullValue,
 		util.NullValue,
 		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
@@ -2413,7 +2414,7 @@ func TestAccResourceExporterFormat(t *testing.T) {
 		CheckDestroy:      testVerifyExportsDestroyedFunc(exportTestDir),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTfExportResource_exportFormat(
+				Config: generateTfExportResourceExportFormat(
 					exportResourceLabel1,
 					strconv.Quote("hcl_json"),
 					[]string{"genesyscloud_journey_segment"},
@@ -3323,6 +3324,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			strconv.Quote("TimestampAndPriority"),
 			util.NullValue,
 			util.NullValue,
+			util.NullValue,
 		)
 	}
 
@@ -3475,7 +3477,7 @@ func validateFlow(flowResourcePath, flowName string) resource.TestCheckFunc {
 	}
 }
 
-func generateTfExportResource_exportFormat(
+func generateTfExportResourceExportFormat(
 	exportResourceLabel1 string,
 	exportFormat string,
 	includeResources []string,
@@ -3487,7 +3489,7 @@ func generateTfExportResource_exportFormat(
 	}
 
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
-        export_format = "%s"
+        export_format = %s
         include_filter_resources = %s
         directory = "%s"
     }

@@ -324,6 +324,10 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.enabled", strconv.FormatBool(authenticationSettings1.enabled)),
 					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.integration_id", authenticationSettings1.integrationId),
 					resource.TestCheckResourceAttr(resourcePath, "authentication_settings.0.allow_session_upgrade", strconv.FormatBool(authenticationSettings1.allowSessionUpgrade)),
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{
@@ -814,6 +818,10 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "support_center.0.style_setting.0.global_style_setting.0.text_color", supportCenter1.styleSetting.globalStyleSetting.textColor),
 					resource.TestCheckResourceAttr(resourcePath, "support_center.0.style_setting.0.global_style_setting.0.font_family", supportCenter1.styleSetting.globalStyleSetting.fontFamily),
 					resource.TestCheckResourceAttr(resourcePath, "support_center.0.feedback_enabled", strconv.FormatBool(supportCenter1.feedbackEnabled)),
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{
@@ -903,6 +911,10 @@ func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "support_center.0.style_setting.0.global_style_setting.0.text_color", supportCenter2.styleSetting.globalStyleSetting.textColor),
 					resource.TestCheckResourceAttr(resourcePath, "support_center.0.style_setting.0.global_style_setting.0.font_family", supportCenter2.styleSetting.globalStyleSetting.fontFamily),
 					resource.TestCheckResourceAttr(resourcePath, "support_center.0.feedback_enabled", strconv.FormatBool(supportCenter2.feedbackEnabled)),
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 			{

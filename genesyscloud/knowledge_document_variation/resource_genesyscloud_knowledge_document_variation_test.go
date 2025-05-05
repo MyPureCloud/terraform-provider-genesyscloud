@@ -1,4 +1,4 @@
-package knowledgedocumentvariation
+package knowledge_document_variation
 
 import (
 	"fmt"
@@ -112,7 +112,7 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 						knowledgeBaseResourceLabel1,
 						title,
 						visible,
-						published,
+						docPublished,
 						phrase,
 						autocomplete,
 					) +

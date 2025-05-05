@@ -3,6 +3,7 @@ package resource_exporter
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"hash/fnv"
 	"log"
 	"strconv"
@@ -24,18 +25,26 @@ type Sanitizer interface {
 // Two different Sanitizer structs one with the original algorithm
 type sanitizerOriginal struct{}
 type sanitizerOptimized struct{}
+type sanitizerBCPOptimized struct{}
 
-// NewSanitizerProvider returns a Sanitizer. Without a GENESYS_SANITIZER_LEGACY environment variable set it will always use the optimized Sanitizer
+// NewSanitizerProvider returns a Sanitizer.
 func NewSanitizerProvider() *SanitizerProvider {
 
-	// Check if the environment variable is set
+	// Check if the Optimized Sanitizer environment variable is set
 	optimizedExists := featureToggles.ExporterSanitizerOptimizedToggleExists()
-
-	//If the GENESYS_SANITIZER_TIME_OPTIMIZED is set use the updated time optimized sanitizer
 	if optimizedExists {
 		log.Print("Using the time optimized resource label sanitizer with transliteration")
 		return &SanitizerProvider{
 			S: &sanitizerOptimized{},
+		}
+	}
+
+	// Check if the BCP Optimized Sanitizer environment variable is set
+	bcpOptimizedExists := featureToggles.ExporterSanitizerBCPOptimizedToggleExists()
+	if bcpOptimizedExists {
+		log.Print("Using the BCP optimized resource label sanitizer")
+		return &SanitizerProvider{
+			S: &sanitizerBCPOptimized{},
 		}
 	}
 
@@ -69,9 +78,7 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 				}
 			}
 			if numSeen > 1 {
-				algorithm := fnv.New32()
-				algorithm.Write([]byte(meta.BlockLabel))
-				sanitizedLabel = sanitizedLabel + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+				sanitizedLabel = sanitizedLabel + "_" + sod.SanitizeResourceHash(meta.BlockLabel)
 			}
 			if meta.OriginalLabel == "" {
 				meta.OriginalLabel = meta.BlockLabel
@@ -83,14 +90,25 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 
 // SanitizeResourceBlockLabel sanitizes a single resource label
 func (sod *sanitizerOriginal) SanitizeResourceBlockLabel(inputLabel string) string {
+	if inputLabel == "" {
+		return ""
+	}
 	label := unsafeLabelChars.ReplaceAllStringFunc(inputLabel, escapeRune)
-
+	if len(label) == 0 {
+		return ""
+	}
 	if unsafeLabelStartingChars.MatchString(string(rune(label[0]))) {
 		// Terraform does not allow labels to begin with a number. Prefix with an underscore instead
 		label = "_" + label
 	}
 
 	return label
+}
+
+func (sod *sanitizerOriginal) SanitizeResourceHash(originalBlockLabel string) string {
+	algorithm := fnv.New32()
+	algorithm.Write([]byte(originalBlockLabel))
+	return strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 }
 
 // Sanitize sanitizes all resource label using the time optimized algorithm
@@ -100,16 +118,17 @@ func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
 
+		if meta.OriginalLabel == "" {
+			meta.OriginalLabel = meta.BlockLabel
+		}
+
 		if sanitizedLabel != meta.BlockLabel {
 			if count, exists := sanitizedLabels[sanitizedLabel]; exists {
 				// We've seen this sanitized label before
 				sanitizedLabels[sanitizedLabel] = count + 1
 
 				// Append a hash to ensure uniqueness
-				h := sha256.New()
-				h.Write([]byte(meta.BlockLabel))
-				hash := hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
-
+				hash := sod.SanitizeResourceHash(meta.BlockLabel)
 				meta.BlockLabel = sanitizedLabel + "_" + hash
 				if meta.OriginalLabel == "" {
 					meta.OriginalLabel = meta.BlockLabel
@@ -125,14 +144,120 @@ func (sod *sanitizerOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
 
 // SanitizeResourceBlockLabel sanitizes a single resource label
 func (sod *sanitizerOptimized) SanitizeResourceBlockLabel(inputLabel string) string {
+	if inputLabel == "" {
+		return ""
+	}
 	// Transliterate any non-latin-based characters to ASCII
 	transliteratedLabel := strings.TrimSpace(unidecode.Unidecode(inputLabel))
 	label := unsafeLabelChars.ReplaceAllStringFunc(transliteratedLabel, escapeRune)
 
+	if len(label) == 0 {
+		return ""
+	}
 	if unsafeLabelStartingChars.MatchString(string(rune(label[0]))) {
 		// Terraform does not allow labels to begin with a number. Prefix with an underscore instead
 		label = "_" + label
 	}
 
 	return label
+}
+
+func (sod *sanitizerOptimized) SanitizeResourceHash(originalBlockLabel string) string {
+	h := sha256.New()
+	h.Write([]byte(originalBlockLabel))
+	return hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
+}
+
+// Sanitize sanitizes all resource label using the BCP specific algorithm which includes
+// adding hashes to the end of all resource block labels to ensure consistent uniqueness
+// See DEVTOOLING-1182 for details on why this sanitizer was necessary
+func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
+	// Maps to track labels at each stage
+	baseLabels := make(map[string]string)   // id -> base sanitized label
+	labelToIDs := make(map[string][]string) // label -> []id
+	needsUFH := make(map[string]bool)       // id -> needs UFH
+
+	// First pass - basic sanitization and identify duplicates
+	for id, meta := range idMetaMap {
+		meta.OriginalLabel = meta.BlockLabel
+		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
+		baseHash := sod.SanitizeResourceHash(meta.OriginalLabel)
+		labelWithBLH := sanitizedLabel + "__BLH" + baseHash
+
+		baseLabels[id] = labelWithBLH
+		labelToIDs[labelWithBLH] = append(labelToIDs[labelWithBLH], id)
+	}
+
+	// Identify which need the UFH (Unique Fields Hash) suffix
+	for _, ids := range labelToIDs {
+		if len(ids) > 1 {
+			for _, id := range ids {
+				needsUFH[id] = true
+			}
+		}
+	}
+
+	// Clear map for reuse
+	labelToIDs = make(map[string][]string)
+
+	// Apply UFH where needed
+	for id, meta := range idMetaMap {
+		baseLabel := baseLabels[id]
+		finalLabel := baseLabel
+
+		if needsUFH[id] && meta.BlockHash != "" {
+			finalLabel = baseLabel + "_UFH" + meta.BlockHash
+		}
+
+		labelToIDs[finalLabel] = append(labelToIDs[finalLabel], id)
+	}
+
+	// Final pass - handle any remaining duplicates
+	for label, ids := range labelToIDs {
+		if len(ids) == 1 {
+			idMetaMap[ids[0]].BlockLabel = label
+			continue
+		}
+
+		// This should never/rarely happen as the sanitizer is specifically designed to prevent duplicates
+		// through the BLH (Block Label Hash) and UFH (Unique Fields Hash) strategies.
+		// If you encounter this, it most likely means the resource type needs a BlockHash (UFH) configured.
+		// To resolve:
+		// 1. Check if the resource type has a BlockHash configured in its exporter
+		// 2. If not, add a BlockHash using unique identifying fields for the resource type. Details on this
+		//    be found in the ResourceMeta.BlockHash documentation with directions to use util.QuickHashFields().
+		// 3. If BlockHash is already configured, file a bug report with:
+		//    - The original resource labels that caused the collision
+		//    - The complete resource configurations
+		//    - The generated hashes (both BLH and UFH)
+		// Reference DEVTOOLING-1183 for more details on BlockHash implementation
+		for i, id := range ids {
+			idMetaMap[id].BlockLabel = fmt.Sprintf("%s_DUPLICATE_INSTANCE_PLEASE_REPORT_%d", label, i+1)
+		}
+	}
+}
+
+// SanitizeResourceBlockLabel sanitizes a single resource label
+func (sod *sanitizerBCPOptimized) SanitizeResourceBlockLabel(inputLabel string) string {
+	if inputLabel == "" {
+		return ""
+	}
+	// Transliterate any non-latin-based characters to ASCII
+	transliteratedLabel := strings.TrimSpace(unidecode.Unidecode(inputLabel))
+	label := unsafeLabelChars.ReplaceAllStringFunc(transliteratedLabel, escapeRune)
+	if len(label) == 0 {
+		return ""
+	}
+	if unsafeLabelStartingChars.MatchString(string(rune(label[0]))) {
+		// Terraform does not allow labels to begin with a number. Prefix with an underscore instead
+		label = "_" + label
+	}
+
+	return label
+}
+
+func (sod *sanitizerBCPOptimized) SanitizeResourceHash(originalLabel string) string {
+	h := sha256.New()
+	h.Write([]byte(originalLabel))
+	return hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 }

@@ -1,5 +1,5 @@
 resource "genesyscloud_knowledge_document" "example_document" {
-  knowledge_base_id = genesyscloud_knowledge.example_knowledgebase.id
+  knowledge_base_id = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   published         = true
   knowledge_document {
     title   = "Document Title"

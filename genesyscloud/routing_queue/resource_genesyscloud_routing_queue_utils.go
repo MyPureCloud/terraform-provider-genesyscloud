@@ -858,6 +858,7 @@ func GenerateRoutingQueueResource(
 	enableAudioMonitoring string,
 	enableManualAssignment string,
 	scoringMethod string,
+	lastAgentRoutingMode string,
 	peerId string,
 	sourceQueueId string,
 	nestedBlocks ...string) string {
@@ -872,6 +873,7 @@ func GenerateRoutingQueueResource(
 		calling_party_number = %s
 		enable_transcription = %s
 		scoring_method = %s
+		last_agent_routing_mode = %s
 		peer_id = %s
 		source_queue_id = %s
         suppress_in_queue_call_recording = %s
@@ -890,6 +892,7 @@ func GenerateRoutingQueueResource(
 		callingPartyNumber,
 		enableTranscription,
 		scoringMethod,
+		lastAgentRoutingMode,
 		peerId,
 		sourceQueueId,
 		suppressInQueueCallRecording,
@@ -1050,6 +1053,7 @@ func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Qu
 		MemberGroups:                 &memberGroups,
 		PeerId:                       platformclientv2.String(d.Get("peer_id").(string)),
 		ScoringMethod:                platformclientv2.String(d.Get("scoring_method").(string)),
+		LastAgentRoutingMode:         platformclientv2.String(d.Get("last_agent_routing_mode").(string)),
 	}
 }
 

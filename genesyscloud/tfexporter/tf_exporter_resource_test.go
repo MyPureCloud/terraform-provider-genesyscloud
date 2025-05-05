@@ -27,6 +27,7 @@ import (
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integrationInstagram "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
+	cMessagingWhatsapp "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 	cMessagingSettings "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	defaultSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
@@ -165,6 +166,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
 	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
+	providerResources[cMessagingWhatsapp.ResourceType] = cMessagingWhatsapp.ResourceConversationsMessagingIntegrationsWhatsapp()
 	providerResources[journeyActionMap.ResourceType] = journeyActionMap.ResourceJourneyActionMap()
 	providerResources[journeyActionTemplate.ResourceType] = journeyActionTemplate.ResourceJourneyActionTemplate()
 	providerResources[journeyViewSchedule.ResourceType] = journeyViewSchedule.ResourceJourneyViewSchedule()
@@ -237,7 +239,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
 	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -336,7 +337,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_user_roles", userRoles.UserRolesExporter())
 	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
-	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
@@ -348,6 +348,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent_default", defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
 	RegisterExporter("genesyscloud_conversations_messaging_integrations_open", cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
+	RegisterExporter(cMessagingWhatsapp.ResourceType, cMessagingWhatsapp.ConversationsMessagingIntegrationsWhatsappExporter())
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
 	RegisterExporter(externalUser.ResourceType, externalUser.ExternalUserIdentityExporter())

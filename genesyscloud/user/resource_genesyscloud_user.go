@@ -44,7 +44,11 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		if user.Id == nil || user.Email == nil {
 			continue
 		}
-		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email}
+		hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department, user.PrimaryContactInfo, user.Addresses)
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email, BlockHash: hashedUniqueFields}
 	}
 
 	return resources, nil

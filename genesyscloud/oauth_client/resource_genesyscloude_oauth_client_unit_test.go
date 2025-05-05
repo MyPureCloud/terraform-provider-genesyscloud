@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testCacheFile = "test-cache.json"
+
 /** This is a unit test to ensure that we populate the internal oAuthCredential cache.  This is to test the fix for DEVTOOLING-448 **/
 func TestUnitCreateOAuthClientWithCache(t *testing.T) {
 	tName := "my-genesys-oauth-unit-test"
@@ -34,7 +36,7 @@ func TestUnitCreateOAuthClientWithCache(t *testing.T) {
 		State:                      &tState,
 	}
 
-	ocproxy := &oauthClientProxy{createdClientCache: make(map[string]platformclientv2.Oauthclient)}
+	ocproxy := &oauthClientProxy{createdClientCache: make(map[string]*platformclientv2.Oauthclient)}
 
 	ocproxy.createOAuthClientAttr = func(ctx context.Context, p *oauthClientProxy, request platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *request.Name)

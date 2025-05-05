@@ -385,20 +385,27 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
 	for _, resource := range g.resources {
+		// 1. Get instance state as JSON Map
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
-		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
 		if diagErr != nil {
 			return diagErr
 		}
 
+		// 2. Determine if instance is a data source
+		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
+
+		// 3. Ensure the resource type is instantiated
 		if g.resourceTypesMaps[resource.Type] == nil {
 			g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
 		}
 
+		// Theoretically this should only ever occur when using the Original Sanitizer as it doesn't have guaranteed
+		// uniqueness for generating the block labels. See resource_name_sanitizer_test.go
 		if len(g.resourceTypesMaps[resource.Type][resource.BlockLabel]) > 0 || len(g.dataSourceTypesMaps[resource.Type][resource.BlockLabel]) > 0 {
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
-			resource.BlockLabel = resource.BlockLabel + "_" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			// The _BRCM prefix is meant to be an identifier so we can tell that the hash was generated here and not in the sanitizer.
+			resource.BlockLabel = resource.BlockLabel + "_BRCM" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			g.updateSanitizeMap(*g.exporters, resource)
 		}
 
@@ -406,22 +413,26 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
 		}
 
-		// Removes zero values and sets proper reference expressions
+		// 6. Removes zero values and sets proper reference expressions. Returns any resources that have references that
+		// were not able to be resolved. We'll handle those later.
 		unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
 		if len(unresolved) > 0 {
 			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
 		}
 
+		// 7. Adds resource to list of data resources if its a data source
 		if isDataSource {
 			if g.dataSourceTypesMaps[resource.Type] == nil {
 				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
 			}
 			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		} else {
+			// 8. Handles writing external files as part of the export process
 			diagnostics = append(diagnostics, g.customWriteAttributes(jsonResult, resource)...)
 			if diagnostics.HasError() {
 				return diagnostics
 			}
+			// 9. Adds resource to list of resources
 			g.resourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		}
 

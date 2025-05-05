@@ -259,7 +259,6 @@ func deleteTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
-
 	// Check if worktype exists before trying to check the status. If the worktype is gone then so it the status
 	_, resp, err := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
 	if err != nil {

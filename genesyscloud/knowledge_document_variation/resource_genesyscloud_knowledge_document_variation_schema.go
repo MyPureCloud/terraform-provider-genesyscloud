@@ -1,4 +1,4 @@
-package knowledgedocumentvariation
+package knowledge_document_variation
 
 import (
 	"strconv"
@@ -17,6 +17,7 @@ const ResourceType = "genesyscloud_knowledge_document_variation"
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(ResourceType, ResourceKnowledgeDocumentVariation())
+	l.RegisterDataSource(ResourceType, dataSourceKnowledgeDocumentVariation())
 	l.RegisterExporter(ResourceType, KnowledgeDocumentVariationExporter())
 }
 
