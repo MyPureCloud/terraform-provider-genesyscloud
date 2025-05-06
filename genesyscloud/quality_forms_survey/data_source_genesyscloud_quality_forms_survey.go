@@ -1,4 +1,4 @@
-package genesyscloud
+package quality_forms_survey
 
 import (
 	"context"
@@ -14,20 +14,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 )
 
-func dataSourceQualityFormsSurvey() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud survey form. Select a form by name",
-		ReadContext: provider.ReadWithPooledClient(dataSourceQualityFormsSurveyRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Survey form name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
-
 func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
@@ -40,11 +26,11 @@ func dataSourceQualityFormsSurveyRead(ctx context.Context, d *schema.ResourceDat
 			forms, resp, getErr := qualityAPI.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", name, "desc")
 
 			if getErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("Error requesting survey forms %s | error: %s", name, getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting survey forms %s | error: %s", name, getErr), resp))
 			}
 
 			if forms.Entities == nil || len(*forms.Entities) == 0 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_survey", fmt.Sprintf("No survey forms found with name %s", name), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No survey forms found with name %s", name), resp))
 			}
 
 			d.SetId(*(*forms.Entities)[0].Id)

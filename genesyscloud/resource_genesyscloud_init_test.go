@@ -71,12 +71,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
@@ -98,7 +92,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
-	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 
 }
