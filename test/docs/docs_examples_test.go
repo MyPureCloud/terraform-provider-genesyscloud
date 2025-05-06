@@ -8,17 +8,12 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"terraform-provider-genesyscloud/test/docs/examples"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	zclCty "github.com/zclconf/go-cty/cty"
 )
 
 func TestExampleResources(t *testing.T) {
@@ -46,7 +41,7 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_externalcontacts_contact",
 		// "genesyscloud_externalcontacts_external_source",
 		// "genesyscloud_externalcontacts_organization",
-		// "genesyscloud_flow",
+		"genesyscloud_flow",
 		// "genesyscloud_flow_loglevel",
 		// "genesyscloud_flow_milestone",
 		// // No DELETE? "genesyscloud_flow_outcome",
@@ -97,15 +92,19 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_outbound_contact_list_template",
 		// "genesyscloud_outbound_contactlistfilter",
 		// "genesyscloud_outbound_digitalruleset",
-
-		// STOPPED HERE
 		// "genesyscloud_outbound_dnclist",
 		// "genesyscloud_outbound_filespecificationtemplate",
+
+		// STOPPED HERE
 		// "genesyscloud_outbound_messagingcampaign",
 		// "genesyscloud_outbound_ruleset",
 		// "genesyscloud_outbound_sequence",
 		// "genesyscloud_outbound_settings",
 		// "genesyscloud_outbound_wrapupcodemappings",
+
+		// "genesyscloud_responsemanagement_library",
+		// "genesyscloud_responsemanagement_response",
+		// "genesyscloud_responsemanagement_responseasset",
 
 		// "genesyscloud_routing_language",
 		// "genesyscloud_routing_queue",
@@ -135,55 +134,71 @@ func TestExampleResources(t *testing.T) {
 	// Add some extra built in providers to be able to be used
 	providerFactories = provider.CombineProviderFactories(providerFactories, UtilsProviderFactory())
 
-	for _, example := range resources {
-		exampleDir := filepath.Join("..", "..", "examples", "resources", example)
+	// Get absolute path of current working directory
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, resourceType := range resources {
+		exampleDir := filepath.Join(wd, "..", "..", "examples", "resources", resourceType)
 		// testName := fmt.Sprintf("%s/%s", *providerMeta.Organization.ThirdPartyOrgName, exampleDir)
-		t.Run(example, func(t *testing.T) {
+		t.Run(resourceType, func(t *testing.T) {
 
-			// Get all tf files in the example directory
-			files, err := filepath.Glob(filepath.Join(exampleDir, "*.tf"))
+			// // Get all tf files in the example directory
+			// files, err := filepath.Glob(filepath.Join(exampleDir, "*.tf"))
+			// if err != nil {
+			// 	t.Fatal(err)
+			// }
+			// if len(files) == 0 {
+			// 	t.Fatal("No tf files found in example directory " + exampleDir)
+			// }
+
+			// // Check for "resource.tf" in files and load it up
+			// if !lists.SubStringInSlice("resource.tf", files) {
+			// 	t.Fatal("resource.tf not found in example directory " + exampleDir)
+			// }
+			// resourceExampleContent, err := os.ReadFile(filepath.Join(exampleDir, "resource.tf"))
+			// if err != nil {
+			// 	t.Fatal(err)
+			// }
+
+			// resourceHCLFile, diagErr := hclsyntax.ParseConfig(resourceExampleContent, "resource.tf", hcl.Pos{Line: 1, Column: 1})
+			// if diagErr != nil && diagErr.HasErrors() {
+			// 	t.Fatal(diagErr)
+			// }
+
+			// // Check for optional "locals.tf" in files and load it up
+			// resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
+			// localsAndDependenciesContent, workingDirs, _, remainingLocalAttrs := checkForLocals(t, exampleDir, []string{}, map[string]interface{}{})
+			// resourceExampleContent = append(resourceExampleContent, localsAndDependenciesContent...)
+
+			// // Build locals {} block
+			// resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
+			// resourceExampleContent = append(resourceExampleContent, constructLocals(workingDirs, remainingLocalAttrs)...)
+			loadedDeps := make(map[string]*examples.Example)
+			example, err := examples.LoadExample(filepath.Join(exampleDir, "resource.tf"), loadedDeps)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(files) == 0 {
-				t.Fatal("No tf files found in example directory " + exampleDir)
-			}
-
-			// Check for "resource.tf" in files and load it up
-			if !lists.SubStringInSlice("resource.tf", files) {
-				t.Fatal("resource.tf not found in example directory " + exampleDir)
-			}
-			resourceExampleContent, err := os.ReadFile(filepath.Join(exampleDir, "resource.tf"))
+			resourceExampleContent, err := example.GenerateOutput()
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			resourceHCLFile, diagErr := hclsyntax.ParseConfig(resourceExampleContent, "resource.tf", hcl.Pos{Line: 1, Column: 1})
-			if diagErr != nil && diagErr.HasErrors() {
-				t.Fatal(diagErr)
-			}
-
-			// Check for optional "locals.tf" in files and load it up
-			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
-			localsAndDependenciesContent, workingDirs, _, remainingLocalAttrs := checkForLocals(t, exampleDir, []string{}, map[string]interface{}{})
-			resourceExampleContent = append(resourceExampleContent, localsAndDependenciesContent...)
-
-			// Build locals {} block
-			resourceExampleContent = append(resourceExampleContent, []byte("\n")...)
-			resourceExampleContent = append(resourceExampleContent, constructLocals(workingDirs, remainingLocalAttrs)...)
+			checks := example.GenerateChecks()
 
 			// Creates a list of Test Checks for the existence of each attribute defined in the example resources
-			var checks []resource.TestCheckFunc
-			for _, block := range resourceHCLFile.Body.(*hclsyntax.Body).Blocks {
-				if block.Type == "resource" {
+			// var checks []resource.TestCheckFunc
+			// for _, block := range resourceHCLFile.Body.(*hclsyntax.Body).Blocks {
+			// 	if block.Type == "resource" {
 
-					resourceBlockType := block.Labels[0]
-					resourceBlockLabel := block.Labels[1]
-					resourceAttributes := block.Body.Attributes
+			// 		resourceBlockType := block.Labels[0]
+			// 		resourceBlockLabel := block.Labels[1]
+			// 		resourceAttributes := block.Body.Attributes
 
-					checks = append(checks, buildAttributeTestChecks(resourceBlockType, resourceBlockLabel, resourceAttributes)...)
-				}
-			}
+			// 		checks = append(checks, buildAttributeTestChecks(resourceBlockType, resourceBlockLabel, resourceAttributes)...)
+			// 	}
+			// }
 
 			if !planOnly {
 				// Add arbitrary sleep to allow API to catch up before attempting to delete
@@ -201,7 +216,9 @@ func TestExampleResources(t *testing.T) {
 					// Uncomment to display the full output of the content being passed to Terraform with line numbers
 					// 12 is the number of lines the provider block (not shown) takes up before outputting the rest of the config
 					// Retained for debugging purposes, allows the line numbers in error messages to line up.
-					// util.PrintBytesWithLineNumbers(resourceExampleContent, 12)
+					// util.PrintStringWithLineNumbers(resourceExampleContent, 12)
+					provider.GetProviderMeta()
+
 				},
 				ProviderFactories: providerFactories,
 				ExternalProviders: map[string]resource.ExternalProvider{
@@ -212,7 +229,8 @@ func TestExampleResources(t *testing.T) {
 				},
 				Steps: []resource.TestStep{
 					{
-						Config: string(resourceExampleContent),
+						Config:   string(resourceExampleContent),
+						SkipFunc: example.GenerateSkipFunc(),
 						Check: resource.ComposeTestCheckFunc(
 							// arbitrary check with sleep
 							checks...,
@@ -234,170 +252,179 @@ func TestExampleResources(t *testing.T) {
 
 // "locals.tf" file example:
 //
-//	locals {
-//	  dependencies = [ ... ]
-//	  working_dir = {
-//	    auth_role = "./genesyscloud_auth_role/"
-//	    user = "./genesyscloud_user/"
-//	  }
-//	}
-type DependenciesConfig struct {
-	Locals struct {
-		// A list of Terraform configs that should be included to make the example resource pass the test
-		Dependencies []string `hcl:"dependencies,optional"`
-		// A reference to the existing working directory
-		WorkingDir map[string]string `hcl:"working_dir,optional"`
-		// Any extra remaining attributes defined, compliments of hcl.Body.PartialContent()
-		// which is called in gohcl.DecodeBody()
-		Remain map[string]interface{} `hcl:",remain"`
-	} `hcl:"locals,block"`
-}
+//		locals {
+//		  dependencies = [
+//	     "../genesyscloud_foo/resource.tf",
+//	   ]
+//		  working_dir = {
+//		    auth_role = "./genesyscloud_auth_role/"
+//		    user = "./genesyscloud_user/"
+//		  }
+//	   constraints = {
+//	     skip_if = {
+//	       not_in_domain = "inintca.com"
+//	       products_missing_any = ["cloudCX4"]
+//	       products_missing_all = ["cloudCX3", "journeyManagementApi"]
+//	     }
+//	   }
+//		}
+// type DependenciesConfig struct {
+// 	Locals struct {
+// 		// A list of Terraform configs that should be included to make the example resource pass the test
+// 		Dependencies []string `hcl:"dependencies,optional"`
+// 		// A reference to the existing working directory
+// 		WorkingDir map[string]string `hcl:"working_dir,optional"`
+// 		// Any extra remaining attributes defined, compliments of hcl.Body.PartialContent()
+// 		// which is called in gohcl.DecodeBody()
+// 		Remain map[string]interface{} `hcl:",remain"`
+// 	} `hcl:"locals,block"`
+// }
 
-// Recursive function that checks for a "locals.tf" file in the example directory and pulls in any extra dependent files.
-// Any files referenced will check for a sibling "locals.tf" to load as well.
-func checkForLocals(t *testing.T, examplesDir string, dependencyFilesInput []string, remainingAttrsInput map[string]interface{}) (content []byte, workingDirs map[string]string, dependencyFilesOutput []string, remainingAttrsOutput map[string]interface{}) {
-	workingDirs = make(map[string]string)
+// // Recursive function that checks for a "locals.tf" file in the example directory and pulls in any extra dependent files.
+// // Any files referenced will check for a sibling "locals.tf" to load as well.
+// func checkForLocals(t *testing.T, examplesDir string, dependencyFilesInput []string, remainingAttrsInput map[string]interface{}) (content []byte, workingDirs map[string]string, dependencyFilesOutput []string, remainingAttrsOutput map[string]interface{}) {
+// 	workingDirs = make(map[string]string)
 
-	files, err := filepath.Glob(filepath.Join(examplesDir, "*.tf"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Check for optional "locals.tf" in files and load it up
-	if lists.SubStringInSlice("locals.tf", files) {
-		var depConfig DependenciesConfig
+// 	files, err := filepath.Glob(filepath.Join(examplesDir, "*.tf"))
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	// Check for optional "locals.tf" in files and load it up
+// 	if lists.SubStringInSlice("locals.tf", files) {
+// 		var depConfig DependenciesConfig
 
-		// Parse the locals.tf file into the depConfig object
-		localsTfPath := filepath.Join(examplesDir, "locals.tf")
-		dependencyContentBody, err := os.ReadFile(localsTfPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		dependencyHCLFile, diagErr := hclsyntax.ParseConfig(dependencyContentBody, "locals.tf", hcl.Pos{Line: 1, Column: 1})
-		if diagErr != nil && diagErr.HasErrors() {
-			t.Fatal(diagErr)
-		}
-		diagErr = gohcl.DecodeBody(dependencyHCLFile.Body, nil, &depConfig)
-		if diagErr != nil && diagErr.HasErrors() {
-			t.Fatal(diagErr)
-		}
+// 		// Parse the locals.tf file into the depConfig object
+// 		localsTfPath := filepath.Join(examplesDir, "locals.tf")
+// 		dependencyContentBody, err := os.ReadFile(localsTfPath)
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		dependencyHCLFile, diagErr := hclsyntax.ParseConfig(dependencyContentBody, "locals.tf", hcl.Pos{Line: 1, Column: 1})
+// 		if diagErr != nil && diagErr.HasErrors() {
+// 			t.Fatal(diagErr)
+// 		}
+// 		diagErr = gohcl.DecodeBody(dependencyHCLFile.Body, nil, &depConfig)
+// 		if diagErr != nil && diagErr.HasErrors() {
+// 			t.Fatal(diagErr)
+// 		}
 
-		// Supports loading an existing example's resource file's content and dependencies
-		if len(depConfig.Locals.Dependencies) > 0 {
-			for _, dependency := range depConfig.Locals.Dependencies {
-				dependencyPath := filepath.Join(examplesDir, dependency)
-				if !lists.ItemInSlice(dependencyPath, dependencyFilesInput) {
-					dependencyFilesInput = append(dependencyFilesInput, dependencyPath)
-					dependencyExampleContent, err := os.ReadFile(dependencyPath)
-					if err != nil {
-						t.Fatalf("Cannot find the file \"%s\" referenced by the \"%s\" file.", dependencyPath, localsTfPath)
-					}
-					content = append(content, dependencyExampleContent...)
-					content = append(content, []byte("\n")...)
+// 		// Supports loading an existing example's resource file's content and dependencies
+// 		if len(depConfig.Locals.Dependencies) > 0 {
+// 			for _, dependency := range depConfig.Locals.Dependencies {
+// 				dependencyPath := filepath.Join(examplesDir, dependency)
+// 				if !lists.ItemInSlice(dependencyPath, dependencyFilesInput) {
+// 					dependencyFilesInput = append(dependencyFilesInput, dependencyPath)
+// 					dependencyExampleContent, err := os.ReadFile(dependencyPath)
+// 					if err != nil {
+// 						t.Fatalf("Cannot find the file \"%s\" referenced by the \"%s\" file.", dependencyPath, localsTfPath)
+// 					}
+// 					content = append(content, dependencyExampleContent...)
+// 					content = append(content, []byte("\n")...)
 
-					dependencyBasePath := filepath.Dir(dependencyPath)
-					if examplesDir != dependencyBasePath {
-						dependencyContent, depWorkingDirs, depPaths, depRemaining := checkForLocals(t, dependencyBasePath, dependencyFilesInput, remainingAttrsInput)
-						remainingAttrsInput = updateRemainingAttrs(remainingAttrsInput, depRemaining)
-						content = append(content, dependencyContent...)
-						content = append(content, []byte("\n")...)
-						for k, v := range depWorkingDirs {
-							workingDirs[k] = v
-						}
-						dependencyFilesInput = depPaths
-					}
-				}
-			}
-		}
-		// Supports constructing a correct reference to the existing examples directory for referencing a filepath
-		// from inside the Terraform config. See genesyscloud_flow for an example.
-		if depConfig.Locals.WorkingDir != nil {
-			wd, err := os.Getwd()
-			if err != nil {
-				t.Fatal(err)
-			}
-			// Set the working directory pointing to the examples dir
-			for k, v := range depConfig.Locals.WorkingDir {
-				workingDirs[k] = filepath.Join(wd, examplesDir, v)
-			}
-		}
+// 					dependencyBasePath := filepath.Dir(dependencyPath)
+// 					if examplesDir != dependencyBasePath {
+// 						dependencyContent, depWorkingDirs, depPaths, depRemaining := checkForLocals(t, dependencyBasePath, dependencyFilesInput, remainingAttrsInput)
+// 						remainingAttrsInput = updateRemainingAttrs(remainingAttrsInput, depRemaining)
+// 						content = append(content, dependencyContent...)
+// 						content = append(content, []byte("\n")...)
+// 						for k, v := range depWorkingDirs {
+// 							workingDirs[k] = v
+// 						}
+// 						dependencyFilesInput = depPaths
+// 					}
+// 				}
+// 			}
+// 		}
+// 		// Supports constructing a correct reference to the existing examples directory for referencing a filepath
+// 		// from inside the Terraform config. See genesyscloud_flow for an example.
+// 		if depConfig.Locals.WorkingDir != nil {
+// 			wd, err := os.Getwd()
+// 			if err != nil {
+// 				t.Fatal(err)
+// 			}
+// 			// Set the working directory pointing to the examples dir
+// 			for k, v := range depConfig.Locals.WorkingDir {
+// 				workingDirs[k] = filepath.Join(wd, examplesDir, v)
+// 			}
+// 		}
 
-		if depConfig.Locals.Remain != nil {
-			remainingAttrsInput = updateRemainingAttrs(remainingAttrsInput, depConfig.Locals.Remain)
-		}
-	}
+// 		if depConfig.Locals.Remain != nil {
+// 			remainingAttrsInput = updateRemainingAttrs(remainingAttrsInput, depConfig.Locals.Remain)
+// 		}
+// 	}
 
-	return content, workingDirs, dependencyFilesInput, remainingAttrsInput
+// 	return content, workingDirs, dependencyFilesInput, remainingAttrsInput
 
-}
+// }
 
-// Update the remaining local attributes
-func updateRemainingAttrs(allLocalAttributes map[string]interface{}, remainingAttrs map[string]interface{}) map[string]interface{} {
-	for k, v := range remainingAttrs {
-		allLocalAttributes[k] = v
-	}
-	return allLocalAttributes
-}
+// // Update the remaining local attributes
+// func updateRemainingAttrs(allLocalAttributes map[string]interface{}, remainingAttrs map[string]interface{}) map[string]interface{} {
+// 	for k, v := range remainingAttrs {
+// 		allLocalAttributes[k] = v
+// 	}
+// 	return allLocalAttributes
+// }
 
-// Constructs a single "locals {}" block based off of a map of merged working directories with locals.tf file.
-// This is to prevent defining multiple locals {} blocks, which Terraform forbids.
-func constructLocals(workingDirs map[string]string, remainingLocalAttrs map[string]interface{}) []byte {
+// // Constructs a single "locals {}" block based off of a map of merged working directories with locals.tf file.
+// // This is to prevent defining multiple locals {} blocks, which Terraform forbids.
+// func constructLocals(workingDirs map[string]string, remainingLocalAttrs map[string]interface{}) []byte {
 
-	f := hclwrite.NewEmptyFile()
-	rootBody := f.Body()
+// 	f := hclwrite.NewEmptyFile()
+// 	rootBody := f.Body()
 
-	// Create the local block
-	localsBlock := rootBody.AppendNewBlock("locals", []string{})
+// 	// Create the local block
+// 	localsBlock := rootBody.AppendNewBlock("locals", []string{})
 
-	// Create the working_dir objects
-	workingDirObj := map[string]zclCty.Value{}
-	for k, v := range workingDirs {
-		workingDirObj[k] = zclCty.StringVal(v)
-	}
+// 	// Create the working_dir objects
+// 	workingDirObj := map[string]zclCty.Value{}
+// 	for k, v := range workingDirs {
+// 		workingDirObj[k] = zclCty.StringVal(v)
+// 	}
 
-	// Add working_dir attribute to locals
-	localsBlock.Body().SetAttributeValue("working_dir", zclCty.ObjectVal(workingDirObj))
+// 	// Add working_dir attribute to locals
+// 	localsBlock.Body().SetAttributeValue("working_dir", zclCty.ObjectVal(workingDirObj))
 
-	// Add remaining attributes
-	for k, attr := range remainingLocalAttrs {
-		hclAttr := attr.(*hcl.Attribute)
+// 	// Add remaining attributes
+// 	for k, attr := range remainingLocalAttrs {
+// 		hclAttr := attr.(*hcl.Attribute)
 
-		// Add hclAttr to locals block without trying to evaluate them
-		localsBlock.Body().SetAttributeTraversal(k, hclAttr.Expr.Variables()[0])
-	}
+// 		// Add hclAttr to locals block without trying to evaluate them
+// 		localsBlock.Body().SetAttributeTraversal(k, hclAttr.Expr.Variables()[0])
+// 	}
 
-	return f.Bytes()
+// 	return f.Bytes()
 
-}
+// }
 
-// Creates a list of Test Checks for the existence of each attribute defined in the example
-func buildAttributeTestChecks(resourceBlockType, resourceBlockLabel string, resourceAttributes hclsyntax.Attributes) []resource.TestCheckFunc {
-	checks := []resource.TestCheckFunc{}
-	for _, attr := range resourceAttributes {
-		attrName := attr.Name
-		expr := attr.Expr
-		switch expr.(type) {
-		case *hclsyntax.ObjectConsExpr:
-			// Handle maps
-			check := resource.TestCheckResourceAttrSet(
-				resourceBlockType+"."+resourceBlockLabel,
-				attrName+".%",
-			)
-			checks = append(checks, check)
-		case *hclsyntax.TupleConsExpr:
-			// Handle lists/arrays
-			check := resource.TestCheckResourceAttrSet(
-				resourceBlockType+"."+resourceBlockLabel,
-				attrName+".#",
-			)
-			checks = append(checks, check)
-		default:
-			// Handle all other types
-			check := resource.TestCheckResourceAttrSet(
-				resourceBlockType+"."+resourceBlockLabel,
-				attrName,
-			)
-			checks = append(checks, check)
-		}
-	}
-	return checks
-}
+// // Creates a list of Test Checks for the existence of each attribute defined in the example
+// func buildAttributeTestChecks(resourceBlockType, resourceBlockLabel string, resourceAttributes hclsyntax.Attributes) []resource.TestCheckFunc {
+// 	checks := []resource.TestCheckFunc{}
+// 	for _, attr := range resourceAttributes {
+// 		attrName := attr.Name
+// 		expr := attr.Expr
+// 		switch expr.(type) {
+// 		case *hclsyntax.ObjectConsExpr:
+// 			// Handle maps
+// 			check := resource.TestCheckResourceAttrSet(
+// 				resourceBlockType+"."+resourceBlockLabel,
+// 				attrName+".%",
+// 			)
+// 			checks = append(checks, check)
+// 		case *hclsyntax.TupleConsExpr:
+// 			// Handle lists/arrays
+// 			check := resource.TestCheckResourceAttrSet(
+// 				resourceBlockType+"."+resourceBlockLabel,
+// 				attrName+".#",
+// 			)
+// 			checks = append(checks, check)
+// 		default:
+// 			// Handle all other types
+// 			check := resource.TestCheckResourceAttrSet(
+// 				resourceBlockType+"."+resourceBlockLabel,
+// 				attrName,
+// 			)
+// 			checks = append(checks, check)
+// 		}
+// 	}
+// 	return checks
+// }

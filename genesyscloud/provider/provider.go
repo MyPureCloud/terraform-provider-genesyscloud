@@ -75,14 +75,15 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 }
 
 type ProviderMeta struct {
-	Version            string
-	Registry           string
-	Platform           *platform.Platform
-	ClientConfig       *platformclientv2.Configuration
-	Domain             string
-	Organization       *platformclientv2.Organization
-	DefaultCountryCode string
-	MaxClients         int
+	Version               string
+	Registry              string
+	Platform              *platform.Platform
+	ClientConfig          *platformclientv2.Configuration
+	Domain                string
+	AuthorizationProducts []string
+	Organization          *platformclientv2.Organization
+	DefaultCountryCode    string
+	MaxClients            int
 }
 
 type IntegrationMeta struct {
@@ -143,6 +144,11 @@ func configure(version string) schema.ConfigureContextFunc {
 			return nil, err
 		}
 
+		authorizedProducts, err := getAuthorizationProducts(defaultConfig)
+		if err != nil {
+			return nil, err
+		}
+
 		maxClients := MaxClients
 		if v, ok := data.GetOk(AttrTokenPoolSize); ok {
 			maxClients = v.(int)
@@ -150,14 +156,15 @@ func configure(version string) schema.ConfigureContextFunc {
 		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
 		meta := &ProviderMeta{
-			Version:            version,
-			Platform:           &platform,
-			Registry:           providerSourceRegistry,
-			ClientConfig:       defaultConfig,
-			Domain:             getRegionDomain(data.Get("aws_region").(string)),
-			Organization:       currentOrg,
-			DefaultCountryCode: *currentOrg.DefaultCountryCode,
-			MaxClients:         maxClients,
+			Version:               version,
+			Platform:              &platform,
+			Registry:              providerSourceRegistry,
+			ClientConfig:          defaultConfig,
+			AuthorizationProducts: authorizedProducts,
+			Domain:                getRegionDomain(data.Get("aws_region").(string)),
+			Organization:          currentOrg,
+			DefaultCountryCode:    *currentOrg.DefaultCountryCode,
+			MaxClients:            maxClients,
 		}
 
 		setProviderMeta(meta)
@@ -204,6 +211,19 @@ func getRegistry(platform *platform.Platform, version string) string {
 		registry = defaultRegistry
 	}
 	return registry
+}
+
+func getAuthorizationProducts(defaultConfig *platformclientv2.Configuration) ([]string, diag.Diagnostics) {
+	authAPI := platformclientv2.NewAuthorizationApiWithConfig(defaultConfig)
+	productEntities, _, err := authAPI.GetAuthorizationProducts()
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+	products := make([]string, *productEntities.Total)
+	for _, product := range *productEntities.Entities {
+		products = append(products, *product.Id)
+	}
+	return products, nil
 }
 
 func getOrganizationMe(defaultConfig *platformclientv2.Configuration) (*platformclientv2.Organization, diag.Diagnostics) {
