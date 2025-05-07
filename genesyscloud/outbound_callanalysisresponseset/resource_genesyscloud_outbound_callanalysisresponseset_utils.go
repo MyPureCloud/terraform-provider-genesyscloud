@@ -11,8 +11,9 @@ import (
 
 func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Responseset {
 	sdkResponseSet := platformclientv2.Responseset{
-		Name:                 platformclientv2.String(d.Get("name").(string)),
-		BeepDetectionEnabled: platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
+		Name:                     platformclientv2.String(d.Get("name").(string)),
+		BeepDetectionEnabled:     platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
+		LiveSpeakerDetectionMode: platformclientv2.String(d.Get("live_speaker_detection_mode").(string)),
 	}
 
 	responses := d.Get("responses").([]interface{})
@@ -94,14 +95,15 @@ func flattenSdkReaction(sdkReaction platformclientv2.Reaction) *schema.Set {
 	return reactionSet
 }
 
-func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, responsesBlock string) string {
+func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, liveSpeakerDetectionMode string, responsesBlock string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name                   = "%s"
 	beep_detection_enabled = %s
+	live_speaker_detection_mode = "%s"
 	%s
 }
-`, resourceLabel, name, beepDetectionEnabled, responsesBlock)
+`, resourceLabel, name, beepDetectionEnabled, liveSpeakerDetectionMode, responsesBlock)
 }
 
 func GenerateCarsResponsesBlock(nestedBlocks ...string) string {

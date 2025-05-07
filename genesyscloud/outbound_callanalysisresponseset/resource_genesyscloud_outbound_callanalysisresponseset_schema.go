@@ -159,8 +159,9 @@ func ResourceOutboundCallanalysisresponseset() *schema.Resource {
 			`live_speaker_detection_mode`: {
 				Description:  `Setting level of live speaker detection based on ringbacks. Valid values: Disabled, Low, Medium, High.`,
 				Optional:     true,
+				Default:      "Disabled",
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"Disabled", "Low", "Medium", "High"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"Disabled", "Low", "Medium", "High"}, true),
 			},
 		},
 	}
