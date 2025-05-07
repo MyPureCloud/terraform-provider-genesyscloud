@@ -11,9 +11,20 @@ import (
 
 func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Responseset {
 	sdkResponseSet := platformclientv2.Responseset{
-		Name:                     platformclientv2.String(d.Get("name").(string)),
-		BeepDetectionEnabled:     platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
-		LiveSpeakerDetectionMode: platformclientv2.String(d.Get("live_speaker_detection_mode").(string)),
+		Name:                 platformclientv2.String(d.Get("name").(string)),
+		BeepDetectionEnabled: platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
+		//AmdSpeechDistinguishEnabled: platformclientv2.Bool(d.Get("amd_speech_distinguish_enabled").(bool)),
+		//LiveSpeakerDetectionMode: platformclientv2.String(d.Get("live_speaker_detection_mode").(string)),
+	}
+
+	amdSpeechDistinguishEnabled := d.Get("amd_speech_distinguish_enabled").(bool)
+	if amdSpeechDistinguishEnabled {
+		sdkResponseSet.AmdSpeechDistinguishEnabled = &amdSpeechDistinguishEnabled
+	}
+
+	liveSpeakerDetectionMode := d.Get("live_speaker_detection_mode").(string)
+	if liveSpeakerDetectionMode != "" {
+		sdkResponseSet.LiveSpeakerDetectionMode = &liveSpeakerDetectionMode
 	}
 
 	responses := d.Get("responses").([]interface{})
@@ -95,15 +106,16 @@ func flattenSdkReaction(sdkReaction platformclientv2.Reaction) *schema.Set {
 	return reactionSet
 }
 
-func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, liveSpeakerDetectionMode string, responsesBlock string) string {
+func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, amdSpeechDistinguishEnabled string, liveSpeakerDetectionMode string, responsesBlock string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name                   = "%s"
 	beep_detection_enabled = %s
+	amd_speech_distinguish_enabled = %s
 	live_speaker_detection_mode = "%s"
 	%s
 }
-`, resourceLabel, name, beepDetectionEnabled, liveSpeakerDetectionMode, responsesBlock)
+`, resourceLabel, name, beepDetectionEnabled, amdSpeechDistinguishEnabled, liveSpeakerDetectionMode, responsesBlock)
 }
 
 func GenerateCarsResponsesBlock(nestedBlocks ...string) string {

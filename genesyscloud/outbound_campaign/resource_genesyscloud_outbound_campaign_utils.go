@@ -351,6 +351,8 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				carResourceLabel,
 				"tf test car "+uuid.NewString(),
 				util.FalseValue,
+				util.FalseValue,
+				"Disabled",
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_person",
@@ -364,6 +366,8 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				carResourceLabel,
 				"tf test car "+uuid.NewString(),
 				util.TrueValue,
+				util.TrueValue,
+				"Disabled",
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_machine",

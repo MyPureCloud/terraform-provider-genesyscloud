@@ -156,10 +156,16 @@ func ResourceOutboundCallanalysisresponseset() *schema.Resource {
 				Default:     false,
 				Type:        schema.TypeBool,
 			},
+			`amd_speech_distinguish_enabled`: {
+				Description: `Whether to enable answering machine detection`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeBool,
+			},
 			`live_speaker_detection_mode`: {
 				Description:  `Setting level of live speaker detection based on ringbacks. Valid values: Disabled, Low, Medium, High.`,
 				Optional:     true,
-				Default:      "Disabled",
+				Computed:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"Disabled", "Low", "Medium", "High"}, true),
 			},
