@@ -13,8 +13,6 @@ func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Res
 	sdkResponseSet := platformclientv2.Responseset{
 		Name:                 platformclientv2.String(d.Get("name").(string)),
 		BeepDetectionEnabled: platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
-		//AmdSpeechDistinguishEnabled: platformclientv2.Bool(d.Get("amd_speech_distinguish_enabled").(bool)),
-		//LiveSpeakerDetectionMode: platformclientv2.String(d.Get("live_speaker_detection_mode").(string)),
 	}
 
 	amdSpeechDistinguishEnabled := d.Get("amd_speech_distinguish_enabled").(bool)
