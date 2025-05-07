@@ -64,6 +64,7 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
 - `default_skills_ids` (List of String) The default skills for Workitems created from the Worktype.
 - `default_ttl_seconds` (Number) The default time to time to live in seconds for Workitems created from the Worktype.
 - `description` (String) The description of the Worktype.
+- `disable_default_status_creation` (Boolean) Optionally set this flag to disable Default Status creation
 - `division_id` (String) The division to which this entity belongs.
 - `schema_id` (String) Id of the workitem schema.
 - `schema_version` (Number) Version of the workitem schema to use. If not provided, the worktype will use the latest version.
