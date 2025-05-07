@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -27,7 +28,7 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 					{
 						Text:    "Did the agent perform the opening spiel?",
 						VarType: "multipleChoiceQuestion",
-						AnswerOptions: []AnswerOptionStruct{
+						AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 							{
 								Text:  "Yes",
 								Value: 1,
@@ -52,7 +53,7 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 			{
 				Text:    "Yet another yes or no question.",
 				VarType: "multipleChoiceQuestion",
-				AnswerOptions: []AnswerOptionStruct{
+				AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 					{
 						Text:  "Yes",
 						Value: 1,
@@ -66,7 +67,7 @@ func TestAccResourceSurveyFormBasic(t *testing.T) {
 			{
 				Text:    "Multiple Choice Question.",
 				VarType: "multipleChoiceQuestion",
-				AnswerOptions: []AnswerOptionStruct{
+				AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 					{
 						Text:  "Option 1",
 						Value: 1,
@@ -171,7 +172,7 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 					{
 						Text:    "Would you recommend our services?",
 						VarType: "multipleChoiceQuestion",
-						AnswerOptions: []AnswerOptionStruct{
+						AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 							{
 								Text:  "Yes",
 								Value: 1,
@@ -190,7 +191,7 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 					{
 						Text:    "Did the agent offer to sell product?",
 						VarType: "multipleChoiceQuestion",
-						AnswerOptions: []AnswerOptionStruct{
+						AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 							{
 								Text:  "Yes",
 								Value: 1,
@@ -200,13 +201,13 @@ func TestAccResourceSurveyFormComplete(t *testing.T) {
 								Value: 0,
 							},
 						},
-						VisibilityCondition: VisibilityConditionStruct{
+						VisibilityCondition: qualityFormsEvaluation.VisibilityConditionStruct{
 							CombiningOperation: "AND",
 							Predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
 						},
 					},
 				},
-				VisibilityCondition: VisibilityConditionStruct{
+				VisibilityCondition: qualityFormsEvaluation.VisibilityConditionStruct{
 					CombiningOperation: "AND",
 					Predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
 				},
@@ -265,7 +266,7 @@ func TestAccResourceSurveyFormPublishing(t *testing.T) {
 					{
 						Text:    "Was your problem solved?",
 						VarType: "multipleChoiceQuestion",
-						AnswerOptions: []AnswerOptionStruct{
+						AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 							{
 								Text:  "Yes",
 								Value: 1,

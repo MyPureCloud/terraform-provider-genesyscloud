@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
+	qualityFormsEvaluation "terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -36,7 +36,7 @@ type SurveyFormQuestionGroupStruct struct {
 	Name                string
 	NaEnabled           bool
 	Questions           []SurveyFormQuestionStruct
-	VisibilityCondition VisibilityConditionStruct
+	VisibilityCondition qualityFormsEvaluation.VisibilityConditionStruct
 }
 
 type SurveyFormQuestionStruct struct {
@@ -44,8 +44,8 @@ type SurveyFormQuestionStruct struct {
 	HelpText              string
 	VarType               string
 	NaEnabled             bool
-	VisibilityCondition   VisibilityConditionStruct
-	AnswerOptions         []AnswerOptionStruct
+	VisibilityCondition   qualityFormsEvaluation.VisibilityConditionStruct
+	AnswerOptions         []qualityFormsEvaluation.AnswerOptionStruct
 	MaxResponseCharacters int
 	ExplanationPrompt     string
 }
@@ -531,7 +531,7 @@ func buildSurveyQuestionGroups(d *schema.ResourceData) (*[]platformclientv2.Surv
 			}
 
 			visibilityCondition := questionGroupsMap["visibility_condition"].([]interface{})
-			sdkquestionGroup.VisibilityCondition = buildSdkVisibilityCondition(visibilityCondition)
+			sdkquestionGroup.VisibilityCondition = qualityFormsEvaluation.BuildSdkVisibilityCondition(visibilityCondition)
 
 			surveyQuestionGroups = append(surveyQuestionGroups, sdkquestionGroup)
 		}
@@ -550,7 +550,7 @@ func buildSurveyQuestions(questions []interface{}) *[]platformclientv2.Surveyque
 		naEnabled := questionsMap["na_enabled"].(bool)
 		answerQuestions := questionsMap["answer_options"].([]interface{})
 		maxResponseCharacters := questionsMap["max_response_characters"].(int)
-		sdkAnswerOptions := buildSdkAnswerOptions(answerQuestions)
+		sdkAnswerOptions := qualityFormsEvaluation.BuildSdkAnswerOptions(answerQuestions)
 
 		sdkQuestion := platformclientv2.Surveyquestion{
 			Text:                  &text,
@@ -567,7 +567,7 @@ func buildSurveyQuestions(questions []interface{}) *[]platformclientv2.Surveyque
 		}
 
 		visibilityCondition := questionsMap["visibility_condition"].([]interface{})
-		sdkQuestion.VisibilityCondition = buildSdkVisibilityCondition(visibilityCondition)
+		sdkQuestion.VisibilityCondition = qualityFormsEvaluation.BuildSdkVisibilityCondition(visibilityCondition)
 
 		sdkQuestions = append(sdkQuestions, sdkQuestion)
 	}
@@ -597,7 +597,7 @@ func flattenSurveyQuestionGroups(questionGroups *[]platformclientv2.Surveyquesti
 			questionGroupMap["questions"] = flattenSurveyQuestions(questionGroup.Questions)
 		}
 		if questionGroup.VisibilityCondition != nil {
-			questionGroupMap["visibility_condition"] = flattenVisibilityCondition(questionGroup.VisibilityCondition)
+			questionGroupMap["visibility_condition"] = qualityFormsEvaluation.FlattenVisibilityCondition(questionGroup.VisibilityCondition)
 		}
 
 		questionGroupList = append(questionGroupList, questionGroupMap)
@@ -630,10 +630,10 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 			questionMap["na_enabled"] = *question.NaEnabled
 		}
 		if question.VisibilityCondition != nil {
-			questionMap["visibility_condition"] = flattenVisibilityCondition(question.VisibilityCondition)
+			questionMap["visibility_condition"] = qualityFormsEvaluation.FlattenVisibilityCondition(question.VisibilityCondition)
 		}
 		if question.AnswerOptions != nil {
-			questionMap["answer_options"] = flattenAnswerOptions(question.AnswerOptions)
+			questionMap["answer_options"] = qualityFormsEvaluation.FlattenAnswerOptions(question.AnswerOptions)
 		}
 		if question.MaxResponseCharacters != nil {
 			questionMap["max_response_characters"] = *question.MaxResponseCharacters
@@ -713,8 +713,8 @@ func generateSurveyFormQuestions(questions *[]SurveyFormQuestionStruct) string {
 			question.HelpText,
 			question.VarType,
 			question.NaEnabled,
-			GenerateFormVisibilityCondition(&question.VisibilityCondition),
-			GenerateFormAnswerOptions(&question.AnswerOptions),
+			qualityFormsEvaluation.GenerateFormVisibilityCondition(&question.VisibilityCondition),
+			qualityFormsEvaluation.GenerateFormAnswerOptions(&question.AnswerOptions),
 			question.MaxResponseCharacters,
 			question.ExplanationPrompt,
 		)
@@ -743,7 +743,7 @@ func generateSurveyFormQuestionGroups(questionGroups *[]SurveyFormQuestionGroupS
         `, questionGroup.Name,
 			questionGroup.NaEnabled,
 			generateSurveyFormQuestions(&questionGroup.Questions),
-			GenerateFormVisibilityCondition(&questionGroup.VisibilityCondition),
+			qualityFormsEvaluation.GenerateFormVisibilityCondition(&questionGroup.VisibilityCondition),
 		)
 
 		questionGroupsString += questionGroupString

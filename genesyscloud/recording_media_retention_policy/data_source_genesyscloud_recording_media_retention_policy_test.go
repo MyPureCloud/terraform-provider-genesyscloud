@@ -9,6 +9,7 @@ import (
 	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -172,7 +173,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
 					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routingLanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +

@@ -1,4 +1,4 @@
-package genesyscloud
+package quality_forms_evaluation
 
 import (
 	"fmt"
@@ -71,10 +71,10 @@ func TestAccDataSourceQualityFormsEvaluations(t *testing.T) {
 				) + generateQualityFormsEvaluationsDataSource(
 					formDataResourceLabel,
 					formName,
-					"genesyscloud_quality_forms_evaluation."+formResourceLabel,
+					ResourceType+"."+formResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_evaluation."+formDataResourceLabel, "id", "genesyscloud_quality_forms_evaluation."+formResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+formDataResourceLabel, "id", "genesyscloud_quality_forms_evaluation."+formResourceLabel, "id"),
 				),
 			},
 		},
@@ -87,9 +87,9 @@ func generateQualityFormsEvaluationsDataSource(
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_quality_forms_evaluation" "%s" {
+	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }

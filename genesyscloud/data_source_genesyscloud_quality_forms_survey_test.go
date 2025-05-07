@@ -3,6 +3,7 @@ package genesyscloud
 import (
 	"fmt"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
@@ -29,7 +30,7 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 					{
 						Text:    "Was your problem solved?",
 						VarType: "multipleChoiceQuestion",
-						AnswerOptions: []AnswerOptionStruct{
+						AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 							{
 								Text:  "Yes",
 								Value: 1,
@@ -43,7 +44,7 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 					{
 						Text:    "Multiple Choice Question.",
 						VarType: "multipleChoiceQuestion",
-						AnswerOptions: []AnswerOptionStruct{
+						AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 							{
 								Text:  "Option 1",
 								Value: 1,
