@@ -249,7 +249,7 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
 		resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
-		resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
+		//resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
 
 		if currentQueue.DefaultScripts != nil {
 			_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))

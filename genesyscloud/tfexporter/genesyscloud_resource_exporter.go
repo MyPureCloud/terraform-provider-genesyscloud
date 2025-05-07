@@ -510,6 +510,8 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		return diag.FromErr(err)
 	}
 
+	fmt.Println("-")
+
 	if g.includeStateFile {
 		t, err := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry)
 		if err != nil {
@@ -531,6 +533,8 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
 		errDiag = jsonExporter.exportJSONConfig()
 	}
+
+	fmt.Println("-")
 
 	if errDiag != nil {
 		return errDiag
