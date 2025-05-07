@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -87,7 +87,6 @@ func readExternalContactsOrganization(ctx context.Context, d *schema.ResourceDat
 		resourcedata.SetNillableValue(d, "name", externalOrganization.Name)
 		resourcedata.SetNillableValue(d, "company_type", externalOrganization.CompanyType)
 		resourcedata.SetNillableValue(d, "industry", externalOrganization.Industry)
-		resourcedata.SetNillableValue(d, "primary_contact_id", externalOrganization.PrimaryContactId)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "address", externalOrganization.Address, flattenSdkAddress)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_number", externalOrganization.PhoneNumber, flattenPhoneNumber)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "fax_number", externalOrganization.FaxNumber, flattenPhoneNumber)

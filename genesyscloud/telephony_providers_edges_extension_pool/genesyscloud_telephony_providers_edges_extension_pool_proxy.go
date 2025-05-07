@@ -3,7 +3,7 @@ package telephony_providers_edges_extension_pool
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *extensionPoolProxy
@@ -108,7 +108,7 @@ func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]plat
 		pageNum           = 1
 	)
 	//Checking First Page
-	extensionPools, resp, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
+	extensionPools, resp, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "", []string{})
 	if err != nil {
 		return nil, resp, err
 	}
@@ -124,7 +124,7 @@ func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]plat
 	}
 
 	for pageNum := 2; pageNum <= *extensionPools.PageCount; pageNum++ {
-		extensionPools, resp, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "")
+		extensionPools, resp, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNum, "", "", []string{})
 		if err != nil {
 			return nil, resp, err
 		}
