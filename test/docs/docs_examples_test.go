@@ -46,7 +46,7 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_flow",
 		// "genesyscloud_flow_loglevel",
 		// "genesyscloud_flow_milestone",
-		// // No DELETE? "genesyscloud_flow_outcome",
+		// "genesyscloud_flow_outcome",
 		// "genesyscloud_group",
 		// "genesyscloud_group_roles",
 		// "genesyscloud_idp_adfs",
@@ -69,13 +69,11 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_journey_segment",
 		// "genesyscloud_journey_view_schedule",
 		// "genesyscloud_journey_views",
-
 		// "genesyscloud_knowledge_category",
 		// "genesyscloud_knowledge_document",
 		// "genesyscloud_knowledge_document_variation",
 		// "genesyscloud_knowledge_knowledgebase",
 		// "genesyscloud_knowledge_label",
-
 		// "genesyscloud_location",
 		// "genesyscloud_oauth_client",
 		// "genesyscloud_organization_authentication_settings",
@@ -83,7 +81,6 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_outbound_attempt_limit",
 		// "genesyscloud_outbound_callabletimeset",
 		// "genesyscloud_outbound_callanalysisresponseset",
-
 		// "genesyscloud_outbound_campaign",
 		// "genesyscloud_outbound_campaignrule",
 		// "genesyscloud_outbound_contact_list",
@@ -102,14 +99,14 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_quality_forms_evaluation",
 		// "genesyscloud_quality_forms_survey",
 		// "genesyscloud_recording_media_retention_policy",
-
-		// STOPPED HERE
-
 		// "genesyscloud_responsemanagement_library",
 		// "genesyscloud_responsemanagement_response",
 		// "genesyscloud_responsemanagement_responseasset",
-
 		// "genesyscloud_routing_email_domain",
+		// "genesyscloud_routing_email_route",
+
+		// STOPPED HERE
+
 		// "genesyscloud_routing_language",
 		// "genesyscloud_routing_queue",
 		// "genesyscloud_routing_skill",
