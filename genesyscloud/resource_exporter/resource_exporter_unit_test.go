@@ -1,6 +1,7 @@
 package resource_exporter
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -16,7 +17,10 @@ type TestAssertion struct {
 
 // Tests the original sanitizing algorithm
 func TestUnitSanitizeResourceOriginal(t *testing.T) {
-	randNumSuffix := "_[0-9]+"
+	randNumSuffixFn := func(amount string) string {
+		return fmt.Sprintf(`_[0-9_]{%s}`, amount)
+	}
+
 	metaMap := make(ResourceIDMetaMap)
 	metaMap["1"] = &ResourceMeta{BlockLabel: "wrapupcodemappings"}
 	metaMap["2"] = &ResourceMeta{BlockLabel: "foobar"}
@@ -45,37 +49,37 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 		},
 		{
 			input:  metaMap["3"].BlockLabel,
-			output: "wrapupcode___mappings" + randNumSuffix,
+			output: "wrapupcode___mappings" + randNumSuffixFn("9"),
 			name:   "ascii chars",
 		},
 		{
 			input:  metaMap["4"].BlockLabel,
-			output: "wrapupcode___mappings" + randNumSuffix,
+			output: "wrapupcode___mappings" + randNumSuffixFn("9,"),
 			name:   "ascii chars with same structure different chars",
 		},
 		{
 			input:  metaMap["5"].BlockLabel,
-			output: "_-suuuuueeeey",
+			output: "_-suuuuueeeey" + randNumSuffixFn("9"),
 			name:   "starting dash",
 		},
 		{
 			input:  metaMap["6"].BlockLabel,
-			output: "_1-2bucklemyshoe",
+			output: "_1-2bucklemyshoe" + randNumSuffixFn("9"),
 			name:   "starting number",
 		},
 		{
 			input:  metaMap["7"].BlockLabel,
-			output: "unsafeUnicode__Here" + randNumSuffix,
+			output: "unsafeUnicode__Here" + randNumSuffixFn("9,"),
 			name:   "unsafe unicode",
 		},
 		{
 			input:  metaMap["8"].BlockLabel,
-			output: "unsafeUnicode__Here" + randNumSuffix,
+			output: "unsafeUnicode__Here" + randNumSuffixFn("9,"),
 			name:   "unsafe unicode matching pattern",
 		},
 		{
 			input:  metaMap["9"].BlockLabel,
-			output: "unsafeUnicode____Here",
+			output: "unsafeUnicode____Here" + randNumSuffixFn("9,"),
 			name:   "unsafe unicode non-matching pattern, no added random suffix",
 		},
 	}
