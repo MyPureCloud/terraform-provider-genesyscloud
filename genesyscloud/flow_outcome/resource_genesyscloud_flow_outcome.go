@@ -45,6 +45,15 @@ func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interfa
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
 
+	flowOutcomeName := d.Get("name").(string)
+
+	// Since Flow Outcomes cannot be deleted, we need to be able to check if there is an existing Flow Outcome and update it
+	flowOutcomeId, _, existingFlowOutcomeApiResp, _ := proxy.getFlowOutcomeIdByName(ctx, flowOutcomeName)
+	if existingFlowOutcomeApiResp.StatusCode != 404 {
+		d.SetId(flowOutcomeId)
+		return updateFlowOutcome(ctx, d, meta)
+	}
+
 	flowOutcome := getFlowOutcomeFromResourceData(d)
 
 	log.Printf("Creating flow outcome %s", *flowOutcome.Name)
