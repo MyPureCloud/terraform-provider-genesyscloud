@@ -31,7 +31,7 @@ resource "genesyscloud_location" "hq" {
     zip_code = "46278"
   }
   emergency_number {
-    number = "3173124657"
+    number = "+13173124657"
     type   = "default"
   }
 }

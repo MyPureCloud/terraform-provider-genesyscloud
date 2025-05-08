@@ -9,7 +9,7 @@ resource "genesyscloud_architect_user_prompt" "welcome_greeting" {
   resources {
     language          = "ja-jp"
     text              = "良い一日。お電話ありがとうございます。"
-    filename          = "jp-welcome-greeting.wav"
-    file_content_hash = filesha256("jp-welcome-greeting.wav")
+    filename          = "${local.working_dir.architect_user_prompt}/jp-welcome-greeting.wav"
+    file_content_hash = filesha256("${local.working_dir.architect_user_prompt}/jp-welcome-greeting.wav")
   }
 }

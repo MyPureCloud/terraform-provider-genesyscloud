@@ -26,6 +26,16 @@ func GetProviderFactories(providerResources map[string]*schema.Resource, provide
 	}
 }
 
+func CombineProviderFactories(providers ...map[string]func() (*schema.Provider, error)) map[string]func() (*schema.Provider, error) {
+	combined := map[string]func() (*schema.Provider, error){}
+	for _, provider := range providers {
+		for k, v := range provider {
+			combined[k] = v
+		}
+	}
+	return combined
+}
+
 // TestDefaultHomeDivision Verify default division is home division
 func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {

@@ -20,24 +20,36 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_routing_email_route" "support-route" {
-  domain_id    = "example.domain.com"
-  pattern      = "support"
-  from_name    = "Example Support"
-  from_email   = "examplesupport@example.domain.com"
-  queue_id     = genesyscloud_routing_queue.example-queue.id
-  priority     = 5
-  skill_ids    = [genesyscloud_routing_skill.support.id]
-  language_id  = genesyscloud_routing_language.english.id
-  flow_id      = data.genesyscloud_flow.flow.id
-  spam_flow_id = data.genesyscloud_flow.spam_flow.id
-  reply_email_address {
-    domain_id = "example.domain.com"
-    route_id  = genesyscloud_routing_email_route.example.id
-  }
+resource "genesyscloud_routing_email_route" "example_route" {
+  domain_id   = genesyscloud_routing_email_domain.example_domain_com.domain_id
+  pattern     = "support"
+  from_name   = "Support"
+  from_email  = "support@${genesyscloud_routing_email_domain.example_domain_com.domain_id}"
+  queue_id    = genesyscloud_routing_queue.example_queue.id
+  priority    = 1
+  skill_ids   = [genesyscloud_routing_skill.example_skill.id]
+  language_id = genesyscloud_routing_language.english.id
   auto_bcc {
-    name  = "Example Support"
-    email = "support@example.domain.com"
+    name  = "Supervisors"
+    email = "support_supervisors@${genesyscloud_routing_email_domain.example_domain_com.domain_id}"
+  }
+}
+
+resource "genesyscloud_routing_email_route" "example_route_reference_other_route" {
+  domain_id   = genesyscloud_routing_email_domain.example_domain_com.domain_id
+  pattern     = "support_tier2"
+  from_name   = "Example Support Tier 2"
+  queue_id    = genesyscloud_routing_queue.example_queue.id
+  priority    = 2
+  skill_ids   = [genesyscloud_routing_skill.example_skill.id]
+  language_id = genesyscloud_routing_language.english.id
+  # flow_id      = genesyscloud_flow.inbound_call_flow.id
+  # spam_flow_id = genesyscloud_flow.spam_call_flow.id
+  reply_email_address {
+    route_id  = genesyscloud_routing_email_route.example_route.id
+    domain_id = genesyscloud_routing_email_domain.example_domain_com.domain_id
+    # OR
+    # self_reference_route = true
   }
 }
 ```
@@ -84,13 +96,10 @@ Optional:
 <a id="nestedblock--reply_email_address"></a>
 ### Nested Schema for `reply_email_address`
 
-Required:
-
-- `domain_id` (String) Domain of the route.
-
 Optional:
 
+- `domain_id` (String) Domain of the route.
 - `route_id` (String) ID of the route.
 - `self_reference_route` (Boolean) Use this route as the reply email address. If true you will use the route id for this resource as the reply and you
-							              can not set a route. If you set this value to false (or leave the attribute off)you must set a route id. Defaults to `false`.
+							              can not set a route. If you set this value to false (or leave the attribute off) you must set a route id and matching domain. Defaults to `false`.
 

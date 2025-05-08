@@ -1,9 +1,9 @@
-resource "genesyscloud_externalcontacts_organization" "organization" {
+resource "genesyscloud_externalcontacts_organization" "example_org" {
   name           = "ExampleCorporation"
   company_type   = "Software"
   employee_count = 450
   phone_number {
-    display      = "+2 123-123-4567"
+    display      = "+1 321-700-1243"
     country_code = "US"
   }
   address {

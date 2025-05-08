@@ -109,7 +109,7 @@ The example above shows how to migrate from the old configuration to the new con
 resource "genesyscloud_telephony_providers_edges_site" "site" {
   name                            = "example site"
   description                     = "example site description"
-  location_id                     = genesyscloud_location.location.id
+  location_id                     = genesyscloud_location.hq.id
   media_model                     = "Cloud"
   media_regions_use_latency_based = true
   edge_auto_update_config {

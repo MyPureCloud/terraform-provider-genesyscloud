@@ -1,3 +1,3 @@
-resource "genesyscloud_responsemanagement_library" "example_responsemanagement_library" {
+resource "genesyscloud_responsemanagement_library" "example_library" {
   name = "Example library name"
 }

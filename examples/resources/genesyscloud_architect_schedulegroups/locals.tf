@@ -1,0 +1,5 @@
+locals {
+  dependencies = [
+    "./schedulegroups.tf"
+  ]
+}

@@ -26,7 +26,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_integration_custom_auth_action" "example-custom-auth-action" {
-  integration_id = genesyscloud_integration.example_integ.id
+  integration_id = genesyscloud_integration.example_rest_integration.id
   name           = "Example Custom Auth Action"
   config_request {
     # Use '$${' to indicate a literal '${' in template strings. Otherwise Terraform will attempt to interpolate the string
