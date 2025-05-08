@@ -84,13 +84,10 @@ Optional:
 <a id="nestedblock--reply_email_address"></a>
 ### Nested Schema for `reply_email_address`
 
-Required:
-
-- `domain_id` (String) Domain of the route.
-
 Optional:
 
+- `domain_id` (String) Domain of the route.
 - `route_id` (String) ID of the route.
 - `self_reference_route` (Boolean) Use this route as the reply email address. If true you will use the route id for this resource as the reply and you
-							              can not set a route. If you set this value to false (or leave the attribute off)you must set a route id. Defaults to `false`.
+							              can not set a route. If you set this value to false (or leave the attribute off) you must set a route id and matching domain. Defaults to `false`.
 

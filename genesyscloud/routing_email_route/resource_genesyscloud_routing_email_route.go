@@ -68,7 +68,12 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	// If the isSelfReferenceRoute() is set to false, we use the route id provided by the terraform script
 	if replyEmail && !isSelfReferenceRouteSet(d) {
-		routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, replyRouteID)
+		// We need to pass the route pattern that matches the route id
+		replyRoute, _, err := proxy.getRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
+		if err != nil {
+			return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route %s error: %s", replyRouteID, err), nil)
+		}
+		routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, replyRouteID, *replyRoute.Pattern)
 	}
 
 	log.Printf("Creating routing email route %s", d.Id())
@@ -82,7 +87,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	// If the isSelfReferenceRoute() is set to true we need grab the route id for the route and reapply the reply address,
 	if replyEmail && isSelfReferenceRouteSet(d) {
-		inboundRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, *inboundRoute.Id)
+		inboundRoute.ReplyEmailAddress = buildReplyEmailAddress(domainId, *inboundRoute.Id, *inboundRoute.Pattern)
 		_, resp, err = proxy.updateRoutingEmailRoute(ctx, *inboundRoute.Id, domainId, inboundRoute)
 
 		if err != nil {
@@ -190,9 +195,16 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	if replyEmail {
 		if isSelfReferenceRouteSet(d) {
-			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, d.Id())
+			replyRoutePattern := d.Get("pattern").(string)
+			domainId := d.Get("domain_id").(string)
+			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(domainId, d.Id(), replyRoutePattern)
 		} else if !isSelfReferenceRouteSet(d) {
-			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, replyRouteID)
+			// We need to pass the route pattern that matches the route id
+			replyRoute, _, err := proxy.getRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
+			if err != nil {
+				return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route %s error: %s", replyRouteID, err), nil)
+			}
+			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(replyDomainID, replyRouteID, *replyRoute.Pattern)
 		}
 	}
 

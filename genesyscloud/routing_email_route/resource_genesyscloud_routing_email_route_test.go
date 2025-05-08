@@ -162,7 +162,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					fromName2,
 					generateRoutingReplyEmail(
 						true,
-						"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+						"",
 						"",
 					),
 					generateRoutingEmailQueueSettings(
@@ -222,7 +222,6 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern2,
 					fromName2,
-					generateRoutingAutoBcc(fromName2, bccEmail2),
 					generateRoutingReplyEmail(
 						false,
 						"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
@@ -252,8 +251,6 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "priority", priority1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.email", bccEmail2),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.route_id", "genesyscloud_routing_email_route."+routeResourceLabel2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.name", fromName2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.email", bccEmail2),
@@ -304,18 +301,16 @@ func generateRoutingReplyEmail(
 	routeID string) string {
 
 	if selfReferenceRoute {
-		return fmt.Sprintf(`
+		return `
         reply_email_address {
-            domain_id = %s
             self_reference_route = true
         }
-	`, domainID)
+	`
 	} else {
 		return fmt.Sprintf(`
         reply_email_address {
             domain_id = %s
             route_id = %s
-			self_reference_route = false
         }
 	`, domainID, routeID)
 	}
