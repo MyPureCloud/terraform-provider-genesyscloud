@@ -11,8 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-var FalseValue = "false"
-
 func TestAccDataSourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	var (
 		resourceLabel   = "cars"
@@ -28,7 +26,9 @@ func TestAccDataSourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceLabel,
 					responseSetName,
-					FalseValue,
+					util.FalseValue,
+					util.FalseValue,
+					"Disabled",
 					"",
 				) + generateOutboundCallAnalysisResponseSetDataSource(
 					dataSourceLabel,

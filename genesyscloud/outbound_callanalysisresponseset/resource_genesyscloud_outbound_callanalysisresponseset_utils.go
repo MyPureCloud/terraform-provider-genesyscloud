@@ -15,6 +15,16 @@ func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Res
 		BeepDetectionEnabled: platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
 	}
 
+	amdSpeechDistinguishEnabled := d.Get("amd_speech_distinguish_enabled").(bool)
+	if amdSpeechDistinguishEnabled {
+		sdkResponseSet.AmdSpeechDistinguishEnabled = &amdSpeechDistinguishEnabled
+	}
+
+	liveSpeakerDetectionMode := d.Get("live_speaker_detection_mode").(string)
+	if liveSpeakerDetectionMode != "" {
+		sdkResponseSet.LiveSpeakerDetectionMode = &liveSpeakerDetectionMode
+	}
+
 	responses := d.Get("responses").([]interface{})
 	if responses != nil && len(responses) > 0 {
 		sdkResponseSet.Responses = buildSdkOutboundCallAnalysisResponseSetReaction(responses)
@@ -94,14 +104,16 @@ func flattenSdkReaction(sdkReaction platformclientv2.Reaction) *schema.Set {
 	return reactionSet
 }
 
-func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, responsesBlock string) string {
+func GenerateOutboundCallAnalysisResponseSetResource(resourceLabel string, name string, beepDetectionEnabled string, amdSpeechDistinguishEnabled string, liveSpeakerDetectionMode string, responsesBlock string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name                   = "%s"
 	beep_detection_enabled = %s
+	amd_speech_distinguish_enabled = %s
+	live_speaker_detection_mode = "%s"
 	%s
 }
-`, resourceLabel, name, beepDetectionEnabled, responsesBlock)
+`, resourceLabel, name, beepDetectionEnabled, amdSpeechDistinguishEnabled, liveSpeakerDetectionMode, responsesBlock)
 }
 
 func GenerateCarsResponsesBlock(nestedBlocks ...string) string {
