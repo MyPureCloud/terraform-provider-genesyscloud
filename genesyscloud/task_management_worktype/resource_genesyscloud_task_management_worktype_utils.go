@@ -6,7 +6,7 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -21,30 +21,36 @@ type worktypeConfig struct {
 	divisionId       string
 	defaultWorkbinId string
 
-	defaultDurationS    int
-	defaultExpirationS  int
-	defaultDueDurationS int
-	defaultPriority     int
-	defaultTtlS         int
-
-	defaultLanguageId string
-	defaultQueueId    string
-	defaultSkillIds   []string
-	defaultScriptId   string
-	assignmentEnabled bool
-
-	schemaId      string
-	schemaVersion int
+	defaultDurationS             int
+	defaultExpirationS           int
+	defaultDueDurationS          int
+	defaultPriority              int
+	defaultTtlS                  int
+	defaultLanguageId            string
+	defaultQueueId               string
+	defaultSkillIds              []string
+	assignmentEnabled            bool
+	defaultScriptId              string
+	disableDefaultStatusCreation bool
+	schemaId                     string
+	schemaVersion                int
 }
 
 // getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
 func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypecreate {
+	DisableDefaultStatusCreation := platformclientv2.Bool(func() bool {
+		if v, ok := d.GetOk("disable_default_status_creation"); ok {
+			return v.(bool)
+		}
+		return false
+	}())
+
 	worktype := platformclientv2.Worktypecreate{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
-		DivisionId:                   platformclientv2.String(d.Get("division_id").(string)),
-		Description:                  platformclientv2.String(d.Get("description").(string)),
-		DisableDefaultStatusCreation: platformclientv2.Bool(false),
-		DefaultWorkbinId:             platformclientv2.String(d.Get("default_workbin_id").(string)),
+		DivisionId:                   resourcedata.GetNonZeroPointer[string](d, "division_id"),
+		Description:                  resourcedata.GetNonZeroPointer[string](d, "description"),
+		DisableDefaultStatusCreation: DisableDefaultStatusCreation,
+		DefaultWorkbinId:             resourcedata.GetNonZeroPointer[string](d, "default_workbin_id"),
 		SchemaId:                     resourcedata.GetNillableValue[string](d, "schema_id"),
 		SchemaVersion:                resourcedata.GetNillableValue[int](d, "schema_version"),
 		DefaultPriority:              platformclientv2.Int(d.Get("default_priority").(int)),

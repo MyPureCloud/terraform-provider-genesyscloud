@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
+	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func buildOAuthRedirectURIs(d *schema.ResourceData) *[]string {
@@ -95,6 +96,20 @@ func updateMetaCache(client *platformclientv2.Oauthclient, cacheFile string) {
 	}
 }
 
+func updateSecretToDirectory(directory string, oauthClientResult *platformclientv2.Oauthclient) {
+	if directory != "" {
+		path, err := files.GetDirPath(directory)
+		if err != nil {
+			log.Printf("Unable to fetch directory specified. %v", err)
+		}
+		filePath := filepath.Join(path, *oauthClientResult.Id)
+		err = files.WriteToFile([]byte(*oauthClientResult.Secret), filePath)
+		if err != nil {
+			log.Printf("Unable to write to directory specified. %v", err)
+		}
+	}
+}
+
 func fetchOauthClientSecret(sdkConfig *platformclientv2.Configuration, id string) map[string]string {
 	fields := make(map[string]string)
 	fields["client_id"] = id
@@ -110,11 +125,13 @@ func fetchOauthClientSecret(sdkConfig *platformclientv2.Configuration, id string
 
 func RetrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, fields map[string]string) {
 	op := GetOAuthClientProxy(sdkConfig)
-	if clientId, ok := fields["client_secret"]; ok {
+	log.Printf("fields %v", fields)
+	if clientId, ok := fields["clientId"]; ok {
 		oAuthClient := op.GetCachedOAuthClient(clientId)
 		if oAuthClient != nil {
 			fields["clientSecret"] = *oAuthClient.Secret
 			log.Printf("Successfully matched with OAuth Client Credential id %s", clientId)
+			log.Printf("Successfully matched with OAuth Client Credential id fields %v", fields)
 		}
 	}
 }

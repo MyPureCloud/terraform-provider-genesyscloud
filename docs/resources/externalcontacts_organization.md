@@ -66,7 +66,6 @@ resource "genesyscloud_externalcontacts_organization" "example_org" {
 - `fax_number` (Block List, Max: 1) (see [below for nested schema](#nestedblock--fax_number))
 - `industry` (String)
 - `phone_number` (Block List, Max: 1) (see [below for nested schema](#nestedblock--phone_number))
-- `primary_contact_id` (String)
 - `revenue` (Number)
 - `schema` (Block List, Max: 1) The schema defining custom fields for this contact (see [below for nested schema](#nestedblock--schema))
 - `tags` (List of String)
