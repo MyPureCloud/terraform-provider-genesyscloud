@@ -42,7 +42,7 @@ Two things to note:
 utils function in the package.  This will keep the code manageable and easy to work through.
 */
 
-// getAllIntegrationActions retrieves all of the integration action via Terraform in the Genesys Cloud and is used for the exporter
+// getAllIntegrationActions retrieves all integration actions via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	iap := getIntegrationActionsProxy(clientConfig)

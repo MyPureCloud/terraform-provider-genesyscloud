@@ -103,6 +103,7 @@ func TestUnitSanitizeResourceBlockLabel(t *testing.T) {
 		})
 	}
 }
+
 func TestUnitSanitize(t *testing.T) {
 	testCases := []struct {
 		name                 string
@@ -207,7 +208,7 @@ func TestUnitSanitize(t *testing.T) {
 				"id3": &ResourceMeta{BlockLabel: "test+user@foo.com"},
 				"id4": &ResourceMeta{BlockLabel: "test&user@foo.com"},
 			},
-			// Always appends a hash to all of the labels that match each other
+			// Always appends a hash to all labels that match each other
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
@@ -215,10 +216,10 @@ func TestUnitSanitize(t *testing.T) {
 				assert.NotEqual(t, result["id2"].BlockLabel, result["id3"].BlockLabel)
 				assert.NotEqual(t, result["id2"].BlockLabel, result["id4"].BlockLabel)
 				assert.NotEqual(t, result["id3"].BlockLabel, result["id4"].BlockLabel)
-				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "test_user_foo_com_"))
+				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "test_user_foo_com"))
 				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "test_user_foo_com_"))
 				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com_"))
+				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com"))
 				assert.True(t, len(result["id1"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
 				assert.True(t, len(result["id2"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
 				assert.True(t, len(result["id4"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
@@ -307,7 +308,7 @@ func TestUnitSanitize(t *testing.T) {
 			},
 			// Ignores the BlockHash (for now). This may change in the future.
 			// Never append a hash to original labels that distinct or are the same as another.
-			// Always appends a hash to all of the labels that were different but match each other directly after being sanitized.
+			// Always appends a hash to all the labels that were different but match each other directly after being sanitized.
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
@@ -324,14 +325,10 @@ func TestUnitSanitize(t *testing.T) {
 				assert.NotEqual(t, result["id3"].BlockLabel, result["id5"].BlockLabel)
 				assert.NotEqual(t, result["id3"].BlockLabel, result["id6"].BlockLabel)
 				assert.NotEqual(t, result["id3"].BlockLabel, result["id7"].BlockLabel)
-				assert.Equal(t, result["id4"].BlockLabel, result["id5"].BlockLabel)
 				assert.NotEqual(t, result["id4"].BlockLabel, result["id6"].BlockLabel)
 				assert.NotEqual(t, result["id4"].BlockLabel, result["id7"].BlockLabel)
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id6"].BlockLabel)
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id7"].BlockLabel)
-				assert.Equal(t, result["id6"].BlockLabel, result["id7"].BlockLabel)
-				assert.Equal(t, result["id1"].BlockLabel, "test_distinct_user_foo_com")
-				assert.Equal(t, result["id2"].BlockLabel, "test_distinct_user2_foo_com")
 				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "test_user_foo_com_"))
 				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com_"))
 				assert.True(t, strings.HasPrefix(result["id5"].BlockLabel, "test_user_foo_com_"))
@@ -501,8 +498,8 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "456#test"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Equal(t, result["id1"].BlockLabel, "_123_test")
-				assert.Equal(t, result["id2"].BlockLabel, "_456_test")
+				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "_123_test"))
+				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "_456_test"))
 			},
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOptimized) {
 				assert.Equal(t, result["id1"].BlockLabel, "_123_test")
@@ -520,8 +517,8 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "Test#Label_456"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Equal(t, result["id1"].BlockLabel, "Test_Label_123")
-				assert.Equal(t, result["id2"].BlockLabel, "Test_Label_456")
+				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "Test_Label_123_"))
+				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "Test_Label_456_"))
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 			},
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOptimized) {

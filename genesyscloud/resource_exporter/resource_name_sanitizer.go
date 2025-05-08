@@ -62,29 +62,31 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 		originalResourceLabels[k] = v.BlockLabel
 	}
 
+	labelOccurrences := make(map[string]int)
+
 	// Iterate over the idMetaMap and sanitize the labels of each resource
 	for _, meta := range idMetaMap {
-
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
 
-		// If there are more than one resource label that ends up with the same sanitized label,
-		// append a hash of the original label to ensure uniqueness for labels to prevent duplicates
-		if sanitizedLabel != meta.BlockLabel {
-			numSeen := 0
-			for _, originalLabel := range originalResourceLabels {
-				originalSanitizedLabel := sod.SanitizeResourceBlockLabel(originalLabel)
-				if sanitizedLabel == originalSanitizedLabel {
-					numSeen++
-				}
-			}
-			if numSeen > 1 {
-				sanitizedLabel = sanitizedLabel + "_" + sod.SanitizeResourceHash(meta.BlockLabel)
-			}
-			if meta.OriginalLabel == "" {
-				meta.OriginalLabel = meta.BlockLabel
-			}
-			meta.BlockLabel = sanitizedLabel
+		if meta.BlockLabel == sanitizedLabel {
+			continue
 		}
+
+		labelOccurrences[sanitizedLabel] += 1
+
+		// Append a hash of the original label to ensure uniqueness for labels to prevent duplicates
+		// The number of hashes that will be appended to the block label is the number of occurrences of
+		// that label, including if it only appears once.
+		numOfOccurrences := labelOccurrences[sanitizedLabel]
+		for i := 0; i < numOfOccurrences; i++ {
+			sanitizedLabel = sanitizedLabel + "_" + sod.SanitizeResourceHash(meta.BlockLabel)
+		}
+
+		if meta.OriginalLabel == "" {
+			meta.OriginalLabel = meta.BlockLabel
+		}
+
+		meta.BlockLabel = sanitizedLabel
 	}
 }
 
