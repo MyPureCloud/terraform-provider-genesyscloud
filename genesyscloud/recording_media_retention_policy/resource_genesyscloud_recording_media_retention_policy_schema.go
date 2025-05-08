@@ -477,9 +477,14 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 		},
 	}
 
-	agentTimeInterval := &schema.Resource{
+	evalTimeInterval := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"months": {
+			"hours": {
+				Description: "",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"days": {
 				Description: "",
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -489,22 +494,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
-			"days": {
-				Description: "",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-		},
-	}
-
-	evalTimeInterval := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"hours": {
-				Description: "",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"days": {
+			"months": {
 				Description: "",
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -594,7 +584,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Elem:        agentTimeInterval,
+				Elem:        evalTimeInterval,
 			},
 			"time_zone": {
 				Description: "",
