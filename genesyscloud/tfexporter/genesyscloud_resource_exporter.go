@@ -499,7 +499,7 @@ func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.Insta
 }
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
-func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnostics) {
 
 	if g.resourceTypesMaps == nil || g.dataSourceTypesMaps == nil {
 		return diag.Errorf("required fields resourceTypesMaps or dataSourceTypesMaps are nil")
@@ -510,50 +510,41 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		return diag.FromErr(err)
 	}
 
-	fmt.Println("-")
-
 	if g.includeStateFile {
 		t, err := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if diagErr := t.writeTfState(); diagErr != nil {
-			return diagErr
+
+		diags = append(diags, t.writeTfState()...)
+		if diags.HasError() {
+			return diags
 		}
 	}
 
-	var errDiag diag.Diagnostics
-
 	if g.matchesExportFormat(formatHCL, formatJSONHCL) {
 		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
-		errDiag = hclExporter.exportHCLConfig()
+		diags = append(diags, hclExporter.exportHCLConfig()...)
 	}
 
 	if g.matchesExportFormat(formatJSON, formatJSONHCL) {
 		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
-		errDiag = jsonExporter.exportJSONConfig()
+		diags = append(diags, jsonExporter.exportJSONConfig()...)
 	}
 
-	fmt.Println("-")
-
-	if errDiag != nil {
-		return errDiag
+	if diags != nil && diags.HasError() {
+		return diags
 	}
 
 	if g.cyclicDependsList != nil && len(g.cyclicDependsList) > 0 {
-		errDiag = files.WriteToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))
-
-		if errDiag != nil {
-			return errDiag
+		diags = append(diags, files.WriteToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))...)
+		if diags.HasError() {
+			return diags
 		}
 	}
 
-	errDiag = g.generateZipForExporter()
-	if errDiag != nil {
-		return errDiag
-	}
-
-	return nil
+	diags = append(diags, g.generateZipForExporter()...)
+	return diags
 }
 
 func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics {

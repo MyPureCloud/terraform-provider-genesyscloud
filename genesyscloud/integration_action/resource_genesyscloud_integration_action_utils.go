@@ -176,35 +176,3 @@ func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []
 
 	return []interface{}{responseMap}
 }
-
-// allActionNamesAreUnique checks if all integration actions in the provided slice are unique
-// based on a combination of their Name and Category fields. An action is considered
-// a duplicate if another action exists with the same Name and Category combination.
-//
-// Parameters:
-//   - actions: A slice of platformclientv2.Action to validate
-//
-// Returns:
-//   - bool: true if all actions are unique or if the slice is empty,
-//     false if any duplicate Name+Category combination is found
-func allActionNamesAreUnique(actions []platformclientv2.Action) bool {
-	if len(actions) == 0 {
-		return true
-	}
-
-	// Use a map to track seen items
-	seen := make(map[string]string)
-
-	// Iterate through each item in the slice
-	for _, action := range actions {
-		// Check if we've seen this item before
-		if _, exists := seen[*action.Name]; exists {
-			return false // Found a duplicate
-		}
-		// Mark item as seen
-		seen[*action.Name] = ""
-	}
-
-	// No duplicates found
-	return true
-}
