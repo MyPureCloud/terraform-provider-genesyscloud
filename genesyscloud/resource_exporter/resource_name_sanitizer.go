@@ -68,13 +68,17 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
 
+		if meta.BlockLabel == sanitizedLabel {
+			continue
+		}
+
 		labelOccurrences[sanitizedLabel] += 1
 
-		// If there are more than one resource label that ends up with the same sanitized label,
-		// append a hash of the original label to ensure uniqueness for labels to prevent duplicates
-		// If there are 3 occurrences of the same label, 2 hashes will be appended. If there are 4, 3 hashes, etc.
+		// Append a hash of the original label to ensure uniqueness for labels to prevent duplicates
+		// The number of hashes that will be appended to the block label is the number of occurrences of
+		// that label, including if it only appears once.
 		numOfOccurrences := labelOccurrences[sanitizedLabel]
-		for i := 1; i < numOfOccurrences; i++ {
+		for i := 0; i < numOfOccurrences; i++ {
 			sanitizedLabel = sanitizedLabel + "_" + sod.SanitizeResourceHash(meta.BlockLabel)
 		}
 
