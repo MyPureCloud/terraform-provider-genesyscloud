@@ -1,13 +1,9 @@
 package architect_flow
 
 import (
-	"fmt"
-	"os"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/validators"
 
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -92,14 +88,14 @@ func ResourceArchitectFlow() *schema.Resource {
 				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
-					dir, err := os.Getwd()
-					if err != nil {
-						return diag.FromErr(err)
-					}
-					fmt.Print(dir)
-					return nil
-				},
+				// ValidateDiagFunc: func(i interface{}, p cty.Path) diag.Diagnostics {
+				// 	dir, err := os.Getwd()
+				// 	if err != nil {
+				// 		return diag.FromErr(err)
+				// 	}
+				// 	fmt.Print(dir)
+				// 	return nil
+				// },
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",

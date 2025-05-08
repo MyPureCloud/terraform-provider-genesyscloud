@@ -23,15 +23,19 @@ copy-hooks:
 
 # Run acceptance tests
 testacc:
-	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=coverage.out
+	TF_ACC=1 go test ./genesyscloud/... -v $(TESTARGS) -timeout 120m -parallel 20  -coverprofile=coverage.out
 
 # Run unit tests
 testunit:
-	TF_UNIT=1 go test ./... -run TestUnit -cover -count=1 -coverprofile=coverage_unit.out
+	TF_UNIT=1 go test ./genesyscloud/... -run TestUnit -cover -count=1 -coverprofile=coverage_unit.out
+
+# Run example docs tests
+testexamples:
+	TF_ACC=1 go test ./test/docs -v -timeout 120m -parallel 1
 
 # Generate docs
 docs:
-	TF_PLAN_ONLY=true go test ./test/docs
+	TF_PLAN_ONLY=true go test ./test/docs -v || exit 1
 	go generate
 
 coverageacc:

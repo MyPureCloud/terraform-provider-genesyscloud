@@ -37,6 +37,7 @@ type Locals struct {
 	Dependencies      []string               `hcl:"dependencies,optional"`
 	WorkingDir        map[string]string      `hcl:"working_dir,optional"`
 	SkipIfConstraints map[string][]string    `hcl:"skip_if,optional"`
+	EnvironmentVars   map[string]string      `hcl:"environment_vars,optional"`
 	Other             map[string]interface{} `hcl:",remain"`
 }
 type SkipIfConstraints struct {
@@ -146,6 +147,9 @@ func LoadExampleWithDependencies(resourcePath string, processedState *ProcessedE
 		}
 		example.Resources = append(example.Resources, resource)
 
+		// Mark as processed here so we don't double process a dependency before finishing up
+		processedExample.markFileAsProcessed(resourcePath)
+
 		// Load dependencies
 		if locals.Dependencies != nil {
 			for _, depPath := range locals.Dependencies {
@@ -181,7 +185,16 @@ func LoadExampleWithDependencies(resourcePath string, processedState *ProcessedE
 				}
 			}
 		}
-		processedExample.markFileAsProcessed(resourcePath)
+
+		if locals.EnvironmentVars != nil {
+			for k, v := range locals.EnvironmentVars {
+				err := os.Setenv(k, v)
+				if err != nil {
+					return nil, processedState, fmt.Errorf("error setting environment variable %s: %w", k, err)
+				}
+			}
+		}
+
 	}
 
 	return example, processedState, nil
@@ -299,13 +312,18 @@ func (l *Locals) GenerateOutput() (string, error) {
 	for k, attr := range l.Other {
 		hclAttr := attr.(*hcl.Attribute)
 
-		value, diags := hclAttr.Expr.Value(nil)
-		if diags.HasErrors() {
-			return "", diags
-		}
+		value := hclAttr.Expr.Variables()
+		if len(value) > 0 {
+			localsBlock.Body().SetAttributeTraversal(k, value[0])
+			continue
+		} else {
+			value, diags := hclAttr.Expr.Value(nil)
+			if diags.HasErrors() {
+				return "", diags
+			}
 
-		// Add hclAttr to locals block without trying to evaluate them
-		localsBlock.Body().SetAttributeValue(k, value)
+			localsBlock.Body().SetAttributeValue(k, value)
+		}
 	}
 
 	return string(f.Bytes()), nil

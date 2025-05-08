@@ -21,7 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_integration_action" "example-action" {
+resource "genesyscloud_integration_action" "example_action" {
   name                   = "Example Action"
   category               = "Genesys Cloud Data Action"
   integration_id         = genesyscloud_integration.example_gc_data_integration.id

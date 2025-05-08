@@ -20,6 +20,31 @@ import (
 
 func TestExampleResources(t *testing.T) {
 
+	var domain string
+	var authorizationProducts []string
+
+	planOnly, err := strconv.ParseBool(os.Getenv("TF_PLAN_ONLY"))
+	if err != nil {
+		planOnly = false
+	}
+	if planOnly {
+		fmt.Fprintln(os.Stdout, "Sanity testing the resources defined in the examples...")
+	} else {
+		fmt.Fprintln(os.Stdout, "Acceptance testing the resources defined in the examples...")
+		provider.AuthorizeSdk()
+		authAPI := platformclientv2.NewAuthorizationApi()
+		productEntities, api, err := authAPI.GetAuthorizationProducts()
+		if err != nil {
+			err = fmt.Errorf("Failed to get authorization products from the API: %s", err)
+			t.Fatal(err)
+		}
+		authorizationProducts = make([]string, *productEntities.Total)
+		for _, product := range *productEntities.Entities {
+			authorizationProducts = append(authorizationProducts, *product.Id)
+		}
+		domain = strings.Join(strings.Split(api.Response.Request.URL.Host, ".")[1:], ".")
+	}
+
 	resources := []string{
 		// "genesyscloud_architect_datatable",
 		// "genesyscloud_architect_datatable_row",
@@ -104,46 +129,28 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_responsemanagement_responseasset",
 		// "genesyscloud_routing_email_domain",
 		// "genesyscloud_routing_email_route",
-
-		// STOPPED HERE
-
 		// "genesyscloud_routing_language",
 		// "genesyscloud_routing_queue",
+		// "genesyscloud_routing_queue_conditional_group_routing",
+		// "genesyscloud_routing_queue_outbound_email_address",
+		// "genesyscloud_routing_settings",
 		// "genesyscloud_routing_skill",
+		// "genesyscloud_routing_skill_group",
 		// "genesyscloud_routing_sms_address",
 		// "genesyscloud_routing_utilization",
 		// "genesyscloud_routing_utilization_label",
 		// "genesyscloud_routing_wrapupcode",
 		// "genesyscloud_script",
+
+		// STOPPED HERE
+		"genesyscloud_task_management_workbin",
+
 		// "genesyscloud_telephony_providers_edges_did_pool",
 		// "genesyscloud_user",
 	}
 
-	planOnly, err := strconv.ParseBool(os.Getenv("TF_PLAN_ONLY"))
-	if err != nil {
-		planOnly = false
-	}
-	if planOnly {
-		fmt.Fprintln(os.Stdout, "Sanity testing the resources defined in the examples...")
-	} else {
-		fmt.Fprintln(os.Stdout, "Acceptance testing the resources defined in the examples...")
-	}
-
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
-
-	provider.AuthorizeSdk()
-	authAPI := platformclientv2.NewAuthorizationApi()
-	productEntities, api, err := authAPI.GetAuthorizationProducts()
-	if err != nil {
-		err = fmt.Errorf("Failed to get authorization products from the API: %s", err)
-		t.Fatal(err)
-	}
-	authorizationProducts := make([]string, *productEntities.Total)
-	for _, product := range *productEntities.Entities {
-		authorizationProducts = append(authorizationProducts, *product.Id)
-	}
-	domain := strings.Join(strings.Split(api.Response.Request.URL.Host, ".")[1:], ".")
 
 	// Add some extra built in providers to be able to be used
 	providerFactories = provider.CombineProviderFactories(providerFactories, UtilsProviderFactory())
@@ -181,11 +188,13 @@ func TestExampleResources(t *testing.T) {
 			// Run test
 			resource.Test(t, resource.TestCase{
 				PreCheck: func() {
-					util.TestAccPreCheck(t)
-					// Uncomment to display the full output of the content being passed to Terraform with line numbers
-					// 12 is the number of lines the provider block (not shown) takes up before outputting the rest of the config
-					// Retained for debugging purposes, allows the line numbers in error messages to line up.
-					util.PrintStringWithLineNumbers(resourceExampleContent, 12)
+					if !planOnly {
+						util.TestAccPreCheck(t)
+						// Uncomment to display the full output of the content being passed to Terraform with line numbers
+						// 12 is the number of lines the provider block (not shown) takes up before outputting the rest of the config
+						// Retained for debugging purposes, allows the line numbers in error messages to line up.
+						util.PrintStringWithLineNumbers(resourceExampleContent, 12)
+					}
 				},
 				ProviderFactories: providerFactories,
 				ExternalProviders: map[string]resource.ExternalProvider{

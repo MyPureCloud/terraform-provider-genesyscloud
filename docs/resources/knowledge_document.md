@@ -47,7 +47,7 @@ resource "genesyscloud_knowledge_document" "example_unpublished_document" {
 
 ### Optional
 
-- `published` (Boolean, Deprecated) If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
+- `published` (Boolean, Deprecated) *DEPRECATED: By Default a document created will be in Draft. In order to Publish a document, use knowledge_document_variation instead.* If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
 
 ### Read-Only
 
