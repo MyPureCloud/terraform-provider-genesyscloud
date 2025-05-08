@@ -8,8 +8,7 @@ locals {
     "../genesyscloud_responsemanagement_response/resource.tf",
   ]
   sms_phone_number = "+18159823725"
-  // Constraints ensures this acceptance test example only gets run with certain conditions
-  constraints = {
-
+  skip_if = {
+    not_in_domains = ["inintca.com"]
   }
 }

@@ -101,9 +101,9 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_processautomation_trigger",
 		// "genesyscloud_quality_forms_evaluation",
 		// "genesyscloud_quality_forms_survey",
+		// "genesyscloud_recording_media_retention_policy",
 
 		// STOPPED HERE
-		"genesyscloud_recording_media_retention_policy",
 
 		// "genesyscloud_responsemanagement_library",
 		// "genesyscloud_responsemanagement_response",

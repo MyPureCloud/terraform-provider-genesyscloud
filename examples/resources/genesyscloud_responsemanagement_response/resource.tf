@@ -62,6 +62,6 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
   response_type = "CampaignSmsTemplate"
   texts {
     content      = "SMS text messages rates may apply"
-    content_type = "text/html"
+    content_type = "text/plain"
   }
 }

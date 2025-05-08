@@ -14,7 +14,7 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
   messages_per_minute     = 10
   contact_list_filter_ids = [genesyscloud_outbound_contactlistfilter.contact_list_filter.id]
   sms_config {
-    phone_column            = "phone"
+    phone_column            = "Cell"
     sender_sms_phone_number = local.sms_phone_number // "+123456789"
     content_template_id     = genesyscloud_responsemanagement_response.example_responsemanagement_response_sms.id
   }
