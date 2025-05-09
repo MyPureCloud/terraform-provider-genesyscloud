@@ -47,12 +47,13 @@ func TestAccDataSourceIntegrationActionDraft(t *testing.T) {
 					"genesyscloud_integration."+integResourceLabel1+".id",
 					util.NullValue, // Secure default (false)
 					util.NullValue, // Timeout default
-					generateActionDraftContract(inputAttr1, outputAttr1),
+					util.GenerateJsonSchemaDocStr(inputAttr1),
+					util.GenerateJsonSchemaDocStr(outputAttr1),
 					generateIntegrationActionDraftConfigRequest(
 						reqUrlTemplate1,
 						reqType1,
-						util.NullValue, // Default req templatezz
-						"",             // No headers
+						util.NullValue,
+						"", // No headers
 					),
 					// Default config response
 				) + generateIntegrationActionDataSource(
