@@ -6,18 +6,6 @@ import (
 	"terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
-	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
-	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
-	journeyViewSchedule "terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
-	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
-	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
-	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
-	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
-
 	grammar "terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -32,6 +20,7 @@ import (
 	supportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	defaultSupportedContent "terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	employeeperformanceExternalmetricsDefinition "terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
+	flowLogLevel "terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"terraform-provider-genesyscloud/genesyscloud/group"
@@ -45,9 +34,18 @@ import (
 	idpSalesforce "terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	integration "terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationActionDraft "terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
 	integrationCred "terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationFacebook "terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeyActionTemplate "terraform-provider-genesyscloud/genesyscloud/journey_action_template"
+	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	journeyViewSchedule "terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
+	knowledgeDocument "terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeDocumentVariation "terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
+	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
+	knowledgeLabel "terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -86,6 +84,7 @@ import (
 	routingSmsAddress "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"terraform-provider-genesyscloud/genesyscloud/scripts"
 	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -95,6 +94,7 @@ import (
 	edgeGroup "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	phonebaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	outboundRoute "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"terraform-provider-genesyscloud/genesyscloud/user"
@@ -163,6 +163,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[idpSalesforce.ResourceType] = idpSalesforce.ResourceIdpSalesforce()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
 	providerResources[integrationAction.ResourceType] = integrationAction.ResourceIntegrationAction()
+	providerResources[integrationActionDraft.ResourceType] = integrationActionDraft.ResourceIntegrationActionDraft()
 	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
 	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
@@ -253,6 +254,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
 	RegisterExporter(knowledgeKnowledgebase.ResourceType, knowledgeKnowledgebase.KnowledgeKnowledgebaseExporter())
 	RegisterExporter(journeyViewSchedule.ResourceType, journeyViewSchedule.JourneyViewScheduleExporter())
+	RegisterExporter(integrationActionDraft.ResourceType, integrationActionDraft.IntegrationActionDraftExporter())
 	RegisterExporter("genesyscloud_organization_authentication_settings", oAuthSettings.OrganizationAuthenticationSettingsExporter())
 	RegisterExporter("genesyscloud_architect_grammar", grammar.ArchitectGrammarExporter())
 	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
