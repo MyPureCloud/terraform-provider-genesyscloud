@@ -352,7 +352,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				"tf test car "+uuid.NewString(),
 				util.FalseValue,
 				util.FalseValue,
-				"Disabled",
+				strconv.Quote("Disabled"),
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_person",
@@ -367,7 +367,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				"tf test car "+uuid.NewString(),
 				util.TrueValue,
 				util.TrueValue,
-				"Disabled",
+				strconv.Quote("Disabled"),
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_machine",

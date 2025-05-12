@@ -2,6 +2,7 @@ package outbound_callanalysisresponseset
 
 import (
 	"fmt"
+	"strconv"
 
 	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"terraform-provider-genesyscloud/genesyscloud/util"
@@ -28,7 +29,7 @@ func TestAccDataSourceOutboundCallAnalysisResponseSet(t *testing.T) {
 					responseSetName,
 					util.FalseValue,
 					util.FalseValue,
-					"Disabled",
+					strconv.Quote("Disabled"),
 					"",
 				) + generateOutboundCallAnalysisResponseSetDataSource(
 					dataSourceLabel,

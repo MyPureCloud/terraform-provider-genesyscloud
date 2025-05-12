@@ -11,13 +11,9 @@ import (
 
 func getResponseSetFromResourceData(d *schema.ResourceData) platformclientv2.Responseset {
 	sdkResponseSet := platformclientv2.Responseset{
-		Name:                 platformclientv2.String(d.Get("name").(string)),
-		BeepDetectionEnabled: platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
-	}
-
-	amdSpeechDistinguishEnabled := d.Get("amd_speech_distinguish_enabled").(bool)
-	if amdSpeechDistinguishEnabled {
-		sdkResponseSet.AmdSpeechDistinguishEnabled = &amdSpeechDistinguishEnabled
+		Name:                        platformclientv2.String(d.Get("name").(string)),
+		BeepDetectionEnabled:        platformclientv2.Bool(d.Get("beep_detection_enabled").(bool)),
+		AmdSpeechDistinguishEnabled: platformclientv2.Bool(d.Get("amd_speech_distinguish_enabled").(bool)),
 	}
 
 	liveSpeakerDetectionMode := d.Get("live_speaker_detection_mode").(string)
@@ -110,7 +106,7 @@ resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 	name                   = "%s"
 	beep_detection_enabled = %s
 	amd_speech_distinguish_enabled = %s
-	live_speaker_detection_mode = "%s"
+	live_speaker_detection_mode = %s
 	%s
 }
 `, resourceLabel, name, beepDetectionEnabled, amdSpeechDistinguishEnabled, liveSpeakerDetectionMode, responsesBlock)

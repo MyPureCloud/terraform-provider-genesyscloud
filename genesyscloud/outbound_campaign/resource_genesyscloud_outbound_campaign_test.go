@@ -131,7 +131,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		"tf car "+uuid.NewString(),
 		util.FalseValue,
 		util.FalseValue,
-		"Disabled",
+		strconv.Quote("Disabled"),
 		obResponseSet.GenerateCarsResponsesBlock(
 			obResponseSet.GenerateCarsResponse(
 				"callable_person",
@@ -496,7 +496,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		"tf car "+uuid.NewString(),
 		util.FalseValue,
 		util.FalseValue,
-		"Disabled",
+		strconv.Quote("Disabled"),
 		obResponseSet.GenerateCarsResponsesBlock(
 			obResponseSet.GenerateCarsResponse(
 				"callable_person",

@@ -74,7 +74,9 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 
 		resourcedata.SetNillableValue(d, "name", responseSet.Name)
 		resourcedata.SetNillableValue(d, "beep_detection_enabled", responseSet.BeepDetectionEnabled)
-		resourcedata.SetNillableValue(d, "amd_speech_distinguish_enabled", responseSet.AmdSpeechDistinguishEnabled)
+		if responseSet.AmdSpeechDistinguishEnabled != nil {
+			_ = d.Set("amd_speech_distinguish_enabled", responseSet.AmdSpeechDistinguishEnabled)
+		}
 		resourcedata.SetNillableValue(d, "live_speaker_detection_mode", responseSet.LiveSpeakerDetectionMode)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "responses", responseSet.Responses, flattenSdkOutboundCallAnalysisResponseSetReaction)
 
