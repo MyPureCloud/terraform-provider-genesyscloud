@@ -5,7 +5,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   acw_wrapup_prompt        = "MANDATORY_TIMEOUT"
   acw_timeout_ms           = 300000
   skill_evaluation_method  = "BEST"
-  queue_flow_id            = data.genesyscloud_flow.default_inqueue_flow.id
+  queue_flow_id            = genesyscloud_flow.inqueue_flow.id
   whisper_prompt_id        = genesyscloud_architect_user_prompt.welcome_greeting.id
   auto_answer_only         = true
   enable_transcription     = true
@@ -26,7 +26,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   }
 
   default_script_ids = {
-    EMAIL = genesyscloud_script.email.id
+    EMAIL = genesyscloud_script.example_script.id
     # CHAT  = data.genesyscloud_script.chat.id
   }
 
@@ -40,7 +40,7 @@ resource "genesyscloud_routing_queue" "example_queue2" {
   acw_wrapup_prompt        = "MANDATORY_TIMEOUT"
   acw_timeout_ms           = 300000
   skill_evaluation_method  = "BEST"
-  queue_flow_id            = data.genesyscloud_flow.default_inqueue_flow.id
+  queue_flow_id            = genesyscloud_flow.inqueue_flow.id
   whisper_prompt_id        = genesyscloud_architect_user_prompt.welcome_greeting.id
   auto_answer_only         = true
   enable_transcription     = true
@@ -61,7 +61,7 @@ resource "genesyscloud_routing_queue" "example_queue2" {
   }
 
   default_script_ids = {
-    EMAIL = genesyscloud_script.email.id
+    EMAIL = genesyscloud_script.example_script.id
     # CHAT  = data.genesyscloud_script.chat.id
   }
 
@@ -75,7 +75,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_bullseye_ring" {
   acw_wrapup_prompt        = "MANDATORY_TIMEOUT"
   acw_timeout_ms           = 300000
   skill_evaluation_method  = "BEST"
-  queue_flow_id            = data.genesyscloud_flow.default_inqueue_flow.id
+  queue_flow_id            = genesyscloud_flow.inqueue_flow.id
   whisper_prompt_id        = genesyscloud_architect_user_prompt.welcome_greeting.id
   auto_answer_only         = true
   enable_transcription     = true
@@ -111,13 +111,13 @@ resource "genesyscloud_routing_queue" "example_queue_with_bullseye_ring" {
       member_group_type = "GROUP"
     }
   }
+  default_script_ids = {
+    EMAIL = genesyscloud_script.example_script.id
+    # CHAT  = data.genesyscloud_script.chat.id
+  }
   members {
     user_id  = genesyscloud_user.queue_user3.id
     ring_num = 2
-  }
-  default_script_ids = {
-    EMAIL = genesyscloud_script.email.id
-    # CHAT  = data.genesyscloud_script.chat.id
   }
 
   wrapup_codes = [genesyscloud_routing_wrapupcode.win.id]
