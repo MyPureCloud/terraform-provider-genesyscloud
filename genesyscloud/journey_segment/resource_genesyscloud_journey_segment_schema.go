@@ -46,14 +46,6 @@ var (
 				return r
 			}(), ""),
 		},
-		"scope": {
-			Description:  "The target entity that a segment applies to. Valid values: Session",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true, // scope can be only set during creation
-			ValidateFunc: validation.StringInSlice([]string{"Session"}, false),
-			Deprecated:   "The scope field is redundant and will be removed in a future release.",
-		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,

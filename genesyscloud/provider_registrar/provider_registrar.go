@@ -1,6 +1,8 @@
 package provider_registrar
 
 import (
+	"sync"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -107,6 +109,7 @@ import (
 	workitemOnAttributeChangeRule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_onattributechange_rule"
 	workitemOnCreateRule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_oncreate_rule"
 	worktypeStatus "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
+	worktypeStatusTransition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status_transition"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
 	did "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
@@ -124,7 +127,6 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -263,6 +265,7 @@ func registerResources() {
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
 	worktypeStatus.SetRegistrar(regInstance)                               //Registering task management worktype status
+	worktypeStatusTransition.SetRegistrar(regInstance)                     //Registering task management worktype status Transition
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	workitemOnCreateRule.SetRegistrar(regInstance)                         //Registering task management oncreate rule
 	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule
