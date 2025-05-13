@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -196,7 +197,6 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 
 	worktypeId, statusId := splitWorktypeStatusTerraformTransitionId(d.Id())
-	destinationStatusIds := &[]string{}
 
 	err := validateSchema(d)
 	if err != nil {
@@ -228,28 +228,41 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 		return nil
 	}
 
-	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
-	// so we need to extract just the status id from any status references that look like this
-	if destinationStatusIds != nil && len(*destinationStatusIds) > 0 {
-		for i, destinationStatusId := range *destinationStatusIds {
-			if strings.Contains(destinationStatusId, "/") {
-				_, id := splitWorktypeStatusTerraformTransitionId(destinationStatusId)
-				(*destinationStatusIds)[i] = id
-			}
+	// If this resource manages the default destination status (via default_destination_status_id),
+	// set it to nil. Otherwise, keep the value from the API response.
+	defaultDestinationStatusId := resourcedata.GetNillableValue[string](d, "default_destination_status_id")
+	if defaultDestinationStatusId == nil {
+		if workitemStatus.DefaultDestinationStatus != nil && workitemStatus.DefaultDestinationStatus.Id != nil {
+			defaultDestinationStatusId = workitemStatus.DefaultDestinationStatus.Id
+		}
+	} else {
+		defaultDestinationStatusId = nil
+	}
+
+	// Build a list of destination status IDs that are managed by the API but not by Terraform.
+	// This preserves any status IDs that were set outside of Terraform.
+	destinationStatusIds := []string{}
+	stateDestinationStatusIds := lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids")
+	apiDestinationStatusIds := workitemStatus.DestinationStatuses
+	for _, v := range *apiDestinationStatusIds {
+		if !lists.ItemInSlice[string](*v.Id, *stateDestinationStatusIds) {
+			destinationStatusIds = append(destinationStatusIds, *v.Id)
 		}
 	}
 
 	log.Printf("%s task management worktype %s status %s %s in progress", "delete", worktypeId, statusId, *workitemStatus.Name)
 
-	taskManagementWorktypeStatus := platformclientv2.Workitemstatusupdate{
+	taskManagementWorktypeStatus := Workitemstatusupdate{
 		Name:                       workitemStatus.Name,
 		Description:                workitemStatus.Description,
-		DestinationStatusIds:       destinationStatusIds,
-		DefaultDestinationStatusId: nil,
+		DestinationStatusIds:       &destinationStatusIds,
+		DefaultDestinationStatusId: defaultDestinationStatusId,
 	}
 
+	fmt.Fprintf(os.Stdout, "Deleting task management worktype %s status transition for %s: %v", worktypeId, statusId, taskManagementWorktypeStatus)
+
 	diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		workitemStatus, resp, err = proxy.updateTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
+		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
 		if err != nil {
 			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
