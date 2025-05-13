@@ -3,13 +3,13 @@ package outbound_callanalysisresponseset
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -74,6 +74,10 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 
 		resourcedata.SetNillableValue(d, "name", responseSet.Name)
 		resourcedata.SetNillableValue(d, "beep_detection_enabled", responseSet.BeepDetectionEnabled)
+		if responseSet.AmdSpeechDistinguishEnabled != nil {
+			_ = d.Set("amd_speech_distinguish_enabled", responseSet.AmdSpeechDistinguishEnabled)
+		}
+		resourcedata.SetNillableValue(d, "live_speaker_detection_mode", responseSet.LiveSpeakerDetectionMode)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "responses", responseSet.Responses, flattenSdkOutboundCallAnalysisResponseSetReaction)
 
 		log.Printf("Read Outbound Call Analysis Response Set %s %s", d.Id(), *responseSet.Name)

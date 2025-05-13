@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	platformUtils "terraform-provider-genesyscloud/genesyscloud/util/platform"
+	platformUtils "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/platform"
 
 	"github.com/leekchan/timeutil"
 )

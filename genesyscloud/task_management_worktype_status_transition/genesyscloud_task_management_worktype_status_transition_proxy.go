@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	taskManagementWorktype "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
-	platformUtils "terraform-provider-genesyscloud/genesyscloud/util/platform"
+
+	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	platformUtils "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/platform"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )

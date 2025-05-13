@@ -3,18 +3,18 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	obResponseSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
-	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -351,6 +351,8 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				carResourceLabel,
 				"tf test car "+uuid.NewString(),
 				util.FalseValue,
+				util.FalseValue,
+				strconv.Quote("Disabled"),
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_person",
@@ -364,6 +366,8 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				carResourceLabel,
 				"tf test car "+uuid.NewString(),
 				util.TrueValue,
+				util.TrueValue,
+				strconv.Quote("Disabled"),
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_machine",
