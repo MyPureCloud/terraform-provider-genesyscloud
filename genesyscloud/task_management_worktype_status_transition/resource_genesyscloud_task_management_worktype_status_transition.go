@@ -3,14 +3,14 @@ package task_management_worktype_status_transition
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"log"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -258,8 +258,6 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 		DestinationStatusIds:       &destinationStatusIds,
 		DefaultDestinationStatusId: defaultDestinationStatusId,
 	}
-
-	fmt.Fprintf(os.Stdout, "Deleting task management worktype %s status transition for %s: %v", worktypeId, statusId, taskManagementWorktypeStatus)
 
 	diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
