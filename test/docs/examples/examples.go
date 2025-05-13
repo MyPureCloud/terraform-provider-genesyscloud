@@ -385,6 +385,10 @@ func buildAttributeTestChecks(resourceBlockType, resourceBlockLabel string, reso
 	checks := []resource.TestCheckFunc{}
 	for _, attr := range resourceAttributes {
 		attrName := attr.Name
+		if attrName == "depends_on" {
+			// Don't attempt to check for the `depends_on` attribute as that is not saved in the state
+			continue
+		}
 		expr := attr.Expr
 		switch expr.(type) {
 		case *hclsyntax.ObjectConsExpr:

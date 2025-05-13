@@ -19,6 +19,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
+// Set to TRUE to display the full output of the content being passed to Terraform with line numbers
+// This is useful for debugging the output of the Terraform configuration
+var SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES = true
+
 func TestExampleResources(t *testing.T) {
 
 	var domain string
@@ -143,16 +147,16 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_routing_wrapupcode",
 		// "genesyscloud_script",
 		// "genesyscloud_task_management_workbin",
+		// "genesyscloud_task_management_workitem",
 		// "genesyscloud_task_management_workitem_schema",
 		// "genesyscloud_task_management_worktype",
+		// "genesyscloud_task_management_worktype_flow_datebased_rule",
+		// "genesyscloud_task_management_worktype_flow_onattributechange_rule",
+		"genesyscloud_task_management_worktype_flow_oncreate_rule",
 		// "genesyscloud_task_management_worktype_status",
+		// "genesyscloud_task_management_worktype_status_transition",
 
 		// STOPPED HERE
-		// "genesyscloud_task_management_workitem",
-		// "genesyscloud_task_management_worktype_flow_datebased_rule",
-		// "genesyscloud_task_management_worktype_onattributechange_rule",
-		// "genesyscloud_task_management_worktype_oncreate_rule",
-		"genesyscloud_task_management_worktype_status_transition",
 
 		// "genesyscloud_telephony_providers_edges_did_pool",
 		// "genesyscloud_user",
@@ -199,10 +203,11 @@ func TestExampleResources(t *testing.T) {
 				PreCheck: func() {
 					if !planOnly {
 						util.TestAccPreCheck(t)
-						// Uncomment to display the full output of the content being passed to Terraform with line numbers
-						// 12 is the number of lines the provider block (not shown) takes up before outputting the rest of the config
-						// Retained for debugging purposes, allows the line numbers in error messages to line up.
-						util.PrintStringWithLineNumbers(resourceExampleContent, 12)
+						if SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES {
+							// 12 is the number of lines the provider block (not shown) takes up before outputting the rest of the config
+							// Retained for debugging purposes, allows the line numbers in error messages to line up.
+							util.PrintStringWithLineNumbers(resourceExampleContent, 12)
+						}
 					}
 				},
 				ProviderFactories: providerFactories,

@@ -7,8 +7,8 @@ resource "genesyscloud_task_management_workitem" "sample_workitem" {
   date_due               = formatdate("YYYY-MM-DD'T'hh:mm:ss.000000", time_offset.tomorrow.rfc3339)
   date_expires           = formatdate("YYYY-MM-DD'T'hh:mm:ss.000000", time_offset.next_week.rfc3339)
   duration_seconds       = 99999
-  ttl                    = time_offset.tomorrow.unix
-  status_id              = random_uuid.uuid.id
+  ttl                    = time_offset.ten_days.unix
+  status_id              = genesyscloud_task_management_worktype_status.working.id
   workbin_id             = genesyscloud_task_management_workbin.example_workbin.id
   assignee_id            = genesyscloud_user.example_user.id
   external_contact_id    = genesyscloud_externalcontacts_contact.contact.id
