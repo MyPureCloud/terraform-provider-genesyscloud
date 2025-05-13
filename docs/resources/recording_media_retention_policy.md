@@ -197,6 +197,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -220,6 +221,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -432,6 +435,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -455,6 +459,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -657,6 +663,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -680,6 +687,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -881,6 +890,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -904,6 +914,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -1094,6 +1106,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -1117,6 +1130,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 

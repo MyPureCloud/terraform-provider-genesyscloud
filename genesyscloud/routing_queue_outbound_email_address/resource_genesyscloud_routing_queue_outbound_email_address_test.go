@@ -2,15 +2,15 @@ package routing_queue_outbound_email_address
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"log"
 	"os"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingEmailRoute "terraform-provider-genesyscloud/genesyscloud/routing_email_route"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 	"time"
 

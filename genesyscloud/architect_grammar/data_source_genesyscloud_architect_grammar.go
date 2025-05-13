@@ -3,8 +3,8 @@ package architect_grammar
 import (
 	"context"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	util "terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	util "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
