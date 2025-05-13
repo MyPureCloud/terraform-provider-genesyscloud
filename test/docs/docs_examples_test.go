@@ -152,11 +152,12 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_task_management_worktype",
 		// "genesyscloud_task_management_worktype_flow_datebased_rule",
 		// "genesyscloud_task_management_worktype_flow_onattributechange_rule",
-		"genesyscloud_task_management_worktype_flow_oncreate_rule",
+		// "genesyscloud_task_management_worktype_flow_oncreate_rule",
 		// "genesyscloud_task_management_worktype_status",
 		// "genesyscloud_task_management_worktype_status_transition",
 
 		// STOPPED HERE
+		"genesyscloud_team",
 
 		// "genesyscloud_telephony_providers_edges_did_pool",
 		// "genesyscloud_user",
