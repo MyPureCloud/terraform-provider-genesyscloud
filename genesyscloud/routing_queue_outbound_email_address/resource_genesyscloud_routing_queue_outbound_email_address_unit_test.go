@@ -2,9 +2,9 @@ package routing_queue_outbound_email_address
 
 import (
 	"context"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"testing"
 
 	"github.com/google/uuid"

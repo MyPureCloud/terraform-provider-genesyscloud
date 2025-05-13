@@ -4,8 +4,9 @@ import (
 	"context"
 	"net/http"
 	"sort"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

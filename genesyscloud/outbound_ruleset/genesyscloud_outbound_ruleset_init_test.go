@@ -1,13 +1,13 @@
 package outbound_ruleset
 
 import (
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"sync"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
 
 /*
