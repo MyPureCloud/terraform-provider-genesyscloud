@@ -1,7 +1,7 @@
 locals {
   dependencies = [
     "../../data-sources/genesyscloud_auth_division_home/data-source.tf",
-    "../../data-sources/genesyscloud_flow/data-source.tf",
+    "../genesyscloud_flow/inqueue_flow.tf",
     "../genesyscloud_architect_user_prompt/resource.tf",
     "../genesyscloud_group/resource.tf",
     "../genesyscloud_user/queue_users.tf",
