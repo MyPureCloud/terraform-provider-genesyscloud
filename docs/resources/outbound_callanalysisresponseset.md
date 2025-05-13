@@ -45,7 +45,9 @@ resource "genesyscloud_outbound_callanalysisresponseset" "example-cars" {
 
 ### Optional
 
+- `amd_speech_distinguish_enabled` (Boolean) Whether to enable answering machine detection Defaults to `true`.
 - `beep_detection_enabled` (Boolean) Whether to enable answering machine beep detection Defaults to `false`.
+- `live_speaker_detection_mode` (String) Setting level of live speaker detection based on ringbacks. Valid values: Disabled, Low, Medium, High.
 - `responses` (Block List, Max: 1) List of maps of disposition identifiers to reactions. Required if beep_detection_enabled = true. (see [below for nested schema](#nestedblock--responses))
 
 ### Read-Only

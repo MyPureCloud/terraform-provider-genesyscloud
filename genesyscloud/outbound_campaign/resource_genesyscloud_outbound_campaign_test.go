@@ -130,6 +130,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		carResourceLabel,
 		"tf car "+uuid.NewString(),
 		util.FalseValue,
+		util.FalseValue,
+		strconv.Quote("Disabled"),
 		obResponseSet.GenerateCarsResponsesBlock(
 			obResponseSet.GenerateCarsResponse(
 				"callable_person",
@@ -493,6 +495,8 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		carResourceLabel,
 		"tf car "+uuid.NewString(),
 		util.FalseValue,
+		util.FalseValue,
+		strconv.Quote("Disabled"),
 		obResponseSet.GenerateCarsResponsesBlock(
 			obResponseSet.GenerateCarsResponse(
 				"callable_person",
