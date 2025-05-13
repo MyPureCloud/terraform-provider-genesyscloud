@@ -6,12 +6,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/provider_registrar"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/test/docs/examples"
 	"testing"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/test/docs/examples"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -141,9 +142,17 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_routing_utilization_label",
 		// "genesyscloud_routing_wrapupcode",
 		// "genesyscloud_script",
+		// "genesyscloud_task_management_workbin",
+		// "genesyscloud_task_management_workitem_schema",
+		// "genesyscloud_task_management_worktype",
+		// "genesyscloud_task_management_worktype_status",
 
 		// STOPPED HERE
-		"genesyscloud_task_management_workbin",
+		// "genesyscloud_task_management_workitem",
+		// "genesyscloud_task_management_worktype_flow_datebased_rule",
+		// "genesyscloud_task_management_worktype_onattributechange_rule",
+		// "genesyscloud_task_management_worktype_oncreate_rule",
+		"genesyscloud_task_management_worktype_status_transition",
 
 		// "genesyscloud_telephony_providers_edges_did_pool",
 		// "genesyscloud_user",
@@ -201,6 +210,10 @@ func TestExampleResources(t *testing.T) {
 					"random": {
 						Source:            "hashicorp/random",
 						VersionConstraint: "3.7.2",
+					},
+					"time": {
+						Source:            "hashicorp/time",
+						VersionConstraint: "0.13.1",
 					},
 				},
 				Steps: []resource.TestStep{
