@@ -61,7 +61,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
-	oPresenceDefinition "terraform-provider-genesyscloud/genesyscloud/organization_presence_definition"
+	oPresenceDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_presence_definition"
 	oAuthPairing "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
 	obAttemptLimit "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
