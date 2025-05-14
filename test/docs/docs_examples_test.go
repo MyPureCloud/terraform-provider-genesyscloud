@@ -155,12 +155,25 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_task_management_worktype_flow_oncreate_rule",
 		// "genesyscloud_task_management_worktype_status",
 		// "genesyscloud_task_management_worktype_status_transition",
+		// "genesyscloud_team",
 
 		// STOPPED HERE
-		"genesyscloud_team",
 
 		// "genesyscloud_telephony_providers_edges_did_pool",
+		// "genesyscloud_telephony_providers_edges_edge_group",
+		// "genesyscloud_telephony_providers_edges_extension_pool",
+		// "genesyscloud_telephony_providers_edges_phone",
+		// "genesyscloud_telephony_providers_edges_phonebasesettings",
+		// "genesyscloud_telephony_providers_edges_site",
+		// "genesyscloud_telephony_providers_edges_site_outbound_route",
+		// "genesyscloud_telephony_providers_edges_trunk",
+		// "genesyscloud_telephony_providers_edges_trunkbasesettings",
+		// "genesyscloud_tf_export",
 		// "genesyscloud_user",
+		// "genesyscloud_user_roles",
+		// "genesyscloud_webdeployments_configuration",
+		// "genesyscloud_webdeployments_deployment",
+		// "genesyscloud_widget_deployment",
 	}
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
