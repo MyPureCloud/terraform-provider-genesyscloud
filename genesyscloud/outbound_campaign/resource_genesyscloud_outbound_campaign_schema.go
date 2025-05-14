@@ -132,12 +132,12 @@ func ResourceOutboundCampaign() *schema.Resource {
 			},
 			`caller_name`: {
 				Description: `The caller id name to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`caller_address`: {
 				Description: `The caller id phone number to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`outbound_line_count`: {
