@@ -3,13 +3,13 @@ package scripts
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 // ScriptResolver is used to download all Genesys Cloud scripts from Genesys Cloud
@@ -48,4 +48,14 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 		resource.State.Attributes["file_content_hash"] = hash
 	}
 	return err
+}
+
+func GenerateScriptResourceBasic(resourceLabel, scriptName, filePath string) string {
+	return fmt.Sprintf(`
+		resource "%s" "%s" {
+			script_name       = "%s"
+			filepath          = "%s"
+			file_content_hash = filesha256("%s")
+		}
+	`, ResourceType, resourceLabel, scriptName, filePath, filePath)
 }

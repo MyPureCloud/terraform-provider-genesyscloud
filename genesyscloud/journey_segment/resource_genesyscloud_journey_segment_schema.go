@@ -1,10 +1,10 @@
 package journey_segment
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"regexp"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -46,13 +46,6 @@ var (
 				return r
 			}(), ""),
 		},
-		"scope": {
-			Description:  "The target entity that a segment applies to. Valid values: Session",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true, // scope can be only set during creation
-			ValidateFunc: validation.StringInSlice([]string{"Session"}, false),
-		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,
@@ -71,6 +64,12 @@ var (
 			Optional:    true,
 			MaxItems:    1,
 			Elem:        journeyResource,
+		},
+		"assignment_expiration_days": {
+			Description:  "Time, in days, from when the segment is assigned until it is automatically unassigned.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ValidateFunc: validation.IntAtLeast(0),
 		},
 	}
 

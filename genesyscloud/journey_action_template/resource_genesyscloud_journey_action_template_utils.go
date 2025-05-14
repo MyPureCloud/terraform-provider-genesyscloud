@@ -1,13 +1,13 @@
 package journey_action_template
 
 import (
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
-	"terraform-provider-genesyscloud/genesyscloud/util/typeconv"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // All buildSdkPatch*  functions are helper method which maps Create operation of journeyApi's Actiontemplates

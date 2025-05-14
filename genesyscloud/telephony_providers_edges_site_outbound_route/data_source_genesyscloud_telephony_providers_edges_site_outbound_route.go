@@ -3,8 +3,8 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"time"
 
@@ -34,8 +34,8 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 		outboundRouteId := buildSiteAndOutboundRouteId(siteId, routeId)
 
 		d.SetId(outboundRouteId)
-		d.Set("site_id", siteId)
-		d.Set("route_id", routeId)
+		_ = d.Set("site_id", siteId)
+		_ = d.Set("route_id", routeId)
 		return nil
 	})
 }

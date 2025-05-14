@@ -1,10 +1,10 @@
 package webdeployments_configuration_utils
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func buildSupportCenterHeroStyle(styles []interface{}) *platformclientv2.Supportcenterherostyle {
@@ -122,8 +122,8 @@ func buildModuleSettings(settings []interface{}) *[]platformclientv2.Supportcent
 		}
 
 		moduleSetting := platformclientv2.Supportcentermodulesetting{
-			VarType: resourcedata.GetNillableValueFromMap[string](settingMap, "type"),
-			Enabled: resourcedata.GetNillableValueFromMap[bool](settingMap, "enabled"),
+			VarType: resourcedata.GetNillableValueFromMap[string](settingMap, "type", true),
+			Enabled: resourcedata.GetNillableValueFromMap[bool](settingMap, "enabled", true),
 		}
 
 		if compactModActive, ok := settingMap["compact_category_module_template_active"].(bool); ok {

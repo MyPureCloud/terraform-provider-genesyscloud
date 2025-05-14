@@ -197,6 +197,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -220,6 +221,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -323,6 +326,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `media_types` (List of String)
+- `team_ids` (Set of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -431,6 +435,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -454,6 +459,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -556,6 +563,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
+- `team_ids` (Set of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -655,6 +663,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -678,6 +687,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -779,6 +790,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
+- `team_ids` (Set of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -878,6 +890,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -901,6 +914,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -1002,6 +1017,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
+- `team_ids` (Set of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -1090,6 +1106,7 @@ Optional:
 Optional:
 
 - `days` (Number)
+- `hours` (Number)
 - `months` (Number)
 - `weeks` (Number)
 
@@ -1113,6 +1130,8 @@ Optional:
 
 - `days` (Number)
 - `hours` (Number)
+- `months` (Number)
+- `weeks` (Number)
 
 
 
@@ -1214,6 +1233,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
+- `team_ids` (Set of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 

@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"log"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -83,7 +83,7 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	outboundRouteId := buildSiteAndOutboundRouteId(siteId, *newOutboundRoute.Id)
-	d.Set("route_id", *newOutboundRoute.Id)
+	_ = d.Set("route_id", *newOutboundRoute.Id)
 	d.SetId(outboundRouteId)
 	log.Printf("created outbound route %s for site %s", *newOutboundRoute.Id, siteId)
 	return readSiteOutboundRoute(ctx, d, meta)
@@ -116,7 +116,7 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 			resourcedata.SetNillableValue(d, "distribution", outboundRoute.Distribution)
 
 			if outboundRoute.ClassificationTypes != nil {
-				d.Set("classification_types", lists.StringListToInterfaceList(*outboundRoute.ClassificationTypes))
+				_ = d.Set("classification_types", lists.StringListToInterfaceList(*outboundRoute.ClassificationTypes))
 			}
 
 			if len(*outboundRoute.ExternalTrunkBases) > 0 {
@@ -124,7 +124,7 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 				for _, externalTrunkBase := range *outboundRoute.ExternalTrunkBases {
 					externalTrunkBaseIds = append(externalTrunkBaseIds, *externalTrunkBase.Id)
 				}
-				d.Set("external_trunk_base_ids", lists.StringListToInterfaceList(externalTrunkBaseIds))
+				_ = d.Set("external_trunk_base_ids", lists.StringListToInterfaceList(externalTrunkBaseIds))
 			}
 		}
 

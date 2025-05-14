@@ -3,31 +3,31 @@ package outbound_campaign
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	outboundMessagingcampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
-	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
 
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	obCallableTimeset "terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
-	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
+	obResponseSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -130,6 +130,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		carResourceLabel,
 		"tf car "+uuid.NewString(),
 		util.FalseValue,
+		util.FalseValue,
+		strconv.Quote("Disabled"),
 		obResponseSet.GenerateCarsResponsesBlock(
 			obResponseSet.GenerateCarsResponse(
 				"callable_person",
@@ -230,12 +232,12 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					nil,
 					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
 					),
-					generateDynamicContactQueueingSettingsBlock(util.TrueValue),
+					generateDynamicContactQueueingSettingsBlock(util.TrueValue, util.TrueValue), // sort and filter
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", name),
@@ -254,6 +256,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.direction", contactSortDirection),
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
 					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.filter", util.TrueValue),
 					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
 					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
@@ -301,12 +304,12 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					[]string{strconv.Quote("en-us")},
 					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
 					),
-					generateDynamicContactQueueingSettingsBlock(util.FalseValue),
+					generateDynamicContactQueueingSettingsBlock(util.FalseValue, util.FalseValue), // sort and filter
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", name),
@@ -325,6 +328,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.direction", contactSortDirection),
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
 					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.filter", util.FalseValue),
 					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
 					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
@@ -372,12 +376,12 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					nil,
 					util.FalseValue, // auto_answer
 					generatePhoneColumnNoTypeBlock("Cell"),
-					outbound.GenerateOutboundMessagingCampaignContactSort(
+					outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 						contactSortFieldName,
 						contactSortDirection,
 						contactSortNumeric,
 					),
-					generateDynamicContactQueueingSettingsBlock(util.FalseValue),
+					generateDynamicContactQueueingSettingsBlock(util.FalseValue, util.FalseValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", nameUpdated),
@@ -394,7 +398,8 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.field_name", contactSortFieldName),
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.direction", contactSortDirection),
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
-					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", "false"),
+					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.filter", util.FalseValue),
 					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
 					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
@@ -490,6 +495,8 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		carResourceLabel,
 		"tf car "+uuid.NewString(),
 		util.FalseValue,
+		util.FalseValue,
+		strconv.Quote("Disabled"),
 		obResponseSet.GenerateCarsResponsesBlock(
 			obResponseSet.GenerateCarsResponse(
 				"callable_person",
@@ -876,7 +883,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						[]string{strconv.Quote("language")},
 						util.FalseValue, // auto_answer
 						generatePhoneColumnNoTypeBlock("Cell"),
-						outbound.GenerateOutboundMessagingCampaignContactSort(
+						outboundMessagingcampaign.GenerateOutboundMessagingCampaignContactSort(
 							contactSortFieldName,
 							contactSortDirection,
 							contactSortNumeric,
@@ -1212,12 +1219,13 @@ resource "genesyscloud_outbound_campaign" "%s" {
 		strings.Join(nestedBlocks, "\n"))
 }
 
-func generateDynamicContactQueueingSettingsBlock(sort string) string {
+func generateDynamicContactQueueingSettingsBlock(sort string, filter string) string {
 	return fmt.Sprintf(`
 	dynamic_contact_queueing_settings {
 		sort = %s
+		filter = %s
 	}
-	`, sort)
+	`, sort, filter)
 }
 
 func generateDynamicLineBalancingSettingsBlock(enabled, weight string) string {

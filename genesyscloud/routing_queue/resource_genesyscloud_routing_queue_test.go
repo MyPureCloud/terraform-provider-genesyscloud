@@ -2,31 +2,32 @@ package routing_queue
 
 import (
 	"fmt"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"log"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/group"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var (
@@ -102,6 +103,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					strconv.Quote(scoringMethod), // scoring Method
 					util.NullValue,
 					util.NullValue,
+					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettingsCallBack("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue, slDuration1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
@@ -160,6 +162,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.TrueValue, // enable_manual_assignment true
 					util.TrueValue, // enable_transcription true
 					strconv.Quote(scoringMethod),
+					util.NullValue, // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
@@ -289,6 +292,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					strconv.Quote("TimestampAndPriority"),
 					util.NullValue,
 					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings(
 						"media_settings_call",
 						alertTimeout1,
@@ -394,6 +398,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					strconv.Quote("TimestampAndPriority"),
 					util.NullValue,
 					util.NullValue,
+					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -477,6 +482,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					util.NullValue,  // enable_audio_monitoring false
 					util.NullValue,  // enable_manual_assignment false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -567,6 +573,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 					util.NullValue, // enable_manual_assignment false
 					strconv.Quote(scoringMethod),
+					util.NullValue, // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -705,17 +712,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: architect_flow.GenerateFlowResource(
+				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel1,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel1,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel1,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
@@ -742,17 +749,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			},
 			{
 				// Update the flows
-				Config: architect_flow.GenerateFlowResource(
+				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel2,
 					queueFlowFilePath1,
 					queueFlowInboundcallConfig1,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel2,
 					queueFlowFilePath2,
 					emailInQueueFlowInboundcallConfig2,
 					false,
-				) + architect_flow.GenerateFlowResource(
+				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel2,
 					queueFlowFilePath3,
 					messageInQueueFlowInboundcallConfig3,
@@ -989,7 +996,6 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				Config: GenerateRoutingQueueResourceBasic(
 					queueResourceLabel,
 					queueName,
-					"members = []",
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
 					GenerateBullseyeSettings("10"),
@@ -1257,66 +1263,112 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 	})
 }
 
-// TestAccResourceRoutingQueueMembersOutsideOfConfig
-// Creates a queue and a user, and then adds the user to that queue outside Terraform.
-// On the next apply, we expect an empty plan and therefore no errors (achieved through 'members' being a computed field)
-// Although members should not be a computed field, it was always computed in the past. As a result, some CX as Code users got used
-// to the behaviour described above, so we don't want to break that behaviour.
-func TestAccResourceRoutingQueueMembersOutsideOfConfig(t *testing.T) {
+func TestAccResourceRoutingQueueCannedResponseLibraryIds(t *testing.T) {
+	t.Parallel()
 	var (
-		userResourceLabel  = "user"
-		userEmail          = fmt.Sprintf("user%s@test.com", strings.Replace(uuid.NewString(), "-", "", -1))
-		queueResourceLabel = "queue"
-		queueName          = "tf test queue " + uuid.NewString()
-		userID             string
+		resourceLabel = "queue_with_lib_ids"
+		queueNameAttr = "tf test queue" + uuid.NewString()
+		queueFullPath = ResourceType + "." + resourceLabel
+
+		library1Label        = "lib1"
+		library1NameAttr     = "tf test library " + uuid.NewString()
+		lib1FullResourcePath = responseManagementLibrary.ResourceType + "." + library1Label
+
+		library2Label        = "lib2"
+		library2NameAttr     = "tf test library " + uuid.NewString()
+		lib2FullResourcePath = responseManagementLibrary.ResourceType + "." + library2Label
+
+		library3Label        = "lib3"
+		library3NameAttr     = "tf test library " + uuid.NewString()
+		lib3FullResourcePath = responseManagementLibrary.ResourceType + "." + library3Label
 	)
 
-	queueResource := fmt.Sprintf(`
-resource "genesyscloud_routing_queue" "%s" {
-	name = "%s"
-}
-`, queueResourceLabel, queueName)
-
-	userResource := fmt.Sprintf(`
-resource "genesyscloud_user" "%s" {
-	name  = "tf test user"
-	email = "%s"
-}
-`, userResourceLabel, userEmail)
+	lib1Config := responseManagementLibrary.GenerateResponseManagementLibraryResource(library1Label, library1NameAttr)
+	lib2Config := responseManagementLibrary.GenerateResponseManagementLibraryResource(library2Label, library2NameAttr)
+	lib3Config := responseManagementLibrary.GenerateResponseManagementLibraryResource(library3Label, library3NameAttr)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: queueResource + userResource,
+				Config: lib1Config + lib2Config + lib3Config + fmt.Sprintf(`
+resource "%s" "%s" {
+	name = "%s"
+	canned_response_libraries {
+		mode        = "SelectedOnly"
+		library_ids = [
+			%s,
+			%s,
+			%s
+		]
+	}
+}
+`, ResourceType, resourceLabel, queueNameAttr, lib1FullResourcePath+".id", lib2FullResourcePath+".id", lib3FullResourcePath+".id"),
 				Check: resource.ComposeTestCheckFunc(
-					addMemberToQueue("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_user."+userResourceLabel),
+					resource.TestCheckResourceAttr(queueFullPath, "name", queueNameAttr),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.mode", "SelectedOnly"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.library_ids.#", "3"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib1FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib2FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib3FullResourcePath, "id"),
 				),
 			},
+			// update just the description
 			{
-				Config:             queueResource + userResource,
-				ExpectNonEmptyPlan: false,
+				Config: lib1Config + lib2Config + lib3Config + fmt.Sprintf(`
+resource "%s" "%s" {
+	name        = "%s"
+	description = "Foobar"
+	canned_response_libraries {
+		mode        = "SelectedOnly"
+		library_ids = [
+			%s,
+			%s,
+			%s
+		]
+	}
+}
+`, ResourceType, resourceLabel, queueNameAttr, lib1FullResourcePath+".id", lib2FullResourcePath+".id", lib3FullResourcePath+".id"),
 				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["genesyscloud_user."+userResourceLabel]
-						if !ok {
-							return fmt.Errorf("not found: %s", "genesyscloud_user."+userResourceLabel)
-						}
-						userID = rs.Primary.ID
-						log.Printf("User ID: %s\n", userID) // Print user ID
-						return nil
-					},
+					resource.TestCheckResourceAttr(queueFullPath, "name", queueNameAttr),
+					resource.TestCheckResourceAttr(queueFullPath, "description", "Foobar"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.mode", "SelectedOnly"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.library_ids.#", "3"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib1FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib2FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib3FullResourcePath, "id"),
+				),
+			},
+			// update description and library_ids
+			{
+				Config: lib1Config + lib2Config + lib3Config + fmt.Sprintf(`
+resource "%s" "%s" {
+	name        = "%s"
+	description = "Foo"
+	canned_response_libraries {
+		mode        = "SelectedOnly"
+		library_ids = [
+			%s,
+			%s
+		]
+	}
+}
+`, ResourceType, resourceLabel, queueNameAttr, lib1FullResourcePath+".id", lib2FullResourcePath+".id"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(queueFullPath, "name", queueNameAttr),
+					resource.TestCheckResourceAttr(queueFullPath, "description", "Foo"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.mode", "SelectedOnly"),
+					resource.TestCheckResourceAttr(queueFullPath, "canned_response_libraries.0.library_ids.#", "2"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib1FullResourcePath, "id"),
+					util.ValidateResourceAttributeInArray(queueFullPath, "canned_response_libraries.0.library_ids", lib2FullResourcePath, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel,
+				ResourceName:      queueFullPath,
 				ImportState:       true,
 				ImportStateVerify: true,
-				Check: resource.ComposeTestCheckFunc(
-					checkUserDeleted(userID),
-				),
 			},
 		},
 		CheckDestroy: testVerifyQueuesDestroyed,
@@ -1671,7 +1723,6 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 						queueResourceLabel,
 						"genesyscloud_routing_skill_group."+skillGroupResourceLabel,
 						queueName,
-						"members = []",
 						"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
 						"groups = [genesyscloud_group."+groupResourceLabel+".id]",
 						GenerateBullseyeSettings("10"),

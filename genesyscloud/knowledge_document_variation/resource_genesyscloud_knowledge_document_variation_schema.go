@@ -1,11 +1,11 @@
-package knowledgedocumentvariation
+package knowledge_document_variation
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -17,6 +17,7 @@ const ResourceType = "genesyscloud_knowledge_document_variation"
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(ResourceType, ResourceKnowledgeDocumentVariation())
+	l.RegisterDataSource(ResourceType, dataSourceKnowledgeDocumentVariation())
 	l.RegisterExporter(ResourceType, KnowledgeDocumentVariationExporter())
 }
 

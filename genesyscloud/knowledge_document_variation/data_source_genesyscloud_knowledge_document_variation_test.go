@@ -1,16 +1,17 @@
-package knowledgedocumentvariation
+package knowledge_document_variation
 
 import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/stretchr/testify/assert"
 	"strings"
-	knowledgeKnowledgebase "terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 )
 
 func TestAccDataSourceVariationRequest(t *testing.T) {
@@ -127,6 +128,10 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 						assert.Equal(t, resourceIDs.knowledgeDocumentVariationID, variationID, "Variation ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeBaseID, knowledgeBaseID, "Knowledge Base ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeDocumentID, KnowledgeDocumentID, "Knowledge Document ID should be equal")
+						return nil
+					},
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
 						return nil
 					},
 				),

@@ -9,9 +9,9 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 )
@@ -26,6 +26,20 @@ type ResourceMeta struct {
 	// Prefix to add to the ID when reading state
 	IdPrefix string
 
+	// BlockHash represents a unique identifier generated from the resource's distinguishing attributes,
+	// explicitly excluding IDs and calculated fields to enable cross-org resource correlation.
+	// Important:
+	//   * Use util.QuickHashFields() to generate this hash
+	//   * Only include fields that uniquely identify the resource WITHOUT using its ID
+	//   * Only include fields that would match if the resource exists in another org
+	//   * DO NOT include fields that are likely to be updated or modified as the resource evolves
+	//   * Do NOT include fields that are calculated (i.e., createdDate)
+	//   * ID fields and calculated field must be excluded from the hash calculation because:
+	//       - IDs and calculated values prevent correlation of resources across different exports and
+	//         make it impossible to compare equivalent resources between orgs
+	BlockHash string
+
+	// Represents the unsanitized version of the BlockLabel
 	OriginalLabel string
 }
 

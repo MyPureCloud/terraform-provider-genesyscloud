@@ -3,24 +3,26 @@ package oauth_client
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
+
+var CacheFile = "/shared-cache.json"
 
 func getAllOAuthClients(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -74,8 +76,11 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 		Scope:                      buildOAuthScopes(d),
 		RoleDivisions:              roles,
 	}
-
-	client, resp, err := oauthClientProxy.createOAuthClient(ctx, *oauthRequest)
+	dirString := ""
+	if dir, ok := d.GetOk("directory_client_secret"); ok {
+		dirString = dir.(string)
+	}
+	client, resp, err := oauthClientProxy.createOAuthClient(ctx, *oauthRequest, dirString)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create oauth client %s error: %s", name, err), resp)
 	}
@@ -283,6 +288,11 @@ func cascadeUpdateOAuthClient(ctx context.Context, d *schema.ResourceData, meta 
 	// check if there is a integration credential to update/create
 	if dealIntegrationFlag {
 		credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
+
+		if client.Secret == nil || *client.Secret != "" {
+			fields := fetchOauthClientSecret(sdkConfig, *client.Id)
+			*client.Secret = fields["client_secret"]
+		}
 		if credentialId != nil {
 			currentCredential, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, *credentialId)
 			if getErr != nil {
@@ -328,6 +338,9 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create credential %s error: %s", *credentialName, err), resp)
 		}
 
+		resourcedata.SetNillableValue(d, "client_id", client.Id)
+		_ = d.Set("client_secret", "")
+
 		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
 		resourcedata.SetNillableValue(d, "integration_credential_name", credential.Name)
 
@@ -336,7 +349,8 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 	return nil
 }
 
-func updateCredential(ctx context.Context, d *schema.ResourceData, client *platformclientv2.Oauthclient, oauthClientProxy *oauthClientProxy) diag.Diagnostics {
+func updateCredential(ctx context.Context, d *schema.ResourceData,
+	client *platformclientv2.Oauthclient, oauthClientProxy *oauthClientProxy) diag.Diagnostics {
 	credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
 	credentialName := resourcedata.GetNillableValue[string](d, "integration_credential_name")
 	if credentialName != nil {
@@ -361,6 +375,8 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, client *platf
 
 		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
 		resourcedata.SetNillableValue(d, "integration_credential_name", credential.Name)
+		resourcedata.SetNillableValue(d, "client_id", client.Id)
+		_ = d.Set("client_secret", "")
 
 		log.Printf("Updated Integration Credential client %s", *credentialName)
 	}

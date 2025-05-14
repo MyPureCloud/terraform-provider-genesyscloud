@@ -2,25 +2,26 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
+	formNameAttr := "TF Test Form " + uuid.NewString()
 	formResourceLabel1 := "test-evaluation-form-1"
 	answer1Text := "Yes"
 	answer1Value := 1
 
 	// Most basic evaluation form
 	evaluationForm1 := EvaluationFormStruct{
-		Name: "terraform-form-evaluations-" + uuid.NewString(),
+		Name: formNameAttr,
 		QuestionGroups: []EvaluationFormQuestionGroupStruct{
 			{
 				Name:   "Test Question Group 1",
@@ -46,7 +47,7 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 
 	// Duplicate form with additional questions
 	evaluationForm2 := evaluationForm1
-	evaluationForm2.Name = "New Form Name"
+	evaluationForm2.Name = formNameAttr + " updated"
 	evaluationForm2.QuestionGroups = append(evaluationForm2.QuestionGroups, EvaluationFormQuestionGroupStruct{
 		Name:   "Test Question Group 2",
 		Weight: 2,

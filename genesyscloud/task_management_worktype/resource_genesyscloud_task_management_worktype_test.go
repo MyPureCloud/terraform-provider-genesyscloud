@@ -2,22 +2,24 @@ package task_management_worktype
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	script "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
-	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -56,30 +58,34 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 		skillResourceLabel2 = "skill_2"
 		skillResName2       = "tf_skill_2" + uuid.NewString()
 
+		// Script
+		scriptResourceLabel = "script_1"
+		scriptName          = "testscriptname" + uuid.NewString()
+		scriptFilePath      = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
+
 		// Worktype
 		wtRes = worktypeConfig{
-			resourceLabel:    "worktype_1",
-			name:             "tf_worktype_" + uuid.NewString(),
-			description:      "worktype created for CX as Code test case",
-			divisionId:       fmt.Sprintf("data.genesyscloud_auth_division_home.%s.id", divDataLabel),
-			defaultWorkbinId: fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-
-			defaultDurationS:    86400,
-			defaultExpirationS:  86400,
-			defaultDueDurationS: 86400,
-			defaultPriority:     100,
-			defaultTtlS:         86400,
-
-			defaultLanguageId: fmt.Sprintf("genesyscloud_routing_language.%s.id", langResourceLabel),
-			defaultQueueId:    fmt.Sprintf("genesyscloud_routing_queue.%s.id", queueResourceLabel),
+			resourceLabel:                "worktype_1",
+			name:                         "tf_worktype_" + uuid.NewString(),
+			description:                  "worktype created for CX as Code test case",
+			divisionId:                   fmt.Sprintf("data.genesyscloud_auth_division_home.%s.id", divDataLabel),
+			defaultWorkbinId:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+			disableDefaultStatusCreation: true,
+			defaultDurationS:             86400,
+			defaultExpirationS:           86400,
+			defaultDueDurationS:          86400,
+			defaultPriority:              100,
+			defaultTtlS:                  86400,
+			defaultLanguageId:            fmt.Sprintf("genesyscloud_routing_language.%s.id", langResourceLabel),
+			defaultQueueId:               fmt.Sprintf("genesyscloud_routing_queue.%s.id", queueResourceLabel),
 			defaultSkillIds: []string{
 				fmt.Sprintf("genesyscloud_routing_skill.%s.id", skillResourceLabel1),
 				fmt.Sprintf("genesyscloud_routing_skill.%s.id", skillResourceLabel2),
 			},
 			assignmentEnabled: false,
-
-			schemaId:      fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
-			schemaVersion: 1,
+			schemaId:          fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
+			schemaVersion:     1,
+			defaultScriptId:   fmt.Sprintf("genesyscloud_script.%s.id", scriptResourceLabel),
 		}
 	)
 
@@ -106,6 +112,7 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 					routingLanguage.GenerateRoutingLanguageResource(langResourceLabel, langName) +
 					routingSkill.GenerateRoutingSkillResource(skillResourceLabel1, skillResName1) +
 					routingSkill.GenerateRoutingSkillResource(skillResourceLabel2, skillResName2) +
+					script.GenerateScriptResourceBasic(scriptResourceLabel, scriptName, scriptFilePath) +
 					generateWorktypeResource(wtRes) +
 					fmt.Sprintf("\n data \"genesyscloud_auth_division_home\" \"%s\" {}\n", divDataLabel),
 				Check: resource.ComposeTestCheckFunc(
@@ -129,6 +136,8 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 
 					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "assignment_enabled", fmt.Sprintf("%v", wtRes.assignmentEnabled)),
 					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "schema_version", fmt.Sprintf("%v", wtRes.schemaVersion)),
+
+					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_script_id", fmt.Sprintf("genesyscloud_script.%s", scriptResourceLabel), "id"),
 				),
 			},
 		},
@@ -175,9 +184,9 @@ func generateWorktypeResource(wt worktypeConfig) string {
 		default_language_id = %s
 		default_queue_id = %s
 		default_skills_ids = %s
-
 		assignment_enabled = %v
 		schema_version = %v
+		default_script_id = %v
 	}
 		`, ResourceType,
 		wt.resourceLabel,
@@ -196,6 +205,7 @@ func generateWorktypeResource(wt worktypeConfig) string {
 		util.GenerateStringArray(wt.defaultSkillIds...),
 		wt.assignmentEnabled,
 		wt.schemaVersion,
+		wt.defaultScriptId,
 	)
 	return tfConfig
 }

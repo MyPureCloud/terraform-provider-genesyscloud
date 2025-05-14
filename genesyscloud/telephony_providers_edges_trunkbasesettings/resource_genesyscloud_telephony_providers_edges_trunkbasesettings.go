@@ -4,24 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func createTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -222,23 +222,31 @@ func readTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func deleteTrunkBaseSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var (
+		err  error
+		resp *platformclientv2.APIResponse
+	)
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTrunkBaseSettingProxy(sdkConfig)
-	log.Printf("Deleting trunk base settings for id %s\n", d.Id())
-	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
-		resp, err := proxy.DeleteTrunkBaseSetting(ctx, d.Id())
+	log.Printf("Deleting trunk base settings for id %s\n", d.Id())
+	deleteWithRetriesErr := util.WithRetries(ctx, 50*time.Second, func() *retry.RetryError {
+		resp, err = proxy.DeleteTrunkBaseSetting(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// trunk base settings not found, goal achieved!
-				return nil, nil
+				return nil
 			}
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete trunk base settings %s error: %s", d.Id(), err), resp)
+			if util.IsStatus400(resp) {
+				return retry.RetryableError(fmt.Errorf("failed to delete trunkbase setting %s due to 400 error: %w", d.Id(), err))
+			}
+			return retry.NonRetryableError(fmt.Errorf("failed to delete trunkbase setting %s: %w", d.Id(), err))
 		}
-		return resp, nil
+		return nil
 	})
-	if diagErr != nil {
-		return diagErr
+	if deleteWithRetriesErr.HasError() {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete trunk base settings %s error: %v", d.Id(), deleteWithRetriesErr), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

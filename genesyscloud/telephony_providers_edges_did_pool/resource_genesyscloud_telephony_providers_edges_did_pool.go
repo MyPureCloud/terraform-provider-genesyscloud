@@ -3,22 +3,22 @@ package telephony_providers_edges_did_pool
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // getAllDidPools retrieves all DID pools and is used for the exporter
@@ -33,7 +33,11 @@ func getAllDidPools(ctx context.Context, clientConfig *platformclientv2.Configur
 
 	for _, didPool := range *didPools {
 		if didPool.State != nil && *didPool.State != "deleted" {
-			resources[*didPool.Id] = &resourceExporter.ResourceMeta{BlockLabel: *didPool.StartPhoneNumber}
+			blockHash, err := util.QuickHashFields(didPool.StartPhoneNumber, didPool.EndPhoneNumber, didPool.Provider)
+			if err != nil {
+				return nil, diag.FromErr(err)
+			}
+			resources[*didPool.Id] = &resourceExporter.ResourceMeta{BlockLabel: *didPool.StartPhoneNumber, BlockHash: blockHash}
 		}
 	}
 	return resources, nil

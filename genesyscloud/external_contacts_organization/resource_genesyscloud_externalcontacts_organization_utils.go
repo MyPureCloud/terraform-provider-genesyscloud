@@ -3,13 +3,13 @@ package external_contacts_organization
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -45,9 +45,6 @@ func getExternalContactsOrganizationFromResourceData(d *schema.ResourceData) (pl
 		externalOrganization.Websites = &websites
 	}
 
-	if d.Get("primary_contact_id").(string) != "" {
-		externalOrganization.PrimaryContactId = platformclientv2.String(d.Get("primary_contact_id").(string))
-	}
 	schema, err := BuildOrganizationSchema(d.Get("schema").([]interface{}))
 	if err != nil {
 		return externalOrganization, err

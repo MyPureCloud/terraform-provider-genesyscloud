@@ -10,8 +10,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -38,7 +38,7 @@ func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.R
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No task management worktype %s status found with name %s", worktypeId, name), resp))
 		}
 
-		d.SetId(worktypeStatusId)
+		d.SetId(worktypeId + "/" + worktypeStatusId)
 		return nil
 	})
 }

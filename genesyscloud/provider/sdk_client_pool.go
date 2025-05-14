@@ -3,18 +3,18 @@ package provider
 import (
 	"context"
 	"fmt"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"log"
 	"math"
 	"sync"
 	"sync/atomic"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 const (
@@ -49,19 +49,19 @@ type SDKClientPool struct {
 }
 
 type SDKClientPoolConfig struct {
-	MaxClients     int
 	AcquireTimeout time.Duration
 	InitTimeout    time.Duration
+	MaxClients     int
 	DebugLogging   bool
 }
 
 type poolMetrics struct {
-	mu              sync.RWMutex
+	activeClients   int64
+	acquireTimeouts int64
 	totalAcquires   int64
 	totalReleases   int64
-	acquireTimeouts int64
 	lastAcquireTime time.Time
-	activeClients   int64
+	mu              sync.RWMutex
 }
 
 func (m *poolMetrics) recordAcquire() {

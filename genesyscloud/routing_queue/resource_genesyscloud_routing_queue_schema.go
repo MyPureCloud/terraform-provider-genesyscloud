@@ -1,22 +1,22 @@
 package routing_queue
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	architectUserPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/group"
-	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	routingSmsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"terraform-provider-genesyscloud/genesyscloud/scripts"
-	"terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectUserPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingSmsAddresses "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -58,7 +58,7 @@ var (
 			"library_ids": {
 				Description: "Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.",
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -143,6 +143,7 @@ var (
 				Description:  "The mode callbacks will use on this queue.",
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
 			"enable_auto_dial_and_end": {
@@ -159,6 +160,42 @@ var (
 			"auto_end_delay_seconds": {
 				Description: "Auto End Delay Seconds.",
 				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"auto_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for an auto-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"manual_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for a manual-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"pacing_modifier": {
+				Description:  "Controls the maximum number of outbound calls at one time when mode is CustomerFirst.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				ValidateFunc: validation.FloatAtLeast(1),
+			},
+			"live_voice_reaction_type": {
+				Description: "The action to take if a live voice is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"live_voice_flow_id": {
+				Description: "The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"answering_machine_reaction_type": {
+				Description: "The action to take if an answering machine is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"answering_machine_flow_id": {
+				Description: "The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.",
+				Type:        schema.TypeString,
 				Optional:    true,
 			},
 		},
@@ -565,7 +602,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
 			},
@@ -601,6 +637,12 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"last_agent_routing_mode": {
+				Description:  "The Last Agent Routing Mode for the queue.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Disabled", "QueueMembersOnly", "AnyAgent"}, false),
+			},
 		},
 	}
 }
@@ -609,25 +651,27 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                              {RefType: authDivision.ResourceType},
-			"queue_flow_id":                            {RefType: architectFlow.ResourceType},
-			"email_in_queue_flow_id":                   {RefType: architectFlow.ResourceType},
-			"message_in_queue_flow_id":                 {RefType: architectFlow.ResourceType},
-			"whisper_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
-			"on_hold_prompt_id":                        {RefType: architectUserPrompt.ResourceType},
-			"outbound_messaging_sms_address_id":        {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
-			"default_script_ids.*":                     {RefType: scripts.ResourceType},
-			"outbound_email_address.route_id":          {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
-			"outbound_email_address.domain_id":         {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
-			"bullseye_rings.skills_to_remove":          {RefType: routingSkill.ResourceType},
-			"members.user_id":                          {RefType: user.ResourceType},
-			"wrapup_codes":                             {RefType: routingWrapupcode.ResourceType},
-			"skill_groups":                             {RefType: routingSkillGroup.ResourceType},
-			"teams":                                    {RefType: team.ResourceType},
-			"groups":                                   {RefType: group.ResourceType},
-			"conditional_group_routing_rules.queue_id": {RefType: ResourceType},
-			"direct_routing.backup_queue_id":           {RefType: ResourceType},
-			"canned_response_libraries.library_ids.*":  {RefType: responseManagementLibrary.ResourceType},
+			"division_id":                                       {RefType: authDivision.ResourceType},
+			"queue_flow_id":                                     {RefType: architectFlow.ResourceType},
+			"email_in_queue_flow_id":                            {RefType: architectFlow.ResourceType},
+			"message_in_queue_flow_id":                          {RefType: architectFlow.ResourceType},
+			"whisper_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
+			"on_hold_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
+			"outbound_messaging_sms_address_id":                 {RefType: routingSmsAddresses.ResourceType}, // Ref type not yet defined
+			"default_script_ids.*":                              {RefType: scripts.ResourceType},
+			"outbound_email_address.route_id":                   {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
+			"outbound_email_address.domain_id":                  {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
+			"bullseye_rings.skills_to_remove":                   {RefType: routingSkill.ResourceType},
+			"members.user_id":                                   {RefType: user.ResourceType},
+			"wrapup_codes":                                      {RefType: routingWrapupcode.ResourceType},
+			"skill_groups":                                      {RefType: routingSkillGroup.ResourceType},
+			"teams":                                             {RefType: team.ResourceType},
+			"groups":                                            {RefType: group.ResourceType},
+			"conditional_group_routing_rules.queue_id":          {RefType: ResourceType},
+			"direct_routing.backup_queue_id":                    {RefType: ResourceType},
+			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
+			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
+			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},

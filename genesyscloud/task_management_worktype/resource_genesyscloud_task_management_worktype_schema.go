@@ -1,9 +1,9 @@
 package task_management_worktype
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -124,6 +124,17 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeInt,
 			},
+			`disable_default_status_creation`: {
+				Description: `Optionally set this flag to disable Default Status creation`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
+			`default_script_id`: {
+				Description: `The default script for Workitems created from the Worktype.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 }
@@ -139,6 +150,7 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 			"default_queue_id":    {RefType: "genesyscloud_routing_queue"},
 			"default_skills_ids":  {RefType: "genesyscloud_routing_skill"},
 			"schema_id":           {RefType: "genesyscloud_task_management_workitem_schema"},
+			"default_script_id":   {RefType: "genesyscloud_script"},
 		},
 	}
 }

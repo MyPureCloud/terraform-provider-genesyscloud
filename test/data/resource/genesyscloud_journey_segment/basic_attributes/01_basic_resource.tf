@@ -1,7 +1,6 @@
 resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
   display_name            = "terraform_test_-TEST-CASE-"
   color                   = "#008000"
-  scope                   = "Session"
   should_display_to_agent = false
   context {
     patterns {
@@ -27,4 +26,5 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
       session_type = "web"
     }
   }
+  assignment_expiration_days = 1
 }

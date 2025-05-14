@@ -3,13 +3,14 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,6 +60,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
 		assert.Equal(t, testRoutingQueue.CannedResponseLibraries, routingQueue.CannedResponseLibraries, "Canned Response Libraries not equal")
+		assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, *routingQueue.LastAgentRoutingMode, "LastAgentRoutingMode Not Equal")
 		return queue, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
@@ -85,7 +87,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 	internalProxy = queueProxy
 	defer func() {
 		internalProxy = nil
-		err := unsetRoutingQueueUnitTestsEnvVar()
+		err = unsetRoutingQueueUnitTestsEnvVar()
 		if err != nil {
 			t.Logf("Failed to unset env variable %s: %s", unitTestsAreActiveEnv, err.Error())
 		}
@@ -95,6 +97,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
 	resourceSchema := ResourceRoutingQueue().Schema
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 	resourceDataMap := buildRoutingQueueResourceMap(tId, *testRoutingQueue.Name, testRoutingQueue)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
@@ -109,6 +112,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "unit test routing queue"
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 
 	queueProxy := &RoutingQueueProxy{}
 	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -154,9 +158,8 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 
 	//Grab our defined schema
 	resourceSchema := ResourceRoutingQueue().Schema
-	//Setup a map of values
-	resourceDataMap := buildRoutingQueueResourceMap(tId, *testRoutingQueue.Name, testRoutingQueue)
 
+	resourceDataMap := buildRoutingQueueResourceMap(tId, *testRoutingQueue.Name, testRoutingQueue)
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
@@ -167,9 +170,9 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	routingQueue := getRoutingQueueFromResourceData(d)
 	routingQueue.Id = platformclientv2.String(d.Id())
 
-	assert.Equal(t, testRoutingQueue.Id, routingQueue.Id, "ID Not Equal")
-	assert.Equal(t, testRoutingQueue.Name, routingQueue.Name, "Name Not Equal")
-	assert.Equal(t, testRoutingQueue.Description, routingQueue.Description, "Description Not Equal")
+	assert.Equal(t, *testRoutingQueue.Id, d.Id(), "ID Not Equal")
+	assert.Equal(t, *testRoutingQueue.Name, d.Get("name").(string), "Name Not Equal")
+	assert.Equal(t, *testRoutingQueue.Description, d.Get("description").(string), "Description Not Equal")
 	assert.Equal(t, testRoutingQueue.ScoringMethod, routingQueue.ScoringMethod, "Scoring Method Not Equal")
 	assert.Equal(t, testRoutingQueue.SkillEvaluationMethod, routingQueue.SkillEvaluationMethod, "Skill Evaluation Method Not Equal")
 	assert.Equal(t, testRoutingQueue.AutoAnswerOnly, routingQueue.AutoAnswerOnly, "Auto Answer Only Not Equal")
@@ -193,12 +196,14 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 	assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 	assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+	assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, d.Get("last_agent_routing_mode").(string), "LastAgentRoutingMode Not Equal")
 }
 
 func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "updated queue name"
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 
 	queueProxy := &RoutingQueueProxy{}
 	queueProxy.getRoutingQueueByIdAttr = func(ctx context.Context, proxy *RoutingQueueProxy, id string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -240,6 +245,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+		assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, *routingQueue.LastAgentRoutingMode, "LastAgentRoutingMode Not Equal")
 
 		return nil, nil, nil
 	}
@@ -294,6 +300,7 @@ func TestUnitResourceRoutingQueueDelete(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "unit test routing queue"
 	testRoutingQueue := generateRoutingQueueData(tId, tName)
+	testRoutingQueue.CannedResponseLibraries = nil // setting this to nil because TestResourceDataRaw seems to have problems with TypeSet
 
 	queueProxy := &RoutingQueueProxy{}
 	queueProxy.deleteRoutingQueueAttr = func(ctx context.Context, p *RoutingQueueProxy, queueId string, forceDelete bool) (*platformclientv2.APIResponse, error) {
@@ -341,6 +348,149 @@ func TestUnitResourceRoutingQueueDelete(t *testing.T) {
 	assert.Equal(t, tId, d.Id())
 }
 
+func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []any
+		expected *platformclientv2.Callbackmediasettings
+	}{
+		{
+			name:     "Empty input",
+			input:    []any{},
+			expected: nil,
+		},
+		{
+			name:     "Nil input",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name: "All fields populated",
+			input: []any{
+				map[string]interface{}{
+					"alerting_timeout_sec":             30,
+					"service_level_percentage":         0.8,
+					"service_level_duration_ms":        20000,
+					"enable_auto_answer":               true,
+					"auto_end_delay_seconds":           20,
+					"auto_dial_delay_seconds":          4,
+					"enable_auto_dial_and_end":         false,
+					"mode":                             "AgentFirst",
+					"auto_answer_alert_tone_seconds":   float64(5),
+					"manual_answer_alert_tone_seconds": float64(6),
+					"pacing_modifier":                  float64(3),
+					"live_voice_reaction_type":         "HangUp",
+					"live_voice_flow_id":               "123",
+					"answering_machine_reaction_type":  "Transfer",
+					"answering_machine_flow_id":        "321",
+				},
+			},
+			expected: &platformclientv2.Callbackmediasettings{
+				AlertingTimeoutSeconds:       platformclientv2.Int(30),
+				ServiceLevel:                 &platformclientv2.Servicelevel{Percentage: platformclientv2.Float64(0.8), DurationMs: platformclientv2.Int(20000)},
+				EnableAutoAnswer:             platformclientv2.Bool(true),
+				AutoEndDelaySeconds:          platformclientv2.Int(20),
+				AutoDialDelaySeconds:         platformclientv2.Int(4),
+				EnableAutoDialAndEnd:         platformclientv2.Bool(false),
+				Mode:                         platformclientv2.String("AgentFirst"),
+				AutoAnswerAlertToneSeconds:   platformclientv2.Float64(5),
+				ManualAnswerAlertToneSeconds: platformclientv2.Float64(6),
+				PacingModifier:               platformclientv2.Float64(3),
+				LiveVoiceReactionType:        platformclientv2.String("HangUp"),
+				LiveVoiceFlow:                &platformclientv2.Domainentityref{Id: platformclientv2.String("123")},
+				AnsweringMachineReactionType: platformclientv2.String("Transfer"),
+				AnsweringMachineFlow:         &platformclientv2.Domainentityref{Id: platformclientv2.String("321")},
+			},
+		},
+		{
+			name: "Zero values are not built when they shouldn't be & vice versa",
+			input: []any{
+				map[string]interface{}{
+					"alerting_timeout_sec":             0,
+					"service_level_percentage":         float64(0),
+					"service_level_duration_ms":        0,
+					"enable_auto_answer":               false,
+					"auto_end_delay_seconds":           0,
+					"auto_dial_delay_seconds":          0,
+					"enable_auto_dial_and_end":         false,
+					"mode":                             "",
+					"auto_answer_alert_tone_seconds":   float64(0),
+					"manual_answer_alert_tone_seconds": float64(0),
+					"pacing_modifier":                  float64(0),
+					"live_voice_reaction_type":         "",
+					"live_voice_flow_id":               "",
+					"answering_machine_reaction_type":  "",
+					"answering_machine_flow_id":        "",
+				},
+			},
+			expected: &platformclientv2.Callbackmediasettings{
+				AlertingTimeoutSeconds:       platformclientv2.Int(0),
+				ServiceLevel:                 &platformclientv2.Servicelevel{Percentage: platformclientv2.Float64(0), DurationMs: platformclientv2.Int(0)},
+				EnableAutoAnswer:             platformclientv2.Bool(false),
+				AutoEndDelaySeconds:          platformclientv2.Int(0),
+				AutoDialDelaySeconds:         platformclientv2.Int(0),
+				EnableAutoDialAndEnd:         platformclientv2.Bool(false),
+				Mode:                         nil,
+				AutoAnswerAlertToneSeconds:   platformclientv2.Float64(0),
+				ManualAnswerAlertToneSeconds: platformclientv2.Float64(0),
+				PacingModifier:               nil,
+				LiveVoiceReactionType:        nil,
+				LiveVoiceFlow:                nil,
+				AnsweringMachineReactionType: nil,
+				AnsweringMachineFlow:         nil,
+			},
+		},
+		{
+			name: "Empty map produces all nil fields",
+			input: []any{
+				map[string]interface{}{},
+			},
+			expected: &platformclientv2.Callbackmediasettings{
+				AlertingTimeoutSeconds:       nil,
+				ServiceLevel:                 nil,
+				EnableAutoAnswer:             nil,
+				AutoEndDelaySeconds:          nil,
+				AutoDialDelaySeconds:         nil,
+				EnableAutoDialAndEnd:         nil,
+				Mode:                         nil,
+				AutoAnswerAlertToneSeconds:   nil,
+				ManualAnswerAlertToneSeconds: nil,
+				PacingModifier:               nil,
+				LiveVoiceReactionType:        nil,
+				LiveVoiceFlow:                nil,
+				AnsweringMachineReactionType: nil,
+				AnsweringMachineFlow:         nil,
+			},
+		},
+	}
+
+	// Run tests
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := buildSdkMediaSettingCallback(tt.input)
+
+			// Compare expected and actual results
+			if tt.expected == nil && actual != nil {
+				t.Errorf("Expected nil but got %v", actual)
+				return
+			}
+			if tt.expected != nil && actual == nil {
+				t.Errorf("Expected %v but got nil", tt.expected)
+				return
+			}
+
+			if tt.expected == nil || actual == nil {
+				return
+			}
+
+			if !util.EquivalentJsons(tt.expected.String(), actual.String()) {
+				t.Errorf("JSON objects are not equal.\nExpected: %s\nActual: %s\n", tt.expected.String(), actual.String())
+				return
+			}
+		})
+	}
+}
+
 func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue platformclientv2.Createqueuerequest) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
 		"id":                                tId,
@@ -376,7 +526,8 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"whisper_prompt_id":                              *testRoutingQueue.WhisperPrompt.Id,
 		"on_hold_prompt_id":                              *testRoutingQueue.OnHoldPrompt.Id,
 		"default_script_ids":                             flattenDefaultScripts(*testRoutingQueue.DefaultScripts),
-		"canned_response_libraries":                      flattenCannedResponse(*&testRoutingQueue.CannedResponseLibraries),
+		"canned_response_libraries":                      flattenCannedResponse(testRoutingQueue.CannedResponseLibraries),
+		"last_agent_routing_mode":                        *testRoutingQueue.LastAgentRoutingMode,
 	}
 	return resourceDataMap
 }
@@ -385,12 +536,13 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 	var (
 		description           = "Unit Test Description"
 		scoringMethod         = "TimestampAndPriority"
-		skillEvaluationMethod = "BEST"
+		skillEvaluationMethod = "ALL"
 		callingPartyName      = "Unit Test Inc."
 		callingPartyNumber    = "123"
 		peerId                = "5696a54c-4009-4e63-826c-311679deeb97"
 		sourceQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		backupQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
+		lastAgentRoutingMode  = "QueueMembersOnly"
 
 		acwWrapupPrompt = "MANDATORY_TIMEOUT"
 		acwTimeoutMs    = 300000
@@ -508,6 +660,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		DefaultScripts:               &defaultScripts,
 		OutboundMessagingAddresses:   &messagingAddress,
 		CannedResponseLibraries:      &cannedResponseLibraries,
+		LastAgentRoutingMode:         &lastAgentRoutingMode,
 	}
 }
 
@@ -539,6 +692,7 @@ func convertCreateQueuetoQueue(req platformclientv2.Createqueuerequest) *platfor
 		OnHoldPrompt:                 req.OnHoldPrompt,
 		DefaultScripts:               req.DefaultScripts,
 		CannedResponseLibraries:      req.CannedResponseLibraries,
+		LastAgentRoutingMode:         req.LastAgentRoutingMode,
 	}
 }
 
@@ -589,10 +743,12 @@ func generateCallbackMediaSettings() platformclientv2.Callbackmediasettings {
 			Percentage: platformclientv2.Float64(0.7),
 			DurationMs: platformclientv2.Int(10000),
 		},
-		EnableAutoDialAndEnd: platformclientv2.Bool(true),
-		AutoDialDelaySeconds: platformclientv2.Int(10),
-		AutoEndDelaySeconds:  platformclientv2.Int(10),
-		Mode:                 platformclientv2.String("AgentFirst"),
+		EnableAutoDialAndEnd:         platformclientv2.Bool(true),
+		AutoDialDelaySeconds:         platformclientv2.Int(10),
+		AutoEndDelaySeconds:          platformclientv2.Int(10),
+		Mode:                         platformclientv2.String("AgentFirst"),
+		AutoAnswerAlertToneSeconds:   platformclientv2.Float64(12),
+		ManualAnswerAlertToneSeconds: platformclientv2.Float64(10),
 	}
 }
 
