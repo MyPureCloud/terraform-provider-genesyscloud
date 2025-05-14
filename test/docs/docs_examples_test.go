@@ -159,7 +159,7 @@ func TestExampleResources(t *testing.T) {
 
 		// STOPPED HERE
 
-		// "genesyscloud_telephony_providers_edges_did_pool",
+		"genesyscloud_telephony_providers_edges_did_pool",
 		// "genesyscloud_telephony_providers_edges_edge_group",
 		// "genesyscloud_telephony_providers_edges_extension_pool",
 		// "genesyscloud_telephony_providers_edges_phone",
