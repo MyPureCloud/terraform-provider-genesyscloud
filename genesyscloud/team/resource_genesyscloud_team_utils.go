@@ -7,10 +7,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"strings"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
@@ -97,9 +98,16 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 		MemberIds: &membersToAdd,
 	}
 
-	_, resp, err := proxy.createMembers(ctx, d.Id(), *teamMembers)
+	teamListingResponse, resp, err := proxy.createMembers(ctx, d.Id(), *teamMembers)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members %s: %s", d.Id(), err), resp)
+	}
+	if len(*teamListingResponse.Failures) > 0 {
+		failureReasons := make([]string, len(*teamListingResponse.Failures))
+		for i, failure := range *teamListingResponse.Failures {
+			failureReasons[i] = fmt.Sprintf("Member %s: %s", *failure.Id, *failure.Reason)
+		}
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members for team %s: %v", d.Id(), failureReasons), fmt.Errorf("%v", failureReasons))
 	}
 
 	return nil
