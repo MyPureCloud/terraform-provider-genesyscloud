@@ -2,6 +2,7 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
@@ -16,12 +17,12 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 	var (
 		addressResLabel  = "address"
 		addressDataLabel = "address_data"
-		name             = "name-1"
-		street           = "street-1"
-		city             = "city-1"
-		region           = "region-1"
-		postalCode       = "postal-code-1"
-		countryCode      = "country-code-1"
+		name             = "tf test address " + uuid.NewString()
+		street           = "Strasse 77"
+		city             = "Berlin"
+		region           = "South"
+		postalCode       = "280991"
+		countryCode      = "GR"
 	)
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
 		postalCode = "90080"

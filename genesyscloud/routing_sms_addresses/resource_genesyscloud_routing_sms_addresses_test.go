@@ -19,11 +19,11 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 		resourceLabel = "AD-123"
 		fullPath      = ResourceType + "." + resourceLabel
 		name          = "name-1"
-		street        = "street-1"
-		city          = "city-1"
-		region        = "region-1"
-		postalCode    = "postal-code-1"
-		countryCode   = "country-code-1"
+		street        = "Strasse 66"
+		city          = "Berlin"
+		region        = "Berlin"
+		postalCode    = "280990"
+		countryCode   = "GR"
 		destroyValue  = false //This type of org does not go out to SMS vendors. When you try and create an address in this case its trying to save it with the vendor, getting a mocked response and not storing any value. Hence cannot be deleted.
 	)
 
@@ -37,20 +37,6 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 		countryCode = "US"
 		destroyValue = true
 	}
-
-	config := generateRoutingSmsAddressesResource(
-		resourceLabel,
-		util.NullValue, // Optional
-		street,
-		city,
-		region,
-		postalCode,
-		countryCode,
-		util.FalseValue,
-	)
-
-	fmt.Println(config)
-	t.Skip()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -66,6 +52,15 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 					postalCode,
 					countryCode,
 					util.FalseValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullPath, "name", ""),
+					resource.TestCheckResourceAttr(fullPath, "street", street),
+					resource.TestCheckResourceAttr(fullPath, "city", city),
+					resource.TestCheckResourceAttr(fullPath, "region", region),
+					resource.TestCheckResourceAttr(fullPath, "postal_code", postalCode),
+					resource.TestCheckResourceAttr(fullPath, "country_code", countryCode),
+					resource.TestCheckResourceAttr(fullPath, "auto_correct_address", util.FalseValue),
 				),
 			},
 			{
