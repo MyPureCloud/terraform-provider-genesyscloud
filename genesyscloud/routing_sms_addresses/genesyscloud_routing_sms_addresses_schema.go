@@ -36,7 +36,7 @@ func ResourceRoutingSmsAddress() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `Name associated with this address`,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeString,
 			},
