@@ -3,11 +3,11 @@ package provider
 import (
 	"bytes"
 	"context"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"log"
 	"os"
 	"strings"
 	"sync"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"testing"
 	"time"
 

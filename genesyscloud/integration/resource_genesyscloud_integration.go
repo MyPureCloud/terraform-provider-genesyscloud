@@ -3,16 +3,16 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

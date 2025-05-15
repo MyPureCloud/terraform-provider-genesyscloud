@@ -1,9 +1,9 @@
 package outbound_campaign
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -132,12 +132,12 @@ func ResourceOutboundCampaign() *schema.Resource {
 			},
 			`caller_name`: {
 				Description: `The caller id name to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`caller_address`: {
 				Description: `The caller id phone number to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`outbound_line_count`: {

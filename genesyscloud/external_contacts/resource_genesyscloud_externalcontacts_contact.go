@@ -4,17 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -54,7 +55,30 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 			continue
 		}
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
-		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalContact.Id}
+		blockLabel := ""
+		if externalContact.ExternalOrganization != nil {
+			externalOrg, resp, err := ep.getExternalContactsOrganizationById(ctx, *externalContact.ExternalOrganization.Id)
+			if err != nil {
+				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get external contact organization %s: %v", *externalContact.ExternalOrganization.Id, err), resp)
+			}
+			if externalOrg != nil {
+				blockLabel = blockLabel + "_" + *externalOrg.Name
+			}
+		}
+		if externalContact.LastName != nil {
+			blockLabel = blockLabel + "_" + *externalContact.LastName
+		}
+		if externalContact.FirstName != nil {
+			blockLabel = blockLabel + "_" + *externalContact.FirstName
+		}
+		if blockLabel == "" {
+			blockLabel = *externalContact.Id
+		}
+		blockHash, err := util.QuickHashFields(externalContact.ExternalIds)
+		if err != nil {
+			return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to generate quick hash for external contact %s", *externalContact.Id), err)
+		}
+		resources[*externalContact.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel, BlockHash: blockHash}
 	}
 	return resources, nil
 }

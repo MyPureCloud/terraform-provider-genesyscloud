@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
-	testrunner "terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	testrunner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

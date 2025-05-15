@@ -3,8 +3,8 @@ package task_management_worktype_status_transition
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"

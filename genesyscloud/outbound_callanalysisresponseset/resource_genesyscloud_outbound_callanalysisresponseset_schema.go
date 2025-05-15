@@ -1,9 +1,9 @@
 package outbound_callanalysisresponseset
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -155,6 +155,19 @@ func ResourceOutboundCallanalysisresponseset() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				Type:        schema.TypeBool,
+			},
+			`amd_speech_distinguish_enabled`: {
+				Description: `Whether to enable answering machine detection`,
+				Optional:    true,
+				Default:     true,
+				Type:        schema.TypeBool,
+			},
+			`live_speaker_detection_mode`: {
+				Description:  `Setting level of live speaker detection based on ringbacks. Valid values: Disabled, Low, Medium, High.`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Disabled", "Low", "Medium", "High"}, true),
 			},
 		},
 	}

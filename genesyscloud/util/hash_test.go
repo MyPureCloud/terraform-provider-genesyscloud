@@ -12,59 +12,70 @@ func TestUnitQuickHashFields(t *testing.T) {
 	numPtr := &num
 
 	tests := []struct {
-		name    string
-		values  []interface{}
-		wantErr bool
+		name     string
+		values   []interface{}
+		wantErr  bool
+		wantHash bool
 	}{
 		{
-			name:    "No inputs",
-			values:  []interface{}{},
-			wantErr: true,
+			name:     "No inputs",
+			values:   []interface{}{},
+			wantErr:  true,
+			wantHash: false,
 		},
 		{
-			name:    "Single string input",
-			values:  []interface{}{"test"},
-			wantErr: false,
+			name:     "Single string input",
+			values:   []interface{}{"test"},
+			wantErr:  false,
+			wantHash: true,
 		},
 		{
-			name:    "Single nil input",
-			values:  []interface{}{nil},
-			wantErr: false,
+			name:     "Single nil input",
+			values:   []interface{}{nil},
+			wantErr:  false,
+			wantHash: false,
 		},
 		{
-			name:    "String pointer input",
-			values:  []interface{}{strPtr},
-			wantErr: false,
+			name:     "String pointer input",
+			values:   []interface{}{strPtr},
+			wantErr:  false,
+			wantHash: true,
 		},
 		{
-			name:    "Nil string pointer input",
-			values:  []interface{}{nilStrPtr},
-			wantErr: false,
+			name:     "Nil string pointer input",
+			values:   []interface{}{nilStrPtr},
+			wantErr:  false,
+			wantHash: false,
 		},
 		{
-			name:    "Single int input",
-			values:  []interface{}{123},
-			wantErr: false,
+			name:     "Single int input",
+			values:   []interface{}{123},
+			wantErr:  false,
+			wantHash: true,
 		},
 		{
-			name:    "Single int pointer input",
-			values:  []interface{}{numPtr},
-			wantErr: false,
+			name:     "Single int pointer input",
+			values:   []interface{}{numPtr},
+			wantErr:  false,
+			wantHash: true,
 		},
 		{
-			name:    "Multiple string inputs",
-			values:  []interface{}{"test1", "test2", "test3"},
-			wantErr: false,
+			name:     "Multiple string inputs",
+			values:   []interface{}{"test1", "test2", "test3"},
+			wantErr:  false,
+			wantHash: true,
 		},
 		{
-			name:    "Mixed type inputs",
-			values:  []interface{}{"test", 123, true},
-			wantErr: false,
+			name:     "Mixed type inputs",
+			values:   []interface{}{"test", 123, true},
+			wantErr:  false,
+			wantHash: true,
 		},
 		{
-			name:    "Multiple nil inputs",
-			values:  []interface{}{nil, nil, nil},
-			wantErr: false,
+			name:     "Multiple nil inputs",
+			values:   []interface{}{nil, nil, nil},
+			wantErr:  false,
+			wantHash: false,
 		},
 		{
 			name: "Mixed pointer and value types",
@@ -75,7 +86,8 @@ func TestUnitQuickHashFields(t *testing.T) {
 				nilStrPtr,
 				nil,
 			},
-			wantErr: false,
+			wantErr:  false,
+			wantHash: true,
 		},
 	}
 
@@ -88,7 +100,7 @@ func TestUnitQuickHashFields(t *testing.T) {
 				return
 			}
 
-			if !tt.wantErr {
+			if tt.wantHash {
 				// Verify hash is exactly 16 characters
 				if len(got) != 16 {
 					t.Errorf("QuickHashFields() returned hash of length %d, want 16", len(got))
@@ -242,7 +254,7 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				nil,
 			},
 			wantErr:      false,
-			expectedHash: "173cb74d538c5b23",
+			expectedHash: "17f7261250799f2d",
 		},
 	}
 
