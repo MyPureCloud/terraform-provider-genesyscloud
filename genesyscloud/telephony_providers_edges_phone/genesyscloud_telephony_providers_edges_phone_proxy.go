@@ -294,6 +294,10 @@ func updatePhoneFn(ctx context.Context, p *phoneProxy, phoneId string, phoneConf
 // deletePhoneFn is an implementation function for deleting a Genesys Cloud Phone
 func deletePhoneFn(ctx context.Context, p *phoneProxy, phoneId string) (response *platformclientv2.APIResponse, err error) {
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesPhone(phoneId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.phoneCache, phoneId)
 	return resp, err
 }
 

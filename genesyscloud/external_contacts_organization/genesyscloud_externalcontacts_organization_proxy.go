@@ -3,8 +3,9 @@ package external_contacts_organization
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
@@ -179,5 +180,9 @@ func updateExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 // deleteExternalContactsOrganizationFn is an implementation function for deleting a Genesys Cloud external contacts organization
 func deleteExternalContactsOrganizationFn(ctx context.Context, p *externalContactsOrganizationProxy, id string) (apiResponse *platformclientv2.APIResponse, err error) {
 	_, response, err := p.externalContactsApi.DeleteExternalcontactsOrganization(id)
+	if err != nil {
+		return response, fmt.Errorf("failed to delete external contacts organization: %s, %v", id, err)
+	}
+	rc.DeleteCacheItem(p.externalOrganizationCache, id)
 	return response, err
 }
