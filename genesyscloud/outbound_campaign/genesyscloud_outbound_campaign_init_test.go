@@ -14,6 +14,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"log"
 	"sync"
@@ -63,6 +64,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[outboundRuleset.ResourceType] = outboundRuleset.ResourceOutboundRuleset()
 	providerResources[obCallableTimeset.ResourceType] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[scripts.ResourceType] = scripts.ResourceScript()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
