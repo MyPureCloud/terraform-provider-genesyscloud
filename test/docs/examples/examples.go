@@ -418,17 +418,16 @@ func buildAttributeTestChecks(resourceBlockType, resourceBlockLabel string, reso
 }
 
 // GenerateSkipFunc creates a function to determine if the test should be skipped
-func (e *Example) GenerateSkipFunc(domain string, authorizationProducts []string) func() (bool, error) {
-	return func() (bool, error) {
-		if e.Locals == nil || e.SkipIfConstraints == nil {
-			return false, nil
-		}
-		shouldSkip := e.SkipIfConstraints.ShouldSkip(domain, authorizationProducts)
-		if shouldSkip {
-			fmt.Printf("Skipping test due to skip constraints: %v\n", e.SkipIfConstraints)
-		}
-		return shouldSkip, nil
+func (e *Example) GenerateSkipFunc(domain string, authorizationProducts []string) bool {
+
+	if e.Locals == nil || e.SkipIfConstraints == nil {
+		return false
 	}
+	shouldSkip := e.SkipIfConstraints.ShouldSkip(domain, authorizationProducts)
+	if shouldSkip {
+		fmt.Printf("Skipping test due to skip constraints: %v\n", e.SkipIfConstraints)
+	}
+	return shouldSkip
 }
 
 func (s *SkipIfConstraints) String() string {

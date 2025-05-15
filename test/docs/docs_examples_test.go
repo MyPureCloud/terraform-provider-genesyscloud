@@ -2,6 +2,7 @@ package testing
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -76,7 +77,7 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_flow",
 		// "genesyscloud_flow_loglevel",
 		// "genesyscloud_flow_milestone",
-		"genesyscloud_flow_outcome",
+		// "genesyscloud_flow_outcome",
 		// "genesyscloud_group",
 		// "genesyscloud_group_roles",
 		// "genesyscloud_idp_adfs",
@@ -163,12 +164,12 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_telephony_providers_edges_phonebasesettings",
 		// "genesyscloud_telephony_providers_edges_site",
 		// "genesyscloud_telephony_providers_edges_site_outbound_route",
-		// "genesyscloud_telephony_providers_edges_trunk",
+		// "genesyscloud_telephony_providers_edges_trunk", // DEPRECATE
 		// "genesyscloud_telephony_providers_edges_trunkbasesettings",
 
 		// STOPPED HERE
 
-		// "genesyscloud_tf_export",
+		"genesyscloud_tf_export",
 		// "genesyscloud_user",
 		// "genesyscloud_user_roles",
 		// "genesyscloud_webdeployments_configuration",
@@ -187,6 +188,8 @@ func TestExampleResources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	successfulResourceTypes := make(map[string]string, len(resources))
 
 	for _, resourceType := range resources {
 		exampleDir := filepath.Join(wd, "..", "..", "examples", "resources", resourceType)
@@ -212,6 +215,8 @@ func TestExampleResources(t *testing.T) {
 				})
 			}
 
+			successfulResourceTypes[resourceType] = "success"
+
 			// Run test
 			resource.Test(t, resource.TestCase{
 				PreCheck: func() {
@@ -223,6 +228,10 @@ func TestExampleResources(t *testing.T) {
 							util.PrintStringWithLineNumbers(resourceExampleContent, 12)
 						}
 					}
+				},
+				ErrorCheck: func(err error) error {
+					successfulResourceTypes[resourceType] = "errored"
+					return err
 				},
 				ProviderFactories: providerFactories,
 				ExternalProviders: map[string]resource.ExternalProvider{
@@ -237,8 +246,14 @@ func TestExampleResources(t *testing.T) {
 				},
 				Steps: []resource.TestStep{
 					{
-						SkipFunc: example.GenerateSkipFunc(domain, authorizationProducts),
-						Config:   string(resourceExampleContent),
+						SkipFunc: func() (bool, error) {
+							shouldSkip := example.GenerateSkipFunc(domain, authorizationProducts)
+							if shouldSkip {
+								successfulResourceTypes[resourceType] = "skipped"
+							}
+							return shouldSkip, nil
+						},
+						Config: string(resourceExampleContent),
 						Check: resource.ComposeTestCheckFunc(
 							// arbitrary check with sleep
 							checks...,
@@ -248,6 +263,9 @@ func TestExampleResources(t *testing.T) {
 					},
 				},
 			})
+			if t.Failed() {
+				successfulResourceTypes[resourceType] = "failed"
+			}
 
 			if !planOnly {
 				// Pause for five seconds to allow GC API to finish processing delete
@@ -255,5 +273,30 @@ func TestExampleResources(t *testing.T) {
 			}
 
 		})
+	}
+
+	io.WriteString(os.Stdout, "The following resources were successfull:\n")
+	for srt, status := range successfulResourceTypes {
+		if status == "success" {
+			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srt))
+		}
+	}
+	io.WriteString(os.Stdout, "The following resources were errored:\n")
+	for srt, status := range successfulResourceTypes {
+		if status == "errored" {
+			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srt))
+		}
+	}
+	io.WriteString(os.Stdout, "The following resources were failed:\n")
+	for srt, status := range successfulResourceTypes {
+		if status == "failed" {
+			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srt))
+		}
+	}
+	io.WriteString(os.Stdout, "The following resources were skipped:\n")
+	for srt, status := range successfulResourceTypes {
+		if status == "skipped" {
+			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srt))
+		}
 	}
 }
