@@ -76,7 +76,7 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_flow",
 		// "genesyscloud_flow_loglevel",
 		// "genesyscloud_flow_milestone",
-		// "genesyscloud_flow_outcome",
+		"genesyscloud_flow_outcome",
 		// "genesyscloud_group",
 		// "genesyscloud_group_roles",
 		// "genesyscloud_idp_adfs",
@@ -156,10 +156,7 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_task_management_worktype_status",
 		// "genesyscloud_task_management_worktype_status_transition",
 		// "genesyscloud_team",
-
-		// STOPPED HERE
-
-		"genesyscloud_telephony_providers_edges_did_pool",
+		// "genesyscloud_telephony_providers_edges_did_pool",
 		// "genesyscloud_telephony_providers_edges_edge_group",
 		// "genesyscloud_telephony_providers_edges_extension_pool",
 		// "genesyscloud_telephony_providers_edges_phone",
@@ -168,6 +165,9 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_telephony_providers_edges_site_outbound_route",
 		// "genesyscloud_telephony_providers_edges_trunk",
 		// "genesyscloud_telephony_providers_edges_trunkbasesettings",
+
+		// STOPPED HERE
+
 		// "genesyscloud_tf_export",
 		// "genesyscloud_user",
 		// "genesyscloud_user_roles",
