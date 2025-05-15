@@ -19,7 +19,7 @@ type TestAssertion struct {
 // Tests the original sanitizing algorithm
 func TestUnitSanitizeResourceOriginal(t *testing.T) {
 	randNumSuffixFn := func(amount string) string {
-		return fmt.Sprintf(`_[0-9_]{%s}`, amount)
+		return fmt.Sprintf(`[0-9_]{%s}`, amount)
 	}
 
 	metaMap := make(ResourceIDMetaMap)
@@ -40,47 +40,47 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 	assertions := [9]TestAssertion{
 		{
 			input:  metaMap["1"].BlockLabel,
-			output: "wrapupcodemappings" + randNumSuffixFn("9"),
+			output: "wrapupcodemappings",
 			name:   "actual resource label",
 		},
 		{
 			input:  metaMap["2"].BlockLabel,
-			output: "foobar" + randNumSuffixFn("9"),
+			output: "foobar",
 			name:   "any label",
 		},
 		{
 			input:  metaMap["3"].BlockLabel,
-			output: "wrapupcode___mappings" + randNumSuffixFn("9,"),
+			output: "wrapupcode___mappings" + randNumSuffixFn("0,11"),
 			name:   "ascii chars",
 		},
 		{
 			input:  metaMap["4"].BlockLabel,
-			output: "wrapupcode___mappings" + randNumSuffixFn("9,"),
+			output: "wrapupcode___mappings" + randNumSuffixFn("0,11"),
 			name:   "ascii chars with same structure different chars",
 		},
 		{
 			input:  metaMap["5"].BlockLabel,
-			output: "_-suuuuueeeey" + randNumSuffixFn("9"),
+			output: "_-suuuuueeeey",
 			name:   "starting dash",
 		},
 		{
 			input:  metaMap["6"].BlockLabel,
-			output: "_1-2bucklemyshoe" + randNumSuffixFn("9"),
+			output: "_1-2bucklemyshoe",
 			name:   "starting number",
 		},
 		{
 			input:  metaMap["7"].BlockLabel,
-			output: "unsafeUnicode__Here" + randNumSuffixFn("9,"),
+			output: "unsafeUnicode__Here" + randNumSuffixFn("0,11"),
 			name:   "unsafe unicode",
 		},
 		{
 			input:  metaMap["8"].BlockLabel,
-			output: "unsafeUnicode__Here" + randNumSuffixFn("9,"),
+			output: "unsafeUnicode__Here" + randNumSuffixFn("0,11"),
 			name:   "unsafe unicode matching pattern",
 		},
 		{
 			input:  metaMap["9"].BlockLabel,
-			output: "unsafeUnicode____Here" + randNumSuffixFn("9,"),
+			output: "unsafeUnicode____Here",
 			name:   "unsafe unicode non-matching pattern, no added random suffix",
 		},
 	}

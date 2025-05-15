@@ -121,8 +121,8 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "test2"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Regexp(t, regexp.MustCompile(`^test1_\d{9}$`), result["id1"].BlockLabel)
-				assert.Regexp(t, regexp.MustCompile(`^test2_\d{9}$`), result["id2"].BlockLabel)
+				assert.Equal(t, "test1", result["id1"].BlockLabel)
+				assert.Equal(t, "test2", result["id2"].BlockLabel)
 			},
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOptimized) {
 				assert.Equal(t, "test1", result["id1"].BlockLabel)
@@ -150,9 +150,9 @@ func TestUnitSanitize(t *testing.T) {
 			// extra logic in the buildResourceConfigMap() function to check for this.
 			// See DEVTOOLING-1183 for ideas on improving this
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Regexp(t, regexp.MustCompile(`^testfoo_[0-9_]{9,}$`), result["id1"].BlockLabel)
-				assert.Regexp(t, regexp.MustCompile(`^testfoo_[0-9_]{9,}$`), result["id2"].BlockLabel)
-				assert.Regexp(t, regexp.MustCompile(`^testfoo_[0-9_]{9,}$`), result["id3"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo[0-9_]{0,31}$`), result["id1"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo[0-9_]{0,31}$`), result["id2"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo[0-9_]{0,31}$`), result["id3"].BlockLabel)
 
 				labelsOnlyAppearOnceInSanitizedMap(t, result)
 			},
@@ -208,28 +208,8 @@ func TestUnitSanitize(t *testing.T) {
 			},
 			// Always appends a hash to all labels that match each other
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
-				assert.NotEqual(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
-				assert.NotEqual(t, result["id1"].BlockLabel, result["id4"].BlockLabel)
-				assert.NotEqual(t, result["id2"].BlockLabel, result["id3"].BlockLabel)
-				assert.NotEqual(t, result["id2"].BlockLabel, result["id4"].BlockLabel)
-				assert.NotEqual(t, result["id3"].BlockLabel, result["id4"].BlockLabel)
-				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "test_user_foo_com"))
-				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com"))
-				assert.True(t, len(result["id1"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id2"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id4"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id4"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				id1Hash := sanitizer.SanitizeResourceHash(result["id1"].OriginalLabel)
-				id2Hash := sanitizer.SanitizeResourceHash(result["id2"].OriginalLabel)
-				id3Hash := sanitizer.SanitizeResourceHash(result["id3"].OriginalLabel)
-				id4Hash := sanitizer.SanitizeResourceHash(result["id4"].OriginalLabel)
-				assert.True(t, strings.Contains(result["id1"].BlockLabel, id1Hash)) // Hash included
-				assert.True(t, strings.Contains(result["id2"].BlockLabel, id2Hash)) // Hash included
-				assert.True(t, strings.Contains(result["id3"].BlockLabel, id3Hash)) // Hash included
-				assert.True(t, strings.Contains(result["id4"].BlockLabel, id4Hash)) // Hash included
+				labelsOnlyAppearOnceInSanitizedMap(t, result)
+				assert.Equal(t, len(result), 4)
 			},
 			// Appends a hash to every other label other than the first label that is processed
 			// Unfortunately this is not consistent across exports, as the first label is never the same
@@ -327,26 +307,10 @@ func TestUnitSanitize(t *testing.T) {
 				assert.NotEqual(t, result["id4"].BlockLabel, result["id7"].BlockLabel)
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id6"].BlockLabel)
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id7"].BlockLabel)
-				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, strings.HasPrefix(result["id5"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, strings.HasPrefix(result["id6"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, strings.HasPrefix(result["id7"].BlockLabel, "test_user_foo_com_"))
-				assert.True(t, len(result["id3"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id4"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id5"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id6"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				assert.True(t, len(result["id7"].BlockLabel) > len("test_user_foo_com_")) // Hash appended
-				id3Hash := sanitizer.SanitizeResourceHash(result["id3"].OriginalLabel)
-				id4Hash := sanitizer.SanitizeResourceHash(result["id4"].OriginalLabel)
-				id5Hash := sanitizer.SanitizeResourceHash(result["id5"].OriginalLabel)
-				id6Hash := sanitizer.SanitizeResourceHash(result["id6"].OriginalLabel)
-				id7Hash := sanitizer.SanitizeResourceHash(result["id7"].OriginalLabel)
-				assert.True(t, strings.HasSuffix(result["id3"].BlockLabel, id3Hash)) // Hash included
-				assert.True(t, strings.HasSuffix(result["id4"].BlockLabel, id4Hash)) // Hash included
-				assert.True(t, strings.HasSuffix(result["id5"].BlockLabel, id5Hash)) // Hash included
-				assert.True(t, strings.HasSuffix(result["id6"].BlockLabel, id6Hash)) // Hash included
-				assert.True(t, strings.HasSuffix(result["id7"].BlockLabel, id7Hash)) // Hash included
+
+				labelsOnlyAppearOnceInSanitizedMap(t, result)
+				assert.Equal(t, result["id1"].BlockLabel, "test_distinct_user_foo_com")
+				assert.Equal(t, result["id2"].BlockLabel, "test_distinct_user2_foo_com")
 			},
 			// Ignores the BlockHash (for now). This may change in the future.
 			// Appends a hash to every other label other than the first label that is processed
@@ -515,8 +479,8 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "Test#Label_456"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "Test_Label_123_"))
-				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "Test_Label_456_"))
+				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "Test_Label_123"))
+				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "Test_Label_456"))
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 			},
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOptimized) {
