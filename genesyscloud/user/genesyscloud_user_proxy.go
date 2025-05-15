@@ -66,6 +66,7 @@ type userProxy struct {
 	updatePasswordAttr                       updatePasswordFunc
 	getTelephonyExtensionPoolByExtensionAttr getTelephonyExtensionPoolByExtensionFunc
 	userCache                                rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
+	extensionPoolCache                       rc.CacheInterface[platformclientv2.Extensionpool]
 }
 
 /*
@@ -80,6 +81,7 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 	voicemailApi := platformclientv2.NewVoicemailApiWithConfig(clientConfig)
 	extensionPoolApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	userCache := rc.NewResourceCache[platformclientv2.User]() // Create Cache for User resource
+	extensionPoolCache := rc.NewResourceCache[platformclientv2.Extensionpool]()
 	return &userProxy{
 		clientConfig:                             clientConfig,
 		userApi:                                  userApi,
@@ -87,6 +89,7 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		voicemailApi:                             voicemailApi,
 		extensionPoolApi:                         extensionPoolApi,
 		userCache:                                userCache,
+		extensionPoolCache:                       extensionPoolCache,
 		createUserAttr:                           createUserFn,
 		GetAllUserAttr:                           GetAllUserFn,
 		getUserIdByNameAttr:                      getUserIdByNameFn,
@@ -327,19 +330,34 @@ func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassw
 }
 
 func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
 	var allPools []platformclientv2.Extensionpool
-	extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(100, 1, "", "")
+
+	extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, 1, "", "")
 	if err != nil {
 		return nil, apiResponse, err
 	}
-	allPools = append(allPools, *extensionPoolList.Entities...)
 
-	for pageNumber := 2; pageNumber <= *extensionPoolList.PageCount; pageNumber++ {
-		extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(100, pageNumber, "", "")
-		if err != nil {
-			return nil, apiResponse, err
-		}
+	// Get the cached pools if they are available
+	if rc.GetCacheSize(p.extensionPoolCache) == *extensionPoolList.Total && rc.GetCacheSize(p.extensionPoolCache) != 0 {
+		allPools = *rc.GetCache(p.extensionPoolCache)
+	} else if rc.GetCacheSize(p.extensionPoolCache) != *extensionPoolList.Total || rc.GetCacheSize(p.extensionPoolCache) != 0 {
+		// The cache is populated but not with the right data, clear the cache so it can be re populated
+		p.extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+
 		allPools = append(allPools, *extensionPoolList.Entities...)
+
+		for pageNumber := 2; pageNumber <= *extensionPoolList.PageCount; pageNumber++ {
+			extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNumber, "", "")
+			if err != nil {
+				return nil, apiResponse, err
+			}
+			allPools = append(allPools, *extensionPoolList.Entities...)
+		}
+	}
+
+	for _, pool := range allPools {
+		rc.SetCache(p.extensionPoolCache, *pool.Id, pool)
 	}
 
 	extNumInt, err := strconv.Atoi(extNum)
