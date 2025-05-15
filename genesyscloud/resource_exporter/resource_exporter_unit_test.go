@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 type TestAssertion struct {
