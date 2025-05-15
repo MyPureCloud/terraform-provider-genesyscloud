@@ -1,9 +1,9 @@
 package task_management_worktype_status
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -56,7 +56,7 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Description:  `The Category of the Status. Changing the category will cause the resource to be dropped and recreated with a new id.`,
 				Required:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"Open", "Waiting", "Closed", "Unknown", "InProgress"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"Open", "Waiting", "Closed", "InProgress"}, false),
 				ForceNew:     true,
 			},
 			`description`: {
@@ -73,24 +73,32 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 					Type:      schema.TypeString,
 					StateFunc: ModifyStatusIdStateValue,
 				},
-				MaxItems: 24,
+				MaxItems:   24,
+				Computed:   true,
+				Deprecated: "Deprecated. Use destination_status_ids in genesyscloud_task_management_worktype_status_transition instead",
 			},
 			`default_destination_status_id`: {
 				Description: `Default destination status to which this Status will transition to if auto status transition enabled.`,
 				Optional:    true,
 				StateFunc:   ModifyStatusIdStateValue,
 				Type:        schema.TypeString,
+				Computed:    true,
+				Deprecated:  "Deprecated. Use default_destination_status_id in genesyscloud_task_management_worktype_status_transition instead",
 			},
 			`status_transition_delay_seconds`: {
 				Description:  `Delay in seconds for auto status transition. Required if default_destination_status_id is provided.`,
 				Optional:     true,
 				Type:         schema.TypeInt,
 				ValidateFunc: validation.IntAtLeast(60),
+				Computed:     true,
+				Deprecated:   "Deprecated. Use status_transition_delay_seconds in genesyscloud_task_management_worktype_status_transition instead",
 			},
 			`status_transition_time`: {
 				Description: `Time is represented as an ISO-8601 string without a timezone. For example: HH:mm:ss`,
 				Optional:    true,
 				Type:        schema.TypeString,
+				Computed:    true,
+				Deprecated:  "Deprecated. Use status_transition_time in genesyscloud_task_management_worktype_status_transition instead",
 			},
 			`default`: {
 				Description: `This status is the default status for Workitems created from this Worktype. Only one status can be set as the default status at a time. Once set there must always be a default status. The default can not be deleted.`,

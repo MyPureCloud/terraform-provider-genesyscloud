@@ -1,10 +1,10 @@
 package journey_segment
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"regexp"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -45,14 +45,6 @@ var (
 				r, _ := regexp.Compile("^#[a-fA-F\\d]{6}$")
 				return r
 			}(), ""),
-		},
-		"scope": {
-			Description:  "The target entity that a segment applies to. Valid values: Session",
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true, // scope can be only set during creation
-			ValidateFunc: validation.StringInSlice([]string{"Session"}, false),
-			Deprecated:   "The scope field is redundant and will be removed in a future release.",
 		},
 		"should_display_to_agent": {
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",

@@ -7,6 +7,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	userPromptResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"io"
 	"log"
 	"math/rand"
@@ -16,32 +29,19 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	userPromptResource "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	"terraform-provider-genesyscloud/genesyscloud/platform"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/google/uuid"
 
-	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -716,7 +716,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					strconv.Quote("QueueMembersOnly"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -762,7 +762,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					strconv.Quote("QueueMembersOnly"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -821,7 +821,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.FalseValue,                    // suppressCall_record_false
 					util.NullValue,                     // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
-					strconv.Quote("QueueMembersOnly"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 				) + generateTfExportByFilter(
@@ -1129,9 +1129,6 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 }
 
 func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
-
-	//t.Parallel()
-
 	var (
 		exportTestDir  = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportContents string
@@ -1174,6 +1171,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		util.TrueValue,
 		util.FalseValue,
 		strconv.Quote("TimestampAndPriority"),
+		util.NullValue,
 		util.NullValue,
 		util.NullValue,
 		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
@@ -2416,7 +2414,7 @@ func TestAccResourceExporterFormat(t *testing.T) {
 		CheckDestroy:      testVerifyExportsDestroyedFunc(exportTestDir),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTfExportResource_exportFormat(
+				Config: generateTfExportResourceExportFormat(
 					exportResourceLabel1,
 					strconv.Quote("hcl_json"),
 					[]string{"genesyscloud_journey_segment"},
@@ -3324,7 +3322,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			util.NullValue,                              //suppressCall_record_false
 			util.NullValue,                              // enable_transcription false
 			strconv.Quote("TimestampAndPriority"),
-			strconv.Quote("QueueMembersOnly"),
+			util.NullValue,
 			util.NullValue,
 			util.NullValue,
 		)
@@ -3479,7 +3477,7 @@ func validateFlow(flowResourcePath, flowName string) resource.TestCheckFunc {
 	}
 }
 
-func generateTfExportResource_exportFormat(
+func generateTfExportResourceExportFormat(
 	exportResourceLabel1 string,
 	exportFormat string,
 	includeResources []string,
@@ -3491,7 +3489,7 @@ func generateTfExportResource_exportFormat(
 	}
 
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
-        export_format = "%s"
+        export_format = %s
         include_filter_resources = %s
         directory = "%s"
     }
