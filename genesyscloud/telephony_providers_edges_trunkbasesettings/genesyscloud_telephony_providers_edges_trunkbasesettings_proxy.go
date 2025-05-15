@@ -190,5 +190,10 @@ func updateTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, tru
 }
 
 func deleteTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, trunkBaseSettingId string) (*platformclientv2.APIResponse, error) {
-	return p.edgesApi.DeleteTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingId)
+	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.trunkBaseCache, trunkBaseSettingId)
+	return resp, nil
 }

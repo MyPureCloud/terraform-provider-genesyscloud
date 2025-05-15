@@ -171,5 +171,6 @@ func deleteTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete task management workbin: %s", err)
 	}
+	rc.DeleteCacheItem(p.workbinCache, id)
 	return resp, nil
 }

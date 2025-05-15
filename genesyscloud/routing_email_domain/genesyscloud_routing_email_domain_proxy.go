@@ -3,8 +3,9 @@ package routing_email_domain
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
@@ -158,5 +159,10 @@ func updateRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy,
 }
 
 func deleteRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy, id string) (*platformclientv2.APIResponse, error) {
-	return p.routingApi.DeleteRoutingEmailDomain(id)
+	resp, err := p.routingApi.DeleteRoutingEmailDomain(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.routingEmailDomainCache, id)
+	return resp, nil
 }

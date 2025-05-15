@@ -3,6 +3,7 @@ package knowledge_category
 import (
 	"context"
 	"fmt"
+
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -232,5 +233,10 @@ func updateKnowledgeCategoryFn(ctx context.Context, p *knowledgeCategoryProxy, k
 }
 
 func deleteKnowledgeCategoryFn(ctx context.Context, p *knowledgeCategoryProxy, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
-	return p.KnowledgeApi.DeleteKnowledgeKnowledgebaseCategory(knowledgeBaseId, categoryId)
+	delete, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebaseCategory(knowledgeBaseId, categoryId)
+	if err != nil {
+		return delete, resp, err
+	}
+	rc.DeleteCacheItem(p.knowledgeCategoryCache, categoryId)
+	return delete, resp, nil
 }
