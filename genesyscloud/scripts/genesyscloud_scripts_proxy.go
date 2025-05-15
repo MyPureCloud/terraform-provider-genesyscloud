@@ -478,9 +478,13 @@ func createScriptFn(ctx context.Context, filePath, scriptName string, substituti
 	}
 
 	if resp, err := p.publishScript(ctx, scriptId); err != nil {
-		// If the script is not able to be published, clean up the script instance on the API before throwing an error
+		// If the script cannot be published, clean up the script instance on the API before throwing an error
 		// See DEVTOOLING-777
-		p.deleteScript(ctx, scriptId)
+		log.Printf("Attempting to delete script '%s'", scriptId)
+		deleteErr := p.deleteScript(ctx, scriptId)
+		if deleteErr != nil {
+			log.Printf("Error occurred while trying to delete script '%s': %s", scriptId, deleteErr.Error())
+		}
 		return "", fmt.Errorf("script '%s' (ID: %s) failed to publish and was deleted: %w (response: %v)", scriptName, scriptId, err, resp)
 	}
 	return scriptId, nil
