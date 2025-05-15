@@ -1,9 +1,9 @@
 package responsemanagement_response
 
 import (
+	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	respManagementRespAsset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	"sync"
-	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

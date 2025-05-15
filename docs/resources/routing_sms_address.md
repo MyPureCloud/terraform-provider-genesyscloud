@@ -37,7 +37,6 @@ resource "genesyscloud_routing_sms_address" "example_routing_sms_address" {
 
 - `city` (String) The city in which this address is in
 - `country_code` (String) The ISO country code of this address
-- `name` (String) Name associated with this address
 - `postal_code` (String) The postal code this address is in
 - `region` (String) The state or region this address is in
 - `street` (String) The number and street address where this address is located.
@@ -45,6 +44,7 @@ resource "genesyscloud_routing_sms_address" "example_routing_sms_address" {
 ### Optional
 
 - `auto_correct_address` (Boolean) This is used when the address is created. If the value is not set or true, then the system will, if necessary, auto-correct the address you provide. Set this value to false if the system should not auto-correct the address.
+- `name` (String) Name associated with this address
 
 ### Read-Only
 

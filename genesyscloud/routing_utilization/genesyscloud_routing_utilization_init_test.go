@@ -1,8 +1,8 @@
 package routing_utilization
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

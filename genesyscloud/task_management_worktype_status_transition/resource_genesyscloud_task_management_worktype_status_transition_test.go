@@ -1,20 +1,23 @@
 package task_management_worktype_status_transition
 
-/*
 import (
 	"fmt"
+	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	workType "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
-	workType "terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
 )
 
+/*
 The resource_genesyscloud_task_management_worktype_status_test.go contains all of the test cases for running the resource
 tests for task_management_worktype_status.
 */
@@ -23,7 +26,7 @@ tests for task_management_worktype_status.
 does not create a new resource but will update the existing  genesyscloud_worktype_status and we get plan non-empty errors for
 genesyscloud_worktype_status. referring  it as data source in a different test step too will not work since the resources are
 independent in each test step.*/
-/*
+
 func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 	t.Parallel()
 	var (
@@ -55,18 +58,38 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 		statusResourceType = "genesyscloud_task_management_worktype_status"
 	)
 
-	// setup worktype status and workbin outside the test step , since the genesyscloud_worktype_status_transition does not
-	// does not create a new resource but will update the existing  genesyscloud_worktype_status and we get plan non-empty errors for
-	// genesyscloud_worktype_status. referring  it as data source in a different test step too will not work since the resources are
-	// independent in each test step.
-	//commented until a clean solution is designed for it.
+	initialConfig := workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+		workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
+		workType.GenerateWorktypeResourceBasic(
+			wtResourceLabel,
+			wtName,
+			wtDescription,
+			fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+			"",
+		) +
+		GenerateWorktypeStatusResource(
+			statusResourceLabel1,
+			fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+			status1Name1,
+			status1Category,
+			"",
+			util.NullValue,
+			"",
+			"default = true",
+		) +
 
-	//err := deployNecessaryWorktype(name)
-	//if err != nil {
-	////	 skip or fail
-	//} else {
-	//	defer cleanup()
-	//}
+		// This status is used as a reference in the first status
+		GenerateWorktypeStatusResourceWithDependsOn(
+			statusResourceLabel2,
+			fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+			status2Name,
+			status2Category,
+			"",
+			util.NullValue,
+			"",
+			"genesyscloud_task_management_worktype_status"+"."+statusResourceLabel1,
+			"default = false",
+		)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -74,38 +97,7 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Update worktype status and add another status so we can test destination_status_ids and default_destination_status_id
-				Config: workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
-					workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
-					workType.GenerateWorktypeResourceBasic(
-						wtResourceLabel,
-						wtName,
-						wtDescription,
-						fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-						"",
-					) +
-					GenerateWorktypeStatusResource(
-						statusResourceLabel1,
-						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						status1Name1,
-						status1Category,
-						"",
-						util.NullValue,
-						"",
-						"default = true",
-					) +
-
-					// This status is used as a reference in the first status
-					GenerateWorktypeStatusResourceWithDependsOn(
-						statusResourceLabel2,
-						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						status2Name,
-						status2Category,
-						"",
-						util.NullValue,
-						"",
-						"genesyscloud_task_management_worktype_status"+"."+statusResourceLabel1,
-						"default = false",
-					),
+				Config: initialConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(statusResourceType+"."+statusResourceLabel1, "worktype_id", fmt.Sprintf("genesyscloud_task_management_worktype.%s", wtResourceLabel), "id"),
 					resource.TestCheckResourceAttr(statusResourceType+"."+statusResourceLabel1, "name", status1Name1),
@@ -115,29 +107,16 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 			},
 			{
 				// Update worktype status and add another status so we can test destination_status_ids and default_destination_status_id
-				Config: generateWorktype(
-					wtResourceLabel,
-					wtName,
-				) +
+				Config: initialConfig +
 					generateWorktypeStatusDataSourceForTransition(
 						statusResourceLabel1,
-						fmt.Sprintf("data.genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
 						status1Name1,
-					) +
-					GenerateWorktypeStatusResource(
-						statusResourceLabel2,
-						fmt.Sprintf("data.genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						status2Name,
-						status2Category,
-						"",
-						util.NullValue,
-						"",
-						"default = false",
 					) +
 					GenerateWorkTypeStatusResourceTransition(
 						statusResourceLabel1+"transition",
-						fmt.Sprintf("data.genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
-						fmt.Sprintf("data.genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel1),
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel1),
 						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel2),
 						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel2),
 						"60",
@@ -152,13 +131,6 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_task_management_worktype_status_transition." + statusResourceLabel1 + "transition",
-				ImportState:       true,
-				ImportStateVerify: false,
-				//ImportStateVerifyIgnore: true,
-			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_task_management_worktype_status" + statusResourceLabel1 + "transition",
 				ImportState:       true,
 				ImportStateVerify: false,
 				//ImportStateVerifyIgnore: true,
@@ -190,4 +162,3 @@ func testVerifyTaskManagementWorktypeStatusDestroyed(state *terraform.State) err
 	//All worktype statuses deleted
 	return nil
 }
-*/
