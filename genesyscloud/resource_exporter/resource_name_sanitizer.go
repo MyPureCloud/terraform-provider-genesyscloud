@@ -4,11 +4,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"hash/fnv"
 	"log"
 	"strconv"
 	"strings"
+
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	unidecode "github.com/mozillazg/go-unidecode"
 )
@@ -171,48 +172,25 @@ func (sod *sanitizerOptimized) SanitizeResourceHash(originalBlockLabel string) s
 // Sanitize sanitizes all resource label using the BCP specific algorithm which includes
 // adding hashes to the end of all resource block labels to ensure consistent uniqueness
 // See DEVTOOLING-1182 for details on why this sanitizer was necessary
+// See DEVTOOLING-1183 for details on the BlockHash implementation
 func (sod *sanitizerBCPOptimized) Sanitize(idMetaMap ResourceIDMetaMap) {
-	// Maps to track labels at each stage
-	baseLabels := make(map[string]string)   // id -> base sanitized label
 	labelToIDs := make(map[string][]string) // label -> []id
-	needsUFH := make(map[string]bool)       // id -> needs UFH
 
-	// First pass - basic sanitization and identify duplicates
+	// Basic sanitization and identify duplicates
 	for id, meta := range idMetaMap {
 		meta.OriginalLabel = meta.BlockLabel
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
 		baseHash := sod.SanitizeResourceHash(meta.OriginalLabel)
 		labelWithBLH := sanitizedLabel + "__BLH" + baseHash
+		if meta.BlockHash != "" {
+			labelWithBLH = labelWithBLH + "_UFH" + meta.BlockHash
+		}
 
-		baseLabels[id] = labelWithBLH
+		// We append because of the off chance that there are duplicate label names.
 		labelToIDs[labelWithBLH] = append(labelToIDs[labelWithBLH], id)
 	}
 
-	// Identify which need the UFH (Unique Fields Hash) suffix
-	for _, ids := range labelToIDs {
-		if len(ids) > 1 {
-			for _, id := range ids {
-				needsUFH[id] = true
-			}
-		}
-	}
-
-	// Clear map for reuse
-	labelToIDs = make(map[string][]string)
-
-	// Apply UFH where needed
-	for id, meta := range idMetaMap {
-		baseLabel := baseLabels[id]
-		finalLabel := baseLabel
-
-		if needsUFH[id] && meta.BlockHash != "" {
-			finalLabel = baseLabel + "_UFH" + meta.BlockHash
-		}
-
-		labelToIDs[finalLabel] = append(labelToIDs[finalLabel], id)
-	}
-
-	// Final pass - handle any remaining duplicates
+	// Handle any remaining duplicates
 	for label, ids := range labelToIDs {
 		if len(ids) == 1 {
 			idMetaMap[ids[0]].BlockLabel = label

@@ -331,8 +331,8 @@ func TestUnitSanitize(t *testing.T) {
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id6"].BlockLabel)
 				assert.NotEqual(t, result["id5"].BlockLabel, result["id7"].BlockLabel)
 				assert.Equal(t, result["id6"].BlockLabel, result["id7"].BlockLabel)
-				assert.Equal(t, result["id1"].BlockLabel, "test_distinct_user_foo_com")
-				assert.Equal(t, result["id2"].BlockLabel, "test_distinct_user2_foo_com")
+				assert.Equal(t, "test_distinct_user_foo_com", result["id1"].BlockLabel)
+				assert.Equal(t, "test_distinct_user2_foo_com", result["id2"].BlockLabel)
 				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "test_user_foo_com_"))
 				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com_"))
 				assert.True(t, strings.HasPrefix(result["id5"].BlockLabel, "test_user_foo_com_"))
@@ -384,8 +384,8 @@ func TestUnitSanitize(t *testing.T) {
 				// Intentionally commented out, as this could be equal (same hash) or
 				// not equal (one without the hash). Retained for consistency purposes.
 				// assert.NotEqual(t, result["id6"].BlockLabel, result["id7"].BlockLabel)
-				assert.Equal(t, result["id1"].BlockLabel, "test_distinct_user_foo_com")
-				assert.Equal(t, result["id2"].BlockLabel, "test_distinct_user2_foo_com")
+				assert.Equal(t, "test_distinct_user_foo_com", result["id1"].BlockLabel)
+				assert.Equal(t, "test_distinct_user2_foo_com", result["id2"].BlockLabel)
 				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "test_user_foo_com"))
 				assert.True(t, strings.HasPrefix(result["id4"].BlockLabel, "test_user_foo_com"))
 				assert.True(t, strings.HasPrefix(result["id5"].BlockLabel, "test_user_foo_com"))
@@ -456,11 +456,11 @@ func TestUnitSanitize(t *testing.T) {
 				assert.NotEqual(t, id5Hash, id7Hash)
 				assert.Equal(t, id6Hash, id7Hash)
 
-				assert.Equal(t, result["id1"].BlockLabel, fmt.Sprintf("test_distinct_user_foo_com__BLH%s", id1Hash))
-				assert.Equal(t, result["id2"].BlockLabel, fmt.Sprintf("test_distinct_user2_foo_com__BLH%s", id2Hash))
-				assert.Equal(t, result["id3"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s", id3Hash))
-				assert.Equal(t, result["id4"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id4Hash, result["id4"].BlockHash))
-				assert.Equal(t, result["id5"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id5Hash, result["id5"].BlockHash))
+				assert.Equal(t, fmt.Sprintf("test_distinct_user_foo_com__BLH%s_UFH%s", id1Hash, result["id1"].BlockHash), result["id1"].BlockLabel)
+				assert.Equal(t, fmt.Sprintf("test_distinct_user2_foo_com__BLH%s", id2Hash), result["id2"].BlockLabel) // No BlockHash value
+				assert.Equal(t, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id3Hash, result["id3"].BlockHash), result["id3"].BlockLabel)
+				assert.Equal(t, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id4Hash, result["id4"].BlockHash), result["id4"].BlockLabel)
+				assert.Equal(t, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id5Hash, result["id5"].BlockHash), result["id5"].BlockLabel)
 				assert.True(t, strings.HasPrefix(result["id6"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id6Hash, result["id6"].BlockHash)))
 				assert.True(t, strings.HasPrefix(result["id7"].BlockLabel, fmt.Sprintf("test_user_foo_com__BLH%s_UFH%s", id6Hash, result["id7"].BlockHash)))
 				assert.False(t, strings.Contains(result["id1"].BlockLabel, "_DUPLICATE_INSTANCE_")) // Duplicate NOT appended
@@ -502,12 +502,12 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "456#test"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Equal(t, result["id1"].BlockLabel, "_123_test")
-				assert.Equal(t, result["id2"].BlockLabel, "_456_test")
+				assert.Equal(t, "_123_test", result["id1"].BlockLabel)
+				assert.Equal(t, "_456_test", result["id2"].BlockLabel)
 			},
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOptimized) {
-				assert.Equal(t, result["id1"].BlockLabel, "_123_test")
-				assert.Equal(t, result["id2"].BlockLabel, "_456_test")
+				assert.Equal(t, "_123_test", result["id1"].BlockLabel)
+				assert.Equal(t, "_456_test", result["id2"].BlockLabel)
 			},
 			validateBCPOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerBCPOptimized) {
 				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "_123_test_"))
@@ -521,13 +521,13 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "Test#Label_456"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Equal(t, result["id1"].BlockLabel, "Test_Label_123")
-				assert.Equal(t, result["id2"].BlockLabel, "Test_Label_456")
+				assert.Equal(t, "Test_Label_123", result["id1"].BlockLabel)
+				assert.Equal(t, "Test_Label_456", result["id2"].BlockLabel)
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 			},
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOptimized) {
-				assert.Equal(t, result["id1"].BlockLabel, "Test_Label_123")
-				assert.Equal(t, result["id2"].BlockLabel, "Test_Label_456")
+				assert.Equal(t, "Test_Label_123", result["id1"].BlockLabel)
+				assert.Equal(t, "Test_Label_456", result["id2"].BlockLabel)
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 			},
 			validateBCPOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerBCPOptimized) {
