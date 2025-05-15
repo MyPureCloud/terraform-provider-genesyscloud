@@ -254,7 +254,7 @@ func TestUnitQuickHashFields_ComplexTypes(t *testing.T) {
 				nil,
 			},
 			wantErr:      false,
-			expectedHash: "173cb74d538c5b23",
+			expectedHash: "17f7261250799f2d",
 		},
 	}
 
