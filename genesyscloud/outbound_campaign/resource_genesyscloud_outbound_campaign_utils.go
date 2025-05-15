@@ -42,8 +42,8 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
 		DialingMode:                    platformclientv2.String(d.Get("dialing_mode").(string)),
-		CallerAddress:                  platformclientv2.String(d.Get("caller_address").(string)),
-		CallerName:                     platformclientv2.String(d.Get("caller_name").(string)),
+		CallerAddress:                  resourcedata.GetNonZeroPointer[string](d, "caller_address"),
+		CallerName:                     resourcedata.GetNonZeroPointer[string](d, "caller_name"),
 		CampaignStatus:                 platformclientv2.String("off"),
 		ContactList:                    util.BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Queue:                          util.BuildSdkDomainEntityRef(d, "queue_id"),

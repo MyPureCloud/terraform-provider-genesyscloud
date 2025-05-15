@@ -59,8 +59,6 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 
 ### Required
 
-- `caller_address` (String) The caller id phone number to be displayed on the outbound call.
-- `caller_name` (String) The caller id name to be displayed on the outbound call.
 - `contact_list_id` (String) The ContactList for this Campaign to dial.
 - `dialing_mode` (String) The strategy this Campaign will use for dialing.
 - `name` (String) The name of the Campaign.
@@ -74,6 +72,8 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 - `call_analysis_language` (String) The language the edge will use to analyze the call.
 - `call_analysis_response_set_id` (String) The call analysis response set to handle call analysis results from the edge. Required for all dialing modes except preview.
 - `callable_time_set_id` (String) The callable time set for this campaign to check before placing a call.
+- `caller_address` (String) The caller id phone number to be displayed on the outbound call.
+- `caller_name` (String) The caller id name to be displayed on the outbound call.
 - `campaign_status` (String) The current status of the Campaign. A Campaign may be turned 'on' or 'off' (default). If this value is changed alongside other changes to the resource, a subsequent update will occur immediately afterwards to set the campaign status. This is due to behavioral requirements in the Genesys Cloud API.
 - `contact_list_filter_ids` (List of String) Filter to apply to the contact list before dialing. Currently a campaign can only have one filter applied.
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
