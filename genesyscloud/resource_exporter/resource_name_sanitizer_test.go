@@ -3,6 +3,7 @@ package resource_exporter
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -120,8 +121,8 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "test2"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Equal(t, "test1", result["id1"].BlockLabel)
-				assert.Equal(t, "test2", result["id2"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^test1_\d{9}$`), result["id1"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^test2_\d{9}$`), result["id2"].BlockLabel)
 			},
 			validateOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOptimized) {
 				assert.Equal(t, "test1", result["id1"].BlockLabel)
@@ -144,22 +145,18 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "testfoo"},
 				"id3": &ResourceMeta{BlockLabel: "testfoo"},
 			},
-			// Never appends a hash to all of the labels that have the same original BlockLabel.
+			// Never appends a hash to all labels that have the same original BlockLabel.
 			// This can cause issues with mixing up the state file unfortunately, and require
 			// extra logic in the buildResourceConfigMap() function to check for this.
 			// See DEVTOOLING-1183 for ideas on improving this
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Equal(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
-				assert.Equal(t, result["id1"].BlockLabel, result["id3"].BlockLabel)
-				assert.Equal(t, result["id2"].BlockLabel, result["id3"].BlockLabel)
-				assert.True(t, strings.HasPrefix(result["id1"].BlockLabel, "testfoo"))
-				assert.True(t, strings.HasPrefix(result["id2"].BlockLabel, "testfoo"))
-				assert.True(t, strings.HasPrefix(result["id3"].BlockLabel, "testfoo"))
-				assert.True(t, len(result["id1"].BlockLabel) == 7) // Hash NOT appended
-				assert.True(t, len(result["id2"].BlockLabel) == 7) // Hash NOT appended
-				assert.True(t, len(result["id3"].BlockLabel) == 7) // Hash NOT appended
+				assert.Regexp(t, regexp.MustCompile(`^testfoo_[0-9_]{9,}$`), result["id1"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo_[0-9_]{9,}$`), result["id2"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo_[0-9_]{9,}$`), result["id3"].BlockLabel)
+
+				labelsOnlyAppearOnceInSanitizedMap(t, result)
 			},
-			// Never appends a hash to all of the labels that have the same original BlockLabel.
+			// Never appends a hash to all labels that have the same original BlockLabel.
 			// This can cause issues with mixing up the state file unfortunately, and require
 			// extra logic in the buildResourceConfigMap() function to check for this
 			// See DEVTOOLING-1183 for ideas on improving this
@@ -581,6 +578,16 @@ func makeInputCopy(input ResourceIDMetaMap) ResourceIDMetaMap {
 		}
 	}
 	return inputCopy
+}
+
+func labelsOnlyAppearOnceInSanitizedMap(t *testing.T, m ResourceIDMetaMap) {
+	seenLabels := make(map[string]string)
+	for _, meta := range m {
+		if _, exists := seenLabels[meta.BlockLabel]; exists {
+			t.Errorf("BlockLabel '%s' appeared twice in sanitized map", meta.BlockLabel)
+		}
+		seenLabels[meta.BlockLabel] = "*"
+	}
 }
 
 func TestUnitNewSanitizerProvider(t *testing.T) {

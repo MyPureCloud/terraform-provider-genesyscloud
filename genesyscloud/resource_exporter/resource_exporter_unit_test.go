@@ -40,12 +40,12 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 	assertions := [9]TestAssertion{
 		{
 			input:  metaMap["1"].BlockLabel,
-			output: "wrapupcodemappings",
+			output: "wrapupcodemappings" + randNumSuffixFn("9"),
 			name:   "actual resource label",
 		},
 		{
 			input:  metaMap["2"].BlockLabel,
-			output: "foobar",
+			output: "foobar" + randNumSuffixFn("9"),
 			name:   "any label",
 		},
 		{
@@ -93,13 +93,7 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 	}
 
 	// assert no two block labels are the same
-	var allBlockLabels = make(map[string]string)
-	for _, meta := range metaMap {
-		if _, exists := allBlockLabels[meta.BlockLabel]; exists {
-			t.Errorf("BlockLabel %s appeared more than once in the meta map after sanitization", meta.BlockLabel)
-		}
-		allBlockLabels[meta.BlockLabel] = "*"
-	}
+	labelsOnlyAppearOnceInSanitizedMap(t, metaMap)
 }
 
 // Tests the optimized sanitizing algorithm

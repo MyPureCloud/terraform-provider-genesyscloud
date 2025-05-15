@@ -68,10 +68,6 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 	for _, meta := range idMetaMap {
 		sanitizedLabel := sod.SanitizeResourceBlockLabel(meta.BlockLabel)
 
-		if meta.BlockLabel == sanitizedLabel {
-			continue
-		}
-
 		labelOccurrences[sanitizedLabel] += 1
 
 		// Append a hash of the original label to ensure uniqueness for labels to prevent duplicates
