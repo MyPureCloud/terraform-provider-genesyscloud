@@ -3,8 +3,8 @@ package organization_presence_definition
 import (
 	"context"
 	"fmt"
-	"log"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
