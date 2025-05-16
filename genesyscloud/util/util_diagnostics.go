@@ -10,13 +10,14 @@ import (
 )
 
 type detailedDiagnosticInfo struct {
-	ResourceType        string      `json:"resourceType,omitempty"`
-	Method              string      `json:"method,omitempty"`
-	Path                string      `json:"path,omitempty"`
-	StatusCode          int         `json:"statusCode,omitempty"`
-	ErrorMessage        string      `json:"errorMessage,omitempty"`
-	ErrorMessageContext interface{} `json:"errorMessageContext,omitempty"`
-	CorrelationID       string      `json:"correlationId,omitempty"`
+	ResourceType        string        `json:"resourceType,omitempty"`
+	Method              string        `json:"method,omitempty"`
+	Path                string        `json:"path,omitempty"`
+	StatusCode          int           `json:"statusCode,omitempty"`
+	ErrorMessage        string        `json:"errorMessage,omitempty"`
+	ErrorMessageContext interface{}   `json:"errorMessageContext,omitempty"`
+	ErrorMessageDetails []interface{} `json:"errorMessageDetails,omitempty"`
+	CorrelationID       string        `json:"correlationId,omitempty"`
 }
 
 func convertResponseToWrapper(resourceType string, apiResponse *platformclientv2.APIResponse) *detailedDiagnosticInfo {
@@ -29,6 +30,11 @@ func convertResponseToWrapper(resourceType string, apiResponse *platformclientv2
 	}
 	if apiResponse.Error != nil && len(apiResponse.Error.MessageParams) > 0 {
 		detailedDiagnosticInfo.ErrorMessageContext = apiResponse.Error.MessageParams
+	}
+	if apiResponse.Error != nil && len(apiResponse.Error.Details) > 0 {
+		for _, detail := range apiResponse.Error.Details {
+			detailedDiagnosticInfo.ErrorMessageDetails = append(detailedDiagnosticInfo.ErrorMessageDetails, detail)
+		}
 	}
 	if apiResponse.Response != nil && apiResponse.Response.Request != nil {
 		detailedDiagnosticInfo.Method = apiResponse.Response.Request.Method

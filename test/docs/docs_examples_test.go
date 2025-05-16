@@ -166,15 +166,11 @@ func TestExampleResources(t *testing.T) {
 		// "genesyscloud_telephony_providers_edges_site_outbound_route",
 		// "genesyscloud_telephony_providers_edges_trunk", // DEPRECATE
 		// "genesyscloud_telephony_providers_edges_trunkbasesettings",
-
-		// STOPPED HERE
-
-		"genesyscloud_tf_export",
+		// "genesyscloud_tf_export",
 		// "genesyscloud_user",
 		// "genesyscloud_user_roles",
 		// "genesyscloud_webdeployments_configuration",
 		// "genesyscloud_webdeployments_deployment",
-		// "genesyscloud_widget_deployment",
 	}
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
