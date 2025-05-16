@@ -4,9 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"hash/fnv"
 	"log"
-	"strconv"
 	"strings"
 
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -81,7 +79,9 @@ func (sod *sanitizerOriginal) SanitizeResourceBlockLabel(inputLabel string) stri
 	if inputLabel == "" {
 		return ""
 	}
-	label := unsafeLabelChars.ReplaceAllStringFunc(inputLabel, escapeRune)
+	// Transliterate any non-latin-based characters to ASCII
+	transliteratedLabel := strings.TrimSpace(unidecode.Unidecode(inputLabel))
+	label := unsafeLabelChars.ReplaceAllStringFunc(transliteratedLabel, escapeRune)
 	if len(label) == 0 {
 		return ""
 	}
@@ -94,9 +94,9 @@ func (sod *sanitizerOriginal) SanitizeResourceBlockLabel(inputLabel string) stri
 }
 
 func (sod *sanitizerOriginal) SanitizeResourceHash(originalBlockLabel string) string {
-	algorithm := fnv.New32()
-	algorithm.Write([]byte(originalBlockLabel))
-	return strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+	h := sha256.New()
+	h.Write([]byte(originalBlockLabel))
+	return hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 }
 
 // Sanitize sanitizes all resource label using the BCP specific algorithm which includes

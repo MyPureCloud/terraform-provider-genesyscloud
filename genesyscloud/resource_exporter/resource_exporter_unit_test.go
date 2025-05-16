@@ -47,12 +47,12 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 		},
 		{
 			input:  metaMap["3"].BlockLabel,
-			output: "wrapupcode___mappings" + randNumSuffixFn("0,11"),
+			output: "wrapupcode___mappings[a-z0-9_]{0,21}",
 			name:   "ascii chars",
 		},
 		{
 			input:  metaMap["4"].BlockLabel,
-			output: "wrapupcode___mappings" + randNumSuffixFn("0,11"),
+			output: "wrapupcode___mappings[a-z0-9_]{0,21}",
 			name:   "ascii chars with same structure different chars",
 		},
 		{
@@ -67,17 +67,17 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 		},
 		{
 			input:  metaMap["7"].BlockLabel,
-			output: "unsafeUnicode__Here" + randNumSuffixFn("0,11"),
+			output: "unsafeUnicodeA_r_Here" + randNumSuffixFn("0,11"),
 			name:   "unsafe unicode",
 		},
 		{
 			input:  metaMap["8"].BlockLabel,
-			output: "unsafeUnicode__Here" + randNumSuffixFn("0,11"),
+			output: "unsafeUnicodeESHHere" + randNumSuffixFn("0,11"),
 			name:   "unsafe unicode matching pattern",
 		},
 		{
 			input:  metaMap["9"].BlockLabel,
-			output: "unsafeUnicode____Here",
+			output: "unsafeUnicodeESHA_r_Here",
 			name:   "unsafe unicode non-matching pattern, no added random suffix",
 		},
 	}
@@ -101,6 +101,7 @@ func TestUnitSanitizeResourceLabelOriginal(t *testing.T) {
 	dash := "-"
 	unsafeUnicode := "Ⱥ®ÊƩ"
 	unsafeAscii := "#%$^@&"
+	unsafeUnicodeTransliteration := "A_r_ESH"
 
 	sanitizer := NewSanitizerProvider()
 
@@ -138,7 +139,7 @@ func TestUnitSanitizeResourceLabelOriginal(t *testing.T) {
 		{
 			name:   "Single Unsafe Unicode Character",
 			input:  string(unsafeUnicode[0]),
-			output: underscore,
+			output: "E",
 		},
 		{
 			name:   "String beginning with Integer",
@@ -168,12 +169,12 @@ func TestUnitSanitizeResourceLabelOriginal(t *testing.T) {
 		{
 			name:   "String beginning with Unicode",
 			input:  unsafeUnicode + simpleString,
-			output: strings.Repeat(underscore, len([]rune(unsafeUnicode))) + simpleString,
+			output: unsafeUnicodeTransliteration + simpleString,
 		},
 		{
 			name:   "String with everything",
 			input:  simpleString + unsafeAscii + underscore + intString + dash + unsafeUnicode + simpleString,
-			output: simpleString + strings.Repeat(underscore, len(unsafeAscii)) + underscore + intString + dash + strings.Repeat(underscore, len([]rune(unsafeUnicode))) + simpleString,
+			output: simpleString + strings.Repeat(underscore, len(unsafeAscii)) + underscore + intString + dash + unsafeUnicodeTransliteration + simpleString,
 		},
 	}
 

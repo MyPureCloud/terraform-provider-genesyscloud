@@ -17,70 +17,60 @@ func TestUnitSanitizeResourceBlockLabel(t *testing.T) {
 		name                 string
 		input                string
 		expectedOriginal     string
-		expectedOptimized    string
 		expectedBCPOptimized string
 	}{
 		{
 			name:                 "basic string",
 			input:                "test label",
 			expectedOriginal:     "test_label",
-			expectedOptimized:    "test_label",
 			expectedBCPOptimized: "test_label",
 		},
 		{
 			name:                 "string with special characters",
 			input:                "test@label#123",
 			expectedOriginal:     "test_label_123",
-			expectedOptimized:    "test_label_123",
 			expectedBCPOptimized: "test_label_123",
 		},
 		{
 			name:                 "starts with number",
 			input:                "123test",
 			expectedOriginal:     "_123test",
-			expectedOptimized:    "_123test",
 			expectedBCPOptimized: "_123test",
 		},
 		{
 			name:                 "non-latin characters",
 			input:                "テスト label",
-			expectedOriginal:     "____label",
-			expectedOptimized:    "tesuto_label",
+			expectedOriginal:     "tesuto_label",
 			expectedBCPOptimized: "tesuto_label",
 		},
 		{
 			name:                 "empty string",
 			input:                "",
 			expectedOriginal:     "",
-			expectedOptimized:    "",
 			expectedBCPOptimized: "",
 		},
 		{
 			name:                 "whitespace only",
 			input:                "   ",
-			expectedOriginal:     "___",
-			expectedOptimized:    "",
+			expectedOriginal:     "",
 			expectedBCPOptimized: "",
 		},
 		{
 			name:                 "mixed case with special chars",
 			input:                "Test@Label_123",
 			expectedOriginal:     "Test_Label_123",
-			expectedOptimized:    "Test_Label_123",
 			expectedBCPOptimized: "Test_Label_123",
 		},
 		{
 			name:                 "multiple consecutive special chars",
 			input:                "test@@##$$label",
 			expectedOriginal:     "test______label",
-			expectedOptimized:    "test______label",
 			expectedBCPOptimized: "test______label",
 		},
 		{
 			name:                 "dots and dashes",
 			input:                "test.label-123",
 			expectedOriginal:     "test_label-123",
-			expectedOptimized:    "test_label-123",
 			expectedBCPOptimized: "test_label-123",
 		},
 	}
@@ -139,9 +129,9 @@ func TestUnitSanitize(t *testing.T) {
 			// extra logic in the buildResourceConfigMap() function to check for this.
 			// See DEVTOOLING-1183 for ideas on improving this
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Regexp(t, regexp.MustCompile(`^testfoo[0-9_]{0,31}$`), result["id1"].BlockLabel)
-				assert.Regexp(t, regexp.MustCompile(`^testfoo[0-9_]{0,31}$`), result["id2"].BlockLabel)
-				assert.Regexp(t, regexp.MustCompile(`^testfoo[0-9_]{0,31}$`), result["id3"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo[a-z0-9_]{0,42}$`), result["id1"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo[a-z0-9_]{0,42}$`), result["id2"].BlockLabel)
+				assert.Regexp(t, regexp.MustCompile(`^testfoo[a-z0-9_]{0,42}$`), result["id3"].BlockLabel)
 
 				labelsOnlyAppearOnceInSanitizedMap(t, result)
 			},
@@ -325,8 +315,8 @@ func TestUnitSanitize(t *testing.T) {
 				"id2": &ResourceMeta{BlockLabel: "テスト2"},
 			},
 			validateOriginal: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerOriginal) {
-				assert.Contains(t, result["id1"].BlockLabel, "___1")
-				assert.Contains(t, result["id2"].BlockLabel, "___2")
+				assert.Contains(t, result["id1"].BlockLabel, "tesuto1")
+				assert.Contains(t, result["id2"].BlockLabel, "tesuto2")
 				assert.NotEqual(t, result["id1"].BlockLabel, result["id2"].BlockLabel)
 			},
 			validateBCPOptimized: func(t *testing.T, result ResourceIDMetaMap, sanitizer sanitizerBCPOptimized) {
