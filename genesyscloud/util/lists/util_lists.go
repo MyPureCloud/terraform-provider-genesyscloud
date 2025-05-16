@@ -249,7 +249,7 @@ func ConvertMapStringAnyToMapStringString(m map[string]any) map[string]string {
 	return sm
 }
 
-// Generic function to apply a function for each item over a list
+// Map is a generic function to apply a function for each item over a list
 func Map[T, V any](ts []T, fn func(T) V) []V {
 	if fn == nil {
 		return nil

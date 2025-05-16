@@ -61,6 +61,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
+	oPresenceDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_presence_definition"
 	oAuthPairing "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
 	obAttemptLimit "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -222,6 +223,7 @@ func registerResources() {
 	obMessagingCampaign.SetRegistrar(regInstance)                          //Registering outbound messaging campaign
 	obwm.SetRegistrar(regInstance)                                         //Registering outbound wrapup code mappings
 	oAuthSettings.SetRegistrar(regInstance)                                //Registering organization authentication settings
+	oPresenceDefinition.SetRegistrar(regInstance)                          //Registering organization presence definition
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
 	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
