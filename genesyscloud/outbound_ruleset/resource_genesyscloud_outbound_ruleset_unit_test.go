@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v156/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestUnitDoesRuleConditionsRefDeletedSkill(t *testing.T) {

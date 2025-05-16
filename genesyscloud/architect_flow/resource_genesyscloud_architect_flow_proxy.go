@@ -7,7 +7,7 @@ import (
 	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v156/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
