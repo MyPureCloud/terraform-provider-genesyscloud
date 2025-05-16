@@ -150,5 +150,10 @@ func getRoutingLanguageIdByNameFn(ctx context.Context, p *routingLanguageProxy, 
 
 // deleteRoutingLanguageFn is an implementation function for deleting a Genesys Cloud routing language
 func deleteRoutingLanguageFn(ctx context.Context, p *routingLanguageProxy, id string) (*platformclientv2.APIResponse, error) {
-	return p.routingApi.DeleteRoutingLanguage(id)
+	resp, err := p.routingApi.DeleteRoutingLanguage(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.routingLanguageCache, id)
+	return resp, nil
 }

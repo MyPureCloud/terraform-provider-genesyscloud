@@ -125,5 +125,10 @@ func updateKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledge
 }
 
 func deleteKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
-	return p.KnowledgeApi.DeleteKnowledgeKnowledgebase(knowledgebaseId)
+	delete, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebase(knowledgebaseId)
+	if err != nil {
+		return delete, resp, err
+	}
+	rc.DeleteCacheItem(p.knowledgebaseCache, knowledgebaseId)
+	return delete, resp, nil
 }

@@ -3,8 +3,9 @@ package conversations_messaging_supportedcontent
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
@@ -173,5 +174,10 @@ func updateSupportedContentFn(ctx context.Context, p *supportedContentProxy, id 
 
 // deleteSupportedContentFn is an implementation function for deleting a Genesys Cloud supported content
 func deleteSupportedContentFn(ctx context.Context, p *supportedContentProxy, id string) (response *platformclientv2.APIResponse, err error) {
-	return p.conversationsApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(id)
+	resp, err := p.conversationsApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.supportedContentCache, id)
+	return resp, nil
 }

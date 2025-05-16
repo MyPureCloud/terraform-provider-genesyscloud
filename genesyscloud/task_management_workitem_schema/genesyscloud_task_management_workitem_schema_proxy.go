@@ -180,6 +180,7 @@ func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete task management workitem schema: %s", err)
 	}
+	rc.DeleteCacheItem(p.workitemSchemaCache, id)
 	return resp, nil
 }
 
