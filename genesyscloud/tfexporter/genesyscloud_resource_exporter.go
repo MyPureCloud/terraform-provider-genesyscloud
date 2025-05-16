@@ -1541,7 +1541,12 @@ func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap 
 		for _, res := range list {
 			for _, resource := range g.resources {
 				if resource.State.ID == strings.Split(res, ".")[1] {
-					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", strings.Split(res, ".")[0]+"."+resource.BlockLabel))
+					resourceName := strings.Split(res, ".")[0] + "." + resource.BlockLabel
+					if g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
+						resourceName = "data." + resourceName
+					}
+					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", resourceName))
+
 				}
 			}
 		}
