@@ -107,6 +107,7 @@ func readTaskManagementWorkitemSchema(ctx context.Context, d *schema.ResourceDat
 		resourcedata.SetNillableValue(d, "description", schema.JsonSchema.Description)
 		resourcedata.SetNillableValue(d, "properties", schemaPropsPtr)
 		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
+		resourcedata.SetNillableValue(d, "version", schema.Version)
 
 		log.Printf("Read task management workitem schema %s %s", d.Id(), *schema.Name)
 		return cc.CheckState(d)
