@@ -22,7 +22,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_architect_datatable" "customers" {
   name        = "Customers"
-  division_id = genesyscloud_auth_division.home.id
+  division_id = data.genesyscloud_auth_division_home.home.id
   description = "Table of Customers"
   properties {
     name  = "key"
@@ -39,6 +39,16 @@ resource "genesyscloud_architect_datatable" "customers" {
     type    = "boolean"
     title   = "Is Deleted"
     default = "false"
+  }
+  properties {
+    name  = "address"
+    type  = "string"
+    title = "Address"
+  }
+  properties {
+    name  = "vip"
+    type  = "boolean"
+    title = "VIP"
   }
 }
 ```

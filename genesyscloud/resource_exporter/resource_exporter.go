@@ -77,8 +77,8 @@ type DataSourceResolver struct {
 
 // RefAttrCustomResolver allows the definition of a custom resolver for an exporter.
 type RefAttrCustomResolver struct {
-	ResolverFunc            func(map[string]interface{}, map[string]*ResourceExporter, string) error
-	ResolveToDataSourceFunc func(map[string]interface{}, any, *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
+	ResolverFunc            func(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error
+	ResolveToDataSourceFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
 }
 
 // CustomFlowResolver allows the definition of a custom resolver for an exporter.

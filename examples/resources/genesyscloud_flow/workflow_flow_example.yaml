@@ -1,0 +1,22 @@
+workflow:
+  name: Workflow Flow Example
+  description: ""
+  division: Home
+  startUpRef: "/workflow/states/state[Initial State_10]"
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      none: true
+  settingsErrorHandling:
+    errorHandling:
+      endWorkflow:
+        none: true
+  states:
+    - state:
+        name: Initial State
+        refId: Initial State_10
+        actions:
+          - endWorkflow:
+              name: End Workflow
+              exitReason:
+                noValue: true

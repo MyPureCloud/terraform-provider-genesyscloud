@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_responsemanagement_library" "example_responsemanagement_library" {
+resource "genesyscloud_responsemanagement_library" "example_library" {
   name = "Example library name"
 }
 ```

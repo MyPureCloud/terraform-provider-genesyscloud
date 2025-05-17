@@ -19,8 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_journey_outcome_predictor" "example_journey_outcome_predictor_resource" {
-  outcome_id = data.genesyscloud_journey_outcome.example_outcome.id
+resource "genesyscloud_journey_outcome_predictor" "example_journey_outcome_predictor" {
+  outcome_id = genesyscloud_journey_outcome.example_journey_outcome.id
 }
 ```
 

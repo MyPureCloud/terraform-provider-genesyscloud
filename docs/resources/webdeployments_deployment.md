@@ -20,22 +20,14 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-data "genesyscloud_flow" "incomingMessageFlow" {
-  name = "Incoming Message Flow"
-}
-
-data "genesyscloud_webdeployments_configuration" "exampleConfiguration" {
-  name = "Example Web Deployment Configuration"
-}
-
-resource "genesyscloud_webdeployments_deployment" "exampleDeployment" {
+resource "genesyscloud_webdeployments_deployment" "example_deployment" {
   name            = "Example Web Deployment"
   description     = "This is an example of a web deployment"
-  allowed_domains = ["genesys.com"]
-  flow_id         = data.genesyscloud_flow.incomingMessageFlow.id
+  allowed_domains = ["example.com"]
+  flow_id         = genesyscloud_flow.inbound_message_flow.id
   configuration {
-    id      = data.genesyscloud_webdeployments_configuration.exampleConfiguration.id
-    version = data.genesyscloud_webdeployments_configuration.exampleConfiguration.version
+    id      = genesyscloud_webdeployments_configuration.example_configuration.id
+    version = genesyscloud_webdeployments_configuration.example_configuration.version
   }
 }
 ```

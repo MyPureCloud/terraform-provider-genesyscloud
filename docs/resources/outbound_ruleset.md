@@ -21,53 +21,83 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_outbound_ruleset" "example_outbound_ruleset" {
-  name            = ""
+  name            = "Example Ruleset"
   contact_list_id = genesyscloud_outbound_contact_list.contact_list.id
-  queue_id        = genesyscloud_routing_queue.queue.id
+  queue_id        = genesyscloud_routing_queue.example_queue.id
+
   rules {
-    name     = ""
+    name     = "Do Not Attempt To Dial Contacts Without Phone Number"
     order    = 0
-    category = "DIALER_PRECALL" // Possible values: DIALER_PRECALL, DIALER_WRAPUP
+    category = "DIALER_PRECALL"
     conditions {
-      type                       = "wrapupCondition" // Possible values: wrapupCondition, systemDispositionCondition, contactAttributeCondition, phoneNumberCondition, phoneNumberTypeCondition, callAnalysisCondition, contactPropertyCondition, dataActionCondition
-      inverted                   = true
-      attribute_name             = ""
-      value                      = ""
-      value_type                 = "STRING" // Possible values: STRING, NUMERIC, DATETIME, PERIOD
-      operator                   = "EQUALS" // Possible values: EQUALS, LESS_THAN, LESS_THAN_EQUALS, GREATER_THAN, GREATER_THAN_EQUALS, CONTAINS, BEGINS_WITH, ENDS_WITH, BEFORE, AFTER, IN
-      codes                      = []
-      property                   = ""
-      property_type              = "LAST_ATTEMPT_BY_COLUMN" // Possible values: LAST_ATTEMPT_BY_COLUMN, LAST_ATTEMPT_OVERALL, LAST_WRAPUP_BY_COLUMN, LAST_WRAPUP_OVERALL
-      data_action_id             = genesyscloud_integration_action.data_action.id
-      data_not_found_resolution  = true
-      contact_id_field           = ""
-      call_analysis_result_field = ""
-      agent_wrapup_field         = ""
-      contact_column_to_data_action_field_mappings {
-        contact_column_name = ""
-        data_action_field   = ""
-      }
-      predicates {
-        output_field                    = ""
-        output_operator                 = "EQUALS" // Possible values: EQUALS, LESS_THAN, LESS_THAN_EQUALS, GREATER_THAN, GREATER_THAN_EQUALS, CONTAINS, BEGINS_WITH, ENDS_WITH, BEFORE, AFTER
-        comparison_value                = ""
-        inverted                        = true
-        output_field_missing_resolution = true
-      }
+      type           = "contactAttributeCondition"
+      inverted       = true
+      attribute_name = "Phone"
+      value          = ""
+      value_type     = "STRING"
+      operator       = "EQUALS"
     }
     actions {
-      type             = "Action"      // Possible values: Action, modifyContactAttribute, dataActionBehavior
-      action_type_name = "DO_NOT_DIAL" // Possible values: DO_NOT_DIAL, MODIFY_CONTACT_ATTRIBUTE, SWITCH_TO_PREVIEW, APPEND_NUMBER_TO_DNC_LIST, SCHEDULE_CALLBACK, CONTACT_UNCALLABLE, NUMBER_UNCALLABLE, SET_CALLER_ID, SET_SKILLS, DATA_ACTION
-      update_option    = "SET"         // Possible values: SET, INCREMENT, DECREMENT, CURRENT_TIME
+      type             = "Action"
+      action_type_name = "DO_NOT_DIAL"
       properties       = {}
-      data_action_id   = genesyscloud_integration_action.data_action.id
-      contact_column_to_data_action_field_mappings {
-        contact_column_name = ""
-        data_action_field   = ""
+    }
+  }
+
+  rules {
+    name     = "When Call Is A Win, Call Data Action"
+    order    = 1
+    category = "DIALER_WRAPUP" // Possible values: DIALER_PRECALL, DIALER_WRAPUP
+    conditions {
+      type     = "wrapupCondition" // Possible values: wrapupCondition, systemDispositionCondition, contactAttributeCondition, phoneNumberCondition, phoneNumberTypeCondition, callAnalysisCondition, contactPropertyCondition, dataActionCondition
+      inverted = false
+      codes    = [genesyscloud_routing_wrapupcode.win.id]
+    }
+    actions {
+      type                       = "dataActionBehavior"
+      action_type_name           = "DATA_ACTION"
+      properties                 = {}
+      data_action_id             = genesyscloud_integration_action.example_action.id
+      call_analysis_result_field = "examplestr"
+    }
+  }
+
+  rules {
+    name     = "Retry on Busy"
+    order    = 2
+    category = "DIALER_WRAPUP"
+    conditions {
+      type     = "callAnalysisCondition"
+      inverted = false
+      value    = "disposition.classification.callable.busy"
+      operator = "EQUALS"
+    }
+    actions {
+      type             = "Action"
+      action_type_name = "SCHEDULE_CALLBACK"
+      properties = {
+        callbackOffset = "5"
       }
-      contact_id_field           = ""
-      call_analysis_result_field = ""
-      agent_wrapup_field         = ""
+    }
+  }
+
+  rules {
+    name     = "Designated ID for 555 area code"
+    order    = 3
+    category = "DIALER_PRECALL"
+    conditions {
+      type     = "phoneNumberCondition"
+      inverted = false
+      value    = "555"
+      operator = "BEGINS_WITH"
+    }
+    actions {
+      type             = "Action"
+      action_type_name = "SET_CALLER_ID"
+      properties = {
+        callerAddress = "+18001234567"
+        callerName    = "Acme Inc"
+      }
     }
   }
 }
