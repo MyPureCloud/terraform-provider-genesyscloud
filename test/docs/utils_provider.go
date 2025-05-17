@@ -41,7 +41,7 @@ func utilsProvider() *schema.Provider {
 	}
 }
 
-func UtilsProviderFactory() map[string]func() (*schema.Provider, error) {
+func ExampleUtilsProviderFactory() map[string]func() (*schema.Provider, error) {
 	return map[string]func() (*schema.Provider, error){
 		"utils": func() (*schema.Provider, error) { return utilsProvider(), nil },
 	}

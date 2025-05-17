@@ -57,6 +57,7 @@ resource "genesyscloud_outbound_contact_list_contact" "contact" {
     Home         = "+2222222"
     Email        = "example@email.com"
     Zipcode      = "12345"
+    Timezone     = "EST"
   }
   phone_number_status {
     key      = "Cell"

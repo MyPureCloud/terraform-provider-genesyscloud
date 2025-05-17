@@ -179,4 +179,5 @@ resource "genesyscloud_task_management_workitem_schema" "example_schema" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `version` (Number) The version number of the Workitem Schema. The version number is incremented each time the schema is modified.
 

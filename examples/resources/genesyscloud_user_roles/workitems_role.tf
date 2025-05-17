@@ -1,4 +1,4 @@
-resource "genesyscloud_user_roles" "example_user_roles" {
+resource "genesyscloud_user_roles" "example_workitems_user_roles" {
   user_id = genesyscloud_user.example_user.id
   roles {
     role_id      = genesyscloud_auth_role.workitems_role.id

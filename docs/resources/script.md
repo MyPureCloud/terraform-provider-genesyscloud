@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_script" "email" {
+resource "genesyscloud_script" "example_script" {
   script_name       = "Example script name ${random_uuid.uuid.result}"
   filepath          = "${local.working_dir.script}/email.script.json"
   file_content_hash = filesha256("${local.working_dir.script}/email.script.json")

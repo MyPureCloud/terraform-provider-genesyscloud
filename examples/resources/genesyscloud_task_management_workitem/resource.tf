@@ -41,5 +41,5 @@ resource "genesyscloud_task_management_workitem" "sample_workitem" {
     "custom_attribute_11_tag" : ["tag_1", "tag_2"],
   })
 
-  depends_on = [genesyscloud_user_roles.example_user_roles]
+  depends_on = [genesyscloud_user_roles.example_workitems_user_roles]
 }
