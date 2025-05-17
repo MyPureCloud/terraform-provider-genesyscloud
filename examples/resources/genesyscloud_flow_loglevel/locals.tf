@@ -1,5 +1,7 @@
 locals {
-  dependencies = [
-    "../genesyscloud_flow/resource.tf"
-  ]
+  dependencies = {
+    resource = [
+      "../genesyscloud_flow/resource.tf"
+    ]
+  }
 }

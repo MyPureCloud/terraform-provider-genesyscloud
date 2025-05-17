@@ -1,5 +1,7 @@
 locals {
-  dependencies = [
-    "../genesyscloud_routing_wrapupcode/resource.tf",
-  ]
+  dependencies = {
+    resource = [
+      "../genesyscloud_routing_wrapupcode/resource.tf",
+    ]
+  }
 }

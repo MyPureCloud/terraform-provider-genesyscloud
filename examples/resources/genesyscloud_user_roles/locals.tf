@@ -1,8 +1,13 @@
 locals {
-  dependencies = [
-    "../genesyscloud_user/resource.tf",
-    "../genesyscloud_auth_role/resource.tf",
-    "../genesyscloud_auth_division/resource.tf",
-    "../../data-sources/genesyscloud_auth_division_home/data-source.tf",
-  ]
+  dependencies = {
+    resource = [
+      "../genesyscloud_user/resource.tf",
+      "../genesyscloud_auth_division/resource.tf",
+      "../genesyscloud_auth_role/resource.tf",
+      "../../data-sources/genesyscloud_auth_division_home/data-source.tf",
+    ]
+    workitems_role = [
+      "../genesyscloud_auth_role/workitems_role.tf",
+    ]
+  }
 }

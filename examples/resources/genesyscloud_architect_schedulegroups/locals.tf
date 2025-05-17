@@ -1,5 +1,7 @@
 locals {
-  dependencies = [
-    "./schedulegroups.tf"
-  ]
+  dependencies = {
+    resource = [
+      "./schedulegroups.tf"
+    ]
+  }
 }

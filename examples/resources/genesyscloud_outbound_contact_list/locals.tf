@@ -1,5 +1,7 @@
 locals {
-  dependencies = [
-    "../genesyscloud_outbound_attempt_limit/resource.tf",
-  ]
+  dependencies = {
+    resource = [
+      "../genesyscloud_outbound_attempt_limit/resource.tf",
+    ]
+  }
 }

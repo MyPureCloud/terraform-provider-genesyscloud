@@ -4,8 +4,4 @@ resource "genesyscloud_user_roles" "example_user_roles" {
     role_id      = genesyscloud_auth_role.agent_role.id
     division_ids = [data.genesyscloud_auth_division_home.home.id, genesyscloud_auth_division.marketing.id]
   }
-  roles {
-    role_id      = genesyscloud_auth_role.workitems_role.id
-    division_ids = [data.genesyscloud_auth_division_home.home.id]
-  }
 }

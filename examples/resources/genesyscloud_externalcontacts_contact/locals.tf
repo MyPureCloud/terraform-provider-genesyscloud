@@ -1,5 +1,7 @@
 locals {
-  dependencies = [
-    "../genesyscloud_externalcontacts_organization/resource.tf"
-  ]
+  dependencies = {
+    resource = [
+      "../genesyscloud_externalcontacts_organization/resource.tf"
+    ]
+  }
 }

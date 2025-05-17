@@ -2,6 +2,7 @@ package examples
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,17 +35,19 @@ type LocalsConfig struct {
 }
 
 type Locals struct {
-	Dependencies      []string               `hcl:"dependencies,optional"`
+	Dependencies      map[string][]string    `hcl:"dependencies,optional"`
 	WorkingDir        map[string]string      `hcl:"working_dir,optional"`
 	SkipIfConstraints map[string][]string    `hcl:"skip_if,optional"`
 	EnvironmentVars   map[string]string      `hcl:"environment_vars,optional"`
 	Other             map[string]interface{} `hcl:",remain"`
 }
 type SkipIfConstraints struct {
-	NotInDomains       []string `hcl:"not_in_domains,optional"`
-	OnlyInDomains      []string `hcl:"only_in_domains,optional"`
-	ProductsMissingAny []string `hcl:"products_missing_any,optional"`
-	ProductsMissingAll []string `hcl:"products_missing_all,optional"`
+	NotInDomains        []string `hcl:"not_in_domains,optional"`
+	OnlyInDomains       []string `hcl:"only_in_domains,optional"`
+	ProductsMissingAny  []string `hcl:"products_missing_any,optional"`
+	ProductsMissingAll  []string `hcl:"products_missing_all,optional"`
+	ProductsExistingAny []string `hcl:"products_existing_any,optional"`
+	ProductsExistingAll []string `hcl:"products_existing_all,optional"`
 }
 
 type ProcessedFiles struct {
@@ -78,6 +81,7 @@ func LoadExampleWithDependencies(resourcePath string, processedState *ProcessedE
 	}
 
 	pathDir := filepath.Dir(resourcePath)
+	fileWithoutExt := strings.TrimSuffix(filepath.Base(resourcePath), filepath.Ext(resourcePath))
 
 	var processedExample *ProcessedFiles
 	if processedState.DirectoryTracker[pathDir] == nil {
@@ -91,37 +95,27 @@ func LoadExampleWithDependencies(resourcePath string, processedState *ProcessedE
 
 	var locals *Locals
 
-	// Only process locals.tf if we haven't processed this directory yet
-	if !processedExample.isFileProcessed("locals.tf") {
+	localsPath := filepath.Join(pathDir, "locals.tf")
 
-		localsPath := filepath.Join(pathDir, "locals.tf")
-
-		// Check if locals.tf exists
-		if _, err := os.Stat(localsPath); err == nil {
-			// locals.tf exists, parse it
-			locals, err = parseLocals(localsPath)
-			if err != nil {
-				return nil, processedState, fmt.Errorf("error parsing locals.tf: %w", err)
-			}
-		} else if os.IsNotExist(err) {
-			// locals.tf doesn't exist, create an empty Locals struct
-			locals = &Locals{
-				WorkingDir: make(map[string]string),
-				Other:      make(map[string]interface{}),
-			}
-		} else {
-			// Some other error occurred
-			return nil, processedState, fmt.Errorf("error checking locals.tf: %w", err)
+	// Check if locals.tf exists
+	if _, err := os.Stat(localsPath); err == nil {
+		// locals.tf exists, parse it
+		locals, err = parseLocals(localsPath)
+		if err != nil {
+			return nil, processedState, fmt.Errorf("error parsing locals.tf: %w", err)
 		}
-
-		processedExample.markFileAsProcessed("locals.tf")
-	} else {
-		// If we've already processed this directory, create an empty Locals struct
+	} else if os.IsNotExist(err) {
+		// locals.tf doesn't exist, create an empty Locals struct
 		locals = &Locals{
 			WorkingDir: make(map[string]string),
 			Other:      make(map[string]interface{}),
 		}
+	} else {
+		// Some other error occurred
+		return nil, processedState, fmt.Errorf("error checking locals.tf: %w", err)
 	}
+
+	processedExample.markFileAsProcessed("locals.tf")
 
 	// Update WorkingDir with absolute paths
 	if locals.WorkingDir != nil {
@@ -149,25 +143,33 @@ func LoadExampleWithDependencies(resourcePath string, processedState *ProcessedE
 
 		// Mark as processed here so we don't double process a dependency before finishing up
 		processedExample.markFileAsProcessed(resourcePath)
+		log.Printf("Resource path processed: %s", resourcePath)
 
 		// Load dependencies
 		if locals.Dependencies != nil {
-			for _, depPath := range locals.Dependencies {
-				depPath = filepath.Join(pathDir, depPath)
-				depExample, depLoadedDeps, err := LoadExampleWithDependencies(depPath, processedState)
-				if err != nil {
-					return nil, processedState, fmt.Errorf("error loading dependency %s: %w", depPath, err)
-				}
-				if depExample == nil {
+			for configFile, dependencies := range locals.Dependencies {
+				if configFile != fileWithoutExt {
 					continue
 				}
-				processedState = depLoadedDeps
-				example.Dependencies = append(example.Dependencies, depExample)
-				// Add resources from dependencies
-				example.Resources = append(example.Resources, depExample.Resources...)
 
-				// Merge locals
-				example.Locals.merge(depExample.Locals)
+				for _, depPath := range dependencies {
+					depPath = filepath.Join(pathDir, depPath)
+					log.Printf("Loading Dependency: %s", depPath)
+					depExample, depLoadedDeps, err := LoadExampleWithDependencies(depPath, processedState)
+					if err != nil {
+						return nil, processedState, fmt.Errorf("error loading dependency %s: %w", depPath, err)
+					}
+					if depExample == nil {
+						continue
+					}
+					processedState = depLoadedDeps
+					example.Dependencies = append(example.Dependencies, depExample)
+					// Add resources from dependencies
+					example.Resources = append(example.Resources, depExample.Resources...)
+
+					// Merge locals
+					example.Locals.merge(depExample.Locals)
+				}
 			}
 		}
 
@@ -178,6 +180,10 @@ func LoadExampleWithDependencies(resourcePath string, processedState *ProcessedE
 					example.SkipIfConstraints.ProductsMissingAny = append(example.SkipIfConstraints.ProductsMissingAny, v...)
 				} else if k == "products_missing_all" {
 					example.SkipIfConstraints.ProductsMissingAll = append(example.SkipIfConstraints.ProductsMissingAll, v...)
+				} else if k == "products_existing_any" {
+					example.SkipIfConstraints.ProductsExistingAny = append(example.SkipIfConstraints.ProductsExistingAny, v...)
+				} else if k == "products_existing_all" {
+					example.SkipIfConstraints.ProductsExistingAll = append(example.SkipIfConstraints.ProductsExistingAll, v...)
 				} else if k == "not_in_domains" {
 					example.SkipIfConstraints.NotInDomains = append(example.SkipIfConstraints.NotInDomains, v...)
 				} else if k == "only_in_domains" {
@@ -206,7 +212,12 @@ func (l *Locals) merge(other *Locals) {
 		return
 	}
 
-	l.Dependencies = append(l.Dependencies, other.Dependencies...)
+	if l.Dependencies == nil {
+		l.Dependencies = make(map[string][]string)
+	}
+	for k, v := range other.Dependencies {
+		l.Dependencies[k] = append(l.Dependencies[k], v...)
+	}
 
 	if l.WorkingDir == nil {
 		l.WorkingDir = make(map[string]string)
@@ -453,6 +464,16 @@ func (s *SkipIfConstraints) String() string {
 			fmt.Sprintf("Missing all of these products: %s", strings.Join(s.ProductsMissingAll, ", ")))
 	}
 
+	if len(s.ProductsExistingAny) > 0 {
+		constraints = append(constraints,
+			fmt.Sprintf("Existing one of these products: %s", strings.Join(s.ProductsExistingAny, ", ")))
+	}
+
+	if len(s.ProductsExistingAll) > 0 {
+		constraints = append(constraints,
+			fmt.Sprintf("Existing all of these products: %s", strings.Join(s.ProductsExistingAll, ", ")))
+	}
+
 	if len(constraints) == 0 {
 		return "No constraints"
 	}
@@ -471,6 +492,12 @@ func (s *SkipIfConstraints) ShouldSkip(domain string, authorizationProducts []st
 		return true
 	}
 	if len(s.ProductsMissingAll) > 0 && !containsAll(authorizationProducts, s.ProductsMissingAll) {
+		return true
+	}
+	if len(s.ProductsExistingAny) > 0 && containsAny(authorizationProducts, s.ProductsExistingAny) {
+		return true
+	}
+	if len(s.ProductsExistingAll) > 0 && containsAll(authorizationProducts, s.ProductsExistingAll) {
 		return true
 	}
 	return false

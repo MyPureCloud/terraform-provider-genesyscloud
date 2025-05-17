@@ -1,5 +1,10 @@
 locals {
-  dependencies = [
-    "../genesyscloud_user/resource.tf"
-  ]
+  dependencies = {
+    resource = [
+      "../genesyscloud_user/resource.tf"
+    ]
+    bullseye_group = [
+      "../genesyscloud_user/resource.tf"
+    ]
+  }
 }

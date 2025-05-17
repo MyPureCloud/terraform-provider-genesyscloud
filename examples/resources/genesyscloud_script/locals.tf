@@ -2,7 +2,9 @@ locals {
   working_dir = {
     script = "."
   }
-  dependencies = [
-    "../../common/random_uuid.tf"
-  ]
+  dependencies = {
+    resource = [
+      "../../common/random_uuid.tf"
+    ]
+  }
 }
