@@ -236,6 +236,20 @@ func ResourceEvaluationForm() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					if oldValue == "true" && newValue == "false" {
+						return true
+					}
+					if oldValue == "false" && newValue == "true" {
+						return true
+					}
+					return false
+				},
+			},
+			"published_id": {
+				Description: "The ID of the published evaluation form.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"question_groups": {
 				Description: "A list of question groups.",
@@ -269,13 +283,15 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// Publishing
 	if published {
-		resp, err = publishEvaluation(*form.Id, qualityAPI)
+		newDraftEval, resp, err := publishEvaluation(*form.Id, qualityAPI)
 		if err != nil {
 			return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to publish evaluation form %s error: %s", name, err), resp)
 		}
+		_ = d.Set("published_id", *form.Id)
+		d.SetId(*newDraftEval.Id)
+	} else {
+		d.SetId(*form.Id)
 	}
-
-	d.SetId(*form.Id)
 
 	log.Printf("Created evaluation form %s %s", name, *form.Id)
 	return readEvaluationForm(ctx, d, meta)
@@ -302,9 +318,9 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			publishedVersions, resp, err := qualityAPI.GetQualityFormsEvaluationsBulkContexts([]string{*evaluationForm.ContextId})
 			if err != nil {
 				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions %s", *evaluationForm.ContextId), resp))
 				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions %s", *evaluationForm.ContextId), resp))
 			}
 
 			if len(publishedVersions) > 0 {
@@ -359,10 +375,13 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	// Set published property on evaluation form update.
 	if d.HasChange("published") {
 		if published {
-			resp, err := publishEvaluation(d.Id(), qualityAPI)
+			formId := d.Id()
+			publishedEval, resp, err := publishEvaluation(d.Id(), qualityAPI)
 			if err != nil {
 				return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("failed to publish evaluation '%s'", d.Id()), resp)
 			}
+			_ = d.Set("published_id", formId)
+			d.SetId(*publishedEval.Id)
 		} else if !updatedResourceDataIdAfterPut {
 			d.SetId(unpublishedVersionId)
 		}
@@ -379,7 +398,7 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
 
 	// Get the latest unpublished version of the form
-	formVersions, resp, err := qualityAPI.GetQualityFormsEvaluationVersions(d.Id(), 25, 1, "desc")
+	formVersions, _, err := qualityAPI.GetQualityFormsEvaluationVersions(d.Id(), 25, 1, "desc")
 	if err != nil {
 		log.Printf("Failed to get evaluation form '%s' versions. Error: %s", name, err.Error())
 	} else if formVersions != nil && formVersions.Entities != nil && len(*formVersions.Entities) > 0 {
@@ -390,12 +409,12 @@ func deleteEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 
 	log.Printf("Deleting evaluation form %s", name)
-	if resp, err = qualityAPI.DeleteQualityFormsEvaluation(d.Id()); err != nil {
+	if resp, err := qualityAPI.DeleteQualityFormsEvaluation(d.Id()); err != nil {
 		return util.BuildAPIDiagnosticError("genesyscloud_quality_forms_evaluation", fmt.Sprintf("Failed to delete evaluation form '%s'. Error: %s", name, err.Error()), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err = qualityAPI.GetQualityFormsEvaluation(d.Id())
+		_, resp, err := qualityAPI.GetQualityFormsEvaluation(d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Evaluation form deleted
@@ -415,19 +434,22 @@ func formIsPublishedRemotely(d *schema.ResourceData) bool {
 		!d.Get("published").(bool) && d.HasChange("published")
 }
 
-func publishEvaluation(formId string, qualityAPI *platformclientv2.QualityApi) (*platformclientv2.APIResponse, error) {
+func publishEvaluation(formId string, qualityAPI *platformclientv2.QualityApi) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	existingState, _, err := qualityAPI.GetQualityFormsEvaluation(formId)
 	if err != nil {
 		log.Println("failed to check existing state")
 	} else if *existingState.Published {
 		log.Printf("No need to publish form '%s' because it's already published", formId)
-		return nil, nil
+		return nil, nil, nil
 	}
-	_, resp, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
+	evaluation, resp, err := qualityAPI.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
 		Id:        &formId,
 		Published: platformclientv2.Bool(true),
 	})
-	return resp, nil
+	if err != nil {
+		return nil, resp, err
+	}
+	return evaluation, resp, nil
 }
 
 func getLatestUnpublishedeVersionOfForm(formId string, qualityAPI *platformclientv2.QualityApi) (_ string, resp *platformclientv2.APIResponse, _ error) {
@@ -547,7 +569,7 @@ func buildSdkAnswerOptions(answerOptions []interface{}) *[]platformclientv2.Answ
 }
 
 func buildSdkVisibilityCondition(visibilityCondition []interface{}) *platformclientv2.Visibilitycondition {
-	if visibilityCondition == nil || len(visibilityCondition) <= 0 {
+	if len(visibilityCondition) <= 0 {
 		return nil
 	}
 
@@ -791,7 +813,7 @@ func GenerateFormAnswerOptions(answerOptions *[]AnswerOptionStruct) string {
 		answerOptionsString += answerOptionString
 	}
 
-	return fmt.Sprintf(`%s`, answerOptionsString)
+	return answerOptionsString
 }
 
 func GenerateFormVisibilityCondition(condition *VisibilityConditionStruct) string {
