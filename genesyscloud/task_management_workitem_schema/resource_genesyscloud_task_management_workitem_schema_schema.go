@@ -65,6 +65,11 @@ func ResourceTaskManagementWorkitemSchema() *schema.Resource {
 				Default:     true,
 				Type:        schema.TypeBool,
 			},
+			"version": {
+				Description: `The version number of the Workitem Schema. The version number is incremented each time the schema is modified.`,
+				Computed:    true,
+				Type:        schema.TypeFloat,
+			},
 		},
 	}
 }

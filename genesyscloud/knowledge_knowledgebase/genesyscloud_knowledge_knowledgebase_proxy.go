@@ -3,6 +3,7 @@ package knowledge_knowledgebase
 import (
 	"context"
 	"fmt"
+
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -100,11 +101,12 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgebaseProxy, p
 			break
 		}
 
+		previousAfter := after // Store current token before getting next one
 		after, err = util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
 			return nil, resp, err
 		}
-		if after == "" {
+		if after == "" || after == previousAfter {
 			break
 		}
 	}
