@@ -1,4 +1,4 @@
-package testing
+package examples
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"

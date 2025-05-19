@@ -14,5 +14,9 @@ locals {
       "../genesyscloud_script/resource.tf",
       "../genesyscloud_routing_wrapupcode/resource.tf",
     ]
+    simplest_resource = [
+      "../../data-sources/genesyscloud_auth_division_home/data-source.tf",
+      "../genesyscloud_group/resource.tf",
+    ]
   }
 }

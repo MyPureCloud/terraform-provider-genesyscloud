@@ -31,12 +31,12 @@ testunit:
 
 # Run example docs tests
 testexamples:
-	TF_UNIT=1 go test ./examples/... -v $(TESTARGS) -timeout 5m
-	TF_ACC=1 go test ./test/docs -run TestExampleResources -v -timeout 120m -parallel 1
+	TF_UNIT=1 go test ./examples/... -run TestLoadExample -v $(TESTARGS) -timeout 5m || exit 1
+	TF_ACC=1 go test ./examples -run TestExampleResources -v -timeout 120m -parallel 1
 
 # Generate docs
 docs:
-	TF_PLAN_ONLY=true go test ./test/docs -run TestExampleResourcesPlanOnly -v || exit 1
+	go test ./examples -run TestExampleResourcesPlanOnly -v || exit 1
 	go generate
 
 coverageacc:

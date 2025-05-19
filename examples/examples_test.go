@@ -125,8 +125,8 @@ locals {
 	}
 }
 
-// TestCyclicDependencyDetection tests that cyclic dependencies are detected
-func TestCyclicDependencyDetection(t *testing.T) {
+// TestLoadExampleCyclicDependencyDetection tests that cyclic dependencies are detected
+func TestLoadExampleCyclicDependencyDetection(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
 	if err != nil {
@@ -205,8 +205,8 @@ locals {
 	}
 }
 
-// TestProcessedExampleState tests that the ProcessedExampleState correctly tracks processed files
-func TestProcessedExampleState(t *testing.T) {
+// TestLoadExampleProcessedExampleState tests that the ProcessedExampleState correctly tracks processed files
+func TestLoadExampleProcessedExampleState(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
 	if err != nil {
@@ -238,8 +238,8 @@ func TestProcessedExampleState(t *testing.T) {
 	}
 }
 
-// TestDependencyChainTracking tests that the dependency chain is correctly tracked
-func TestDependencyChainTracking(t *testing.T) {
+// TestLoadExampleDependencyChainTracking tests that the dependency chain is correctly tracked
+func TestLoadExampleDependencyChainTracking(t *testing.T) {
 	// Create a ProcessedExampleState
 	state := NewProcessedExampleState()
 
@@ -268,8 +268,8 @@ func TestDependencyChainTracking(t *testing.T) {
 	}
 }
 
-// TestLocalsMerging tests that locals are properly merged from dependencies
-func TestLocalsMerging(t *testing.T) {
+// TestLoadExampleLocalsMerging tests that locals are properly merged from dependencies
+func TestLoadExampleLocalsMerging(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
 	if err != nil {
@@ -423,8 +423,8 @@ locals {
 	}
 }
 
-// TestLocalsNilHandling tests that nil locals are handled properly during merging
-func TestLocalsNilHandling(t *testing.T) {
+// TestLoadExampleLocalsNilHandling tests that nil locals are handled properly during merging
+func TestLoadExampleLocalsNilHandling(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
 	if err != nil {
@@ -514,8 +514,8 @@ locals {
 	}
 }
 
-// TestLocalsMergeDirectly tests the merge function directly
-func TestLocalsMergeDirectly(t *testing.T) {
+// TestLoadExampleLocalsMergeDirectly tests the merge function directly
+func TestLoadExampleLocalsMergeDirectly(t *testing.T) {
 	// Create two Locals objects
 	locals1 := &Locals{
 		Dependencies: map[string][]string{
