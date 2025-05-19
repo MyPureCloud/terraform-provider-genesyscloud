@@ -603,7 +603,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
-				Computed:    true,
 				Elem:        queueMemberResource,
 			},
 			"wrapup_codes": {
