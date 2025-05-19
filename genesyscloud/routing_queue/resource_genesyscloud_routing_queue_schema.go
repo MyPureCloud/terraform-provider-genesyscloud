@@ -602,7 +602,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
-				Computed:    true,
 				Elem:        queueMemberResource,
 			},
 			"wrapup_codes": {
@@ -640,6 +639,7 @@ func ResourceRoutingQueue() *schema.Resource {
 			"last_agent_routing_mode": {
 				Description:  "The Last Agent Routing Mode for the queue.",
 				Type:         schema.TypeString,
+				Computed:     true,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Disabled", "QueueMembersOnly", "AnyAgent"}, false),
 			},
