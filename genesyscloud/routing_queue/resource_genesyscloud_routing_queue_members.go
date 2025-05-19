@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -79,12 +80,13 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	}
 }
 
-func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
-	proxy := GetRoutingQueueProxy(sdkConfig)
-
-	if !d.HasChange("members") {
-		return nil
+func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) (diags diag.Diagnostics) {
+	if d.Get("ignore_members").(bool) {
+		log.Println("Skipping queue members update because ignore_members is set to true. Queue ID: ", strconv.Quote(d.Id()))
+		return
 	}
+
+	proxy := GetRoutingQueueProxy(sdkConfig)
 
 	membersSet, ok := d.Get("members").(*schema.Set)
 	if !ok || membersSet.Len() == 0 {
@@ -108,7 +110,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 	}
 
 	// Check for members to add or remove
-	if diagErr := addOrRemoveMembers(d.Id(), oldUserIds, newUserIds, proxy); err != nil {
+	if diagErr := addOrRemoveMembers(d.Id(), oldUserIds, newUserIds, proxy); diagErr != nil {
 		return diagErr
 	}
 
