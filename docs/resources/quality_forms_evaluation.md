@@ -107,6 +107,7 @@ resource "genesyscloud_quality_forms_evaluation" "example-evaluation-form" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `published_id` (String) The ID of the published evaluation form.
 
 <a id="nestedblock--question_groups"></a>
 ### Nested Schema for `question_groups`
