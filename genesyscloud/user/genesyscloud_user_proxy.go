@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
@@ -37,6 +38,7 @@ type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platfo
 type updateVoicemailUserpoliciesFunc func(ctx context.Context, p *userProxy, id string, policy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type getVoicemailUserpoliciesByIdFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error)
+type getTelephonyExtensionPoolByExtensionFunc func(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 
 /*
 The userProxy struct holds all the methods responsible for making calls to
@@ -46,23 +48,26 @@ enabling this terraform provider software to perform tasks like retrieving data,
 or triggering actions within the Genesys Cloud environment.
 */
 type userProxy struct {
-	clientConfig                      *platformclientv2.Configuration
-	userApi                           *platformclientv2.UsersApi
-	routingApi                        *platformclientv2.RoutingApi
-	voicemailApi                      *platformclientv2.VoicemailApi
-	createUserAttr                    createUserFunc
-	GetAllUserAttr                    GetAllUserFunc
-	getUserIdByNameAttr               getUserIdByNameFunc
-	getUserByIdAttr                   getUserByIdFunc
-	updateUserAttr                    updateUserFunc
-	deleteUserAttr                    deleteUserFunc
-	patchUserWithStateAttr            patchUserWithStateFunc
-	hydrateUserCacheAttr              hydrateUserCacheFunc
-	getUserByNameAttr                 getUserByNameFunc
-	updateVoicemailUserpoliciesAttr   updateVoicemailUserpoliciesFunc
-	getVoicemailUserpolicicesByIdAttr getVoicemailUserpoliciesByIdFunc
-	updatePasswordAttr                updatePasswordFunc
-	userCache                         rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
+	clientConfig                             *platformclientv2.Configuration
+	userApi                                  *platformclientv2.UsersApi
+	routingApi                               *platformclientv2.RoutingApi
+	voicemailApi                             *platformclientv2.VoicemailApi
+	extensionPoolApi                         *platformclientv2.TelephonyProvidersEdgeApi
+	createUserAttr                           createUserFunc
+	GetAllUserAttr                           GetAllUserFunc
+	getUserIdByNameAttr                      getUserIdByNameFunc
+	getUserByIdAttr                          getUserByIdFunc
+	updateUserAttr                           updateUserFunc
+	deleteUserAttr                           deleteUserFunc
+	patchUserWithStateAttr                   patchUserWithStateFunc
+	hydrateUserCacheAttr                     hydrateUserCacheFunc
+	getUserByNameAttr                        getUserByNameFunc
+	updateVoicemailUserpoliciesAttr          updateVoicemailUserpoliciesFunc
+	getVoicemailUserpolicicesByIdAttr        getVoicemailUserpoliciesByIdFunc
+	updatePasswordAttr                       updatePasswordFunc
+	getTelephonyExtensionPoolByExtensionAttr getTelephonyExtensionPoolByExtensionFunc
+	userCache                                rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
+	extensionPoolCache                       rc.CacheInterface[platformclientv2.Extensionpool]
 }
 
 /*
@@ -75,25 +80,30 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 	userApi := platformclientv2.NewUsersApiWithConfig(clientConfig)      // NewUsersApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
 	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewRoutingApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
 	voicemailApi := platformclientv2.NewVoicemailApiWithConfig(clientConfig)
+	extensionPoolApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	userCache := rc.NewResourceCache[platformclientv2.User]() // Create Cache for User resource
+	extensionPoolCache := rc.NewResourceCache[platformclientv2.Extensionpool]()
 	return &userProxy{
-		clientConfig:                      clientConfig,
-		userApi:                           userApi,
-		routingApi:                        routingApi,
-		voicemailApi:                      voicemailApi,
-		userCache:                         userCache,
-		createUserAttr:                    createUserFn,
-		GetAllUserAttr:                    GetAllUserFn,
-		getUserIdByNameAttr:               getUserIdByNameFn,
-		getUserByIdAttr:                   getUserByIdFn,
-		updateUserAttr:                    updateUserFn,
-		deleteUserAttr:                    deleteUserFn,
-		patchUserWithStateAttr:            patchUserWithStateFn,
-		hydrateUserCacheAttr:              hydrateUserCacheFn,
-		getUserByNameAttr:                 getUserByNameFn,
-		updateVoicemailUserpoliciesAttr:   updateVoicemailUserpoliciesFn,
-		getVoicemailUserpolicicesByIdAttr: getVoicemailUserpoliciesByUserIdFn,
-		updatePasswordAttr:                updatePasswordFn,
+		clientConfig:                             clientConfig,
+		userApi:                                  userApi,
+		routingApi:                               routingApi,
+		voicemailApi:                             voicemailApi,
+		extensionPoolApi:                         extensionPoolApi,
+		userCache:                                userCache,
+		extensionPoolCache:                       extensionPoolCache,
+		createUserAttr:                           createUserFn,
+		GetAllUserAttr:                           GetAllUserFn,
+		getUserIdByNameAttr:                      getUserIdByNameFn,
+		getUserByIdAttr:                          getUserByIdFn,
+		updateUserAttr:                           updateUserFn,
+		deleteUserAttr:                           deleteUserFn,
+		patchUserWithStateAttr:                   patchUserWithStateFn,
+		hydrateUserCacheAttr:                     hydrateUserCacheFn,
+		getUserByNameAttr:                        getUserByNameFn,
+		updateVoicemailUserpoliciesAttr:          updateVoicemailUserpoliciesFn,
+		getVoicemailUserpolicicesByIdAttr:        getVoicemailUserpoliciesByUserIdFn,
+		updatePasswordAttr:                       updatePasswordFn,
+		getTelephonyExtensionPoolByExtensionAttr: getTelephonyExtensionPoolByExtensionFn,
 	}
 }
 
@@ -172,6 +182,10 @@ func (p *userProxy) getVoicemailUserpoliciesById(ctx context.Context, id string)
 // updatePassword
 func (p *userProxy) updatePassword(ctx context.Context, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
 	return p.updatePasswordAttr(ctx, p, userId, newPassword)
+}
+
+func (p *userProxy) getTelephonyExtensionPoolByExtension(ctx context.Context, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	return p.getTelephonyExtensionPoolByExtensionAttr(ctx, p, extNum)
 }
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
@@ -314,4 +328,59 @@ func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassw
 	return p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
 		NewPassword: &newPassword,
 	})
+}
+
+func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	const pageSize = 100
+	var allPools []platformclientv2.Extensionpool
+
+	extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, 1, "", "", []string{})
+	if err != nil {
+		return nil, apiResponse, err
+	}
+
+	// Get the cached pools if they are available
+	if rc.GetCacheSize(p.extensionPoolCache) == *extensionPoolList.Total && rc.GetCacheSize(p.extensionPoolCache) != 0 {
+		allPools = *rc.GetCache(p.extensionPoolCache)
+	} else if rc.GetCacheSize(p.extensionPoolCache) != *extensionPoolList.Total || rc.GetCacheSize(p.extensionPoolCache) != 0 {
+		// The cache is populated but not with the right data, clear the cache so it can be re populated
+		p.extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+
+		allPools = append(allPools, *extensionPoolList.Entities...)
+
+		for pageNumber := 2; pageNumber <= *extensionPoolList.PageCount; pageNumber++ {
+			extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNumber, "", "", []string{})
+			if err != nil {
+				return nil, apiResponse, err
+			}
+			allPools = append(allPools, *extensionPoolList.Entities...)
+		}
+	}
+
+	for _, pool := range allPools {
+		rc.SetCache(p.extensionPoolCache, *pool.Id, pool)
+	}
+
+	extNumInt, err := strconv.Atoi(extNum)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid extension number: %s", err)
+	}
+	for _, pool := range allPools {
+		startNum, err := strconv.Atoi(*pool.StartNumber)
+		if err != nil {
+			log.Printf("invalid start number: %v", err)
+			continue
+		}
+		endNum, err := strconv.Atoi(*pool.EndNumber)
+		if err != nil {
+			log.Printf("invalid end number: %v", err)
+			continue
+		}
+
+		if extNumInt > startNum && extNumInt < endNum {
+			return &pool, apiResponse, nil
+		}
+	}
+
+	return nil, nil, fmt.Errorf("unable to find corresponding extension pool")
 }
