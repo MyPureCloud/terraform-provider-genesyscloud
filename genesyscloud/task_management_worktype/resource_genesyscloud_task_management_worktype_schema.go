@@ -152,6 +152,15 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 			"schema_id":           {RefType: "genesyscloud_task_management_workitem_schema"},
 			"default_script_id":   {RefType: "genesyscloud_script"},
 		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"disable_default_status_creation": {ResolverFunc: func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
+				// Always export this as true to ensure the default status items are not created since they will be created with
+				// the genesyscloud_task_management_worktype_status resource exports
+				configMap["disable_default_status_creation"] = true
+				return nil
+			},
+			},
+		},
 	}
 }
 
