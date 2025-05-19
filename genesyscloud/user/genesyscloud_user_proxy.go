@@ -333,7 +333,7 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 	const pageSize = 100
 	var allPools []platformclientv2.Extensionpool
 
-	extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, 1, "", "")
+	extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, 1, "", "", []string{})
 	if err != nil {
 		return nil, apiResponse, err
 	}
@@ -348,7 +348,7 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 		allPools = append(allPools, *extensionPoolList.Entities...)
 
 		for pageNumber := 2; pageNumber <= *extensionPoolList.PageCount; pageNumber++ {
-			extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNumber, "", "")
+			extensionPoolList, apiResponse, err := p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpools(pageSize, pageNumber, "", "", []string{})
 			if err != nil {
 				return nil, apiResponse, err
 			}
