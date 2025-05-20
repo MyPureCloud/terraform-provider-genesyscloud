@@ -4,12 +4,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 /*
@@ -34,7 +31,9 @@ var validLanguageLabels = []string{
 	"de",
 	"en",
 	"en_US",
+	"en-us",
 	"es",
+	"es_US",
 	"fi",
 	"fr",
 	"he",
@@ -45,6 +44,7 @@ var validLanguageLabels = []string{
 	"nl",
 	"no",
 	"pl",
+	"pt",
 	"pt_BR",
 	"pt_PT",
 	"ru",
@@ -64,6 +64,9 @@ var validSystemPresences = []string{
 	"Meal",
 	"Meeting",
 	"Training",
+	"OnQueue",
+	"Offline",
+	"Idle",
 }
 
 // ResourceOrganizationPresenceDefinition registers the genesyscloud_organization_presence_definition resource with Terraform
@@ -81,17 +84,15 @@ func ResourceOrganizationPresenceDefinition() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`language_labels`: {
-				Description:      `The localized language labels for the presence definition. Valid labels: ` + strings.Join(validLanguageLabels, `, `),
-				Type:             schema.TypeMap,
-				Required:         true,
-				Elem:             &schema.Schema{Type: schema.TypeString},
-				ValidateDiagFunc: validators.ValidateStringInMap(validLanguageLabels, true),
+				Description: `The localized language labels for the presence definition. Valid labels include: ` + strings.Join(validLanguageLabels, `, `),
+				Type:        schema.TypeMap,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`system_presence`: {
-				Description:  `System presence to create presence definition for. Once presence definition is created, this cannot be changed. Valid presences: ` + strings.Join(validSystemPresences, `, `),
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice(validSystemPresences, true),
+				Description: `System presence to create presence definition for. Once presence definition is created, this cannot be changed. Valid presences include: ` + strings.Join(validSystemPresences, `, `),
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			`division_id`: {
 				Description: `The division to which the presence definition will belong. If not set, the presence definition will apply to all divisions.`,
