@@ -246,7 +246,7 @@ func (r *registerTestInstance) registerTestResources() {
 }
 
 func (r *registerTestInstance) registerTestExporters() {
-RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
+	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
 	RegisterExporter(architectSchedules.ResourceType, architectSchedules.ArchitectSchedulesExporter())
 	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
 	RegisterExporter(knowledgeLabel.ResourceType, knowledgeLabel.KnowledgeLabelExporter())
