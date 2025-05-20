@@ -1,23 +1,26 @@
 package recording_media_retention_policy
 
 import (
+	"log"
+	"sync"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"log"
-	"sync"
+
+	"testing"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	team "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
@@ -56,7 +59,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
+	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
 	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
 	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()

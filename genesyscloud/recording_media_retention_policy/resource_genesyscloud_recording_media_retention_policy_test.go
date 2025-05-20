@@ -2,10 +2,19 @@ package recording_media_retention_policy
 
 import (
 	"fmt"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
@@ -14,13 +23,6 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
-	"path/filepath"
-	"reflect"
-	"regexp"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
@@ -529,10 +531,10 @@ var (
 		QuestionGroups: questionGroupBody1,
 	}
 
-	questionGroupBody2 = []gcloud.SurveyFormQuestionGroupStruct{
+	questionGroupBody2 = []qualityFormsSurvey.SurveyFormQuestionGroupStruct{
 		{
 			Name: questionGroupName,
-			Questions: []gcloud.SurveyFormQuestionStruct{
+			Questions: []qualityFormsSurvey.SurveyFormQuestionStruct{
 				{
 					Text:                  "question-1",
 					VarType:               "freeTextQuestion",
@@ -541,7 +543,7 @@ var (
 			},
 		},
 	}
-	surveyFormResourceBody = gcloud.SurveyFormStruct{
+	surveyFormResourceBody = qualityFormsSurvey.SurveyFormStruct{
 		Name:           surveyFormName,
 		Language:       "en-US",
 		Published:      true,
@@ -1070,7 +1072,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1179,7 +1181,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1287,7 +1289,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1395,7 +1397,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1503,7 +1505,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
 					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +

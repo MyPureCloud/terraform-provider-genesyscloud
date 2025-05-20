@@ -1,28 +1,19 @@
 package tfexporter
 
 import (
+	"testing"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
-	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
-	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
-	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
-	knowledgeDocument "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document"
-	knowledgeDocumentVariation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
-	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
-	knowledgeLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_label"
-	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	outboundRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
-
 	grammar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	architectSchedulegroups "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
@@ -32,6 +23,9 @@ import (
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	defaultSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
+	externalOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
+	externalUser "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_user"
+	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
@@ -48,6 +42,16 @@ import (
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
+	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
+	knowledgeCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_category"
+	knowledgeDocument "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeDocumentVariation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
+	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
+	knowledgeLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_label"
+	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -69,6 +73,7 @@ import (
 	obSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obw "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
@@ -86,6 +91,7 @@ import (
 	routingSmsAddress "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -94,23 +100,16 @@ import (
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
+	edgePhone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	phonebaseSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	outboundRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-	"testing"
-
-	edgePhone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
-	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-
-	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	externalOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
-	externalUser "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_user"
-	knowledgeCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_category"
-	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -237,7 +236,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 	providerResources[externalUser.ResourceType] = externalUser.ResourceExternalUserIdentity()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
-	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
+	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
 	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[ResourceType] = ResourceTfExport()
@@ -307,7 +306,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_filespecificationtemplate", obfst.OutboundFileSpecificationTemplateExporter())
 	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
 	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())
-	RegisterExporter("genesyscloud_quality_forms_survey", gcloud.SurveyFormExporter())
+	RegisterExporter("genesyscloud_quality_forms_survey", qualityFormsSurvey.QualityFormsSurveyExporter())
 	RegisterExporter("genesyscloud_recording_media_retention_policy", recMediaRetPolicy.MediaRetentionPolicyExporter())
 	RegisterExporter("genesyscloud_responsemanagement_library", respmanagementLibrary.ResponsemanagementLibraryExporter())
 	RegisterExporter("genesyscloud_responsemanagement_response", responsemanagementResponse.ResponsemanagementResponseExporter())

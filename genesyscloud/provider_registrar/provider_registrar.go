@@ -81,6 +81,7 @@ import (
 	obSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obwm "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -322,6 +323,7 @@ func registerResources() {
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
 	knowledgeKnowledgebase.SetRegistrar(regInstance)                       //Registering Knowledge base
+	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
