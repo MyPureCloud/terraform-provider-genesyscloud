@@ -3,19 +3,19 @@ package external_contacts_organization
 import (
 	"context"
 	"fmt"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
@@ -87,7 +87,6 @@ func readExternalContactsOrganization(ctx context.Context, d *schema.ResourceDat
 		resourcedata.SetNillableValue(d, "name", externalOrganization.Name)
 		resourcedata.SetNillableValue(d, "company_type", externalOrganization.CompanyType)
 		resourcedata.SetNillableValue(d, "industry", externalOrganization.Industry)
-		resourcedata.SetNillableValue(d, "primary_contact_id", externalOrganization.PrimaryContactId)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "address", externalOrganization.Address, flattenSdkAddress)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_number", externalOrganization.PhoneNumber, flattenPhoneNumber)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "fax_number", externalOrganization.FaxNumber, flattenPhoneNumber)

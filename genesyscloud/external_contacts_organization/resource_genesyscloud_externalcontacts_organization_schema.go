@@ -1,14 +1,14 @@
 package external_contacts_organization
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/validators"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 const ResourceType = `genesyscloud_externalcontacts_organization`
@@ -236,11 +236,6 @@ func ResourceExternalContactsOrganization() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`industry`: {
-				Description: ``,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`primary_contact_id`: {
 				Description: ``,
 				Optional:    true,
 				Type:        schema.TypeString,

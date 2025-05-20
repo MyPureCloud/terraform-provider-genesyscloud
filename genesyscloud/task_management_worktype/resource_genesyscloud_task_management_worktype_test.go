@@ -2,24 +2,24 @@ package task_management_worktype
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	script "terraform-provider-genesyscloud/genesyscloud/scripts"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	script "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
-	workbin "terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
-	workitemSchema "terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
+	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -65,18 +65,19 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 
 		// Worktype
 		wtRes = worktypeConfig{
-			resourceLabel:       "worktype_1",
-			name:                "tf_worktype_" + uuid.NewString(),
-			description:         "worktype created for CX as Code test case",
-			divisionId:          fmt.Sprintf("data.genesyscloud_auth_division_home.%s.id", divDataLabel),
-			defaultWorkbinId:    fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
-			defaultDurationS:    86400,
-			defaultExpirationS:  86400,
-			defaultDueDurationS: 86400,
-			defaultPriority:     100,
-			defaultTtlS:         86400,
-			defaultLanguageId:   fmt.Sprintf("genesyscloud_routing_language.%s.id", langResourceLabel),
-			defaultQueueId:      fmt.Sprintf("genesyscloud_routing_queue.%s.id", queueResourceLabel),
+			resourceLabel:                "worktype_1",
+			name:                         "tf_worktype_" + uuid.NewString(),
+			description:                  "worktype created for CX as Code test case",
+			divisionId:                   fmt.Sprintf("data.genesyscloud_auth_division_home.%s.id", divDataLabel),
+			defaultWorkbinId:             fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+			disableDefaultStatusCreation: true,
+			defaultDurationS:             86400,
+			defaultExpirationS:           86400,
+			defaultDueDurationS:          86400,
+			defaultPriority:              100,
+			defaultTtlS:                  86400,
+			defaultLanguageId:            fmt.Sprintf("genesyscloud_routing_language.%s.id", langResourceLabel),
+			defaultQueueId:               fmt.Sprintf("genesyscloud_routing_queue.%s.id", queueResourceLabel),
 			defaultSkillIds: []string{
 				fmt.Sprintf("genesyscloud_routing_skill.%s.id", skillResourceLabel1),
 				fmt.Sprintf("genesyscloud_routing_skill.%s.id", skillResourceLabel2),

@@ -2,19 +2,19 @@ package auth_role
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	lists "terraform-provider-genesyscloud/genesyscloud/util/lists"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceAuthRoleDefault(t *testing.T) {

@@ -2,16 +2,16 @@ package telephony_providers_edges_phone
 
 import (
 	"fmt"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	phoneBaseSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
 	"strings"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	location "terraform-provider-genesyscloud/genesyscloud/location"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
-	phoneBaseSettings "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
-	edgeSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -19,7 +19,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {

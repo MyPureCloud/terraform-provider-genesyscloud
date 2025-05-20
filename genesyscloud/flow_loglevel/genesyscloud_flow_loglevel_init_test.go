@@ -1,8 +1,8 @@
 package flow_loglevel
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

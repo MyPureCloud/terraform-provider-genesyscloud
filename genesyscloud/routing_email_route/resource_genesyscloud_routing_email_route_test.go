@@ -2,15 +2,15 @@ package routing_email_route
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"log"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
@@ -162,7 +162,7 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					fromName2,
 					generateRoutingReplyEmail(
 						true,
-						"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+						"",
 						"",
 					),
 					generateRoutingEmailQueueSettings(
@@ -222,7 +222,6 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
 					routePattern2,
 					fromName2,
-					generateRoutingAutoBcc(fromName2, bccEmail2),
 					generateRoutingReplyEmail(
 						false,
 						"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
@@ -252,8 +251,6 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "priority", priority1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.domain_id", domainId),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.name", fromName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "auto_bcc.0.email", bccEmail2),
 					resource.TestCheckResourceAttrPair("genesyscloud_routing_email_route."+routeResourceLabel1, "reply_email_address.0.route_id", "genesyscloud_routing_email_route."+routeResourceLabel2, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.name", fromName2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel2, "auto_bcc.0.email", bccEmail2),
@@ -304,18 +301,16 @@ func generateRoutingReplyEmail(
 	routeID string) string {
 
 	if selfReferenceRoute {
-		return fmt.Sprintf(`
+		return `
         reply_email_address {
-            domain_id = %s
             self_reference_route = true
         }
-	`, domainID)
+	`
 	} else {
 		return fmt.Sprintf(`
         reply_email_address {
             domain_id = %s
             route_id = %s
-			self_reference_route = false
         }
 	`, domainID, routeID)
 	}

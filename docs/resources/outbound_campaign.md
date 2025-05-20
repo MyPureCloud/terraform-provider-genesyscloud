@@ -44,8 +44,6 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 
 ### Required
 
-- `caller_address` (String) The caller id phone number to be displayed on the outbound call.
-- `caller_name` (String) The caller id name to be displayed on the outbound call.
 - `contact_list_id` (String) The ContactList for this Campaign to dial.
 - `dialing_mode` (String) The strategy this Campaign will use for dialing.
 - `name` (String) The name of the Campaign.
@@ -59,12 +57,14 @@ resource "genesyscloud_outbound_campaign" "campaign" {
 - `call_analysis_language` (String) The language the edge will use to analyze the call.
 - `call_analysis_response_set_id` (String) The call analysis response set to handle call analysis results from the edge. Required for all dialing modes except preview.
 - `callable_time_set_id` (String) The callable time set for this campaign to check before placing a call.
+- `caller_address` (String) The caller id phone number to be displayed on the outbound call.
+- `caller_name` (String) The caller id name to be displayed on the outbound call.
 - `campaign_status` (String) The current status of the Campaign. A Campaign may be turned 'on' or 'off' (default). If this value is changed alongside other changes to the resource, a subsequent update will occur immediately afterwards to set the campaign status. This is due to behavioral requirements in the Genesys Cloud API.
 - `contact_list_filter_ids` (List of String) Filter to apply to the contact list before dialing. Currently a campaign can only have one filter applied.
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
 - `division_id` (String) The division this campaign belongs to.
 - `dnc_list_ids` (Set of String) DncLists for this Campaign to check before placing a call.
-- `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
+- `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
 - `dynamic_line_balancing_settings` (Block List, Max: 1) Dynamic line balancing settings. (see [below for nested schema](#nestedblock--dynamic_line_balancing_settings))
 - `edge_group_id` (String) The EdgeGroup that will place the calls. Required for all dialing modes except preview.
 - `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign.
@@ -107,9 +107,10 @@ Optional:
 <a id="nestedblock--dynamic_contact_queueing_settings"></a>
 ### Nested Schema for `dynamic_contact_queueing_settings`
 
-Required:
+Optional:
 
-- `sort` (Boolean) Whether to sort contacts dynamically.
+- `filter` (Boolean) Whether to filter contacts dynamically. Note: Changing the filter value will cause the outbound campaign to be dropped and recreated with a new ID
+- `sort` (Boolean) Whether to sort contacts dynamically. Note: Changing the sort value will cause the outbound campaign to be dropped and recreated with a new ID
 
 
 <a id="nestedblock--dynamic_line_balancing_settings"></a>

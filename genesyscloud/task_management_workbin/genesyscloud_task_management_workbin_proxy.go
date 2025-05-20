@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -171,5 +171,6 @@ func deleteTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete task management workbin: %s", err)
 	}
+	rc.DeleteCacheItem(p.workbinCache, id)
 	return resp, nil
 }

@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *oauthClientProxy
@@ -138,7 +138,7 @@ func (o *oauthClientProxy) GetCachedOAuthClient(clientId string) *platformclient
 	return o.createdClientCache[clientId]
 }
 
-func (o *oauthClientProxy) createOAuthClient(ctx context.Context, oauthClient platformclientv2.Oauthclientrequest) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
+func (o *oauthClientProxy) createOAuthClient(ctx context.Context, oauthClient platformclientv2.Oauthclientrequest, directory string) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
 	oauthClientResult, response, err := o.createOAuthClientAttr(ctx, o, oauthClient)
 	if err != nil {
 		return oauthClientResult, response, err
@@ -149,8 +149,7 @@ func (o *oauthClientProxy) createOAuthClient(ctx context.Context, oauthClient pl
 	defer o.createdClientCacheLock.Unlock()
 	o.createdClientCache[*oauthClientResult.Id] = oauthClientResult
 	log.Printf("Successfully added oauth client %s to cache", *oauthClientResult.Id)
-	updateMetaCache(oauthClientResult, CacheFile)
-
+	updateSecretToDirectory(directory, oauthClientResult)
 	return oauthClientResult, response, err
 }
 

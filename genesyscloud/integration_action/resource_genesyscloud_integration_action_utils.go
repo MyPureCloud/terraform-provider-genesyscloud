@@ -3,13 +3,13 @@ package integration_action
 import (
 	"encoding/json"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 /*
@@ -67,7 +67,7 @@ func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 	}, nil
 }
 
-// buildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
+// BuildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
 func BuildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
 	ActionConfig := &platformclientv2.Actionconfig{
@@ -82,7 +82,7 @@ func BuildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig
 	return ActionConfig
 }
 
-// buildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
+// BuildSdkActionConfigRequest takes the resource data and builds the SDK platformclientv2.Requestconfig from it
 func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Requestconfig {
 	if configRequest := d.Get("config_request"); configRequest != nil {
 		if configList := configRequest.([]interface{}); len(configList) > 0 {
@@ -109,7 +109,7 @@ func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Reque
 	return &platformclientv2.Requestconfig{}
 }
 
-// buildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
+// BuildSdkActionConfigResponse takes the resource data and builds the SDK platformclientv2.Responseconfig from it
 func BuildSdkActionConfigResponse(d *schema.ResourceData) *platformclientv2.Responseconfig {
 	if configResponse := d.Get("config_response"); configResponse != nil {
 		if configList := configResponse.([]interface{}); len(configList) > 0 {
@@ -154,7 +154,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 	return string(schemaBytes), nil
 }
 
-// flattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
+// FlattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
 func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
 
@@ -166,7 +166,7 @@ func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []int
 	return []interface{}{requestMap}
 }
 
-// FlattenActionConfigResponse converts the the platformclientv2.Responseconfig into a map
+// FlattenActionConfigResponse converts the platformclientv2.Responseconfig into a map
 func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []interface{} {
 	responseMap := make(map[string]interface{})
 

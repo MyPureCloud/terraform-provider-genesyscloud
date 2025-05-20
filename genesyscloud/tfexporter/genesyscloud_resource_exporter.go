@@ -4,6 +4,16 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"hash/fnv"
 	"io"
 	"log"
@@ -15,16 +25,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	dependentconsumers "terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	rRegistrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,7 +34,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -499,7 +499,7 @@ func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.Insta
 }
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
-func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
+func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnostics) {
 
 	if g.resourceTypesMaps == nil || g.dataSourceTypesMaps == nil {
 		return diag.Errorf("required fields resourceTypesMaps or dataSourceTypesMaps are nil")
@@ -515,41 +515,36 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() diag.Diagnostics {
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if diagErr := t.writeTfState(); diagErr != nil {
-			return diagErr
+
+		diags = append(diags, t.writeTfState()...)
+		if diags.HasError() {
+			return diags
 		}
 	}
 
-	var errDiag diag.Diagnostics
-
 	if g.matchesExportFormat(formatHCL, formatJSONHCL) {
 		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
-		errDiag = hclExporter.exportHCLConfig()
+		diags = append(diags, hclExporter.exportHCLConfig()...)
 	}
 
 	if g.matchesExportFormat(formatJSON, formatJSONHCL) {
 		jsonExporter := NewJsonExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
-		errDiag = jsonExporter.exportJSONConfig()
+		diags = append(diags, jsonExporter.exportJSONConfig()...)
 	}
 
-	if errDiag != nil {
-		return errDiag
+	if diags != nil && diags.HasError() {
+		return diags
 	}
 
 	if g.cyclicDependsList != nil && len(g.cyclicDependsList) > 0 {
-		errDiag = files.WriteToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))
-
-		if errDiag != nil {
-			return errDiag
+		diags = append(diags, files.WriteToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))...)
+		if diags.HasError() {
+			return diags
 		}
 	}
 
-	errDiag = g.generateZipForExporter()
-	if errDiag != nil {
-		return errDiag
-	}
-
-	return nil
+	diags = append(diags, g.generateZipForExporter()...)
+	return diags
 }
 
 func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics {
@@ -1541,7 +1536,12 @@ func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap 
 		for _, res := range list {
 			for _, resource := range g.resources {
 				if resource.State.ID == strings.Split(res, ".")[1] {
-					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", strings.Split(res, ".")[0]+"."+resource.BlockLabel))
+					resourceName := strings.Split(res, ".")[0] + "." + resource.BlockLabel
+					if g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
+						resourceName = "data." + resourceName
+					}
+					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", resourceName))
+
 				}
 			}
 		}

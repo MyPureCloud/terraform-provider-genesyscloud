@@ -2,10 +2,10 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 type ExtensionPoolStruct struct {
@@ -36,7 +36,7 @@ func DeleteExtensionPoolWithNumber(startNumber string) error {
 	edgesAPI := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
-		extensionPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesExtensionpools(100, pageNum, "", "")
+		extensionPools, _, getErr := edgesAPI.GetTelephonyProvidersEdgesExtensionpools(100, pageNum, "", "", []string{})
 		if getErr != nil {
 			return getErr
 		}

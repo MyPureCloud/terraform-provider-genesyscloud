@@ -3,18 +3,18 @@ package user
 import (
 	"context"
 	"fmt"
+	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"log"
 	"strconv"
 	"strings"
-	location "terraform-provider-genesyscloud/genesyscloud/location"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingUtilization "terraform-provider-genesyscloud/genesyscloud/routing_utilization"
-	routingUtilizationLabel "terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 
-	extensionPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -315,7 +315,6 @@ func TestAccResourceUserAddresses(t *testing.T) {
 							strconv.Quote(addrTypeHome),
 						),
 					),
-					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceType, extensionPoolResourceLabel1),
 				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
@@ -577,7 +576,6 @@ func TestAccResourceUserPhone(t *testing.T) {
 							strconv.Quote(addrPhone1), // extension
 						),
 					),
-					fmt.Sprintf("depends_on = [%s.%s]", extensionPool.ResourceType, extensionPoolResourceLabel1),
 				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
@@ -1574,6 +1572,102 @@ func TestAccResourceUserPassword(t *testing.T) {
 	})
 }
 
+func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
+	var (
+		addrUserResourceLabel1      = "test-user-addr-ext-pool"
+		addrUserName                = "Tim Cheese"
+		addrEmail1                  = "terraform-" + uuid.NewString() + "@user.com"
+		addrExt1                    = "4105"
+		addrExt2                    = "4225"
+		phoneMediaType              = "PHONE"
+		addrTypeWork                = "WORK"
+		extensionPoolResourceLabel1 = "test-extensionpool" + uuid.NewString()
+		extensionPoolStartNumber1   = "4100"
+		extensionPoolEndNumber1     = "4199"
+		extensionPoolResourceLabel2 = "test2-extensionpool" + uuid.NewString()
+		extensionPoolStartNumber2   = "4200"
+		extensionPoolEndNumber2     = "4299"
+	)
+
+	extensionPoolResource1 := extensionPool.ExtensionPoolStruct{
+		ResourceLabel: extensionPoolResourceLabel1,
+		StartNumber:   extensionPoolStartNumber1,
+		EndNumber:     extensionPoolEndNumber1,
+		Description:   util.NullValue, // No description
+	}
+	extensionPoolResource2 := extensionPool.ExtensionPoolStruct{
+		ResourceLabel: extensionPoolResourceLabel2,
+		StartNumber:   extensionPoolStartNumber2,
+		EndNumber:     extensionPoolEndNumber2,
+		Description:   util.NullValue, // No description
+	}
+
+	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber2)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel1,
+					addrEmail1,
+					addrUserName,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							util.NullValue,          // number
+							util.NullValue,          // Default to type PHONE
+							util.NullValue,          // Default to type WORK
+							strconv.Quote(addrExt1), // extension
+							fmt.Sprintf("extension_pool_id = %s.%s.id", extensionPool.ResourceType, extensionPoolResourceLabel1),
+						),
+					),
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension_pool_id",
+						extensionPool.ResourceType+"."+extensionPoolResourceLabel1, "id"),
+				),
+			},
+			{
+				// Update
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel1,
+					addrEmail1,
+					addrUserName,
+					generateUserAddresses(
+						generateUserPhoneAddress(
+							util.NullValue,
+							util.NullValue,          // Default to type PHONE
+							util.NullValue,          // Default to type WORK
+							strconv.Quote(addrExt2), // extension
+							fmt.Sprintf("extension_pool_id = %s.%s.id", extensionPool.ResourceType, extensionPoolResourceLabel2),
+						),
+					),
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource1) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt2),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension_pool_id",
+						extensionPool.ResourceType+"."+extensionPoolResourceLabel2, "id"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
 func checkUserDeleted(id string) resource.TestCheckFunc {
 	log.Printf("Fetching user with ID: %s\n", id)
 	return func(s *terraform.State) error {
@@ -1729,14 +1823,15 @@ func generateUserRoutingUtil(nestedBlocks ...string) string {
 	`, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateUserPhoneAddress(phoneNum string, phoneMediaType string, phoneType string, extension string) string {
+func generateUserPhoneAddress(phoneNum string, phoneMediaType string, phoneType string, extension string, extras ...string) string {
 	return fmt.Sprintf(`phone_numbers {
 				number = %s
 				media_type = %s
 				type = %s
 				extension = %s
+				%s
 			}
-			`, phoneNum, phoneMediaType, phoneType, extension)
+			`, phoneNum, phoneMediaType, phoneType, extension, strings.Join(extras, "\n"))
 }
 
 func generateUserEmailAddress(emailAddress string, emailType string) string {

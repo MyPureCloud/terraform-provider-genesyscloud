@@ -2,9 +2,9 @@ package architect_schedules
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"regexp"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 )
 
