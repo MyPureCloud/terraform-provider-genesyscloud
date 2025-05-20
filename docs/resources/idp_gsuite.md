@@ -19,7 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_idp_gsuite" "gsuite" {
-  certificates             = ["MIIDgjCCAmoCCQCY7/3Fvy+CmDA..."]
+  name                     = "Google Workspace"
+  certificates             = [local.gsuite_certificate]
   issuer_uri               = "https://example.com"
   target_uri               = "https://example.com/login"
   relying_party_identifier = "unique-id-from-gsuite"

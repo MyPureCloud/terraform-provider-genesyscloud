@@ -22,16 +22,49 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_task_management_worktype_status" "worktype_status" {
-  worktype_id                     = genesyscloud_task_management_worktype.example.id
-  name                            = "Open Status"
-  description                     = "Description of open status"
-  category                        = "Open"
-  destination_status_ids          = [genesyscloud_task_management_worktype_status.status1.id, genesyscloud_task_management_worktype_status.status2.id]
-  default_destination_status_id   = genesyscloud_task_management_worktype_status.status1.id
-  status_transition_delay_seconds = 86500
-  status_transition_time          = "04:20:00"
-  default                         = false
+resource "genesyscloud_task_management_worktype_status" "backlog" {
+  worktype_id = genesyscloud_task_management_worktype.example_worktype.id
+  name        = "Backlog Status"
+  description = "Description of Backlog status"
+  category    = "Open"
+  default     = true
+}
+resource "genesyscloud_task_management_worktype_status" "open" {
+  worktype_id = genesyscloud_task_management_worktype.example_worktype.id
+  name        = "Open Status"
+  description = "Description of open status"
+  category    = "Open"
+  default     = false
+}
+
+resource "genesyscloud_task_management_worktype_status" "working" {
+  worktype_id = genesyscloud_task_management_worktype.example_worktype.id
+  name        = "Working Status"
+  description = "Description of working status"
+  category    = "InProgress"
+  default     = false
+}
+
+resource "genesyscloud_task_management_worktype_status" "waiting" {
+  worktype_id = genesyscloud_task_management_worktype.example_worktype.id
+  name        = "Waiting Status"
+  description = "Description of wait status"
+  category    = "Waiting"
+  default     = false
+}
+
+resource "genesyscloud_task_management_worktype_status" "resolved" {
+  worktype_id = genesyscloud_task_management_worktype.example_worktype.id
+  name        = "Resolved Status"
+  description = "Description of working status"
+  category    = "Closed"
+}
+
+resource "genesyscloud_task_management_worktype_status" "closed" {
+  worktype_id = genesyscloud_task_management_worktype.example_worktype.id
+  name        = "Closed Status"
+  description = "Closed statue indicates no longer working, but not resolved"
+  category    = "Closed"
 }
 ```
 
@@ -47,11 +80,11 @@ resource "genesyscloud_task_management_worktype_status" "worktype_status" {
 ### Optional
 
 - `default` (Boolean) This status is the default status for Workitems created from this Worktype. Only one status can be set as the default status at a time. Once set there must always be a default status. The default can not be deleted.
-- `default_destination_status_id` (String, Deprecated) Default destination status to which this Status will transition to if auto status transition enabled.
+- `default_destination_status_id` (String, Deprecated) *DEPRECATED: Deprecated. Use default_destination_status_id in genesyscloud_task_management_worktype_status_transition instead* Default destination status to which this Status will transition to if auto status transition enabled.
 - `description` (String) The description of the Status.
-- `destination_status_ids` (List of String, Deprecated) A list of destination Statuses where a Workitem with this Status can transition to. If the list is empty Workitems with this Status can transition to all other Statuses defined on the Worktype. A Status can have a maximum of 24 destinations.
-- `status_transition_delay_seconds` (Number, Deprecated) Delay in seconds for auto status transition. Required if default_destination_status_id is provided.
-- `status_transition_time` (String, Deprecated) Time is represented as an ISO-8601 string without a timezone. For example: HH:mm:ss
+- `destination_status_ids` (List of String, Deprecated) *DEPRECATED: Deprecated. Use destination_status_ids in genesyscloud_task_management_worktype_status_transition instead* A list of destination Statuses where a Workitem with this Status can transition to. If the list is empty Workitems with this Status can transition to all other Statuses defined on the Worktype. A Status can have a maximum of 24 destinations.
+- `status_transition_delay_seconds` (Number, Deprecated) *DEPRECATED: Deprecated. Use status_transition_delay_seconds in genesyscloud_task_management_worktype_status_transition instead* Delay in seconds for auto status transition. Required if default_destination_status_id is provided.
+- `status_transition_time` (String, Deprecated) *DEPRECATED: Deprecated. Use status_transition_time in genesyscloud_task_management_worktype_status_transition instead* Time is represented as an ISO-8601 string without a timezone. For example: HH:mm:ss
 
 ### Read-Only
 

@@ -2,6 +2,7 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -356,7 +357,7 @@ func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
 			return "Only one of message_column or content_template_id can be defined", false
 		}
 	} else {
-		return "", false
+		return "No sms_config found", false
 	}
 
 	return "", true

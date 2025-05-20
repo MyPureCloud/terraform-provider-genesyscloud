@@ -1,4 +1,4 @@
-resource "genesyscloud_outbound_callabletimeset" "example-callable-time-set" {
+resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
   name = "Example Callable time set"
   callable_times {
     time_zone_id = "Africa/Abidjan"

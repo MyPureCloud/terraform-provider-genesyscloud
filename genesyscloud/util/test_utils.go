@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -406,4 +407,29 @@ func AssignRegion() string {
 	}
 	regionJSON := "[" + strconv.Quote(region) + "]"
 	return regionJSON
+}
+
+func PrintBytesWithLineNumbers(content []byte, startingNum int) {
+	splitContent := bytes.Split(content, []byte("\n"))
+	lines := make([]string, len(splitContent))
+	for i, b := range splitContent {
+		lines[i] = string(b)
+	}
+	printWithLineNumbers(lines, startingNum)
+}
+
+func PrintStringWithLineNumbers(content string, startingNum int) {
+	lines := strings.Split(content, "\n")
+	printWithLineNumbers(lines, startingNum)
+}
+
+func printWithLineNumbers(lines []string, startingNum int) {
+	// Calculate width needed for line numbers
+	width := len(strconv.Itoa(len(lines)))
+	// Format string with consistent width
+	format := fmt.Sprintf("%%%dd: %%s\n", width)
+
+	for i, line := range lines {
+		fmt.Printf(format, startingNum+i+1, line)
+	}
 }

@@ -43,13 +43,13 @@ This behavior ensures consistency with Genesys Cloud's management policies for m
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "trunkBaseSettings" {
+resource "genesyscloud_telephony_providers_edges_trunkbasesettings" "example_trunkbasesettings" {
   name               = "example trunk base settings"
   description        = "my example trunk base settings"
-  trunk_meta_base_id = "phone_connections_webrtc.json"
-  trunk_type         = "PHONE"
+  trunk_meta_base_id = "external_sip_pcv_byoc_carrier.json"
+  trunk_type         = "EXTERNAL"
+  inbound_site_id    = genesyscloud_telephony_providers_edges_site.site.id
   managed            = false
-  inbound_site_id    = "site_id"
   properties = jsonencode({
     "trunk_label" = {
       "value" = {

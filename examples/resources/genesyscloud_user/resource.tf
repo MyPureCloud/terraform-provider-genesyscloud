@@ -1,12 +1,12 @@
 resource "genesyscloud_user" "example_user" {
-  email           = "john@example.com"
-  name            = "John Doe"
-  password        = "initial-password"
-  division_id     = genesyscloud_auth_division.home.id
+  email           = "johnny${random_uuid.uuid.result}@example.com"
+  name            = "Johnny Doe"
+  password        = "initialP@ssW0rd"
+  division_id     = data.genesyscloud_auth_division_home.home.id
   state           = "active"
   department      = "Development"
   title           = "Senior Director"
-  manager         = genesyscloud_user.example-user-manager.id
+  manager         = genesyscloud_user.example_user2.id
   acd_auto_answer = true
   profile_skills  = ["Java", "Go"]
   certifications  = ["Certified Developer"]
@@ -22,7 +22,7 @@ resource "genesyscloud_user" "example_user" {
     }
   }
   routing_skills {
-    skill_id    = genesyscloud_routing_skill.test-skill.id
+    skill_id    = genesyscloud_routing_skill.example_skill.id
     proficiency = 4.5
   }
   routing_languages {
@@ -30,7 +30,7 @@ resource "genesyscloud_user" "example_user" {
     proficiency = 4
   }
   locations {
-    location_id = genesyscloud_location.main-site.id
+    location_id = genesyscloud_location.hq.id
     notes       = "Office 201"
   }
   employer_info {
@@ -74,4 +74,11 @@ resource "genesyscloud_user" "example_user" {
       interrupting_label_ids = [genesyscloud_routing_utilization_label.red_label.id]
     }
   }
+}
+
+resource "genesyscloud_user" "example_user2" {
+  email = "bobby${random_uuid.uuid.result}@example.com"
+  name  = "Bobby Drop Tables"
+  title = "CEO"
+  state = "active"
 }

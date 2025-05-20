@@ -25,7 +25,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_integration" "integration" {
+resource "genesyscloud_integration" "example_embedded_client_integration" {
   intended_state   = "DISABLED"
   integration_type = "embedded-client-app"
   config {
@@ -39,8 +39,42 @@ resource "genesyscloud_integration" "integration" {
     })
     advanced = jsonencode({})
     notes    = "Test config notes"
+  }
+}
+
+resource "genesyscloud_integration" "example_rest_integration" {
+  intended_state   = "ENABLED"
+  integration_type = "custom-rest-actions"
+  config {
     credentials = {
-      basic_Auth = genesyscloud_integration_credential.example_cred.id
+      basicAuth = genesyscloud_integration_credential.example_userDefinedOAuth_credential.id
+    }
+  }
+}
+
+resource "genesyscloud_integration" "example_imap_integration" {
+  intended_state   = "DISABLED"
+  integration_type = "imap-server"
+  config {
+    credentials = {
+      basicAuth = genesyscloud_integration_credential.example_basicauth_credential.id
+    }
+    name = "example imap integration name"
+    properties = jsonencode({
+      "imapHost" = "mail.example.com"
+      "imapPort" = 993
+    })
+    advanced = jsonencode({})
+    notes    = "Test config notes"
+  }
+}
+
+resource "genesyscloud_integration" "example_gc_data_integration" {
+  intended_state   = "ENABLED"
+  integration_type = "purecloud-data-actions"
+  config {
+    credentials = {
+      pureCloudOAuthClient = genesyscloud_integration_credential.example_purecloudoauth_credential.id
     }
   }
 }
