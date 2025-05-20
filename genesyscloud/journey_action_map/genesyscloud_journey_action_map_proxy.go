@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -214,5 +215,6 @@ func deleteJourneyActionMapFn(ctx context.Context, p *journeyActionMapProxy, id 
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete journey action map %s: %s", id, err)
 	}
+	rc.DeleteCacheItem(p.actionMapCache, id)
 	return resp, nil
 }

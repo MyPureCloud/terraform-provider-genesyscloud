@@ -2,14 +2,13 @@ package feature_toggles
 
 import "os"
 
-const sanitizerOptimized = "GENESYS_SANITIZER_OPTIMIZED"
+const enableBCPOptimizedSanitizer = "ENABLE_BCP_OPTIMIZED_SANITIZER"
 
-func ExporterSanitizerOptimizedName() string {
-	return sanitizerOptimized
+func ExporterSanitizerBCPOptimizedName() string {
+	return enableBCPOptimizedSanitizer
 }
 
-func ExporterSanitizerOptimizedToggleExists() bool {
-	var exists bool
-	_, exists = os.LookupEnv(sanitizerOptimized)
-	return exists
+func ExporterSanitizerBCPOptimizedToggleExists() bool {
+	_, enabled := os.LookupEnv(enableBCPOptimizedSanitizer)
+	return enabled
 }

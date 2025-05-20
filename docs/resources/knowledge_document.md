@@ -22,7 +22,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_knowledge_document" "example_document" {
-  knowledge_base_id = genesyscloud_knowledge.example_knowledgebase.id
+  knowledge_base_id = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   published         = true
   knowledge_document {
     title   = "Document Title"
@@ -44,7 +44,10 @@ resource "genesyscloud_knowledge_document" "example_document" {
 
 - `knowledge_base_id` (String) Knowledge base id
 - `knowledge_document` (Block List, Min: 1, Max: 1) Knowledge document request body (see [below for nested schema](#nestedblock--knowledge_document))
-- `published` (Boolean) If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
+
+### Optional
+
+- `published` (Boolean, Deprecated) If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
 
 ### Read-Only
 

@@ -2,11 +2,11 @@ package tfexporter
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"

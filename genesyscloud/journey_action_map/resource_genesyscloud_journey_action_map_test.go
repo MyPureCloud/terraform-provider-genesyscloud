@@ -2,17 +2,17 @@ package journey_action_map
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/fileserver"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/fileserver"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {

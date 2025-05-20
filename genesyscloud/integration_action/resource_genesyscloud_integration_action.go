@@ -3,23 +3,23 @@ package integration_action
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -42,7 +42,7 @@ Two things to note:
 utils function in the package.  This will keep the code manageable and easy to work through.
 */
 
-// getAllIntegrationActions retrieves all of the integration action via Terraform in the Genesys Cloud and is used for the exporter
+// getAllIntegrationActions retrieves all integration actions via Terraform in the Genesys Cloud and is used for the exporter
 func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	iap := getIntegrationActionsProxy(clientConfig)
@@ -57,7 +57,11 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		if strings.HasPrefix(*action.Id, "static") {
 			continue
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name}
+		blockHash, err := util.QuickHashFields(action.Category)
+		if err != nil {
+			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
+		}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name, BlockHash: blockHash}
 	}
 	return resources, nil
 }

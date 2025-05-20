@@ -2,9 +2,11 @@ package genesyscloud
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -13,14 +15,14 @@ import (
 func TestAccDataSourceSmsAddress(t *testing.T) {
 
 	var (
-		addressResLabel  = "addressRes"
-		addressDataLabel = "addressData"
-		name             = "name-1"
-		street           = "street-1"
-		city             = "city-1"
-		region           = "region-1"
-		postalCode       = "postal-code-1"
-		countryCode      = "country-code-1"
+		addressResLabel  = "address"
+		addressDataLabel = "address_data"
+		name             = "tf test address " + uuid.NewString()
+		street           = "Strasse 77"
+		city             = "Berlin"
+		region           = "South"
+		postalCode       = "280991"
+		countryCode      = "GR"
 	)
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
 		postalCode = "90080"
@@ -34,7 +36,7 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 			{
 				Config: generateRoutingSmsAddressesResource(
 					addressResLabel,
-					name,
+					strconv.Quote(name),
 					street,
 					city,
 					region,
@@ -57,11 +59,11 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 	})
 }
 
-func generateSmsAddressDataSource(dataSourceLabel string, name string, dependsOn string) string {
+func generateSmsAddressDataSource(dataSourceLabel, name, dependsOn string) string {
 	return fmt.Sprintf(`
-		data "genesyscloud_routing_sms_address" "%s" {
+		data "%s" "%s" {
 			name = "%s"
 			depends_on = [%s]
 		}
-	`, dataSourceLabel, name, dependsOn)
+	`, ResourceType, dataSourceLabel, name, dependsOn)
 }

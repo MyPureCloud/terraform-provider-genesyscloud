@@ -3,9 +3,10 @@ package auth_role
 import (
 	"context"
 	"fmt"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -226,6 +227,7 @@ func deleteAuthRoleFn(ctx context.Context, p *authRoleProxy, id string) (respons
 	if err != nil {
 		return apiResponse, err
 	}
+	rc.DeleteCacheItem(p.authRoleCache, id)
 	return apiResponse, nil
 }
 

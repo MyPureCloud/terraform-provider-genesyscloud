@@ -2,9 +2,9 @@ package routing_queue
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
@@ -42,6 +42,7 @@ func TestAccDataSourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue, //suppressCall_record_false
 					util.NullValue, // enable_transcription false
 					strconv.Quote("TimestampAndPriority"),
+					util.NullValue,
 					util.NullValue,
 					util.NullValue,
 				) + generateRoutingQueueDataSource(

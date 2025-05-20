@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"log"
 	"net/http"
 	"os"
@@ -11,16 +12,15 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/platform"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func init() {
@@ -80,6 +80,11 @@ type ProviderMeta struct {
 	Organization       *platformclientv2.Organization
 	DefaultCountryCode string
 	MaxClients         int
+}
+
+type IntegrationMeta struct {
+	ClientSecret string
+	ClientId     string
 }
 
 var (

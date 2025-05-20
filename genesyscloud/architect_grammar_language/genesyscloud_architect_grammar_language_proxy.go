@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 type FileType int
@@ -165,7 +166,12 @@ func updateArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 
 // deleteArchitectGrammarLanguageFn is an implementation function for deleting a Genesys Cloud Architect Grammar Language
 func deleteArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (response *platformclientv2.APIResponse, err error) {
-	return p.architectApi.DeleteArchitectGrammarLanguage(grammarId, languageCode)
+	resp, err := p.architectApi.DeleteArchitectGrammarLanguage(grammarId, languageCode)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.grammarLanguageCache, buildGrammarLanguageId(grammarId, languageCode))
+	return resp, nil
 }
 
 // uploadGrammarLanguageFile is a function for uploading a grammar language file to Genesys cloud

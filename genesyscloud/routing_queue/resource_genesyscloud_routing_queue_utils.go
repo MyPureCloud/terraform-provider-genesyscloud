@@ -3,15 +3,15 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"os"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // Build Functions
@@ -858,6 +858,7 @@ func GenerateRoutingQueueResource(
 	enableAudioMonitoring string,
 	enableManualAssignment string,
 	scoringMethod string,
+	lastAgentRoutingMode string,
 	peerId string,
 	sourceQueueId string,
 	nestedBlocks ...string) string {
@@ -872,6 +873,7 @@ func GenerateRoutingQueueResource(
 		calling_party_number = %s
 		enable_transcription = %s
 		scoring_method = %s
+		last_agent_routing_mode = %s
 		peer_id = %s
 		source_queue_id = %s
         suppress_in_queue_call_recording = %s
@@ -890,6 +892,7 @@ func GenerateRoutingQueueResource(
 		callingPartyNumber,
 		enableTranscription,
 		scoringMethod,
+		lastAgentRoutingMode,
 		peerId,
 		sourceQueueId,
 		suppressInQueueCallRecording,
@@ -1050,6 +1053,7 @@ func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Qu
 		MemberGroups:                 &memberGroups,
 		PeerId:                       platformclientv2.String(d.Get("peer_id").(string)),
 		ScoringMethod:                platformclientv2.String(d.Get("scoring_method").(string)),
+		LastAgentRoutingMode:         platformclientv2.String(d.Get("last_agent_routing_mode").(string)),
 	}
 }
 

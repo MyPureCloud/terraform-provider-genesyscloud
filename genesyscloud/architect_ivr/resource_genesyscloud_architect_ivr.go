@@ -3,22 +3,22 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // getAllIvrConfigs retrieves all architect IVRs and is used for the exporter
@@ -57,14 +57,23 @@ func createIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("Creating IVR config %s", *ivrBody.Name)
-	ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create IVR config %s error: %s", *ivrBody.Name, err), resp)
+
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		ivrConfig, resp, err := ap.createArchitectIvr(ctx, *ivrBody)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create IVR config %s error: %s", *ivrBody.Name, err), resp)
+		}
+
+		d.SetId(*ivrConfig.Id)
+		log.Printf("Created IVR config %s %s", *ivrBody.Name, *ivrConfig.Id)
+
+		return resp, nil
+	})
+
+	if diagErr != nil {
+		return diagErr
 	}
 
-	d.SetId(*ivrConfig.Id)
-
-	log.Printf("Created IVR config %s %s", *ivrBody.Name, *ivrConfig.Id)
 	return readIvrConfig(ctx, d, meta)
 }
 
@@ -139,7 +148,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 
 		return resp, nil
-	})
+	}, 400)
 
 	if diagErr != nil {
 		return diagErr

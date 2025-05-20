@@ -8,13 +8,14 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -401,6 +402,7 @@ func deleteScriptFn(_ context.Context, p *scriptsProxy, scriptId string) error {
 		return fmt.Errorf("failed to delete script %s: %s", scriptId, resp.Status)
 	}
 
+	rc.DeleteCacheItem(p.scriptCache, scriptId)
 	log.Printf("Successfully deleted script %s", scriptId)
 	return nil
 }
@@ -478,9 +480,13 @@ func createScriptFn(ctx context.Context, filePath, scriptName string, substituti
 	}
 
 	if resp, err := p.publishScript(ctx, scriptId); err != nil {
-		// If the script is not able to be published, clean up the script instance on the API before throwing an error
+		// If the script cannot be published, clean up the script instance on the API before throwing an error
 		// See DEVTOOLING-777
-		p.deleteScript(ctx, scriptId)
+		log.Printf("Attempting to delete script '%s'", scriptId)
+		deleteErr := p.deleteScript(ctx, scriptId)
+		if deleteErr != nil {
+			log.Printf("Error occurred while trying to delete script '%s': %s", scriptId, deleteErr.Error())
+		}
 		return "", fmt.Errorf("script '%s' (ID: %s) failed to publish and was deleted: %w (response: %v)", scriptName, scriptId, err, resp)
 	}
 	return scriptId, nil

@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"log"
 	"net/mail"
 	"sort"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -580,7 +580,9 @@ func phoneNumberHash(val interface{}) int {
 	// Copy map to avoid modifying state
 	phoneMap := make(map[string]interface{})
 	for k, v := range val.(map[string]interface{}) {
-		phoneMap[k] = v
+		if k != "extension_pool_id" {
+			phoneMap[k] = v
+		}
 	}
 	if num, ok := phoneMap["number"]; ok {
 		// Attempt to format phone numbers before hashing
@@ -718,7 +720,20 @@ func getNumbers(d *schema.ResourceData, index int) (bool, bool) {
 	return isNumber, isExtension
 }
 
-func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.Contact) []interface{} {
+func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) string {
+	ext, getErr, err := proxy.getTelephonyExtensionPoolByExtension(ctx, extNum)
+	if err != nil {
+		if getErr != nil {
+			log.Printf("Failed to fetch extension pools. Status: %d. Error: %s", getErr.StatusCode, getErr.ErrorMessage)
+			return ""
+		}
+		log.Printf("Failed to fetch extension pool id for extension %s. Error: %s", extNum, err)
+		return ""
+	}
+	return *ext.Id
+}
+
+func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Contact, proxy *userProxy) []interface{} {
 	if addresses == nil || len(*addresses) == 0 {
 		return nil
 	}
@@ -733,6 +748,7 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 			if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
 				phoneNumber := make(map[string]interface{})
 				phoneNumber["media_type"] = *address.MediaType
+				phoneNumber["extension_pool_id"] = ""
 
 				// PHONE and SMS Addresses have four different ways they can return in the API
 				// We need to be able to handle them all, and strip off any parentheses that can surround
@@ -748,7 +764,9 @@ func flattenUserAddresses(d *schema.ResourceData, addresses *[]platformclientv2.
 				if address.Extension != nil {
 					if address.Display != nil {
 						if *address.Extension == *address.Display {
-							phoneNumber["extension"] = strings.Trim(*address.Extension, "()")
+							extensionNum := strings.Trim(*address.Extension, "()")
+							phoneNumber["extension"] = extensionNum
+							phoneNumber["extension_pool_id"] = fetchExtensionPoolId(ctx, extensionNum, proxy)
 						}
 					}
 				}

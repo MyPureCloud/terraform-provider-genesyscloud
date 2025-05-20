@@ -3,22 +3,22 @@ package user
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 type agentUtilizationWithLabels struct {
@@ -44,7 +44,11 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		if user.Id == nil || user.Email == nil {
 			continue
 		}
-		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email}
+		hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department, user.PrimaryContactInfo, user.Addresses)
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email, BlockHash: hashedUniqueFields}
 	}
 
 	return resources, nil
@@ -168,7 +172,8 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		} else {
 			d.Set("manager", nil)
 		}
-		d.Set("addresses", flattenUserAddresses(d, currentUser.Addresses))
+
+		d.Set("addresses", flattenUserAddresses(ctx, currentUser.Addresses, proxy))
 		d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
 		d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
 		d.Set("locations", flattenUserLocations(currentUser.Locations))
