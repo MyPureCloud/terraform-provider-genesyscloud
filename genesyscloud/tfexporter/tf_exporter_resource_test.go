@@ -18,7 +18,7 @@ import (
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	outboundRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 
-	qualityFormsEvaluation "terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	"testing"
 
 	grammar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar"
@@ -240,10 +240,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[externalUser.ResourceType] = externalUser.ResourceExternalUserIdentity()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
+	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
-	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_widget_deployment"] = gcloud.ResourceWidgetDeployment()
-	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[ResourceType] = ResourceTfExport()
 }
 
@@ -310,7 +308,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_outbound_digitalruleset", obDigitalRuleset.OutboundDigitalrulesetExporter())
 	RegisterExporter("genesyscloud_outbound_filespecificationtemplate", obfst.OutboundFileSpecificationTemplateExporter())
 	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
-	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())
+	RegisterExporter("genesyscloud_quality_forms_evaluation", qualityFormsEvaluation.EvaluationFormExporter())
 	RegisterExporter("genesyscloud_quality_forms_survey", gcloud.SurveyFormExporter())
 	RegisterExporter("genesyscloud_recording_media_retention_policy", recMediaRetPolicy.MediaRetentionPolicyExporter())
 	RegisterExporter("genesyscloud_responsemanagement_library", respmanagementLibrary.ResponsemanagementLibraryExporter())
@@ -341,7 +339,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_user_roles", userRoles.UserRolesExporter())
 	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())
 	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
-	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
 	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
 	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
@@ -356,7 +353,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
 	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
 	RegisterExporter(externalUser.ResourceType, externalUser.ExternalUserIdentityExporter())
-	RegisterExporter("genesyscloud_widget_deployment", gcloud.WidgetDeploymentExporter())
 	RegisterExporter("genesyscloud_quality_forms_survey", gcloud.SurveyFormExporter())
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
