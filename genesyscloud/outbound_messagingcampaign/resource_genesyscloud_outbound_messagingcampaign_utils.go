@@ -329,9 +329,9 @@ func validateEmailconfig(emailConfig *schema.Set) (string, bool) {
 	emailConfigList := emailConfig.List()
 	if len(emailConfigList) > 0 {
 		emailConfigMap := emailConfigList[0].(map[string]interface{})
-		emailColumn, _ := emailConfigMap["email_columns"].(string)
-		if emailColumn == "" {
-			return "Message_column is required.", false
+		emailColumn, _ := emailConfigMap["email_columns"].([]interface{})
+		if len(emailColumn) == 0 {
+			return "email_columns is required.", false
 		}
 	} else {
 		return "", false

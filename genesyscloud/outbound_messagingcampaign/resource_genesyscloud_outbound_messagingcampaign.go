@@ -51,9 +51,24 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
-	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-	if !valid {
-		return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+	if _, sms := d.GetOk("sms_config"); sms {
+		log.Printf("HERE1")
+		msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+		if !valid {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+		}
+	}
+	if _, email := d.GetOk("email_config"); email {
+		log.Printf("HERE2")
+		//emailConfig := lists.BuildSdkStringListFromInterfaceArray(d, "email_config")
+		//msg, valid := validateEmailconfig(emailConfig)
+		//if !valid {
+		//	return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+		//}
+		msg, valid := validateEmailconfig(d.Get("email_config").(*schema.Set))
+		if !valid {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+		}
 	}
 
 	log.Printf("Creating outbound messagingcampaign %s", *outboundMessagingcampaign.Name)
