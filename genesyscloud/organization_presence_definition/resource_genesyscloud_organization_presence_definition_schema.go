@@ -1,6 +1,7 @@
 package organization_presence_definition
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,9 +32,7 @@ var validLanguageLabels = []string{
 	"de",
 	"en",
 	"en_US",
-	"en-us",
 	"es",
-	"es_US",
 	"fi",
 	"fr",
 	"he",
@@ -90,9 +89,10 @@ func ResourceOrganizationPresenceDefinition() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`system_presence`: {
-				Description: `System presence to create presence definition for. Once presence definition is created, this cannot be changed. Valid presences include: ` + strings.Join(validSystemPresences, `, `),
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  `System presence to create presence definition for. Once presence definition is created, this cannot be changed. Valid presences include: ` + strings.Join(validSystemPresences, `, `),
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice(validSystemPresences, true),
 			},
 			`division_id`: {
 				Description: `The division to which the presence definition will belong. If not set, the presence definition will apply to all divisions.`,
