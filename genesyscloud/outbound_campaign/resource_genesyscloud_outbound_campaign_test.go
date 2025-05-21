@@ -248,12 +248,12 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					util.NullValue, // caller name
 					util.NullValue, // caller address
 					"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
-					util.NullValue, // campaign status
-					util.NullValue, // division id
+					util.NullValue,                                                 // campaign status
+					util.NullValue,                                                 // division id
 					fmt.Sprintf("%s.%s.id", scripts.ResourceType, scriptLabel),     // script id
 					fmt.Sprintf("%s.%s.id", routingQueue.ResourceType, queueLabel), // queue id
-					util.NullValue, // site_id
-					util.NullValue, // abandon rate
+					util.NullValue,                                                 // site_id
+					util.NullValue,                                                 // abandon rate
 					util.NullValue,
 					util.NullValue,
 					util.NullValue,
@@ -941,7 +941,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						name,
 						dialingMode,
 						strconv.Quote(callerName),
-						callerAddress,
+						strconv.Quote(callerAddress),
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 						util.NullValue,
 						util.NullValue,
