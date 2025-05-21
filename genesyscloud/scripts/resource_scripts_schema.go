@@ -76,6 +76,7 @@ func ResourceScript() *schema.Resource {
 				Description: "Specify division id",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}

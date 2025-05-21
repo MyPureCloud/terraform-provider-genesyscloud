@@ -17,5 +17,5 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
     }
   }
   # optional
-  description                = "Test description"
+  description = "Test description"
 }
