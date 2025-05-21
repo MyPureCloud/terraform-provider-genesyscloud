@@ -22,11 +22,13 @@ The resource_genesyscloud_task_management_worktype_status_test.go contains all o
 tests for task_management_worktype_status.
 */
 
-/* setup worktype status and workbin outside the test step , since the genesyscloud_worktype_status_transition does not
+/*
+	setup worktype status and workbin outside the test step , since the genesyscloud_worktype_status_transition does not
+
 does not create a new resource but will update the existing  genesyscloud_worktype_status and we get plan non-empty errors for
 genesyscloud_worktype_status. referring  it as data source in a different test step too will not work since the resources are
-independent in each test step.*/
-
+independent in each test step.
+*/
 func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 	t.Parallel()
 	var (
