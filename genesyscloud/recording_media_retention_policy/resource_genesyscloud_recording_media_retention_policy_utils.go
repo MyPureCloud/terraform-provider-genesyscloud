@@ -1428,15 +1428,15 @@ func flattenMessageMediaPolicyConditions(conditions *platformclientv2.Messagemed
 
 func buildCallMediaPolicy(callMediaPolicy []interface{}, pp *policyProxy, ctx context.Context) (error, *platformclientv2.Callmediapolicy) {
 	if len(callMediaPolicy) <= 0 {
-		return fmt.Errorf("callMediaPolicy paramter passed into builddCallMediaPolicy is nil or empty"), nil
+		log.Println("callMediaPolicy parameter passed into buildCallMediaPolicy is nil or empty")
+		return nil, nil
 	}
 
 	policyMap, ok := callMediaPolicy[0].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("unable to retrieve a policyMap record in the buildCallMediaPolicy() methdo"), nil
+		return fmt.Errorf("unable to retrieve a policyMap record in the buildCallMediaPolicy() method"), nil
 	}
 	err, actions := buildPolicyActionsFromMediaPolicy(policyMap["actions"].([]interface{}), pp, ctx)
-
 	if err != nil {
 		return err, nil
 	}
