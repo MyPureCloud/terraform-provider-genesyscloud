@@ -38,19 +38,19 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_d
   display_name            = "terraform_test_-TEST-CASE-_action_map_dependency"
   color                   = "#008000"
   should_display_to_agent = false
-   journey {
-     patterns {
-       criteria {
-         key                = "page.title"
-         values             = ["Title"]
-         operator           = "notEqual"
-         should_ignore_case = true
-       }
-       count        = 1
-       stream_type  = "Web"
-       session_type = "web"
-     }
-   }
+  journey {
+    patterns {
+      criteria {
+        key                = "page.title"
+        values             = ["Title"]
+        operator           = "notEqual"
+        should_ignore_case = true
+      }
+      count        = 1
+      stream_type  = "Web"
+      session_type = "web"
+    }
+  }
 }
 
 resource "genesyscloud_journey_outcome" "terraform_test_-TEST-CASE-_action_map_dependency" {

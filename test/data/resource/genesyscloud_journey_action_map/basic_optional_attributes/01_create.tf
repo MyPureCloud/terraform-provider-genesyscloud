@@ -11,12 +11,12 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   start_date = "2022-07-04T12:00:00.000000"
   # optional
   trigger_with_outcome_probability_conditions {
-    outcome_id = genesyscloud_journey_outcome.terraform_test_-TEST-CASE-_action_map_dependency.id
+    outcome_id          = genesyscloud_journey_outcome.terraform_test_-TEST-CASE-_action_map_dependency.id
     maximum_probability = 0.333
   }
   # optional
   trigger_with_outcome_quantile_conditions {
-    outcome_id = genesyscloud_journey_outcome.terraform_test_-TEST-CASE-_action_map_dependency.id
+    outcome_id             = genesyscloud_journey_outcome.terraform_test_-TEST-CASE-_action_map_dependency.id
     max_quantile_threshold = 0.333
   }
   page_url_conditions {
