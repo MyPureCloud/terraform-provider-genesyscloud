@@ -2,6 +2,7 @@ package architect_schedules
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"regexp"
 	"strings"
@@ -55,6 +56,40 @@ func getDaysFromRRule(rrule string) []string {
 	}
 
 	return fullDays
+}
+
+// parseScheduleStartAndEndDateTimes parses and validates the start and end times from a Terraform resource data object.
+// It extracts the "start" and "end" string values from the ResourceData, parses them according to the predefined timeFormat,
+// and if a "rrule" is present, verifies that the start date conforms to the recurrence rule.
+//
+// Parameters:
+//   - d: A pointer to schema.ResourceData containing the resource's state data
+//
+// Returns:
+//   - start: A time.Time representing the parsed start datetime
+//   - end: A time.Time representing the parsed end datetime
+//   - err: An error if parsing fails or if the start date doesn't conform to the rrule
+func parseScheduleStartAndEndDateTimes(d *schema.ResourceData) (start, end time.Time, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("error in parseScheduleStartAndEndDateTimes: %w", err)
+		}
+	}()
+
+	//The first parameter of the Parse() method specifies the date and time format/layout that should be used to interpret the second parameter.
+	start, err = time.Parse(timeFormat, d.Get("start").(string))
+	if err != nil {
+		return
+	}
+
+	if rrule := d.Get("rrule").(string); rrule != "" {
+		if err = verifyStartDateConformsToRRule(start, rrule, d.Get("name").(string)); err != nil {
+			return
+		}
+	}
+
+	end, err = time.Parse(timeFormat, d.Get("end").(string))
+	return
 }
 
 func GenerateArchitectSchedulesResource(
