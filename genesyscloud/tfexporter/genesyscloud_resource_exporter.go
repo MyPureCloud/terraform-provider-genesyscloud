@@ -4,16 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
-	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"hash/fnv"
 	"io"
 	"log"
@@ -26,6 +16,17 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
@@ -1211,8 +1212,15 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
+
+	resourceMutex := &sync.Mutex{}
+
+	resourceMutex.Lock()
+	resourceData := resource.Data(instanceState)
+	resourceMutex.Unlock()
+
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
-		resourceDataArr, err := resource.Importer.StateContext(ctx, resource.Data(instanceState), meta)
+		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, meta)
 		if err != nil {
 			log.Printf("Error with resource Importer %v for id %s", resID, err)
 			return nil, diag.FromErr(err)
@@ -1222,7 +1230,10 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		}
 	}
 
+	resourceMutex.Lock()
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
+	resourceMutex.Unlock()
+
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
