@@ -6,9 +6,9 @@ import (
 	"errors"
 	"net/http"
 
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *trunkbaseSettingProxy
@@ -190,5 +190,10 @@ func updateTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, tru
 }
 
 func deleteTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, trunkBaseSettingId string) (*platformclientv2.APIResponse, error) {
-	return p.edgesApi.DeleteTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingId)
+	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.trunkBaseCache, trunkBaseSettingId)
+	return resp, nil
 }

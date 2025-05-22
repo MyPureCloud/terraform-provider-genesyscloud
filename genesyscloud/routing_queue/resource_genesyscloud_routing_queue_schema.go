@@ -1,22 +1,21 @@
 package routing_queue
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	architectUserPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/group"
-	responseManagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	routingSkill "terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingSkillGroup "terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	routingSmsAddresses "terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"terraform-provider-genesyscloud/genesyscloud/scripts"
-	"terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/user"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectUserPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	routingSmsAddresses "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -598,12 +597,20 @@ func ResourceRoutingQueue() *schema.Resource {
 					},
 				},
 			},
+			"ignore_members": {
+				Description:   "If true, queue members will not be managed through Terraform state or API updates. This provides backwards compatibility for configurations where queue members are managed outside of Terraform.",
+				Type:          schema.TypeBool,
+				Optional:      true,
+				ConflictsWith: []string{"members"},
+			},
 			"members": {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
+				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
+					return d.Get("ignore_members").(bool)
+				},
 			},
 			"wrapup_codes": {
 				Description: "IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.",
@@ -640,6 +647,7 @@ func ResourceRoutingQueue() *schema.Resource {
 			"last_agent_routing_mode": {
 				Description:  "The Last Agent Routing Mode for the queue.",
 				Type:         schema.TypeString,
+				Computed:     true,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Disabled", "QueueMembersOnly", "AnyAgent"}, false),
 			},

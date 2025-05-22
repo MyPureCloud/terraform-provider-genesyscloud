@@ -119,6 +119,9 @@ func StringListToInterfaceList(list []string) []interface{} {
 }
 
 func SetToStringList(strSet *schema.Set) *[]string {
+	if strSet == nil {
+		return nil
+	}
 	interfaceList := strSet.List()
 	strList := InterfaceListToStrings(interfaceList)
 	return &strList
@@ -127,13 +130,20 @@ func SetToStringList(strSet *schema.Set) *[]string {
 func InterfaceListToStrings(interfaceList []interface{}) []string {
 	strs := make([]string, len(interfaceList))
 	for i, val := range interfaceList {
-		strs[i] = val.(string)
+		if val, ok := val.(string); ok {
+			strs[i] = val
+		} else {
+			strs[i] = ""
+		}
 	}
 	return strs
 }
 
 func BuildStringListFromSetInMap(m map[string]any, key string) []string {
 	var strList []string
+	if m == nil || m[key] == nil {
+		return strList
+	}
 	if setVal, ok := m[key].(*schema.Set); ok {
 		listVal := setVal.List()
 		if len(listVal) > 0 {
@@ -144,13 +154,21 @@ func BuildStringListFromSetInMap(m map[string]any, key string) []string {
 }
 
 func BuildSdkStringList(d *schema.ResourceData, attrName string) *[]string {
+	if d == nil {
+		return nil
+	}
 	if val, ok := d.GetOk(attrName); ok {
-		return SetToStringList(val.(*schema.Set))
+		if setVal, ok := val.(*schema.Set); ok {
+			return SetToStringList(setVal)
+		}
 	}
 	return nil
 }
 
 func BuildSdkStringListFromInterfaceArray(d *schema.ResourceData, attrName string) *[]string {
+	if d == nil {
+		return nil
+	}
 	var stringArray []string
 	if val, ok := d.GetOk(attrName); ok {
 		if valArray, ok := val.([]interface{}); ok {
@@ -164,6 +182,9 @@ func FlattenList[T interface{}](resourceList *[]T, elementFlattener func(resourc
 	if resourceList == nil {
 		return nil
 	}
+	if elementFlattener == nil {
+		return nil
+	}
 
 	var resultList []map[string]interface{}
 
@@ -175,6 +196,9 @@ func FlattenList[T interface{}](resourceList *[]T, elementFlattener func(resourc
 
 func FlattenAsList[T interface{}](resource *T, elementFlattener func(resource *T) map[string]interface{}) *[]map[string]interface{} {
 	if resource == nil {
+		return nil
+	}
+	if elementFlattener == nil {
 		return nil
 	}
 
@@ -196,6 +220,9 @@ func NilToEmptyList[T interface{}](list *[]T) *[]T {
 
 // Remove an item from a string list based on the value
 func Remove[T comparable](s []T, r T) []T {
+	if len(s) == 0 {
+		return s
+	}
 	for i, v := range s {
 		if v == r {
 			return append(s[:i], s[i+1:]...)
@@ -211,13 +238,22 @@ func ConvertMapStringAnyToMapStringString(m map[string]any) map[string]string {
 	}
 	sm := make(map[string]string)
 	for k, v := range m {
-		sm[k] = v.(string)
+		if v == nil {
+			sm[k] = ""
+		} else if valStr, ok := v.(string); ok {
+			sm[k] = valStr
+		} else {
+			sm[k] = ""
+		}
 	}
 	return sm
 }
 
-// Generic function to apply a function for each item over a list
+// Map is a generic function to apply a function for each item over a list
 func Map[T, V any](ts []T, fn func(T) V) []V {
+	if fn == nil {
+		return nil
+	}
 	result := make([]V, len(ts))
 	for i, t := range ts {
 		result[i] = fn(t)

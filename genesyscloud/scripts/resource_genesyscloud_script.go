@@ -3,16 +3,16 @@ package scripts
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -43,9 +43,9 @@ func createScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	filePath := d.Get("filepath").(string)
 	scriptName := d.Get("script_name").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
-
+	divisionId := d.Get("division_id").(string)
 	log.Printf("Creating script %s", scriptName)
-	scriptId, err := scriptsProxy.createScript(ctx, filePath, scriptName, substitutions)
+	scriptId, err := scriptsProxy.createScript(ctx, filePath, scriptName, divisionId, substitutions)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -63,10 +63,11 @@ func updateScript(ctx context.Context, d *schema.ResourceData, meta interface{})
 	filePath := d.Get("filepath").(string)
 	scriptName := d.Get("script_name").(string)
 	substitutions := d.Get("substitutions").(map[string]interface{})
+	divisionId := d.Get("division_id").(string)
 
 	log.Printf("Updating script '%s' %s", scriptName, d.Id())
 
-	scriptId, err := scriptsProxy.updateScript(ctx, filePath, scriptName, d.Id(), substitutions)
+	scriptId, err := scriptsProxy.updateScript(ctx, filePath, scriptName, d.Id(), divisionId, substitutions)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -97,6 +98,9 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		if script.Name != nil {
 			_ = d.Set("script_name", *script.Name)
+		}
+		if script.Division != nil && script.Division.Id != nil {
+			_ = d.Set("division_id", *script.Division.Id)
 		}
 
 		log.Printf("Read script %s %s", d.Id(), *script.Name)

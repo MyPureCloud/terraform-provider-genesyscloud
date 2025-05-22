@@ -2,11 +2,11 @@ package user
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -48,6 +48,11 @@ var (
 			},
 			"extension": {
 				Description: "Phone number extension",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"extension_pool_id": {
+				Description: "Id of the extension pool which contains this extension.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -438,11 +443,12 @@ func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsers),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"manager":                       {RefType: ResourceType},
-			"division_id":                   {RefType: "genesyscloud_auth_division"},
-			"routing_skills.skill_id":       {RefType: "genesyscloud_routing_skill"},
-			"routing_languages.language_id": {RefType: "genesyscloud_routing_language"},
-			"locations.location_id":         {RefType: "genesyscloud_location"},
+			"manager":                                   {RefType: ResourceType},
+			"division_id":                               {RefType: "genesyscloud_auth_division"},
+			"routing_skills.skill_id":                   {RefType: "genesyscloud_routing_skill"},
+			"routing_languages.language_id":             {RefType: "genesyscloud_routing_language"},
+			"locations.location_id":                     {RefType: "genesyscloud_location"},
+			"addresses.phone_numbers.extension_pool_id": {RefType: "genesyscloud_telephony_providers_edges_extension_pool"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"routing_skills":         {"skill_id"},

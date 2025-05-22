@@ -3,23 +3,23 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	obResponseSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	obContactListFilter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
 	"strconv"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	obResponseSet "terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	obContactListFilter "terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
-	obDnclist "terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -42,8 +42,8 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
 		DialingMode:                    platformclientv2.String(d.Get("dialing_mode").(string)),
-		CallerAddress:                  platformclientv2.String(d.Get("caller_address").(string)),
-		CallerName:                     platformclientv2.String(d.Get("caller_name").(string)),
+		CallerAddress:                  resourcedata.GetNonZeroPointer[string](d, "caller_address"),
+		CallerName:                     resourcedata.GetNonZeroPointer[string](d, "caller_name"),
 		CampaignStatus:                 platformclientv2.String("off"),
 		ContactList:                    util.BuildSdkDomainEntityRef(d, "contact_list_id"),
 		Queue:                          util.BuildSdkDomainEntityRef(d, "queue_id"),
@@ -351,6 +351,8 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				carResourceLabel,
 				"tf test car "+uuid.NewString(),
 				util.FalseValue,
+				util.FalseValue,
+				strconv.Quote("Disabled"),
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_person",
@@ -364,6 +366,8 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				carResourceLabel,
 				"tf test car "+uuid.NewString(),
 				util.TrueValue,
+				util.TrueValue,
+				strconv.Quote("Disabled"),
 				obResponseSet.GenerateCarsResponsesBlock(
 					obResponseSet.GenerateCarsResponse(
 						"callable_machine",

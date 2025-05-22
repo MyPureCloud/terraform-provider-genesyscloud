@@ -4,22 +4,23 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -67,16 +68,16 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-	err, mediaPolicies := buildMediaPolicies(d, pp, ctx)
+	mediaPolicies, err := buildMediaPolicies(d, pp, ctx)
 
 	if err != nil {
-		util.BuildDiagnosticError(ResourceType, "error while calling buildMediaPolicie()in createMediaRetention", err)
+		return util.BuildDiagnosticError(ResourceType, "error while calling buildMediaPolicies()in createMediaRetention", err)
 	}
 
 	conditions := buildConditions(d)
-	err, actions := buildPolicyActionsFromResource(d, pp, ctx)
+	actions, err := buildPolicyActionsFromResource(d, pp, ctx)
 	if err != nil {
-		util.BuildDiagnosticError(ResourceType, "error while calling buildPolicyActionsFromResource()", err)
+		return util.BuildDiagnosticError(ResourceType, "error while calling buildPolicyActionsFromResource()", err)
 	}
 
 	policyErrors := buildPolicyErrors(d)
@@ -110,7 +111,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, gcloud.ResourceSurveyForm(), constants.ConsistencyChecks(), ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, qualityFormsSurvey.ResourceQualityFormsSurvey(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading media retention policy %s", d.Id())
 
@@ -132,7 +133,7 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 
 		err, mediaPolicies := flattenMediaPolicies(retentionPolicy.MediaPolicies, pp, ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Unable to flatten media policies in readMediaRetentionPolicy() method: %s", err))
+			return retry.NonRetryableError(fmt.Errorf("unable to flatten media policies in readMediaRetentionPolicy() method: %s", err))
 		}
 		if retentionPolicy.MediaPolicies != nil {
 			d.Set("media_policies", mediaPolicies)
@@ -140,7 +141,7 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 
 		err, actions := flattenPolicyActions(retentionPolicy.Actions, pp, ctx)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Unable to flatten actions in readMediaRetentionPolicy(): %s", err))
+			return retry.NonRetryableError(fmt.Errorf("unable to flatten actions in readMediaRetentionPolicy(): %s", err))
 		}
 		if retentionPolicy.Actions != nil {
 			d.Set("actions", actions)
@@ -158,13 +159,13 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	order := d.Get("order").(int)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
-	err, mediaPolicies := buildMediaPolicies(d, pp, ctx)
+	mediaPolicies, err := buildMediaPolicies(d, pp, ctx)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "Error while retrieving buildMediaPolicies() function in updateMediaRetentionPolicy() method)", err)
 	}
 
 	conditions := buildConditions(d)
-	err, actions := buildPolicyActionsFromResource(d, pp, ctx)
+	actions, err := buildPolicyActionsFromResource(d, pp, ctx)
 
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "Error while retrieving buildPolicyActionsFromResource() function in updateMediaRetentionPolicy() method)", err)

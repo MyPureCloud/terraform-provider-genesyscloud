@@ -1,7 +1,7 @@
 package outbound_attempt_limit
 
 import (
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 func SetRegistrar(regInstance registrar.Registrar) {

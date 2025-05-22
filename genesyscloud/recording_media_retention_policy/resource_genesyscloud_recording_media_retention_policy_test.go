@@ -7,28 +7,29 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routinglanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	team "terraform-provider-genesyscloud/genesyscloud/team"
-	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	team "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -505,13 +506,13 @@ var (
 	roleActions                  = make([]string, 0)
 	permissions                  = make([]string, 0)
 
-	questionGroupBody1 = []gcloud.EvaluationFormQuestionGroupStruct{
+	questionGroupBody1 = []qualityFormsEvaluation.EvaluationFormQuestionGroupStruct{
 		{
 			Name: questionGroupName,
-			Questions: []gcloud.EvaluationFormQuestionStruct{
+			Questions: []qualityFormsEvaluation.EvaluationFormQuestionStruct{
 				{
 					Text: "question-1",
-					AnswerOptions: []gcloud.AnswerOptionStruct{
+					AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 						{
 							Text: "yes",
 						},
@@ -523,16 +524,16 @@ var (
 			},
 		},
 	}
-	evaluationFormResourceBody = gcloud.EvaluationFormStruct{
+	evaluationFormResourceBody = qualityFormsEvaluation.EvaluationFormStruct{
 		Name:           evaluationFormName,
 		Published:      true,
 		QuestionGroups: questionGroupBody1,
 	}
 
-	questionGroupBody2 = []gcloud.SurveyFormQuestionGroupStruct{
+	questionGroupBody2 = []qualityFormsSurvey.SurveyFormQuestionGroupStruct{
 		{
 			Name: questionGroupName,
-			Questions: []gcloud.SurveyFormQuestionStruct{
+			Questions: []qualityFormsSurvey.SurveyFormQuestionStruct{
 				{
 					Text:                  "question-1",
 					VarType:               "freeTextQuestion",
@@ -541,7 +542,7 @@ var (
 			},
 		},
 	}
-	surveyFormResourceBody = gcloud.SurveyFormStruct{
+	surveyFormResourceBody = qualityFormsSurvey.SurveyFormStruct{
 		Name:           surveyFormName,
 		Language:       "en-US",
 		Published:      true,
@@ -1069,8 +1070,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1178,8 +1179,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1286,8 +1287,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1394,8 +1395,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
@@ -1502,8 +1503,8 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 						GenerateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routinglanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +

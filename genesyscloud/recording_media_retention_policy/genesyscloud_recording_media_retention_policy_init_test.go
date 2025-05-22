@@ -3,24 +3,25 @@ package recording_media_retention_policy
 import (
 	"log"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	flow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	team "terraform-provider-genesyscloud/genesyscloud/team"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"testing"
 
+	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -55,8 +56,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 	providerResources[user.ResourceType] = user.ResourceUser()
-	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
+	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
+	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
 	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
 	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()

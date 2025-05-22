@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

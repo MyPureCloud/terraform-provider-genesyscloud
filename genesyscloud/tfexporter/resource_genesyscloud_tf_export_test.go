@@ -16,32 +16,33 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	userPromptResource "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	"terraform-provider-genesyscloud/genesyscloud/platform"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	userPromptResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/google/uuid"
 
-	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -1001,11 +1002,11 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		formResourceLabel = formName
 
 		// Complete evaluation form
-		evaluationForm1 = gcloud.EvaluationFormStruct{
+		evaluationForm1 = qualityFormsEvaluation.EvaluationFormStruct{
 			Name:      formName,
 			Published: false,
 
-			QuestionGroups: []gcloud.EvaluationFormQuestionGroupStruct{
+			QuestionGroups: []qualityFormsEvaluation.EvaluationFormQuestionGroupStruct{
 				{
 					Name:                    "Test Question Group 1",
 					DefaultAnswersToHighest: true,
@@ -1013,10 +1014,10 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 					NaEnabled:               true,
 					Weight:                  1,
 					ManualWeight:            true,
-					Questions: []gcloud.EvaluationFormQuestionStruct{
+					Questions: []qualityFormsEvaluation.EvaluationFormQuestionStruct{
 						{
 							Text: "Did the agent perform the opening spiel?",
-							AnswerOptions: []gcloud.AnswerOptionStruct{
+							AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 								{
 									Text:  "Yes",
 									Value: 1,
@@ -1034,11 +1035,11 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 							CommentsRequired: true,
 							IsKill:           true,
 							IsCritical:       true,
-							VisibilityCondition: gcloud.VisibilityConditionStruct{
+							VisibilityCondition: qualityFormsEvaluation.VisibilityConditionStruct{
 								CombiningOperation: "AND",
 								Predicates:         []string{"/form/questionGroup/0/question/0/answer/0", "/form/questionGroup/0/question/0/answer/1"},
 							},
-							AnswerOptions: []gcloud.AnswerOptionStruct{
+							AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 								{
 									Text:  "Yes",
 									Value: 1,
@@ -1054,10 +1055,10 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 				{
 					Name:   "Test Question Group 2",
 					Weight: 2,
-					Questions: []gcloud.EvaluationFormQuestionStruct{
+					Questions: []qualityFormsEvaluation.EvaluationFormQuestionStruct{
 						{
 							Text: "Did the agent offer to sell product?",
-							AnswerOptions: []gcloud.AnswerOptionStruct{
+							AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 								{
 									Text:  "Yes",
 									Value: 1,
@@ -1069,7 +1070,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 							},
 						},
 					},
-					VisibilityCondition: gcloud.VisibilityConditionStruct{
+					VisibilityCondition: qualityFormsEvaluation.VisibilityConditionStruct{
 						CombiningOperation: "AND",
 						Predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
 					},
@@ -1085,13 +1086,13 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1),
+				Config: qualityFormsEvaluation.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					validateEvaluationFormAttributes(formResourceLabel, evaluationForm1),
 				),
 			},
 			{
-				Config: gcloud.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1) + generateTfExportByFilter(
+				Config: qualityFormsEvaluation.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1) + generateTfExportByFilter(
 					formResourceLabel,
 					exportTestDir,
 					util.TrueValue,
@@ -3193,7 +3194,7 @@ func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc
 	}
 }
 
-func validateEvaluationFormAttributes(resourceLabel string, form gcloud.EvaluationFormStruct) resource.TestCheckFunc {
+func validateEvaluationFormAttributes(resourceLabel string, form qualityFormsEvaluation.EvaluationFormStruct) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceLabel, "name", resourceLabel),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceLabel, "published", util.FalseValue),

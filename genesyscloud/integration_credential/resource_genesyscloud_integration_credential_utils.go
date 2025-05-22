@@ -2,11 +2,12 @@ package integration_credential
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
 	"log"
-	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*

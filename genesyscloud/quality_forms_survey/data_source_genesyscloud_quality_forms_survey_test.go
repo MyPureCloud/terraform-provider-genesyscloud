@@ -1,10 +1,11 @@
-package genesyscloud
+package quality_forms_survey
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -73,10 +74,10 @@ func TestAccDataSourceQualityFormsSurvey(t *testing.T) {
 				) + generateQualityFormsSurveyDataSource(
 					formDataResourceLabel,
 					formName,
-					"genesyscloud_quality_forms_survey."+formResourceLabel,
+					ResourceType+"."+formResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_quality_forms_survey."+formDataResourceLabel, "id", "genesyscloud_quality_forms_survey."+formResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+formDataResourceLabel, "id", ResourceType+"."+formResourceLabel, "id"),
 				),
 			},
 		},
@@ -89,9 +90,9 @@ func generateQualityFormsSurveyDataSource(
 	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
 	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_quality_forms_survey" "%s" {
+	return fmt.Sprintf(`data "%s" "%s" {
 		name = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }

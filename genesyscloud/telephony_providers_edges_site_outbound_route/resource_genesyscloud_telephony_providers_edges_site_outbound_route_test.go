@@ -3,15 +3,15 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	tbs "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 
 	"github.com/google/uuid"
@@ -26,7 +26,7 @@ func TestAccResourceSiteoutboundRoutes(t *testing.T) {
 
 		// site
 		siteResourceLabel = "site"
-		siteName          = "site " + uuid.NewString()
+		siteName          = "tf test site " + uuid.NewString()
 		siteDescription   = "terraform description 1"
 		mediaModel        = "Cloud"
 
