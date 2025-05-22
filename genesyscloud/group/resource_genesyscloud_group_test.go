@@ -2,13 +2,14 @@ package group
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -29,6 +30,8 @@ func TestAccResourceGroupBasic(t *testing.T) {
 		testUserName          = "nameUser1" + uuid.NewString()
 		testUserEmail         = uuid.NewString() + "@group.com"
 		userID                string
+		groupResourceLabel2   = "test-group2"
+		groupName2            = "terraform-" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -127,6 +130,32 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				),
 
 				PreventPostDestroyRefresh: true,
+			},
+			{
+				// Create a group with include owners
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel2,
+						groupName2,
+						strconv.Quote(groupDesc1),
+						util.NullValue, // Default type
+						util.NullValue, // Default visibility
+						util.NullValue, // Default rules_visible
+						"roles_enabled = false",
+						"calls_enabled = false",
+						"include_owners = false",
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "name", groupName2),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "type", typeOfficial),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "description", groupDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "visibility", visPublic),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "rules_visible", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "roles_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "calls_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "include_owners", util.FalseValue),
+				),
 			},
 			{
 				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) + GenerateGroupResource(
