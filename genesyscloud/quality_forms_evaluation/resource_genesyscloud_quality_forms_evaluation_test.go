@@ -86,8 +86,10 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 		},
 	})
 
-	evaluationForm3 := evaluationForm1
+	evaluationForm3 := evaluationForm2
 	evaluationForm3.Published = true
+
+	evaluationDraftId := ""
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -97,13 +99,21 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 				// Create
 				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						// Set evaluationDraftId to the instance ID of formResourceLabel1
+						evaluationDraftId = s.RootModule().Resources[ResourceType+"."+formResourceLabel1].Primary.ID
+						return nil
+					},
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", evaluationForm1.Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published_id", ""),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.text", evaluationForm1.QuestionGroups[0].Questions[0].Text),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
 				),
+				Destroy:                   false,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Update and add some questions
@@ -111,6 +121,7 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", evaluationForm2.Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published_id", ""),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", evaluationForm2.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm2.QuestionGroups))),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.weight", fmt.Sprint(evaluationForm2.QuestionGroups[1].Weight)),
@@ -121,13 +132,27 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[1].Questions[0].AnswerOptions))),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.1.answer_options.#", fmt.Sprint(len(evaluationForm2.QuestionGroups[1].Questions[1].AnswerOptions))),
 				),
+				Destroy:                   false,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Publish Evaluation Form
 				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm3),
 				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						// Get the evaluation draft ID from the state
+						newDraftId := s.RootModule().Resources[ResourceType+"."+formResourceLabel1].Primary.ID
+						if evaluationDraftId == "" {
+							return fmt.Errorf("evaluation draft ID not set")
+						}
+						if evaluationDraftId == newDraftId {
+							return fmt.Errorf("evaluation draft ID is the same as the original draft ID: %s and %s", evaluationDraftId, newDraftId)
+						}
+						return nil
+					},
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", evaluationForm3.Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "published_id"),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", evaluationForm3.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm3.QuestionGroups))),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.text", evaluationForm3.QuestionGroups[0].Questions[0].Text),
@@ -136,22 +161,23 @@ func TestAccResourceEvaluationFormBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      ResourceType + "." + formResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            ResourceType + "." + formResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"published"},
 			},
 		},
 		CheckDestroy: testVerifyEvaluationFormDestroyed,
 	})
 }
 
-func TestAccResourceEvaluationFormComplete(t *testing.T) {
+func TestAccResourceEvaluationFormCompleteWithPublish(t *testing.T) {
 	formResourceLabel1 := "test-evaluation-form-1"
 
 	// Complete evaluation form
 	evaluationForm1 := EvaluationFormStruct{
 		Name:      "terraform-form-evaluations-" + uuid.NewString(),
-		Published: false,
+		Published: true,
 		QuestionGroups: []EvaluationFormQuestionGroupStruct{
 			{
 				Name:                    "Test Question Group 1",
@@ -233,7 +259,8 @@ func TestAccResourceEvaluationFormComplete(t *testing.T) {
 				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", evaluationForm1.Name),
-					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "published_id"),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to_highest", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToHighest)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to_na", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersToNA)),
@@ -255,9 +282,10 @@ func TestAccResourceEvaluationFormComplete(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      ResourceType + "." + formResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            ResourceType + "." + formResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"published"},
 			},
 		},
 		CheckDestroy: testVerifyEvaluationFormDestroyed,
@@ -298,6 +326,8 @@ func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 	evaluationForm2 := evaluationForm1
 	evaluationForm2.Published = false
 
+	publishedId := ""
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -307,6 +337,15 @@ func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "published_id"),
+					func(s *terraform.State) error {
+						publishedId = s.RootModule().Resources[ResourceType+"."+formResourceLabel1].Primary.Attributes["published_id"]
+						if publishedId == "" {
+							return fmt.Errorf("published_id is not set")
+						} else {
+							return nil
+						}
+					},
 				),
 			},
 			{
@@ -314,20 +353,44 @@ func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					// Previous publish version is retained
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "published_id"),
+					func(s *terraform.State) error {
+						publishedIdCheck := s.RootModule().Resources[ResourceType+"."+formResourceLabel1].Primary.Attributes["published_id"]
+						if publishedIdCheck == "" {
+							return fmt.Errorf("published_id is not set")
+						}
+						if publishedIdCheck != publishedId {
+							return fmt.Errorf("published_id is not the same as the previous version: %s and %s", publishedIdCheck, publishedId)
+						}
+						return nil
+					},
 				),
 			},
 			{
-				// republish
+				// republish should generate new publish_id
 				Config: GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.TrueValue),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "published_id"),
+					func(s *terraform.State) error {
+						publishedIdCheck := s.RootModule().Resources[ResourceType+"."+formResourceLabel1].Primary.Attributes["published_id"]
+						if publishedIdCheck == "" {
+							return fmt.Errorf("published_id is not set")
+						}
+						if publishedIdCheck == publishedId {
+							return fmt.Errorf("published_id is the same as the previous version: %s and %s", publishedIdCheck, publishedId)
+						}
+						return nil
+					},
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      ResourceType + "." + formResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            ResourceType + "." + formResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"published"},
 			},
 		},
 		CheckDestroy: testVerifyEvaluationFormDestroyed,

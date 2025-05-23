@@ -30,7 +30,7 @@ type getQualityFormsEvaluationIdByNameFunc func(ctx context.Context, p *qualityF
 type getQualityFormsEvaluationByIdFunc func(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (evaluationForm *platformclientv2.Evaluationformresponse, response *platformclientv2.APIResponse, err error)
 type updateQualityFormsEvaluationFunc func(ctx context.Context, p *qualityFormsEvaluationProxy, id string, evaluationForm *platformclientv2.Evaluationform) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error)
 type deleteQualityFormsEvaluationFunc func(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (*platformclientv2.APIResponse, error)
-type publishQualityFormsEvaluationFunc func(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (*platformclientv2.APIResponse, error)
+type publishQualityFormsEvaluationFunc func(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error)
 type getQualityFormsEvaluationsBulkContextsFunc func(ctx context.Context, p *qualityFormsEvaluationProxy, contextIds []string) ([]platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error)
 type getEvaluationFormRecentVerIdFunc func(ctx context.Context, p *qualityFormsEvaluationProxy, formId string) (string, *platformclientv2.APIResponse, error)
 
@@ -129,7 +129,7 @@ func (p *qualityFormsEvaluationProxy) deleteQualityFormsEvaluation(ctx context.C
 }
 
 // publishQualityFormsEvaluation publishes a Genesys Cloud quality forms evaluation by Id
-func (p *qualityFormsEvaluationProxy) publishQualityFormsEvaluation(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+func (p *qualityFormsEvaluationProxy) publishQualityFormsEvaluation(ctx context.Context, id string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	return p.publishQualityFormsEvaluationAttr(ctx, p, id)
 }
 
@@ -144,29 +144,29 @@ func (p *qualityFormsEvaluationProxy) getEvaluationFormRecentVerId(ctx context.C
 }
 
 // publishQualityFormsEvaluationFn is an implementation function for publishing a Genesys Cloud quality forms evaluation
-func publishQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (*platformclientv2.APIResponse, error) {
+func publishQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	// Check if the form is already published
 	form, apiResponse, err := p.qualityApi.GetQualityFormsEvaluation(id)
 	if err != nil {
-		return apiResponse, fmt.Errorf("Failed to check existing state of quality forms evaluation: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to check existing state of quality forms evaluation: %s", err)
 	}
 
 	if *form.Published {
 		log.Printf("No need to publish form '%s' because it's already published", id)
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// Publish the form
-	_, apiResponse, err = p.qualityApi.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
+	newDraftEval, apiResponse, err := p.qualityApi.PostQualityPublishedformsEvaluations(platformclientv2.Publishform{
 		Id:        &id,
 		Published: platformclientv2.Bool(true),
 	})
 
 	if err != nil {
-		return apiResponse, fmt.Errorf("Failed to publish quality forms evaluation: %s", err)
+		return nil, apiResponse, fmt.Errorf("Failed to publish quality forms evaluation: %s", err)
 	}
 
-	return apiResponse, nil
+	return newDraftEval, apiResponse, nil
 }
 
 // createQualityFormsEvaluationFn is an implementation function for creating a Genesys Cloud quality forms evaluation
