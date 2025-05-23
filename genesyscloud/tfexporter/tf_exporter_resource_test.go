@@ -1,23 +1,13 @@
 package tfexporter
 
 import (
+	"testing"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
 	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
-	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
-	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
-	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
-	knowledgeDocument "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document"
-	knowledgeDocumentVariation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
-	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
-	knowledgeLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_label"
-	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	outboundRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
-
 	grammar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
@@ -32,6 +22,7 @@ import (
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	defaultSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
+	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
@@ -48,6 +39,14 @@ import (
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
+	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
+	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
+	knowledgeDocument "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document"
+	knowledgeDocumentVariation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
+	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
+	knowledgeLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_label"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
 	oAuthPairing "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
@@ -69,6 +68,8 @@ import (
 	obSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obw "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
@@ -86,6 +87,7 @@ import (
 	routingSmsAddress "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_sms_addresses"
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -95,13 +97,13 @@ import (
 	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	phonebaseSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phonebasesettings"
+	outboundRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site_outbound_route"
 	edgesTrunk "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-	"testing"
 
 	edgePhone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -237,9 +239,9 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 	providerResources[externalUser.ResourceType] = externalUser.ResourceExternalUserIdentity()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
-	providerResources["genesyscloud_quality_forms_survey"] = gcloud.ResourceSurveyForm()
-	providerResources["genesyscloud_quality_forms_evaluation"] = gcloud.ResourceEvaluationForm()
-	providerResources["genesyscloud_knowledge_label"] = knowledgeLabel.ResourceKnowledgeLabel()
+	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
+	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
+	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[ResourceType] = ResourceTfExport()
 }
 
@@ -253,105 +255,105 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
 	RegisterExporter(knowledgeKnowledgebase.ResourceType, knowledgeKnowledgebase.KnowledgeKnowledgebaseExporter())
 	RegisterExporter(journeyViewSchedule.ResourceType, journeyViewSchedule.JourneyViewScheduleExporter())
-	RegisterExporter("genesyscloud_organization_authentication_settings", oAuthSettings.OrganizationAuthenticationSettingsExporter())
-	RegisterExporter("genesyscloud_architect_grammar", grammar.ArchitectGrammarExporter())
-	RegisterExporter("genesyscloud_architect_grammar_language", grammarLanguage.ArchitectGrammarLanguageExporter())
-	RegisterExporter("genesyscloud_architect_datatable", dt.ArchitectDatatableExporter())
-	RegisterExporter("genesyscloud_architect_datatable_row", architect_datatable_row.ArchitectDatatableRowExporter())
-	RegisterExporter("genesyscloud_architect_emergencygroup", emergencyGroup.ArchitectEmergencyGroupExporter())
-	RegisterExporter("genesyscloud_architect_ivr", archIvr.ArchitectIvrExporter())
-	RegisterExporter("genesyscloud_architect_schedulegroups", architectSchedulegroups.ArchitectSchedulegroupsExporter())
-	RegisterExporter("genesyscloud_architect_user_prompt", userPrompt.ArchitectUserPromptExporter())
-	RegisterExporter("genesyscloud_auth_division", authDivision.AuthDivisionExporter())
-	RegisterExporter("genesyscloud_auth_role", authRole.AuthRoleExporter())
-	RegisterExporter("genesyscloud_employeeperformance_externalmetrics_definitions", employeeperformanceExternalmetricsDefinition.EmployeeperformanceExternalmetricsDefinitionExporter())
-	RegisterExporter("genesyscloud_flow", flow.ArchitectFlowExporter())
-	RegisterExporter("genesyscloud_flow_loglevel", flowLogLevel.FlowLogLevelExporter())
-	RegisterExporter("genesyscloud_flow_milestone", flowMilestone.FlowMilestoneExporter())
-	RegisterExporter("genesyscloud_flow_outcome", flowOutcome.FlowOutcomeExporter())
-	RegisterExporter("genesyscloud_group", group.GroupExporter())
-	RegisterExporter("genesyscloud_group_roles", groupRoles.GroupRolesExporter())
-	RegisterExporter("genesyscloud_idp_adfs", idpAdfs.IdpAdfsExporter())
-	RegisterExporter("genesyscloud_idp_generic", idpGeneric.IdpGenericExporter())
-	RegisterExporter("genesyscloud_idp_gsuite", idpGsuite.IdpGsuiteExporter())
-	RegisterExporter("genesyscloud_idp_okta", idpOkta.IdpOktaExporter())
-	RegisterExporter("genesyscloud_idp_onelogin", idpOneLogin.IdpOneloginExporter())
-	RegisterExporter("genesyscloud_idp_ping", idpPing.IdpPingExporter())
-	RegisterExporter("genesyscloud_idp_salesforce", idpSalesforce.IdpSalesforceExporter())
-	RegisterExporter("genesyscloud_integration", integration.IntegrationExporter())
-	RegisterExporter("genesyscloud_integration_action", integrationAction.IntegrationActionExporter())
-	RegisterExporter("genesyscloud_integration_credential", integrationCred.IntegrationCredentialExporter())
-	RegisterExporter("genesyscloud_integration_facebook", integrationFacebook.IntegrationFacebookExporter())
-	RegisterExporter("genesyscloud_conversations_messaging_integrations_instagram", integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
-	RegisterExporter("genesyscloud_journey_action_map", journeyActionMap.JourneyActionMapExporter())
-	RegisterExporter("genesyscloud_journey_action_template", journeyActionTemplate.JourneyActionTemplateExporter())
-	RegisterExporter("genesyscloud_journey_outcome", journeyOutcome.JourneyOutcomeExporter())
-	RegisterExporter("genesyscloud_journey_segment", journeySegment.JourneySegmentExporter())
-	RegisterExporter("genesyscloud_knowledge_document", knowledgeDocument.KnowledgeDocumentExporter())
-	RegisterExporter("genesyscloud_knowledge_document_variation", knowledgeDocumentVariation.KnowledgeDocumentVariationExporter())
-	RegisterExporter("genesyscloud_location", location.LocationExporter())
-	RegisterExporter("genesyscloud_oauth_client", oauth_client.OauthClientExporter())
-	RegisterExporter("genesyscloud_outbound_attempt_limit", outboundAttemptLimit.OutboundAttemptLimitExporter())
-	RegisterExporter("genesyscloud_outbound_callanalysisresponseset", obCallResponseSet.OutboundCallanalysisresponsesetExporter())
-	RegisterExporter("genesyscloud_outbound_callabletimeset", obCallableTimeset.OutboundCallableTimesetExporter())
-	RegisterExporter("genesyscloud_outbound_campaign", obCampaign.OutboundCampaignExporter())
-	RegisterExporter("genesyscloud_outbound_contact_list", outboundContactList.OutboundContactListExporter())
-	RegisterExporter("genesyscloud_outbound_contact_list_template", outboundContactListTemplate.OutboundContactListTemplateExporter())
-	RegisterExporter("genesyscloud_outbound_contactlistfilter", obContactListFilter.OutboundContactlistfilterExporter())
-	RegisterExporter("genesyscloud_outbound_messagingcampaign", obMessagingCampaign.OutboundMessagingcampaignExporter())
-	RegisterExporter("genesyscloud_outbound_sequence", obSequence.OutboundSequenceExporter())
-	RegisterExporter("genesyscloud_outbound_dnclist", obDncList.OutboundDncListExporter())
-	RegisterExporter("genesyscloud_outbound_campaignrule", obCampaignRule.OutboundCampaignruleExporter())
-	RegisterExporter("genesyscloud_outbound_settings", obSettings.OutboundSettingsExporter())
-	RegisterExporter("genesyscloud_outbound_digitalruleset", obDigitalRuleset.OutboundDigitalrulesetExporter())
-	RegisterExporter("genesyscloud_outbound_filespecificationtemplate", obfst.OutboundFileSpecificationTemplateExporter())
-	RegisterExporter("genesyscloud_outbound_wrapupcodemappings", obw.OutboundWrapupCodeMappingsExporter())
-	RegisterExporter("genesyscloud_quality_forms_evaluation", gcloud.EvaluationFormExporter())
-	RegisterExporter("genesyscloud_quality_forms_survey", gcloud.SurveyFormExporter())
-	RegisterExporter("genesyscloud_recording_media_retention_policy", recMediaRetPolicy.MediaRetentionPolicyExporter())
-	RegisterExporter("genesyscloud_responsemanagement_library", respmanagementLibrary.ResponsemanagementLibraryExporter())
-	RegisterExporter("genesyscloud_responsemanagement_response", responsemanagementResponse.ResponsemanagementResponseExporter())
-	RegisterExporter("genesyscloud_responsemanagement_responseasset", respManagementRespAsset.ExporterResponseManagementResponseAsset())
-	RegisterExporter("genesyscloud_routing_email_domain", routingEmailDomain.RoutingEmailDomainExporter())
-	RegisterExporter("genesyscloud_routing_email_route", routingEmailRoute.RoutingEmailRouteExporter())
-	RegisterExporter("genesyscloud_routing_language", routinglanguage.RoutingLanguageExporter())
-	RegisterExporter("genesyscloud_routing_queue", routingQueue.RoutingQueueExporter())
-	RegisterExporter("genesyscloud_routing_queue_conditional_group_routing", routingQueueConditionalGroupRouting.RoutingQueueConditionalGroupRoutingExporter())
-	RegisterExporter("genesyscloud_routing_queue_outbound_email_address", routingQueueOutboundEmailAddress.OutboundRoutingQueueOutboundEmailAddressExporter())
-	RegisterExporter("genesyscloud_routing_settings", routingSettings.RoutingSettingsExporter())
-	RegisterExporter("genesyscloud_routing_skill_group", routingSkillGroup.ResourceSkillGroupExporter())
-	RegisterExporter("genesyscloud_routing_skill", routingSkill.RoutingSkillExporter())
-	RegisterExporter("genesyscloud_routing_sms_address", routingSmsAddress.RoutingSmsAddressExporter())
-	RegisterExporter("genesyscloud_routing_utilization", routingUtilization.RoutingUtilizationExporter())
-	RegisterExporter("genesyscloud_routing_utilization_label", routingUtilizationLabel.RoutingUtilizationLabelExporter())
-	RegisterExporter("genesyscloud_routing_wrapupcode", routingWrapupcode.RoutingWrapupCodeExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_edge_group", edgeGroup.EdgeGroupExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_extension_pool", edgeExtension.TelephonyExtensionPoolExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_phone", edgePhone.PhoneExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_site", edgeSite.SiteExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_site_outbound_route", outboundRoute.SiteExporterOutboundRoute())
-	RegisterExporter("genesyscloud_telephony_providers_edges_phonebasesettings", phonebaseSettings.PhoneBaseSettingsExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_trunkbasesettings", tbs.TrunkBaseSettingsExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_trunk", edgesTrunk.TrunkExporter())
-	RegisterExporter("genesyscloud_user", user.UserExporter())
-	RegisterExporter("genesyscloud_user_roles", userRoles.UserRolesExporter())
-	RegisterExporter("genesyscloud_webdeployments_deployment", webdeployDeploy.WebDeploymentExporter())
-	RegisterExporter("genesyscloud_webdeployments_configuration", webdeployConfig.WebDeploymentConfigurationExporter())
-	RegisterExporter("genesyscloud_processautomation_trigger", pat.ProcessAutomationTriggerExporter())
-	RegisterExporter("genesyscloud_outbound_ruleset", obRuleset.OutboundRulesetExporter())
-	RegisterExporter("genesyscloud_telephony_providers_edges_did_pool", didPool.TelephonyDidPoolExporter())
-	RegisterExporter("genesyscloud_task_management_workbin", workbin.TaskManagementWorkbinExporter())
-	RegisterExporter("genesyscloud_task_management_workitem_schema", workbin.TaskManagementWorkbinExporter())
-	RegisterExporter("genesyscloud_task_management_worktype", worktype.TaskManagementWorktypeExporter())
-	RegisterExporter("genesyscloud_conversations_messaging_settings", cMessagingSettings.ConversationsMessagingSettingsExporter())
-	RegisterExporter("genesyscloud_task_management_worktype_status", worktypeStatus.TaskManagementWorktypeStatusExporter())
-	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent", supportedContent.SupportedContentExporter())
-	RegisterExporter("genesyscloud_conversations_messaging_supportedcontent_default", defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
-	RegisterExporter("genesyscloud_conversations_messaging_integrations_open", cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
-	RegisterExporter(cMessagingWhatsapp.ResourceType, cMessagingWhatsapp.ConversationsMessagingIntegrationsWhatsappExporter())
-	RegisterExporter("genesyscloud_script", scripts.ExporterScript())
-	RegisterExporter("genesyscloud_externalcontacts_organization", externalOrganization.ExternalContactsOrganizationExporter())
+	RegisterExporter(oAuthSettings.ResourceType, oAuthSettings.OrganizationAuthenticationSettingsExporter())
+	RegisterExporter(grammar.ResourceType, grammar.ArchitectGrammarExporter())
+	RegisterExporter(grammarLanguage.ResourceType, grammarLanguage.ArchitectGrammarLanguageExporter())
+	RegisterExporter(dt.ResourceType, dt.ArchitectDatatableExporter())
+	RegisterExporter(architect_datatable_row.ResourceType, architect_datatable_row.ArchitectDatatableRowExporter())
+	RegisterExporter(emergencyGroup.ResourceType, emergencyGroup.ArchitectEmergencyGroupExporter())
+	RegisterExporter(archIvr.ResourceType, archIvr.ArchitectIvrExporter())
+	RegisterExporter(architectSchedulegroups.ResourceType, architectSchedulegroups.ArchitectSchedulegroupsExporter())
+	RegisterExporter(userPrompt.ResourceType, userPrompt.ArchitectUserPromptExporter())
+	RegisterExporter(authDivision.ResourceType, authDivision.AuthDivisionExporter())
+	RegisterExporter(authRole.ResourceType, authRole.AuthRoleExporter())
+	RegisterExporter(employeeperformanceExternalmetricsDefinition.ResourceType, employeeperformanceExternalmetricsDefinition.EmployeeperformanceExternalmetricsDefinitionExporter())
+	RegisterExporter(flow.ResourceType, flow.ArchitectFlowExporter())
+	RegisterExporter(flowLogLevel.ResourceType, flowLogLevel.FlowLogLevelExporter())
+	RegisterExporter(flowMilestone.ResourceType, flowMilestone.FlowMilestoneExporter())
+	RegisterExporter(flowOutcome.ResourceType, flowOutcome.FlowOutcomeExporter())
+	RegisterExporter(group.ResourceType, group.GroupExporter())
+	RegisterExporter(groupRoles.ResourceType, groupRoles.GroupRolesExporter())
+	RegisterExporter(idpAdfs.ResourceType, idpAdfs.IdpAdfsExporter())
+	RegisterExporter(idpGeneric.ResourceType, idpGeneric.IdpGenericExporter())
+	RegisterExporter(idpGsuite.ResourceType, idpGsuite.IdpGsuiteExporter())
+	RegisterExporter(idpOkta.ResourceType, idpOkta.IdpOktaExporter())
+	RegisterExporter(idpOneLogin.ResourceType, idpOneLogin.IdpOneloginExporter())
+	RegisterExporter(idpPing.ResourceType, idpPing.IdpPingExporter())
+	RegisterExporter(idpSalesforce.ResourceType, idpSalesforce.IdpSalesforceExporter())
+	RegisterExporter(integration.ResourceType, integration.IntegrationExporter())
+	RegisterExporter(integrationAction.ResourceType, integrationAction.IntegrationActionExporter())
+	RegisterExporter(integrationCred.ResourceType, integrationCred.IntegrationCredentialExporter())
+	RegisterExporter(integrationFacebook.ResourceType, integrationFacebook.IntegrationFacebookExporter())
+	RegisterExporter(integrationInstagram.ResourceType, integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
+	RegisterExporter(journeyActionMap.ResourceType, journeyActionMap.JourneyActionMapExporter())
+	RegisterExporter(journeyActionTemplate.ResourceType, journeyActionTemplate.JourneyActionTemplateExporter())
+	RegisterExporter(journeyOutcome.ResourceType, journeyOutcome.JourneyOutcomeExporter())
+	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
+	RegisterExporter(knowledgeDocument.ResourceType, knowledgeDocument.KnowledgeDocumentExporter())
+	RegisterExporter(knowledgeDocumentVariation.ResourceType, knowledgeDocumentVariation.KnowledgeDocumentVariationExporter())
+	RegisterExporter(location.ResourceType, location.LocationExporter())
+	RegisterExporter(oauth_client.ResourceType, oauth_client.OauthClientExporter())
+	RegisterExporter(outboundAttemptLimit.ResourceType, outboundAttemptLimit.OutboundAttemptLimitExporter())
+	RegisterExporter(obCallResponseSet.ResourceType, obCallResponseSet.OutboundCallanalysisresponsesetExporter())
+	RegisterExporter(obCallableTimeset.ResourceType, obCallableTimeset.OutboundCallableTimesetExporter())
+	RegisterExporter(obCampaign.ResourceType, obCampaign.OutboundCampaignExporter())
+	RegisterExporter(outboundContactList.ResourceType, outboundContactList.OutboundContactListExporter())
+	RegisterExporter(outboundContactListTemplate.ResourceType, outboundContactListTemplate.OutboundContactListTemplateExporter())
+	RegisterExporter(obContactListFilter.ResourceType, obContactListFilter.OutboundContactlistfilterExporter())
+	RegisterExporter(obMessagingCampaign.ResourceType, obMessagingCampaign.OutboundMessagingcampaignExporter())
+	RegisterExporter(obSequence.ResourceType, obSequence.OutboundSequenceExporter())
+	RegisterExporter(obDncList.ResourceType, obDncList.OutboundDncListExporter())
+	RegisterExporter(obCampaignRule.ResourceType, obCampaignRule.OutboundCampaignruleExporter())
+	RegisterExporter(obSettings.ResourceType, obSettings.OutboundSettingsExporter())
+	RegisterExporter(obDigitalRuleset.ResourceType, obDigitalRuleset.OutboundDigitalrulesetExporter())
+	RegisterExporter(obfst.ResourceType, obfst.OutboundFileSpecificationTemplateExporter())
+	RegisterExporter(obw.ResourceType, obw.OutboundWrapupCodeMappingsExporter())
+	RegisterExporter(qualityFormsEvaluation.ResourceType, qualityFormsEvaluation.EvaluationFormExporter())
+	RegisterExporter(recMediaRetPolicy.ResourceType, recMediaRetPolicy.MediaRetentionPolicyExporter())
+	RegisterExporter(respmanagementLibrary.ResourceType, respmanagementLibrary.ResponsemanagementLibraryExporter())
+	RegisterExporter(responsemanagementResponse.ResourceType, responsemanagementResponse.ResponsemanagementResponseExporter())
+	RegisterExporter(respManagementRespAsset.ResourceType, respManagementRespAsset.ExporterResponseManagementResponseAsset())
+	RegisterExporter(routingEmailDomain.ResourceType, routingEmailDomain.RoutingEmailDomainExporter())
+	RegisterExporter(routingEmailRoute.ResourceType, routingEmailRoute.RoutingEmailRouteExporter())
+	RegisterExporter(routinglanguage.ResourceType, routinglanguage.RoutingLanguageExporter())
+	RegisterExporter(routingQueue.ResourceType, routingQueue.RoutingQueueExporter())
+	RegisterExporter(routingQueueConditionalGroupRouting.ResourceType, routingQueueConditionalGroupRouting.RoutingQueueConditionalGroupRoutingExporter())
+	RegisterExporter(routingQueueOutboundEmailAddress.ResourceType, routingQueueOutboundEmailAddress.OutboundRoutingQueueOutboundEmailAddressExporter())
+	RegisterExporter(routingSettings.ResourceType, routingSettings.RoutingSettingsExporter())
+	RegisterExporter(routingSkillGroup.ResourceType, routingSkillGroup.ResourceSkillGroupExporter())
+	RegisterExporter(routingSkill.ResourceType, routingSkill.RoutingSkillExporter())
+	RegisterExporter(routingSmsAddress.ResourceType, routingSmsAddress.RoutingSmsAddressExporter())
+	RegisterExporter(routingUtilization.ResourceType, routingUtilization.RoutingUtilizationExporter())
+	RegisterExporter(routingUtilizationLabel.ResourceType, routingUtilizationLabel.RoutingUtilizationLabelExporter())
+	RegisterExporter(routingWrapupcode.ResourceType, routingWrapupcode.RoutingWrapupCodeExporter())
+	RegisterExporter(edgeGroup.ResourceType, edgeGroup.EdgeGroupExporter())
+	RegisterExporter(edgeExtension.ResourceType, edgeExtension.TelephonyExtensionPoolExporter())
+	RegisterExporter(edgePhone.ResourceType, edgePhone.PhoneExporter())
+	RegisterExporter(edgeSite.ResourceType, edgeSite.SiteExporter())
+	RegisterExporter(outboundRoute.ResourceType, outboundRoute.SiteExporterOutboundRoute())
+	RegisterExporter(phonebaseSettings.ResourceType, phonebaseSettings.PhoneBaseSettingsExporter())
+	RegisterExporter(tbs.ResourceType, tbs.TrunkBaseSettingsExporter())
+	RegisterExporter(edgesTrunk.ResourceType, edgesTrunk.TrunkExporter())
+	RegisterExporter(user.ResourceType, user.UserExporter())
+	RegisterExporter(userRoles.ResourceType, userRoles.UserRolesExporter())
+	RegisterExporter(webdeployDeploy.ResourceType, webdeployDeploy.WebDeploymentExporter())
+	RegisterExporter(webdeployConfig.ResourceType, webdeployConfig.WebDeploymentConfigurationExporter())
+	RegisterExporter(pat.ResourceType, pat.ProcessAutomationTriggerExporter())
+	RegisterExporter(obRuleset.ResourceType, obRuleset.OutboundRulesetExporter())
+	RegisterExporter(didPool.ResourceType, didPool.TelephonyDidPoolExporter())
+	RegisterExporter(workbin.ResourceType, workbin.TaskManagementWorkbinExporter())
+	RegisterExporter(workitemSchema.ResourceType, workitemSchema.TaskManagementWorkitemSchemaExporter())
+	RegisterExporter(worktype.ResourceType, worktype.TaskManagementWorktypeExporter())
+	RegisterExporter(cMessagingSettings.ResourceType, cMessagingSettings.ConversationsMessagingSettingsExporter())
+	RegisterExporter(worktypeStatus.ResourceType, worktypeStatus.TaskManagementWorktypeStatusExporter())
+	RegisterExporter(supportedContent.ResourceType, supportedContent.SupportedContentExporter())
+	RegisterExporter(defaultSupportedContent.ResourceType, defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
+	RegisterExporter(cMessagingOpen.ResourceType, cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())
+	RegisterExporter(scripts.ResourceType, scripts.ExporterScript())
+	RegisterExporter(externalOrganization.ResourceType, externalOrganization.ExternalContactsOrganizationExporter())
 	RegisterExporter(externalUser.ResourceType, externalUser.ExternalUserIdentityExporter())
+	RegisterExporter(qualityFormsSurvey.ResourceType, qualityFormsSurvey.QualityFormsSurveyExporter())
+
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 

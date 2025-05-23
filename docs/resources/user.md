@@ -161,6 +161,7 @@ Optional:
 Optional:
 
 - `extension` (String)
+- `extension_pool_id` (String)
 - `media_type` (String)
 - `number` (String)
 - `type` (String)

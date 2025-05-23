@@ -32,13 +32,7 @@ func getAllIvrConfigs(ctx context.Context, clientConfig *platformclientv2.Config
 	}
 
 	for _, entity := range *allIvrs {
-		var blockLabel string
-		if entity.OpenHoursFlow != nil && entity.OpenHoursFlow.Name != nil {
-			blockLabel = *entity.OpenHoursFlow.Name + "_" + *entity.Name
-		} else {
-			blockLabel = *entity.Name
-		}
-		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
+		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: *entity.Name}
 	}
 	return resources, nil
 }

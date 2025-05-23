@@ -2,12 +2,13 @@ package task_management_worktype_status_transition
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	workType "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
 
 	"github.com/google/uuid"
 

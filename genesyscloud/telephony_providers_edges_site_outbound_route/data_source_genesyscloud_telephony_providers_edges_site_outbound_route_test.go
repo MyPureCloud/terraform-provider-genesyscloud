@@ -24,7 +24,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 
 		// site
 		siteResourceLabel = "site"
-		siteName          = "site " + uuid.NewString()
+		siteName          = "tf test site " + uuid.NewString()
 		description       = "terraform description 1"
 		mediaModel        = "Cloud"
 

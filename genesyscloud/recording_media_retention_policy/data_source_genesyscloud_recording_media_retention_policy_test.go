@@ -2,22 +2,24 @@ package recording_media_retention_policy
 
 import (
 	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"math/rand"
-	"strconv"
-	"strings"
-	"testing"
 
-	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 
 	"github.com/google/uuid"
@@ -172,8 +174,8 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routingLanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +

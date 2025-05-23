@@ -21,8 +21,8 @@ import (
 /*
 The genesyscloud_scripts_proxy.go file contains all of the logic associated with calling the Genesys cloud API for scripts.
 */
-type createScriptFunc func(ctx context.Context, filePath, scriptName string, substitutions map[string]interface{}, p *scriptsProxy) (scriptId string, err error)
-type updateScriptFunc func(ctx context.Context, filePath, scriptName, scriptId string, substitutions map[string]interface{}, p *scriptsProxy) (id string, err error)
+type createScriptFunc func(ctx context.Context, filePath, scriptName, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (scriptId string, err error)
+type updateScriptFunc func(ctx context.Context, filePath, scriptName, scriptId, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (id string, err error)
 type getAllPublishedScriptsFunc func(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error)
 type publishScriptFunc func(ctx context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error)
 type getScriptsByNameFunc func(ctx context.Context, p *scriptsProxy, scriptName string) ([]platformclientv2.Script, *platformclientv2.APIResponse, error)
@@ -89,13 +89,13 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 }
 
 // createScript creates a Genesys Cloud Script
-func (p *scriptsProxy) createScript(ctx context.Context, filePath, scriptName string, substitutions map[string]interface{}) (string, error) {
-	return p.createScriptAttr(ctx, filePath, scriptName, substitutions, p)
+func (p *scriptsProxy) createScript(ctx context.Context, filePath, scriptName, divisionId string, substitutions map[string]interface{}) (string, error) {
+	return p.createScriptAttr(ctx, filePath, scriptName, divisionId, substitutions, p)
 }
 
 // updateScript updates a Genesys Cloud Script
-func (p *scriptsProxy) updateScript(ctx context.Context, filePath, scriptName, scriptId string, substitutions map[string]interface{}) (string, error) {
-	return p.updateScriptAttr(ctx, filePath, scriptName, scriptId, substitutions, p)
+func (p *scriptsProxy) updateScript(ctx context.Context, filePath, scriptName, scriptId, divisionId string, substitutions map[string]interface{}) (string, error) {
+	return p.updateScriptAttr(ctx, filePath, scriptName, scriptId, divisionId, substitutions, p)
 }
 
 func (p *scriptsProxy) getAllPublishedScripts(ctx context.Context) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
@@ -452,7 +452,7 @@ func getPublishedScriptsByNameFn(_ context.Context, p *scriptsProxy, name string
 }
 
 // createScriptFn is an implementation function for creating a Genesys Cloud Script
-func createScriptFn(ctx context.Context, filePath, scriptName string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
+func createScriptFn(ctx context.Context, filePath, scriptName, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
 	exists, err := scriptExistsWithName(ctx, p, scriptName)
 	if err != nil {
 		return "", err
@@ -466,7 +466,6 @@ func createScriptFn(ctx context.Context, filePath, scriptName string, substituti
 	if err != nil {
 		return "", err
 	}
-
 	success, err := p.verifyScriptUploadSuccess(ctx, resp)
 	if err != nil {
 		return "", err
@@ -477,6 +476,11 @@ func createScriptFn(ctx context.Context, filePath, scriptName string, substituti
 	scriptId, _, _, err := p.getScriptIdByName(ctx, scriptName)
 	if err != nil {
 		return "", err
+	}
+
+	setDivisionErr := setScriptDivision(scriptId, divisionId, p)
+	if setDivisionErr != nil {
+		return "", setDivisionErr
 	}
 
 	if resp, err := p.publishScript(ctx, scriptId); err != nil {
@@ -493,7 +497,7 @@ func createScriptFn(ctx context.Context, filePath, scriptName string, substituti
 }
 
 // updateScriptFn is an implementation function for updating a Genesys Cloud Script
-func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
+func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
 	resp, err := p.uploadScriptFile(filePath, scriptName, scriptId, substitutions)
 	if err != nil {
 		return "", err
@@ -509,6 +513,10 @@ func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId string, 
 	scriptIdAfterUpdate, _, _, err := p.getScriptIdByName(ctx, scriptName)
 	if err != nil {
 		return "", err
+	}
+	setDivisionErr := setScriptDivision(scriptId, divisionId, p)
+	if setDivisionErr != nil {
+		return "", setDivisionErr
 	}
 
 	if resp, err := p.publishScript(ctx, scriptIdAfterUpdate); err != nil {
@@ -527,4 +535,32 @@ func scriptExistsWithName(ctx context.Context, scriptsProxy *scriptsProxy, scrip
 		return false, nil
 	}
 	return true, nil
+}
+
+func setScriptDivision(scriptId, divisionId string, p *scriptsProxy) error {
+	if divisionId == "" {
+		return nil
+	}
+	apiClient := &p.scriptsApi.Configuration.APIClient
+	action := http.MethodPost
+	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/authorization/divisions/" + divisionId + "/objects/SCRIPT"
+	body := []string{scriptId}
+
+	headerParams := make(map[string]string)
+
+	for key := range p.scriptsApi.Configuration.DefaultHeader {
+		headerParams[key] = p.scriptsApi.Configuration.DefaultHeader[key]
+	}
+	headerParams["Authorization"] = "Bearer " + p.scriptsApi.Configuration.AccessToken
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	response, err := apiClient.CallAPI(fullPath, action, body, headerParams, nil, nil, "", nil, "")
+
+	if err != nil || response.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("failed to set divisionId script %s: status code %d due to %s", scriptId, response.StatusCode, response.ErrorMessage)
+	}
+
+	log.Printf("successfully set divisionId for script %s", scriptId)
+	return nil
 }

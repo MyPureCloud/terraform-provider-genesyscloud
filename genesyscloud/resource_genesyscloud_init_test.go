@@ -1,6 +1,10 @@
 package genesyscloud
 
 import (
+	"log"
+	"sync"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	archScheduleGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
@@ -23,9 +27,6 @@ import (
 	routingWrapupCode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-	"log"
-	"sync"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
@@ -70,13 +71,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
 	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
-	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-	providerResources["genesyscloud_quality_forms_evaluation"] = ResourceEvaluationForm()
-	providerResources["genesyscloud_quality_forms_survey"] = ResourceSurveyForm()
-
 }
 
 func (r *registerTestInstance) registerTestDataSources() {
@@ -97,10 +91,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
-	providerDataSources["genesyscloud_quality_forms_evaluation"] = DataSourceQualityFormsEvaluations()
-	providerDataSources["genesyscloud_quality_forms_survey"] = dataSourceQualityFormsSurvey()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
-
 }
 
 func initTestResources() {
