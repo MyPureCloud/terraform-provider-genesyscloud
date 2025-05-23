@@ -80,13 +80,19 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 
 	// Publishing
 	if published {
-		proxyResponse, err := proxy.publishQualityFormsEvaluation(ctx, *formResponse.Id)
+		newDraftEval, proxyResponse, err := proxy.publishQualityFormsEvaluation(ctx, *formResponse.Id)
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to publish evaluation form '%s': %s", *formResponse.Id, err), proxyResponse)
 		}
+		_ = d.Set("published_id", *formResponse.Id)
+		d.SetId(*newDraftEval.Id)
+	} else {
+		d.Set("published_id", "")
+		d.SetId(*formResponse.Id)
 	}
 
 	d.SetId(*formResponse.Id)
+	d.Set("context_id", *formResponse.ContextId)
 
 	log.Printf("Created evaluation form %s %s", name, *formResponse.Id)
 	return readEvaluationForm(ctx, d, meta)
@@ -110,24 +116,27 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read evaluation form %s: %s", d.Id(), getErr), resp))
 		}
 
-		// During an export, Retrieve a list of any published versions of the evaluation form
-		// If there are published versions, published will be set to true
-		if tfexporter_state.IsExporterActive() && evaluationForm.ContextId != nil {
-			publishedVersions, resp, err := proxy.getQualityFormsEvaluationsBulkContexts(ctx, []string{*evaluationForm.ContextId})
-			if err != nil {
-				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
-				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions"), resp))
+		resourcedata.SetNillableValue(d, "context_id", evaluationForm.ContextId)
+		publishedVersions, resp, err := proxy.getQualityFormsEvaluationsBulkContexts(ctx, []string{*evaluationForm.ContextId})
+		if err != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions %s", *evaluationForm.ContextId), resp))
 			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve a list of the latest published evaluation form versions %s", *evaluationForm.ContextId), resp))
+		}
+		if len(publishedVersions) > 0 {
+			if publishedVersions[0].Id != nil {
+				resourcedata.SetNillableValue(d, "published_id", publishedVersions[0].Id)
+			}
+		}
 
+		// During an export, published should be set to true if there are any published versions of an evaluation form
+		if tfexporter_state.IsExporterActive() {
 			if len(publishedVersions) > 0 {
 				_ = d.Set("published", true)
 			} else {
 				_ = d.Set("published", false)
 			}
-		} else if evaluationForm.Published != nil {
-			_ = d.Set("published", *evaluationForm.Published)
 		}
 
 		resourcedata.SetNillableValue(d, "name", evaluationForm.Name)
@@ -181,10 +190,13 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	// Set published property on evaluation form update.
 	if d.HasChange("published") {
 		if published {
-			proxyResponse, err := proxy.publishQualityFormsEvaluation(ctx, d.Id())
+			formId := d.Id()
+			newDraftEval, proxyResponse, err := proxy.publishQualityFormsEvaluation(ctx, formId)
 			if err != nil {
 				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to publish evaluation '%s': %s", d.Id(), err), proxyResponse)
 			}
+			_ = d.Set("published_id", formId)
+			d.SetId(*newDraftEval.Id)
 		} else if !updatedResourceDataIdAfterPut {
 			d.SetId(unpublishedVersionId)
 		}
