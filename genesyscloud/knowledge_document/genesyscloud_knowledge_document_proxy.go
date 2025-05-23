@@ -199,7 +199,7 @@ func fetchPublished(p *knowledgeDocumentProxy, knowledgeBaseId string, documentI
 	return false, nil
 }
 
-func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+func GetAllKnowledgebaseEntitiesFn(_ context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	var (
 		after                 string
 		err                   error
@@ -223,11 +223,12 @@ func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 			break
 		}
 
+		previousAfter := after
 		after, err = util.GetQueryParamValueFromUri(*knowledgeBases.NextUri, "after")
 		if err != nil {
-			return nil, resp, fmt.Errorf("failed to parse after cursor from knowledge base nextUri: %s", err)
+			return nil, resp, fmt.Errorf("failed to parse after cursor from knowledge base nextUri: %w", err)
 		}
-		if after == "" {
+		if after == "" || after == previousAfter {
 			break
 		}
 	}
@@ -236,8 +237,7 @@ func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 
 }
 
-func GetAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-
+func GetAllKnowledgeDocumentEntitiesFn(_ context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	var (
 		after    string
 		entities []platformclientv2.Knowledgedocumentresponse
@@ -486,22 +486,20 @@ func cacheKnowledgeCategoryEntities(p *knowledgeDocumentProxy, knowledgeBaseId s
 	return &entities, nil
 }
 
-func createKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func createKnowledgeKnowledgebaseDocumentFn(_ context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	return p.KnowledgeApi.PostKnowledgeKnowledgebaseDocuments(knowledgeBaseId, *body)
 }
 
-func createKnowledgebaseDocumentVersionsFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error) {
+func createKnowledgebaseDocumentVersionsFn(_ context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error) {
 	return p.KnowledgeApi.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, documentId, *body)
 }
 
-func deleteKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error) {
-	resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId)
-	if err != nil {
-		return resp, err
+func deleteKnowledgeKnowledgebaseDocumentFn(_ context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (resp *platformclientv2.APIResponse, err error) {
+	resp, err = p.KnowledgeApi.DeleteKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId)
+	if err == nil {
+		rc.DeleteCacheItem(p.knowledgeDocumentCache, BuildDocumentResourceDataID(documentId, knowledgeBaseId))
 	}
-	id := fmt.Sprintf("%s,%s", knowledgeBaseId, documentId)
-	rc.DeleteCacheItem(p.knowledgeDocumentCache, id)
-	return nil, nil
+	return
 }
 
 func updateKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {

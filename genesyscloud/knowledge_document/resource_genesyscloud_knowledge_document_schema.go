@@ -28,7 +28,7 @@ func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
 const ResourceType = "genesyscloud_knowledge_document"
 
 var (
-	knowledgeDocument = &schema.Resource{
+	knowledgeDocumentResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"title": {
 				Description: "Document title",
@@ -99,7 +99,7 @@ func ResourceKnowledgeDocument() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Required:    true,
-				Elem:        knowledgeDocument,
+				Elem:        knowledgeDocumentResource,
 			},
 			"published": {
 				Description: "If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.",

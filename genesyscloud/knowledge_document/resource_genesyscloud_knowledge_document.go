@@ -83,7 +83,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Creating knowledge document")
 	knowledgeDocument, resp, err := proxy.createKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, body)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to create knowledge document %s error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create knowledge document for knowledge base '%s'. Error: %s", knowledgeBaseId, err.Error()), resp)
 	}
 
 	id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
@@ -109,10 +109,11 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 
 		knowledgeDocument, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
+			err := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr), resp)
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr), resp))
+				return retry.RetryableError(err)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr), resp))
+			return retry.NonRetryableError(err)
 		}
 
 		// required
@@ -138,6 +139,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	knowledgeDocumentId, _ := parseDocumentResourceDataID(d.Id())
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
+
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
@@ -150,7 +152,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
 		_, resp, putErr := proxy.updateKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, update)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to update knowledge document %s error: %s", knowledgeDocumentId, putErr), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update knowledge document %s error: %s", knowledgeDocumentId, putErr), resp)
 		}
 		return resp, nil
 	})
