@@ -1,18 +1,18 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"log"
 	"sync"
-	"terraform-provider-genesyscloud/genesyscloud/location"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -45,7 +45,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceSiteOutboundRoute()
-	providerResources[telephony_provider_edges_trunkbasesettings.ResourceType] = telephony_provider_edges_trunkbasesettings.ResourceTrunkBaseSettings()
+	providerResources[tbs.ResourceType] = tbs.ResourceTrunkBaseSettings()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[telephony_providers_edges_site.ResourceType] = telephony_providers_edges_site.ResourceSite()
 }

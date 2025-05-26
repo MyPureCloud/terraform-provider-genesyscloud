@@ -1,10 +1,10 @@
 package telephony_providers_edges_phonebasesettings
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -73,6 +73,12 @@ func ResourcePhoneBaseSettings() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"station_persistent_enabled": {
 				Description: "The station_persistent_enabled attribute in the line's property",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"station_persistent_webrtc_enabled": {
+				Description: "The station_persistent_webrtc_enabled attribute in the line's property",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,

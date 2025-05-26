@@ -2,7 +2,6 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
   # required
   display_name            = "terraform_test_-TEST-CASE-_updated"
   color                   = "#008000"
-  scope                   = "Session"
   should_display_to_agent = false
   journey {
     patterns {
@@ -18,5 +17,5 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-" {
     }
   }
   # optional
-  description                = "Test description updated"
+  description = "Test description updated"
 }

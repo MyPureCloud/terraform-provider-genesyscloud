@@ -1,10 +1,10 @@
 package integration_action
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -164,6 +164,7 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 			"integration_id": {RefType: "genesyscloud_integration"},
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
+		AllowZeroValuesInMap: []string{"config_response.translation_map_defaults"},
 	}
 }
 

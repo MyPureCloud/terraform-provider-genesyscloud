@@ -2,9 +2,9 @@ package team
 
 import (
 	"fmt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -31,7 +31,7 @@ func TestAccDataSourceResourceTeam(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 
-				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + generateTeamResource(
+				Config: authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + GenerateTeamResource(
 					teamResourceLabel,
 					name,
 					"genesyscloud_auth_division."+divResourceLabel+".id",

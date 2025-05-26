@@ -3,26 +3,27 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -35,21 +36,23 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
+	// Gets all routing queues without a peer
 	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
 
-	if queues != nil || len(*queues) != 0 {
+	if queues != nil && len(*queues) != 0 {
 		allQueues = append(allQueues, *queues...)
 	}
 
+	// Gets all routing queues with a peer
 	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
 	}
 
-	if queues != nil || len(*queues) != 0 {
+	if queues != nil && len(*queues) != 0 {
 		allQueues = append(allQueues, *queues...)
 	}
 
@@ -73,6 +76,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	teams := buildMemberGroupList(d, "teams", "TEAM")
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
+	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
 	createQueue := platformclientv2.Createqueuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
@@ -130,6 +134,9 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	if sourceQueueId != "" {
 		createQueue.SourceQueueId = &sourceQueueId
 	}
+	if lastAgentRoutingMode != "" {
+		createQueue.LastAgentRoutingMode = &lastAgentRoutingMode
+	}
 
 	log.Printf("Creating Routing Queue %s", *createQueue.Name)
 
@@ -144,12 +151,12 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	d.SetId(*queue.Id)
 
 	diagErr := updateQueueMembers(d, sdkConfig)
-	if diagErr != nil {
+	if diagErr.HasError() {
 		return diagErr
 	}
 
-	diagErr = updateQueueWrapupCodes(d, sdkConfig)
-	if diagErr != nil {
+	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
@@ -198,7 +205,7 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_callback", currentQueue.MediaSettings.Callback, flattenMediaSettingCallback)
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_chat", currentQueue.MediaSettings.Chat, flattenMediaSetting)
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaEmailSetting)
-			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSetting)
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSettingsMessage)
 		}
 		_ = d.Set("outbound_messaging_sms_address_id", nil)
 		_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)
@@ -243,6 +250,7 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
 		resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
+		resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
 
 		if currentQueue.DefaultScripts != nil {
 			_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
@@ -256,11 +264,15 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 		_ = d.Set("wrapup_codes", wrapupCodes)
 
-		members, err := flattenQueueMembers(d.Id(), "user", sdkConfig)
-		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("%v", err))
+		if !d.Get("ignore_members").(bool) {
+			members, err := flattenQueueMembers(d.Id(), "user", sdkConfig)
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			_ = d.Set("members", members)
+		} else {
+			log.Println("Not reading queue members because ignore_members is set to true. Queue ID: ", strconv.Quote(d.Id()))
 		}
-		_ = d.Set("members", members)
 
 		skillGroup := "SKILLGROUP"
 		team := "TEAM"
@@ -303,6 +315,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 	peerId := d.Get("peer_id").(string)
+	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
 	updateQueue := platformclientv2.Queuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
@@ -333,7 +346,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
-	if diagErr != nil {
+	if diagErr.HasError() {
 		return diagErr
 	}
 
@@ -343,6 +356,9 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	if peerId != "" {
 		updateQueue.PeerId = &peerId
 	}
+	if lastAgentRoutingMode != "" {
+		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
+	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)
 
@@ -351,18 +367,18 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
-	diagErr = util.UpdateObjectDivision(d, "QUEUE", sdkConfig)
-	if diagErr != nil {
+	diagErr = append(diagErr, util.UpdateObjectDivision(d, "QUEUE", sdkConfig)...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
-	diagErr = updateQueueMembers(d, sdkConfig)
-	if diagErr != nil {
+	diagErr = append(diagErr, updateQueueMembers(d, sdkConfig)...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 
-	diagErr = updateQueueWrapupCodes(d, sdkConfig)
-	if diagErr != nil {
+	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
+	if diagErr.HasError() {
 		return diagErr
 	}
 

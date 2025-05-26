@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -87,7 +87,7 @@ func (p *flowOutcomeProxy) updateFlowOutcome(ctx context.Context, id string, flo
 func createFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy, flowOutcome *platformclientv2.Flowoutcome) (*platformclientv2.Flowoutcome, *platformclientv2.APIResponse, error) {
 	flowOutcome, resp, err := p.architectApi.PostFlowsOutcomes(*flowOutcome)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to create flow outcome: %s", err)
+		return nil, resp, fmt.Errorf("failed to create flow outcome: %s", err)
 	}
 	return flowOutcome, resp, nil
 }
@@ -99,28 +99,23 @@ func getAllFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy) (*[]platformc
 
 	flowOutcomes, resp, err := p.architectApi.GetFlowsOutcomes(1, pageSize, "", "", nil, "", "", "", nil)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get flow outcome: %v", err)
+		return nil, resp, fmt.Errorf("failed to get flow outcome: %v", err)
 	}
 	if flowOutcomes.Entities == nil || len(*flowOutcomes.Entities) == 0 {
 		return &allFlowOutcomes, resp, nil
 	}
-	for _, flowOutcome := range *flowOutcomes.Entities {
-		allFlowOutcomes = append(allFlowOutcomes, flowOutcome)
-	}
+	allFlowOutcomes = append(allFlowOutcomes, *flowOutcomes.Entities...)
 
 	for pageNum := 2; pageNum <= *flowOutcomes.PageCount; pageNum++ {
 		flowOutcomes, resp, err := p.architectApi.GetFlowsOutcomes(pageNum, pageSize, "", "", nil, "", "", "", nil)
 		if err != nil {
-			return nil, resp, fmt.Errorf("Failed to get flow outcome: %v", err)
+			return nil, resp, fmt.Errorf("failed to get flow outcome: %v", err)
 		}
 
 		if flowOutcomes.Entities == nil || len(*flowOutcomes.Entities) == 0 {
 			break
 		}
-
-		for _, flowOutcome := range *flowOutcomes.Entities {
-			allFlowOutcomes = append(allFlowOutcomes, flowOutcome)
-		}
+		allFlowOutcomes = append(allFlowOutcomes, *flowOutcomes.Entities...)
 	}
 	return &allFlowOutcomes, resp, nil
 }
@@ -133,7 +128,7 @@ func getFlowOutcomeIdByNameFn(ctx context.Context, p *flowOutcomeProxy, name str
 	}
 
 	if flowOutcomes.Entities == nil || len(*flowOutcomes.Entities) == 0 {
-		return "", true, resp, fmt.Errorf("No flow outcome found with name %s", name)
+		return "", true, resp, fmt.Errorf("no flow outcome found with name %s", name)
 	}
 
 	for _, flowOutcomeSdk := range *flowOutcomes.Entities {
@@ -142,14 +137,14 @@ func getFlowOutcomeIdByNameFn(ctx context.Context, p *flowOutcomeProxy, name str
 			return *flowOutcomeSdk.Id, false, resp, nil
 		}
 	}
-	return "", true, resp, fmt.Errorf("Unable to find flow outcome with name %s", name)
+	return "", true, resp, fmt.Errorf("unable to find flow outcome with name %s", name)
 }
 
 // getFlowOutcomeByIdFn is an implementation of the function to get a Genesys Cloud flow outcome by Id
 func getFlowOutcomeByIdFn(ctx context.Context, p *flowOutcomeProxy, id string) (flowOutcome *platformclientv2.Flowoutcome, response *platformclientv2.APIResponse, err error) {
 	flowOutcome, resp, err := p.architectApi.GetFlowsOutcome(id)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to retrieve flow outcome by id %s: %s", id, err)
+		return nil, resp, fmt.Errorf("failed to retrieve flow outcome by id %s: %s", id, err)
 	}
 	return flowOutcome, resp, nil
 }
@@ -158,7 +153,7 @@ func getFlowOutcomeByIdFn(ctx context.Context, p *flowOutcomeProxy, id string) (
 func updateFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy, id string, flowOutcome *platformclientv2.Flowoutcome) (*platformclientv2.Flowoutcome, *platformclientv2.APIResponse, error) {
 	_, resp, err := p.architectApi.PutFlowsOutcome(id, *flowOutcome)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to update flow outcome: %s", err)
+		return nil, resp, fmt.Errorf("failed to update flow outcome: %s", err)
 	}
 	return flowOutcome, resp, nil
 }

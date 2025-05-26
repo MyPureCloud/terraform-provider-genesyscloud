@@ -8,11 +8,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
@@ -97,9 +98,16 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 		MemberIds: &membersToAdd,
 	}
 
-	_, resp, err := proxy.createMembers(ctx, d.Id(), *teamMembers)
+	teamListingResponse, resp, err := proxy.createMembers(ctx, d.Id(), *teamMembers)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members %s: %s", d.Id(), err), resp)
+	}
+	if len(*teamListingResponse.Failures) > 0 {
+		failureReasons := make([]string, len(*teamListingResponse.Failures))
+		for i, failure := range *teamListingResponse.Failures {
+			failureReasons[i] = fmt.Sprintf("Member %s: %s", *failure.Id, *failure.Reason)
+		}
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members for team %s: %v", d.Id(), failureReasons), fmt.Errorf("%v", failureReasons))
 	}
 
 	return nil
@@ -122,4 +130,19 @@ func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclie
 		interfaceList[i] = *member.Id
 	}
 	return schema.NewSet(schema.HashString, interfaceList), nil
+}
+
+func GenerateTeamResource(
+	teamResource string,
+	name string,
+	divisionId string,
+	description string,
+	memberIds ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_team" "%s" {
+		name = "%s"
+		division_id = %s
+		description = "%s"
+		%s
+	}
+	`, teamResource, name, divisionId, description, strings.Join(memberIds, "\n"))
 }

@@ -3,10 +3,10 @@ package knowledge_knowledgebase
 import (
 	"context"
 	"fmt"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *knowledgebaseProxy
@@ -125,5 +125,10 @@ func updateKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledge
 }
 
 func deleteKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
-	return p.KnowledgeApi.DeleteKnowledgeKnowledgebase(knowledgebaseId)
+	delete, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebase(knowledgebaseId)
+	if err != nil {
+		return delete, resp, err
+	}
+	rc.DeleteCacheItem(p.knowledgebaseCache, knowledgebaseId)
+	return delete, resp, nil
 }

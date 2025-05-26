@@ -3,15 +3,15 @@ package task_management_worktype
 import (
 	"context"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"net/http"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,6 +35,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		defaultLanguageId: uuid.NewString(),
 		defaultQueueId:    uuid.NewString(),
 		defaultSkillIds:   []string{uuid.NewString(), uuid.NewString()},
+		defaultScriptId:   uuid.NewString(),
 		assignmentEnabled: false,
 
 		schemaId:      uuid.NewString(),
@@ -59,6 +60,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		assert.Equal(t, wt.assignmentEnabled, *create.AssignmentEnabled, "wt.assignmentEnabled check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.schemaId, *create.SchemaId, "wt.schemaId check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.schemaVersion, *create.SchemaVersion, "wt.schemaVersion check failed in create createTaskManagementWorktypeAttr")
+		assert.Equal(t, wt.defaultScriptId, *create.DefaultScriptId, "wt.defaultScriptId check failed in create createTaskManagementWorktypeAttr")
 
 		return &platformclientv2.Worktype{
 			Id:          &tId,
@@ -84,6 +86,9 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			Schema: &platformclientv2.Workitemschema{
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
+			},
+			DefaultScript: &platformclientv2.Workitemscriptreference{
+				Id: &wt.defaultScriptId,
 			},
 		}, nil, nil
 	}
@@ -124,6 +129,9 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 			Schema: &platformclientv2.Workitemschema{
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
+			},
+			DefaultScript: &platformclientv2.Workitemscriptreference{
+				Id: &wt.defaultScriptId,
 			},
 		}
 
@@ -172,6 +180,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 		defaultLanguageId: uuid.NewString(),
 		defaultQueueId:    uuid.NewString(),
 		defaultSkillIds:   []string{uuid.NewString(), uuid.NewString()},
+		defaultScriptId:   uuid.NewString(),
 		assignmentEnabled: false,
 
 		schemaId:      uuid.NewString(),
@@ -216,6 +225,9 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 			Schema: &platformclientv2.Workitemschema{
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
+			},
+			DefaultScript: &platformclientv2.Workitemscriptreference{
+				Id: &wt.defaultScriptId,
 			},
 		}
 
@@ -258,6 +270,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 	assert.Equal(t, wt.assignmentEnabled, d.Get("assignment_enabled").(bool))
 	assert.Equal(t, wt.schemaId, d.Get("schema_id").(string))
 	assert.Equal(t, wt.schemaVersion, d.Get("schema_version").(int))
+	assert.Equal(t, wt.defaultScriptId, d.Get("default_script_id").(string))
 }
 
 func TestUnitResourceWorktypeUpdate(t *testing.T) {
@@ -279,6 +292,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 		defaultLanguageId: uuid.NewString(),
 		defaultQueueId:    uuid.NewString(),
 		defaultSkillIds:   []string{uuid.NewString(), uuid.NewString()},
+		defaultScriptId:   uuid.NewString(),
 		assignmentEnabled: false,
 
 		schemaId:      uuid.NewString(),
@@ -315,6 +329,9 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			Schema: &platformclientv2.Workitemschema{
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
+			},
+			DefaultScript: &platformclientv2.Workitemscriptreference{
+				Id: &wt.defaultScriptId,
 			},
 		}, nil, nil
 	}
@@ -356,6 +373,9 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			Schema: &platformclientv2.Workitemschema{
 				Id:      &wt.schemaId,
 				Version: &wt.schemaVersion,
+			},
+			DefaultScript: &platformclientv2.Workitemscriptreference{
+				Id: &wt.defaultScriptId,
 			},
 		}
 
@@ -454,6 +474,7 @@ func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interfa
 		"assignment_enabled":           wt.assignmentEnabled,
 		"schema_id":                    wt.schemaId,
 		"schema_version":               wt.schemaVersion,
+		"default_script_id":            wt.defaultScriptId,
 	}
 
 	return resourceDataMap

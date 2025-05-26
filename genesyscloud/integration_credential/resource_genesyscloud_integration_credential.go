@@ -3,24 +3,23 @@ package integration_credential
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"regexp"
 	"strings"
-	oauth "terraform-provider-genesyscloud/genesyscloud/oauth_client"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -74,8 +73,8 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
 				}
 			}
-			blockLabel := fmt.Sprintf("%s_%s", *integration.Name, *cred.Name)
-			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
+			// Block Label: DEVTOOLING-1135
+			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: "Integration-" + *integration.Name}
 		}
 	}
 	return resources, nil
@@ -85,17 +84,10 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 func createCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
-	fields := buildCredentialFields(d)
-	_, secretFieldPresent := fields["clientSecret"]
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	ip := getIntegrationCredsProxy(sdkConfig)
+	fields := buildCredentialFields(d, sdkConfig)
 
-	//If if is a Genesys Cloud OAuth Client and the user has not provided a secret field we should look for the
-	//item in the cache DEVTOOLING-448
-	if cred_type == "pureCloudOAuthClient" && !secretFieldPresent {
-		retrieveCachedOauthClientSecret(sdkConfig, fields)
-	}
+	ip := getIntegrationCredsProxy(sdkConfig)
 
 	createCredential := platformclientv2.Credential{
 		Name: &name,
@@ -113,15 +105,6 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	d.SetId(*credential.Id)
 	log.Printf("Created credential %s, %s", name, *credential.Id)
 	return readCredential(ctx, d, meta)
-}
-
-func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, fields map[string]string) {
-	op := oauth.GetOAuthClientProxy(sdkConfig)
-	if clientId, ok := fields["clientId"]; ok {
-		oAuthClient := op.GetCachedOAuthClient(clientId)
-		fields["clientSecret"] = *oAuthClient.Secret
-		log.Printf("Successfully matched with OAuth Client Credential id %s", clientId)
-	}
 }
 
 // readCredential is used by the integration credential resource to read a  credential from genesys cloud.
@@ -154,14 +137,14 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 func updateCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
-	fields := buildCredentialFields(d)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	fields := buildCredentialFields(d, sdkConfig)
+
 	ip := getIntegrationCredsProxy(sdkConfig)
 
 	if d.HasChanges("name", "credential_type_name", "fields") {
 		log.Printf("Updating credential %s", name)
-
 		_, resp, err := ip.updateIntegrationCred(ctx, d.Id(), &platformclientv2.Credential{
 			Name: &name,
 			VarType: &platformclientv2.Credentialtype{

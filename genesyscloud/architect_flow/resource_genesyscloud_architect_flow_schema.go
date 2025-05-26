@@ -1,15 +1,15 @@
 package architect_flow
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 const (
@@ -23,8 +23,11 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(ResourceType, ArchitectFlowExporter())
 }
 
+const ExportSubDirectoryName = "architect_flows"
+
 func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
+
+	legacyExporter := &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		UnResolvableAttributes: map[string]*schema.Schema{
@@ -34,6 +37,20 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
 		},
 	}
+
+	// new feature
+	newExporter := &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlows),
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: architectFlowResolver,
+			SubDirectory:              ExportSubDirectoryName,
+		},
+	}
+
+	resourceExporter.SetNewFlowResourceExporter(newExporter)
+
+	return legacyExporter
 }
 
 func ResourceArchitectFlow() *schema.Resource {

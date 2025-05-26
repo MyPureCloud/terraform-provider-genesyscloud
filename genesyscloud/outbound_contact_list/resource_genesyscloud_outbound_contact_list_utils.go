@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
@@ -129,7 +129,7 @@ func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAdd
 }
 
 func buildSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpecifications []interface{}) *[]platformclientv2.Columndatatypespecification {
-	if columnDataTypeSpecifications == nil || len(columnDataTypeSpecifications) < 1 {
+	if len(columnDataTypeSpecifications) < 1 {
 		return nil
 	}
 
@@ -206,31 +206,37 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	ctx := context.Background()
 	var exportUrl string
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Initiating contact list export for contact list %s", contactListName)
 		resp, err := cp.initiateContactListContactsExport(ctx, contactListId)
-		// Sleep one second before attempting to retrieve export url to give the system time to be able to generate the URL
-		time.Sleep(time.Second)
 		if err != nil {
 			return resp, diag.FromErr(err)
 		}
 		return resp, nil
 	}, 400)
 	if diagErr != nil {
-		return fmt.Errorf(`Error initiating contact list export: %v`, diagErr)
+		return fmt.Errorf(`error initiating contact list export: %v`, diagErr)
 	}
+	retryAttempt := 1
 	diagErr = util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Waiting for signed export URL for contact list %s", contactListName)
+		// Sleep at least 30 secs before attempting to retrieve export url to give the system time to be able to generate the URL
+		// This has an exponential backoff to permit large lists the time to process and serve up the export signed url
+		time.Sleep(time.Duration(30*retryAttempt) * time.Second)
 		var err error
 		var resp *platformclientv2.APIResponse
 		exportUrl, resp, err = cp.getContactListContactsExportUrl(ctx, contactListId)
 		if err != nil {
+			retryAttempt += 1
 			return resp, diag.FromErr(err)
 		}
 		return resp, nil
 
 	}, 400)
 	if diagErr != nil {
-		return fmt.Errorf(`Error retrieving contact list export url: %v`, diagErr)
+		return fmt.Errorf(`error retrieving signed export url for contact list: %v`, diagErr)
 	}
 	diagErr = util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Downloading exported contacts for contact list %s", contactListName)
 		resp, err := files.DownloadExportFileWithAccessToken(fullDirectoryPath, exportFileName, exportUrl, sdkConfig.AccessToken)
 		if err != nil {
 			return resp, diag.FromErr(err)
@@ -238,11 +244,12 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 		return resp, nil
 	}, 400)
 	if diagErr != nil {
-		return fmt.Errorf(`Error downloading exported contacts: %v`, diagErr)
+		return fmt.Errorf(`error downloading exported contacts: %v`, diagErr)
 	}
 
 	fullCurrentPath := filepath.Join(fullDirectoryPath, exportFileName)
 	fullRelativePath := filepath.Join(subDirectory, exportFileName)
+	log.Printf("Saving exported contact list %s to file %s and updating state", contactListName, fullRelativePath)
 	configMap["contacts_filepath"] = fullRelativePath
 	configMap["contacts_id_name"] = "inin-outbound-id"
 

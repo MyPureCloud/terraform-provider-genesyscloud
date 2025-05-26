@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *conversationsMessagingSettingsProxy
@@ -173,7 +174,12 @@ func updateConversationsMessagingSettingsFn(ctx context.Context, p *conversation
 
 // deleteConversationsMessagingSettingsFn is an implementation function for deleting a Genesys Cloud conversations messaging settings
 func deleteConversationsMessagingSettingsFn(ctx context.Context, p *conversationsMessagingSettingsProxy, id string) (*platformclientv2.APIResponse, error) {
-	return p.conversationsApi.DeleteConversationsMessagingSetting(id)
+	resp, err := p.conversationsApi.DeleteConversationsMessagingSetting(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.messagingSettingsCache, id)
+	return resp, nil
 }
 
 func getConversationsMessagingSettingsDefaultFn(ctx context.Context, p *conversationsMessagingSettingsProxy) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {

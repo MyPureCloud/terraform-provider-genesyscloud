@@ -2,21 +2,21 @@ package responsemanagement_response
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	respManagementRespAsset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	respmanagementLibrary "terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
-	respManagementRespAsset "terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
@@ -152,7 +152,10 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 				) + generateResponseManagementResponseResource(
 					responseResourceLabel,
 					name2,
-					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel2 + ".id", "genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id"},
+					[]string{
+						"genesyscloud_responsemanagement_library." + libraryResourceLabel1 + ".id",
+						"genesyscloud_responsemanagement_library." + libraryResourceLabel2 + ".id",
+					},
 					strconv.Quote(interactionTypes[0]),
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[3]),
@@ -176,12 +179,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name2),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.1",
-						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent2),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content", textsContent1),
@@ -383,12 +381,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "name", name2),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.0",
-						"genesyscloud_responsemanagement_library."+libraryResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair(
-						"genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.1",
-						"genesyscloud_responsemanagement_library."+libraryResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "library_ids.#", "2"),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content", textsContent2),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.0.content_type", textsContentTypes[1]),
 					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_response."+responseResourceLabel, "texts.1.content", textsContent1),

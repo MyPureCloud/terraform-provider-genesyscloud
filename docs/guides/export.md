@@ -90,3 +90,37 @@ On the other hand, Terraform also provides the `exclude_attributes` option for i
 
 In its standard setup, during a full org download, the exporter doesnt verify if the exported state file is in sync with the exported configuration.
 This is an experimental feature enabled just for troubleshooting. To enable this,set env value of ENABLE_EXPORTER_STATE_COMPARISON to true.
+
+# Export Architect Flow Configuration Files
+
+Prior to v1.61.0, the resource exporter wouldn’t actually export Architect flow configuration files along with the genesyscloud_flow resource. Instead, it would generate a Terraform variable that referenced a non-existent file, leaving it up to the user to manually export the flow file and fill in the gaps.
+
+Those days are over! Now, you can simply toggle a boolean field in the export resource, and the flow files will download automatically as part of the export process.
+
+Let’s dive into how you can start using this feature. Once you have upgraded to a version greater than or equal to v1.61.0, you'll need to:
+
+## 1. Acquire Permissions
+
+Add the following permissions to your oauth client:
+
+* **Architect > jobExport > Create**
+* **Architect > jobExport > View**
+
+## 2. Update the Export Resource Configuration
+
+Next, update your export resource configuration by setting `use_legacy_architect_flow_exporter` to false.
+
+By default, this setting is true to avoid unexpected changes in behavior after upgrading.
+
+```hcl
+resource "genesyscloud_tf_export" "example" {
+  directory                          = "./genesyscloud/flows"
+  export_format                      = "hcl"
+  include_filter_resources           = ["genesyscloud_flow::ExampleFlowName"]
+  use_legacy_architect_flow_exporter = false
+}
+```
+
+After running terraform apply with the example configuration above, all Architect flows matching "ExampleFlowName" will be exported to `./genesyscloud/flows/architect_flows/` in YAML format.
+
+

@@ -35,6 +35,73 @@ If the Genesys Cloud Telephony Site is configured as a `managed` resource:
 
 This behavior ensures consistency with Genesys Cloud's management policies for managed telephony sites.
 
+## Breaking Changes in 1.61.0
+
+### Removal of `outbound_routes` attribute from `genesyscloud_telephony_providers_edges_site`
+
+In version 1.39.0 we introduced the `genesyscloud_telephony_providers_edges_site_outbound_route` resource to replace the `outbound_routes` attributes in the `genesyscloud_telephony_providers_edges_site` resource. This was held behind a feature toggle for a number of releases, with the attribute marked with a deprecated notice.
+
+As of version 1.61.0, the `outbound_routes` attribute has been completely removed from the `genesyscloud_telephony_providers_edges_site` resource. This functionality is moved entirely to the dedicated resource: `genesyscloud_telephony_providers_edges_site_outbound_route`. A migration is required for any existing `outbound_routes` attributes.
+
+#### Migration Steps
+
+When upgrading to version 1.61.0, the provider will automatically migrate your state by removing the `outbound_routes` configuration from the `genesyscloud_telephony_providers_edges_site` resource. However, you will need to manually:
+
+1. Run `terraform init -upgrade` to get the latest provider version
+2. The provider will output the necessary configuration blocks and import commands for your existing outbound routes
+3. Add the configuration blocks to your Terraform configuration
+4. Run the provided import commands
+5. Run `terraform plan` to verify the changes
+
+#### Example Migration
+
+##### Prior to version 1.61.0
+
+```hcl
+resource "genesyscloud_telephony_providers_edges_site" "example" {
+  name        = "My Site"
+  description = "My test site"
+  location_id = genesyscloud_location.location.id
+  media_model = "Cloud"
+
+  outbound_routes {
+    name                   = "Test outbound route"
+    description           = "Test outbound route description"
+    classification_types  = ["International"]
+    enabled              = true
+    distribution         = "SEQUENTIAL"
+    external_trunk_base_ids = [
+      genesyscloud_telephony_providers_edges_trunkbasesettings.trunk-base.id
+    ]
+  }
+}
+```
+
+##### Version 1.61.0 and on
+
+```hcl
+resource "genesyscloud_telephony_providers_edges_site" "example" {
+  name = "My Site"
+  description = "My test site"
+  location_id = genesyscloud_location.location.id
+  media_model = "Cloud"
+}
+
+resource "genesyscloud_telephony_providers_edges_site_outbound_route" "example" {
+  site_id = genesyscloud_telephony_providers_edges_site.example.id
+  name = "Test outbound route"
+  description = "Test outbound route description"
+  classification_types = ["International"]
+  enabled = true
+  distribution = "SEQUENTIAL"
+  external_trunk_base_ids = [
+    genesyscloud_telephony_providers_edges_trunkbasesettings.trunk-base.id
+  ]
+}
+```
+
+The example above shows how to migrate from the old configuration to the new configuration. The state will be automatically migrated when you upgrade to version 1.61.0, but you will need to update your Terraform configuration files manually.
+
 
 ## Example Usage
 
@@ -69,23 +136,6 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
       end   = "8"
     }
   }
-  outbound_routes {
-    name                    = "outboundRoute 1"
-    description             = "outboundRoute description"
-    classification_types    = ["International", "National"]
-    external_trunk_base_ids = [genesyscloud_telephony_providers_edges_trunkbasesettings.trunk-base-settings1.id]
-    distribution            = "RANDOM"
-    enabled                 = false
-  }
-
-  outbound_routes {
-    name                    = "outboundRoute 2"
-    description             = "outboundRoute description"
-    classification_types    = ["Network"]
-    external_trunk_base_ids = [genesyscloud_telephony_providers_edges_trunkbasesettings.trunk-base-settings2.id]
-    distribution            = "SEQUENTIAL"
-    enabled                 = true
-  }
 }
 ```
 
@@ -107,7 +157,6 @@ resource "genesyscloud_telephony_providers_edges_site" "site" {
 - `media_regions` (List of String) The ordered list of AWS regions through which media can stream. A full list of available media regions can be found at the GET /api/v2/telephony/mediaregions endpoint
 - `media_regions_use_latency_based` (Boolean) Latency based on media region Defaults to `false`.
 - `number_plans` (Block List) Number plans for the site. The order of the plans in the resource file determines the priority of the plans. Specifying number plans will not result in the default plans being overwritten. (see [below for nested schema](#nestedblock--number_plans))
-- `outbound_routes` (Set of Object, Deprecated) Outbound Routes for the site. The default outbound route will be deleted if routes are specified (see [below for nested schema](#nestedatt--outbound_routes))
 - `primary_sites` (List of String) Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.
 - `secondary_sites` (List of String) Used for secondary phone edge assignment on physical edges only.  List of secondary sites the phones can be assigned to.  If no primary_sites or secondary_sites are defined then the current site will defined as primary and secondary.
 - `set_as_default_site` (Boolean) Set this site as the default site for the organization. Only one genesyscloud_telephony_providers_edges_site resource should be set as the default. Defaults to `false`.
@@ -160,18 +209,4 @@ Optional:
 
 - `end` (String)
 - `start` (String)
-
-
-
-<a id="nestedatt--outbound_routes"></a>
-### Nested Schema for `outbound_routes`
-
-Optional:
-
-- `classification_types` (List of String)
-- `description` (String)
-- `distribution` (String)
-- `enabled` (Boolean)
-- `external_trunk_base_ids` (List of String)
-- `name` (String)
 

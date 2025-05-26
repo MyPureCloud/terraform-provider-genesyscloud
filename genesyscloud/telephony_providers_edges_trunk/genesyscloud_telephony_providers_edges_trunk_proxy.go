@@ -3,7 +3,7 @@ package telephony_providers_edges_trunk
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 //generate a proxy for telephony_providers_edges_trunk

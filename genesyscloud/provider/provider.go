@@ -6,20 +6,22 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
-	"regexp"
 	"strings"
-	prl "terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
+	"sync"
+	"syscall"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/platform"
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 const (
@@ -67,192 +69,10 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 			copiedDataSources[k] = v
 		}
 
+		setupCleanup()
+
 		return &schema.Provider{
-			Schema: map[string]*schema.Schema{
-				"access_token": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Sensitive:   true,
-					Description: fmt.Sprintf("A string that the OAuth client uses to make requests. Can be set with the `%s` environment variable.", accessTokenEnvVar),
-				},
-				"oauthclient_id": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Description: fmt.Sprintf("OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `%s` environment variable.", clientIdEnvVar),
-				},
-				"oauthclient_secret": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					Description: fmt.Sprintf("OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `%s` environment variable.", clientSecretEnvVar),
-					Sensitive:   true,
-				},
-				"aws_region": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					Description:  fmt.Sprintf("AWS region where org exists. e.g. us-east-1. Can be set with the `%s` environment variable. Defaults to \"%s\"", regionEnvVar, awsRegionDefaultValue),
-					ValidateFunc: validation.StringInSlice(getAllowedRegions(), true),
-				},
-				"sdk_debug": {
-					Type:        schema.TypeBool,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc(sdkDebugEnvVar, false),
-					Description: fmt.Sprintf("Enables debug tracing in the Genesys Cloud SDK. Output will be written to `sdk_debug_file_path`. Can be set with the `%s` environment variable.", sdkDebugEnvVar),
-				},
-				"sdk_debug_format": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc(sdkDebugFormatEnvVar, sdkDebugFormatDefaultValue),
-					Description:  fmt.Sprintf("Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `%s` environment variable. Default value is %s.", sdkDebugFormatEnvVar, sdkDebugFormatDefaultValue),
-					ValidateFunc: validation.StringInSlice([]string{"Text", "Json"}, false),
-				},
-				"sdk_debug_file_path": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					DefaultFunc:  schema.EnvDefaultFunc(sdkDebugFilePathEnvVar, sdkDebugFilePathDefaultValue),
-					Description:  fmt.Sprintf("Specifies the file path for the log file. Can be set with the `%s` environment variable. Default value is %s", sdkDebugFilePathEnvVar, sdkDebugFilePathDefaultValue),
-					ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid file path."),
-				},
-				"token_pool_size": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					Description:  fmt.Sprintf("Max number of OAuth tokens in the token pool. Can be set with the `%s` environment variable.", tokenPoolSizeEnvVar),
-					ValidateFunc: validation.IntBetween(1, 20),
-				},
-				"log_stack_traces": {
-					Type:        schema.TypeBool,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc(logStackTracesEnvVar, false),
-					Description: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible. 
-If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message 
-"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API. 
-If you encounter any stack traces, please report them so we can address the underlying issues.`, logStackTracesEnvVar),
-				},
-				"log_stack_traces_file_path": {
-					Type:             schema.TypeString,
-					Optional:         true,
-					Description:      fmt.Sprintf("Specifies the file path for the stack trace logs. Can be set with the `%s` environment variable. Default value is %s", logStackTracesFilePathEnvVar, logStackTracesFilePathDefaultValue),
-					DefaultFunc:      schema.EnvDefaultFunc(logStackTracesFilePathEnvVar, logStackTracesFilePathDefaultValue),
-					ValidateDiagFunc: validateLogFilePath,
-				},
-				"gateway": {
-					Type:     schema.TypeSet,
-					Optional: true,
-					MaxItems: 1,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
-							"port": {
-								Type:        schema.TypeString,
-								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc(gatewayPortEnvVar, nil),
-								Description: fmt.Sprintf("Port for the gateway can be set with the `%s` environment variable.", gatewayPortEnvVar),
-							},
-							"host": {
-								Type:        schema.TypeString,
-								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc(gatewayHostEnvVar, nil),
-								Description: fmt.Sprintf("Host for the gateway can be set with the `%s` environment variable.", gatewayHostEnvVar),
-							},
-							"protocol": {
-								Type:        schema.TypeString,
-								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc(gatewayProtocolEnvVar, nil),
-								Description: fmt.Sprintf("Protocol for the gateway can be set with the `%s` environment variable.", gatewayProtocolEnvVar),
-							},
-							"path_params": {
-								Type:     schema.TypeSet,
-								Optional: true,
-								Elem: &schema.Resource{
-									Schema: map[string]*schema.Schema{
-										"path_name": {
-											Type:        schema.TypeString,
-											Required:    true,
-											Description: fmt.Sprintf("Path name for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsNameEnvVar),
-											DefaultFunc: schema.EnvDefaultFunc(gatewayPathParamsNameEnvVar, nil),
-										},
-										"path_value": {
-											Type:        schema.TypeString,
-											Required:    true,
-											Description: fmt.Sprintf("Path value for Gateway Path Params can be set with the `%s` environment variable.", gatewayPathParamsValueEnvVar),
-											DefaultFunc: schema.EnvDefaultFunc(gatewayPathParamsValueEnvVar, nil),
-										},
-									},
-								},
-							},
-							"auth": {
-								Type:     schema.TypeSet,
-								Optional: true,
-								MaxItems: 1,
-								Elem: &schema.Resource{
-									Schema: map[string]*schema.Schema{
-										"username": {
-											Type:        schema.TypeString,
-											Required:    true,
-											DefaultFunc: schema.EnvDefaultFunc(gatewayAuthUsernameEnvVar, nil),
-											Description: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", gatewayAuthUsernameEnvVar),
-										},
-										"password": {
-											Type:        schema.TypeString,
-											Optional:    true,
-											Sensitive:   true,
-											DefaultFunc: schema.EnvDefaultFunc(gatewayAuthPasswordEnvVar, nil),
-											Description: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", gatewayAuthPasswordEnvVar),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				"proxy": {
-					Type:     schema.TypeSet,
-					Optional: true,
-					MaxItems: 1,
-					Elem: &schema.Resource{
-						Schema: map[string]*schema.Schema{
-							"port": {
-								Type:        schema.TypeString,
-								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc(proxyPortEnvVar, nil),
-								Description: fmt.Sprintf("Port for the proxy can be set with the `%s` environment variable.", proxyPortEnvVar),
-							},
-							"host": {
-								Type:        schema.TypeString,
-								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc(proxyHostEnvVar, nil),
-								Description: fmt.Sprintf("Host for the proxy can be set with the `%s` environment variable.", proxyHostEnvVar),
-							},
-							"protocol": {
-								Type:        schema.TypeString,
-								Optional:    true,
-								DefaultFunc: schema.EnvDefaultFunc(proxyProtocolEnvVar, nil),
-								Description: fmt.Sprintf("Protocol for the proxy can be set with the `%s` environment variable.", proxyProtocolEnvVar),
-							},
-							"auth": {
-								Type:     schema.TypeSet,
-								Optional: true,
-								MaxItems: 1,
-								Elem: &schema.Resource{
-									Schema: map[string]*schema.Schema{
-										"username": {
-											Type:        schema.TypeString,
-											Required:    true,
-											DefaultFunc: schema.EnvDefaultFunc(proxyAuthUsernameEnvVar, nil),
-											Description: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", proxyAuthUsernameEnvVar),
-										},
-										"password": {
-											Type:        schema.TypeString,
-											Optional:    true,
-											Sensitive:   true,
-											DefaultFunc: schema.EnvDefaultFunc(proxyAuthPasswordEnvVar, nil),
-											Description: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", proxyAuthPasswordEnvVar),
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
+			Schema:               ProviderSchema(),
 			ResourcesMap:         copiedResources,
 			DataSourcesMap:       copiedDataSources,
 			ConfigureContextFunc: configure(version),
@@ -268,10 +88,46 @@ type ProviderMeta struct {
 	Domain             string
 	Organization       *platformclientv2.Organization
 	DefaultCountryCode string
+	MaxClients         int
+}
+
+type IntegrationMeta struct {
+	ClientSecret string
+	ClientId     string
+}
+
+var (
+	cleanupOnce sync.Once
+	sigChan     chan os.Signal
+)
+
+func setupCleanup() {
+	cleanupOnce.Do(func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+		go func() {
+			<-sigChan
+			log.Println("Received termination signal, cleaning up...")
+
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			if SdkClientPool != nil {
+				if err := SdkClientPool.Close(ctx); err != nil {
+					log.Printf("[ERROR] Failed to close SDK client pool: %v", err)
+				}
+			}
+			// Ensure we stop listening for signals after cleanup
+			signal.Stop(sigChan)
+			close(sigChan)
+			os.Exit(0)
+		}()
+	})
 }
 
 func configure(version string) schema.ConfigureContextFunc {
-	return func(context context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	return func(ctx context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 
 		platformInstance := platform.GetPlatform()
 		platformValidationErr := platformInstance.Validate()
@@ -281,9 +137,7 @@ func configure(version string) schema.ConfigureContextFunc {
 
 		providerSourceRegistry := getRegistry(&platformInstance, version)
 
-		tokenPoolSize := determineTokenPoolSize(data)
-
-		err := InitSDKClientPool(tokenPoolSize, version, data)
+		err := InitSDKClientPool(ctx, version, data)
 		if err != nil {
 			return nil, err
 		}
@@ -295,6 +149,10 @@ func configure(version string) schema.ConfigureContextFunc {
 			return nil, err
 		}
 
+		maxClients := MaxClients
+		if v, ok := data.GetOk(AttrTokenPoolSize); ok {
+			maxClients = v.(int)
+		}
 		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
 		meta := &ProviderMeta{
@@ -305,6 +163,7 @@ func configure(version string) schema.ConfigureContextFunc {
 			Domain:             getRegionDomain(data.Get("aws_region").(string)),
 			Organization:       currentOrg,
 			DefaultCountryCode: *currentOrg.DefaultCountryCode,
+			MaxClients:         maxClients,
 		}
 
 		setProviderMeta(meta)
@@ -444,12 +303,14 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 	}
 
 	if accessToken != "" {
-		log.Print("Setting access token set on configuration instance.")
+		if isDefaultConfig {
+			log.Print("Setting access token set on configuration instance.")
+		}
 		config.AccessToken = accessToken
 	} else {
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
 
-		return withRetries(context.Background(), time.Minute, func() *retry.RetryError {
+		return withRetries(ctx, time.Minute, func() *retry.RetryError {
 			err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 			if err != nil {
 				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
@@ -462,14 +323,17 @@ func InitClientConfig(data *schema.ResourceData, version string, config *platfor
 		})
 	}
 
-	log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
+	// Log SDK initialization only on default client config to avoid duplicate logging
+	if isDefaultConfig {
+		log.Printf("Initialized Go SDK Client. Debug=%t", data.Get("sdk_debug").(bool))
+	}
 	return nil
 }
 
 func withRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
 	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 		return withRetries(ctx, timeout, method)
 	}

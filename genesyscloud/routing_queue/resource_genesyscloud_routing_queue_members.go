@@ -5,18 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	chunksProcess "terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var ctx = context.Background()
@@ -79,12 +80,13 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	}
 }
 
-func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
-	proxy := GetRoutingQueueProxy(sdkConfig)
-
-	if !d.HasChange("members") {
-		return nil
+func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) (diags diag.Diagnostics) {
+	if d.Get("ignore_members").(bool) {
+		log.Println("Skipping queue members update because ignore_members is set to true. Queue ID: ", strconv.Quote(d.Id()))
+		return
 	}
+
+	proxy := GetRoutingQueueProxy(sdkConfig)
 
 	membersSet, ok := d.Get("members").(*schema.Set)
 	if !ok || membersSet.Len() == 0 {
@@ -108,7 +110,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 	}
 
 	// Check for members to add or remove
-	if diagErr := addOrRemoveMembers(d.Id(), oldUserIds, newUserIds, proxy); err != nil {
+	if diagErr := addOrRemoveMembers(d.Id(), oldUserIds, newUserIds, proxy); diagErr != nil {
 		return diagErr
 	}
 
@@ -172,13 +174,21 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
 	log.Printf("Updating ring number for queue %s user %s", queueID, userID)
-	resp, err := proxy.updateRoutingQueueMember(ctx, queueID, userID, platformclientv2.Queuemember{
-		Id:         &userID,
-		RingNumber: &ringNum,
+	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := proxy.updateRoutingQueueMember(ctx, queueID, userID, platformclientv2.Queuemember{
+			Id:         &userID,
+			RingNumber: &ringNum,
+		})
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
+		}
+		return resp, nil
 	})
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update ring number for queue %s user %s error: %s", queueID, userID, err), resp)
+
+	if diagErr != nil {
+		return diagErr
 	}
+
 	return nil
 }
 

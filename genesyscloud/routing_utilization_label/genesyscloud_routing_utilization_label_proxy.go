@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *routingUtilizationLabelProxy
@@ -145,5 +146,10 @@ func updateRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLab
 }
 
 func deleteRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error) {
-	return p.routingApi.DeleteRoutingUtilizationLabel(id, forceDelete)
+	resp, err := p.routingApi.DeleteRoutingUtilizationLabel(id, forceDelete)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.routingCache, id)
+	return resp, nil
 }

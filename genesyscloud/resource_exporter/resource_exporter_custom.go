@@ -3,12 +3,12 @@ package resource_exporter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"regexp"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -209,4 +209,17 @@ func ConditionValueResolver(configMap map[string]interface{}, exporters map[stri
 	}
 
 	return nil
+}
+
+// newFlowResourceExporter stores the flow exporter definition that utilises the
+// archy export service. Depending on a bool in the export resource, this may be swapped for the
+// default (legacy) ResourceExporter definition defined in architect_flow schema file
+var newFlowResourceExporter *ResourceExporter
+
+func SetNewFlowResourceExporter(r *ResourceExporter) {
+	newFlowResourceExporter = r
+}
+
+func GetNewFlowResourceExporter() *ResourceExporter {
+	return newFlowResourceExporter
 }

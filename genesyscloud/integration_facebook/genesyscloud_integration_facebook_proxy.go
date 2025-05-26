@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -177,5 +178,10 @@ func updateIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 
 // deleteIntegrationFacebookFn is an implementation function for deleting a Genesys Cloud integration facebook
 func deleteIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProxy, id string) (response *platformclientv2.APIResponse, err error) {
-	return p.conversationsApi.DeleteConversationsMessagingIntegrationsFacebookIntegrationId(id)
+	resp, err := p.conversationsApi.DeleteConversationsMessagingIntegrationsFacebookIntegrationId(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.facebookCache, id)
+	return resp, nil
 }

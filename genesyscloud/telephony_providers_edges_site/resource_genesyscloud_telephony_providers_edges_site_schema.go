@@ -1,15 +1,14 @@
 package telephony_providers_edges_site
 
 import (
-	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"terraform-provider-genesyscloud/genesyscloud/validators"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -181,7 +180,15 @@ func ResourceSite() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 1,
+		SchemaVersion: 2,
+		StateUpgraders: []schema.StateUpgrader{
+			// Upgrade state from outbound_routes as a site attribute to it's own dedicated resource
+			{
+				Type:    resourceSiteResourceV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceSiteUpgradeV1ToV2,
+				Version: 1,
+			},
+		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the entity.",
@@ -243,15 +250,6 @@ func ResourceSite() *schema.Resource {
 				Computed:    true,
 				Elem:        numberPlansSchema,
 			},
-			"outbound_routes": {
-				Description: "Outbound Routes for the site. The default outbound route will be deleted if routes are specified",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        outboundRouteSchema,
-				Deprecated:  fmt.Sprintf("The outbound routes property is deprecated in %s, please use independent outbound routes resource instead, genesyscloud_telephony_providers_edges_site_outbound_route", ResourceType),
-			},
 			"primary_sites": {
 				Description: `Used for primary phone edge assignment on physical edges only.  List of primary sites the phones can be assigned to. If no primary_sites are defined, the site id for this site will be used as the primary site id.`,
 				Optional:    true,
@@ -289,8 +287,7 @@ func SiteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSites),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"location_id": {RefType: "genesyscloud_location"},
-			"outbound_routes.external_trunk_base_ids": {RefType: "genesyscloud_telephony_providers_edges_trunkbasesettings"},
+			"location_id":     {RefType: "genesyscloud_location"},
 			"primary_sites":   {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"secondary_sites": {RefType: "genesyscloud_telephony_providers_edges_site"},
 		},

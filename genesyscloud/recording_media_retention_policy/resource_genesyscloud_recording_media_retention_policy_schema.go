@@ -1,9 +1,9 @@
 package recording_media_retention_policy
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -144,6 +144,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"duration": {
 				Description: "",
 				Type:        schema.TypeList,
@@ -193,6 +199,12 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        timeAllowed,
+			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"duration": {
 				Description: "",
@@ -244,6 +256,18 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"customer_participation": {
+				Description:  "This condition is to filter out conversation with and without customer participation. Valid values: YES, NO.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"YES", "NO"}, false),
+			},
 		},
 	}
 
@@ -286,6 +310,18 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        timeAllowed,
+			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"customer_participation": {
+				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"YES", "NO"}, false),
 			},
 		},
 	}
@@ -343,6 +379,18 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        timeAllowed,
+			},
+			"team_ids": {
+				Description: "Teams to match conversations against",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"customer_participation": {
+				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"YES", "NO"}, false),
 			},
 		},
 	}
@@ -429,9 +477,14 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 		},
 	}
 
-	agentTimeInterval := &schema.Resource{
+	evalTimeInterval := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"months": {
+			"hours": {
+				Description: "",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"days": {
 				Description: "",
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -441,22 +494,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
-			"days": {
-				Description: "",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-		},
-	}
-
-	evalTimeInterval := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"hours": {
-				Description: "",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"days": {
+			"months": {
 				Description: "",
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -546,7 +584,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Elem:        agentTimeInterval,
+				Elem:        evalTimeInterval,
 			},
 			"time_zone": {
 				Description: "",
@@ -1031,6 +1069,11 @@ func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 			"media_policies.message_policy.actions.assign_evaluations.user_id":                            {RefType: "genesyscloud_user"},
 			"media_policies.email_policy.actions.assign_evaluations.user_id":                              {RefType: "genesyscloud_user"},
 			"actions.assign_evaluations.user_id":                                                          {RefType: "genesyscloud_user"},
+			"conditions.team_ids":                                                                         {RefType: "genesyscloud_team"},
+			"media_policies.message_policy.conditions.team_ids":                                           {RefType: "genesyscloud_team"},
+			"media_policies.call_policy.conditions.team_ids":                                              {RefType: "genesyscloud_team"},
+			"media_policies.chat_policy.conditions.team_ids":                                              {RefType: "genesyscloud_team"},
+			"media_policies.email_policy.conditions.team_ids":                                             {RefType: "genesyscloud_team"},
 		},
 		AllowZeroValues: []string{"order"},
 		RemoveIfMissing: map[string][]string{

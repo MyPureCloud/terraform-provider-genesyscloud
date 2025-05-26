@@ -2,9 +2,8 @@ package routing_email_route
 
 import (
 	"context"
-	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -18,7 +17,6 @@ import (
 */
 
 // dataSourceRoutingEmailRouteRead retrieves by pattern, domainId the id in question
-
 func dataSourceRoutingEmailRouteRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailRouteProxy(sdkConfig)
@@ -29,11 +27,11 @@ func dataSourceRoutingEmailRouteRead(ctx context.Context, d *schema.ResourceData
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		responseId, retryable, resp, err := proxy.getRoutingEmailRouteIdByPattern(ctx, pattern, domainId)
 
-		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting routing email route %s | error: %s", pattern, err), resp))
-		}
-		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No routing email route found with pattern %s", pattern), resp))
+		if err != nil {
+			if !retryable {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, err.Error(), resp))
+			}
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, err.Error(), resp))
 		}
 
 		d.SetId(responseId)

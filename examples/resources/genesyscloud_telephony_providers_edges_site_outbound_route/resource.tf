@@ -1,4 +1,3 @@
-// To enable this resource, set ENABLE_STANDALONE_OUTBOUND_ROUTES as an environment variable
 resource "genesyscloud_telephony_providers_edges_site_outbound_routes" "site1-route1" {
   site_id                 = genesyscloud_telephony_providers_edges_site.site1.id
   name                    = "outboundRoute 1"

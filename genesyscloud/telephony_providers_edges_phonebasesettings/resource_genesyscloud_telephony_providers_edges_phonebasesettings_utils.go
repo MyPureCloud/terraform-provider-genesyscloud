@@ -3,13 +3,13 @@ package telephony_providers_edges_phonebasesettings
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func generatePhoneBaseSettingsDataSource(
@@ -143,6 +143,11 @@ func BuildTelephonyLineBaseProperties(d *schema.ResourceData) *map[string]interf
 					"instance": lineBaseMap["station_persistent_enabled"].(bool),
 				},
 			},
+			"station_persistent_webrtc_enabled": &map[string]interface{}{
+				"value": &map[string]interface{}{
+					"instance": lineBaseMap["station_persistent_webrtc_enabled"].(bool),
+				},
+			},
 			"station_persistent_timeout": &map[string]interface{}{
 				"value": &map[string]interface{}{
 					"instance": lineBaseMap["station_persistent_timeout"].(int),
@@ -165,14 +170,20 @@ func flattenTelephonyLineBaseProperties(lineBase *[]platformclientv2.Linebase) [
 		return []interface{}{lineBaseMap}
 	}
 	if enabledKey, ok := (*propertiesObject)["station_persistent_enabled"].(map[string]interface{}); ok && enabledKey != nil {
-		enabledValue := enabledKey["value"].(map[string]interface{})["instance"]
-		if enabledValue != nil {
+		enabledValue, ok := enabledKey["value"].(map[string]interface{})["instance"]
+		if ok && enabledValue != nil {
 			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_enabled", &enabledValue)
 		}
 	}
+	if enabledKey, ok := (*propertiesObject)["station_persistent_webrtc_enabled"].(map[string]interface{}); ok && enabledKey != nil {
+		enabledValue, ok := enabledKey["value"].(map[string]interface{})["instance"]
+		if ok && enabledValue != nil {
+			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_webrtc_enabled", &enabledValue)
+		}
+	}
 	if timeOutKey, ok := (*propertiesObject)["station_persistent_timeout"].(map[string]interface{}); ok && timeOutKey != nil {
-		timeOutKey := timeOutKey["value"].(map[string]interface{})["instance"]
-		if timeOutKey != nil {
+		timeOutKey, ok := timeOutKey["value"].(map[string]interface{})["instance"]
+		if ok && timeOutKey != nil {
 			resourcedata.SetMapValueIfNotNil(lineBaseMap, "station_persistent_timeout", &timeOutKey)
 		}
 	}

@@ -1,12 +1,12 @@
 package organization_authentication_settings
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 /*
@@ -76,7 +76,8 @@ var timeOutSettings = &schema.Resource{
 			Description: `Indicates whether the Token Timeout should be enabled or disabled.`,
 			Required:    true,
 			Type:        schema.TypeBool,
-		}, `idle_token_timeout_seconds`: {
+		},
+		`idle_token_timeout_seconds`: {
 			Description: `Token timeout length in seconds. Must be at least 5 minutes and 8 hours or less (if HIPAA is disabled) or 15 minutes or less (if HIPAA is enabled).`,
 			Required:    true,
 			Type:        schema.TypeInt,
@@ -142,5 +143,8 @@ func OrganizationAuthenticationSettingsExporter() *resourceExporter.ResourceExpo
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOrganizationAuthenticationSettings),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		AllowZeroValues: []string{
+			"timeout_settings.idle_token_timeout_seconds",
+		},
 	}
 }

@@ -1,10 +1,10 @@
 package outbound_filespecificationtemplate
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func getFilespecificationtemplateFromResourceData(d *schema.ResourceData) platformclientv2.Filespecificationtemplate {

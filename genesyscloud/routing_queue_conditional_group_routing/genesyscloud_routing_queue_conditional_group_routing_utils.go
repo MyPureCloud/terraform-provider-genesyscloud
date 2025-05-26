@@ -2,11 +2,11 @@ package routing_queue_conditional_group_routing
 
 import (
 	"fmt"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func buildConditionalGroupRouting(rules []interface{}) ([]platformclientv2.Conditionalgrouproutingrule, error) {

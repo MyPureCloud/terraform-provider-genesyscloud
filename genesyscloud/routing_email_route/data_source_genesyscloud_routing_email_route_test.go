@@ -2,10 +2,10 @@ package routing_email_route
 
 import (
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -68,7 +68,7 @@ func generateRoutingEmailRouteDataSource(
 	return fmt.Sprintf(`
 		data "genesyscloud_routing_email_route" "%s" {
 			pattern = "%s"
-			domain_id = "%s"
+			domain_id = %s
 			depends_on=[%s]
 		}
 	`, resourceLabel, pattern, domainId, dependsOn)

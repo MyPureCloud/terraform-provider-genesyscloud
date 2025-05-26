@@ -2,12 +2,12 @@ package outbound_contact_list_contact
 
 import (
 	"context"
+	contactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"log"
-	contactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var contactCache = rc.NewResourceCache[platformclientv2.Dialercontact]()

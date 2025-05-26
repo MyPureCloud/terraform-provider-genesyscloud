@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -132,7 +133,7 @@ func getAllJourneyActionMapsFn(ctx context.Context, p *journeyActionMapProxy) (*
 	var allActionMaps []platformclientv2.Actionmap
 	const pageSize = 100
 
-	actionMaps, resp, err := p.journeyApi.GetJourneyActionmaps(pageSize, 1, "", "", "", nil, nil, "")
+	actionMaps, resp, err := p.journeyApi.GetJourneyActionmaps(1, pageSize, "", "", "", nil, nil, "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get journey action maps: %s", err)
 	}
@@ -144,7 +145,7 @@ func getAllJourneyActionMapsFn(ctx context.Context, p *journeyActionMapProxy) (*
 	allActionMaps = append(allActionMaps, *actionMaps.Entities...)
 
 	for pageNum := 2; pageNum <= *actionMaps.PageCount; pageNum++ {
-		actionMaps, resp, err := p.journeyApi.GetJourneyActionmaps(pageSize, pageNum, "", "", "", nil, nil, "")
+		actionMaps, resp, err := p.journeyApi.GetJourneyActionmaps(pageNum, pageSize, "", "", "", nil, nil, "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("Failed to get journey action maps page %d: %s", pageNum, err)
 		}
@@ -214,5 +215,6 @@ func deleteJourneyActionMapFn(ctx context.Context, p *journeyActionMapProxy, id 
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete journey action map %s: %s", id, err)
 	}
+	rc.DeleteCacheItem(p.actionMapCache, id)
 	return resp, nil
 }

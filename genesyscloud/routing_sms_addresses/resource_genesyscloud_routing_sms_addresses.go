@@ -3,22 +3,22 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 const ResourceType = "genesyscloud_routing_sms_address"
@@ -33,56 +33,38 @@ func getAllRoutingSmsAddress(ctx context.Context, clientConfig *platformclientv2
 	}
 
 	for _, entity := range *allSmsAddresses {
-		var name string
+		var blockLabel string
 		if entity.Name != nil {
-			name = *entity.Name
+			blockLabel = *entity.Name
+		} else if entity.PostalCode != nil {
+			blockLabel = *entity.PostalCode
 		} else {
-			name = *entity.Id
+			blockLabel = *entity.Id
 		}
-		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: name}
+		resources[*entity.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 	return resources, nil
 }
 
 func createRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
-	street := d.Get("street").(string)
-	city := d.Get("city").(string)
-	region := d.Get("region").(string)
-	postalCode := d.Get("postal_code").(string)
-	countryCode := d.Get("country_code").(string)
-	autoCorrectAddress := d.Get("auto_correct_address").(bool)
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSmsAddressProxy(sdkConfig)
 
 	sdkSmsAddressProvision := platformclientv2.Smsaddressprovision{
-		AutoCorrectAddress: &autoCorrectAddress,
-	}
-
-	if name != "" {
-		sdkSmsAddressProvision.Name = &name
-	}
-	if street != "" {
-		sdkSmsAddressProvision.Street = &street
-	}
-	if city != "" {
-		sdkSmsAddressProvision.City = &city
-	}
-	if region != "" {
-		sdkSmsAddressProvision.Region = &region
-	}
-	if postalCode != "" {
-		sdkSmsAddressProvision.PostalCode = &postalCode
-	}
-	if countryCode != "" {
-		sdkSmsAddressProvision.CountryCode = &countryCode
+		Name:               &name, // is optional but must be an empty string. Null here will return a 400 error
+		Street:             platformclientv2.String(d.Get("street").(string)),
+		City:               platformclientv2.String(d.Get("city").(string)),
+		Region:             platformclientv2.String(d.Get("region").(string)),
+		PostalCode:         platformclientv2.String(d.Get("postal_code").(string)),
+		CountryCode:        platformclientv2.String(d.Get("country_code").(string)),
+		AutoCorrectAddress: platformclientv2.Bool(d.Get("auto_correct_address").(bool)),
 	}
 
 	log.Printf("Creating Routing Sms Address %s", name)
 	routingSmsAddress, resp, err := proxy.createSmsAddress(sdkSmsAddressProvision)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create sms address %s error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create sms address with name '%s'. Error: %s", name, err.Error()), resp)
 	}
 
 	d.SetId(*routingSmsAddress.Id)
@@ -100,10 +82,11 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkSmsAddress, resp, getErr := proxy.getSmsAddressById(d.Id())
 		if getErr != nil {
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Routing Sms Address %s | error: %s", d.Id(), getErr), resp)
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Routing Sms Address %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Routing Sms Address %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(diagErr)
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkSmsAddress.Name)

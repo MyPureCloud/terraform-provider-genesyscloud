@@ -11,15 +11,131 @@ Genesys Cloud Routing Queue
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/routing/queues](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues)
-* [GET /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--members)
-* [GET /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId-)
-* [POST /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--members)
-* [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-queues--queueId--members--memberId-)
-* [DELETE /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId-)
-* [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--wrapupcodes)
-* [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--wrapupcodes)
-* [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
+- [POST /api/v2/routing/queues](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues)
+- [GET /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--members)
+- [GET /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId-)
+- [POST /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--members)
+- [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-queues--queueId--members--memberId-)
+- [DELETE /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId-)
+- [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--wrapupcodes)
+- [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--wrapupcodes)
+- [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
+
+## Schema Migration: Routing Queue V1 to V2
+
+### Migration Details
+
+As of v1.61.0 of the provider, the Genesys Cloud Routing Queue resource type includes a schema migration that removes several vestigial attributes from the media settings blocks.
+
+#### Removed Attributes
+
+The following attributes have been removed from the following media settings blocks: `media_settings_call`, `media_settings_email`, `media_settings_chat`, and `media_settings_message`:
+
+- `mode`
+- `enable_auto_dial_and_end`
+- `auto_dial_delay_seconds`
+- `auto_end_delay_seconds`
+
+#### Migration Process
+
+The migration of the state will automatically occur when running terraform init with version 1.61.0 or later of the provider. The migration process:
+
+- Preserves all other existing attributes and their values
+- Removes the deprecated attributes listed above from the state
+- Maintains the functionality of the queue resource
+-
+
+#### Example State Changes
+
+Before migration:
+
+```hcl
+resource "genesyscloud_routing_queue" "example" {
+  name = "Example Queue"
+  media_settings_callback {
+    enable_auto_answer        = false
+    mode                      = "AgentFirst"
+    alerting_timeout_sec      = 30
+    auto_end_delay_seconds    = 300
+    enable_auto_dial_and_end  = false
+    service_level_duration_ms = 20000
+    service_level_percentage  = 0.8
+    auto_dial_delay_seconds   = 300
+  }
+  media_settings_chat {
+    enable_auto_answer        = false
+    enable_auto_dial_and_end  = false
+    service_level_duration_ms = 20000
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 30
+  }
+  media_settings_message {
+    service_level_duration_ms = 20000
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 30
+    enable_auto_answer        = false
+    enable_auto_dial_and_end  = false
+  }
+  media_settings_call {
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 8
+    enable_auto_answer        = false
+    enable_auto_dial_and_end  = false
+    service_level_duration_ms = 20000
+  }
+  media_settings_email {
+    enable_auto_dial_and_end  = false
+    service_level_duration_ms = 86400000
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 300
+    enable_auto_answer        = false
+  }
+  ...
+}
+```
+
+After migration:
+
+```hcl
+resource "genesyscloud_routing_queue" "example" {
+  name = "Example Queue"
+  media_settings_callback {
+    enable_auto_answer        = false
+    mode                      = "AgentFirst"
+    alerting_timeout_sec      = 30
+    auto_end_delay_seconds    = 300
+    enable_auto_dial_and_end  = false
+    service_level_duration_ms = 20000
+    service_level_percentage  = 0.8
+    auto_dial_delay_seconds   = 300
+  }
+  media_settings_chat {
+    service_level_duration_ms = 20000
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 30
+  }
+  media_settings_message {
+    service_level_duration_ms = 20000
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 30
+  }
+  media_settings_call {
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 8
+    service_level_duration_ms = 20000
+  }
+  media_settings_email {
+    service_level_duration_ms = 86400000
+    service_level_percentage  = 0.8
+    alerting_timeout_sec      = 300
+  }
+}
+```
+
+#### Action Required
+
+The state will be automatically upgraded when you run terraform init with version 1.60.0 or later of the provider. After this, you will have to update your config to remove these attributes from the `media_settings_call`, `media_settings_email`, `media_settings_chat`, and `media_settings_message` config blocks as they are no longer supported.
+
 
 ## Example Usage
 
@@ -101,12 +217,14 @@ resource "genesyscloud_routing_queue" "example_queue" {
 - `enable_manual_assignment` (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
 - `enable_transcription` (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
 - `groups` (Set of String) List of group ids assigned to the queue
+- `ignore_members` (Boolean) If true, queue members will not be managed through Terraform state or API updates. This provides backwards compatibility for configurations where queue members are managed outside of Terraform.
+- `last_agent_routing_mode` (String) The Last Agent Routing Mode for the queue.
 - `media_settings_call` (Block List, Max: 1) Call media settings. (see [below for nested schema](#nestedblock--media_settings_call))
 - `media_settings_callback` (Block List, Max: 1) Callback media settings. (see [below for nested schema](#nestedblock--media_settings_callback))
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
 - `media_settings_email` (Block List, Max: 1) Email media settings. (see [below for nested schema](#nestedblock--media_settings_email))
 - `media_settings_message` (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
-- `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedatt--members))
+- `members` (Block Set) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedblock--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `on_hold_prompt_id` (String) The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
 - `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. **Note**: outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address (see [below for nested schema](#nestedblock--outbound_email_address))
@@ -166,7 +284,7 @@ Required:
 
 Optional:
 
-- `library_ids` (List of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
+- `library_ids` (Set of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
 - `mode` (String) The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.
 
 
@@ -214,11 +332,7 @@ Optional:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_call--sub_type_settings))
@@ -239,11 +353,18 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
+- `answering_machine_flow_id` (String) The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.
+- `answering_machine_reaction_type` (String) The action to take if an answering machine is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
+- `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
 - `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
 - `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Auto Dial and End Defaults to `false`.
+- `live_voice_flow_id` (String) The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.
+- `live_voice_reaction_type` (String) The action to take if a live voice is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
+- `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
 - `mode` (String) The mode callbacks will use on this queue.
+- `pacing_modifier` (Number) Controls the maximum number of outbound calls at one time when mode is CustomerFirst.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_callback--sub_type_settings))
@@ -264,11 +385,7 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_chat--sub_type_settings))
@@ -289,11 +406,7 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_email--sub_type_settings))
@@ -314,11 +427,7 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_auto_dial_and_end` (Boolean) Auto Dail and End Defaults to `false`.
-- `mode` (String) The mode callbacks will use on this queue.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
@@ -333,13 +442,16 @@ Required:
 
 
 
-<a id="nestedatt--members"></a>
+<a id="nestedblock--members"></a>
 ### Nested Schema for `members`
+
+Required:
+
+- `user_id` (String) User ID
 
 Optional:
 
-- `ring_num` (Number)
-- `user_id` (String)
+- `ring_num` (Number) Ring number between 1 and 6 for this user in the queue. Defaults to `1`.
 
 
 <a id="nestedblock--outbound_email_address"></a>

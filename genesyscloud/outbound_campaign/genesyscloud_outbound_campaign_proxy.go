@@ -3,15 +3,15 @@ package outbound_campaign
 import (
 	"context"
 	"fmt"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
-	rc "terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -136,7 +136,7 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 
 // createOutboundCampaignFn is an implementation function for creating a Genesys Cloud outbound campaign
 func createOutboundCampaignFn(_ context.Context, p *outboundCampaignProxy, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
-	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign)
+	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, false)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create campaign %s", err)
 	}
@@ -215,7 +215,7 @@ func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id 
 	}
 
 	outboundCampaign.Version = campaign.Version
-	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign)
+	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, false)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update campaign: %s", err)
 	}

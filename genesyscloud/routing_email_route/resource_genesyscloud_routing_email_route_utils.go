@@ -3,12 +3,12 @@ package routing_email_route
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -70,10 +70,11 @@ func buildAutoBccEmailAddresses(d *schema.ResourceData) *[]platformclientv2.Emai
 	return nil
 }
 
-func buildReplyEmailAddress(domainID string, routeID string) *platformclientv2.Queueemailaddress {
+func buildReplyEmailAddress(domainID string, routeID string, pattern string) *platformclientv2.Queueemailaddress {
 	// For some reason the SDK expects a pointer to a pointer for this property
 	inboundRoute := &platformclientv2.Inboundroute{
-		Id: &routeID,
+		Id:      &routeID,
+		Pattern: &pattern,
 	}
 	result := platformclientv2.Queueemailaddress{
 		Domain: &platformclientv2.Domainentityref{Id: &domainID},
@@ -118,7 +119,7 @@ func flattenReplyEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 
 func validateSdkReplyEmailAddress(d *schema.ResourceData) (bool, error) {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
-	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
+	if len(replyEmailAddress) > 0 {
 		settingsMap := replyEmailAddress[0].(map[string]interface{})
 
 		routeID := settingsMap["route_id"].(string)
@@ -138,8 +139,11 @@ func validateSdkReplyEmailAddress(d *schema.ResourceData) (bool, error) {
 
 func extractReplyEmailAddressValue(d *schema.ResourceData) (string, string, bool) {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
-	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
-		settingsMap := replyEmailAddress[0].(map[string]interface{})
+	if len(replyEmailAddress) > 0 {
+		settingsMap, ok := replyEmailAddress[0].(map[string]interface{})
+		if !ok {
+			return "", "", false
+		}
 
 		return settingsMap["domain_id"].(string), settingsMap["route_id"].(string), settingsMap["self_reference_route"].(bool)
 	}
@@ -149,8 +153,11 @@ func extractReplyEmailAddressValue(d *schema.ResourceData) (string, string, bool
 
 func isSelfReferenceRouteSet(d *schema.ResourceData) bool {
 	replyEmailAddress := d.Get("reply_email_address").([]interface{})
-	if replyEmailAddress != nil && len(replyEmailAddress) > 0 {
-		settingsMap := replyEmailAddress[0].(map[string]interface{})
+	if len(replyEmailAddress) > 0 {
+		settingsMap, ok := replyEmailAddress[0].(map[string]interface{})
+		if !ok {
+			return false
+		}
 		return settingsMap["self_reference_route"].(bool)
 	}
 
@@ -174,14 +181,11 @@ func GenerateRoutingEmailRouteResource(
 	pattern string,
 	fromName string,
 	otherAttrs ...string) string {
-	hh := fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_routing_email_route" "%s" {
             domain_id = %s
             pattern = "%s"
             from_name = "%s"
             %s
         }
         `, resourceLabel, domainID, pattern, fromName, strings.Join(otherAttrs, "\n"))
-
-	fmt.Println(hh)
-	return hh
 }

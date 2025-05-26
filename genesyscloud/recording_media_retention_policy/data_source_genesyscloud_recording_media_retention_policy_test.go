@@ -5,20 +5,22 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	authRole "terraform-provider-genesyscloud/genesyscloud/auth_role"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	routingEmailDomain "terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingLanguage "terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	userRoles "terraform-provider-genesyscloud/genesyscloud/user_roles"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
+	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -134,19 +136,18 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		},
 	}
 
+	const domainPrefix = "terraformmedia"
 	var (
 		domainResourceLabel = "routing-domain1"
-		domainId            = "terraformmedia" + strconv.Itoa(rand.Intn(1000)) + ".com"
+		domainId            = domainPrefix + strconv.Itoa(rand.Intn(1000)) + ".com"
 		divResourceLabel    = "test-division"
 		divName             = "terraform-" + uuid.NewString()
 		description         = "Terraform test description"
 	)
 
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
+	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
+		t.Logf("Failed to cleanup domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
-	CleanupRoutingEmailDomains()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -173,8 +174,8 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 						generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel1+".id"),
 					) +
 					generateUserWithCustomAttrs(userResourceLabel1, userEmail, userName) +
-					gcloud.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
-					gcloud.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(evaluationFormResourceLabel1, &evaluationFormResourceBody) +
+					qualityFormsSurvey.GenerateSurveyFormResource(surveyFormResourceLabel1, &surveyFormResourceBody) +
 					integration.GenerateIntegrationResource(integrationResourceLabel1, strconv.Quote(integrationIntendedState), strconv.Quote(integrationType), "") +
 					routingLanguage.GenerateRoutingLanguageResource(languageResourceLabel1, languageName) +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +

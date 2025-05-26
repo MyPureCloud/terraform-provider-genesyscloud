@@ -3,20 +3,20 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -51,7 +51,11 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 
 	for _, integration := range *integrations {
 		log.Printf("Dealing with integration id : %s, integration Name : %s", *integration.Id, *integration.Name)
-		resources[*integration.Id] = &resourceExporter.ResourceMeta{BlockLabel: *integration.Name}
+		blockHash, err := util.QuickHashFields(integration.IntegrationType.Id) // .Id is not a GUID here. It is a human readable consistent value.
+		if err != nil {
+			return nil, diag.Errorf("failed to generate quick hash for integration %s: %v", *integration.Name, err)
+		}
+		resources[*integration.Id] = &resourceExporter.ResourceMeta{BlockLabel: *integration.Name, BlockHash: blockHash}
 	}
 	return resources, nil
 }

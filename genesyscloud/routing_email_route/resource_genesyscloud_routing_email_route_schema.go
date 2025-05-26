@@ -2,12 +2,12 @@ package routing_email_route
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 /*
@@ -74,9 +74,10 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Required:    true,
 			},
 			"from_email": {
-				Description: "The sender email to use for outgoing replies. This should not be set if reply_email_address is specified.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:   "The sender email to use for outgoing replies. This should not be set if reply_email_address is specified.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ConflictsWith: []string{"reply_email_address"},
 			},
 			"queue_id": {
 				Description: "The queue to route the emails to. This should not be set if a flow_id is specified.",
@@ -117,39 +118,48 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Optional:    true,
 			},
 			"reply_email_address": {
-				Description: "The route to use for email replies. This should not be set if from_email or auto_bcc are specified.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
+				Description:   "The route to use for email replies. This should not be set if from_email or auto_bcc are specified.",
+				Type:          schema.TypeList,
+				MaxItems:      1,
+				Optional:      true,
+				ConflictsWith: []string{"from_email", "auto_bcc"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"domain_id": {
-							Description: "Domain of the route.",
-							Type:        schema.TypeString,
-							Required:    true,
+							Description:   "Domain of the route.",
+							Type:          schema.TypeString,
+							ConflictsWith: []string{"reply_email_address.0.self_reference_route"},
+							RequiredWith:  []string{"reply_email_address.0.route_id"},
+							Optional:      true,
+							Computed:      true,
 						},
 						"route_id": {
-							Description: "ID of the route.",
-							Type:        schema.TypeString,
-							Required:    false,
-							Optional:    true,
+							Description:   "ID of the route.",
+							Type:          schema.TypeString,
+							ConflictsWith: []string{"reply_email_address.0.self_reference_route"},
+							RequiredWith:  []string{"reply_email_address.0.domain_id"},
+							AtLeastOneOf:  []string{"reply_email_address.0.self_reference_route"},
+							Optional:      true,
 						},
 						"self_reference_route": {
 							Description: `Use this route as the reply email address. If true you will use the route id for this resource as the reply and you
-							              can not set a route. If you set this value to false (or leave the attribute off)you must set a route id.`,
-							Type:     schema.TypeBool,
-							Required: false,
-							Optional: true,
-							Default:  false,
+							              can not set a route. If you set this value to false (or leave the attribute off) you must set a route id and matching domain.`,
+							Type:          schema.TypeBool,
+							ConflictsWith: []string{"reply_email_address.0.domain_id", "reply_email_address.0.route_id"},
+							AtLeastOneOf:  []string{"reply_email_address.0.route_id"},
+							Required:      false,
+							Optional:      true,
+							Default:       false,
 						},
 					},
 				},
 			},
 			"auto_bcc": {
-				Description: "The recipients that should be automatically blind copied on outbound emails associated with this route. This should not be set if reply_email_address is specified.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        bccEmailResource,
+				Description:   "The recipients that should be automatically blind copied on outbound emails associated with this route. This should not be set if reply_email_address is specified.",
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Elem:          bccEmailResource,
+				ConflictsWith: []string{"reply_email_address"},
 			},
 			"spam_flow_id": {
 				Description: "The flow to use for processing inbound emails that have been marked as spam.",

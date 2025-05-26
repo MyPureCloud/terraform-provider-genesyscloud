@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
+	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

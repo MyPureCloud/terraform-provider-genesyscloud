@@ -37,6 +37,7 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
   default_language_id = genesyscloud_routing_language.language_skill.id
   default_queue_id    = genesyscloud_routing_queue.my_queue.id
   default_skills_ids  = [genesyscloud_routing_skill.skill_1.id, genesyscloud_routing_skill.skill_2.id]
+  default_script_id   = genesyscloud_script.script.id
 
   assignment_enabled = true
 }
@@ -59,9 +60,11 @@ resource "genesyscloud_task_management_worktype" "worktype_1" {
 - `default_language_id` (String) The default routing language for Workitems created from the Worktype.
 - `default_priority` (Number) The default priority for Workitems created from the Worktype. The valid range is between -25,000,000 and 25,000,000.
 - `default_queue_id` (String) The default queue for Workitems created from the Worktype.
+- `default_script_id` (String) The default script for Workitems created from the Worktype.
 - `default_skills_ids` (List of String) The default skills for Workitems created from the Worktype.
 - `default_ttl_seconds` (Number) The default time to time to live in seconds for Workitems created from the Worktype.
 - `description` (String) The description of the Worktype.
+- `disable_default_status_creation` (Boolean) Optionally set this flag to disable Default Status creation
 - `division_id` (String) The division to which this entity belongs.
 - `schema_id` (String) Id of the workitem schema.
 - `schema_version` (Number) Version of the workitem schema to use. If not provided, the worktype will use the latest version.

@@ -3,14 +3,14 @@ package architect_flow
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"testing"
 	"time"
 
@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -383,6 +383,67 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
+}
+
+func TestUnitSanitizeFlowName(t *testing.T) {
+	// Define test cases with input and expected output
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "Single space",
+			input:    "hello world",
+			expected: "hello_world",
+		},
+		{
+			name:     "Multiple spaces",
+			input:    "hello   world",
+			expected: "hello___world",
+		},
+		{
+			name:     "Forward slashes",
+			input:    "path/to/file",
+			expected: "path_to_file",
+		},
+		{
+			name:     "Back slashes",
+			input:    "path\\to\\file",
+			expected: "path_to_file",
+		},
+		{
+			name:     "Mixed slashes and spaces",
+			input:    "path/to\\file   name",
+			expected: "path_to_file___name",
+		},
+		{
+			name:     "Leading and trailing spaces",
+			input:    " hello world  ",
+			expected: "_hello_world__",
+		},
+		{
+			name:     "Complex mixed case",
+			input:    "  path/to\\file   name  with/\\spaces",
+			expected: "__path_to_file___name__with__spaces",
+		},
+	}
+
+	// Run all test cases
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sanitizeFlowName(tt.input)
+			if result != tt.expected {
+				t.Errorf("sanitizeFlowName(%q) = %q, want %q",
+					tt.input, result, tt.expected)
+			}
+		})
+	}
 }
 
 // Check if flow is published, then check if flow name and type are correct

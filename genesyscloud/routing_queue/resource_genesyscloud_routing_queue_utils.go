@@ -3,15 +3,15 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"os"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	"terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 // Build Functions
@@ -41,7 +41,7 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if len(mediaSettingsMessage) > 0 {
-		queueMediaSettings.Message = buildSdkMediaSetting(mediaSettingsMessage)
+		queueMediaSettings.Message = buildSdkMediaSettingsMessage(mediaSettingsMessage)
 	}
 
 	return queueMediaSettings
@@ -129,7 +129,13 @@ func buildAgentOwnedRouting(routing []interface{}) *platformclientv2.Agentownedr
 }
 
 func buildSdkMediaEmailSetting(settings []interface{}) *platformclientv2.Emailmediasettings {
-	settingsMap := settings[0].(map[string]interface{})
+	if len(settings) == 0 {
+		return nil
+	}
+	settingsMap, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	return &platformclientv2.Emailmediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
@@ -142,7 +148,13 @@ func buildSdkMediaEmailSetting(settings []interface{}) *platformclientv2.Emailme
 }
 
 func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasettings {
-	settingsMap := settings[0].(map[string]interface{})
+	if settings == nil {
+		return nil
+	}
+	settingsMap, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	return &platformclientv2.Mediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
@@ -155,20 +167,86 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 	}
 }
 
-func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
-	settingsMap := settings[0].(map[string]interface{})
-	return &platformclientv2.Callbackmediasettings{
-		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
-		ServiceLevel: &platformclientv2.Servicelevel{
-			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
-			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
-		},
-		EnableAutoAnswer:     platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
-		AutoEndDelaySeconds:  platformclientv2.Int(settingsMap["auto_end_delay_seconds"].(int)),
-		AutoDialDelaySeconds: platformclientv2.Int(settingsMap["auto_dial_delay_seconds"].(int)),
-		EnableAutoDialAndEnd: platformclientv2.Bool(settingsMap["enable_auto_dial_and_end"].(bool)),
-		Mode:                 platformclientv2.String(settingsMap["mode"].(string)),
+func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemediasettings {
+	if len(settings) == 0 {
+		return nil
 	}
+	settingsMap, ok := settings[0].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	var messageMediaSettings platformclientv2.Messagemediasettings
+
+	if v, ok := settingsMap["alerting_timeout_sec"].(int); ok {
+		messageMediaSettings.AlertingTimeoutSeconds = &v
+	}
+
+	if v, ok := settingsMap["enable_auto_answer"].(bool); ok {
+		messageMediaSettings.EnableAutoAnswer = &v
+	}
+
+	if v, ok := settingsMap["service_level_percentage"].(float64); ok {
+		messageMediaSettings.ServiceLevel = &platformclientv2.Servicelevel{
+			Percentage: &v,
+		}
+	}
+	if v, ok := settingsMap["service_level_duration_ms"].(int); ok {
+		if messageMediaSettings.ServiceLevel != nil {
+			messageMediaSettings.ServiceLevel.DurationMs = &v
+		} else {
+			messageMediaSettings.ServiceLevel = &platformclientv2.Servicelevel{
+				DurationMs: &v,
+			}
+		}
+	}
+
+	if subTypeSettingsList, ok := settingsMap["sub_type_settings"].([]interface{}); ok {
+		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
+	}
+
+	return &messageMediaSettings
+}
+
+func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
+	if len(settings) == 0 {
+		return nil
+	}
+	settingsMap, mapOk := settings[0].(map[string]interface{})
+	if !mapOk {
+		return nil
+	}
+
+	var callbackSettings platformclientv2.Callbackmediasettings
+
+	if serviceLevelPercentage, ok := settingsMap["service_level_percentage"].(float64); ok {
+		callbackSettings.ServiceLevel = &platformclientv2.Servicelevel{
+			Percentage: &serviceLevelPercentage,
+		}
+	}
+
+	if serviceLevelDurationMs, ok := settingsMap["service_level_duration_ms"].(int); ok {
+		if callbackSettings.ServiceLevel == nil {
+			callbackSettings.ServiceLevel = &platformclientv2.Servicelevel{}
+		}
+		callbackSettings.ServiceLevel.DurationMs = &serviceLevelDurationMs
+	}
+
+	callbackSettings.AlertingTimeoutSeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "alerting_timeout_sec", true)
+	callbackSettings.EnableAutoAnswer = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_auto_answer", true)
+	callbackSettings.AutoEndDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "auto_end_delay_seconds", true)
+	callbackSettings.AutoDialDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "auto_dial_delay_seconds", true)
+	callbackSettings.EnableAutoDialAndEnd = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_auto_dial_and_end", true)
+	callbackSettings.Mode = resourcedata.GetNillableValueFromMap[string](settingsMap, "mode", false)
+	callbackSettings.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", true)
+	callbackSettings.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", true)
+	callbackSettings.PacingModifier = resourcedata.GetNillableValueFromMap[float64](settingsMap, "pacing_modifier", false)
+	callbackSettings.LiveVoiceReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "live_voice_reaction_type", false)
+	callbackSettings.LiveVoiceFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "live_voice_flow_id")
+	callbackSettings.AnsweringMachineReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "answering_machine_reaction_type", false)
+	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
+
+	return &callbackSettings
 }
 
 func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Basemediasettings {
@@ -201,12 +279,11 @@ func buildCannedResponseLibraries(d *schema.ResourceData) *platformclientv2.Cann
 	if len(cannedResponseList) > 0 {
 		cannedResponseMap := cannedResponseList[0].(map[string]interface{})
 		resourcedata.BuildSDKStringValueIfNotNil(&cannedResponseSdk.Mode, cannedResponseMap, "mode")
-		if libraryIds, exists := cannedResponseMap["library_ids"].([]interface{}); exists {
-			libraryIdList := lists.InterfaceListToStrings(libraryIds)
+		if libraryIds, exists := cannedResponseMap["library_ids"].(*schema.Set); exists {
+			libraryIdList := lists.InterfaceListToStrings(libraryIds.List())
 			cannedResponseSdk.LibraryIds = &libraryIdList
 		}
 		return &cannedResponseSdk
-
 	}
 	return nil
 }
@@ -463,6 +540,25 @@ func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{}
 	return []interface{}{settingsMap}
 }
 
+func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings) []any {
+	if settings == nil {
+		return nil
+	}
+	settingsMap := make(map[string]any)
+
+	resourcedata.SetMapValueIfNotNil(settingsMap, "alerting_timeout_sec", settings.AlertingTimeoutSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	if settings.ServiceLevel != nil {
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
+	}
+	if settings.SubTypeSettings != nil {
+		settingsMap["sub_type_settings"] = flattenSubTypeSettings(*settings.SubTypeSettings)
+	}
+
+	return []any{settingsMap}
+}
+
 func flattenSubTypeSettings(subType map[string]platformclientv2.Basemediasettings) []interface{} {
 	if subType == nil {
 		return nil
@@ -485,7 +581,7 @@ func flattenCannedResponse(cannedResponse *platformclientv2.Cannedresponselibrar
 	cannedResponseMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(cannedResponseMap, "mode", cannedResponse.Mode)
 	if cannedResponse.LibraryIds != nil {
-		cannedResponseMap["library_ids"] = lists.StringListToInterfaceList(*cannedResponse.LibraryIds)
+		cannedResponseMap["library_ids"] = lists.StringListToSet(*cannedResponse.LibraryIds)
 	}
 	cannedResponseList = append(cannedResponseList, cannedResponseMap)
 
@@ -546,14 +642,22 @@ func flattenAgentOwnedRouting(settings *platformclientv2.Agentownedrouting) []in
 func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
 
-	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
-	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
-	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	resourcedata.SetMapValueIfNotNil(settingsMap, "alerting_timeout_sec", settings.AlertingTimeoutSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
-	settingsMap["auto_end_delay_seconds"] = *settings.AutoEndDelaySeconds
-	settingsMap["auto_dial_delay_seconds"] = *settings.AutoDialDelaySeconds
-	settingsMap["mode"] = *settings.Mode
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_end_delay_seconds", settings.AutoEndDelaySeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_dial_delay_seconds", settings.AutoDialDelaySeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "mode", settings.Mode)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "pacing_modifier", settings.PacingModifier)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "live_voice_reaction_type", settings.LiveVoiceReactionType)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "live_voice_flow_id", settings.LiveVoiceFlow)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "answering_machine_reaction_type", settings.AnsweringMachineReactionType)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
+
 	return []interface{}{settingsMap}
 }
 
@@ -754,6 +858,7 @@ func GenerateRoutingQueueResource(
 	enableAudioMonitoring string,
 	enableManualAssignment string,
 	scoringMethod string,
+	lastAgentRoutingMode string,
 	peerId string,
 	sourceQueueId string,
 	nestedBlocks ...string) string {
@@ -768,6 +873,7 @@ func GenerateRoutingQueueResource(
 		calling_party_number = %s
 		enable_transcription = %s
 		scoring_method = %s
+		last_agent_routing_mode = %s
 		peer_id = %s
 		source_queue_id = %s
         suppress_in_queue_call_recording = %s
@@ -786,6 +892,7 @@ func GenerateRoutingQueueResource(
 		callingPartyNumber,
 		enableTranscription,
 		scoringMethod,
+		lastAgentRoutingMode,
 		peerId,
 		sourceQueueId,
 		suppressInQueueCallRecording,
@@ -946,6 +1053,7 @@ func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Qu
 		MemberGroups:                 &memberGroups,
 		PeerId:                       platformclientv2.String(d.Get("peer_id").(string)),
 		ScoringMethod:                platformclientv2.String(d.Get("scoring_method").(string)),
+		LastAgentRoutingMode:         platformclientv2.String(d.Get("last_agent_routing_mode").(string)),
 	}
 }
 

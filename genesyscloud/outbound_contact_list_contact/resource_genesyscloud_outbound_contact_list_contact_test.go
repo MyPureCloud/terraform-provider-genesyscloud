@@ -2,10 +2,10 @@ package outbound_contact_list_contact
 
 import (
 	"fmt"
+	outboundContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
-	outboundContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -27,7 +27,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 
 		emailColumnKey        = "Email"
 		dataEmailValue        = "email@fake.com"
-		dataEmailValueUpdated = "fake@email.cmo"
+		dataEmailValueUpdated = "fake@email.com"
 
 		contactListResourceLabel     = "contact_list"
 		contactListFullResourceLabel = "genesyscloud_outbound_contact_list." + contactListResourceLabel
@@ -40,8 +40,9 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 	)
 
 	const (
-		emailMediaType = "Email"
-		voiceMediaType = "Voice"
+		emailMediaType    = "Email"
+		voiceMediaType    = "Voice"
+		whatsAppMediaType = "WhatsApp"
 	)
 
 	contactListResource := outboundContactList.GenerateOutboundContactList(
@@ -101,6 +102,10 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 						util.TrueValue, // contactable
 						GenerateColumnStatus(emailColumnKey, util.TrueValue),
 					),
+					GenerateContactableStatus(
+						whatsAppMediaType,
+						util.TrueValue, // contactable
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceLabel, "callable", util.TrueValue),
@@ -114,7 +119,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.0.callable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.key", homeColumnKey),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.callable", util.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "3"),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.media_type", voiceMediaType),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.contactable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.column_status.0.column", cellColumnKey),
@@ -152,6 +157,10 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 						util.TrueValue, // contactable
 						GenerateColumnStatus(emailColumnKey, util.TrueValue),
 					),
+					GenerateContactableStatus(
+						whatsAppMediaType,
+						util.TrueValue, // contactable
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceLabel, "callable", util.FalseValue),
@@ -165,7 +174,7 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.0.callable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.key", homeColumnKey),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.callable", util.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "3"),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.media_type", voiceMediaType),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.contactable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.column_status.0.column", cellColumnKey),
@@ -209,8 +218,9 @@ func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 	)
 
 	const (
-		emailMediaType = "Email"
-		voiceMediaType = "Voice"
+		emailMediaType    = "Email"
+		voiceMediaType    = "Voice"
+		whatsAppMediaType = "WhatsApp"
 	)
 
 	contactListResource := outboundContactList.GenerateOutboundContactList(
@@ -248,7 +258,7 @@ func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 				Config: contactListResource + GenerateOutboundContactListContact(
 					resourceLabel,
 					contactListFullResourceLabel+".id",
-					contactId,
+					strconv.Quote(contactId),
 					util.TrueValue,
 					util.GenerateMapAttrWithMapProperties(
 						"data",
@@ -270,6 +280,15 @@ func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 						util.TrueValue, // contactable
 						GenerateColumnStatus(emailColumnKey, util.TrueValue),
 					),
+					GenerateContactableStatus(
+						emailMediaType,
+						util.TrueValue, // contactable
+						GenerateColumnStatus(emailColumnKey, util.TrueValue),
+					),
+					GenerateContactableStatus(
+						whatsAppMediaType,
+						util.TrueValue, // contactable
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceLabel, "callable", util.TrueValue),
@@ -283,7 +302,7 @@ func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.0.callable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.key", homeColumnKey),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.callable", util.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "3"),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.media_type", voiceMediaType),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.contactable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.column_status.0.column", cellColumnKey),
@@ -299,7 +318,7 @@ func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 				Config: contactListResource + GenerateOutboundContactListContact(
 					resourceLabel,
 					contactListFullResourceLabel+".id",
-					contactId,
+					strconv.Quote(contactId),
 					util.FalseValue,
 					util.GenerateMapAttrWithMapProperties(
 						"data",
@@ -321,6 +340,10 @@ func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 						util.TrueValue, // contactable
 						GenerateColumnStatus(emailColumnKey, util.TrueValue),
 					),
+					GenerateContactableStatus(
+						whatsAppMediaType,
+						util.TrueValue, // contactable
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceLabel, "callable", util.FalseValue),
@@ -334,7 +357,7 @@ func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.0.callable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.key", homeColumnKey),
 					resource.TestCheckResourceAttr(fullResourceLabel, "phone_number_status.1.callable", util.TrueValue),
-					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.#", "3"),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.media_type", voiceMediaType),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.contactable", util.FalseValue),
 					resource.TestCheckResourceAttr(fullResourceLabel, "contactable_status.0.column_status.0.column", cellColumnKey),

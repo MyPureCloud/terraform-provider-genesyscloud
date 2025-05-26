@@ -17,11 +17,11 @@ import (
 	"strings"
 	"time"
 
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 type S3Uploader struct {
@@ -230,10 +230,11 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 	}
 
 	resp, err := client.Do(req)
-	apiResp, apiErr := platformclientv2.NewAPIResponse(resp, nil)
 	if err != nil {
-		return apiResp, err
+		return nil, err
 	}
+	apiResp, apiErr := platformclientv2.NewAPIResponse(resp, nil)
+
 	if apiErr != nil {
 		return apiResp, apiErr
 	}
@@ -247,7 +248,11 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 	if err != nil {
 		return apiResp, err
 	}
-	defer out.Close()
+	defer func(out *os.File) {
+		if err := out.Close(); err != nil {
+			log.Printf("failed to close file: %s", err.Error())
+		}
+	}(out)
 
 	_, err = io.Copy(out, resp.Body)
 	return apiResp, err
@@ -317,4 +322,20 @@ func GetCSVRecordCount(filepath string) (int, error) {
 	}
 
 	return recordCount, nil
+}
+
+// Get a string path to the target export directory
+func GetDirPath(directory string) (string, diag.Diagnostics) {
+	if strings.HasPrefix(directory, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", diag.Errorf("Failed to evaluate home directory: %v", err)
+		}
+		directory = strings.Replace(directory, "~", homeDir, 1)
+	}
+	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+		return "", diag.FromErr(err)
+	}
+
+	return directory, nil
 }

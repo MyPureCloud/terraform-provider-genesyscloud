@@ -1,12 +1,11 @@
 package oauth_client
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 const (
@@ -111,8 +110,30 @@ func ResourceOAuthClient() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"client_id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Place holder that can be referred in integration_credential fields.",
+			},
+			"client_secret": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
+				Optional:    true,
+				Description: "Place holder that can be referred in integration_credential fields. Sensitive info",
+				StateFunc:   ModifyStatusIdStateValue,
+			},
+			"directory_client_secret": {
+				Description: "Directory where the secret can be stored.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
+}
+
+func ModifyStatusIdStateValue(id interface{}) string {
+	return ""
 }
 
 func OauthClientExporter() *resourceExporter.ResourceExporter {

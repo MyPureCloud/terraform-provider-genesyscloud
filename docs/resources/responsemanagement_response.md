@@ -73,7 +73,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
 
 ### Required
 
-- `library_ids` (List of String) One or more libraries response is associated with. Changing the library IDs will result in the resource being recreated
+- `library_ids` (Set of String) One or more libraries response is associated with. Changing the library IDs will result in the resource being recreated
 - `name` (String) Name of the responsemanagement response
 - `texts` (Block Set, Min: 1) One or more texts associated with the response. (see [below for nested schema](#nestedblock--texts))
 

@@ -1,19 +1,19 @@
 package journey_action_map
 
 import (
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	architectSchedulegroups "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
+	architectSchedules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
+	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"log"
 	"sync"
-	architectFlow "terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	architectSchedulegroups "terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
-	architectSchedules "terraform-provider-genesyscloud/genesyscloud/architect_schedules"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	journeyOutcome "terraform-provider-genesyscloud/genesyscloud/journey_outcome"
-	journeySegment "terraform-provider-genesyscloud/genesyscloud/journey_segment"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var (

@@ -3,9 +3,9 @@ package flow_outcome
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 /*
@@ -28,7 +28,8 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // ResourceFlowOutcome registers the genesyscloud_flow_outcome resource with Terraform
 func ResourceFlowOutcome() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud flow outcome`,
+		Description: `Genesys Cloud flow outcome. If an outcome with the same name already exists, 
+the resource will manage the existing outcome instead of failing during creation, as outcomes cannot be deleted.`,
 
 		CreateContext: provider.CreateWithPooledClient(createFlowOutcome),
 		ReadContext:   provider.ReadWithPooledClient(readFlowOutcome),

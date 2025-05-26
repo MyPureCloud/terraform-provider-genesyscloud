@@ -6,12 +6,12 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
+	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"strings"
-	utillists "terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestUnitUploadIvrDnisChunksSuccess(t *testing.T) {

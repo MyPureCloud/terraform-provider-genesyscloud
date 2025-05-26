@@ -3,18 +3,18 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	util "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"strconv"
 	"strings"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	didPool "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
-	util "terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceIvrConfigBasic(t *testing.T) {
@@ -51,7 +51,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "name", ivrConfigName),
 					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "description", ivrConfigDescription),
-					hasEmptyDnis(ResourceType+"."+ivrConfigResourceLabel),
+					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "dnis.#", "0"),
 				),
 			},
 			{
@@ -73,6 +73,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "name", ivrConfigName),
 					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "description", ivrConfigDescription),
+					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "dnis.#", "2"),
 					util.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "dnis", ivrConfigDnis[0]),
 					util.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "dnis", ivrConfigDnis[1]),
 				),
@@ -134,8 +135,8 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourceLabel, "name", ivrConfigName),
 					resource.TestCheckResourceAttr(fullResourceLabel, "description", ivrConfigDescription),
+					resource.TestCheckResourceAttr(fullResourceLabel, "dnis.#", "0"),
 					resource.TestCheckResourceAttrPair(fullResourceLabel, "division_id", "genesyscloud_auth_division."+divResourceLabel1, "id"),
-					hasEmptyDnis(ResourceType+"."+ivrConfigResourceLabel1),
 				),
 			},
 			{
@@ -168,6 +169,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceLabel, "name", ivrConfigName),
 					resource.TestCheckResourceAttr(fullResourceLabel, "description", ivrConfigDescription),
 					resource.TestCheckResourceAttrPair(fullResourceLabel, "division_id", "genesyscloud_auth_division."+divResourceLabel1, "id"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "dnis.#", "2"),
 					util.ValidateStringInArray(fullResourceLabel, "dnis", ivrConfigDnis[0]),
 					util.ValidateStringInArray(fullResourceLabel, "dnis", ivrConfigDnis[1]),
 				),
@@ -345,32 +347,6 @@ func testVerifyIvrConfigsDestroyed(state *terraform.State) error {
 	}
 	// Success. All IVR Config pool destroyed
 	return nil
-}
-
-func hasEmptyDnis(ivrResourcePath string) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-		ivrResource, ok := state.RootModule().Resources[ivrResourcePath]
-		if !ok {
-			return fmt.Errorf("Failed to find ivr config %s in state", ivrResourcePath)
-		}
-		ivrID := ivrResource.Primary.ID
-
-		dnisCountStr, ok := ivrResource.Primary.Attributes["dnis.#"]
-		if !ok {
-			return fmt.Errorf("No dnis found for %s in state", ivrID)
-		}
-
-		dnisCount, err := strconv.Atoi(dnisCountStr)
-		if err != nil {
-			return fmt.Errorf("Error while converting dnis count")
-		}
-
-		if dnisCount > 0 {
-			return fmt.Errorf("Dnis is not empty.")
-		}
-
-		return nil
-	}
 }
 
 func createStringArrayOfPhoneNumbers(from, to int) []string {

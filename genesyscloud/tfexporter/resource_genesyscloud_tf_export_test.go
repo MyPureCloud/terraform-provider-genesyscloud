@@ -3,7 +3,9 @@ package tfexporter
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -14,32 +16,33 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	gcloud "terraform-provider-genesyscloud/genesyscloud"
-	"terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	userPromptResource "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
-	authDivision "terraform-provider-genesyscloud/genesyscloud/auth_division"
-	obContactList "terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	"terraform-provider-genesyscloud/genesyscloud/platform"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	routingQueue "terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	telephonyProvidersEdgesSite "terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"terraform-provider-genesyscloud/genesyscloud/user"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	userPromptResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/google/uuid"
 
-	userPrompt "terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
+	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -100,7 +103,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue::.*-prod"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -160,7 +163,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabels(t *t
 			strconv.Quote("genesyscloud_routing_queue::include filter test - foo - bar me"),   // Unsanitized Label Resource
 			strconv.Quote("genesyscloud_routing_queue::include_filter_test_-_fu_-_barre_you"), // Sanitized Label Resource
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -232,7 +235,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 			strconv.Quote("genesyscloud_routing_queue::.*-prod"),
 			strconv.Quote("genesyscloud_routing_wrapupcode"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -272,6 +275,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 // Wrap up codes will be created with -prod, -dev and -test suffixes but they should not be affected by the regex filter
 // for the queue and should all be exported
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1096 is addressed.")
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6"
@@ -307,7 +311,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -392,7 +396,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.TrueValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -428,6 +432,7 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 // TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels will exclude any test resources that match a
 // regular expression provided for the resource. In this test we check against both sanitized and unsanitized labels.
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1120 is resolved")
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6_1"
@@ -449,6 +454,11 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		description      = "Terraform wrapup code description"
 	)
 	cleanupFunc := func() {
+		if provider.SdkClientPool != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			_ = provider.SdkClientPool.Close(ctx)
+		}
 		if err := os.RemoveAll(exportTestDir); err != nil {
 			t.Logf("Error while cleaning up %v", err)
 		}
@@ -470,7 +480,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -676,7 +686,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_user::" + userEmail1)},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_user." + userResourceLabel1)},
 				),
@@ -709,6 +719,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					strconv.Quote("TimestampAndPriority"),
 					util.NullValue,
 					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByFilter(
 					exportResourceLabel1,
 					exportTestDir,
@@ -718,7 +729,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 						strconv.Quote("genesyscloud_routing_queue::" + queueName),
 					},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_user." + userResourceLabel1)},
 				),
@@ -754,6 +765,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					strconv.Quote("TimestampAndPriority"),
 					util.NullValue,
 					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByFilter(
 					exportResourceLabel1,
 					exportTestDir,
@@ -764,7 +776,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueResourceLabel),
@@ -812,6 +824,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 					strconv.Quote("TimestampAndPriority"),
 					util.NullValue,
 					util.NullValue,
+					util.NullValue,
 				) + generateTfExportByFilter(
 					exportResourceLabel1,
 					exportTestDir,
@@ -823,7 +836,7 @@ func TestAccResourceTfExportByLabel(t *testing.T) {
 						strconv.Quote("genesyscloud_telephony_providers_edges_trunkbasesettings"),
 					},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueResourceLabel),
@@ -879,7 +892,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -944,7 +957,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
 		},
-		"json",
+		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -981,9 +994,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 }
 
 func TestAccResourceTfExportFormAsHCL(t *testing.T) {
-
-	//t.Parallel()
-
 	var (
 		exportTestDir     = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportedContents  string
@@ -992,11 +1002,11 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		formResourceLabel = formName
 
 		// Complete evaluation form
-		evaluationForm1 = gcloud.EvaluationFormStruct{
+		evaluationForm1 = qualityFormsEvaluation.EvaluationFormStruct{
 			Name:      formName,
 			Published: false,
 
-			QuestionGroups: []gcloud.EvaluationFormQuestionGroupStruct{
+			QuestionGroups: []qualityFormsEvaluation.EvaluationFormQuestionGroupStruct{
 				{
 					Name:                    "Test Question Group 1",
 					DefaultAnswersToHighest: true,
@@ -1004,10 +1014,10 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 					NaEnabled:               true,
 					Weight:                  1,
 					ManualWeight:            true,
-					Questions: []gcloud.EvaluationFormQuestionStruct{
+					Questions: []qualityFormsEvaluation.EvaluationFormQuestionStruct{
 						{
 							Text: "Did the agent perform the opening spiel?",
-							AnswerOptions: []gcloud.AnswerOptionStruct{
+							AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 								{
 									Text:  "Yes",
 									Value: 1,
@@ -1025,11 +1035,11 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 							CommentsRequired: true,
 							IsKill:           true,
 							IsCritical:       true,
-							VisibilityCondition: gcloud.VisibilityConditionStruct{
+							VisibilityCondition: qualityFormsEvaluation.VisibilityConditionStruct{
 								CombiningOperation: "AND",
 								Predicates:         []string{"/form/questionGroup/0/question/0/answer/0", "/form/questionGroup/0/question/0/answer/1"},
 							},
-							AnswerOptions: []gcloud.AnswerOptionStruct{
+							AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 								{
 									Text:  "Yes",
 									Value: 1,
@@ -1045,10 +1055,10 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 				{
 					Name:   "Test Question Group 2",
 					Weight: 2,
-					Questions: []gcloud.EvaluationFormQuestionStruct{
+					Questions: []qualityFormsEvaluation.EvaluationFormQuestionStruct{
 						{
 							Text: "Did the agent offer to sell product?",
-							AnswerOptions: []gcloud.AnswerOptionStruct{
+							AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
 								{
 									Text:  "Yes",
 									Value: 1,
@@ -1060,7 +1070,7 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 							},
 						},
 					},
-					VisibilityCondition: gcloud.VisibilityConditionStruct{
+					VisibilityCondition: qualityFormsEvaluation.VisibilityConditionStruct{
 						CombiningOperation: "AND",
 						Predicates:         []string{"/form/questionGroup/0/question/0/answer/1"},
 					},
@@ -1076,19 +1086,19 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: gcloud.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1),
+				Config: qualityFormsEvaluation.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1),
 				Check: resource.ComposeTestCheckFunc(
 					validateEvaluationFormAttributes(formResourceLabel, evaluationForm1),
 				),
 			},
 			{
-				Config: gcloud.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1) + generateTfExportByFilter(
+				Config: qualityFormsEvaluation.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm1) + generateTfExportByFilter(
 					formResourceLabel,
 					exportTestDir,
 					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation::" + formName)},
 					"",
-					"hcl",
+					strconv.Quote("hcl"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_quality_forms_evaluation." + formResourceLabel),
@@ -1120,9 +1130,6 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 }
 
 func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
-
-	//t.Parallel()
-
 	var (
 		exportTestDir  = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportContents string
@@ -1167,6 +1174,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 		strconv.Quote("TimestampAndPriority"),
 		util.NullValue,
 		util.NullValue,
+		util.NullValue,
 		routingQueue.GenerateMediaSettings("media_settings_call", alertTimeoutSec, util.FalseValue, slPercentage, slDurationMs),
 		routingQueue.GenerateRoutingRules(rrOperator, rrThreshold, rrWaitSeconds),
 		routingQueue.GenerateDefaultScriptIDs(chatScriptID, emailScriptID),
@@ -1194,7 +1202,7 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 					util.TrueValue,
 					[]string{strconv.Quote("genesyscloud_routing_queue::" + queueName)},
 					"",
-					"hcl",
+					strconv.Quote("hcl"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_routing_queue." + queueLabel),
@@ -1258,7 +1266,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.TrueValue,
 					[]string{}),
 				Check: resource.ComposeTestCheckFunc(
@@ -1282,7 +1290,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.TrueValue,
 					[]string{}),
 				ExpectError: regexp.MustCompile(otherErrorMessage),
@@ -1302,7 +1310,7 @@ func TestAccResourceTfExportLogMissingPermissions(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_quality_forms_evaluation")},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{}),
 				ExpectError: regexp.MustCompile(logAttrInfo),
@@ -1372,7 +1380,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceLabel),
@@ -1409,7 +1417,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 					util.FalseValue,
 					[]string{strconv.Quote("genesyscloud_architect_user_prompt::" + userPromptName)},
 					"",
-					"json",
+					strconv.Quote("json"),
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + userPromptResourceLabel),
@@ -1437,6 +1445,46 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
+	var (
+		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
+		resourceLabel = "export"
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+	)
+
+	// Clean up
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTfExportByIncludeFilterResources(
+					resourceLabel,
+					exportTestDir,
+					util.TrueValue, // include_state_file
+					[]string{ // include_filter_resources
+						strconv.Quote("genesyscloud_quality_forms_survey"),
+					},
+					strconv.Quote("json"), // export_as_hcl
+					util.FalseValue,
+					[]string{},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validatePublishedAndUnpublishedExported(configPath),
+					validateStateFileHasPublishedAndUnpublished(statePath),
+				),
+			},
+		},
 	})
 }
 
@@ -1478,7 +1526,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_telephony_providers_edges_site"),
 					},
-					"json", // export_format attribute
+					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
 					[]string{},
 				),
@@ -1528,6 +1576,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 
 	queueResourceDef := buildQueueResources(queueResources)
 	userResourcesDef := buildUserResources(userResources)
+
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResourceLabel+".id", description)
 	baseConfig := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + wrapupcodeResourceDef + userResourcesDef
 	configWithExporter := baseConfig + generateTfExportByIncludeFilterResources(
@@ -1539,7 +1588,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 			strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
 		},
-		"hcl",
+		strconv.Quote("hcl"),
 		util.TrueValue,
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
@@ -1570,6 +1619,84 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+func validateStateFileHasPublishedAndUnpublished(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		if _, err := os.Stat(filename); err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		stateData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+
+		modules, ok := stateData["modules"].([]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected structure for modules")
+		}
+
+		log.Println("Successfully loaded export config into map variable ")
+
+		resources := make([]interface{}, 0, len(modules))
+		for _, module := range modules {
+			m, ok := module.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if r, ok := m["resources"].([]interface{}); ok {
+				resources = append(resources, r...)
+			}
+		}
+
+		log.Printf("checking that quality forms surveys exports published and unpublished in tf state")
+
+		for _, r := range resources {
+			out, ok := r.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			instances, ok := out["instances"].([]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected structure for form %s", filename)
+			}
+
+			res, ok := instances[0].(map[string]interface{})["attributes_flat"].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected structure attributes %s", filename)
+			}
+
+			name, ok := res["name"].(string)
+			if !ok {
+				return fmt.Errorf("unexpected name structure for form %s", filename)
+			}
+
+			published, ok := res["published"].(string)
+			if !ok {
+				return fmt.Errorf("unexpected published structure for form %s", filename)
+			}
+
+			if name == "test-published-form" {
+				if published == "true" {
+					log.Printf("Form with name '%s' is correctly exported as published\n", name)
+				} else {
+					return fmt.Errorf("Form with name '%s' is not correctly exported as published\n", name)
+				}
+			}
+
+			if name == "test-unpublished-form" {
+				if published == "false" {
+					log.Printf("Form with name '%s' is correctly exported as unpublished\n", name)
+				} else {
+					return fmt.Errorf("Form with name '%s' is not correctly exported as unpublished\n", name)
+				}
+			}
+		}
+
+		return nil
+	}
 }
 
 // validateStateFileAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
@@ -1623,6 +1750,45 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 		} else {
 			return fmt.Errorf("No data sources found in exported data")
 		}
+	}
+}
+
+func validatePublishedAndUnpublishedExported(configFile string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.ReadFile(configFile)
+		if err != nil {
+			return fmt.Errorf("failed to read state file %s: %v", configFile, err)
+		}
+
+		// Load the JSON content of the export file
+		log.Println("Loading export config into map variable")
+		exportData, err := loadJsonFileToMap(configFile)
+		if err != nil {
+			return err
+		}
+
+		if data, ok := exportData["resource"].(map[string]interface{}); ok {
+			forms, ok := data["genesyscloud_quality_forms_survey"].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("no resources exported for genesyscloud_quality_forms_survey")
+			}
+
+			if publishedForm, ok := forms["test-published-form"].(map[string]interface{}); ok {
+				if publishedForm["published"].(bool) != true {
+					return fmt.Errorf("test-published-form is not published")
+				}
+			} else {
+				return fmt.Errorf("test-published-form is not exported")
+			}
+			if unpublishedForm, ok := forms["test-unpublished-form"].(map[string]interface{}); ok {
+				if unpublishedForm["published"].(bool) != false {
+					return fmt.Errorf("test-unpublished-form is published")
+				}
+			} else {
+				return fmt.Errorf("test-unpublished-form is not exported")
+			}
+		}
+		return nil
 	}
 }
 
@@ -1790,7 +1956,7 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 						strconv.Quote("genesyscloud_architect_user_prompt::" + hPromptNameAttr),
 						strconv.Quote("genesyscloud_architect_user_prompt::" + zPromptNameAttr),
 					},
-					"json", // export_format attribute
+					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + dPromptResourceLabel),
@@ -1930,9 +2096,9 @@ resource "genesyscloud_routing_queue" "queue" {
 				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
 					resourceLabel,
 					exportTestDir,
-					util.FalseValue, // include_state_file
-					"json",          // export_format attribute
-					util.TrueValue,  // enable_dependency_resolution
+					util.FalseValue,       // include_state_file
+					strconv.Quote("json"), // export_format attribute
+					util.TrueValue,        // enable_dependency_resolution
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
@@ -1959,9 +2125,9 @@ resource "genesyscloud_routing_queue" "queue" {
 				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
 					resourceLabel,
 					exportTestDir,
-					util.TrueValue, // include_state_file
-					"json",         // export_format attribute
-					util.TrueValue, // enable_dependency_resolution
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format attribute
+					util.TrueValue,        // enable_dependency_resolution
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
@@ -1988,9 +2154,9 @@ resource "genesyscloud_routing_queue" "queue" {
 				Config: remainingConfig + contactListConfig + generateExportResourceIncludeFilterWithEnableDepRes(
 					resourceLabel,
 					exportTestDir,
-					util.TrueValue,  // include_state_file
-					"json",          // export_format attribute
-					util.FalseValue, // enable_dependency_resolution
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format attribute
+					util.FalseValue,       // enable_dependency_resolution
 					[]string{ // include_filter_resources
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameDefaultScript),
 						strconv.Quote("genesyscloud_outbound_campaign::" + campaignNameCustomScript),
@@ -2202,7 +2368,7 @@ create_duration = "100s"
 			[]string{
 				strconv.Quote("genesyscloud_flow::" + flowName),
 			},
-			"json",
+			strconv.Quote("json"),
 			util.FalseValue,
 			util.TrueValue,
 		)
@@ -2249,9 +2415,9 @@ func TestAccResourceExporterFormat(t *testing.T) {
 		CheckDestroy:      testVerifyExportsDestroyedFunc(exportTestDir),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTfExportResource_exportFormat(
+				Config: generateTfExportResourceExportFormat(
 					exportResourceLabel1,
-					"hcl_json",
+					strconv.Quote("hcl_json"),
 					[]string{"genesyscloud_journey_segment"},
 					exportTestDir,
 				),
@@ -2264,6 +2430,70 @@ func TestAccResourceExporterFormat(t *testing.T) {
 				),
 			},
 		},
+	})
+}
+
+// TestAccResourceTfExportArchitectFlowExporterLegacyAndNew Exports a flow using the legacy exporter (creates a tfvars file but does not export flow config files)
+// and then exports using the new archy exporter by setting use_legacy_architect_flow_exporter to false
+func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
+	const (
+		systemFlowName = "Default Voicemail Flow"
+		systemFlowType = "VOICEMAIL"
+		systemFlowId   = "de4c63f0-0be1-11ec-9a03-0242ac130003"
+	)
+	exportedSystemFlowFileName := architectFlow.BuildExportFileName(systemFlowName, systemFlowType, systemFlowId)
+	exportResourceLabel := "export"
+	exportTestDir := testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+	exportFullPath := ResourceType + "." + exportResourceLabel
+	pathToFolderHoldingExportedFlows := filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("An error occured while removing directory '%s': %s", exportTestDir, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTFExportResourceCustom(
+					exportResourceLabel,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("hcl"),
+					util.NullValue, // use_legacy_architect_flow_exporter - should default to true
+					[]string{
+						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
+					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
+					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
+				),
+			},
+			{
+				Config: generateTFExportResourceCustom(
+					exportResourceLabel,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("hcl"),
+					util.FalseValue, // use_legacy_architect_flow_exporter
+					[]string{
+						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),
+					validateFileNotCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
+					validateFileCreated(pathToFolderHoldingExportedFlows),
+					validateFileCreated(filepath.Join(pathToFolderHoldingExportedFlows, exportedSystemFlowFileName)),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 }
 
@@ -2530,10 +2760,10 @@ func getResourceDefinition(filePath, resourceType string) (map[string]*json.RawM
 	return r, nil
 }
 
-// Create a directed graph of exported resources to their references. Report any potential graph cycles in this test.
+// TestUnitTestForExportCycles creates a directed graph of exported resources to their references. Report any potential graph cycles in this test.
 // Reference cycles can sometimes be broken by exporting a separate resource to update membership after the member
 // and container resources are created/updated (see genesyscloud_user_roles).
-func TestForExportCycles(t *testing.T) {
+func TestUnitTestForExportCycles(t *testing.T) {
 
 	// Assumes exporting all resource types
 	exporters := resourceExporter.GetResourceExporters()
@@ -2857,6 +3087,26 @@ func generateTfExportByExcludeFilterResources(
 	`, resourceLabel, directory, includeState, strings.Join(excludeFilterResources, ","), exportFormat, splitByResource, strings.Join(dependencies, ","))
 }
 
+func generateTFExportResourceCustom(
+	resourceLabel,
+	directory,
+	includeStateFile,
+	exportFormat,
+	useLegacyFlowExporter string,
+	includeResources []string,
+) string {
+	return fmt.Sprintf(`
+resource "%s" "%s" {
+	directory                          = "%s"
+	include_state_file                 = %s
+	export_format                      = %s
+	use_legacy_architect_flow_exporter = %s
+
+	include_filter_resources = [%s]
+}
+`, ResourceType, resourceLabel, directory, includeStateFile, exportFormat, useLegacyFlowExporter, strings.Join(includeResources, "\n"))
+}
+
 func getExportedFileContents(filename string, result *string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		d, err := os.ReadFile(filename)
@@ -2872,7 +3122,20 @@ func validateFileCreated(filename string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		_, err := os.Stat(filename)
 		if err != nil {
-			return fmt.Errorf("Failed to find file %s", filename)
+			return fmt.Errorf("failed to find file '%s'. Error: %w", filename, err)
+		}
+		return nil
+	}
+}
+
+func validateFileNotCreated(filename string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err == nil {
+			return fmt.Errorf("expected '%s' to not exist", filename)
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("unexpected error while verifying file '%s' does not exist: %w", filename, err)
 		}
 		return nil
 	}
@@ -2931,7 +3194,7 @@ func testVerifyExportsDestroyedFunc(exportTestDir string) resource.TestCheckFunc
 	}
 }
 
-func validateEvaluationFormAttributes(resourceLabel string, form gcloud.EvaluationFormStruct) resource.TestCheckFunc {
+func validateEvaluationFormAttributes(resourceLabel string, form qualityFormsEvaluation.EvaluationFormStruct) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceLabel, "name", resourceLabel),
 		resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+resourceLabel, "published", util.FalseValue),
@@ -3062,6 +3325,7 @@ func buildQueueResources(queueExports []QueueExport) string {
 			strconv.Quote("TimestampAndPriority"),
 			util.NullValue,
 			util.NullValue,
+			util.NullValue,
 		)
 	}
 
@@ -3167,7 +3431,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 		"wrapupcode "+uuid.NewString(),
 		"genesyscloud_auth_division."+divResourceLabel+".id",
 		description,
-	) + architect_flow.GenerateFlowResource(
+	) + architectFlow.GenerateFlowResource(
 		flowResourceLabel,
 		outboundFlowFilePath,
 		"",
@@ -3214,7 +3478,7 @@ func validateFlow(flowResourcePath, flowName string) resource.TestCheckFunc {
 	}
 }
 
-func generateTfExportResource_exportFormat(
+func generateTfExportResourceExportFormat(
 	exportResourceLabel1 string,
 	exportFormat string,
 	includeResources []string,
@@ -3226,7 +3490,7 @@ func generateTfExportResource_exportFormat(
 	}
 
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
-        export_format = "%s"
+        export_format = %s
         include_filter_resources = %s
         directory = "%s"
     }

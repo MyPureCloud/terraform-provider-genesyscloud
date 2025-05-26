@@ -1,10 +1,9 @@
 package outbound_campaign
 
 import (
-	"terraform-provider-genesyscloud/genesyscloud/outbound"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -133,12 +132,12 @@ func ResourceOutboundCampaign() *schema.Resource {
 			},
 			`caller_name`: {
 				Description: `The caller id name to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`caller_address`: {
 				Description: `The caller id phone number to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`outbound_line_count`: {
@@ -171,7 +170,28 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Description: `The order in which to sort contacts for dialing, based on up to four columns.`,
 				Optional:    true,
 				Type:        schema.TypeList,
-				Elem:        outbound.OutboundmessagingcampaigncontactsortResource,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						`field_name`: {
+							Description: `The field name by which to sort contacts.`,
+							Required:    true,
+							Type:        schema.TypeString,
+						},
+						`direction`: {
+							Description:  `The direction in which to sort contacts.`,
+							Optional:     true,
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringInSlice([]string{`ASC`, `DESC`}, false),
+							Default:      `ASC`,
+						},
+						`numeric`: {
+							Description: `Whether or not the column contains numeric data.`,
+							Optional:    true,
+							Type:        schema.TypeBool,
+							Default:     false,
+						},
+					},
+				},
 			},
 			`no_answer_timeout`: {
 				Description: `How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.`,
@@ -215,7 +235,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`dynamic_contact_queueing_settings`: {
-				Description: `Settings for dynamic queueing of contacts.`,
+				Description: `Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied`,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -223,9 +243,17 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"sort": {
-							Description: "Whether to sort contacts dynamically.",
+							Description: "Whether to sort contacts dynamically. Note: Changing the sort value will cause the outbound campaign to be dropped and recreated with a new ID",
 							Type:        schema.TypeBool,
-							Required:    true,
+							Optional:    true,
+							Computed:    true,
+							ForceNew:    true,
+						},
+						"filter": {
+							Description: "Whether to filter contacts dynamically. Note: Changing the filter value will cause the outbound campaign to be dropped and recreated with a new ID",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
 							ForceNew:    true,
 						},
 					},

@@ -3,9 +3,9 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -15,9 +15,6 @@ import (
 )
 
 func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	if exists := featureToggles.OutboundRoutesToggleExists(); !exists {
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Environment variable %s not set", featureToggles.OutboundRoutesToggleName()), fmt.Errorf("environment variable %s not set", featureToggles.OutboundRoutesToggleName()))
-	}
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 
@@ -37,8 +34,8 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 		outboundRouteId := buildSiteAndOutboundRouteId(siteId, routeId)
 
 		d.SetId(outboundRouteId)
-		d.Set("site_id", siteId)
-		d.Set("route_id", routeId)
+		_ = d.Set("site_id", siteId)
+		_ = d.Set("route_id", routeId)
 		return nil
 	})
 }

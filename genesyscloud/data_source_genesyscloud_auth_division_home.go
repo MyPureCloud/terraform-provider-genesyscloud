@@ -3,16 +3,19 @@ package genesyscloud
 import (
 	"context"
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
+
+const homeDivisionDataSourceType = "genesyscloud_auth_division_home"
 
 func DataSourceAuthDivisionHome() *schema.Resource {
 	return &schema.Resource{
@@ -37,8 +40,8 @@ func DataSourceAuthDivisionHome() *schema.Resource {
 
 func GenerateAuthDivisionHomeDataSource(resourceLabel string) string {
 	return fmt.Sprintf(`
-		data "genesyscloud_auth_division_home" "%s" {}
-		`, resourceLabel)
+		data "%s" "%s" {}
+		`, homeDivisionDataSourceType, resourceLabel)
 }
 
 func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -49,14 +52,12 @@ func dataSourceAuthDivisionHomeRead(ctx context.Context, d *schema.ResourceData,
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		division, resp, getErr := authAPI.GetAuthorizationDivisionsHome()
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_auth_division_home", fmt.Sprintf("Error requesting divisions: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(homeDivisionDataSourceType, fmt.Sprintf("Error requesting divisions: %s", getErr), resp))
 		}
 
 		d.SetId(*division.Id)
-		d.Set("name", *division.Name)
-		if division.Description != nil {
-			d.Set("description", *division.Description)
-		}
+		resourcedata.SetNillableValue(d, "name", division.Name)
+		resourcedata.SetNillableValue(d, "description", division.Description)
 
 		return nil
 	})

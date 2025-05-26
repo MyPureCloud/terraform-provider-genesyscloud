@@ -2,9 +2,9 @@ package telephony_providers_edges_edge_group
 
 import (
 	"fmt"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/telephony_provider_edges_trunkbasesettings"
-	"terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	tpetbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,7 +22,7 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 		phoneTrunkBaseSettingsResourceLabel1 = "phoneTrunkBaseSettingsRes1"
 	)
 
-	phoneTrunkBaseSetting1 := telephony_provider_edges_trunkbasesettings.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+	phoneTrunkBaseSetting1 := tpetbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
 		phoneTrunkBaseSettingsResourceLabel1,
 		"phone trunk base settings "+uuid.NewString(),
 		"",
