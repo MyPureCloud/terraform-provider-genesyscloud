@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 	"log"
 	"regexp"
-	"terraform-provider-genesyscloud/genesyscloud/platform"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var (

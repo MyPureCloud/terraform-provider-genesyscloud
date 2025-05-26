@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v152/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"log"
 	"net/http"
 	"os"
@@ -77,7 +77,10 @@ func (f *GenesysCloudProvider) frameworkPreFill() diag.Diagnostics {
 }
 
 func AcquireSdkClient(ctx context.Context, client GenesysCloudProvider) (*platformclientv2.Configuration, error) {
-	clientConfig := client.SdkClientPool.acquire()
+	clientConfig, err := client.SdkClientPool.acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
 	defer client.SdkClientPool.release(clientConfig)
 
 	// Check if the request has been cancelled

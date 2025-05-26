@@ -259,7 +259,7 @@ func GetRegionBasePath(region string) string {
 	return "https://api." + getRegionDomain(region)
 }
 
-func InitClientConfig(data *schema.ResourceData, version string, config *platformclientv2.Configuration) diag.Diagnostics {
+func InitClientConfig(ctx context.Context, data *schema.ResourceData, version string, config *platformclientv2.Configuration, isDefaultConfig bool) diag.Diagnostics {
 	accessToken := determineProviderStringAttribute(data, "access_token", accessTokenEnvVar)
 	oauthclientID := determineProviderStringAttribute(data, "oauthclient_id", clientIdEnvVar)
 	oauthclientSecret := determineProviderStringAttribute(data, "oauthclient_secret", clientSecretEnvVar)

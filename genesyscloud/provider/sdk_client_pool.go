@@ -84,18 +84,6 @@ var SdkClientPool *SDKClientPool
 var SdkClientPoolErr diag.Diagnostics
 var Once sync.Once
 
-func (p *SDKClientPool) acquire() *platformclientv2.Configuration {
-	return <-p.Pool
-}
-
-func (p *SDKClientPool) release(c *platformclientv2.Configuration) {
-	select {
-	case p.Pool <- c:
-	default:
-		// Pool is full. Don't put it back in the Pool
-	}
-}
-
 // InitSDKClientPool creates a new Pool of Clients with the given provider config
 // This must be called during provider initialization before the Pool is used
 func InitSDKClientPool(ctx context.Context, version string, providerConfig *schema.ResourceData) diag.Diagnostics {

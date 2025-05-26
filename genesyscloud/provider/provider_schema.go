@@ -9,12 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+// Provider attribute keys
 const (
-	// Provider environment variables
-	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
-	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
-
-	// Provider attribute keys
 	AttrTokenPoolSize       = "token_pool_size"
 	AttrTokenAcquireTimeout = "token_acquire_timeout"
 	AttrTokenInitTimeout    = "token_init_timeout"
