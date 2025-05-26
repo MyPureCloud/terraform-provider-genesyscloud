@@ -1,8 +1,9 @@
 package provider_registrar
 
 import (
-	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 	"sync"
+
+	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -61,6 +62,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
+	oPresenceDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_presence_definition"
 	oAuthPairing "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/orgauthorization_pairing"
 	obAttemptLimit "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_attempt_limit"
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -80,6 +82,8 @@ import (
 	obSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obwm "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -109,6 +113,7 @@ import (
 	workitemOnAttributeChangeRule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_onattributechange_rule"
 	workitemOnCreateRule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_flow_oncreate_rule"
 	worktypeStatus "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
+	worktypeStatusTransition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status_transition"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
 	did "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did"
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
@@ -228,6 +233,7 @@ func registerResources() {
 	obMessagingCampaign.SetRegistrar(regInstance)                          //Registering outbound messaging campaign
 	obwm.SetRegistrar(regInstance)                                         //Registering outbound wrapup code mappings
 	oAuthSettings.SetRegistrar(regInstance)                                //Registering organization authentication settings
+	oPresenceDefinition.SetRegistrar(regInstance)                          //Registering organization presence definition
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
 	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
@@ -271,6 +277,7 @@ func registerResources() {
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
 	worktypeStatus.SetRegistrar(regInstance)                               //Registering task management worktype status
+	worktypeStatusTransition.SetRegistrar(regInstance)                     //Registering task management worktype status Transition
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	workitemOnCreateRule.SetRegistrar(regInstance)                         //Registering task management oncreate rule
 	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule
@@ -325,6 +332,8 @@ func registerResources() {
 	knowledgeCategory.SetRegistrar(regInstance)                            //Registering knowledge category
 	knowledgeLabel.SetRegistrar(regInstance)                               //Registering Knowledge Label
 	knowledgeKnowledgebase.SetRegistrar(regInstance)                       //Registering Knowledge base
+	qualityFormsEvaluation.SetRegistrar(regInstance)                       //Registering quality forms evaluation
+	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

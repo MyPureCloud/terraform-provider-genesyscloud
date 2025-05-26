@@ -1,6 +1,6 @@
 package mrmo
 
-import "github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+import "github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
 var clientConfig *platformclientv2.Configuration
 var isActive bool

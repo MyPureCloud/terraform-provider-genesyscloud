@@ -6,7 +6,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -206,5 +206,6 @@ func deleteRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete response asset: %s", err)
 	}
+	rc.DeleteCacheItem(p.assetCache, id)
 	return resp, nil
 }

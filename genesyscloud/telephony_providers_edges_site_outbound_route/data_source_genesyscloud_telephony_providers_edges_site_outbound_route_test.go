@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -24,7 +24,7 @@ func TestAccDataSourceSiteOutboundRoute(t *testing.T) {
 
 		// site
 		siteResourceLabel = "site"
-		siteName          = "site " + uuid.NewString()
+		siteName          = "tf test site " + uuid.NewString()
 		description       = "terraform description 1"
 		mediaModel        = "Cloud"
 

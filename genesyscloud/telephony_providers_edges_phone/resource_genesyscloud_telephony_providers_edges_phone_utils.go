@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -45,12 +45,9 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 
 	// Line base settings and lines
 	var err error
-	lineBaseSettingsID := d.Get("line_base_settings_id").(string)
-	if lineBaseSettingsID == "" {
-		lineBaseSettingsID, err = getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
-		if err != nil {
-			return phoneConfig, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
-		}
+	lineBaseSettingsID, err := getLineBaseSettingsID(ctx, pp, *phoneConfig.PhoneBaseSettings.Id)
+	if err != nil {
+		return phoneConfig, fmt.Errorf("failed to get line base settings for %s: %s", *phoneConfig.Name, err)
 	}
 	lineBaseSettings := &platformclientv2.Domainentityref{Id: &lineBaseSettingsID}
 	lines, isStandalone, lineError := buildSdkLines(ctx, pp, d, lineBaseSettings)

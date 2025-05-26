@@ -72,6 +72,12 @@ func ResourceScript() *schema.Resource {
 				Type:        schema.TypeMap,
 				Optional:    true,
 			},
+			"division_id": {
+				Description: "Specify division id",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }

@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 type S3Uploader struct {
@@ -322,4 +322,20 @@ func GetCSVRecordCount(filepath string) (int, error) {
 	}
 
 	return recordCount, nil
+}
+
+// Get a string path to the target export directory
+func GetDirPath(directory string) (string, diag.Diagnostics) {
+	if strings.HasPrefix(directory, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", diag.Errorf("Failed to evaluate home directory: %v", err)
+		}
+		directory = strings.Replace(directory, "~", homeDir, 1)
+	}
+	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+		return "", diag.FromErr(err)
+	}
+
+	return directory, nil
 }

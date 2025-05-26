@@ -3,9 +3,10 @@ package location
 import (
 	"context"
 	"fmt"
+
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *locationProxy
@@ -144,5 +145,10 @@ func updateLocationFn(ctx context.Context, p *locationProxy, id string, updateRe
 }
 
 func deleteLocationFn(ctx context.Context, p *locationProxy, id string) (*platformclientv2.APIResponse, error) {
-	return p.locationsApi.DeleteLocation(id)
+	resp, err := p.locationsApi.DeleteLocation(id)
+	if err != nil {
+		return resp, fmt.Errorf("failed to delete location %s", err)
+	}
+	rc.DeleteCacheItem(p.locationCache, id)
+	return resp, nil
 }

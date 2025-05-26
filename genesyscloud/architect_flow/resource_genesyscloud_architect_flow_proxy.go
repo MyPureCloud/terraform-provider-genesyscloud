@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
@@ -277,7 +277,12 @@ func forceUnlockFlowFn(_ context.Context, p *architectFlowProxy, flowId string) 
 }
 
 func deleteArchitectFlowFn(_ context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
-	return p.api.DeleteFlow(flowId)
+	resp, err := p.api.DeleteFlow(flowId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.flowCache, flowId)
+	return resp, err
 }
 
 func createArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {

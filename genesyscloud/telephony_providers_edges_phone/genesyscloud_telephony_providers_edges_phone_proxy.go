@@ -8,7 +8,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -294,6 +294,10 @@ func updatePhoneFn(ctx context.Context, p *phoneProxy, phoneId string, phoneConf
 // deletePhoneFn is an implementation function for deleting a Genesys Cloud Phone
 func deletePhoneFn(ctx context.Context, p *phoneProxy, phoneId string) (response *platformclientv2.APIResponse, err error) {
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesPhone(phoneId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.phoneCache, phoneId)
 	return resp, err
 }
 

@@ -3,15 +3,16 @@ package flow_outcome
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -44,6 +45,19 @@ func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.
 func createFlowOutcome(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getFlowOutcomeProxy(sdkConfig)
+
+	flowOutcomeName := d.Get("name").(string)
+
+	// Since Flow Outcomes cannot be deleted, we need to be able to check if there is an existing Flow Outcome and update it
+	flowOutcomeId, retryable, _, err := proxy.getFlowOutcomeIdByName(ctx, flowOutcomeName)
+	if flowOutcomeId != "" {
+		d.SetId(flowOutcomeId)
+		return updateFlowOutcome(ctx, d, meta)
+	}
+
+	if err != nil && !retryable {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to check for existing flow outcomes when creating flow outcome %s error: %s", flowOutcomeName, err), nil)
+	}
 
 	flowOutcome := getFlowOutcomeFromResourceData(d)
 

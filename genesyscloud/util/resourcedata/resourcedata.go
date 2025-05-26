@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 const (
@@ -201,6 +201,22 @@ func GetNillableValue[T any](d *schema.ResourceData, key string) *T {
 		v := value.(T)
 		return &v
 	}
+	return nil
+}
+
+// GetNonZeroPointer returns a pointer to the value stored in ResourceData at the given key
+// if the value is non-zero, otherwise returns nil. The type parameter T must match the
+// actual type stored in ResourceData.
+func GetNonZeroPointer[T any](d *schema.ResourceData, key string) *T {
+	v := d.Get(key)
+	if v == nil {
+		return nil
+	}
+
+	if value, ok := v.(T); ok && !reflect.ValueOf(value).IsZero() {
+		return &value
+	}
+
 	return nil
 }
 

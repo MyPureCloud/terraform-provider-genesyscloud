@@ -6,7 +6,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -278,7 +278,12 @@ func createRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, q
 }
 
 func deleteRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, queueId, codeId string) (*platformclientv2.APIResponse, error) {
-	return p.routingApi.DeleteRoutingQueueWrapupcode(queueId, codeId)
+	resp, err := p.routingApi.DeleteRoutingQueueWrapupcode(queueId, codeId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.wrapupCodeCache, codeId)
+	return resp, nil
 }
 
 func addOrRemoveMembersFn(ctx context.Context, p *RoutingQueueProxy, queueId string, body []platformclientv2.Writableentity, delete bool) (*platformclientv2.APIResponse, error) {

@@ -6,7 +6,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
@@ -14,7 +14,6 @@ func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclien
 	d.Set("display_name", *journeySegment.DisplayName)
 	resourcedata.SetNillableValue(d, "description", journeySegment.Description)
 	d.Set("color", *journeySegment.Color)
-	d.Set("scope", *journeySegment.Scope)
 	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
 	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeySegment.Context, flattenContext))
 	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeySegment.Journey, flattenJourney))
@@ -26,7 +25,6 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	displayName := journeySegment.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
 	color := journeySegment.Get("color").(string)
-	scope := journeySegment.Get("scope").(string)
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
@@ -37,7 +35,6 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 		DisplayName:              &displayName,
 		Description:              description,
 		Color:                    &color,
-		Scope:                    &scope,
 		ShouldDisplayToAgent:     shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,

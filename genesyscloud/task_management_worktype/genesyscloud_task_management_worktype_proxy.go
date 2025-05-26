@@ -6,7 +6,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -214,5 +214,10 @@ func updateTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorkty
 
 // deleteTaskManagementWorktypeFn is an implementation function for deleting a Genesys Cloud task management worktype
 func deleteTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (resp *platformclientv2.APIResponse, err error) {
-	return p.taskManagementApi.DeleteTaskmanagementWorktype(id)
+	resp, err = p.taskManagementApi.DeleteTaskmanagementWorktype(id)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.worktypeCache, id)
+	return resp, nil
 }

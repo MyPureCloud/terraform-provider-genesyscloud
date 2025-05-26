@@ -7,7 +7,7 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 var internalProxy *journeyViewsProxy
@@ -121,7 +121,12 @@ func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string,
 }
 
 func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
-	return p.journeyViewsApi.DeleteJourneyView(viewId)
+	resp, err := p.journeyViewsApi.DeleteJourneyView(viewId)
+	if err != nil {
+		return resp, err
+	}
+	rc.DeleteCacheItem(p.journeyViewCache, viewId)
+	return resp, nil
 }
 
 // GetAllJourneyViewsFn is the implementation for retrieving all journey views in Genesys Cloud

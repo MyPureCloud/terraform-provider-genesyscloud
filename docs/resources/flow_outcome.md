@@ -2,11 +2,13 @@
 page_title: "genesyscloud_flow_outcome Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud flow outcome
+  Genesys Cloud flow outcome. If an outcome with the same name already exists,
+  the resource will manage the existing outcome instead of failing during creation, as outcomes cannot be deleted.
 ---
 # genesyscloud_flow_outcome (Resource)
 
-Genesys Cloud flow outcome
+Genesys Cloud flow outcome. If an outcome with the same name already exists, 
+the resource will manage the existing outcome instead of failing during creation, as outcomes cannot be deleted.
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

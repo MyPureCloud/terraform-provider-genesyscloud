@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -33,7 +33,15 @@ func getAllAuthResponsemanagementResponses(ctx context.Context, clientConfig *pl
 	}
 
 	for _, response := range *responseManagementResponses {
-		resources[*response.Id] = &resourceExporter.ResourceMeta{BlockLabel: *response.Name}
+		libraryNames := []string{}
+		for _, library := range *response.Libraries {
+			libraryNames = append(libraryNames, *library.Name)
+		}
+		hashedUniqueFields, err := util.QuickHashFields(libraryNames)
+		if err != nil {
+			return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to hash unique fields of response management response %s error: %s", *response.Id, err), err)
+		}
+		resources[*response.Id] = &resourceExporter.ResourceMeta{BlockLabel: *response.Name, BlockHash: hashedUniqueFields}
 	}
 	return resources, nil
 }

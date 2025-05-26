@@ -6,7 +6,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -191,5 +191,6 @@ func deleteArchitectGrammarFn(_ context.Context, p *architectGrammarProxy, gramm
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete grammar: %s", err)
 	}
+	rc.DeleteCacheItem(p.grammarCache, grammarId)
 	return resp, nil
 }

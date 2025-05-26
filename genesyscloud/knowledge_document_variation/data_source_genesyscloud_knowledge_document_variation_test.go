@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAccDataSourceVariationRequest(t *testing.T) {
@@ -127,6 +128,10 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 						assert.Equal(t, resourceIDs.knowledgeDocumentVariationID, variationID, "Variation ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeBaseID, knowledgeBaseID, "Knowledge Base ID should be equal")
 						assert.Equal(t, resourceIDs.knowledgeDocumentID, KnowledgeDocumentID, "Knowledge Document ID should be equal")
+						return nil
+					},
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
 						return nil
 					},
 				),

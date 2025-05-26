@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -33,17 +33,22 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 
 	for _, flow := range *flows {
 
+		blockHash, err := util.QuickHashFields(flow.VarType)
+		if err != nil {
+			return nil, diag.Errorf("failed to generate quick hash for flow %s: %v", *flow.Id, err)
+		}
+
 		//DEVTOOLING-393:  Putting this in here to deal with the situation where Cesar's BCP app is reliant on the naming structure
 		//This should be removed once the CX as Code architect export process is complete and will export files with the type in the name.
 		overrideBCPNaming := os.Getenv("OVERRIDE_BCP_NAMING")
 
 		if overrideBCPNaming != "" {
-			resources[*flow.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flow.Name}
+			resources[*flow.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flow.Name, BlockHash: blockHash}
 			continue
 		}
 
 		//This is our go forward naming standard for flows.
-		resources[*flow.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flow.VarType + "_" + *flow.Name}
+		resources[*flow.Id] = &resourceExporter.ResourceMeta{BlockLabel: *flow.VarType + "_" + *flow.Name, BlockHash: blockHash}
 	}
 
 	return resources, nil

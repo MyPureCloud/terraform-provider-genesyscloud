@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -70,10 +70,11 @@ func buildAutoBccEmailAddresses(d *schema.ResourceData) *[]platformclientv2.Emai
 	return nil
 }
 
-func buildReplyEmailAddress(domainID string, routeID string) *platformclientv2.Queueemailaddress {
+func buildReplyEmailAddress(domainID string, routeID string, pattern string) *platformclientv2.Queueemailaddress {
 	// For some reason the SDK expects a pointer to a pointer for this property
 	inboundRoute := &platformclientv2.Inboundroute{
-		Id: &routeID,
+		Id:      &routeID,
+		Pattern: &pattern,
 	}
 	result := platformclientv2.Queueemailaddress{
 		Domain: &platformclientv2.Domainentityref{Id: &domainID},

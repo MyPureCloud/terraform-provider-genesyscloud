@@ -16,19 +16,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceLabel       = "cars"
-		name                = "Terraform test CAR " + uuid.NewString()
-		identifier1         = "callable_person"
-		identifier2         = "callable_fax"
-		identifier3         = "callable_machine"
-		reactionType        = "transfer"
-		reactionTypeUpdated = "hangup"
+		resourceLabel             = "cars"
+		name                      = "Terraform test CAR " + uuid.NewString()
+		identifier1               = "callable_person"
+		identifier2               = "callable_fax"
+		identifier3               = "callable_machine"
+		reactionType              = "transfer"
+		reactionTypeUpdated       = "hangup"
+		liveSpeakerDetectionMode1 = "Disabled"
+		liveSpeakerDetectionMode2 = "High"
 
 		contactListResourceLabel = "contact-list"
 		wrapupCodeResourceLabel  = "wrapup"
@@ -53,6 +55,8 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 					resourceLabel,
 					name,
 					util.TrueValue,
+					util.NullValue,
+					util.NullValue,
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
 							identifier1,
@@ -77,6 +81,8 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "beep_detection_enabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "amd_speech_distinguish_enabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "live_speaker_detection_mode", liveSpeakerDetectionMode1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0."+identifier1+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0."+identifier2+".0.reaction_type", "transfer"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0."+identifier3+".0.reaction_type", "transfer"),
@@ -87,7 +93,9 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				Config: GenerateOutboundCallAnalysisResponseSetResource(
 					resourceLabel,
 					name,
-					FalseValue,
+					util.FalseValue,
+					util.TrueValue,
+					strconv.Quote(liveSpeakerDetectionMode2),
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
 							identifier1,
@@ -111,7 +119,9 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "beep_detection_enabled", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "beep_detection_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "amd_speech_distinguish_enabled", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "live_speaker_detection_mode", liveSpeakerDetectionMode2),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0."+identifier1+".0.reaction_type", reactionTypeUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0."+identifier2+".0.reaction_type", reactionTypeUpdated),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0."+identifier3+".0.reaction_type", reactionTypeUpdated),
@@ -130,7 +140,7 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 					util.NullValue,
 					[]string{},
 					[]string{strconv.Quote("Cell")},
-					FalseValue,
+					util.FalseValue,
 					util.NullValue,
 					util.NullValue,
 					obContactList.GeneratePhoneColumnsBlock("Cell",
@@ -156,7 +166,9 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				) + GenerateOutboundCallAnalysisResponseSetResource(
 					resourceLabel,
 					name,
-					FalseValue,
+					util.FalseValue,
+					util.FalseValue,
+					strconv.Quote(liveSpeakerDetectionMode1),
 					GenerateCarsResponsesBlock(
 						GenerateCarsResponse(
 							"callable_person",
@@ -168,7 +180,9 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "beep_detection_enabled", FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "beep_detection_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "amd_speech_distinguish_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "live_speaker_detection_mode", liveSpeakerDetectionMode1),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0.callable_person.0.reaction_type", "transfer_flow"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0.callable_person.0.name", outboundFlowName),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_callanalysisresponseset."+resourceLabel, "responses.0.callable_person.0.data",

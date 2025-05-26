@@ -3,14 +3,14 @@ package integration_credential
 import (
 	"context"
 	"fmt"
-	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -85,17 +85,10 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 func createCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
-	fields := buildCredentialFields(d)
-	_, secretFieldPresent := fields["clientSecret"]
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	ip := getIntegrationCredsProxy(sdkConfig)
+	fields := buildCredentialFields(d, sdkConfig)
 
-	//If if is a Genesys Cloud OAuth Client and the user has not provided a secret field we should look for the
-	//item in the cache DEVTOOLING-448
-	if cred_type == "pureCloudOAuthClient" && !secretFieldPresent {
-		retrieveCachedOauthClientSecret(sdkConfig, fields)
-	}
+	ip := getIntegrationCredsProxy(sdkConfig)
 
 	createCredential := platformclientv2.Credential{
 		Name: &name,
@@ -113,15 +106,6 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	d.SetId(*credential.Id)
 	log.Printf("Created credential %s, %s", name, *credential.Id)
 	return readCredential(ctx, d, meta)
-}
-
-func retrieveCachedOauthClientSecret(sdkConfig *platformclientv2.Configuration, fields map[string]string) {
-	op := oauth.GetOAuthClientProxy(sdkConfig)
-	if clientId, ok := fields["clientId"]; ok {
-		oAuthClient := op.GetCachedOAuthClient(clientId)
-		fields["clientSecret"] = *oAuthClient.Secret
-		log.Printf("Successfully matched with OAuth Client Credential id %s", clientId)
-	}
 }
 
 // readCredential is used by the integration credential resource to read a  credential from genesys cloud.
@@ -154,14 +138,14 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 func updateCredential(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
-	fields := buildCredentialFields(d)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	fields := buildCredentialFields(d, sdkConfig)
+
 	ip := getIntegrationCredsProxy(sdkConfig)
 
 	if d.HasChanges("name", "credential_type_name", "fields") {
 		log.Printf("Updating credential %s", name)
-
 		_, resp, err := ip.updateIntegrationCred(ctx, d.Id(), &platformclientv2.Credential{
 			Name: &name,
 			VarType: &platformclientv2.Credentialtype{

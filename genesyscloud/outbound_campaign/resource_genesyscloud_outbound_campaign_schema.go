@@ -132,12 +132,12 @@ func ResourceOutboundCampaign() *schema.Resource {
 			},
 			`caller_name`: {
 				Description: `The caller id name to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`caller_address`: {
 				Description: `The caller id phone number to be displayed on the outbound call.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`outbound_line_count`: {
@@ -235,7 +235,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`dynamic_contact_queueing_settings`: {
-				Description: `Settings for dynamic queueing of contacts.`,
+				Description: `Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied`,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -243,9 +243,17 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"sort": {
-							Description: "Whether to sort contacts dynamically.",
+							Description: "Whether to sort contacts dynamically. Note: Changing the sort value will cause the outbound campaign to be dropped and recreated with a new ID",
 							Type:        schema.TypeBool,
-							Required:    true,
+							Optional:    true,
+							Computed:    true,
+							ForceNew:    true,
+						},
+						"filter": {
+							Description: "Whether to filter contacts dynamically. Note: Changing the filter value will cause the outbound campaign to be dropped and recreated with a new ID",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
 							ForceNew:    true,
 						},
 					},

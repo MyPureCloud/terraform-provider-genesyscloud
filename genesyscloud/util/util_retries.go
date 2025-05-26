@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
@@ -79,11 +79,21 @@ func wrapReadMethodWithRecover(method func() *retry.RetryError) func() *retry.Re
 type checkResponseFunc func(resp *platformclientv2.APIResponse, additionalCodes ...int) bool
 type callSdkFunc func() (*platformclientv2.APIResponse, diag.Diagnostics)
 
+var maxRetries = 10
+
+func SetMaxRetriesForTests(retries int) (previous int) {
+	previous = maxRetries
+	if retries > 0 {
+		maxRetries = retries
+	}
+	return previous
+}
+
 // RetryWhen Retries up to 10 times while the shouldRetry condition returns true
 // Useful for adding custom retry logic to normally non-retryable error codes
 func RetryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc, additionalCodes ...int) diag.Diagnostics {
 	var lastErr diag.Diagnostics
-	for i := 0; i < 10; i++ {
+	for i := 0; i < maxRetries; i++ {
 		resp, sdkErr := callSdk()
 		if sdkErr != nil {
 			if resp != nil && shouldRetry(resp, additionalCodes...) {

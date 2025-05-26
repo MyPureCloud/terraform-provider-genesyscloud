@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func init() {
@@ -80,6 +80,11 @@ type ProviderMeta struct {
 	Organization       *platformclientv2.Organization
 	DefaultCountryCode string
 	MaxClients         int
+}
+
+type IntegrationMeta struct {
+	ClientSecret string
+	ClientId     string
 }
 
 var (

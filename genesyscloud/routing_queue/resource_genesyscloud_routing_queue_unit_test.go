@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,6 +60,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
 		assert.Equal(t, testRoutingQueue.CannedResponseLibraries, routingQueue.CannedResponseLibraries, "Canned Response Libraries not equal")
+		assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, *routingQueue.LastAgentRoutingMode, "LastAgentRoutingMode Not Equal")
 		return queue, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
@@ -157,9 +158,8 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 
 	//Grab our defined schema
 	resourceSchema := ResourceRoutingQueue().Schema
-	//Setup a map of values
-	resourceDataMap := buildRoutingQueueResourceMap(tId, *testRoutingQueue.Name, testRoutingQueue)
 
+	resourceDataMap := buildRoutingQueueResourceMap(tId, *testRoutingQueue.Name, testRoutingQueue)
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
@@ -170,9 +170,9 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	routingQueue := getRoutingQueueFromResourceData(d)
 	routingQueue.Id = platformclientv2.String(d.Id())
 
-	assert.Equal(t, testRoutingQueue.Id, routingQueue.Id, "ID Not Equal")
-	assert.Equal(t, testRoutingQueue.Name, routingQueue.Name, "Name Not Equal")
-	assert.Equal(t, testRoutingQueue.Description, routingQueue.Description, "Description Not Equal")
+	assert.Equal(t, *testRoutingQueue.Id, d.Id(), "ID Not Equal")
+	assert.Equal(t, *testRoutingQueue.Name, d.Get("name").(string), "Name Not Equal")
+	assert.Equal(t, *testRoutingQueue.Description, d.Get("description").(string), "Description Not Equal")
 	assert.Equal(t, testRoutingQueue.ScoringMethod, routingQueue.ScoringMethod, "Scoring Method Not Equal")
 	assert.Equal(t, testRoutingQueue.SkillEvaluationMethod, routingQueue.SkillEvaluationMethod, "Skill Evaluation Method Not Equal")
 	assert.Equal(t, testRoutingQueue.AutoAnswerOnly, routingQueue.AutoAnswerOnly, "Auto Answer Only Not Equal")
@@ -196,6 +196,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 	assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 	assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+	assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, d.Get("last_agent_routing_mode").(string), "LastAgentRoutingMode Not Equal")
 }
 
 func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
@@ -244,6 +245,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.OnHoldPrompt, routingQueue.OnHoldPrompt, "On Hold Prompt Not Equal")
 		assert.Equal(t, testRoutingQueue.DefaultScripts, routingQueue.DefaultScripts, "Default Scripts Not Equal")
 		assert.Equal(t, testRoutingQueue.MediaSettings.Message.SubTypeSettings, routingQueue.MediaSettings.Message.SubTypeSettings, "SubTypeSettings Not Equal")
+		assert.Equal(t, *testRoutingQueue.LastAgentRoutingMode, *routingQueue.LastAgentRoutingMode, "LastAgentRoutingMode Not Equal")
 
 		return nil, nil, nil
 	}
@@ -534,7 +536,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 	var (
 		description           = "Unit Test Description"
 		scoringMethod         = "TimestampAndPriority"
-		skillEvaluationMethod = "BEST"
+		skillEvaluationMethod = "ALL"
 		callingPartyName      = "Unit Test Inc."
 		callingPartyNumber    = "123"
 		peerId                = "5696a54c-4009-4e63-826c-311679deeb97"
@@ -690,6 +692,7 @@ func convertCreateQueuetoQueue(req platformclientv2.Createqueuerequest) *platfor
 		OnHoldPrompt:                 req.OnHoldPrompt,
 		DefaultScripts:               req.DefaultScripts,
 		CannedResponseLibraries:      req.CannedResponseLibraries,
+		LastAgentRoutingMode:         req.LastAgentRoutingMode,
 	}
 }
 

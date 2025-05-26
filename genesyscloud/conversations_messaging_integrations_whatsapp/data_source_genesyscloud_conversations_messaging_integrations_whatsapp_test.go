@@ -1,7 +1,9 @@
 package conversations_messaging_integrations_whatsapp
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"testing"
+	"time"
 
 	cmMessagingSetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -70,6 +72,10 @@ func TestAccDataSourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id", ResourceType+"."+resourceLabel, "id"),
+					func(s *terraform.State) error {
+						time.Sleep(45 * time.Second) // Wait for 45 seconds for resources to get deleted properly
+						return nil
+					},
 				),
 			},
 		},

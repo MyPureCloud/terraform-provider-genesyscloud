@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v154/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -74,6 +74,10 @@ func readOutboundCallanalysisresponseset(ctx context.Context, d *schema.Resource
 
 		resourcedata.SetNillableValue(d, "name", responseSet.Name)
 		resourcedata.SetNillableValue(d, "beep_detection_enabled", responseSet.BeepDetectionEnabled)
+		if responseSet.AmdSpeechDistinguishEnabled != nil {
+			_ = d.Set("amd_speech_distinguish_enabled", responseSet.AmdSpeechDistinguishEnabled)
+		}
+		resourcedata.SetNillableValue(d, "live_speaker_detection_mode", responseSet.LiveSpeakerDetectionMode)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "responses", responseSet.Responses, flattenSdkOutboundCallAnalysisResponseSetReaction)
 
 		log.Printf("Read Outbound Call Analysis Response Set %s %s", d.Id(), *responseSet.Name)
