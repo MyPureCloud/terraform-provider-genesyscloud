@@ -115,10 +115,16 @@ github.com/hashicorp/terraform-json v0.25.0 h1:rmNqc/CIfcWawGiwXmRuiXJKEiJu1ntGo
 github.com/hashicorp/terraform-json v0.25.0/go.mod h1:sMKS8fiRDX4rVlR6EJUMudg1WcanxCMoWwTLkgZP/vc=
 github.com/hashicorp/terraform-plugin-docs v0.21.0 h1:yoyA/Y719z9WdFJAhpUkI1jRbKP/nteVNBaI3hW7iQ8=
 github.com/hashicorp/terraform-plugin-docs v0.21.0/go.mod h1:J4Wott1J2XBKZPp/NkQv7LMShJYOcrqhQ2myXBcu64s=
-github.com/hashicorp/terraform-plugin-go v0.27.0 h1:ujykws/fWIdsi6oTUT5Or4ukvEan4aN9lY+LOxVP8EE=
-github.com/hashicorp/terraform-plugin-go v0.27.0/go.mod h1:FDa2Bb3uumkTGSkTFpWSOwWJDwA7bf3vdP3ltLDTH6o=
+github.com/hashicorp/terraform-plugin-framework v1.15.0 h1:LQ2rsOfmDLxcn5EeIwdXFtr03FVsNktbbBci8cOKdb4=
+github.com/hashicorp/terraform-plugin-framework v1.15.0/go.mod h1:hxrNI/GY32KPISpWqlCoTLM9JZsGH3CyYlir09bD/fI=
+github.com/hashicorp/terraform-plugin-framework-validators v0.18.0 h1:OQnlOt98ua//rCw+QhBbSqfW3QbwtVrcdWeQN5gI3Hw=
+github.com/hashicorp/terraform-plugin-framework-validators v0.18.0/go.mod h1:lZvZvagw5hsJwuY7mAY6KUz45/U6fiDR0CzQAwWD0CA=
+github.com/hashicorp/terraform-plugin-go v0.28.0 h1:zJmu2UDwhVN0J+J20RE5huiF3XXlTYVIleaevHZgKPA=
+github.com/hashicorp/terraform-plugin-go v0.28.0/go.mod h1:FDa2Bb3uumkTGSkTFpWSOwWJDwA7bf3vdP3ltLDTH6o=
 github.com/hashicorp/terraform-plugin-log v0.9.0 h1:i7hOA+vdAItN1/7UrfBqBwvYPQ9TFvymaRGZED3FCV0=
 github.com/hashicorp/terraform-plugin-log v0.9.0/go.mod h1:rKL8egZQ/eXSyDqzLUuwUYLVdlYeamldAHSxjUFADow=
+github.com/hashicorp/terraform-plugin-mux v0.20.0 h1:3QpBnI9uCuL0Yy2Rq/kR9cOdmOFNhw88A2GoZtk5aXM=
+github.com/hashicorp/terraform-plugin-mux v0.20.0/go.mod h1:wSIZwJjSYk86NOTX3fKUlThMT4EAV1XpBHz9SAvjQr4=
 github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0 h1:NFPMacTrY/IdcIcnUB+7hsore1ZaRWU9cnB6jFoBnIM=
 github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0/go.mod h1:QYmYnLfsosrxjCnGY1p9c7Zj6n9thnEE+7RObeYs3fA=
 github.com/hashicorp/terraform-registry-address v0.2.5 h1:2GTftHqmUhVOeuu9CW3kwDkRe4pcBDq0uuK5VJngU1M=
@@ -178,6 +184,8 @@ github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
 github.com/mozillazg/go-unidecode v0.2.0 h1:vFGEzAH9KSwyWmXCOblazEWDh7fOkpmy/Z4ArmamSUc=
 github.com/mozillazg/go-unidecode v0.2.0/go.mod h1:zB48+/Z5toiRolOZy9ksLryJ976VIwmDmpQ2quyt1aA=
+github.com/mypurecloud/platform-client-sdk-go/v152 v152.0.0 h1:DVq4VfdLae+Fd12gByaO1u/HRVc+GAe0RkO96195apU=
+github.com/mypurecloud/platform-client-sdk-go/v152 v152.0.0/go.mod h1:BVljJrpR/ct6abVxfAQQ7kyLceSPtQKshy9tTn8PHjI=
 github.com/mypurecloud/platform-client-sdk-go/v157 v157.0.0 h1:4w4q61jNOTOwC3vXJqTScCdvp8tISG9X9qO7XiFpB4E=
 github.com/mypurecloud/platform-client-sdk-go/v157 v157.0.0/go.mod h1:KbCfgEQJLPGjg5OvhdE3W0rykAtUz0MXSJNhQXyAZD0=
 github.com/nyaruka/phonenumbers v1.6.3 h1:JU7Q30+UM/03/vto6Q4EiZfEuRpTVyXMqImIbI942Qw=

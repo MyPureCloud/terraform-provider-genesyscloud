@@ -8,10 +8,14 @@ require (
 	github.com/hashicorp/go-cty v1.5.0
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/hashicorp/terraform-plugin-docs v0.21.0
+	github.com/hashicorp/terraform-plugin-framework v1.15.0
+	github.com/hashicorp/terraform-plugin-framework-validators v0.18.0
+	github.com/hashicorp/terraform-plugin-mux v0.20.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/mozillazg/go-unidecode v0.2.0
+	github.com/mypurecloud/platform-client-sdk-go/v152 v152.0.0
 	github.com/mypurecloud/platform-client-sdk-go/v157 v157.0.0
 	github.com/nyaruka/phonenumbers v1.6.3
 	github.com/rjNemo/underscore v0.7.0
@@ -81,7 +85,7 @@ require (
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform-exec v0.23.0 // indirect
 	github.com/hashicorp/terraform-json v0.25.0 // indirect
-	github.com/hashicorp/terraform-plugin-go v0.27.0 // indirect
+	github.com/hashicorp/terraform-plugin-go v0.28.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.5 // indirect
 	github.com/hashicorp/terraform-svchost v0.1.1 // indirect
