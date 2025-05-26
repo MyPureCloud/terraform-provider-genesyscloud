@@ -130,8 +130,10 @@ func SetToStringList(strSet *schema.Set) *[]string {
 func InterfaceListToStrings(interfaceList []interface{}) []string {
 	strs := make([]string, len(interfaceList))
 	for i, val := range interfaceList {
-		if val, ok := val.(string); ok {
-			strs[i] = val
+		if val == nil {
+			strs[i] = ""
+		} else if valStr, ok := val.(string); ok {
+			strs[i] = valStr
 		} else {
 			strs[i] = ""
 		}
@@ -187,9 +189,10 @@ func FlattenList[T interface{}](resourceList *[]T, elementFlattener func(resourc
 	}
 
 	var resultList []map[string]interface{}
+	list := *resourceList
 
-	for _, resource := range *resourceList {
-		resultList = append(resultList, elementFlattener(&resource))
+	for i := range list {
+		resultList = append(resultList, elementFlattener(&list[i]))
 	}
 	return &resultList
 }
