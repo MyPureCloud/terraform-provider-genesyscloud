@@ -193,7 +193,7 @@ func (f *GenesysCloudProvider) Schema(_ context.Context, request provider.Schema
 			},
 			"aws_region": schema.StringAttribute{
 				Optional:            true,
-				MarkdownDescription: fmt.Sprintf("AWS region where org exists. e.g. us-east-1. Can be set with the `%s` environment variable. Defaults to \"%s\"", regionEnvVar, awsRegionDefaultValue),
+				MarkdownDescription: fmt.Sprintf("AWS region where org exists. e.g. us-east-1. Can be set with the `%s` environment variable.", regionEnvVar),
 				Validators: []validator.String{
 					stringvalidator.OneOfCaseInsensitive(getAllowedRegions()...),
 				},
@@ -208,6 +208,15 @@ func (f *GenesysCloudProvider) Schema(_ context.Context, request provider.Schema
 				Validators: []validator.String{
 					stringvalidator.OneOf("Text", "Json"),
 				},
+			},
+			AttrSdkClientPoolDebug: schema.BoolAttribute{
+				Optional:            true,
+				MarkdownDescription: "Enables debug tracing in the Genesys Cloud SDK client pool. Output will be written to standard log output. Can be set with the `GENESYSCLOUD_SDK_CLIENT_POOL_DEBUG` environment variable.",
+			},
+			AttrTokenAcquireTimeout: schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: "Timeout for acquiring a token from the pool. Can be set with the `GENESYSCLOUD_TOKEN_ACQUIRE_TIMEOUT` environment variable.",
+				//ValidateFunc: validateDuration,
 			},
 			"sdk_debug_file_path": schema.StringAttribute{
 				Optional:            true,
@@ -225,9 +234,9 @@ func (f *GenesysCloudProvider) Schema(_ context.Context, request provider.Schema
 			},
 			"log_stack_traces": schema.BoolAttribute{
 				Optional: true,
-				MarkdownDescription: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible. 
-If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message 
-"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API. 
+				MarkdownDescription: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.
+If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message
+"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.
 If you encounter any stack traces, please report them so we can address the underlying issues.`, logStackTracesEnvVar),
 			},
 			"log_stack_traces_file_path": schema.StringAttribute{
