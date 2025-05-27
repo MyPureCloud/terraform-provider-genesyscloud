@@ -25,7 +25,16 @@ import (
 // This is useful for debugging the output of the Terraform configuration
 var SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES = false
 
-func TestExampleResources(t *testing.T) {
+type ResultsStatus string
+
+const (
+	ResultsStatusSuccess ResultsStatus = "success"
+	ResultsStatusSkipped ResultsStatus = "skipped"
+	ResultsStatusFailed  ResultsStatus = "failed"
+	ResultsStatusErrored ResultsStatus = "errored"
+)
+
+func TestAccExampleResources(t *testing.T) {
 
 	var domain string
 	var authorizationProducts []string
@@ -48,9 +57,9 @@ func TestExampleResources(t *testing.T) {
 	resources := provider_registrar.GetResourceTypeNames()
 	// If you need to just test a specific resource type, you can manually override the resource(s)
 	// under test by uncommenting these lines and updating them
-	// resources = []string{
-	// 	"genesyscloud_user_roles",
-	// }
+	resources = []string{
+		"genesyscloud_recording_media_retention_policy",
+	}
 	sort.Strings(resources)
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
@@ -70,7 +79,7 @@ func TestExampleResources(t *testing.T) {
 		},
 	}
 
-	successfulResourceTypes := make(map[string]string, len(resources))
+	resourceTypesResults := make(map[string]ResultsStatus, len(resources))
 
 	for _, resourceType := range resources {
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
@@ -96,7 +105,7 @@ func TestExampleResources(t *testing.T) {
 				return nil
 			})
 
-			successfulResourceTypes[resourceType] = "success"
+			resourceTypesResults[resourceType] = ResultsStatusSuccess
 
 			// Run test
 			resource.Test(t, resource.TestCase{
@@ -111,7 +120,7 @@ func TestExampleResources(t *testing.T) {
 
 				},
 				ErrorCheck: func(err error) error {
-					successfulResourceTypes[resourceType] = "errored"
+					resourceTypesResults[resourceType] = ResultsStatusErrored
 					return err
 				},
 				ProviderFactories: providerFactories,
@@ -121,7 +130,7 @@ func TestExampleResources(t *testing.T) {
 						SkipFunc: func() (bool, error) {
 							shouldSkip := example.ShouldSkipExample(domain, authorizationProducts)
 							if shouldSkip {
-								successfulResourceTypes[resourceType] = "skipped"
+								resourceTypesResults[resourceType] = ResultsStatusSkipped
 							}
 							return shouldSkip, nil
 						},
@@ -134,7 +143,7 @@ func TestExampleResources(t *testing.T) {
 				},
 			})
 			if t.Failed() {
-				successfulResourceTypes[resourceType] = "failed"
+				resourceTypesResults[resourceType] = ResultsStatusFailed
 			}
 
 			// Pause for five seconds to allow GC API to finish processing delete
@@ -144,43 +153,43 @@ func TestExampleResources(t *testing.T) {
 	}
 
 	// Sort successfulResourceTypes by key
-	successfulResourceTypesKeys := make([]string, 0, len(successfulResourceTypes))
-	for k := range successfulResourceTypes {
+	successfulResourceTypesKeys := make([]string, 0, len(resourceTypesResults))
+	for k := range resourceTypesResults {
 		successfulResourceTypesKeys = append(successfulResourceTypesKeys, k)
 	}
 	sort.Strings(successfulResourceTypesKeys)
 
 	io.WriteString(os.Stdout, "The following resources were successfull:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "success" {
+		status := resourceTypesResults[srtKey]
+		if status == ResultsStatusSuccess {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
 	io.WriteString(os.Stdout, "The following resources were errored:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "errored" {
+		status := resourceTypesResults[srtKey]
+		if status == ResultsStatusErrored {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
 	io.WriteString(os.Stdout, "The following resources were failed:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "failed" {
+		status := resourceTypesResults[srtKey]
+		if status == ResultsStatusFailed {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
 	io.WriteString(os.Stdout, "The following resources were skipped:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "skipped" {
+		status := resourceTypesResults[srtKey]
+		if status == ResultsStatusSkipped {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
 }
 
-func TestExampleResourcesPlanOnly(t *testing.T) {
+func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 
 	fmt.Fprintln(os.Stdout, "Sanity testing the resources defined in the examples directory...")
 
@@ -255,10 +264,6 @@ func TestExampleResourcesPlanOnly(t *testing.T) {
 			ExternalProviders: externalProviders,
 			Steps: []resource.TestStep{
 				{
-					// SkipFunc: func() (bool, error) {
-					// 	shouldSkip := example.ShouldSkipExample(domain, authorizationProducts)
-					// 	return shouldSkip, nil
-					// },
 					Config:             string(resourceExampleContent),
 					PlanOnly:           true,
 					ExpectNonEmptyPlan: true,
@@ -271,7 +276,7 @@ func TestExampleResourcesPlanOnly(t *testing.T) {
 }
 
 // Utilize this test to explicitly test the simplest functionality available for each resource
-func TestExampleResourcesAudit(t *testing.T) {
+func TestAccExampleResourcesAudit(t *testing.T) {
 
 	fmt.Fprintln(os.Stdout, "Acceptance testing the resources defined in the examples directory...")
 
@@ -313,7 +318,7 @@ func TestExampleResourcesAudit(t *testing.T) {
 	organization, _, _ := orgApi.GetOrganizationsMe()
 	orgName := *organization.ThirdPartyOrgName
 
-	successfulResourceTypes := make(map[string]string, len(resources))
+	resourceTypeResults := make(map[string]ResultsStatus, len(resources))
 
 	for _, resourceType := range resources {
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
@@ -346,7 +351,7 @@ func TestExampleResourcesAudit(t *testing.T) {
 				return nil
 			})
 
-			successfulResourceTypes[resourceType] = "success"
+			resourceTypeResults[resourceType] = ResultsStatusSuccess
 
 			// Run test
 			resource.Test(t, resource.TestCase{
@@ -359,7 +364,7 @@ func TestExampleResourcesAudit(t *testing.T) {
 					}
 				},
 				ErrorCheck: func(err error) error {
-					successfulResourceTypes[resourceType] = "errored"
+					resourceTypeResults[resourceType] = ResultsStatusErrored
 					return err
 				},
 				ProviderFactories: providerFactories,
@@ -375,7 +380,7 @@ func TestExampleResourcesAudit(t *testing.T) {
 				},
 			})
 			if t.Failed() {
-				successfulResourceTypes[resourceType] = "failed"
+				resourceTypeResults[resourceType] = ResultsStatusFailed
 			}
 
 			// Pause for five seconds to allow GC API to finish processing delete
@@ -385,37 +390,37 @@ func TestExampleResourcesAudit(t *testing.T) {
 	}
 
 	// Sort successfulResourceTypes by key
-	successfulResourceTypesKeys := make([]string, 0, len(successfulResourceTypes))
-	for k := range successfulResourceTypes {
+	successfulResourceTypesKeys := make([]string, 0, len(resourceTypeResults))
+	for k := range resourceTypeResults {
 		successfulResourceTypesKeys = append(successfulResourceTypesKeys, k)
 	}
 	sort.Strings(successfulResourceTypesKeys)
 
 	io.WriteString(os.Stdout, "The following resources were successfull:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "success" {
+		status := resourceTypeResults[srtKey]
+		if status == ResultsStatusSuccess {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
 	io.WriteString(os.Stdout, "The following resources were errored:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "errored" {
+		status := resourceTypeResults[srtKey]
+		if status == ResultsStatusErrored {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
 	io.WriteString(os.Stdout, "The following resources were failed:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "failed" {
+		status := resourceTypeResults[srtKey]
+		if status == ResultsStatusFailed {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
 	io.WriteString(os.Stdout, "The following resources were skipped:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
-		status := successfulResourceTypes[srtKey]
-		if status == "skipped" {
+		status := resourceTypeResults[srtKey]
+		if status == ResultsStatusSkipped {
 			io.WriteString(os.Stdout, fmt.Sprintf("  - %s\n", srtKey))
 		}
 	}
