@@ -1,6 +1,7 @@
 package scripts
 
 import (
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -86,7 +87,9 @@ func ResourceScript() *schema.Resource {
 func ExporterScript() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllScripts),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: authDivision.ResourceType},
+		},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ScriptResolver,
 			SubDirectory:              "scripts",
