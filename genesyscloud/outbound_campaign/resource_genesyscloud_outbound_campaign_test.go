@@ -941,7 +941,7 @@ func TestAccResourceOutboundCampaignWithScriptId(t *testing.T) {
 						name,
 						dialingMode,
 						strconv.Quote(callerName),
-						callerAddress,
+						strconv.Quote(callerAddress),
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 						util.NullValue,
 						util.NullValue,

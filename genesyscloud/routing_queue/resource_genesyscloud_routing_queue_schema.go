@@ -1,14 +1,13 @@
 package routing_queue
 
 import (
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	architectUserPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
@@ -597,12 +596,20 @@ func ResourceRoutingQueue() *schema.Resource {
 					},
 				},
 			},
+			"ignore_members": {
+				Description:   "If true, queue members will not be managed through Terraform state or API updates. This provides backwards compatibility for configurations where queue members are managed outside of Terraform.",
+				Type:          schema.TypeBool,
+				Optional:      true,
+				ConflictsWith: []string{"members"},
+			},
 			"members": {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        queueMemberResource,
+				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
+					return d.Get("ignore_members").(bool)
+				},
 			},
 			"wrapup_codes": {
 				Description: "IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.",

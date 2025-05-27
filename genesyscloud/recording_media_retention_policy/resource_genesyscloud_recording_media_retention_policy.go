@@ -3,18 +3,19 @@ package recording_media_retention_policy
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
-	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -110,7 +111,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	pp := getPolicyProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, gcloud.ResourceSurveyForm(), constants.ConsistencyChecks(), ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, qualityFormsSurvey.ResourceQualityFormsSurvey(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading media retention policy %s", d.Id())
 

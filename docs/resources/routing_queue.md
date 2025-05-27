@@ -293,13 +293,14 @@ resource "genesyscloud_routing_queue" "example_queue_with_bullseye_ring" {
 - `enable_manual_assignment` (Boolean) Indicates whether manual assignment is enabled for this queue. Defaults to `false`.
 - `enable_transcription` (Boolean) Indicates whether voice transcription is enabled for this queue. Defaults to `false`.
 - `groups` (Set of String) List of group ids assigned to the queue
+- `ignore_members` (Boolean) If true, queue members will not be managed through Terraform state or API updates. This provides backwards compatibility for configurations where queue members are managed outside of Terraform.
 - `last_agent_routing_mode` (String) The Last Agent Routing Mode for the queue.
 - `media_settings_call` (Block List, Max: 1) Call media settings. (see [below for nested schema](#nestedblock--media_settings_call))
 - `media_settings_callback` (Block List, Max: 1) Callback media settings. (see [below for nested schema](#nestedblock--media_settings_callback))
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
 - `media_settings_email` (Block List, Max: 1) Email media settings. (see [below for nested schema](#nestedblock--media_settings_email))
 - `media_settings_message` (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
-- `members` (Set of Object) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedatt--members))
+- `members` (Block Set) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedblock--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `on_hold_prompt_id` (String) The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
 - `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. **Note**: outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address (see [below for nested schema](#nestedblock--outbound_email_address))
@@ -517,13 +518,16 @@ Required:
 
 
 
-<a id="nestedatt--members"></a>
+<a id="nestedblock--members"></a>
 ### Nested Schema for `members`
+
+Required:
+
+- `user_id` (String) User ID
 
 Optional:
 
-- `ring_num` (Number)
-- `user_id` (String)
+- `ring_num` (Number) Ring number between 1 and 6 for this user in the queue. Defaults to `1`.
 
 
 <a id="nestedblock--outbound_email_address"></a>
