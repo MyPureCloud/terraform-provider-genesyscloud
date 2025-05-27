@@ -253,7 +253,6 @@ func flattenAddressableEntityRefs(addressableEntityRefs *[]platformclientv2.Addr
 	return schema.NewSet(schema.HashString, addressableEntityRefList)
 }
 
-
 func GenerateResponseManagementResponseResource(
 	resourceLabel string,
 	name string,
