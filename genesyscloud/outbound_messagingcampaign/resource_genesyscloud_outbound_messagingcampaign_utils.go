@@ -2,13 +2,11 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"log"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -125,37 +123,26 @@ func buildReplyToEmailAddresss(replyToEmailAddress []interface{}) *platformclien
 	if replyToEmailAddress == nil || len(replyToEmailAddress) < 1 {
 		return nil
 	}
-	var sdkReplyToEmailAddress platformclientv2.Replytoemailaddress
-	replyToEmailAddressMap, ok := replyToEmailAddress[0].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	log.Printf("domain_id: %s\nroute_id: %s", replyToEmailAddressMap["domain_id"].(string), replyToEmailAddressMap["route_id"].(string))
-	sdkReplyToEmailAddress.Domain = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddressMap["domain_id"].(string))}
-	sdkReplyToEmailAddress.Route = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddressMap["route_id"].(string))}
-	log.Println(sdkReplyToEmailAddress)
-	return &sdkReplyToEmailAddress
+	replyToEmailAddresssSlice := make([]platformclientv2.Replytoemailaddress, 0)
+	for _, replyToEmailAddress := range replyToEmailAddress {
+		var sdkReplyToEmailAddress platformclientv2.Replytoemailaddress
+		replyToEmailAddresssMap, ok := replyToEmailAddress.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
-	//replyToEmailAddresssSlice := make([]platformclientv2.Replytoemailaddress, 0)
-	//for _, replyToEmailAddress := range replyToEmailAddress {
-	//	var sdkReplyToEmailAddress platformclientv2.Replytoemailaddress
-	//	replyToEmailAddresssMap, ok := replyToEmailAddress.(map[string]interface{})
-	//	if !ok {
-	//		continue
-	//	}
-	//
-	//	sdkReplyToEmailAddress.Domain = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["domain_id"].(string))}
-	//	sdkReplyToEmailAddress.Route = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["route_id"].(string))}
-	//
-	//	replyToEmailAddresssSlice = append(replyToEmailAddresssSlice, sdkReplyToEmailAddress)
-	//	return &replyToEmailAddresssSlice[0]
-	//}
-	//return nil
+		sdkReplyToEmailAddress.Domain = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["domain_id"].(string))}
+		sdkReplyToEmailAddress.Route = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["route_id"].(string))}
+
+		replyToEmailAddresssSlice = append(replyToEmailAddresssSlice, sdkReplyToEmailAddress)
+	}
+
+	return &replyToEmailAddresssSlice[0]
 }
 
 // buildEmailConfigs maps an []interface{} into a Genesys Cloud *[]platformclientv2.Emailconfig
 func buildEmailConfigs(emailConfigs *schema.Set) *platformclientv2.Emailconfig {
-	if emailConfigs == nil {
+	if emailConfigs == nil || emailConfigs.Len() < 1 {
 		return nil
 	}
 	var sdkEmailConfig platformclientv2.Emailconfig
@@ -300,8 +287,6 @@ func flattenEmailConfigs(emailConfigs *platformclientv2.Emailconfig) []interface
 	resourcedata.SetMapReferenceValueIfNotNil(emailConfigMap, "content_template_id", emailConfigs.ContentTemplate)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(emailConfigMap, "from_address", emailConfigs.FromAddress, flattenFromEmailAddresss)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(emailConfigMap, "reply_to_address", emailConfigs.ReplyToAddress, flattenReplyToEmailAddresss)
-	log.Println("IN READ CONTEXT")
-	log.Println(emailConfigMap)
 
 	emailConfigList = append(emailConfigList, emailConfigMap)
 
@@ -346,8 +331,12 @@ func validateEmailconfig(emailConfig *schema.Set) (string, bool) {
 	if len(emailConfigList) > 0 {
 		emailConfigMap := emailConfigList[0].(map[string]interface{})
 		emailColumn, _ := emailConfigMap["email_columns"].([]interface{})
+		fromAddress, _ := emailConfigMap["from_address"].([]interface{})
 		if len(emailColumn) == 0 {
 			return "email_columns is required.", false
+		}
+		if len(fromAddress) == 0 {
+			return "from_address is required.", false
 		}
 	} else {
 		return "", false

@@ -52,21 +52,17 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
 	if _, sms := d.GetOk("sms_config"); sms {
-		log.Printf("HERE1")
 		msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
 		if !valid {
 			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
 		}
 	}
 	if _, email := d.GetOk("email_config"); email {
-		log.Printf("HERE2")
 		msg, valid := validateEmailconfig(d.Get("email_config").(*schema.Set))
 		if !valid {
 			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
 		}
 	}
-
-	log.Println(outboundMessagingcampaign)
 
 	log.Printf("Creating outbound messagingcampaign %s", *outboundMessagingcampaign.Name)
 	messagingCampaign, resp, err := proxy.createOutboundMessagingcampaign(ctx, &outboundMessagingcampaign)
@@ -115,8 +111,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "errors", messagingCampaign.Errors, flattenRestErrorDetails)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", messagingCampaign.DynamicContactQueueingSettings, flattenDynamicContactQueueingSettingss)
-		//resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
-		d.Set("email_config", flattenEmailConfigs(messagingCampaign.EmailConfig))
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
 		d.Set("sms_config", flattenSmsConfigs(messagingCampaign.SmsConfig))
 
 		log.Printf("Read outbound messagingcampaign %s %s", d.Id(), *messagingCampaign.Name)
@@ -132,14 +127,12 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
 	if _, sms := d.GetOk("sms_config"); sms {
-		log.Printf("HERE1")
 		msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
 		if !valid {
 			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
 		}
 	}
 	if _, email := d.GetOk("email_config"); email {
-		log.Printf("HERE2")
 		msg, valid := validateEmailconfig(d.Get("email_config").(*schema.Set))
 		if !valid {
 			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
