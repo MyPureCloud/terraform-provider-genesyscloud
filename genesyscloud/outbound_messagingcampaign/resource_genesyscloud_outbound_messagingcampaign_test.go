@@ -6,6 +6,7 @@ import (
 	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -544,6 +545,11 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					// Can be removed once `api/v2/routing/email/outbound/*` is implemented in provider
+					CheckOutboundDomainExists(fromAddressDomainId)
+				},
+
 				// Create
 				Config: contactListResource +
 					routingQueueResource +
@@ -741,5 +747,38 @@ func testVerifyOutboundMessagingCampaignDestroyed(state *terraform.State) error 
 		}
 	}
 	// Success. All messaging campaigns destroyed
+	return nil
+}
+
+func CheckOutboundDomainExists(id string) error {
+	config, _ := provider.AuthorizeSdk()
+	routingApi := platformclientv2.NewRoutingApiWithConfig(config)
+	outboundDomain, resp, err := routingApi.GetRoutingEmailOutboundDomain(id)
+	if err != nil {
+		return fmt.Errorf("error getting outbound domain %v: %v", id, err)
+	} else if resp.StatusCode == 404 {
+		// outbound domain for test does not exist so create it
+		_, _, err := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomain{
+			Id: &id,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create outbound domain: %v", err)
+		}
+	}
+
+	// ensure domain is verified
+	if *outboundDomain.DkimVerificationResult.Status != "Verified" ||
+		*outboundDomain.CnameVerificationResult.Status != "Verified" {
+		result, _, err := routingApi.PutRoutingEmailOutboundDomainActivation(*outboundDomain.Id)
+		if err != nil {
+			return fmt.Errorf("failed to verify outbound domain: %v", err)
+		}
+		if result.DnsTxtSendingRecord.VerificationStatus != nil &&
+			*result.DnsTxtSendingRecord.VerificationStatus == "Verified" &&
+			result.DnsCnameBounceRecord.VerificationStatus != nil &&
+			*result.DnsCnameBounceRecord.VerificationStatus == "Verified" {
+			log.Printf("Outbound domain (%s) created and verified", id)
+		}
+	}
 	return nil
 }
