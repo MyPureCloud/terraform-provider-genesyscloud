@@ -1,6 +1,8 @@
 package webdeployments_configuration
 
 import (
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -38,7 +40,7 @@ var (
 							Description:  "Contains localized label key used in messenger homescreen",
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle", "PushNotificationTitle", "PushNotificationBody"}, false),
 						},
 						"value": {
 							Description: "Contains localized label value used in messenger homescreen",
@@ -75,9 +77,10 @@ var (
 	messengerStyle = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"primary_color": {
-				Description: "The primary color of messenger in hexadecimal",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "The primary color of messenger in hexadecimal",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: validators.ValidateHexColor,
 			},
 		},
 	}
@@ -121,6 +124,13 @@ var (
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+				// Validate only works for single instance values in this version of the Plugin SDK.
+				// After migrating to the new SDK, this validation can be applied. Commenting out for now.
+				// ValidateFunc: validation.StringInSlice([]string{
+				// 	"image/jpeg",
+				// 	"image/gif",
+				// 	"image/png",
+				// }, false),
 			},
 			"max_file_size_kb": {
 				Description:  "The maximum file size for file uploads in kilobytes. Default is 10240 (10 MB)",
@@ -378,6 +388,9 @@ var (
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"Includes", "DoesNotInclude", "StartsWith", "EndsWith", "Equals"}, true),
+							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+								return strings.EqualFold(old, new)
+							},
 						},
 					},
 				},
