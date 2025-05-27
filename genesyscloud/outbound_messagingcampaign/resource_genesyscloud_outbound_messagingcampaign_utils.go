@@ -5,6 +5,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
@@ -33,8 +34,7 @@ func getOutboundMessagingcampaignFromResourceData(d *schema.ResourceData) platfo
 		Errors:                         buildRestErrorDetails(d.Get("errors").([]interface{})),
 		DynamicContactQueueingSettings: buildDynamicContactQueueingSettingss(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 		SmsConfig:                      buildSmsConfigs(d.Get("sms_config").(*schema.Set)),
-		// TODO: add email configs in future as it is linked with contact list templates which isn't a resource yet
-		// EmailConfig: buildEmailConfigs(d.Get("email_config").(*schema.Set)),
+		EmailConfig:                    buildEmailConfigs(d.Get("email_config").(*schema.Set)),
 	}
 }
 
@@ -121,22 +121,36 @@ func buildFromEmailAddresss(fromEmailAddresss []interface{}) *platformclientv2.F
 }
 
 // buildReplyToEmailAddresss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Replytoemailaddress
-func buildReplyToEmailAddresss(replyToEmailAddresss []interface{}) *platformclientv2.Replytoemailaddress {
-	replyToEmailAddresssSlice := make([]platformclientv2.Replytoemailaddress, 0)
-	for _, replyToEmailAddress := range replyToEmailAddresss {
-		var sdkReplyToEmailAddress platformclientv2.Replytoemailaddress
-		replyToEmailAddresssMap, ok := replyToEmailAddress.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		sdkReplyToEmailAddress.Domain = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["domain_id"].(string))}
-		sdkReplyToEmailAddress.Route = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["route_id"].(string))}
-
-		replyToEmailAddresssSlice = append(replyToEmailAddresssSlice, sdkReplyToEmailAddress)
+func buildReplyToEmailAddresss(replyToEmailAddress []interface{}) *platformclientv2.Replytoemailaddress {
+	if replyToEmailAddress == nil || len(replyToEmailAddress) < 1 {
+		return nil
 	}
+	var sdkReplyToEmailAddress platformclientv2.Replytoemailaddress
+	replyToEmailAddressMap, ok := replyToEmailAddress[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	log.Printf("domain_id: %s\nroute_id: %s", replyToEmailAddressMap["domain_id"].(string), replyToEmailAddressMap["route_id"].(string))
+	sdkReplyToEmailAddress.Domain = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddressMap["domain_id"].(string))}
+	sdkReplyToEmailAddress.Route = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddressMap["route_id"].(string))}
+	log.Println(sdkReplyToEmailAddress)
+	return &sdkReplyToEmailAddress
 
-	return &replyToEmailAddresssSlice[0]
+	//replyToEmailAddresssSlice := make([]platformclientv2.Replytoemailaddress, 0)
+	//for _, replyToEmailAddress := range replyToEmailAddress {
+	//	var sdkReplyToEmailAddress platformclientv2.Replytoemailaddress
+	//	replyToEmailAddresssMap, ok := replyToEmailAddress.(map[string]interface{})
+	//	if !ok {
+	//		continue
+	//	}
+	//
+	//	sdkReplyToEmailAddress.Domain = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["domain_id"].(string))}
+	//	sdkReplyToEmailAddress.Route = &platformclientv2.Domainentityref{Id: platformclientv2.String(replyToEmailAddresssMap["route_id"].(string))}
+	//
+	//	replyToEmailAddresssSlice = append(replyToEmailAddresssSlice, sdkReplyToEmailAddress)
+	//	return &replyToEmailAddresssSlice[0]
+	//}
+	//return nil
 }
 
 // buildEmailConfigs maps an []interface{} into a Genesys Cloud *[]platformclientv2.Emailconfig
@@ -144,7 +158,6 @@ func buildEmailConfigs(emailConfigs *schema.Set) *platformclientv2.Emailconfig {
 	if emailConfigs == nil {
 		return nil
 	}
-
 	var sdkEmailConfig platformclientv2.Emailconfig
 	emailConfigList := emailConfigs.List()
 	if len(emailConfigList) > 0 {
@@ -153,14 +166,15 @@ func buildEmailConfigs(emailConfigs *schema.Set) *platformclientv2.Emailconfig {
 		sdkEmailConfig.ContentTemplate = &platformclientv2.Domainentityref{Id: platformclientv2.String(emailConfigsMap["content_template_id"].(string))}
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkEmailConfig.FromAddress, emailConfigsMap, "from_address", buildFromEmailAddresss)
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkEmailConfig.ReplyToAddress, emailConfigsMap, "reply_to_address", buildReplyToEmailAddresss)
-	}
 
-	return &sdkEmailConfig
+		return &sdkEmailConfig
+	}
+	return nil
 }
 
 // buildSmsConfigs maps an []interface{} into a Genesys Cloud *platformclientv2.Smsconfig
 func buildSmsConfigs(smsConfigs *schema.Set) *platformclientv2.Smsconfig {
-	if smsConfigs == nil {
+	if smsConfigs == nil || smsConfigs.Len() < 1 {
 		return nil
 	}
 	var sdkSmsconfig platformclientv2.Smsconfig
@@ -181,9 +195,9 @@ func buildSmsConfigs(smsConfigs *schema.Set) *platformclientv2.Smsconfig {
 		if contentTemplateId := smsconfigMap["content_template_id"].(string); contentTemplateId != "" {
 			sdkSmsconfig.ContentTemplate = &platformclientv2.Domainentityref{Id: &contentTemplateId}
 		}
+		return &sdkSmsconfig
 	}
-
-	return &sdkSmsconfig
+	return nil
 }
 
 // flattenContactSorts maps a Genesys Cloud *[]platformclientv2.Contactsort into a []interface{}
@@ -286,6 +300,8 @@ func flattenEmailConfigs(emailConfigs *platformclientv2.Emailconfig) []interface
 	resourcedata.SetMapReferenceValueIfNotNil(emailConfigMap, "content_template_id", emailConfigs.ContentTemplate)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(emailConfigMap, "from_address", emailConfigs.FromAddress, flattenFromEmailAddresss)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(emailConfigMap, "reply_to_address", emailConfigs.ReplyToAddress, flattenReplyToEmailAddresss)
+	log.Println("IN READ CONTEXT")
+	log.Println(emailConfigMap)
 
 	emailConfigList = append(emailConfigList, emailConfigMap)
 

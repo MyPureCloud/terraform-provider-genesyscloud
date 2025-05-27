@@ -21,6 +21,11 @@ import (
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	obContactListFilter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	responseManagementResponse "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
 
 /*
@@ -427,6 +432,174 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 	})
 }
 
+func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
+	// contact_list variables
+	var (
+		contactListResourceLabel = "email-config-test"
+		contactListName          = "Terraform Test Contact List " + uuid.NewString()
+		contactListColumnNames   = []string{strconv.Quote("PERSONAL")}
+		contactListResource      = obContactList.GenerateOutboundContactList(
+			contactListResourceLabel,
+			contactListName,
+			util.NullValue,
+			util.NullValue,
+			[]string{},
+			contactListColumnNames,
+			util.NullValue,
+			util.NullValue,
+			util.NullValue,
+			obContactList.GenerateEmailColumnsBlock(
+				"PERSONAL",
+				"PERSONAL",
+				util.NullValue,
+			),
+		)
+
+		// routing variables
+
+		routingQueueResourceLabel = "email-config-test"
+		routingQueueName          = "Terraform Test Routing Queue " + uuid.NewString()
+		routingQueueResource      = routingQueue.GenerateRoutingQueueResourceBasic(
+			routingQueueResourceLabel,
+			routingQueueName,
+		)
+
+		routingEmailDomainResourceLabel = "email-config-test"
+		routingEmailDomainId            = "email_config_test"
+		routingEmailDomainSubdomain     = util.TrueValue
+		routingEmailDomainResource      = routingEmailDomain.GenerateRoutingEmailDomainResource(
+			routingEmailDomainResourceLabel,
+			routingEmailDomainId,
+			routingEmailDomainSubdomain,
+			util.NullValue,
+		)
+
+		routingEmailRouteResourceLabel = "email-config-test"
+		//routingEmailRouteDomainId      = "terraform-test.mypurecloud.com"
+		routingEmailRoutePattern  = "test"
+		routingEmailRouteFromName = "TerraformAccTest"
+		routingEmailRouteResource = routingEmailRoute.GenerateRoutingEmailRouteResource(
+			routingEmailRouteResourceLabel,
+			routingEmailDomain.ResourceType+"."+routingEmailDomainResourceLabel+".id",
+			routingEmailRoutePattern,
+			routingEmailRouteFromName,
+			"queue_id = "+routingQueue.ResourceType+"."+routingQueueResourceLabel+".id",
+		)
+
+		// responsemanagement variables
+
+		responseManagementLibraryResourceLabel = "email_config_test_response_management_library"
+		responseManagementLibraryName          = "Terraform Test Response Management Library " + uuid.NewString()
+		responseManagementLibraryResource      = responseManagementLibrary.GenerateResponseManagementLibraryResource(
+			responseManagementLibraryResourceLabel,
+			responseManagementLibraryName,
+		)
+
+		responseManagementResponseResourceLabel = "email_config_test_response_management_response"
+		responseManagementResponseName          = "Terraform Test Response Management Response " + uuid.NewString()
+		responseManagementResponseType          = "CampaignEmailTemplate"
+		responseManagementResponseResource      = responseManagementResponse.GenerateResponseManagementResponseResource(
+			responseManagementResponseResourceLabel,
+			responseManagementResponseName,
+			[]string{responseManagementLibrary.ResourceType + "." + responseManagementLibraryResourceLabel + ".id"},
+			util.NullValue,
+			util.NullValue,
+			responseManagementResponseType,
+			[]string{},
+			`text {
+				content = "Email Config Test"
+			}`,
+		)
+
+		// messaging_campaign variables
+
+		resourceLabel  = "test_messaging_campaign_email_config"
+		name           = "Terraform Test Messaging Campaign " + uuid.NewString()
+		messagesPerMin = "10"
+		alwaysRunning  = util.FalseValue
+		campaignStatus = "off"
+
+		emailColumns = "PERSONAL"
+		// The API for creating this outbound domain () does not have a terraform resource yet
+		fromAddressDomainId  = "terraformemailconfig.com"
+		fromAddressLocalPart = "TestEmail"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: contactListResource +
+					routingQueueResource +
+					routingEmailDomainResource +
+					routingEmailRouteResource +
+					responseManagementLibraryResource +
+					responseManagementResponseResource +
+					generateOutboundMessagingCampaignResource(
+						resourceLabel,
+						name,
+						obContactList.ResourceType+"."+contactListResourceLabel+".id",
+						strconv.Quote(campaignStatus),
+						messagesPerMin,
+						alwaysRunning,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						generateOutboundMessagingCampaignEmailConfig(
+							[]string{emailColumns},
+							responseManagementResponse.ResourceType+"."+responseManagementResponseResourceLabel+".id",
+							fromAddressDomainId,
+							fromAddressLocalPart,
+							routingEmailDomain.ResourceType+"."+routingEmailDomainResourceLabel+".id",
+							routingEmailRoute.ResourceType+"."+routingEmailRouteResourceLabel+".id",
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "messages_per_minute", messagesPerMin),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "always_running", alwaysRunning),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "campaign_status", campaignStatus),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.email_columns.#", "1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.email_columns.0", emailColumns),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.from_address.domain_id", fromAddressDomainId),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.from_address.local_part", fromAddressLocalPart),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.reply_to_address.domain_id", routingEmailDomain.ResourceType+"."+routingEmailDomainResourceLabel+".id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.reply_to_address.route_id", routingEmailRoute.ResourceType+"."+routingEmailRouteResourceLabel+".id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.response_management_email_template_id", responseManagementResponse.ResourceType+"."+responseManagementResponseResourceLabel+".id"),
+				),
+			},
+			//{
+			//	// Update
+			//	Config: contactListResource +
+			//		routingQueueResource +
+			//		routingEmailDomainResource +
+			//		routingEmailRouteResource +
+			//		generateOutboundMessagingCampaignResource(
+			//			resourceLabel,
+			//			name,
+			//			obContactList.ResourceType+"."+contactListResourceLabel+".id",
+			//			strconv.Quote(campaignStatus),
+			//			messagesPerMin,
+			//			alwaysRunning,
+			//			util.NullValue,
+			//			[]string{},
+			//			[]string{},
+			//			[]string{},
+			//
+			//},
+			{
+				ResourceName:      ResourceType + "." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyOutboundMessagingCampaignDestroyed,
+	})
+}
+
 func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclientv2.RoutingApi) error {
 	var (
 		phoneNumberType = "local"
@@ -518,6 +691,30 @@ func generateOutboundMessagingCampaignSmsConfig(
  		sender_sms_phone_number = "%s"
 	}
 `, smsConfigMessageColumn, smsConfigPhoneColumn, smsConfigSenderSMSPhoneNumber)
+}
+
+func generateOutboundMessagingCampaignEmailConfig(
+	emailColumns []string,
+	contentTemplateId string,
+	fromAddressDomainId string,
+	fromAddressLocalPart string,
+	replyToAddressDomainId string,
+	replyToAddressRouteId string,
+) string {
+	return fmt.Sprintf(`
+   	email_config {
+		email_columns = [%s]
+		content_template_id = %s
+		from_address = {
+			domain_id = %s
+			local_part = %s
+		}
+		reply_to_address {
+			domain_id = %s
+			route_id = %s
+		}
+	}
+`, emailColumns, contentTemplateId, fromAddressDomainId, fromAddressLocalPart, replyToAddressDomainId, replyToAddressRouteId)
 }
 
 func generateDynamicContactQueueingSettings(sort string, filter string) string {
