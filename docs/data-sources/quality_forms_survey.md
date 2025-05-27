@@ -3,12 +3,12 @@
 page_title: "genesyscloud_quality_forms_survey Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud survey form. Select a form by name
+  Data source for Genesys Cloud Survey Forms. Select a form by name
 ---
 
 # genesyscloud_quality_forms_survey (Data Source)
 
-Data source for Genesys Cloud survey form. Select a form by name
+Data source for Genesys Cloud Survey Forms. Select a form by name
 
 
 

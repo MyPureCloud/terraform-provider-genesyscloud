@@ -42,6 +42,7 @@ resource "genesyscloud_script" "script" {
 
 ### Optional
 
+- `division_id` (String) Specify division id
 - `substitutions` (Map of String) A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.
 
 ### Read-Only
