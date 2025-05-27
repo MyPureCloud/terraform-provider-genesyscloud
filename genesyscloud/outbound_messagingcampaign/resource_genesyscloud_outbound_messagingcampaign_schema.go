@@ -298,16 +298,16 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundMessagingcampaigns),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			`division_id`:                         {RefType: "genesyscloud_auth_division"},
-			`contact_list_id`:                     {RefType: "genesyscloud_outbound_contact_list"},
-			`contact_list_filter_ids`:             {RefType: "genesyscloud_outbound_contactlistfilter"},
-			`dnc_list_ids`:                        {RefType: "genesyscloud_outbound_dnclist"},
-			`callable_time_set_id`:                {RefType: "genesyscloud_outbound_callabletimeset"},
-			`rule_set_ids`:                        {RefType: "genesyscloud_outbound_digitalruleset"},
-			`email_config.from_address.route_id`:  {RefType: "genesyscloud_routing_email_route"},
-			`email_config.from_address.domain_id`: {RefType: "genesyscloud_routing_email_domain"},
-			`sms_config.content_template_id`:      {RefType: "genesyscloud_responsemanagement_response"},
-			`email_config.content_template_id`:    {RefType: "genesyscloud_responsemanagement_response"},
+			`division_id`:                             {RefType: "genesyscloud_auth_division"},
+			`contact_list_id`:                         {RefType: "genesyscloud_outbound_contact_list"},
+			`contact_list_filter_ids`:                 {RefType: "genesyscloud_outbound_contactlistfilter"},
+			`dnc_list_ids`:                            {RefType: "genesyscloud_outbound_dnclist"},
+			`callable_time_set_id`:                    {RefType: "genesyscloud_outbound_callabletimeset"},
+			`rule_set_ids`:                            {RefType: "genesyscloud_outbound_digitalruleset"},
+			`email_config.reply_to_address.route_id`:  {RefType: "genesyscloud_routing_email_route"},
+			`email_config.reply_to_address.domain_id`: {RefType: "genesyscloud_routing_email_domain"},
+			`sms_config.content_template_id`:          {RefType: "genesyscloud_responsemanagement_response"},
+			`email_config.content_template_id`:        {RefType: "genesyscloud_responsemanagement_response"},
 		},
 	}
 }
