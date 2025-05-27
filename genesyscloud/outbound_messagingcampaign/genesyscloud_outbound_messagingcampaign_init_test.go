@@ -6,9 +6,11 @@ import (
 	obContactListFilter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contactlistfilter"
 	obDigitalRuleSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
-	responseManagement "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	responseManagementResponse "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"sync"
 	"testing"
 
@@ -42,9 +44,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[obCallableTimeset.ResourceType] = obCallableTimeset.ResourceOutboundCallabletimeset()
 	providerResources[obDnclist.ResourceType] = obDnclist.ResourceOutboundDncList()
 	providerResources[obDigitalRuleSet.ResourceType] = obDigitalRuleSet.ResourceOutboundDigitalruleset()
-	providerResources[responseManagement.ResourceType] = responseManagement.ResourceResponsemanagementResponse()
+	providerResources[responseManagementLibrary.ResourceType] = responseManagementLibrary.ResourceResponsemanagementLibrary()
+	providerResources[responseManagementResponse.ResourceType] = responseManagementResponse.ResourceResponsemanagementResponse()
 	providerResources[routingEmailRoute.ResourceType] = routingEmailRoute.ResourceRoutingEmailRoute()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

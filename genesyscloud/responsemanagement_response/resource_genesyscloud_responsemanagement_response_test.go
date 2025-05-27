@@ -73,7 +73,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					util.NullValue,
 					util.NullValue,
 					[]string{},
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
 						util.NullValue,
@@ -106,7 +106,7 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					strconv.Quote(responseTypes[3]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
 					generateFooterBlock(footerType, footerResource),
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
 						util.NullValue,
@@ -160,13 +160,13 @@ func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[3]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
 						util.NullValue,
 					),
 					generateFooterBlock(footerType, footerResource),
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
 						util.NullValue,
@@ -263,7 +263,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					util.NullValue,
 					util.NullValue,
 					[]string{},
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
 						util.NullValue,
@@ -295,7 +295,7 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
 						util.NullValue,
@@ -356,12 +356,12 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 					util.GenerateJsonSchemaDocStr(substitutionsSchema),
 					strconv.Quote(responseTypes[0]),
 					[]string{"genesyscloud_responsemanagement_responseasset." + assetResourceLabel + ".id"},
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent1,
 						textsContentTypes[0],
 						util.NullValue,
 					),
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent2,
 						textsContentTypes[1],
 						util.NullValue,
@@ -453,12 +453,12 @@ func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T
 					util.NullValue,
 					strconv.Quote(responseTypes[2]),
 					[]string{},
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContentSubject,
 						textsContentTypes[0],
 						strconv.Quote(textsType[0]),
 					),
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContentBody,
 						textsContentTypes[1],
 						strconv.Quote(textsType[1]),
@@ -488,16 +488,6 @@ func TestAccResourceResponseManagementResponseCampaignEmailTemplate(t *testing.T
 		CheckDestroy: testVerifyResponseManagementResponseDestroyed,
 	})
 
-}
-
-func generateTextsBlock(content string, contentType string, cType string) string {
-	return fmt.Sprintf(`
-		texts {
-			content = "%s"
-			content_type = "%s"
-			type = %s
-		}
-	`, content, contentType, cType)
 }
 
 func generateSubstitutionsBlock(id, description, defaultValue string) string {

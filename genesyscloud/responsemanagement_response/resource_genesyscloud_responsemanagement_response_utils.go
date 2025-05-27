@@ -276,3 +276,13 @@ func GenerateResponseManagementResponseResource(
 		}
 	`, resourceLabel, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
 }
+
+func GenerateTextsBlock(content string, contentType string, cType string) string {
+	return fmt.Sprintf(`
+		texts {
+			content = "%s"
+			content_type = "%s"
+			type = %s
+		}
+	`, content, contentType, cType)
+}
