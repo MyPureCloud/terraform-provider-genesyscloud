@@ -432,6 +432,10 @@ func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 	})
 }
 
+/*
+Since (api/v2/routing/emails/outbound/domains) has no terraform resource currently,
+this tests relies on a pre-created outbound domain "terraformemailconfig.com"
+*/
 func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 	var (
 		// contact_list variables
@@ -476,10 +480,9 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 		)
 
 		routingEmailRouteResourceLabel = "email-config-test"
-		//routingEmailRouteDomainId      = "terraform-test.mypurecloud.com"
-		routingEmailRoutePattern  = "test"
-		routingEmailRouteFromName = "TerraformAccTest"
-		routingEmailRouteResource = routingEmailRoute.GenerateRoutingEmailRouteResource(
+		routingEmailRoutePattern       = "test"
+		routingEmailRouteFromName      = "TerraformAccTest"
+		routingEmailRouteResource      = routingEmailRoute.GenerateRoutingEmailRouteResource(
 			routingEmailRouteResourceLabel,
 			routingEmailDomain.ResourceType+"."+routingEmailDomainResourceLabel+".id",
 			routingEmailRoutePattern,
@@ -528,7 +531,10 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 		campaignStatus = "off"
 
 		emailColumns = "PERSONAL"
-		// The API for creating this outbound domain () does not have a terraform resource yet
+		/*
+			The API for creating this outbound domain (api/v2/routing/email/outbound/domains) does not have a terraform resource yet.
+			currently this test relies on the pre-created outbound domain "terraformemailconfig.com".
+		*/
 		fromAddressDomainId  = "terraformemailconfig.com"
 		fromAddressLocalPart = "TestEmail"
 	)
