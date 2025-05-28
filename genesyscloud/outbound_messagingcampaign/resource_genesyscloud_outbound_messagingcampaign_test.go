@@ -577,7 +577,10 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Can be removed once `api/v2/routing/email/outbound/*` is implemented in provider
-					CheckOutboundDomainExists(fromAddressDomainId)
+					err := CheckOutboundDomainExists(fromAddressDomainId)
+					if err != nil {
+						t.Fatal(err)
+					}
 				},
 
 				// Create
@@ -828,32 +831,70 @@ func testVerifyOutboundMessagingCampaignDestroyed(state *terraform.State) error 
 func CheckOutboundDomainExists(id string) error {
 	config, _ := provider.AuthorizeSdk()
 	routingApi := platformclientv2.NewRoutingApiWithConfig(config)
+
+	log.Printf("Checking if outbound domain (%s) exists", id)
 	outboundDomain, resp, err := routingApi.GetRoutingEmailOutboundDomain(id)
-	if err != nil {
-		return fmt.Errorf("error getting outbound domain %v: %v", id, err)
-	} else if resp.StatusCode == 404 {
+	if err != nil && resp.StatusCode != http.StatusNotFound {
+		return fmt.Errorf("error getting outbound domain (%s): %v", id, err)
+	}
+
+	if isDomainVerified(outboundDomain) {
+		log.Printf("Outbound domain (%s) exists and is verified", id)
+		return nil
+	}
+
+	if resp.StatusCode == 404 {
 		// outbound domain for test does not exist so create it
-		_, _, err := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomain{
+		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
+		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomain{
 			Id: &id,
 		})
-		if err != nil {
+		if postErr != nil {
 			return fmt.Errorf("failed to create outbound domain: %v", err)
 		}
+
+		log.Printf("Outbound domain (%s) created", id)
+		time.Sleep(3 * time.Second)
 	}
 
 	// ensure domain is verified
-	if *outboundDomain.DkimVerificationResult.Status != "Verified" ||
-		*outboundDomain.CnameVerificationResult.Status != "Verified" {
-		result, _, err := routingApi.PutRoutingEmailOutboundDomainActivation(*outboundDomain.Id)
-		if err != nil {
-			return fmt.Errorf("failed to verify outbound domain: %v", err)
+	if !isDomainVerified(outboundDomain) {
+		log.Printf("Verifying outbound domain (%s)...", id)
+
+		result, _, putErr := routingApi.PutRoutingEmailOutboundDomainActivation(id)
+		if putErr != nil {
+			return fmt.Errorf("failed to verify outbound domain (%s): %v", id, err)
 		}
-		if result.DnsTxtSendingRecord.VerificationStatus != nil &&
-			*result.DnsTxtSendingRecord.VerificationStatus == "Verified" &&
-			result.DnsCnameBounceRecord.VerificationStatus != nil &&
-			*result.DnsCnameBounceRecord.VerificationStatus == "Verified" {
-			log.Printf("Outbound domain (%s) created and verified", id)
+
+		if checkDomainVerification(result) {
+			log.Printf("Outbound domain (%s) verified", id)
 		}
 	}
 	return nil
+}
+
+func isDomainVerified(domain *platformclientv2.Outbounddomain) bool {
+	if domain == nil ||
+		domain.DkimVerificationResult == nil ||
+		domain.CnameVerificationResult == nil ||
+		domain.DkimVerificationResult.Status == nil ||
+		domain.CnameVerificationResult.Status == nil {
+		return false
+	}
+
+	return *domain.DkimVerificationResult.Status == "VERIFIED" &&
+		*domain.CnameVerificationResult.Status == "VERIFIED"
+}
+
+func checkDomainVerification(domain *platformclientv2.Emailoutbounddomainresult) bool {
+	if domain == nil ||
+		domain.DnsTxtSendingRecord == nil ||
+		domain.DnsCnameBounceRecord == nil ||
+		domain.DnsTxtSendingRecord.VerificationStatus == nil ||
+		domain.DnsCnameBounceRecord.VerificationStatus == nil {
+		return false
+	}
+
+	return *domain.DnsTxtSendingRecord.VerificationStatus == "Verified" &&
+		*domain.DnsCnameBounceRecord.VerificationStatus == "Verified"
 }

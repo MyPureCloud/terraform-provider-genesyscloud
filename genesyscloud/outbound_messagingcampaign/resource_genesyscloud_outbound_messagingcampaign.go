@@ -2,7 +2,6 @@ package outbound_messagingcampaign
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -52,15 +51,9 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
 	if _, sms := d.GetOk("sms_config"); sms {
-		msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-		if !valid {
-			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
-		}
-	}
-	if _, email := d.GetOk("email_config"); email {
-		msg, valid := validateEmailconfig(d.Get("email_config").(*schema.Set))
-		if !valid {
-			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+		err := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+		if err != nil {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", err)
 		}
 	}
 
@@ -127,15 +120,9 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
 	if _, sms := d.GetOk("sms_config"); sms {
-		msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-		if !valid {
-			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
-		}
-	}
-	if _, email := d.GetOk("email_config"); email {
-		msg, valid := validateEmailconfig(d.Get("email_config").(*schema.Set))
-		if !valid {
-			return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+		err := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+		if err != nil {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", err)
 		}
 	}
 

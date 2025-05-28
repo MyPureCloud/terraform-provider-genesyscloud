@@ -322,32 +322,9 @@ func flattenSmsConfigs(smsconfig *platformclientv2.Smsconfig) *schema.Set {
 	return smsconfigSet
 }
 
-func validateEmailconfig(emailConfig *schema.Set) (string, bool) {
-	if emailConfig == nil {
-		return "", true
-	}
-
-	emailConfigList := emailConfig.List()
-	if len(emailConfigList) > 0 {
-		emailConfigMap := emailConfigList[0].(map[string]interface{})
-		emailColumn, _ := emailConfigMap["email_columns"].([]interface{})
-		fromAddress, _ := emailConfigMap["from_address"].([]interface{})
-		if len(emailColumn) == 0 {
-			return "email_columns is required.", false
-		}
-		if len(fromAddress) == 0 {
-			return "from_address is required.", false
-		}
-	} else {
-		return "", false
-	}
-
-	return "", true
-}
-
-func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
+func validateSmsconfig(smsconfig *schema.Set) error {
 	if smsconfig == nil {
-		return "", true
+		return nil
 	}
 
 	smsconfigList := smsconfig.List()
@@ -356,15 +333,15 @@ func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
 		messageColumn, _ := smsconfigMap["message_column"].(string)
 		contentTemplateId, _ := smsconfigMap["content_template_id"].(string)
 		if messageColumn == "" && contentTemplateId == "" {
-			return "Either message_column or content_template_id is required.", false
+			return fmt.Errorf("either message_column or content_template_id is required")
 		} else if messageColumn != "" && contentTemplateId != "" {
-			return "Only one of message_column or content_template_id can be defined", false
+			return fmt.Errorf("only one of message_column or content_template_id can be defined")
 		}
 	} else {
-		return "", false
+		return fmt.Errorf("error reading smsconfig")
 	}
 
-	return "", true
+	return nil
 }
 
 func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction string, numeric string) string {
