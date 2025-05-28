@@ -443,8 +443,11 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 
 		contactListResourceLabel = "email-config-test"
 		contactListName          = "Terraform Test Contact List " + uuid.NewString()
-		contactListColumnNames   = []string{strconv.Quote("PERSONAL")}
-		contactListResource      = obContactList.GenerateOutboundContactList(
+		contactListColumnNames   = []string{
+			strconv.Quote("PERSONAL"),
+			strconv.Quote("WORK"),
+		}
+		contactListResource = obContactList.GenerateOutboundContactList(
 			contactListResourceLabel,
 			contactListName,
 			util.NullValue,
@@ -457,6 +460,11 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 			obContactList.GenerateEmailColumnsBlock(
 				"PERSONAL",
 				"PERSONAL",
+				util.NullValue,
+			),
+			obContactList.GenerateEmailColumnsBlock(
+				"WORK",
+				"WORK",
 				util.NullValue,
 			),
 		)
@@ -502,10 +510,30 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 
 		responseManagementResponseResourceLabel = "email-config-test"
 		responseManagementResponseName          = "Terraform Test Response Management Response " + uuid.NewString()
+		responseManagementResponseName2         = "Terraform Test Response Management Response 2" + uuid.NewString()
 		responseManagementResponseType          = "CampaignEmailTemplate"
 		responseManagementResponseResource      = responseManagementResponse.GenerateResponseManagementResponseResource(
 			responseManagementResponseResourceLabel,
 			responseManagementResponseName,
+			[]string{responseManagementLibrary.ResourceType + "." + responseManagementLibraryResourceLabel + ".id"},
+			util.NullValue,
+			util.NullValue,
+			strconv.Quote(responseManagementResponseType),
+			[]string{},
+			responseManagementResponse.GenerateTextsBlock(
+				"test@email.com",
+				"text/plain",
+				strconv.Quote("subject"),
+			),
+			responseManagementResponse.GenerateTextsBlock(
+				"Testing Email Content",
+				"text/html",
+				strconv.Quote("body"),
+			),
+		)
+		responseManagementResponseResource2 = responseManagementResponse.GenerateResponseManagementResponseResource(
+			responseManagementResponseResourceLabel,
+			responseManagementResponseName2,
 			[]string{responseManagementLibrary.ResourceType + "." + responseManagementLibraryResourceLabel + ".id"},
 			util.NullValue,
 			util.NullValue,
@@ -531,13 +559,15 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 		alwaysRunning  = util.FalseValue
 		campaignStatus = "off"
 
-		emailColumns = "PERSONAL"
+		emailColumns  = "PERSONAL"
+		emailColumns2 = "WORK"
 		/*
 			The API for creating this outbound domain (api/v2/routing/email/outbound/domains) does not have a terraform resource yet.
 			currently this test relies on the pre-created outbound domain "terraformemailconfig.com".
 		*/
-		fromAddressDomainId  = "terraformemailconfig.com"
-		fromAddressLocalPart = "TestEmail"
+		fromAddressDomainId   = "terraformemailconfig.com"
+		fromAddressLocalPart  = "TestEmail"
+		fromAddressLocalPart2 = "newPart"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -594,6 +624,51 @@ func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
 				),
 			},
 			{
+				// Update
+				Config: contactListResource +
+					routingQueueResource +
+					routingEmailDomainResource +
+					routingEmailRouteResource +
+					responseManagementLibraryResource +
+					responseManagementResponseResource2 +
+					generateOutboundMessagingCampaignResource(
+						resourceLabel,
+						name,
+						obContactList.ResourceType+"."+contactListResourceLabel+".id",
+						strconv.Quote(campaignStatus),
+						messagesPerMin,
+						alwaysRunning,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						generateOutboundMessagingCampaignEmailConfig(
+							[]string{strconv.Quote(emailColumns2)},
+							responseManagementResponse.ResourceType+"."+responseManagementResponseResourceLabel+".id",
+							strconv.Quote(fromAddressDomainId),
+							strconv.Quote(fromAddressLocalPart2),
+							routingEmailDomain.ResourceType+"."+routingEmailDomainResourceLabel+".id",
+							routingEmailRoute.ResourceType+"."+routingEmailRouteResourceLabel+".id",
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "messages_per_minute", messagesPerMin),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "always_running", alwaysRunning),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "campaign_status", campaignStatus),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.email_columns.#", "1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.email_columns.0", emailColumns2),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.from_address.0.domain_id", fromAddressDomainId),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.from_address.0.local_part", fromAddressLocalPart2),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_config.0.reply_to_address.0.domain_id", "terraformtest.mypurecloud.com"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "email_config.0.reply_to_address.0.route_id",
+						routingEmailRoute.ResourceType+"."+routingEmailRouteResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "email_config.0.content_template_id",
+						responseManagementResponse.ResourceType+"."+responseManagementResponseResourceLabel, "id"),
+				),
+			},
+			{
+				// Import
 				ResourceName:      ResourceType + "." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
