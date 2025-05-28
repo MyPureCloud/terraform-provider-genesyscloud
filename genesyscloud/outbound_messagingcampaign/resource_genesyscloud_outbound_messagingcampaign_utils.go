@@ -2,12 +2,11 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 /*
@@ -33,8 +32,7 @@ func getOutboundMessagingcampaignFromResourceData(d *schema.ResourceData) platfo
 		Errors:                         buildRestErrorDetails(d.Get("errors").([]interface{})),
 		DynamicContactQueueingSettings: buildDynamicContactQueueingSettingss(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 		SmsConfig:                      buildSmsConfigs(d.Get("sms_config").(*schema.Set)),
-		// TODO: add email configs in future as it is linked with contact list templates which isn't a resource yet
-		// EmailConfig: buildEmailConfigs(d.Get("email_config").(*schema.Set)),
+		EmailConfig:                    buildEmailConfigs(d.Get("email_config").(*schema.Set)),
 	}
 }
 
@@ -121,9 +119,12 @@ func buildFromEmailAddresss(fromEmailAddresss []interface{}) *platformclientv2.F
 }
 
 // buildReplyToEmailAddresss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Replytoemailaddress
-func buildReplyToEmailAddresss(replyToEmailAddresss []interface{}) *platformclientv2.Replytoemailaddress {
+func buildReplyToEmailAddresss(replyToEmailAddress []interface{}) *platformclientv2.Replytoemailaddress {
+	if replyToEmailAddress == nil || len(replyToEmailAddress) < 1 {
+		return nil
+	}
 	replyToEmailAddresssSlice := make([]platformclientv2.Replytoemailaddress, 0)
-	for _, replyToEmailAddress := range replyToEmailAddresss {
+	for _, replyToEmailAddress := range replyToEmailAddress {
 		var sdkReplyToEmailAddress platformclientv2.Replytoemailaddress
 		replyToEmailAddresssMap, ok := replyToEmailAddress.(map[string]interface{})
 		if !ok {
@@ -141,10 +142,9 @@ func buildReplyToEmailAddresss(replyToEmailAddresss []interface{}) *platformclie
 
 // buildEmailConfigs maps an []interface{} into a Genesys Cloud *[]platformclientv2.Emailconfig
 func buildEmailConfigs(emailConfigs *schema.Set) *platformclientv2.Emailconfig {
-	if emailConfigs == nil {
+	if emailConfigs == nil || emailConfigs.Len() < 1 {
 		return nil
 	}
-
 	var sdkEmailConfig platformclientv2.Emailconfig
 	emailConfigList := emailConfigs.List()
 	if len(emailConfigList) > 0 {
@@ -153,14 +153,15 @@ func buildEmailConfigs(emailConfigs *schema.Set) *platformclientv2.Emailconfig {
 		sdkEmailConfig.ContentTemplate = &platformclientv2.Domainentityref{Id: platformclientv2.String(emailConfigsMap["content_template_id"].(string))}
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkEmailConfig.FromAddress, emailConfigsMap, "from_address", buildFromEmailAddresss)
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkEmailConfig.ReplyToAddress, emailConfigsMap, "reply_to_address", buildReplyToEmailAddresss)
-	}
 
-	return &sdkEmailConfig
+		return &sdkEmailConfig
+	}
+	return nil
 }
 
 // buildSmsConfigs maps an []interface{} into a Genesys Cloud *platformclientv2.Smsconfig
 func buildSmsConfigs(smsConfigs *schema.Set) *platformclientv2.Smsconfig {
-	if smsConfigs == nil {
+	if smsConfigs == nil || smsConfigs.Len() < 1 {
 		return nil
 	}
 	var sdkSmsconfig platformclientv2.Smsconfig
@@ -181,9 +182,9 @@ func buildSmsConfigs(smsConfigs *schema.Set) *platformclientv2.Smsconfig {
 		if contentTemplateId := smsconfigMap["content_template_id"].(string); contentTemplateId != "" {
 			sdkSmsconfig.ContentTemplate = &platformclientv2.Domainentityref{Id: &contentTemplateId}
 		}
+		return &sdkSmsconfig
 	}
-
-	return &sdkSmsconfig
+	return nil
 }
 
 // flattenContactSorts maps a Genesys Cloud *[]platformclientv2.Contactsort into a []interface{}
@@ -321,28 +322,9 @@ func flattenSmsConfigs(smsconfig *platformclientv2.Smsconfig) *schema.Set {
 	return smsconfigSet
 }
 
-func validateEmailconfig(emailConfig *schema.Set) (string, bool) {
-	if emailConfig == nil {
-		return "", true
-	}
-
-	emailConfigList := emailConfig.List()
-	if len(emailConfigList) > 0 {
-		emailConfigMap := emailConfigList[0].(map[string]interface{})
-		emailColumn, _ := emailConfigMap["email_columns"].(string)
-		if emailColumn == "" {
-			return "Message_column is required.", false
-		}
-	} else {
-		return "", false
-	}
-
-	return "", true
-}
-
-func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
+func validateSmsconfig(smsconfig *schema.Set) error {
 	if smsconfig == nil {
-		return "", true
+		return nil
 	}
 
 	smsconfigList := smsconfig.List()
@@ -351,15 +333,15 @@ func validateSmsconfig(smsconfig *schema.Set) (string, bool) {
 		messageColumn, _ := smsconfigMap["message_column"].(string)
 		contentTemplateId, _ := smsconfigMap["content_template_id"].(string)
 		if messageColumn == "" && contentTemplateId == "" {
-			return "Either message_column or content_template_id is required.", false
+			return fmt.Errorf("either message_column or content_template_id is required")
 		} else if messageColumn != "" && contentTemplateId != "" {
-			return "Only one of message_column or content_template_id can be defined", false
+			return fmt.Errorf("only one of message_column or content_template_id can be defined")
 		}
 	} else {
-		return "", false
+		return fmt.Errorf("error reading smsconfig")
 	}
 
-	return "", true
+	return nil
 }
 
 func GenerateOutboundMessagingCampaignContactSort(fieldName string, direction string, numeric string) string {
