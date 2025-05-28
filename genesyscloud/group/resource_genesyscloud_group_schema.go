@@ -133,6 +133,12 @@ func ResourceGroup() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
+			"include_owners": {
+				Description: "Allow owners to be included as members of the group.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
 		},
 	}
 }

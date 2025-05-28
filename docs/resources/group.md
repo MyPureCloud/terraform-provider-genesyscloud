@@ -33,10 +33,11 @@ resource "genesyscloud_group" "sample_group" {
     number = "+13174181234"
     type   = "GROUPRING"
   }
-  owner_ids     = [genesyscloud_user.test-user.id]
-  member_ids    = [genesyscloud_user.test-user.id]
-  roles_enabled = true
-  calls_enabled = false
+  owner_ids      = [genesyscloud_user.test-user.id]
+  member_ids     = [genesyscloud_user.test-user.id]
+  roles_enabled  = true
+  calls_enabled  = false
+  include_owners = false
 }
 ```
 
@@ -52,6 +53,7 @@ resource "genesyscloud_group" "sample_group" {
 - `addresses` (Block List) Contact numbers for this group. (see [below for nested schema](#nestedblock--addresses))
 - `calls_enabled` (Boolean) Allow calls to be placed to this group Defaults to `true`.
 - `description` (String) Group description.
+- `include_owners` (Boolean) Allow owners to be included as members of the group. Defaults to `true`.
 - `member_ids` (Set of String) IDs of members assigned to the group. If not set, this resource will not manage group members.
 - `owner_ids` (List of String) IDs of owners of the group.
 - `roles_enabled` (Boolean) Allow roles to be assigned to this group. Defaults to `true`.
