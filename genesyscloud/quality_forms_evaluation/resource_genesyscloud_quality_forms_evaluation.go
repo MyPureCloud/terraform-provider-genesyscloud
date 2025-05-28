@@ -91,7 +91,6 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		d.SetId(*formResponse.Id)
 	}
 
-	d.SetId(*formResponse.Id)
 	d.Set("context_id", *formResponse.ContextId)
 
 	log.Printf("Created evaluation form %s %s", name, *formResponse.Id)

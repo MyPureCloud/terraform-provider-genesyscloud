@@ -19,7 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_idp_onelogin" "onelogin" {
-  certificates = ["MIIDgjCCAmoCCQCY7/3Fvy+CmDA..."]
+  name         = "OneLogin"
+  certificates = [local.onelogin_certificate]
   issuer_uri   = "https://example.com"
   target_uri   = "https://example.com/login"
 }

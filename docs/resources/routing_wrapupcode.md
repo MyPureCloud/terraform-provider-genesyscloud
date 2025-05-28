@@ -22,7 +22,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_routing_wrapupcode" "win" {
   name        = "Win"
-  description = "test description"
+  description = "Win test description"
+}
+resource "genesyscloud_routing_wrapupcode" "unknown" {
+  name        = "Unknown"
+  description = "Unknown test description"
 }
 ```
 

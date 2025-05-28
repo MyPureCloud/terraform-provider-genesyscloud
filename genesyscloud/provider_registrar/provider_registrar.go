@@ -163,9 +163,10 @@ circular dependency issues with the package tf_exporter
 */
 
 var (
-	providerResources   = make(map[string]*schema.Resource)
-	providerDataSources = make(map[string]*schema.Resource)
-	resourceExporters   = make(map[string]*resourceExporter.ResourceExporter)
+	providerResources     = make(map[string]*schema.Resource)
+	providerResourceTypes = make([]string, 0)
+	providerDataSources   = make(map[string]*schema.Resource)
+	resourceExporters     = make(map[string]*resourceExporter.ResourceExporter)
 )
 
 type RegisterInstance struct {
@@ -186,6 +187,13 @@ func GetResourceExporters() (exporters map[string]*resourceExporter.ResourceExpo
 		registerResources()
 	}
 	return resourceExporters
+}
+
+func GetResourceTypeNames() []string {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	return providerResourceTypes
 }
 
 func resourceMapsAreRegistered() bool {
@@ -335,6 +343,7 @@ func (r *RegisterInstance) RegisterResource(resourceType string, resource *schem
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 	providerResources[resourceType] = resource
+	providerResourceTypes = append(providerResourceTypes, resourceType)
 }
 
 func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {
