@@ -2,7 +2,6 @@ package outbound_messagingcampaign
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -52,9 +51,11 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
-	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-	if !valid {
-		return util.BuildDiagnosticError(ResourceType, "Configuration error encountered when validating the sms_config attributes", fmt.Errorf(msg))
+	if _, sms := d.GetOk("sms_config"); sms {
+		err := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+		if err != nil {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", err)
+		}
 	}
 
 	log.Printf("Creating outbound messagingcampaign %s", *outboundMessagingcampaign.Name)
@@ -104,8 +105,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "errors", messagingCampaign.Errors, flattenRestErrorDetails)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", messagingCampaign.DynamicContactQueueingSettings, flattenDynamicContactQueueingSettingss)
-		// TODO: add email configs in future as it is linked with contact list templates which isn't a resource yet
-		// resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
 		d.Set("sms_config", flattenSmsConfigs(messagingCampaign.SmsConfig))
 
 		log.Printf("Read outbound messagingcampaign %s %s", d.Id(), *messagingCampaign.Name)
@@ -120,10 +120,11 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
-	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-
-	if !valid {
-		return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+	if _, sms := d.GetOk("sms_config"); sms {
+		err := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+		if err != nil {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", err)
+		}
 	}
 
 	log.Printf("Updating outbound messagingcampaign %s", *outboundMessagingcampaign.Name)
