@@ -1,0 +1,6 @@
+resource "genesyscloud_routing_settings" "my_settings" {
+  reset_agent_on_presence_change = true
+  contactcenter {
+    remove_skills_from_blind_transfer = true
+  }
+}

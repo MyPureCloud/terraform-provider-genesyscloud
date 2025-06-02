@@ -1212,8 +1212,15 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
+
+	resourceMutex := &sync.Mutex{}
+
+	resourceMutex.Lock()
+	resourceData := resource.Data(instanceState)
+	resourceMutex.Unlock()
+
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
-		resourceDataArr, err := resource.Importer.StateContext(ctx, resource.Data(instanceState), meta)
+		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, meta)
 		if err != nil {
 			log.Printf("Error with resource Importer %v for id %s", resID, err)
 			return nil, diag.FromErr(err)
@@ -1223,7 +1230,10 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		}
 	}
 
+	resourceMutex.Lock()
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
+	resourceMutex.Unlock()
+
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {

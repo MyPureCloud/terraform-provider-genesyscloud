@@ -13,8 +13,13 @@ Data source for Genesys Cloud Flows. Select a flow by name and type.
 ## Example Usage
 
 ```terraform
-data "genesyscloud_flow" "example-flow" {
-  name = "example-flow"
+data "genesyscloud_flow" "default_inqueue_flow" {
+  name = "Default In-Queue Flow"
+}
+
+data "genesyscloud_flow" "default_voicemail_flow" {
+  name = "Default Voicemail Flow"
+  type = "voicemail"
 }
 ```
 

@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_journey_outcome" "example_journey_outcome_resource" {
+resource "genesyscloud_journey_outcome" "example_journey_outcome" {
   is_active    = true
   display_name = "example journey outcome name"
   description  = "description of journey outcome"

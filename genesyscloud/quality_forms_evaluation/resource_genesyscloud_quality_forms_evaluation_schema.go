@@ -228,6 +228,11 @@ func ResourceEvaluationForm() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
+			"context_id": {
+				Description: "ID of the context of the evaluation form. This provides access to all versions of forms.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"name": {
 				Description: "The name of the entity.",
 				Type:        schema.TypeString,
@@ -238,6 +243,11 @@ func ResourceEvaluationForm() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+			},
+			"published_id": {
+				Description: "The ID of the published evaluation form.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"question_groups": {
 				Description: "A list of question groups.",

@@ -18,8 +18,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_conversations_messaging_settings_default" "example-default-messaging-settings" {
-  setting_id = data.genesyscloud_conversations_messaging_settings.example-messaging-settings.id
+resource "genesyscloud_conversations_messaging_settings_default" "example_default_settings" {
+  setting_id = genesyscloud_conversations_messaging_settings.example_settings.id
 }
 ```
 
