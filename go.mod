@@ -15,7 +15,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v157 v157.0.0
 	github.com/nyaruka/phonenumbers v1.6.3
 	github.com/rjNemo/underscore v0.7.0
-	github.com/shirou/gopsutil/v4 v4.25.4
+	github.com/shirou/gopsutil/v4 v4.25.5
 	github.com/zclconf/go-cty v1.16.3
 	gonum.org/v1/gonum v0.16.0
 )
@@ -28,7 +28,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.8.1 // indirect
 	github.com/cloudflare/circl v1.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/ebitengine/purego v0.8.2 // indirect
+	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/hashicorp/cli v1.1.7 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
