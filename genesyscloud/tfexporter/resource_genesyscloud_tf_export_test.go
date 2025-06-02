@@ -35,6 +35,7 @@ import (
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -275,7 +276,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 // Wrap up codes will be created with -prod, -dev and -test suffixes but they should not be affected by the regex filter
 // for the queue and should all be exported
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1096 is addressed.")
+
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6"
@@ -297,6 +298,14 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 	)
 	defer os.RemoveAll(exportTestDir)
 
+	fullListOfResourceTypes := resourceExporter.GetAvailableExporterTypes()
+	fullListOfResourceTypes = lists.RemoveStringFromSlice("genesyscloud_routing_wrapupcode", fullListOfResourceTypes)
+	fullListOfResourceTypes = lists.RemoveStringFromSlice("genesyscloud_routing_queue", fullListOfResourceTypes)
+	fullListOfResourceTypes = lists.Map(fullListOfResourceTypes, func(str string) string {
+		return strconv.Quote(str)
+	})
+	fullListOfResourceTypes = append(fullListOfResourceTypes, strconv.Quote("genesyscloud_routing_queue::.*-(dev|test)"))
+
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResourceLabel+".id", description)
 	baseConfig := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + wrapupcodeResourceDef
@@ -304,13 +313,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 		exportResourceLabel,
 		exportTestDir,
 		util.TrueValue,
-		[]string{
-			strconv.Quote("genesyscloud_routing_queue::.*-(dev|test)"),
-			strconv.Quote("genesyscloud_outbound_ruleset"),
-			strconv.Quote("genesyscloud_user"),
-			strconv.Quote("genesyscloud_user_roles"),
-			strconv.Quote("genesyscloud_flow"),
-		},
+		fullListOfResourceTypes,
 		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
