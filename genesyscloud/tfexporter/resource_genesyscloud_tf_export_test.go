@@ -35,6 +35,7 @@ import (
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -275,7 +276,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 // Wrap up codes will be created with -prod, -dev and -test suffixes but they should not be affected by the regex filter
 // for the queue and should all be exported
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1096 is addressed.")
+
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6"
@@ -297,6 +298,14 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 	)
 	defer os.RemoveAll(exportTestDir)
 
+	fullListOfResourceTypes := resourceExporter.GetAvailableExporterTypes()
+	fullListOfResourceTypes = lists.RemoveStringFromSlice("genesyscloud_routing_wrapupcode", fullListOfResourceTypes)
+	fullListOfResourceTypes = lists.RemoveStringFromSlice("genesyscloud_routing_queue", fullListOfResourceTypes)
+	fullListOfResourceTypes = lists.Map(fullListOfResourceTypes, func(str string) string {
+		return strconv.Quote(str)
+	})
+	fullListOfResourceTypes = append(fullListOfResourceTypes, strconv.Quote("genesyscloud_routing_queue::.*-(dev|test)"))
+
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResourceLabel+".id", description)
 	baseConfig := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + wrapupcodeResourceDef
@@ -304,13 +313,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResource(t *
 		exportResourceLabel,
 		exportTestDir,
 		util.TrueValue,
-		[]string{
-			strconv.Quote("genesyscloud_routing_queue::.*-(dev|test)"),
-			strconv.Quote("genesyscloud_outbound_ruleset"),
-			strconv.Quote("genesyscloud_user"),
-			strconv.Quote("genesyscloud_user_roles"),
-			strconv.Quote("genesyscloud_flow"),
-		},
+		fullListOfResourceTypes,
 		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
@@ -432,7 +435,6 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 // TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels will exclude any test resources that match a
 // regular expression provided for the resource. In this test we check against both sanitized and unsanitized labels.
 func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndSanitizedLabels(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1120 is resolved")
 	var (
 		exportTestDir       = testrunner.GetTestTempPath(".terraformExclude" + uuid.NewString())
 		exportResourceLabel = "test-export6_1"
@@ -465,6 +467,15 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 	}
 	t.Cleanup(cleanupFunc)
 
+	fullListOfResourceTypes := resourceExporter.GetAvailableExporterTypes()
+	fullListOfResourceTypes = lists.RemoveStringFromSlice("genesyscloud_routing_wrapupcode", fullListOfResourceTypes)
+	fullListOfResourceTypes = lists.RemoveStringFromSlice("genesyscloud_routing_queue", fullListOfResourceTypes)
+	fullListOfResourceTypes = lists.Map(fullListOfResourceTypes, func(str string) string {
+		return strconv.Quote(str)
+	})
+	fullListOfResourceTypes = append(fullListOfResourceTypes, strconv.Quote("genesyscloud_routing_queue::exclude filter - foo - bar me"))
+	fullListOfResourceTypes = append(fullListOfResourceTypes, strconv.Quote("genesyscloud_routing_queue::exclude_filter_-_fu_-_barre_you"))
+
 	queueResourceDef := buildQueueResources(queueResources)
 	wrapupcodeResourceDef := buildWrapupcodeResources(wrapupCodeResources, "genesyscloud_auth_division."+divResourceLabel+".id", description)
 	baseConfig := queueResourceDef + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + wrapupcodeResourceDef
@@ -472,14 +483,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 		exportResourceLabel,
 		exportTestDir,
 		util.TrueValue,
-		[]string{
-			strconv.Quote("genesyscloud_routing_queue::exclude filter - foo - bar me"),
-			strconv.Quote("genesyscloud_routing_queue::exclude_filter_-_fu_-_barre_you"),
-			strconv.Quote("genesyscloud_outbound_ruleset"),
-			strconv.Quote("genesyscloud_user"),
-			strconv.Quote("genesyscloud_user_roles"),
-			strconv.Quote("genesyscloud_flow"),
-		},
+		fullListOfResourceTypes,
 		strconv.Quote("json"),
 		util.FalseValue,
 		[]string{
@@ -509,7 +513,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegExExclusiveToResourceAndS
 					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceBlockLabel(wrapupCodeResources[0].Name), wrapupCodeResources[0]),
 					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceBlockLabel(wrapupCodeResources[1].Name), wrapupCodeResources[1]),
 					testWrapupcodeExportEqual(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_wrapupcode", sanitizer.S.SanitizeResourceBlockLabel(wrapupCodeResources[2].Name), wrapupCodeResources[2]),
-					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "(foo|fu)"),
+					testQueueExportExcludesRegEx(exportTestDir+"/"+defaultTfJSONFile, "genesyscloud_routing_queue", "exclude[ _]filter[ _]-[ _](foo|fu).*"),
 				),
 			},
 		},
