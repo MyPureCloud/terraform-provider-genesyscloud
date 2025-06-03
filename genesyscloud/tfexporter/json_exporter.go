@@ -3,11 +3,12 @@ package tfexporter
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"path/filepath"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -63,19 +64,24 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 		}
 
 		// Variables file
-		variablesRoot := map[string]interface{}{
-			"variable": variablesJsonMap,
-		}
-		variablesJSONFilePath := filepath.Join(j.dirPath, defaultTfJSONVariablesFile)
-		if variablesJSONFilePath == "" {
-			return diag.Errorf("Failed to create file path %s", variablesJSONFilePath)
-		}
-		if diagErr := writeConfig(variablesRoot, variablesJSONFilePath); diagErr != nil {
-			return diagErr
+		if len(variablesJsonMap) > 0 {
+			variablesRoot := map[string]interface{}{
+				"variable": variablesJsonMap,
+			}
+			variablesJSONFilePath := filepath.Join(j.dirPath, defaultTfJSONVariablesFile)
+			if variablesJSONFilePath == "" {
+				return diag.Errorf("Failed to create file path %s", variablesJSONFilePath)
+			}
+			if diagErr := writeConfig(variablesRoot, variablesJSONFilePath); diagErr != nil {
+				return diagErr
+			}
 		}
 
 		// Resource files
 		for resType, resJsonMap := range j.resourceTypesJSONMaps {
+			if len(resJsonMap) == 0 {
+				continue
+			}
 			resourceRoot := map[string]interface{}{
 				"resource": util.JsonMap{
 					resType: resJsonMap,
@@ -93,6 +99,9 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 
 		// DataSource files
 		for resType, resJsonMap := range j.dataSourceTypesMaps {
+			if len(resJsonMap) == 0 {
+				continue
+			}
 			resourceRoot := map[string]interface{}{
 				"data": util.JsonMap{
 					resType: resJsonMap,
@@ -111,11 +120,15 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 	} else {
 		// Single file export
 		rootJSONObject := util.JsonMap{
-			"resource":  j.resourceTypesJSONMaps,
 			"terraform": providerJsonMap,
-			"data":      j.dataSourceTypesMaps,
 		}
 
+		if len(j.resourceTypesJSONMaps) > 0 {
+			rootJSONObject["resource"] = j.resourceTypesJSONMaps
+		}
+		if len(j.dataSourceTypesMaps) > 0 {
+			rootJSONObject["data"] = j.dataSourceTypesMaps
+		}
 		if len(variablesJsonMap) > 0 {
 			rootJSONObject["variable"] = variablesJsonMap
 		}

@@ -394,10 +394,15 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 
 		// 2. Determine if instance is a data source
 		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
-
-		// 3. Ensure the resource type is instantiated
-		if g.resourceTypesMaps[resource.Type] == nil {
-			g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+		if isDataSource {
+			if g.dataSourceTypesMaps[resource.Type] == nil {
+				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			}
+		} else {
+			// 3. Ensure the resource type is instantiated
+			if g.resourceTypesMaps[resource.Type] == nil {
+				g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			}
 		}
 
 		// Theoretically this should only ever occur when using the Original Sanitizer as it doesn't have guaranteed
@@ -423,9 +428,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 
 		// 7. Adds resource to list of data resources if its a data source
 		if isDataSource {
-			if g.dataSourceTypesMaps[resource.Type] == nil {
-				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
-			}
 			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		} else {
 			// 8. Handles writing external files as part of the export process
