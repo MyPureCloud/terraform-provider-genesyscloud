@@ -8,10 +8,11 @@ resource "genesyscloud_group" "example_group" {
     number = "+13174181234"
     type   = "GROUPRING"
   }
-  owner_ids     = [genesyscloud_user.example_user.id]
-  member_ids    = [genesyscloud_user.example_user.id]
-  roles_enabled = true
-  calls_enabled = false
+  owner_ids      = [genesyscloud_user.example_user.id]
+  member_ids     = [genesyscloud_user.example_user.id]
+  roles_enabled  = true
+  calls_enabled  = false
+  include_owners = false
 }
 resource "genesyscloud_group" "example_group2" {
   name          = "Example Group2"
