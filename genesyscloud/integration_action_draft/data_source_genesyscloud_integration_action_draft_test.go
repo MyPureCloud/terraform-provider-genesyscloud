@@ -2,10 +2,10 @@ package integration_action_draft
 
 import (
 	"fmt"
+	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
-	integration "terraform-provider-genesyscloud/genesyscloud/integration"
-	"terraform-provider-genesyscloud/genesyscloud/provider"
-	"terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
 
 	"github.com/google/uuid"
