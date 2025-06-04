@@ -3,6 +3,8 @@ package tfexporter
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +21,7 @@ import (
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"io"
 	"log"
 	"math/rand"
@@ -1128,9 +1131,9 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 					}
 				}
 			}
-			return fmt.Errorf("No Resources '%s' was not exported as data source", siteName)
+			return fmt.Errorf("no Resources '%s' was not exported as data source", siteName)
 		} else {
-			return fmt.Errorf("No data sources found in exported data")
+			return fmt.Errorf("no data sources found in exported data")
 		}
 	}
 }
@@ -1414,4 +1417,140 @@ func testUserPromptAudioFileExport(filePath, resourceType, resourceLabel, export
 
 		return nil
 	}
+}
+
+// verifyLabelsExistInExportedStateFile parses the exported state file and verifies that the specified labels exist within it
+func verifyLabelsExistInExportedStateFile(filename, relevantResourceType string, labels []string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		stateData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable ")
+
+		allLabelsInStateFile, err := collectAllLabelsFromTfStateFile(relevantResourceType, stateData)
+		if err != nil {
+			return err
+		}
+
+		return validateLabelsExistInExportedFile(labels, allLabelsInStateFile, filename)
+	}
+}
+
+// verifyLabelsExistInExportedTfConfig parses the exported TF config file and verifies that the specified labels exist within it
+func verifyLabelsExistInExportedTfConfig(filename, relevantResourceType string, labels []string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		_, err := os.Stat(filename)
+		if err != nil {
+			return fmt.Errorf("failed to find file %s", filename)
+		}
+
+		stateData, err := loadJsonFileToMap(filename)
+		if err != nil {
+			return err
+		}
+		log.Println("Successfully loaded export config into map variable")
+
+		allLabelsInExportedConfigFile, err := collectAllLabelsFromTfConfigFile(relevantResourceType, stateData)
+		if err != nil {
+			return err
+		}
+
+		return validateLabelsExistInExportedFile(labels, allLabelsInExportedConfigFile, filename)
+	}
+}
+
+// validateLabelsExistInExportedFile confirms that the expected labels and the labels collected from the exported file align
+// i.e. all expected labels are present and non appear more than once.
+//
+// Parameters:
+//   - expectedLabels: []string - slice of labels that should exist in the file
+//   - allLabelsInFile: []string - slice of all labels found in the exported file
+//   - filename: string - name of the file being validated
+//
+// Returns:
+//   - error: returns nil if validation passes, otherwise returns an error with description
+func validateLabelsExistInExportedFile(expectedLabels, allLabelsInFile []string, filename string) error {
+	mapOfLabelsToValidateUniqueness := make(map[string]string)
+
+	for _, label := range allLabelsInFile {
+		if _, exists := mapOfLabelsToValidateUniqueness[label]; exists {
+			return fmt.Errorf("label %s appeared more than once in file %s", strconv.Quote(label), strconv.Quote(filename))
+		}
+		mapOfLabelsToValidateUniqueness[label] = "*"
+	}
+
+	for _, label := range expectedLabels {
+		if !lists.ItemInSlice(label, allLabelsInFile) {
+			return fmt.Errorf("expected to find label %s in exported file %s", strconv.Quote(label), strconv.Quote(filename))
+		}
+	}
+
+	return nil
+}
+
+func collectAllLabelsFromTfStateFile(relevantResourceType string, stateFileData map[string]any) ([]string, error) {
+	modules, ok := stateFileData["modules"].([]any)
+	if !ok || len(modules) == 0 {
+		return nil, fmt.Errorf("no modules found in exported state file")
+	}
+
+	module, ok := modules[0].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid module in exported state file")
+	}
+
+	resources, ok := module["resources"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("expected resources to map type map[string]any, got %T", module["resources"])
+	}
+
+	allLabelsInStateFile := make([]string, 0)
+	for k := range resources {
+		if !strings.HasPrefix(k, relevantResourceType) {
+			continue
+		}
+		allLabelsInStateFile = append(allLabelsInStateFile, parseLabelFromResourceKey(k))
+	}
+
+	return allLabelsInStateFile, nil
+}
+
+func collectAllLabelsFromTfConfigFile(relevantResourceType string, config map[string]any) ([]string, error) {
+	resources, ok := config["resource"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("expected 'resource' to be map[string]any, got %T", resources)
+	}
+
+	relevantResources, ok := resources[relevantResourceType].(map[string]any)
+	if !ok || len(relevantResources) == 0 {
+		return nil, fmt.Errorf("failed to find resources of type %s", relevantResourceType)
+	}
+
+	allLabelsInExportedConfigFile := make([]string, 0)
+
+	for label := range relevantResources {
+		allLabelsInExportedConfigFile = append(allLabelsInExportedConfigFile, label)
+	}
+
+	return allLabelsInExportedConfigFile, nil
+}
+
+func parseLabelFromResourceKey(key string) string {
+	strs := strings.Split(key, ".")
+	return strs[1]
+}
+
+// sanitizeResourceHash is used by TestAccResourceTfExportSanitizedDuplicateLabels and must perform
+// the same actions as sanitizerOriginal.SanitizeResourceHash in the resource_exporter package or else the
+// test case will fail
+func sanitizeResourceHash(originalLabel string) string {
+	h := sha256.New()
+	h.Write([]byte(originalLabel))
+	return hex.EncodeToString(h.Sum(nil)[:10]) // Use first 10 characters of hash
 }

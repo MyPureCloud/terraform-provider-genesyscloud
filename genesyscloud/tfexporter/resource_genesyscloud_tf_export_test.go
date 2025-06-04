@@ -3,6 +3,7 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 	"log"
 	"os"
 	"path/filepath"
@@ -2109,4 +2110,150 @@ func TestUnitTestForExportCycles(t *testing.T) {
 			t.Fatalf("Found the following potential reference cycles:\n %s", cycleResources)
 		}
 	}
+}
+
+// TestAccResourceTfExportSanitizedDuplicateLabels creates multiple data actions that will share the same sanitized labels and require
+// hashes to be appended to them to guarantee uniqueness.
+// The test will then export them, parse the exported tf state and tf configuration files, and validate that the labels are all present
+// and that no labels appear more than once either file
+func TestAccResourceTfExportSanitizedDuplicateLabels(t *testing.T) {
+	var (
+		exportTestDir = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+
+		integrationLabel = "integration"
+		integrationName  = "tf test integration " + uuid.NewString()
+
+		credentialLabel = "credential"
+		credentialName  = "tf test credential " + uuid.NewString()
+
+		dataActionLabel1 = "action_1"
+		dataActionLabel2 = "action_2"
+		dataActionLabel3 = "action_3"
+		dataActionName   = "tf test data action " + uuid.NewString()
+
+		stateFilePath = filepath.Join(exportTestDir, defaultTfStateFile)
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+
+		sanitizer      = resourceExporter.NewSanitizerProvider()
+		sanitizedName  = sanitizer.S.SanitizeResourceBlockLabel(dataActionName)
+		expectedLabels = []string{
+			sanitizedName,
+			sanitizedName + "_" + sanitizeResourceHash(dataActionName+"2"),
+			sanitizedName + "_" + sanitizeResourceHash(dataActionName+"3"),
+		}
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("Failed to cleanup export directory: %s", err.Error())
+		}
+	}(exportTestDir)
+
+	dataActionResource := func(label string) string {
+		return fmt.Sprintf(`
+resource "genesyscloud_integration_action" "%s" {
+  name           = "%s"
+  category       = "%s"
+  integration_id = genesyscloud_integration.%s.id
+  secure         = false
+  config_request {
+    request_template     = "$${input.rawRequest}"
+    request_type         = "POST"
+    request_url_template = "/api/v2/conversations/$${input.conversationId}/disconnect"
+  }
+  contract_output = jsonencode({
+    "properties" : {},
+    "type" : "object"
+  })
+  config_response {
+    success_template = "$${rawResult}"
+  }
+  contract_input = jsonencode({
+    "properties" : {
+      "conversationId" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object"
+  })
+}
+`, label, dataActionName, integrationName, integrationLabel)
+	}
+
+	config := fmt.Sprintf(`
+locals {
+  shared_action_name = "%s"
+  integration_name   = "%s"
+}
+
+resource "genesyscloud_tf_export" "export" {
+  directory          = "%s"
+  include_state_file = true
+  export_format      = "json"
+  include_filter_resources = [
+    "genesyscloud_integration_action::${local.shared_action_name}",
+    "genesyscloud_integration::${local.integration_name}"
+  ]
+
+  depends_on = [
+    genesyscloud_integration_action.%s,
+    genesyscloud_integration_action.%s,
+    genesyscloud_integration_action.%s,
+  ]
+}
+
+resource "genesyscloud_integration" "%s" {
+  config {
+    advanced = jsonencode({})
+    credentials = {
+      pureCloudOAuthClient = genesyscloud_integration_credential.%s.id
+    }
+    name       = local.integration_name
+    properties = jsonencode({})
+  }
+  integration_type = "purecloud-data-actions"
+  intended_state   = "ENABLED"
+}
+
+resource "genesyscloud_integration_credential" "%s" {
+  name                 = "%s"
+  credential_type_name = "pureCloudOAuthClient"
+  fields = {
+    clientId     = "someUserName"
+    clientSecret = "$tr0ngP@s$w0rd"
+  }
+}
+
+%s
+
+%s
+
+%s
+`, dataActionName, integrationName, exportTestDir,
+		dataActionLabel1,
+		dataActionLabel2,
+		dataActionLabel3,
+		integrationLabel,
+		credentialLabel,
+		credentialLabel,
+		credentialName,
+		dataActionResource(dataActionLabel1),
+		dataActionResource(dataActionLabel2),
+		dataActionResource(dataActionLabel3),
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					verifyLabelsExistInExportedStateFile(stateFilePath, integrationAction.ResourceType, expectedLabels),
+					verifyLabelsExistInExportedTfConfig(configPath, integrationAction.ResourceType, expectedLabels),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
 }
