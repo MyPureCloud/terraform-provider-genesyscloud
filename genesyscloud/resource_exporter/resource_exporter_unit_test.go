@@ -16,7 +16,7 @@ type TestAssertion struct {
 // Tests the original sanitizing algorithm
 func TestUnitSanitizeResourceOriginal(t *testing.T) {
 	randNumSuffixFn := func(amount string) string {
-		return fmt.Sprintf(`[0-9_]{%s}`, amount)
+		return fmt.Sprintf(`[a-z0-9_]{%s}`, amount)
 	}
 
 	metaMap := make(ResourceIDMetaMap)
@@ -47,12 +47,12 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 		},
 		{
 			input:  metaMap["3"].BlockLabel,
-			output: "wrapupcode___mappings[a-z0-9_]{0,21}",
+			output: "wrapupcode___mappings" + randNumSuffixFn("0,21"),
 			name:   "ascii chars",
 		},
 		{
 			input:  metaMap["4"].BlockLabel,
-			output: "wrapupcode___mappings[a-z0-9_]{0,21}",
+			output: "wrapupcode___mappings" + randNumSuffixFn("0,21"),
 			name:   "ascii chars with same structure different chars",
 		},
 		{
@@ -67,12 +67,12 @@ func TestUnitSanitizeResourceOriginal(t *testing.T) {
 		},
 		{
 			input:  metaMap["7"].BlockLabel,
-			output: "unsafeUnicodeA_r_Here" + randNumSuffixFn("0,11"),
+			output: "unsafeUnicodeA_r_Here",
 			name:   "unsafe unicode",
 		},
 		{
 			input:  metaMap["8"].BlockLabel,
-			output: "unsafeUnicodeESHHere" + randNumSuffixFn("0,11"),
+			output: "unsafeUnicodeESHHere",
 			name:   "unsafe unicode matching pattern",
 		},
 		{
