@@ -1543,25 +1543,45 @@ func removeZeroValues(key string, val interface{}, configMap util.JsonMap) {
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap util.JsonMap) {
 	list, exists := g.dependsList[key]
+	if !exists {
+		return
+	}
+
+	// Build a quick lookup map from resource ID to resource
+	resourceMap := make(map[string]resourceExporter.ResourceInfo)
+	for _, resource := range g.resources {
+		resourceMap[resource.State.ID] = resource
+	}
+
+	resource, found := resourceMap[key]
+	if found && g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
+		return
+	}
 
 	resourceDependsList := make([]string, 0)
-	if exists {
-		for _, res := range list {
-			for _, resource := range g.resources {
-				if resource.State.ID == strings.Split(res, ".")[1] {
-					resourceName := strings.Split(res, ".")[0] + "." + resource.BlockLabel
-					if g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
-						resourceName = "data." + resourceName
-					}
-					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", resourceName))
 
-				}
-			}
+	for _, res := range list {
+		parts := strings.SplitN(res, ".", 2)
+		if len(parts) != 2 {
+			continue
 		}
-		if len(resourceDependsList) > 0 {
-			configMap["depends_on"] = resourceDependsList
+		prefix, id := parts[0], parts[1]
+
+		resource, found := resourceMap[id]
+		if !found {
+			continue
 		}
 
+		resourceName := fmt.Sprintf("%s.%s", prefix, resource.BlockLabel)
+		if g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
+			resourceName = "data." + resourceName
+		}
+
+		resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", resourceName))
+	}
+
+	if len(resourceDependsList) > 0 {
+		configMap["depends_on"] = resourceDependsList
 	}
 }
 
