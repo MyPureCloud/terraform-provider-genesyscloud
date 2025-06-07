@@ -36,6 +36,7 @@ import (
 	idpSalesforce "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationActionDraft "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
@@ -165,6 +166,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[idpSalesforce.ResourceType] = idpSalesforce.ResourceIdpSalesforce()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
 	providerResources[integrationAction.ResourceType] = integrationAction.ResourceIntegrationAction()
+	providerResources[integrationActionDraft.ResourceType] = integrationActionDraft.ResourceIntegrationActionDraft()
 	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
 	providerResources[integrationFacebook.ResourceType] = integrationFacebook.ResourceIntegrationFacebook()
 	providerResources[integrationInstagram.ResourceType] = integrationInstagram.ResourceConversationsMessagingIntegrationsInstagram()
@@ -282,6 +284,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(idpSalesforce.ResourceType, idpSalesforce.IdpSalesforceExporter())
 	RegisterExporter(integration.ResourceType, integration.IntegrationExporter())
 	RegisterExporter(integrationAction.ResourceType, integrationAction.IntegrationActionExporter())
+	RegisterExporter(integrationActionDraft.ResourceType, integrationActionDraft.IntegrationActionDraftExporter())
 	RegisterExporter(integrationCred.ResourceType, integrationCred.IntegrationCredentialExporter())
 	RegisterExporter(integrationFacebook.ResourceType, integrationFacebook.IntegrationFacebookExporter())
 	RegisterExporter(integrationInstagram.ResourceType, integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())

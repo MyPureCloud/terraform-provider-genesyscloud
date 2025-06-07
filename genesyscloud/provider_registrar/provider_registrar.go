@@ -1,8 +1,7 @@
 package provider_registrar
 
 import (
-	"sync"
-
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -43,6 +42,7 @@ import (
 	idpSalesforce "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationActionDraft "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
@@ -130,8 +130,7 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"sync"
 )
 
 /*
@@ -262,6 +261,7 @@ func registerResources() {
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
+	integrationActionDraft.SetRegistrar(regInstance)                       //Registering integrations action draft
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
