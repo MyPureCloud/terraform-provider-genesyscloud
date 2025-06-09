@@ -9,6 +9,12 @@ import (
 
 const ResourceType = "genesyscloud_guide_jobs"
 
+type GenerateGuideContentRequest struct {
+	Id          *string `json:"$id,omitempty"`
+	Url         *string `json:"url,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(ResourceType, ResourceGuideJobs())
 	l.RegisterExporter(ResourceType, GuideJobsExporter())
@@ -18,10 +24,9 @@ func ResourceGuideJobs() *schema.Resource {
 	return &schema.Resource{
 		Description: "Guide Jobs",
 
-		CreateContext: provider.CreateWithPooledClient(createGuideJobs),
-		ReadContext:   provider.ReadWithPooledClient(readGuideJobs),
-		UpdateContext: provider.UpdateWithPooledClient(updateGuideJobs),
-		DeleteContext: provider.DeleteWithPooledClient(deleteGuideJobs),
+		CreateContext: provider.CreateWithPooledClient(createGuideJob),
+		ReadContext:   provider.ReadWithPooledClient(readGuideJob),
+		DeleteContext: provider.DeleteWithPooledClient(deleteGuideJob),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
