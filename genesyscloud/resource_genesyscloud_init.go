@@ -13,7 +13,7 @@ func SetRegistrar(l registrar.Registrar) {
 
 func registerDataSources(l registrar.Registrar) {
 	l.RegisterDataSource("genesyscloud_auth_division_home", DataSourceAuthDivisionHome())
-	l.RegisterDataSource("genesyscloud_organizations_me", DataSourceOrganizationsMe())
+	l.RegisterDataSource(DataSourceOrganizationsMeResourceType, DataSourceOrganizationsMe())
 }
 
 func registerResources(l registrar.Registrar) {

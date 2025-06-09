@@ -56,7 +56,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[ResourceType] = DataSourceSiteOutboundRoute()
-	providerDataSources["genesyscloud_organizations_me"] = gcloud.DataSourceOrganizationsMe()
+	providerDataSources[gcloud.DataSourceOrganizationsMeResourceType] = gcloud.DataSourceOrganizationsMe()
 }
 
 // initTestResources initializes all test resources and data sources.
