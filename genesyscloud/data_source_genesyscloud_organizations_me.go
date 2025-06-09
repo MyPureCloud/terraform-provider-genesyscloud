@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
-const dataSourceOrganizationsMeResourceType = "genesyscloud_organizations_me"
+const DataSourceOrganizationsMeResourceType = "genesyscloud_organizations_me"
 
 func DataSourceOrganizationsMe() *schema.Resource {
 	return &schema.Resource{
@@ -79,7 +79,7 @@ func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, 
 
 	orgMe, resp, getErr := orgAPI.GetOrganizationsMe()
 	if getErr != nil {
-		return util.BuildAPIDiagnosticError(dataSourceOrganizationsMeResourceType, fmt.Sprintf("Error requesting organization: %s", getErr), resp)
+		return util.BuildAPIDiagnosticError(DataSourceOrganizationsMeResourceType, fmt.Sprintf("Error requesting organization: %s", getErr), resp)
 	}
 
 	d.SetId(*orgMe.Id)
@@ -100,5 +100,5 @@ func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, 
 func GenerateOrganizationMe() string {
 	return fmt.Sprintf(`
 data "%s" "me" {}
-`, dataSourceOrganizationsMeResourceType)
+`, DataSourceOrganizationsMeResourceType)
 }

@@ -90,7 +90,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingWrapupCode.ResourceType] = routingWrapupCode.DataSourceRoutingWrapupCode()
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
-	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
+	providerDataSources[DataSourceOrganizationsMeResourceType] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 }
 
