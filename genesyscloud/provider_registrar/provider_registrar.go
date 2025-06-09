@@ -34,7 +34,7 @@ import (
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
-	guide "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guides"
+	guide "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	idpAdfs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_adfs"
 	idpGeneric "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_gsuite"

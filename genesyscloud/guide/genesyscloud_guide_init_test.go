@@ -1,4 +1,4 @@
-package guides
+package guide
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -19,7 +19,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceGuides()
+	providerResources[ResourceType] = ResourceGuide()
 
 }
 
@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceGuides()
+	providerDataSources[ResourceType] = DataSourceGuide()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -44,9 +44,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when running the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the guides package
+	// Run setup function before starting the test suite for the guide package
 	initTestResources()
 
-	// Run the test suite for the guides package
+	// Run the test suite for the guide package
 	m.Run()
 }

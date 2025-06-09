@@ -1,4 +1,4 @@
-package guides
+package guide
 
 type Guide struct {
 	Id                           *string `json:"id,omitempty"`

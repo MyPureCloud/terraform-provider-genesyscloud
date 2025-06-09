@@ -1,4 +1,4 @@
-package guides
+package guide
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -8,15 +8,15 @@ import (
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const ResourceType = "genesyscloud_guides"
+const ResourceType = "genesyscloud_guide"
 
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(ResourceType, DataSourceGuides())
-	l.RegisterResource(ResourceType, ResourceGuides())
-	l.RegisterExporter(ResourceType, GuidesExporter())
+	l.RegisterDataSource(ResourceType, DataSourceGuide())
+	l.RegisterResource(ResourceType, ResourceGuide())
+	l.RegisterExporter(ResourceType, GuideExporter())
 }
 
-func ResourceGuides() *schema.Resource {
+func ResourceGuide() *schema.Resource {
 	return &schema.Resource{
 		Description:   "Genesys Cloud Guide",
 		CreateContext: provider.CreateWithPooledClient(createGuide),
@@ -58,9 +58,9 @@ func ResourceGuides() *schema.Resource {
 	}
 }
 
-func DataSourceGuides() *schema.Resource {
+func DataSourceGuide() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Guides. Select a guide by name.",
+		Description: "Data source for Genesys Cloud Guide. Select a guide by name.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceGuideRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -72,7 +72,7 @@ func DataSourceGuides() *schema.Resource {
 	}
 }
 
-func GuidesExporter() *resourceExporter.ResourceExporter {
+func GuideExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGuides),
 	}

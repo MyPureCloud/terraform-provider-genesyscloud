@@ -1,4 +1,4 @@
-package guides
+package guide
 
 import (
 	"context"

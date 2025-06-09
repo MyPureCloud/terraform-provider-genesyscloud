@@ -1,4 +1,4 @@
-package guides
+package guide
 
 import (
 	"bytes"
@@ -230,7 +230,7 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 	}
 
 	if guides == nil || len(*guides) == 0 {
-		return "", true, resp, fmt.Errorf("no guides found with name: %s", name)
+		return "", true, resp, fmt.Errorf("no guide found with name: %s", name)
 	}
 
 	for _, guide := range *guides {

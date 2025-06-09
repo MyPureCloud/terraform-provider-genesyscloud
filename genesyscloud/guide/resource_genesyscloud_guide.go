@@ -1,4 +1,4 @@
-package guides
+package guide
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func getAllGuides(ctx context.Context, clientConfig *platformclientv2.Configurat
 	log.Printf("Retrieving all Guides")
 	guides, resp, err := proxy.getAllGuides(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all guides error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all guide error: %s", err), resp)
 	}
 
 	for _, guide := range *guides {
@@ -59,7 +59,7 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGuideProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGuides(), constants.ConsistencyChecks(), ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGuide(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Guide: %s", d.Id())
 
