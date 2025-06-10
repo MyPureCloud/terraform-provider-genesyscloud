@@ -5,6 +5,11 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
+type GuideJob struct {
+	Id     string `json:"id,omitempty"`
+	Status string `json:"status,omitempty"`
+}
+
 func buildGuideJobFromResourceData(d *schema.ResourceData) GenerateGuideContentRequest {
 	guideJobReq := GenerateGuideContentRequest{}
 

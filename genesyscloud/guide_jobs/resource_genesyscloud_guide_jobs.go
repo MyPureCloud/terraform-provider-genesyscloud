@@ -28,13 +28,13 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Creating Guide Job")
 	guideJobRequest := buildGuideJobFromResourceData(d)
 
-	guide, resp, err := proxy.createGuideJob(ctx, &guideJobRequest)
+	job, resp, err := proxy.createGuideJob(ctx, &guideJobRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide job error: %s", err), resp)
 	}
 
-	d.SetId(*guide.Id)
-	log.Printf("Created guide: %s", *guide.Id)
+	d.SetId(job.Id)
+	log.Printf("Created guide: %s", job.Id)
 	return readGuideJob(ctx, d, meta)
 }
 
@@ -54,10 +54,10 @@ func readGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read guide job: %s | Error: %s", d.Id(), err), resp))
 		}
 
-		resourcedata.SetNillableValue(d, "status", job.Status)
+		resourcedata.SetNillableValue(d, "status", &job.Status)
 
 		// TODO: Set Guide, The Addressable Entity Ref
-		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "guide_id", job.Guide, flattenAddressableEntityRefs)
+		//resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "guide_id", job.Guide, flattenAddressableEntityRefs)
 
 		log.Printf("Read Guide Job: %s", d.Id())
 		return cc.CheckState(d)
