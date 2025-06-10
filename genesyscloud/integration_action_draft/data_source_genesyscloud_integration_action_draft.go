@@ -22,7 +22,7 @@ func dataSourceIntegrationActionDraftRead(ctx context.Context, d *schema.Resourc
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting data action %s | error: %s", draftName, err), resp))
 		}
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no action drafts found with name %s", draftName), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no action drafts found with name %s | error: %s", draftName, err), resp))
 		}
 
 		d.SetId(draftId)

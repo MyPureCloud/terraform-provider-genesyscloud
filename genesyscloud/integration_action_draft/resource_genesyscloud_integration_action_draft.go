@@ -78,8 +78,7 @@ func readIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, met
 		reqTemp, resp, err := iap.getIntegrationActionDraftTemplate(ctx, d.Id(), reqTemplateFileName)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				d.SetId("")
-				return nil
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read request template for integration action draft %s | error: %s", d.Id(), err), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read request template for integration action draft %s | error: %s", d.Id(), err), resp))
 		}
@@ -87,8 +86,7 @@ func readIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, met
 		successTemp, resp, err := iap.getIntegrationActionDraftTemplate(ctx, d.Id(), successTemplateFileName)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				d.SetId("")
-				return nil
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read success template for integration action draft %s | error: %s", d.Id(), err), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read success template for integration action draft %s | error: %s", d.Id(), err), resp))
 		}
@@ -145,7 +143,7 @@ func updateIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 	category := d.Get("category").(string)
 	secure := d.Get("secure").(bool)
 
-	fmt.Printf("Updating integration action draft %s\n", name)
+	log.Printf("Updating integration action draft %s\n", name)
 
 	// retrieve the latest draft version to send with PATCH
 	draft, resp, err := iap.getIntegrationActionDraftById(ctx, d.Id())
@@ -170,7 +168,7 @@ func updateIntegrationActionDraft(ctx context.Context, d *schema.ResourceData, m
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action draft %s error: %s", name, err), resp)
 	}
 
-	fmt.Printf("Update successful for action draft %s\n", name)
+	log.Printf("Update successful for action draft %s\n", name)
 	return readIntegrationActionDraft(ctx, d, meta)
 }
 

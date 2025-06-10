@@ -124,7 +124,7 @@ func getIntegrationActionDraftByNameFn(ctx context.Context, p *integrationAction
 	}
 
 	if drafts == nil || len(*drafts) == 0 {
-		return "", false, resp, fmt.Errorf("no integration action draft with name %s", name)
+		return "", true, resp, fmt.Errorf("no integration action draft with name %s", name)
 	}
 
 	for _, draft := range *drafts {
