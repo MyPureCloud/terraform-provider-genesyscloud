@@ -14,12 +14,15 @@ import (
 func TestAccDataSourceEdgeGroup(t *testing.T) {
 	t.Parallel()
 	var (
-		edgeGroupResourceLabel = "edgeGroup1234"
-		edgeGroupDataLabel     = "edgeGroupData"
-		edgeGroupName1         = "test edge group " + uuid.NewString()
-		edgeGroupDescription1  = "test description 1"
+		edgeGroupResourceLabel      = "edgeGroup1234"
+		edgeGroupDataLabel          = "edgeGroupData"
+		edgeGroupName1              = "test edge group " + uuid.NewString()
+		edgeGroupDescription1       = "test description 1"
+		edgeGroupResourceFullPath   = ResourceType + "." + edgeGroupResourceLabel
+		edgeGroupDataSourceFullPath = "data." + ResourceType + "." + edgeGroupDataLabel
 
-		phoneTrunkBaseSettingsResourceLabel1 = "phoneTrunkBaseSettingsRes1"
+		phoneTrunkBaseSettingsResourceLabel1   = "phoneTrunkBaseSettingsRes1"
+		phoneTrunkBaseSettingsResourceFullPath = tpetbs.ResourceType + "." + phoneTrunkBaseSettingsResourceLabel1
 	)
 
 	phoneTrunkBaseSetting1 := tpetbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
@@ -41,15 +44,15 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 					edgeGroupDescription1,
 					false,
 					false,
-					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsResourceLabel1+".id"),
+					GeneratePhoneTrunkBaseIds(phoneTrunkBaseSettingsResourceFullPath+".id"),
 				) + generateEdgeGroupDataSource(
 					edgeGroupDataLabel,
 					edgeGroupName1,
-					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel,
+					edgeGroupResourceFullPath,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupDataLabel, "id", "genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(edgeGroupDataSourceFullPath, "id", edgeGroupResourceFullPath, "id"),
 				),
 			},
 		},
