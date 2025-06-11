@@ -6,6 +6,7 @@ import (
 	tpetbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -45,6 +46,20 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 					false,
 					false,
 					GeneratePhoneTrunkBaseIds(phoneTrunkBaseSettingsResourceFullPath+".id"),
+				),
+			},
+			{
+				PreConfig: func() {
+					t.Log("Sleeping for 1 second")
+					time.Sleep(1 * time.Second)
+				},
+				Config: phoneTrunkBaseSetting1 + GenerateEdgeGroupResourceWithCustomAttrs(
+					edgeGroupResourceLabel,
+					edgeGroupName1,
+					edgeGroupDescription1,
+					false,
+					false,
+					GeneratePhoneTrunkBaseIds(phoneTrunkBaseSettingsResourceFullPath+".id"),
 				) + generateEdgeGroupDataSource(
 					edgeGroupDataLabel,
 					edgeGroupName1,
@@ -56,6 +71,7 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyEdgeGroupsDestroyed,
 	})
 }
 
@@ -65,8 +81,9 @@ This test expects that the org has a product called "voice" enabled on it. If th
 func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 	t.Parallel()
 	var (
-		edgeGroupDataLabel = "edgeGroupData"
-		edgeGroupName1     = "PureCloud Voice - AWS"
+		edgeGroupDataLabel    = "edgeGroupData"
+		edgeGroupDataFullPath = fmt.Sprintf("data.%s.%s", ResourceType, edgeGroupDataLabel)
+		edgeGroupName1        = "PureCloud Voice - AWS"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -81,7 +98,7 @@ func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupDataLabel, "name", edgeGroupName1),
+					resource.TestCheckResourceAttr(edgeGroupDataFullPath, "name", edgeGroupName1),
 				),
 			},
 		},
@@ -91,8 +108,8 @@ func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 func generateEdgeGroupDataSource(
 	resourceLabel string,
 	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string,
 	managed bool) string {
 	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_edge_group" "%s" {
