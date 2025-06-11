@@ -102,9 +102,6 @@ func (p *architectSchedulesProxy) getArchitectSchedulesIdByName(ctx context.Cont
 
 // getArchitectSchedulesById returns a single Genesys Cloud architect schedules by Id
 func (p *architectSchedulesProxy) getArchitectSchedulesById(ctx context.Context, id string) (architectSchedules *platformclientv2.Schedule, response *platformclientv2.APIResponse, err error) {
-	if schedule := rc.GetCacheItem(p.schedulesCache, id); schedule != nil { // Get the schedule from the cache, if not there in the cache then call p.getArchitectSchedulesByIdAttr()
-		return schedule, nil, nil
-	}
 	return p.getArchitectSchedulesByIdAttr(ctx, p, id)
 }
 
@@ -119,7 +116,7 @@ func (p *architectSchedulesProxy) deleteArchitectSchedules(ctx context.Context, 
 }
 
 // createArchitectSchedulesFn is an implementation function for creating a Genesys Cloud architect schedules
-func createArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, architectSchedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
+func createArchitectSchedulesFn(_ context.Context, p *architectSchedulesProxy, architectSchedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
 	schedules, apiResponse, err := p.architectApi.PostArchitectSchedules(*architectSchedules)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to create architect schedules: %s", err)
@@ -128,13 +125,13 @@ func createArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy,
 }
 
 // getAllArchitectSchedulesFn is the implementation for retrieving all architect schedules in Genesys Cloud
-func getAllArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy) (*[]platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
+func getAllArchitectSchedulesFn(_ context.Context, p *architectSchedulesProxy) (*[]platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
 	var allSchedules []platformclientv2.Schedule
 	const pageSize = 100
 
 	schedules, apiResponse, err := p.architectApi.GetArchitectSchedules(1, pageSize, "", "", "", nil)
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("Failed to get schedule : %v", err)
+		return nil, apiResponse, fmt.Errorf("failed to read schedules: %s", err.Error())
 	}
 
 	if schedules == nil || schedules.Entities == nil || len(*schedules.Entities) == 0 {
@@ -144,9 +141,9 @@ func getAllArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy)
 	allSchedules = append(allSchedules, *schedules.Entities...)
 
 	for pageNum := 2; pageNum <= *schedules.PageCount; pageNum++ {
-		schedules, apiResponse, err := p.architectApi.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
+		schedules, apiResponse, err = p.architectApi.GetArchitectSchedules(pageNum, pageSize, "", "", "", nil)
 		if err != nil {
-			return nil, apiResponse, fmt.Errorf("Failed to get schedule : %v", err)
+			return nil, apiResponse, fmt.Errorf("failed to read schedules: %s", err.Error())
 		}
 
 		if schedules == nil || schedules.Entities == nil || len(*schedules.Entities) == 0 {
@@ -186,12 +183,11 @@ func getArchitectSchedulesIdByNameFn(ctx context.Context, p *architectSchedulesP
 }
 
 // getArchitectSchedulesByIdFn is an implementation of the function to get a Genesys Cloud architect schedules by Id
-func getArchitectSchedulesByIdFn(ctx context.Context, p *architectSchedulesProxy, id string) (architectSchedules *platformclientv2.Schedule, response *platformclientv2.APIResponse, err error) {
-	schedule, apiResponse, err := p.architectApi.GetArchitectSchedule(id)
-	if err != nil {
-		return nil, apiResponse, fmt.Errorf("Failed to retrieve architect schedule by id %s: %s", id, err)
+func getArchitectSchedulesByIdFn(_ context.Context, p *architectSchedulesProxy, id string) (architectSchedules *platformclientv2.Schedule, response *platformclientv2.APIResponse, err error) {
+	if schedule := rc.GetCacheItem(p.schedulesCache, id); schedule != nil {
+		return schedule, nil, nil
 	}
-	return schedule, apiResponse, nil
+	return p.architectApi.GetArchitectSchedule(id)
 }
 
 // updateArchitectSchedulesFn is an implementation of the function to update a Genesys Cloud architect schedules
@@ -209,7 +205,7 @@ func updateArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy,
 }
 
 // deleteArchitectSchedulesFn is an implementation function for deleting a Genesys Cloud architect schedules
-func deleteArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, id string) (*platformclientv2.APIResponse, error) {
+func deleteArchitectSchedulesFn(_ context.Context, p *architectSchedulesProxy, id string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.architectApi.DeleteArchitectSchedule(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete architect schedules: %s", err)

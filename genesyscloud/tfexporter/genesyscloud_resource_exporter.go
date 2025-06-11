@@ -1093,12 +1093,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				// This calls into the resource's ReadContext method which
 				// will block until it can acquire a pooled client config object.
 				ctyType := res.CoreConfigSchema().ImpliedType()
-				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
-
-				if err != nil {
-					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, err)
-					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, err)
+				instanceState, diags := getResourceState(ctx, res, id, resMeta, meta)
+				if diags.HasError() {
+					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, diags)
+					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, diags)
 					return fmt.Errorf(errString)
+				}
+				if diags != nil {
+					log.Printf("Diagnostics returned from getResourceState was not nil: %v", diags)
 				}
 
 				if instanceState == nil {
@@ -1211,7 +1213,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	}
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (state *terraform.InstanceState, diags diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
 
@@ -1233,24 +1235,25 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 	}
 
 	resourceMutex.Lock()
-	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
+	state, diags = resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
 	resourceMutex.Unlock()
 
-	if err != nil {
-		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
-			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
+	if diags.HasError() {
+		if strings.Contains(fmt.Sprintf("%v", diags), "API Error: 404") ||
+			strings.Contains(fmt.Sprintf("%v", diags), "API Error: 410") {
+			log.Printf("RefreshWithout upgrade returned 404 or 410 for resource '%s'. BlockLabel: '%s'. Error: %v", resID, resMeta.BlockLabel, diags)
 			return nil, nil
 		}
-		log.Printf("Error during RefreshWithoutUpgrade for resource  %s, %v", resID, err)
-		return nil, err
+		log.Printf("Error during RefreshWithoutUpgrade for resource  %s, %v", resID, diags)
+		return nil, diags
 	}
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
-		log.Printf("Empty State for resource %s, %v", resID, state)
+		log.Printf("Empty State for resource with ID '%s', BlockLabel: '%s'. State: %v", resID, resMeta.BlockLabel, state)
 		return nil, nil
 	}
 
-	return state, nil
+	return state, diags
 }
 
 func correctCustomFunctions(config string) string {

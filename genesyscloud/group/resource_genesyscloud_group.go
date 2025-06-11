@@ -15,7 +15,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -27,9 +27,9 @@ import (
 
 func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	groupProxy := getGroupProxy(clientConfig)
+	proxy := getGroupProxy(clientConfig)
 
-	groups, resp, err := groupProxy.getAllGroups(ctx)
+	groups, resp, err := proxy.getAllGroups(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to retrieve all groups: %s", err), resp)
 	}
@@ -59,7 +59,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Error Building SDK group addresses"), err)
 	}
 
-	createGroup := &platformclientv2.Groupcreate{
+	groupCreate := &platformclientv2.Groupcreate{
 		Name:          &name,
 		VarType:       &groupType,
 		Visibility:    &visibility,
@@ -70,9 +70,9 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		OwnerIds:      lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
 		IncludeOwners: &includeOwners,
 	}
-	log.Printf("Creating group %s", name)
-	group, resp, err := gp.createGroup(ctx, createGroup)
 
+	log.Printf("Creating group %s", name)
+	group, resp, err := gp.createGroup(ctx, groupCreate)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create group %s: %s", name, err), resp)
 	}
@@ -88,29 +88,34 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	diagErr := updateGroupMembers(ctx, d, sdkConfig)
-	if diagErr != nil {
+	if diagErr.HasError() {
 		return diagErr
+	}
+
+	if diagErr != nil {
+		log.Printf("createGroup produces potential diagnostics warnings: %v", diagErr)
 	}
 
 	log.Printf("Created group %s %s", name, *group.Id)
 	return readGroup(ctx, d, meta)
 }
 
-func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroup(), constants.ConsistencyChecks(), ResourceType)
 	gp := getGroupProxy(sdkConfig)
 
 	log.Printf("Reading group %s", d.Id())
 
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	retryDiags := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 
 		group, resp, getErr := gp.getGroupById(ctx, d.Id())
 		if getErr != nil {
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp)
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(diagErr)
 		}
 
 		resourcedata.SetNillableValue(d, "name", group.Name)
@@ -130,15 +135,23 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			_ = d.Set("addresses", nil)
 		}
 
-		members, err := readGroupMembers(ctx, d.Id(), sdkConfig)
+		members, resp, err := readGroupMembers(ctx, d.Id(), sdkConfig)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("%v", err))
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for group %s: %s", d.Id(), err), resp)
+			return retry.NonRetryableError(diagErr)
 		}
+
 		_ = d.Set("member_ids", members)
 
 		log.Printf("Read group %s %s", d.Id(), *group.Name)
 		return cc.CheckState(d)
 	})
+
+	if retryDiags != nil {
+		diags = append(diags, retryDiags...)
+	}
+
+	return diags
 }
 
 func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -166,7 +179,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		}
 
 		log.Printf("Updating group %s", name)
-		updateGroup := &platformclientv2.Groupupdate{
+		groupUpdate := &platformclientv2.Groupupdate{
 			Version:       group.Version,
 			Name:          &name,
 			Description:   &description,
@@ -185,22 +198,26 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			emptyList := []string{" "}
 			ownerIds = &emptyList
 		}
-		updateGroup.OwnerIds = ownerIds
+		groupUpdate.OwnerIds = ownerIds
 
-		_, resp, putErr := gp.updateGroup(ctx, d.Id(), updateGroup)
+		_, resp, putErr := gp.updateGroup(ctx, d.Id(), groupUpdate)
 		if putErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group %s: %s", d.Id(), putErr), resp)
 		}
 
 		return resp, nil
 	})
-	if diagErr != nil {
+	if diagErr.HasError() {
 		return diagErr
 	}
 
-	diagErr = updateGroupMembers(ctx, d, sdkConfig)
-	if diagErr != nil {
+	diagErr = append(diagErr, updateGroupMembers(ctx, d, sdkConfig)...)
+	if diagErr.HasError() {
 		return diagErr
+	}
+
+	if diagErr != nil {
+		log.Printf("updateGroup produced potential diagnostics warnings: %v", diagErr)
 	}
 
 	log.Printf("Updated group %s", name)
@@ -305,19 +322,20 @@ func updateGroupMembers(ctx context.Context, d *schema.ResourceData, sdkConfig *
 	return nil
 }
 
-func readGroupMembers(ctx context.Context, groupID string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
+func readGroupMembers(ctx context.Context, groupID string, sdkConfig *platformclientv2.Configuration) (*schema.Set, *platformclientv2.APIResponse, error) {
 	gp := getGroupProxy(sdkConfig)
-	members, resp, err := gp.getGroupMembers(ctx, groupID)
 
+	members, resp, err := gp.getGroupMembers(ctx, groupID)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for group %s: %s", groupID, err), resp)
+		return nil, resp, err
 	}
 
 	interfaceList := make([]interface{}, len(*members))
 	for i, v := range *members {
 		interfaceList[i] = v
 	}
-	return schema.NewSet(schema.HashString, interfaceList), nil
+
+	return schema.NewSet(schema.HashString, interfaceList), resp, nil
 }
 
 func getGroupMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) ([]string, diag.Diagnostics) {
