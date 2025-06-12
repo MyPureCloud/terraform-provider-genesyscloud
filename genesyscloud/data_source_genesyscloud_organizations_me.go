@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
+
+const DataSourceOrganizationsMeResourceType = "genesyscloud_organizations_me"
 
 func DataSourceOrganizationsMe() *schema.Resource {
 	return &schema.Resource{
@@ -76,43 +79,26 @@ func dataSourceOrganizationsMeRead(ctx context.Context, d *schema.ResourceData, 
 
 	orgMe, resp, getErr := orgAPI.GetOrganizationsMe()
 	if getErr != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_organizations_me", fmt.Sprintf("Error requesting organization: %s", getErr), resp)
+		return util.BuildAPIDiagnosticError(DataSourceOrganizationsMeResourceType, fmt.Sprintf("Error requesting organization: %s", getErr), resp)
 	}
 
 	d.SetId(*orgMe.Id)
-	if orgMe.Name != nil {
-		d.Set("name", *orgMe.Name)
-	}
-	if orgMe.DefaultLanguage != nil {
-		d.Set("default_language", *orgMe.DefaultLanguage)
-	}
-	if orgMe.DefaultCountryCode != nil {
-		d.Set("default_country_code", *orgMe.DefaultCountryCode)
-	}
-	if orgMe.Domain != nil {
-		d.Set("domain", *orgMe.Domain)
-	}
-	if orgMe.DefaultSiteId != nil {
-		d.Set("default_site_id", *orgMe.DefaultSiteId)
-	}
-	if orgMe.ThirdPartyOrgName != nil {
-		d.Set("third_party_org_name", *orgMe.ThirdPartyOrgName)
-	}
-	if orgMe.VoicemailEnabled != nil {
-		d.Set("voicemail_enabled", *orgMe.VoicemailEnabled)
-	}
-	if orgMe.ProductPlatform != nil {
-		d.Set("product_platform", *orgMe.ProductPlatform)
-	}
-	if orgMe.SupportURI != nil {
-		d.Set("support_uri", *orgMe.SupportURI)
-	}
+
+	resourcedata.SetNillableValue(d, "name", orgMe.Name)
+	resourcedata.SetNillableValue(d, "default_language", orgMe.DefaultLanguage)
+	resourcedata.SetNillableValue(d, "default_country_code", orgMe.DefaultCountryCode)
+	resourcedata.SetNillableValue(d, "domain", orgMe.Domain)
+	resourcedata.SetNillableValue(d, "default_site_id", orgMe.DefaultSiteId)
+	resourcedata.SetNillableValue(d, "third_party_org_name", orgMe.ThirdPartyOrgName)
+	resourcedata.SetNillableValue(d, "voicemail_enabled", orgMe.VoicemailEnabled)
+	resourcedata.SetNillableValue(d, "product_platform", orgMe.ProductPlatform)
+	resourcedata.SetNillableValue(d, "support_uri", orgMe.SupportURI)
 
 	return nil
 }
 
 func GenerateOrganizationMe() string {
-	return `
-data "genesyscloud_organizations_me" "me" {}
-`
+	return fmt.Sprintf(`
+data "%s" "me" {}
+`, DataSourceOrganizationsMeResourceType)
 }

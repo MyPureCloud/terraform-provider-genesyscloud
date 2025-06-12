@@ -74,7 +74,7 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      ResourceType + "." + didPoolResourceLabel1,
+				ResourceName:      resourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

@@ -20,13 +20,13 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_employeeperformance_externalmetrics_definition" "example_externalmetrics_definition" {
+resource "genesyscloud_employeeperformance_externalmetrics_definitions" "example_externalmetrics_definition" {
   name                   = "Example name"
-  precision              = 0                // Between 0 and 5
+  precision              = 2                // Between 0 and 5
   default_objective_type = "HigherIsBetter" // Possible values: HigherIsBetter, LowerIsBetter, TargetArea
   enabled                = true
-  unit                   = "Seconds" // Possible values: Seconds, Percent, Number, Currency
-  unit_definition        = ""
+  unit                   = "Currency" // Possible values: Seconds, Percent, Number, Currency
+  unit_definition        = "USD"
 }
 ```
 

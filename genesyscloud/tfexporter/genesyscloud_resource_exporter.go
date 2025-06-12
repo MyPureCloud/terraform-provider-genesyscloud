@@ -4,16 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
-	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"hash/fnv"
 	"io"
 	"log"
@@ -26,6 +16,17 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
@@ -393,10 +394,15 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 
 		// 2. Determine if instance is a data source
 		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
-
-		// 3. Ensure the resource type is instantiated
-		if g.resourceTypesMaps[resource.Type] == nil {
-			g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+		if isDataSource {
+			if g.dataSourceTypesMaps[resource.Type] == nil {
+				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			}
+		} else {
+			// 3. Ensure the resource type is instantiated
+			if g.resourceTypesMaps[resource.Type] == nil {
+				g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			}
 		}
 
 		// Theoretically this should only ever occur when using the Original Sanitizer as it doesn't have guaranteed
@@ -422,9 +428,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 
 		// 7. Adds resource to list of data resources if its a data source
 		if isDataSource {
-			if g.dataSourceTypesMaps[resource.Type] == nil {
-				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
-			}
 			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
 		} else {
 			// 8. Handles writing external files as part of the export process
@@ -1211,8 +1214,15 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
+
+	resourceMutex := &sync.Mutex{}
+
+	resourceMutex.Lock()
+	resourceData := resource.Data(instanceState)
+	resourceMutex.Unlock()
+
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
-		resourceDataArr, err := resource.Importer.StateContext(ctx, resource.Data(instanceState), meta)
+		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, meta)
 		if err != nil {
 			log.Printf("Error with resource Importer %v for id %s", resID, err)
 			return nil, diag.FromErr(err)
@@ -1222,7 +1232,10 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		}
 	}
 
+	resourceMutex.Lock()
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
+	resourceMutex.Unlock()
+
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
@@ -1530,25 +1543,45 @@ func removeZeroValues(key string, val interface{}, configMap util.JsonMap) {
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap util.JsonMap) {
 	list, exists := g.dependsList[key]
+	if !exists {
+		return
+	}
+
+	// Build a quick lookup map from resource ID to resource
+	resourceMap := make(map[string]resourceExporter.ResourceInfo)
+	for _, resource := range g.resources {
+		resourceMap[resource.State.ID] = resource
+	}
+
+	resource, found := resourceMap[key]
+	if found && g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
+		return
+	}
 
 	resourceDependsList := make([]string, 0)
-	if exists {
-		for _, res := range list {
-			for _, resource := range g.resources {
-				if resource.State.ID == strings.Split(res, ".")[1] {
-					resourceName := strings.Split(res, ".")[0] + "." + resource.BlockLabel
-					if g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
-						resourceName = "data." + resourceName
-					}
-					resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", resourceName))
 
-				}
-			}
+	for _, res := range list {
+		parts := strings.SplitN(res, ".", 2)
+		if len(parts) != 2 {
+			continue
 		}
-		if len(resourceDependsList) > 0 {
-			configMap["depends_on"] = resourceDependsList
+		prefix, id := parts[0], parts[1]
+
+		resource, found := resourceMap[id]
+		if !found {
+			continue
 		}
 
+		resourceName := fmt.Sprintf("%s.%s", prefix, resource.BlockLabel)
+		if g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
+			resourceName = "data." + resourceName
+		}
+
+		resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", resourceName))
+	}
+
+	if len(resourceDependsList) > 0 {
+		configMap["depends_on"] = resourceDependsList
 	}
 }
 

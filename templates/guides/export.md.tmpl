@@ -112,15 +112,15 @@ Next, update your export resource configuration by setting `use_legacy_architect
 
 By default, this setting is true to avoid unexpected changes in behavior after upgrading.
 
-```diff
+```hcl
 resource "genesyscloud_tf_export" "example" {
   directory                          = "./genesyscloud/flows"
   export_format                      = "hcl"
   include_filter_resources           = ["genesyscloud_flow::ExampleFlowName"]
-+ use_legacy_architect_flow_exporter = false
+  use_legacy_architect_flow_exporter = false
 }
 ```
 
-After running terraform apply with this configuration, all Architect flows matching "ExampleFlowName" will be exported to `./genesyscloud/flows/architect_flows/` in YAML format.
+After running terraform apply with the example configuration above, all Architect flows matching "ExampleFlowName" will be exported to `./genesyscloud/flows/architect_flows/` in YAML format.
 
 

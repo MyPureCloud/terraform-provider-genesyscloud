@@ -36,8 +36,8 @@ resource "genesyscloud_organization_presence_definition" "Away_From_Keyboard" {
 
 ### Required
 
-- `language_labels` (Map of String) The localized language labels for the presence definition. Valid labels: ar, cs, da, de, en, en_US, es, fi, fr, he, hi, it, ja, ko, nl, no, pl, pt_BR, pt_PT, ru, sv, th, tr, uk, zh_CN, zh_TW
-- `system_presence` (String) System presence to create presence definition for. Once presence definition is created, this cannot be changed. Valid presences: Available, Away, Break, Busy, Meal, Meeting, Training
+- `language_labels` (Map of String) The localized language labels for the presence definition. Valid labels include: ar, cs, da, de, en, en_US, es, fi, fr, he, hi, it, ja, ko, nl, no, pl, pt, pt_BR, pt_PT, ru, sv, th, tr, uk, zh_CN, zh_TW
+- `system_presence` (String) System presence to create presence definition for. Once presence definition is created, this cannot be changed. Valid presences include: Available, Away, Break, Busy, Meal, Meeting, Training, OnQueue, Offline, Idle
 
 ### Optional
 

@@ -22,9 +22,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_flow" "flow" {
-  filepath          = "the flow configuration file path"
-  file_content_hash = filesha256("the flow configuration file path")
+resource "genesyscloud_flow" "inbound_call_flow" {
+  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml"
+  file_content_hash = filesha256("${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml")
   // Example flow configuration using substitutions:
   /*
   inboundCall:
@@ -51,6 +51,16 @@ resource "genesyscloud_flow" "flow" {
     default_language     = "en-us"
     greeting             = "Hello World"
     menu_disconnect_name = "Disconnect"
+  }
+}
+resource "genesyscloud_flow" "outbound_call_flow" {
+  filepath          = "${local.working_dir.flow}/outboundcall_flow_example.yaml"
+  file_content_hash = filesha256("${local.working_dir.flow}/outboundcall_flow_example.yaml")
+  substitutions = {
+    flow_name          = "An example outbound flow"
+    home_division_name = data.genesyscloud_auth_division_home.home.name
+    contact_list_name  = genesyscloud_outbound_contact_list.contact_list.name
+    wrapup_code_name   = genesyscloud_routing_wrapupcode.win.name
   }
 }
 ```

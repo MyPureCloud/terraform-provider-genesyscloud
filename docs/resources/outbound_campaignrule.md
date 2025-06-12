@@ -26,8 +26,8 @@ resource "genesyscloud_outbound_campaignrule" "campaign_rule" {
   enabled              = false
   match_any_conditions = false
   campaign_rule_entities {
-    campaign_ids = [genesyscloud_outbound_campaign.campaign1.id]
-    sequence_ids = [genesyscloud_outbound_sequence.sequence.id]
+    campaign_ids = [genesyscloud_outbound_campaign.campaign.id]
+    sequence_ids = [genesyscloud_outbound_sequence.example_outbound_sequence.id]
   }
   campaign_rule_conditions {
     condition_type = "campaignProgress"

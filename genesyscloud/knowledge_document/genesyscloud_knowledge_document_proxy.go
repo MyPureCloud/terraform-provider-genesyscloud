@@ -236,8 +236,7 @@ func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeDocumentProx
 
 }
 
-func GetAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
-
+func GetAllKnowledgeDocumentEntitiesFn(_ context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	var (
 		after    string
 		entities []platformclientv2.Knowledgedocumentresponse
