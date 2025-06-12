@@ -14,31 +14,45 @@ import (
 
 func dataSourceExtensionPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
+	proxy := getExtensionPoolProxy(sdkConfig)
 
 	extensionPoolStartPhoneNumber := d.Get("start_number").(string)
 	extensionPoolEndPhoneNumber := d.Get("end_number").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 
-		extensionPools, resp, getErr := extensionPoolProxy.getAllExtensionPools(ctx)
+		extensionPools, resp, getErr := proxy.getAllExtensionPools(ctx)
 
 		if getErr != nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting list of extension pools: %s", getErr), resp))
 		}
 
+		noneFoundDiagError := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber), resp)
+
 		if extensionPools == nil || len(*extensionPools) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no extension pools found with start phone number: %s and end phone number: %s", extensionPoolStartPhoneNumber, extensionPoolEndPhoneNumber), resp))
+			return retry.RetryableError(noneFoundDiagError)
 		}
 
 		for _, extensionPool := range *extensionPools {
-			if extensionPool.StartNumber != nil && *extensionPool.StartNumber == extensionPoolStartPhoneNumber &&
-				extensionPool.EndNumber != nil && *extensionPool.EndNumber == extensionPoolEndPhoneNumber &&
-				extensionPool.State != nil && *extensionPool.State != "deleted" {
-				d.SetId(*extensionPool.Id)
+			if extensionPool.StartNumber == nil || extensionPool.EndNumber == nil || extensionPool.State == nil {
+				continue
 			}
-		}
-		return nil
-	})
 
+			if *extensionPool.StartNumber != extensionPoolStartPhoneNumber {
+				continue
+			}
+
+			if *extensionPool.EndNumber != extensionPoolEndPhoneNumber {
+				continue
+			}
+
+			if *extensionPool.State == "deleted" {
+				continue
+			}
+
+			d.SetId(*extensionPool.Id)
+			return nil
+		}
+		return retry.RetryableError(noneFoundDiagError)
+	})
 }
