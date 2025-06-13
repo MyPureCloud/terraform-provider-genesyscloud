@@ -8,15 +8,15 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"io"
 	"net/http"
-	"os"
 )
 
 var internalProxy *guideProxy
 
 type getAllGuidesFunc func(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error)
-type createGuideFunc func(ctx context.Context, p *guideProxy, guide *Guide) (*Guide, *platformclientv2.APIResponse, error)
+type createGuideFunc func(ctx context.Context, p *guideProxy, guide *Createguide) (*Guide, *platformclientv2.APIResponse, error)
 type getGuideByIdFunc func(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error)
 type getGuideByNameFunc func(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error)
+type deleteGuideFunc func(ctx context.Context, p *guideProxy, id string) (*platformclientv2.APIResponse, error)
 
 type guideProxy struct {
 	clientConfig *platformclientv2.Configuration
@@ -25,6 +25,7 @@ type guideProxy struct {
 	createGuideAttr    createGuideFunc
 	getGuideByIdAttr   getGuideByIdFunc
 	getGuideByNameAttr getGuideByNameFunc
+	deleteGuideAttr    deleteGuideFunc
 }
 
 func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
@@ -36,6 +37,7 @@ func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
 		createGuideAttr:    createGuideFn,
 		getGuideByIdAttr:   getGuideByIdFn,
 		getGuideByNameAttr: getGuideByNameFn,
+		deleteGuideAttr:    deleteGuideFn,
 	}
 }
 
@@ -50,7 +52,7 @@ func (p *guideProxy) getAllGuides(ctx context.Context, name string) (*[]Guide, *
 	return p.getAllGuidesAttr(ctx, p, name)
 }
 
-func (p *guideProxy) createGuide(ctx context.Context, guide *Guide) (*Guide, *platformclientv2.APIResponse, error) {
+func (p *guideProxy) createGuide(ctx context.Context, guide *Createguide) (*Guide, *platformclientv2.APIResponse, error) {
 	return p.createGuideAttr(ctx, p, guide)
 }
 
@@ -60,6 +62,10 @@ func (p *guideProxy) getGuideById(ctx context.Context, id string) (*Guide, *plat
 
 func (p *guideProxy) getGuideByName(ctx context.Context, name string) (string, bool, *platformclientv2.APIResponse, error) {
 	return p.getGuideByNameAttr(ctx, p, name)
+}
+
+func (p *guideProxy) deleteGuide(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+	return p.deleteGuideAttr(ctx, p, id)
 }
 
 // GetAll Functions
@@ -72,14 +78,14 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 	client := &http.Client{}
 
 	// Create request
-	req, err := http.NewRequest("GET", "https://apicentral.genesys.cloud/api-explorer#get-api-v2-guides", nil)
+	req, err := http.NewRequest("GET", "https://api.inintca.com/api/v2/guides/", nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("GENESYS_ACCESS_TOKEN"))
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
 
 	// Make the request
 	resp, err := client.Do(req)
@@ -105,6 +111,7 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 	}
 
 	// Parse response into Guide struct
+
 	var guides []Guide
 	if err := json.Unmarshal(respBody, &guides); err != nil {
 		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
@@ -115,12 +122,13 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 // Create Functions
 
-func createGuideFn(ctx context.Context, p *guideProxy, guide *Guide) (*Guide, *platformclientv2.APIResponse, error) {
-	return sdkPostGuide(guide)
+func createGuideFn(ctx context.Context, p *guideProxy, guide *Createguide) (*Guide, *platformclientv2.APIResponse, error) {
+	return sdkPostGuide(p, guide)
 }
 
-func sdkPostGuide(body *Guide) (*Guide, *platformclientv2.APIResponse, error) {
+func sdkPostGuide(p *guideProxy, body *Createguide) (*Guide, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
+	action := http.MethodPost
 
 	// Convert body to JSON
 	jsonBody, err := json.Marshal(body)
@@ -129,14 +137,15 @@ func sdkPostGuide(body *Guide) (*Guide, *platformclientv2.APIResponse, error) {
 	}
 
 	// Create request
-	req, err := http.NewRequest("POST", "https://api.mypurecloud.com/api/v2/guides", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("GENESYS_ACCESS_TOKEN"))
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req.Header.Set("Accept", "application/json")
 
 	// Make the request
 	resp, err := client.Do(req)
@@ -173,21 +182,23 @@ func sdkPostGuide(body *Guide) (*Guide, *platformclientv2.APIResponse, error) {
 // Read Functions
 
 func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
-	return sdkGetGuideById(id)
+	return sdkGetGuideById(p, id)
 }
 
-func sdkGetGuideById(id string) (*Guide, *platformclientv2.APIResponse, error) {
+func sdkGetGuideById(p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
+	action := http.MethodGet
 
 	// Create request
-	req, err := http.NewRequest("GET", "https://api.mypurecloud.com/api/v2/guides/"+id, nil)
+	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides/"+id, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+os.Getenv("GENESYS_ACCESS_TOKEN"))
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req.Header.Set("Accept", "application/json")
 
 	// Make the request
 	resp, err := client.Do(req)
@@ -240,4 +251,49 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 	}
 
 	return "", false, resp, fmt.Errorf("unable to find guide with name %s", name)
+}
+
+// Delete Functions
+
+func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*platformclientv2.APIResponse, error) {
+	return sdkDeleteGuide(p, id)
+}
+
+func sdkDeleteGuide(p *guideProxy, id string) (*platformclientv2.APIResponse, error) {
+	client := &http.Client{}
+
+	// Create request
+	req, err := http.NewRequest("DELETE", "https://api.inintca.com/api/v2/guides/"+id+"/jobs", nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response: %v", err)
+	}
+
+	// Check status code
+	apiResp := &platformclientv2.APIResponse{
+		StatusCode: resp.StatusCode,
+		Response:   resp,
+	}
+
+	if resp.StatusCode >= 400 {
+		return apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	return apiResp, nil
 }

@@ -23,7 +23,7 @@ func getAllGuides(ctx context.Context, clientConfig *platformclientv2.Configurat
 	log.Printf("Retrieving all Guides")
 	guides, resp, err := proxy.getAllGuides(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all guide error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all guides error: %s", err), resp)
 	}
 
 	for _, guide := range *guides {
@@ -41,7 +41,8 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	source := d.Get("source").(string)
 
 	log.Printf("Creating Guide")
-	guideReq := &Guide{
+
+	guideReq := &Createguide{
 		Name:   &name,
 		Source: &source,
 	}
@@ -80,5 +81,34 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		log.Printf("Read Guide: %s", d.Id())
 		return cc.CheckState(d)
+	})
+}
+
+func deleteGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getGuideProxy(sdkConfig)
+
+	log.Printf("Deleting Guide: %s", d.Id())
+
+	resp, err := proxy.deleteGuide(ctx, d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete guide %s | Error: %s", d.Id(), err), resp)
+	}
+
+	if resp.StatusCode == 202 {
+		log.Printf("Delete guide job started for: %s", d.Id())
+	}
+
+	return util.WithRetries(ctx, 180, func() *retry.RetryError {
+		_, resp, err := proxy.getGuideById(ctx, d.Id())
+		if err != nil {
+			if util.IsStatus404(resp) {
+				log.Printf("Deleted Guide: %s", d.Id())
+				return nil
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting guide %s | Error: %s", d.Id(), err), resp))
+		}
+
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Guide %s still exists", d.Id()), resp))
 	})
 }
