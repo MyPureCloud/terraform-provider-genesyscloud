@@ -2,11 +2,14 @@
 page_title: "genesyscloud_knowledge_label Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Knowledge Label
+  Genesys Cloud Knowledge Label.
+  Export block label: "{parent knowledge base name}_{knowledge_label.name}"
 ---
 # genesyscloud_knowledge_label (Resource)
 
-Genesys Cloud Knowledge Label
+Genesys Cloud Knowledge Label.
+
+Export block label: "{parent knowledge base name}_{knowledge_label.name}"
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

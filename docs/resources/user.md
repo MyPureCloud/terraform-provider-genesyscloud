@@ -2,11 +2,14 @@
 page_title: "genesyscloud_user Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud User
+  Genesys Cloud User.
+  Export block label: "{email}"
 ---
 # genesyscloud_user (Resource)
 
-Genesys Cloud User
+Genesys Cloud User.
+
+Export block label: "{email}"
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

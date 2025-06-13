@@ -2,11 +2,14 @@
 page_title: "genesyscloud_flow Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Flow
+  Genesys Cloud Flow.
+  Export block label: "{type}_{name}"
 ---
 # genesyscloud_flow (Resource)
 
-Genesys Cloud Flow
+Genesys Cloud Flow.
+
+Export block label: "{type}_{name}"
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
