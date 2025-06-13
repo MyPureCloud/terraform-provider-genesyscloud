@@ -1,7 +1,7 @@
 resource "genesyscloud_integration_action_draft" "example-action-draft" {
   name                   = "Example Action Draft"
   category               = "Genesys Cloud Data Action"
-  integration_id         = genesyscloud_integration.example_integ.id
+  integration_id         = genesyscloud_integration.example_gc_data_integration.id
   secure                 = true
   config_timeout_seconds = 20
   contract_input = jsonencode({
