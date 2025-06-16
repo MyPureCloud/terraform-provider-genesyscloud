@@ -43,9 +43,8 @@ func ResourceGuide() *schema.Resource {
 			"status": {
 				Description: "The status of the guide.Valid values: Published, Draft",
 				Type:        schema.TypeString,
-				Computed:    true,
-				Required:    false,
-				Optional:    false,
+				Optional:    true,
+				ForceNew:    true,
 			},
 			"latest_saved_version": {
 				Description: "The latest saved version of the guide",
