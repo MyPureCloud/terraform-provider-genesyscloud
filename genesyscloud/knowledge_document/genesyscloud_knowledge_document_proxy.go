@@ -327,20 +327,18 @@ func getAllVariations(p *knowledgeDocumentProxy, knowledgeBaseId, documentId str
 	)
 
 	// Get draft variations
-	draftVariations, draftResp, err := getVariationsByStatus(p, knowledgeBaseId, documentId, "Draft", expand)
+	draftVariations, resp, err := getVariationsByStatus(p, knowledgeBaseId, documentId, "Draft", expand)
 	if err != nil {
-		return nil, draftResp, err
+		return nil, resp, err
 	}
 	allVariations = append(allVariations, draftVariations...)
-	resp = draftResp
 
 	// Get published variations
-	publishedVariations, publishedResp, err := getVariationsByStatus(p, knowledgeBaseId, documentId, "Published", expand)
+	publishedVariations, resp, err := getVariationsByStatus(p, knowledgeBaseId, documentId, "Published", expand)
 	if err != nil {
-		return nil, publishedResp, err
+		return nil, resp, err
 	}
 	allVariations = append(allVariations, publishedVariations...)
-	resp = publishedResp
 
 	return &allVariations, resp, nil
 }

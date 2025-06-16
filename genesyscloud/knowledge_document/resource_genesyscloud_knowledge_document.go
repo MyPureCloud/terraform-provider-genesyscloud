@@ -83,10 +83,11 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	log.Printf("Creating knowledge document")
+	log.Printf("Creating knowledge document for knowledge base '%s'", knowledgeBaseId)
 	knowledgeDocument, resp, err := proxy.createKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, body)
 	if err != nil {
 		createDiagErr := util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create knowledge document for knowledge base '%s'. Error: %s", knowledgeBaseId, err.Error()), resp)
+		log.Println(createDiagErr)
 		diags = append(diags, createDiagErr...)
 		return diags
 	}
@@ -94,7 +95,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 	d.SetId(id)
 
-	log.Printf("Created knowledge document %s", *knowledgeDocument.Id)
+	log.Printf("Created knowledge document %s. Resource schema ID: '%s'", *knowledgeDocument.Id, id)
 	return append(diags, readKnowledgeDocument(ctx, d, meta)...)
 }
 
@@ -111,10 +112,11 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
 	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-
+		log.Printf("Reading knowledge document '%s'. Knowledge base '%s'", knowledgeDocumentId, knowledgeBaseId)
 		knowledgeDocument, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
 			err := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document %s: %s", knowledgeDocumentId, getErr), resp)
+			log.Println(err)
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(err)
 			}
@@ -123,13 +125,19 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 
 		// required
 		id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
+		if id != d.Id() {
+			log.Printf("[WARN] Concatenated ID after read is not the same as what was in the resource data schema. Original: %s. New: %s", d.Id(), id)
+		}
 		d.SetId(id)
+
 		if knowledgeDocument.KnowledgeBase != nil && knowledgeDocument.KnowledgeBase.Id != nil {
 			_ = d.Set("knowledge_base_id", *knowledgeDocument.KnowledgeBase.Id)
 		}
 
+		log.Printf("Flattening knowledge document schema for document '%s'", d.Id())
 		flattenedDocument, err := flattenKnowledgeDocument(ctx, knowledgeDocument, proxy, knowledgeBaseId)
 		if err != nil {
+			log.Printf("Failed to flatten knowledge document schema for document '%s': %s", d.Id(), err.Error())
 			return retry.NonRetryableError(err)
 		}
 
@@ -153,17 +161,20 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
-	log.Printf("Updating Knowledge document %s", knowledgeDocumentId)
 	updateErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		update, err := buildKnowledgeDocumentRequest(ctx, d, proxy, knowledgeBaseId)
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("Updating knowledge document %s", knowledgeDocumentId)
+
+		log.Printf("Updating knowledge document '%s'. Knowledge Base ID: '%s'", knowledgeDocumentId, knowledgeBaseId)
 		_, resp, putErr := proxy.updateKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, update)
 		if putErr != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update knowledge document %s error: %s", knowledgeDocumentId, putErr), resp)
+			updateDiagErr := util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update knowledge document '%s'. Knowledge Base ID: '%s'. Error: %s", knowledgeDocumentId, knowledgeBaseId, putErr), resp)
+			log.Println(updateDiagErr)
+			return resp, updateDiagErr
 		}
+
 		return resp, nil
 	})
 
@@ -175,7 +186,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	_ = d.Set("published", false)
-	log.Printf("Updated Knowledge document %s", knowledgeDocumentId)
+	log.Printf("Succesfully updated knowledge document '%s'. Knowledge base: '%s'", knowledgeDocumentId, knowledgeBaseId)
 	return append(diags, readKnowledgeDocument(ctx, d, meta)...)
 }
 
@@ -187,7 +198,7 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
-	log.Printf("Deleting Knowledge document %s", knowledgeDocumentId)
+	log.Printf("Deleting Knowledge document '%s'. Knowledge base ID: '%s'", knowledgeDocumentId, knowledgeBaseId)
 	resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
@@ -201,9 +212,9 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 				log.Printf("Deleted Knowledge document %s", knowledgeDocumentId)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Error deleting Knowledge document %s | error: %s", knowledgeDocumentId, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Knowledge document '%s' | error: %s", knowledgeDocumentId, err.Error()), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Knowledge document %s still exists", knowledgeDocumentId), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document '%s' still exists", knowledgeDocumentId), resp))
 	})
 }
