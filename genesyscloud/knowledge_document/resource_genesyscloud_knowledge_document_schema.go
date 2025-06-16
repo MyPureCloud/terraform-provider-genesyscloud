@@ -78,7 +78,9 @@ var (
 
 func ResourceKnowledgeDocument() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Knowledge document",
+		Description: `Genesys Cloud Knowledge document.
+
+Export block label: "{parent knowledge base name}_{title}"`,
 
 		CreateContext: provider.CreateWithPooledClient(createKnowledgeDocument),
 		ReadContext:   provider.ReadWithPooledClient(readKnowledgeDocument),
