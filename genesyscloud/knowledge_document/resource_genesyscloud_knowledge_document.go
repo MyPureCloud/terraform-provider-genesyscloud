@@ -3,7 +3,7 @@ package knowledge_document
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	consistencyChecker "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -70,34 +70,39 @@ func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv
 	return resources, nil
 }
 
-func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
 	body, buildErr := buildKnowledgeDocumentCreateRequest(ctx, d, proxy, knowledgeBaseId)
 	if buildErr != nil {
-		return buildErr
+		diags = append(diags, buildErr...)
+		if diags.HasError() {
+			return diags
+		}
 	}
 
 	log.Printf("Creating knowledge document")
 	knowledgeDocument, resp, err := proxy.createKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, body)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create knowledge document for knowledge base '%s'. Error: %s", knowledgeBaseId, err.Error()), resp)
+		createDiagErr := util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create knowledge document for knowledge base '%s'. Error: %s", knowledgeBaseId, err.Error()), resp)
+		diags = append(diags, createDiagErr...)
+		return diags
 	}
 
 	id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document %s", *knowledgeDocument.Id)
-	return readKnowledgeDocument(ctx, d, meta)
+	return append(diags, readKnowledgeDocument(ctx, d, meta)...)
 }
 
-func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	knowledgeDocumentId, knowledgeBaseId := parseDocumentResourceDataID(d.Id())
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.ConsistencyChecks(), "genesyscloud_knowledge_document")
+	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.ConsistencyChecks(), ResourceType)
 
 	state := ""
 	if !d.Get("published").(bool) {
@@ -105,7 +110,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 
 		knowledgeDocument, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)
 		if getErr != nil {
@@ -131,12 +136,17 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		_ = d.Set("knowledge_document", flattenedDocument)
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
-		checkState := cc.CheckState(d)
-		return checkState
+		return cc.CheckState(d)
 	})
+
+	if retryErr != nil {
+		diags = append(diags, retryErr...)
+	}
+
+	return diags
 }
 
-func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	knowledgeDocumentId, _ := parseDocumentResourceDataID(d.Id())
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 
@@ -144,7 +154,7 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
 	log.Printf("Updating Knowledge document %s", knowledgeDocumentId)
-	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	updateErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		update, err := buildKnowledgeDocumentRequest(ctx, d, proxy, knowledgeBaseId)
 		if err != nil {
 			return nil, err
@@ -156,12 +166,17 @@ func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		return resp, nil
 	})
-	if diagErr != nil {
-		return diagErr
+
+	if updateErr != nil {
+		diags = append(diags, updateErr...)
+		if diags.HasError() {
+			return diags
+		}
 	}
+
 	_ = d.Set("published", false)
 	log.Printf("Updated Knowledge document %s", knowledgeDocumentId)
-	return readKnowledgeDocument(ctx, d, meta)
+	return append(diags, readKnowledgeDocument(ctx, d, meta)...)
 }
 
 func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -175,11 +190,11 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Deleting Knowledge document %s", knowledgeDocumentId)
 	resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_document", fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, "")
+		_, resp, err = proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, "")
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Knowledge document deleted
