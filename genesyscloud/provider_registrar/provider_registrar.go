@@ -34,6 +34,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	guide "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
+	guideVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide_version"
 	idpAdfs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_adfs"
 	idpGeneric "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
@@ -336,6 +337,7 @@ func registerResources() {
 	knowledgeKnowledgebase.SetRegistrar(regInstance)                       //Registering Knowledge base
 	qualityFormsEvaluation.SetRegistrar(regInstance)                       //Registering quality forms evaluation
 	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
+	guideVersion.SetRegistrar(regInstance)                                //Registering Guide Version
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

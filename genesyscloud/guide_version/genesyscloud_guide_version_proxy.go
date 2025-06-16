@@ -1,0 +1,220 @@
+package guide_version
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"io"
+	"net/http"
+)
+
+var internalProxy *guideVersionProxy
+
+type createGuideVersionFunc func(ctx context.Context, p *guideVersionProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error)
+type getGuideVersionByIdFunc func(ctx context.Context, p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error)
+type updateGuideVersionFunc func(ctx context.Context, p *guideVersionProxy, id string, guideId string, guideVersion *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error)
+
+type guideVersionProxy struct {
+	clientConfig            *platformclientv2.Configuration
+	createGuideVersionAttr  createGuideVersionFunc
+	getGuideVersionByIdAttr getGuideVersionByIdFunc
+	updateGuideVersionAttr  updateGuideVersionFunc
+}
+
+func newGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
+	return &guideVersionProxy{
+		clientConfig:            clientConfig,
+		createGuideVersionAttr:  createGuideVersionFn,
+		getGuideVersionByIdAttr: getGuideVersionByIdFn,
+		updateGuideVersionAttr:  updateGuideVersionFn,
+	}
+}
+
+func getGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
+	if internalProxy == nil {
+		internalProxy = newGuideVersionProxy(clientConfig)
+	}
+	return internalProxy
+}
+
+func (p *guideVersionProxy) createGuideVersion(ctx context.Context, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return p.createGuideVersionAttr(ctx, p, guideVersion, guideId)
+}
+
+func (p *guideVersionProxy) getGuideVersionById(ctx context.Context, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return p.getGuideVersionByIdAttr(ctx, p, id, guideId)
+}
+
+func (p *guideVersionProxy) updateGuideVersion(ctx context.Context, id string, guideId string, guideVersion *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return p.updateGuideVersionAttr(ctx, p, id, guideId, guideVersion)
+}
+
+// Create Functions
+
+func createGuideVersionFn(ctx context.Context, p *guideVersionProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return sdkPostGuideVersion(guideVersion, p, guideId)
+}
+
+func sdkPostGuideVersion(body *CreateGuideVersionRequest, p *guideVersionProxy, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	client := &http.Client{}
+	action := http.MethodPost
+
+	// Convert body to JSON
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
+	}
+
+	// Create request
+	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides/"+guideId+"/versions", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading response: %v", err)
+	}
+
+	// Check status code
+	apiResp := &platformclientv2.APIResponse{
+		StatusCode: resp.StatusCode,
+		Response:   resp,
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	// Parse response into GuideVersion struct
+	var guideVersion VersionResponse
+	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
+		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
+	}
+
+	return &guideVersion, apiResp, nil
+}
+
+// Read Functions
+
+func getGuideVersionByIdFn(ctx context.Context, p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return sdkGetGuideVersionById(p, id, guideId)
+}
+
+func sdkGetGuideVersionById(p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	client := &http.Client{}
+	action := http.MethodGet
+
+	// Create request
+	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides/"+guideId+"/versions/"+id, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading response: %v", err)
+	}
+
+	// Check status code
+	apiResp := &platformclientv2.APIResponse{
+		StatusCode: resp.StatusCode,
+		Response:   resp,
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	// Parse response into GuideVersion struct
+	var guideVersion VersionResponse
+	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
+		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
+	}
+
+	return &guideVersion, apiResp, nil
+}
+
+// Update Functions
+
+func updateGuideVersionFn(ctx context.Context, p *guideVersionProxy, id string, guideId string, guideVersion *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return sdkUpdateGuideVersion(p, id, guideId, guideVersion)
+}
+
+func sdkUpdateGuideVersion(p *guideVersionProxy, id string, guideId string, body *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	client := &http.Client{}
+	action := http.MethodPatch
+
+	// Convert body to JSON
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
+	}
+
+	// Create request
+	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides/"+guideId+"/versions/"+id, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading response: %v", err)
+	}
+
+	// Check status code
+	apiResp := &platformclientv2.APIResponse{
+		StatusCode: resp.StatusCode,
+		Response:   resp,
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	// Parse response into GuideVersion struct
+	var guideVersion VersionResponse
+	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
+		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
+	}
+
+	return &guideVersion, apiResp, nil
+}
