@@ -31,13 +31,16 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 
 	baseName := strings.TrimSuffix(filepath.Base(*data.Name), filepath.Ext(*data.Name))
 	fileName := fmt.Sprintf("%s-%s%s", baseName, responseAssetId, filepath.Ext(*data.Name))
-	exportFilename := filepath.Join(fullPath, fileName)
+	exportFilename := filepath.Join(subDirectory, fileName)
+	// Normalize the export filename by converting backslashes to forward slashes.
+	// This is crucial for consistent path validation (e.g., preventing "\\" checks) and API compatibility.
+	normalizedFilename := strings.ReplaceAll(exportFilename, "\\", "/")
 
 	if _, err := files.DownloadExportFile(fullPath, fileName, *data.ContentLocation); err != nil {
 		return err
 	}
-	configMap["filename"] = fileName
-	resource.State.Attributes["filename"] = fileName
+	configMap["filename"] = normalizedFilename
+	resource.State.Attributes["filename"] = normalizedFilename
 
 	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
 	configMap["file_content_hash"] = fileContentVal
