@@ -101,7 +101,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,               // enable_manual_assignment false
 					util.NullValue,               // enable_transcription false
 					strconv.Quote(scoringMethod), // scoring Method
-					util.NullValue,
+					strconv.Quote("Disabled"),    // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -122,6 +122,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "auto_answer_only", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "Disabled"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
@@ -162,7 +163,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.TrueValue, // enable_manual_assignment true
 					util.TrueValue, // enable_transcription true
 					strconv.Quote(scoringMethod),
-					util.NullValue, // last_agent_routing_mode
+					strconv.Quote("QueueMembersOnly"), // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
@@ -186,6 +187,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_name", callingPartyName),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_number", callingPartyNumber),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "scoring_method", scoringMethod),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "QueueMembersOnly"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.TrueValue),
@@ -225,7 +227,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 	if exists := featureToggles.CSGToggleExists(); exists {
 		t.Skip("conditional group routing is deprecated in this resource, skipping test")
 	}
-
+	const lastAgentRoutingModeComputedValue = "AnyAgent"
 	var (
 		queueResourceLabel1     = "test-queue"
 		queueName1              = "Terraform Test Queue1-" + uuid.NewString()
@@ -279,18 +281,18 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					queueResourceLabel1,
 					queueName1,
 					queueDesc1,
-					util.NullValue,  // MANDATORY_TIMEOUT
-					"200000",        // acw_timeout
-					util.NullValue,  // ALL
-					util.NullValue,  // auto_answer_only true
-					util.NullValue,  // No calling party name
-					util.NullValue,  // No calling party number
-					util.NullValue,  // enable_transcription false
-					util.FalseValue, // suppress_in_queue_call_recording false
-					util.NullValue,  // enable_audio_monitoring false
-					util.NullValue,  // enable_manual_assignment false
-					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
+					util.NullValue,                        // MANDATORY_TIMEOUT
+					"200000",                              // acw_timeout
+					util.NullValue,                        // ALL
+					util.NullValue,                        // auto_answer_only true
+					util.NullValue,                        // No calling party name
+					util.NullValue,                        // No calling party number
+					util.NullValue,                        // enable_transcription false
+					util.FalseValue,                       // suppress_in_queue_call_recording false
+					util.NullValue,                        // enable_audio_monitoring false
+					util.NullValue,                        // enable_manual_assignment false
+					strconv.Quote("TimestampAndPriority"), // scoring_method
+					util.NullValue,                        // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateMediaSettings(
@@ -347,7 +349,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
-
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingModeComputedValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.condition_value", conditionalGroupRouting1ConditionValue),
@@ -385,18 +387,18 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					queueResourceLabel1,
 					queueName1,
 					queueDesc1,
-					util.NullValue,  // MANDATORY_TIMEOUT
-					"200000",        // acw_timeout
-					util.NullValue,  // ALL
-					util.NullValue,  // auto_answer_only true
-					util.NullValue,  // No calling party name
-					util.NullValue,  // No calling party number
-					util.NullValue,  // enable_transcription false
-					util.FalseValue, // suppress_in_queue_call_recording false
-					util.NullValue,  // enable_audio_monitoring false
-					util.NullValue,  // enable_manual_assignment false
-					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
+					util.NullValue,                        // MANDATORY_TIMEOUT
+					"200000",                              // acw_timeout
+					util.NullValue,                        // ALL
+					util.NullValue,                        // auto_answer_only true
+					util.NullValue,                        // No calling party name
+					util.NullValue,                        // No calling party number
+					util.NullValue,                        // enable_transcription false
+					util.FalseValue,                       // suppress_in_queue_call_recording false
+					util.NullValue,                        // enable_audio_monitoring false
+					util.NullValue,                        // enable_manual_assignment false
+					strconv.Quote("TimestampAndPriority"), // scoring_method
+					strconv.Quote("Disabled"),             // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -440,6 +442,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "Disabled"),
 
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
@@ -542,6 +545,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 		skillEvalAll            = "ALL"
 		callbackHours           = "7"
 		scoringMethod           = "TimestampAndPriority"
+		lastAgentRoutingMode    = "Disabled"
 		skillGroupResourceLabel = "skillgroup"
 		skillGroupName          = "test skillgroup " + uuid.NewString()
 		callbackModeAgentFirst  = "AgentFirst"
@@ -573,7 +577,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 					util.NullValue, // enable_manual_assignment false
 					strconv.Quote(scoringMethod),
-					util.NullValue, // last_agent_routing_mode
+					strconv.Quote(lastAgentRoutingMode), // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -595,6 +599,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingMode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),

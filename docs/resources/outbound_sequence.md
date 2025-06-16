@@ -23,7 +23,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_outbound_sequence" "example_outbound_sequence" {
   name         = "Example name"
-  campaign_ids = [genesyscloud_outbound_campaign.campaign_1.id, genesyscloud_outbound_campaign.campaign_2.id]
+  campaign_ids = [genesyscloud_outbound_campaign.campaign.id, genesyscloud_outbound_campaign.campaign2.id]
   status       = "off"
   repeat       = false
 }

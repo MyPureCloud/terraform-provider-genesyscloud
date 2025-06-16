@@ -1,4 +1,4 @@
-resource "genesyscloud_conversations_messaging_supportedcontent" "supported_content" {
+resource "genesyscloud_conversations_messaging_supportedcontent" "example_supported_content" {
   name = "test supported_content"
   media_types {
     allow {

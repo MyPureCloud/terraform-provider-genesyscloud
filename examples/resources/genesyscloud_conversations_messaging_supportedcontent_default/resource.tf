@@ -1,3 +1,3 @@
-resource "genesyscloud_conversations_messaging_supportedcontent_default" "example-default-supported-content" {
-  content_id = genesyscloud_conversations_messaging_supportedcontent.supported_content.id
+resource "genesyscloud_conversations_messaging_supportedcontent_default" "example_default_supported_content" {
+  content_id = genesyscloud_conversations_messaging_supportedcontent.example_supported_content.id
 }

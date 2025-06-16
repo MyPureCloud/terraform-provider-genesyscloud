@@ -1,0 +1,1081 @@
+{
+  "id": "5ba115b2-79ae-4be2-8227-6af7d3295d54",
+  "createdDate": "2025-02-04T16:38:38.380Z",
+  "modifiedDate": "2025-02-04T16:38:38.380Z",
+  "name": "Email Script",
+  "organizationId": "5cfc64b8-10ba-45fa-8fb8-d94081fefee9",
+  "versionId": "40765ebf-798c-449f-a341-b5683149c11f",
+  "startPageId": "a556a442-ffc0-11e4-8df6-17ce7d092df5",
+  "pages": [
+    {
+      "id": "a556a442-ffc0-11e4-8df6-17ce7d092df5",
+      "name": "Start Page",
+      "organizationId": "5cfc64b8-10ba-45fa-8fb8-d94081fefee9",
+      "scriptId": "5ba115b2-79ae-4be2-8227-6af7d3295d54",
+      "versionId": "40765ebf-798c-449f-a341-b5683149c11f",
+      "properties": {
+        "onLoadAction": {
+          "typeName": "action",
+          "value": { "actionName": "72af764f-0c30-401e-9527-ccfbae4dd53e" }
+        },
+        "backgroundColor": { "typeName": "null" }
+      },
+      "dataVersion": 0,
+      "rootContainer": {
+        "type": "verticalStackContainer",
+        "properties": {
+          "margin": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+          "alignment": { "typeName": "alignment", "value": "start" },
+          "width": {
+            "typeName": "sizing",
+            "value": { "sizeType": "stretch", "size": 100 }
+          },
+          "height": {
+            "typeName": "sizing",
+            "value": { "sizeType": "stretch", "size": 100 }
+          },
+          "visible": { "typeName": "variable" },
+          "preserveLayoutLocation": { "typeName": "boolean", "value": false },
+          "backgroundColor": { "typeName": "null" },
+          "padding": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+          "childArrangement": {
+            "typeName": "childArrangement",
+            "value": "start"
+          },
+          "border": {
+            "typeName": "border",
+            "value": [
+              { "width": 0, "style": "solid", "color": "000000" },
+              { "width": 0, "style": "solid", "color": "000000" },
+              { "width": 0, "style": "solid", "color": "000000" },
+              { "width": 0, "style": "solid", "color": "000000" }
+            ]
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "properties": {
+              "margin": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+              "alignment": { "typeName": "alignment", "value": "start" },
+              "width": {
+                "typeName": "sizing",
+                "value": { "sizeType": "auto" }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": { "sizeType": "auto" }
+              },
+              "visible": { "typeName": "variable" },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "{{scripter.queueName}}"
+              },
+              "bold": { "typeName": "boolean", "value": true },
+              "italic": { "typeName": "boolean", "value": false },
+              "underline": { "typeName": "boolean", "value": false },
+              "font": {
+                "typeName": "font",
+                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+              },
+              "fontSize": { "typeName": "integer", "value": 16 },
+              "justification": { "typeName": "text", "value": "left" },
+              "backgroundColor": { "typeName": "null" },
+              "textColor": { "typeName": "null" },
+              "padding": { "typeName": "spacing", "value": 0 }
+            }
+          },
+          {
+            "type": "verticalStackContainer",
+            "properties": {
+              "margin": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+              "alignment": { "typeName": "alignment", "value": "start" },
+              "width": {
+                "typeName": "sizing",
+                "value": { "sizeType": "auto" }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": { "sizeType": "auto" }
+              },
+              "visible": { "typeName": "variable" },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "backgroundColor": { "typeName": "null" },
+              "padding": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+              "childArrangement": {
+                "typeName": "childArrangement",
+                "value": "start"
+              },
+              "border": {
+                "typeName": "border",
+                "value": [
+                  { "width": 0, "style": "solid", "color": "000000" },
+                  { "width": 0, "style": "solid", "color": "000000" },
+                  { "width": 0, "style": "solid", "color": "000000" },
+                  { "width": 0, "style": "solid", "color": "000000" }
+                ]
+              }
+            },
+            "children": [
+              {
+                "type": "horizontalStackContainer",
+                "properties": {
+                  "margin": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "alignment": { "typeName": "alignment", "value": "start" },
+                  "width": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "height": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "visible": { "typeName": "variable" },
+                  "preserveLayoutLocation": {
+                    "typeName": "boolean",
+                    "value": false
+                  },
+                  "backgroundColor": { "typeName": "null" },
+                  "padding": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "childArrangement": {
+                    "typeName": "childArrangement",
+                    "value": "start"
+                  },
+                  "border": {
+                    "typeName": "border",
+                    "value": [
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" }
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "pixels", "size": 200 }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "Customer First Name:"
+                      },
+                      "bold": { "typeName": "boolean", "value": true },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "{{3f37d719-d387-438a-98bb-972ac23dcc07}}"
+                      },
+                      "bold": { "typeName": "boolean", "value": false },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "horizontalStackContainer",
+                "properties": {
+                  "margin": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "alignment": { "typeName": "alignment", "value": "start" },
+                  "width": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "height": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "visible": { "typeName": "variable" },
+                  "preserveLayoutLocation": {
+                    "typeName": "boolean",
+                    "value": false
+                  },
+                  "backgroundColor": { "typeName": "null" },
+                  "padding": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "childArrangement": {
+                    "typeName": "childArrangement",
+                    "value": "start"
+                  },
+                  "border": {
+                    "typeName": "border",
+                    "value": [
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" }
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "pixels", "size": 200 }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "Customer Last Name:"
+                      },
+                      "bold": { "typeName": "boolean", "value": true },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "{{d70b3970-7f3c-49d5-a63d-f3966bdf7171}}"
+                      },
+                      "bold": { "typeName": "boolean", "value": false },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "horizontalStackContainer",
+                "properties": {
+                  "margin": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "alignment": { "typeName": "alignment", "value": "start" },
+                  "width": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "height": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "visible": { "typeName": "variable" },
+                  "preserveLayoutLocation": {
+                    "typeName": "boolean",
+                    "value": false
+                  },
+                  "backgroundColor": { "typeName": "null" },
+                  "padding": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "childArrangement": {
+                    "typeName": "childArrangement",
+                    "value": "start"
+                  },
+                  "border": {
+                    "typeName": "border",
+                    "value": [
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" }
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "pixels", "size": 200 }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "Customer Email:"
+                      },
+                      "bold": { "typeName": "boolean", "value": true },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "{{a24e4d8f-58b6-4bbf-b6cc-5b8cc85799b6}}"
+                      },
+                      "bold": { "typeName": "boolean", "value": false },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "horizontalStackContainer",
+                "properties": {
+                  "margin": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "alignment": { "typeName": "alignment", "value": "start" },
+                  "width": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "height": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "visible": { "typeName": "variable" },
+                  "preserveLayoutLocation": {
+                    "typeName": "boolean",
+                    "value": false
+                  },
+                  "backgroundColor": { "typeName": "null" },
+                  "padding": { "typeName": "spacing", "value": [5, 5, 5, 5] },
+                  "childArrangement": {
+                    "typeName": "childArrangement",
+                    "value": "start"
+                  },
+                  "border": {
+                    "typeName": "border",
+                    "value": [
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" },
+                      { "width": 0, "style": "solid", "color": "000000" }
+                    ]
+                  }
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "pixels", "size": 200 }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "Customer's Account Number:"
+                      },
+                      "bold": { "typeName": "boolean", "value": true },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  },
+                  {
+                    "type": "text",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "center"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "{{8ec79c43-aa70-4f46-b2b3-dfb1d24386f1}}"
+                      },
+                      "bold": { "typeName": "boolean", "value": false },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 11 },
+                      "justification": { "typeName": "text", "value": "left" },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 0 }
+                    }
+                  },
+                  {
+                    "type": "verticalStackContainer",
+                    "properties": {
+                      "margin": { "typeName": "spacing", "value": 0 },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "start"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "stretch", "size": 100 }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": { "typeName": "variable" },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "backgroundColor": { "typeName": "null" },
+                      "padding": { "typeName": "spacing", "value": 10 },
+                      "childArrangement": {
+                        "typeName": "childArrangement",
+                        "value": "start"
+                      },
+                      "border": {
+                        "typeName": "border",
+                        "value": {
+                          "width": 0,
+                          "style": "solid",
+                          "color": "000000"
+                        }
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "horizontalStackContainer",
+                        "properties": {
+                          "margin": {
+                            "typeName": "spacing",
+                            "value": [5, 5, 5, 5]
+                          },
+                          "alignment": {
+                            "typeName": "alignment",
+                            "value": "start"
+                          },
+                          "width": {
+                            "typeName": "sizing",
+                            "value": { "sizeType": "auto" }
+                          },
+                          "height": {
+                            "typeName": "sizing",
+                            "value": { "sizeType": "auto" }
+                          },
+                          "visible": { "typeName": "variable" },
+                          "preserveLayoutLocation": {
+                            "typeName": "boolean",
+                            "value": false
+                          },
+                          "backgroundColor": { "typeName": "null" },
+                          "padding": {
+                            "typeName": "spacing",
+                            "value": [5, 5, 5, 5]
+                          },
+                          "childArrangement": {
+                            "typeName": "childArrangement",
+                            "value": "start"
+                          },
+                          "border": {
+                            "typeName": "border",
+                            "value": [
+                              {
+                                "width": 0,
+                                "style": "solid",
+                                "color": "000000"
+                              },
+                              {
+                                "width": 0,
+                                "style": "solid",
+                                "color": "000000"
+                              },
+                              {
+                                "width": 0,
+                                "style": "solid",
+                                "color": "000000"
+                              },
+                              {
+                                "width": 0,
+                                "style": "solid",
+                                "color": "000000"
+                              }
+                            ]
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "text",
+                            "properties": {
+                              "margin": {
+                                "typeName": "spacing",
+                                "value": [5, 5, 5, 5]
+                              },
+                              "alignment": {
+                                "typeName": "alignment",
+                                "value": "center"
+                              },
+                              "width": {
+                                "typeName": "sizing",
+                                "value": { "sizeType": "pixels", "size": 200 }
+                              },
+                              "height": {
+                                "typeName": "sizing",
+                                "value": { "sizeType": "auto" }
+                              },
+                              "visible": { "typeName": "variable" },
+                              "preserveLayoutLocation": {
+                                "typeName": "boolean",
+                                "value": false
+                              },
+                              "text": {
+                                "typeName": "interpolatedText",
+                                "value": "Customer's Priority:"
+                              },
+                              "bold": { "typeName": "boolean", "value": true },
+                              "italic": {
+                                "typeName": "boolean",
+                                "value": false
+                              },
+                              "underline": {
+                                "typeName": "boolean",
+                                "value": false
+                              },
+                              "font": {
+                                "typeName": "font",
+                                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                              },
+                              "fontSize": {
+                                "typeName": "integer",
+                                "value": 11
+                              },
+                              "justification": {
+                                "typeName": "text",
+                                "value": "left"
+                              },
+                              "backgroundColor": { "typeName": "null" },
+                              "textColor": { "typeName": "null" },
+                              "padding": { "typeName": "spacing", "value": 0 }
+                            }
+                          },
+                          {
+                            "type": "text",
+                            "properties": {
+                              "margin": {
+                                "typeName": "spacing",
+                                "value": [5, 5, 5, 5]
+                              },
+                              "alignment": {
+                                "typeName": "alignment",
+                                "value": "center"
+                              },
+                              "width": {
+                                "typeName": "sizing",
+                                "value": { "sizeType": "auto" }
+                              },
+                              "height": {
+                                "typeName": "sizing",
+                                "value": { "sizeType": "auto" }
+                              },
+                              "visible": { "typeName": "variable" },
+                              "preserveLayoutLocation": {
+                                "typeName": "boolean",
+                                "value": false
+                              },
+                              "text": {
+                                "typeName": "interpolatedText",
+                                "value": "{{d6987da8-f998-43c7-b59e-ae95c6be7a84}}"
+                              },
+                              "bold": { "typeName": "boolean", "value": false },
+                              "italic": {
+                                "typeName": "boolean",
+                                "value": false
+                              },
+                              "underline": {
+                                "typeName": "boolean",
+                                "value": false
+                              },
+                              "font": {
+                                "typeName": "font",
+                                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                              },
+                              "fontSize": {
+                                "typeName": "integer",
+                                "value": 11
+                              },
+                              "justification": {
+                                "typeName": "text",
+                                "value": "left"
+                              },
+                              "backgroundColor": { "typeName": "null" },
+                              "textColor": { "typeName": "null" },
+                              "padding": { "typeName": "spacing", "value": 0 }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "horizontalStackContainer",
+                "properties": {
+                  "margin": { "typeName": "spacing", "value": 0 },
+                  "alignment": { "typeName": "alignment", "value": "start" },
+                  "width": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "stretch", "size": 100 }
+                  },
+                  "height": {
+                    "typeName": "sizing",
+                    "value": { "sizeType": "auto" }
+                  },
+                  "visible": { "typeName": "variable" },
+                  "preserveLayoutLocation": {
+                    "typeName": "boolean",
+                    "value": false
+                  },
+                  "backgroundColor": { "typeName": "null" },
+                  "padding": { "typeName": "spacing", "value": 10 },
+                  "childArrangement": {
+                    "typeName": "childArrangement",
+                    "value": "start"
+                  },
+                  "border": {
+                    "typeName": "border",
+                    "value": { "width": 0, "style": "solid", "color": "000000" }
+                  }
+                },
+                "children": [
+                  {
+                    "type": "button",
+                    "properties": {
+                      "margin": {
+                        "typeName": "spacing",
+                        "value": [5, 5, 5, 5]
+                      },
+                      "alignment": {
+                        "typeName": "alignment",
+                        "value": "start"
+                      },
+                      "width": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "height": {
+                        "typeName": "sizing",
+                        "value": { "sizeType": "auto" }
+                      },
+                      "visible": {
+                        "typeName": "variable",
+                        "value": "22705a34-0c7f-487b-87db-d346a5045f10"
+                      },
+                      "preserveLayoutLocation": {
+                        "typeName": "boolean",
+                        "value": false
+                      },
+                      "text": {
+                        "typeName": "interpolatedText",
+                        "value": "Reopen URL"
+                      },
+                      "clickAction": {
+                        "typeName": "action",
+                        "value": {
+                          "actionName": "scripter.webPage",
+                          "actionArgumentValues": [
+                            {
+                              "typeName": "interpolatedText",
+                              "value": "{{f59cde71-8328-4ef6-ade0-8b98f535aa97}}"
+                            }
+                          ]
+                        }
+                      },
+                      "backgroundColor": { "typeName": "null" },
+                      "textColor": { "typeName": "null" },
+                      "bold": { "typeName": "boolean", "value": false },
+                      "italic": { "typeName": "boolean", "value": false },
+                      "underline": { "typeName": "boolean", "value": false },
+                      "font": {
+                        "typeName": "font",
+                        "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+                      },
+                      "fontSize": { "typeName": "integer", "value": 10 },
+                      "justification": {
+                        "typeName": "text",
+                        "value": "center"
+                      },
+                      "disabled": { "typeName": "variable" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "features": {
+    "dialer": {
+      "properties": {
+        "enabled": { "typeName": "boolean", "value": false },
+        "contactListId": { "typeName": "text", "value": "" },
+        "onContactDataLoadAction": { "typeName": "action", "value": {} }
+      }
+    },
+    "scripter": {
+      "properties": { "enabled": { "typeName": "boolean", "value": true } }
+    },
+    "screenPop": {
+      "properties": { "enabled": { "typeName": "boolean", "value": true } }
+    },
+    "callback": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "chat": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "email": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "message": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "bridge": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "uuiData": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "customerSecuredData": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "list": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    },
+    "workItem": {
+      "properties": { "enabled": { "typeName": "boolean", "value": false } }
+    }
+  },
+  "variables": [
+    {
+      "id": "f59cde71-8328-4ef6-ade0-8b98f535aa97",
+      "name": "Screen Pop URL",
+      "description": "Url to pop when script loads",
+      "type": { "isDynamic": false, "isList": false, "name": "string" },
+      "value": "",
+      "input": true,
+      "output": false
+    },
+    {
+      "id": "22705a34-0c7f-487b-87db-d346a5045f10",
+      "name": "URL Button Visible",
+      "description": "Whether the button to reopen the url is visible",
+      "type": { "isDynamic": false, "isList": false, "name": "boolean" },
+      "value": false,
+      "input": false,
+      "output": false
+    },
+    {
+      "id": "3f37d719-d387-438a-98bb-972ac23dcc07",
+      "name": "FName",
+      "description": "",
+      "type": { "isDynamic": false, "isList": false, "name": "string" },
+      "value": "",
+      "input": true,
+      "output": true
+    },
+    {
+      "id": "d70b3970-7f3c-49d5-a63d-f3966bdf7171",
+      "name": "LName",
+      "description": "",
+      "type": { "isDynamic": false, "isList": false, "name": "string" },
+      "value": "",
+      "input": true,
+      "output": true
+    },
+    {
+      "id": "a24e4d8f-58b6-4bbf-b6cc-5b8cc85799b6",
+      "name": "Email",
+      "description": "",
+      "type": { "isDynamic": false, "isList": false, "name": "string" },
+      "value": "",
+      "input": true,
+      "output": true
+    },
+    {
+      "id": "8ec79c43-aa70-4f46-b2b3-dfb1d24386f1",
+      "name": "ACCNumber",
+      "description": "",
+      "type": { "isDynamic": false, "isList": false, "name": "number" },
+      "value": 0,
+      "input": true,
+      "output": true
+    },
+    {
+      "id": "d6987da8-f998-43c7-b59e-ae95c6be7a84",
+      "name": "Priority",
+      "description": "",
+      "type": { "isDynamic": false, "isList": false, "name": "string" },
+      "value": "",
+      "input": true,
+      "output": true
+    }
+  ],
+  "customActions": [
+    {
+      "id": "72af764f-0c30-401e-9527-ccfbae4dd53e",
+      "name": "Screen Pop URL",
+      "action": {
+        "block": [
+          {
+            "type": "if",
+            "condition": {
+              "type": "standard",
+              "leftHandSide": {
+                "typeName": "variable",
+                "value": "f59cde71-8328-4ef6-ade0-8b98f535aa97"
+              },
+              "operator": "notEqual",
+              "rightHandSide": { "typeName": "interpolatedText", "value": "" }
+            },
+            "ifBlock": [
+              {
+                "type": "action",
+                "actionName": "scripter.webPage",
+                "actionArgumentValues": [
+                  {
+                    "typeName": "interpolatedText",
+                    "value": "{{f59cde71-8328-4ef6-ade0-8b98f535aa97}}"
+                  }
+                ]
+              },
+              {
+                "type": "action",
+                "actionName": "scripter.setVariable",
+                "actionArgumentValues": [
+                  {
+                    "typeName": "variableWithValue",
+                    "value": {
+                      "variable": {
+                        "typeName": "variable",
+                        "value": "22705a34-0c7f-487b-87db-d346a5045f10"
+                      },
+                      "variableTypeName": "boolean",
+                      "valueOfVariableProperty": {
+                        "typeName": "boolean",
+                        "value": true
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "elseBlock": []
+          }
+        ]
+      }
+    }
+  ],
+  "dataVersion": 0
+}

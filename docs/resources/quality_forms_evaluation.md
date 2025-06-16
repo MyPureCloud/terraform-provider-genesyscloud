@@ -23,7 +23,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_quality_forms_evaluation" "example-evaluation-form" {
+resource "genesyscloud_quality_forms_evaluation" "example_evaluation_form" {
   name      = "Example Evaluation Form"
   published = true
   question_groups {
@@ -106,7 +106,9 @@ resource "genesyscloud_quality_forms_evaluation" "example-evaluation-form" {
 
 ### Read-Only
 
+- `context_id` (String) ID of the context of the evaluation form. This provides access to all versions of forms.
 - `id` (String) The ID of this resource.
+- `published_id` (String) The ID of the published evaluation form.
 
 <a id="nestedblock--question_groups"></a>
 ### Nested Schema for `question_groups`

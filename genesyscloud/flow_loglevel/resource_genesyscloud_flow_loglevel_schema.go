@@ -21,6 +21,7 @@ const ResourceType = "genesyscloud_flow_loglevel"
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceFlowLoglevel())
+	regInstance.RegisterExporter(ResourceType, FlowLogLevelExporter())
 }
 
 // FlowMilestoneExporter returns the resourceExporter object used to hold the genesyscloud_flow_milestone exporter's config

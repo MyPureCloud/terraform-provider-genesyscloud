@@ -33,7 +33,7 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
 					libraryResourceLabel,
 					libraryName,
-				) + generateResponseManagementResponseResource(
+				) + GenerateResponseManagementResponseResource(
 					responseResourceLabel,
 					name,
 					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel + ".id"},
@@ -41,7 +41,7 @@ func TestAccDataSourceResponsemanagementResponse(t *testing.T) {
 					util.NullValue,
 					util.NullValue,
 					[]string{},
-					generateTextsBlock(
+					GenerateTextsBlock(
 						textsContent,
 						textsContentTypes[0],
 						util.NullValue,

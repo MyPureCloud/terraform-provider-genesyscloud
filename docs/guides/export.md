@@ -33,18 +33,32 @@ If exported resources contain references to objects that we don't intend to mana
 
 # Filtering Resources with Regular Expressions
 
-In your Terraform setup, regular expressions can be employed to selectively include or exclude certain resources. Here’s a concise way to do it:
+You can use regular expressions to filter which Genesys Cloud resources are exported to Terraform. To do this, specify the resource type followed by `::` and your regex pattern.
+
+In most cases, the regex is matched against the resource name. However, for some resources where the name alone isn’t unique—like Architect flows—we match the regex against a combined label (e.g. "{type}_{name}" in the case of Architect flows).
+
+When writing your regex pattern, you can choose to match either the sanitized label or the original unsanitized field, depending on which approach provides better control and clarity for your needs. A 'sanitized label' is the formatted ID/label
+that Terraform assigns to an exported resource, where special characters and spaces are replaced with underscores. For example, when exporting users, you can create a regex pattern that matches either the original email field or the sanitized label that will be generated for that resource.
+
+```hcl
+resource "genesyscloud_user" "user_example_com" { // <- the sanitized label
+  email = "user@example.com"
+}
+```
+
+If your filter isn’t working as expected, check the resource’s description to confirm what field(s) the regex is matched against. This will be shown as:
+
+> Export block label: `"{example_field}"`
 
 ## Include Filter:
 
 If you want to include resources that begin or end with “dev” or “test”, use the following format:
 
-
 ```hcl
 resource "genesyscloud_tf_export" "include-filter" {
-  directory = "./genesyscloud/include-filter"
-  export_format = "hcl"
-  log_permission_errors = true
+  directory                = "./genesyscloud/include-filter"
+  export_format            = "hcl"
+  log_permission_errors    = true
   include_filter_resources = ["genesyscloud_group::.*(?:dev|test)$"]
 }
 ```
@@ -55,9 +69,9 @@ To exclude certain resources, you can use a similar method:
 
 ```hcl
 resource "genesyscloud_tf_export" "exclude-filter" {
-  directory = "./genesyscloud/exclude-filter"
-  export_format = "hcl"
-  log_permission_errors = true
+  directory                = "./genesyscloud/exclude-filter"
+  export_format            = "hcl"
+  log_permission_errors    = true
   exclude_filter_resources = ["genesyscloud_routing_queue"]
 }
 ```
@@ -112,15 +126,15 @@ Next, update your export resource configuration by setting `use_legacy_architect
 
 By default, this setting is true to avoid unexpected changes in behavior after upgrading.
 
-```diff
+```hcl
 resource "genesyscloud_tf_export" "example" {
   directory                          = "./genesyscloud/flows"
   export_format                      = "hcl"
   include_filter_resources           = ["genesyscloud_flow::ExampleFlowName"]
-+ use_legacy_architect_flow_exporter = false
+  use_legacy_architect_flow_exporter = false
 }
 ```
 
-After running terraform apply with this configuration, all Architect flows matching "ExampleFlowName" will be exported to `./genesyscloud/flows/architect_flows/` in YAML format.
+After running terraform apply with the example configuration above, all Architect flows matching "ExampleFlowName" will be exported to `./genesyscloud/flows/architect_flows/` in YAML format.
 
 

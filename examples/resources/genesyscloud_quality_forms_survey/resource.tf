@@ -1,10 +1,10 @@
-resource "genesyscloud_quality_forms_survey" "example-survey-form" {
+resource "genesyscloud_quality_forms_survey" "example_survey_form" {
   name      = "Example survey form"
-  published = false
+  published = true
   disabled  = false
   language  = "en-US"
-  header    = ""
-  footer    = ""
+  header    = "example header"
+  footer    = "example footer"
   question_groups {
     name       = "Example Question Group 1"
     na_enabled = false

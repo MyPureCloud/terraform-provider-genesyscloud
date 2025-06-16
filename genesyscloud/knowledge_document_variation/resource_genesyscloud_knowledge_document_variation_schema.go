@@ -469,7 +469,9 @@ var (
 
 func ResourceKnowledgeDocumentVariation() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Knowledge Document Variation",
+		Description: `Genesys Cloud Knowledge Document Variation.
+
+Export block label: "{parent knowledge base name}_{parent document title}_{knowledge_document_variation.name}`,
 
 		CreateContext: provider.CreateWithPooledClient(createKnowledgeDocumentVariation),
 		ReadContext:   provider.ReadWithPooledClient(readKnowledgeDocumentVariation),
