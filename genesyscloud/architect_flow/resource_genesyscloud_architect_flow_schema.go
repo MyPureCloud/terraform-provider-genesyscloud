@@ -56,7 +56,9 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 
 func ResourceArchitectFlow() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Flow`,
+		Description: `Genesys Cloud Flow.
+
+Export block label: "{type}_{name}"`,
 
 		CreateContext: provider.CreateWithPooledClient(createFlow),
 		UpdateContext: provider.UpdateWithPooledClient(updateFlow),

@@ -183,7 +183,9 @@ var (
 
 func ResourceUser() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud User",
+		Description: `Genesys Cloud User.
+
+Export block label: "{email}"`,
 
 		CreateContext: provider.CreateWithPooledClient(createUser),
 		ReadContext:   provider.ReadWithPooledClient(readUser),

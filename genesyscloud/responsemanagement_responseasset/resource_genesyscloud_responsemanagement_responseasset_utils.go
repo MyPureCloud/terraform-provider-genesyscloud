@@ -3,14 +3,15 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
@@ -31,12 +32,15 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 	baseName := strings.TrimSuffix(filepath.Base(*data.Name), filepath.Ext(*data.Name))
 	fileName := fmt.Sprintf("%s-%s%s", baseName, responseAssetId, filepath.Ext(*data.Name))
 	exportFilename := filepath.Join(subDirectory, fileName)
+	// Normalize the export filename by converting backslashes to forward slashes.
+	// This is crucial for consistent path validation (e.g., preventing "\\" checks) and API compatibility.
+	normalizedFilename := strings.ReplaceAll(exportFilename, "\\", "/")
 
 	if _, err := files.DownloadExportFile(fullPath, fileName, *data.ContentLocation); err != nil {
 		return err
 	}
-	configMap["filename"] = exportFilename
-	resource.State.Attributes["filename"] = exportFilename
+	configMap["filename"] = normalizedFilename
+	resource.State.Attributes["filename"] = normalizedFilename
 
 	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
 	configMap["file_content_hash"] = fileContentVal

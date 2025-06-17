@@ -47,7 +47,7 @@ func DeleteExtensionPoolWithNumber(startNumber string) error {
 
 		for _, extensionPool := range *extensionPools.Entities {
 			if extensionPool.StartNumber != nil && *extensionPool.StartNumber == startNumber {
-				_, err := edgesAPI.DeleteTelephonyProvidersEdgesExtensionpool(*extensionPool.Id)
+				_, err = edgesAPI.DeleteTelephonyProvidersEdgesExtensionpool(*extensionPool.Id)
 				time.Sleep(20 * time.Second)
 				return err
 			}

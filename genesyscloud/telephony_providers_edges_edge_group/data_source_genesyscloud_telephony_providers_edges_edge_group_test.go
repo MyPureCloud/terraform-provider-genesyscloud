@@ -6,6 +6,7 @@ import (
 	tpetbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,12 +15,15 @@ import (
 func TestAccDataSourceEdgeGroup(t *testing.T) {
 	t.Parallel()
 	var (
-		edgeGroupResourceLabel = "edgeGroup1234"
-		edgeGroupDataLabel     = "edgeGroupData"
-		edgeGroupName1         = "test edge group " + uuid.NewString()
-		edgeGroupDescription1  = "test description 1"
+		edgeGroupResourceLabel      = "edgeGroup1234"
+		edgeGroupDataLabel          = "edgeGroupData"
+		edgeGroupName1              = "test edge group " + uuid.NewString()
+		edgeGroupDescription1       = "test description 1"
+		edgeGroupResourceFullPath   = ResourceType + "." + edgeGroupResourceLabel
+		edgeGroupDataSourceFullPath = "data." + ResourceType + "." + edgeGroupDataLabel
 
-		phoneTrunkBaseSettingsResourceLabel1 = "phoneTrunkBaseSettingsRes1"
+		phoneTrunkBaseSettingsResourceLabel1   = "phoneTrunkBaseSettingsRes1"
+		phoneTrunkBaseSettingsResourceFullPath = tpetbs.ResourceType + "." + phoneTrunkBaseSettingsResourceLabel1
 	)
 
 	phoneTrunkBaseSetting1 := tpetbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
@@ -41,18 +45,33 @@ func TestAccDataSourceEdgeGroup(t *testing.T) {
 					edgeGroupDescription1,
 					false,
 					false,
-					GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+phoneTrunkBaseSettingsResourceLabel1+".id"),
+					GeneratePhoneTrunkBaseIds(phoneTrunkBaseSettingsResourceFullPath+".id"),
+				),
+			},
+			{
+				PreConfig: func() {
+					t.Log("Sleeping for 1 second")
+					time.Sleep(1 * time.Second)
+				},
+				Config: phoneTrunkBaseSetting1 + GenerateEdgeGroupResourceWithCustomAttrs(
+					edgeGroupResourceLabel,
+					edgeGroupName1,
+					edgeGroupDescription1,
+					false,
+					false,
+					GeneratePhoneTrunkBaseIds(phoneTrunkBaseSettingsResourceFullPath+".id"),
 				) + generateEdgeGroupDataSource(
 					edgeGroupDataLabel,
 					edgeGroupName1,
-					"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel,
+					edgeGroupResourceFullPath,
 					false,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupDataLabel, "id", "genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(edgeGroupDataSourceFullPath, "id", edgeGroupResourceFullPath, "id"),
 				),
 			},
 		},
+		CheckDestroy: testVerifyEdgeGroupsDestroyed,
 	})
 }
 
@@ -62,8 +81,9 @@ This test expects that the org has a product called "voice" enabled on it. If th
 func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 	t.Parallel()
 	var (
-		edgeGroupDataLabel = "edgeGroupData"
-		edgeGroupName1     = "PureCloud Voice - AWS"
+		edgeGroupDataLabel    = "edgeGroupData"
+		edgeGroupDataFullPath = fmt.Sprintf("data.%s.%s", ResourceType, edgeGroupDataLabel)
+		edgeGroupName1        = "PureCloud Voice - AWS"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -78,7 +98,7 @@ func TestAccDataSourceEdgeGroupManaged(t *testing.T) {
 					true,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("data.genesyscloud_telephony_providers_edges_edge_group."+edgeGroupDataLabel, "name", edgeGroupName1),
+					resource.TestCheckResourceAttr(edgeGroupDataFullPath, "name", edgeGroupName1),
 				),
 			},
 		},

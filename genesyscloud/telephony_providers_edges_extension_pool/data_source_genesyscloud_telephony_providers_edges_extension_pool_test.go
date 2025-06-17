@@ -2,21 +2,27 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		extensionPoolStartNumber       = "2500"
-		extensionPoolEndNumber         = "2599"
-		extensionPoolResourceLabel     = "extensionPool"
-		extensionPoolDataResourceLabel = "extensionPoolData"
+		extensionPoolStartNumber = "2500"
+		extensionPoolEndNumber   = "2599"
+
+		extensionPoolResourceLabel    = "extensionPool"
+		extensionPoolResourceFullPath = ResourceType + "." + extensionPoolResourceLabel
+
+		extensionPoolDataSourceLabel    = "extensionPoolData"
+		extensionPoolDataSourceFullPath = fmt.Sprintf("data.%s.%s", ResourceType, extensionPoolDataSourceLabel)
 	)
+
+	cleanupExtensionPool(t, extensionPoolStartNumber, extensionPoolEndNumber)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -28,29 +34,23 @@ func TestAccDataSourceExtensionPoolBasic(t *testing.T) {
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,
 					util.NullValue, // No description
-				}) + generateExtensionPoolDataSource(extensionPoolDataResourceLabel,
+				}) + generateExtensionPoolDataSource(extensionPoolDataSourceLabel,
 					extensionPoolStartNumber,
 					extensionPoolEndNumber,
-					"genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel),
+					extensionPoolResourceFullPath),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data.genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(extensionPoolDataSourceFullPath, "id", extensionPoolResourceFullPath, "id"),
 				),
 			},
 		},
 	})
 }
 
-func generateExtensionPoolDataSource(
-	resourceLabel string,
-	startNumber string,
-	endNumber string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOnResource string) string {
-	return fmt.Sprintf(`data "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
+func generateExtensionPoolDataSource(resourceLabel, startNumber, endNumber, dependsOnResource string) string {
+	return fmt.Sprintf(`data "%s" "%s" {
 		start_number = "%s"
 		end_number = "%s"
 		depends_on=[%s]
 	}
-	`, resourceLabel, startNumber, endNumber, dependsOnResource)
+	`, ResourceType, resourceLabel, startNumber, endNumber, dependsOnResource)
 }
