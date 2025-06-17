@@ -1247,6 +1247,10 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		log.Printf("Error during RefreshWithoutUpgrade for resource  %s, %v", resID, diags)
 		return nil, diags
 	}
+	if diags != nil {
+		log.Printf("Potential diagnostics warnings produced within getResourceState function: %v. Resource ID: '%s'. BlockLabel: '%s'",
+			diags, resID, resMeta.BlockLabel)
+	}
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
 		log.Printf("Empty State for resource with ID '%s', BlockLabel: '%s'. State: %v", resID, resMeta.BlockLabel, state)
