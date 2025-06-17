@@ -31,7 +31,6 @@ func newGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVe
 		updateGuideVersionAttr:  updateGuideVersionFn,
 	}
 }
-
 func getGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
 	if internalProxy == nil {
 		internalProxy = newGuideVersionProxy(clientConfig)
@@ -42,11 +41,9 @@ func getGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVe
 func (p *guideVersionProxy) createGuideVersion(ctx context.Context, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	return p.createGuideVersionAttr(ctx, p, guideVersion, guideId)
 }
-
 func (p *guideVersionProxy) getGuideVersionById(ctx context.Context, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	return p.getGuideVersionByIdAttr(ctx, p, id, guideId)
 }
-
 func (p *guideVersionProxy) updateGuideVersion(ctx context.Context, id string, guideId string, guideVersion *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	return p.updateGuideVersionAttr(ctx, p, id, guideId, guideVersion)
 }
@@ -60,47 +57,25 @@ func createGuideVersionFn(ctx context.Context, p *guideVersionProxy, guideVersio
 func sdkPostGuideVersion(body *CreateGuideVersionRequest, p *guideVersionProxy, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 	action := http.MethodPost
+	baseURL := "https://api.inintca.com/api/v2/guides/" + guideId + "/versions"
 
-	// Convert body to JSON
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
 	}
 
-	// Create request
-	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides/"+guideId+"/versions", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req = buildRequestHeader(req, p)
 
-	// Make the request
-	resp, err := client.Do(req)
+	respBody, apiResp, err := callAPI(client, req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error making request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response body
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading response: %v", err)
+		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
 
-	// Check status code
-	apiResp := &platformclientv2.APIResponse{
-		StatusCode: resp.StatusCode,
-		Response:   resp,
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	// Parse response into GuideVersion struct
 	var guideVersion VersionResponse
 	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
 		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
@@ -118,41 +93,20 @@ func getGuideVersionByIdFn(ctx context.Context, p *guideVersionProxy, id string,
 func sdkGetGuideVersionById(p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 	action := http.MethodGet
+	baseURL := "https://api.inintca.com/api/v2/guides/" + guideId + "/versions/" + id
 
-	// Create request
-	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides/"+guideId+"/versions/"+id, nil)
+	req, err := http.NewRequest(action, baseURL, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req = buildRequestHeader(req, p)
 
-	// Make the request
-	resp, err := client.Do(req)
+	respBody, apiResp, err := callAPI(client, req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error making request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response body
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading response: %v", err)
+		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
 
-	// Check status code
-	apiResp := &platformclientv2.APIResponse{
-		StatusCode: resp.StatusCode,
-		Response:   resp,
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	// Parse response into GuideVersion struct
 	var guideVersion VersionResponse
 	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
 		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
@@ -170,51 +124,53 @@ func updateGuideVersionFn(ctx context.Context, p *guideVersionProxy, id string, 
 func sdkUpdateGuideVersion(p *guideVersionProxy, id string, guideId string, body *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 	action := http.MethodPatch
+	baseURL := "https://api.inintca.com/api/v2/guides/" + guideId + "/versions/" + id
 
-	// Convert body to JSON
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
 	}
 
-	// Create request
-	req, err := http.NewRequest(action, "https://api.inintca.com/api/v2/guides/"+guideId+"/versions/"+id, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req = buildRequestHeader(req, p)
 
-	// Make the request
-	resp, err := client.Do(req)
+	respBody, apiResp, err := callAPI(client, req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error making request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response body
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading response: %v", err)
+		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
 
-	// Check status code
-	apiResp := &platformclientv2.APIResponse{
-		StatusCode: resp.StatusCode,
-		Response:   resp,
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	// Parse response into GuideVersion struct
 	var guideVersion VersionResponse
 	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
 		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
 	}
 
 	return &guideVersion, apiResp, nil
+}
+
+// Helper api call function to be removed once endpoints are public
+func callAPI(client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading response: %v", err)
+	}
+
+	apiResp := &platformclientv2.APIResponse{
+		StatusCode: resp.StatusCode,
+		Response:   resp,
+	}
+	if resp.StatusCode != 200 {
+		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	return respBody, apiResp, nil
 }
