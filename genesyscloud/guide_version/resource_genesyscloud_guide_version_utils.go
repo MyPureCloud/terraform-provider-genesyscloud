@@ -1,5 +1,13 @@
 package guide_version
 
+import "net/http"
+
+func buildRequestHeader(r *http.Request, p *guideVersionProxy) *http.Request {
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	return r
+}
+
 type Variable struct {
 	Name        string `json:"name,omitempty"`
 	Type        string `json:"type,omitempty"`

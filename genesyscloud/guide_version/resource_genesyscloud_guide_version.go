@@ -3,7 +3,6 @@ package guide_version
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -36,11 +35,13 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGuideVersionProxy(skdConfig)
-	cc :=  consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGuideVersion(), constants.ConsistencyChecks(), ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGuideVersion(), constants.ConsistencyChecks(), ResourceType)
+	guideId := d.Get("guide_id").(string)
+
 	log.Printf("Reading Guide Version")
 
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError{
-		version, resp, err := proxy.getGuideVersion(ctx, d.Id())
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		version, resp, err := proxy.getGuideVersionById(ctx, d.Id(), guideId)
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read guide version %s | Error: %s", d.Id(), err), resp))
@@ -93,20 +94,14 @@ func buildGuideVersionFromResourceData(d *schema.ResourceData) *CreateGuideVersi
 		guideVersion.Resources = buildGuideVersionResources(resource)
 	}
 
-	log.Printf("Succesfully Built Guide Version from Resource Data: %v", *guideVersion.)
+	log.Printf("Succesfully Built Guide Version from Resource Data")
 	return guideVersion
 }
 
 func buildGuideVersionResources(resource []interface{}) GuideVersionResources {
-	//	var versionResource = GuideVersionResources{}
-	//
-	//	for i, r := range resource {
-	//		versionResource.DataActions
-	//
-	//	}
-	//
-	//	return versionResource
-	return nil
+	var versionResource = GuideVersionResources{}
+
+	return versionResource
 }
 
 func buildGuideVersionVariables(vars []interface{}) []Variable {
@@ -143,6 +138,6 @@ func buildGuideVersionForUpdate(d *schema.ResourceData) *UpdateGuideVersion {
 		guideVersion.Resources = buildGuideVersionResources(resource)
 	}
 
-	log.Printf("Succesfully Built Guide Version from Resource Data: %v", *guideVersion.)
+	log.Printf("Succesfully Built Guide Version from Resource Data")
 	return guideVersion
 }
