@@ -1,8 +1,12 @@
 package group
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
 	"strings"
@@ -10,6 +14,124 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
+
+func updateGroupMembers(ctx context.Context, d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) (diags diag.Diagnostics) {
+	gp := getGroupProxy(sdkConfig)
+
+	if !d.HasChange("member_ids") {
+		return diags
+	}
+
+	membersConfig := d.Get("member_ids")
+	if membersConfig == nil {
+		return diags
+	}
+
+	log.Printf("Updating members for '%s'", d.Id())
+
+	configMemberIds := *lists.SetToStringList(membersConfig.(*schema.Set))
+
+	log.Printf("Reading member IDs for group '%s'", d.Id())
+
+	existingMemberIds, getMemberIdsDiags := getGroupMemberIds(ctx, d, sdkConfig)
+	diags = append(diags, getMemberIdsDiags...)
+	if diags.HasError() {
+		log.Printf("Encountered error while reading member IDs for group '%s': %v", d.Id(), getMemberIdsDiags)
+		return diags
+	}
+
+	maxMembersPerRequest := 50
+	membersToRemoveList := lists.SliceDifference(existingMemberIds, configMemberIds)
+	chunkedMemberIdsDelete := chunks.ChunkBy(membersToRemoveList, maxMembersPerRequest)
+
+	chunkProcessor := func(membersToRemove []string) diag.Diagnostics {
+		if len(membersToRemove) == 0 {
+			log.Printf("No members to remove for group '%s'", d.Id())
+			return nil
+		}
+
+		log.Printf("Removing %d members for group '%s'", len(membersToRemove), d.Id())
+		return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			_, resp, err := gp.deleteGroupMembers(ctx, d.Id(), strings.Join(membersToRemove, ","))
+			if err != nil {
+				log.Printf("Encountered error while removing members from gorup '%s': %s", d.Id(), err.Error())
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove members from group %s: %s", d.Id(), err), resp)
+			}
+			log.Printf("Successfully removed %d members from group '%s", len(membersToRemove), d.Id())
+			return resp, nil
+		})
+	}
+
+	log.Printf("Beginning chunking process for group '%s'", d.Id())
+	diags = append(diags, chunks.ProcessChunks(chunkedMemberIdsDelete, chunkProcessor)...)
+	if diags.HasError() {
+		log.Printf("Encountered error while invoking chunk processor for group '%s': %v", d.Id(), diags)
+		return diags
+	}
+
+	membersToAdd := lists.SliceDifference(configMemberIds, existingMemberIds)
+	if len(membersToAdd) < 1 {
+		log.Printf("No members to add for group '%s'", d.Id())
+		return diags
+	}
+
+	chunkedMemberIds := lists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
+	for _, chunk := range chunkedMemberIds {
+		diags = append(diags, addGroupMembers(ctx, d, chunk, sdkConfig)...)
+	}
+
+	return diags
+}
+
+func readGroupMembers(ctx context.Context, groupID string, sdkConfig *platformclientv2.Configuration) (*schema.Set, *platformclientv2.APIResponse, error) {
+	gp := getGroupProxy(sdkConfig)
+
+	members, resp, err := gp.getGroupMembers(ctx, groupID)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	interfaceList := make([]interface{}, len(*members))
+	for i, v := range *members {
+		interfaceList[i] = v
+	}
+
+	return schema.NewSet(schema.HashString, interfaceList), resp, nil
+}
+
+func getGroupMemberIds(ctx context.Context, d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) ([]string, diag.Diagnostics) {
+	gp := getGroupProxy(sdkConfig)
+	members, resp, err := gp.getGroupMembers(ctx, d.Id())
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Unable to retrieve members for group %s. %s", d.Id(), err), resp)
+	}
+	return *members, nil
+}
+
+func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd []string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	gp := getGroupProxy(sdkConfig)
+	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Need the current group version to add members
+		log.Printf("Reading group '%s' version", d.Id())
+		groupInfo, resp, getErr := gp.getGroupById(ctx, d.Id())
+		if getErr != nil {
+			log.Printf("Encountered error while reading group '%s' version: %s", d.Id(), getErr.Error())
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group %s: %s", d.Id(), getErr), resp)
+		}
+
+		log.Printf("Adding %d members to group '%s'", len(membersToAdd), d.Id())
+		groupMemberUpdate := &platformclientv2.Groupmembersupdate{
+			MemberIds: &membersToAdd,
+			Version:   groupInfo.Version,
+		}
+		_, resp, postErr := gp.addGroupMembers(ctx, d.Id(), groupMemberUpdate)
+		if postErr != nil {
+			log.Printf("Encountered error while adding members to group '%s': %s", d.Id(), postErr.Error())
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add group members %s: %s", d.Id(), postErr), resp)
+		}
+		return resp, nil
+	})
+}
 
 // 'number' and 'extension' conflict with eachother. However, one must be set.
 // This function validates that the user has satisfied these conditions
@@ -19,7 +141,7 @@ func validateAddressesMap(m map[string]interface{}) error {
 
 	if (number != "" && extension != "") ||
 		(number == "" && extension == "") {
-		return fmt.Errorf("Either 'number' or 'extension' must be set inside addresses, but both cannot be set.")
+		return fmt.Errorf("either 'number' or 'extension' must be set inside addresses, but both cannot be set")
 	}
 
 	return nil
