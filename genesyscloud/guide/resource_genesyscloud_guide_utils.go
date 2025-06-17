@@ -9,6 +9,12 @@ func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
 	return r
 }
 
+type DeleteObject struct {
+	Id      string `json:"id,omitempty"`
+	GuideId string `json:"guideId,omitempty"`
+	Status  string `json:"status,omitempty"`
+}
+
 type Guide struct {
 	Id                           *string          `json:"id,omitempty"`
 	Name                         *string          `json:"name,omitempty"`
@@ -18,38 +24,25 @@ type Guide struct {
 	LatestProductionReadyVersion *GuideVersionRef `json:"latestProductionReadyVersion,omitempty"`
 }
 
-type Createguide struct {
+type CreateGuide struct {
 	SetFieldNames map[string]bool `json:"setFieldNames,omitempty"`
 	Name          *string         `json:"name,omitempty"`
 	Source        *string         `json:"source,omitempty"`
 }
 
 type GuideEntityListing struct {
-	// SetFieldNames defines the list of fields to use for controlled JSON serialization
 	SetFieldNames map[string]bool `json:"-"`
-	// Entities
-	Entities *[]Guide `json:"entities,omitempty"`
-
-	// PageNumber
-	PageNumber *int `json:"pageNumber,omitempty"`
-
-	// PageSize
-	PageSize *int `json:"pageSize,omitempty"`
-
-	// NextUri
-	NextUri *string `json:"nextUri,omitempty"`
-
-	// PreviousUri
-	PreviousUri *string `json:"previousUri,omitempty"`
-
-	// FirstUri
-	FirstUri *string `json:"firstUri,omitempty"`
-
-	// SelfUri
-	SelfUri *string `json:"selfUri,omitempty"`
+	Entities      *[]Guide        `json:"entities,omitempty"`
+	PageNumber    *int            `json:"pageNumber,omitempty"`
+	PageSize      *int            `json:"pageSize,omitempty"`
+	NextUri       *string         `json:"nextUri,omitempty"`
+	PreviousUri   *string         `json:"previousUri,omitempty"`
+	FirstUri      *string         `json:"firstUri,omitempty"`
+	SelfUri       *string         `json:"selfUri,omitempty"`
+	PageCount     *int            `json:"pageCount,omitempty"`
 }
 
 type GuideVersionRef struct {
-	version *string `json:"version,omitempty"`
-	selfUri *string `json:"selfUri,omitempty"`
+	Version *string `json:"version,omitempty"`
+	SelfUri *string `json:"selfUri,omitempty"`
 }

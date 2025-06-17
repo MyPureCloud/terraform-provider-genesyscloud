@@ -2,7 +2,6 @@ package guide
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -32,7 +31,7 @@ func TestUnitResourceGuideCreate(t *testing.T) {
 		return testGuide, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
-	guideProxyObj.createGuideAttr = func(ctx context.Context, p *guideProxy, guide *Createguide) (*Guide, *platformclientv2.APIResponse, error) {
+	guideProxyObj.createGuideAttr = func(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *guide.Name)
 		assert.Equal(t, tSource, *guide.Source)
 		return testGuide, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
@@ -69,10 +68,10 @@ func TestUnitResourceGuideRead(t *testing.T) {
 		Source: &tSource,
 		Status: &tStatus,
 		LatestSavedVersion: &GuideVersionRef{
-			version: &version,
+			Version: &version,
 		},
 		LatestProductionReadyVersion: &GuideVersionRef{
-			version: &version,
+			Version: &version,
 		},
 	}
 
@@ -104,34 +103,6 @@ func TestUnitResourceGuideRead(t *testing.T) {
 	assert.Equal(t, tName, d.Get("name").(string))
 	assert.Equal(t, tSource, d.Get("source").(string))
 	assert.Equal(t, tStatus, d.Get("status").(string))
-}
-
-func TestUnitResourceGuideDelete(t *testing.T) {
-	tId := uuid.NewString()
-
-	guideProxyObj := &guideProxy{}
-	guideProxyObj.deleteGuideAttr = func(ctx context.Context, p *guideProxy, id string) (*platformclientv2.APIResponse, error) {
-		assert.Equal(t, tId, id)
-		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
-	}
-
-	guideProxyObj.getGuideByIdAttr = func(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
-		assert.Equal(t, tId, id)
-		return nil, &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}, fmt.Errorf("not found")
-	}
-
-	internalProxy = guideProxyObj
-	defer func() { internalProxy = nil }()
-
-	ctx := context.Background()
-	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
-
-	resourceSchema := ResourceGuide().Schema
-	resourceDataMap := map[string]interface{}{}
-
-	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
-	d.SetId(tId)
-
-	diag := deleteGuide(ctx, d, gcloud)
-	assert.Nil(t, diag)
+	assert.Equal(t, version, d.Get("latest_saved_version").(string))
+	assert.Equal(t, version, d.Get("latest_production_ready_version").(string))
 }

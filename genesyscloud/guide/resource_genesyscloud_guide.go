@@ -14,6 +14,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
+	"time"
 )
 
 func getAllGuides(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -21,16 +22,17 @@ func getAllGuides(ctx context.Context, clientConfig *platformclientv2.Configurat
 	proxy := getGuideProxy(clientConfig)
 
 	log.Printf("Retrieving all Guides")
+
 	guides, resp, err := proxy.getAllGuides(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all guides | error: %s", err), resp)
 	}
 
-	if guides.Entities == nil {
+	if guides == nil {
 		return resources, nil
 	}
 
-	for _, guide := range *guides.Entities {
+	for _, guide := range *guides {
 		resources[*guide.Id] = &resourceExporter.ResourceMeta{BlockLabel: *guide.Name}
 	}
 
@@ -48,7 +50,7 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Creating Guide: %s", name)
 
-	guideReq := &Createguide{
+	guideReq := &CreateGuide{
 		Name:   &name,
 		Source: &source,
 	}
@@ -84,17 +86,14 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		if guide.Status != nil {
 			_ = d.Set("status", *guide.Status)
 		}
-
 		if guide.Source != nil {
 			_ = d.Set("source", guide.Source)
 		}
-
-		if guide.LatestSavedVersion != nil && guide.LatestSavedVersion.version != nil {
-			log.Println("Latest Saved Version:", *guide.LatestSavedVersion)
-			_ = d.Set("latest_saved_version", guide.LatestSavedVersion.version)
+		if guide.LatestSavedVersion != nil && guide.LatestSavedVersion.Version != nil {
+			_ = d.Set("latest_saved_version", guide.LatestSavedVersion.Version)
 		}
-		if guide.LatestProductionReadyVersion != nil && guide.LatestProductionReadyVersion.version != nil {
-			_ = d.Set("latest_production_ready_version", guide.LatestProductionReadyVersion.version)
+		if guide.LatestProductionReadyVersion != nil && guide.LatestProductionReadyVersion.Version != nil {
+			_ = d.Set("latest_production_ready_version", guide.LatestProductionReadyVersion.Version)
 		}
 
 		log.Printf("Read Guide: %s", d.Id())
@@ -108,7 +107,7 @@ func deleteGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Deleting Guide: %s", d.Id())
 
-	resp, err := proxy.deleteGuide(ctx, d.Id())
+	job, resp, err := proxy.deleteGuide(ctx, d.Id())
 	if err != nil {
 		if util.IsStatus404(resp) {
 			log.Printf("Guide %s already deleted", d.Id())
@@ -118,21 +117,35 @@ func deleteGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	if resp.StatusCode == 202 {
-		log.Printf("Delete guide job started for: %s", d.Id())
-		return nil
+		log.Printf("Delete Job for Guide: %s started", d.Id())
 	}
 
-	return util.WithRetries(ctx, 180, func() *retry.RetryError {
-		_, resp, err := proxy.getGuideById(ctx, d.Id())
+	// Large Timeout to allow for delete job to complete before context deadline exceeded
+	return util.WithRetries(ctx, 20*time.Second, func() *retry.RetryError {
+		guide, resp, err := proxy.getGuideById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Deleted Guide: %s", d.Id())
 				return nil
 			}
-			log.Printf("Error checking if guide %s is deleted: %s", d.Id(), err)
-			return nil
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error retrieving guide %s | error: %s", d.Id(), err), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Guide %s still exists", d.Id()), resp))
+		if guide != nil {
+			jobStatus, jobResp, jobErr := proxy.getDeleteJobStatusById(ctx, job.Id, d.Id())
+			if jobErr != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error checking delete job status for guide %s | Error: %s", d.Id(), jobErr), jobResp))
+			}
+
+			if jobStatus.Status == "InProgress" {
+				return retry.RetryableError(fmt.Errorf("delete job for guide %s still in progress: %s", d.Id(), jobStatus.Status))
+			}
+
+			if jobStatus.Status == "Succeeded" {
+				log.Printf("Deleted Guide: %s", d.Id())
+				return nil
+			}
+		}
+		return retry.RetryableError(fmt.Errorf("guide: %s still exists", d.Id()))
 	})
 }

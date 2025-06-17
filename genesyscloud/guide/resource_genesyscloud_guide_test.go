@@ -14,8 +14,9 @@ import (
 func TestAccResourceGuide(t *testing.T) {
 	var (
 		resourceLabel = "guide"
-		name          = "Test Guide " + uuid.NewString()
-		source        = "Manual"
+
+		name   = "Test Guide Manual" + uuid.NewString()
+		source = "Manual"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -57,14 +58,11 @@ func testVerifyGuideDestroyed(state *terraform.State) error {
 		if guide != nil {
 			return fmt.Errorf("guide (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
-			// Guide not found as expected
 			continue
 		} else {
-			// Unexpected error
 			return fmt.Errorf("unexpected error: %s", err)
 		}
 	}
-	// Success. All guides deleted
 	return nil
 }
 
