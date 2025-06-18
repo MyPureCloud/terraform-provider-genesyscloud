@@ -22,7 +22,7 @@ func TestAccDataSourceSmsAddress(t *testing.T) {
 		postalCode       = "postal-code-1"
 		countryCode      = "country-code-1"
 	)
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" || v == "us-west-2" {
 		postalCode = "90080"
 		countryCode = "US"
 	}

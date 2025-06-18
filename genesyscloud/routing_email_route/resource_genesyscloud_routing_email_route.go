@@ -98,43 +98,21 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	return readRoutingEmailRoute(ctx, d, meta)
 }
 
-// readRoutingEmailRoute is used by the routing_email_route resource to read an routing email route from genesys cloud
-func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+// readRoutingEmailRoute is used by the routing_email_route resource to read a routing email route from genesys cloud
+func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingEmailRouteProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute(), constants.ConsistencyChecks(), ResourceType)
 	domainId := d.Get("domain_id").(string)
 
 	log.Printf("Reading routing email route %s", d.Id())
-	var route *platformclientv2.Inboundroute
-
-	// The normal GET route API has a long cache TTL (5 minutes) which can result in stale data.
-	// This can be bypassed by issuing a domain query instead.
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		inboundRoutesMap, resp, getErr := proxy.getAllRoutingEmailRoute(ctx, domainId, "")
-		if getErr != nil {
-			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read routing email route %s | error: %s", d.Id(), getErr.Error()), resp)
+	return util.WithRetriesForReadCustomTimeout(ctx, 7*time.Minute, d, func() *retry.RetryError {
+		route, resp, err := proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
+		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(diagErr)
+				return retry.RetryableError(err)
 			}
-			return retry.NonRetryableError(diagErr)
-		}
-
-		if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
-			return retry.RetryableError(fmt.Errorf("found no domain '%s'", domainId))
-		}
-
-		for _, inboundRoutes := range *inboundRoutesMap {
-			for _, queryRoute := range inboundRoutes {
-				if queryRoute.Id != nil && *queryRoute.Id == d.Id() {
-					routeCopy := queryRoute
-					route = &routeCopy
-					break
-				}
-			}
-		}
-		if route == nil {
-			return retry.RetryableError(fmt.Errorf("no email route '%s' found in domain '%s'", d.Id(), domainId))
+			return retry.NonRetryableError(err)
 		}
 
 		resourcedata.SetNillableValue(d, "pattern", route.Pattern)
@@ -195,9 +173,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 
 	if replyEmail {
 		if isSelfReferenceRouteSet(d) {
-			replyRoutePattern := d.Get("pattern").(string)
-			domainId := d.Get("domain_id").(string)
-			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(domainId, d.Id(), replyRoutePattern)
+			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(domainId, d.Id(), d.Get("pattern").(string))
 		} else if !isSelfReferenceRouteSet(d) {
 			// We need to pass the route pattern that matches the route id
 			replyRoute, _, err := proxy.getRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
@@ -234,7 +210,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
+		_, resp, err = proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Deleted routing email route %s", d.Id())

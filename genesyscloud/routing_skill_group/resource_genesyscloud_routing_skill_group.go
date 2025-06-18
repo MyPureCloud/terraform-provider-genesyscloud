@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -257,24 +258,6 @@ func GenerateRoutingSkillGroupResourceBasic(
 	`, ResourceType, resourceLabel, name, description)
 }
 
-// Todo: remove once auth divisions is refactored into its own package
-
-func getAllAuthDivisionIds(meta interface{}) ([]string, diag.Diagnostics) {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	allIds := make([]string, 0)
-
-	divisionResourcesMap, err := getAllAuthDivisions(nil, sdkConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	for key, _ := range divisionResourcesMap {
-		allIds = append(allIds, key)
-	}
-
-	return allIds, nil
-}
-
 func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
@@ -283,7 +266,7 @@ func getAllAuthDivisions(_ context.Context, clientConfig *platformclientv2.Confi
 		const pageSize = 100
 		divisions, resp, getErr := authAPI.GetAuthorizationDivisions(pageSize, pageNum, "", nil, "", "", false, nil, "")
 		if getErr != nil {
-			return nil, util.BuildAPIDiagnosticError("genesyscloud_auth_division", fmt.Sprintf("Failed to get page of divisions error: %s", getErr), resp)
+			return nil, util.BuildAPIDiagnosticError(auth_division.ResourceType, fmt.Sprintf("Failed to get page of divisions error: %s", getErr), resp)
 		}
 
 		if divisions.Entities == nil || len(*divisions.Entities) == 0 {
