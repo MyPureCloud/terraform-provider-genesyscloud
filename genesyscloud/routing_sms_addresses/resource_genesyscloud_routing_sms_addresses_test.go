@@ -16,7 +16,6 @@ import (
 func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 	var (
 		resourceLabel = "AD-123"
-		fullPath      = ResourceType + "." + resourceLabel
 		name          = "name-1"
 		street        = "street-1"
 		city          = "city-1"
@@ -29,7 +28,7 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 		destroyValue = false
 	)
 
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" || v == "us-west-2" {
 		resourceLabel = "sms-address1"
 		name = "name-1"
 		street = "street-1"
@@ -39,6 +38,8 @@ func TestAccResourceRoutingSmsAddresses(t *testing.T) {
 		countryCode = "US"
 		destroyValue = true
 	}
+
+	fullPath := ResourceType + "." + resourceLabel
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
