@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,8 +18,8 @@ type getAllGuidesFunc func(ctx context.Context, p *guideProxy, name string) (*[]
 type createGuideFunc func(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error)
 type getGuideByIdFunc func(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error)
 type getGuideByNameFunc func(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error)
-type deleteGuideFunc func(ctx context.Context, p *guideProxy, id string) (*DeleteObject, *platformclientv2.APIResponse, error)
-type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObject, *platformclientv2.APIResponse, error)
+type deleteGuideFunc func(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
+type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
 
 type guideProxy struct {
 	clientConfig               *platformclientv2.Configuration
@@ -28,9 +29,11 @@ type guideProxy struct {
 	getGuideByNameAttr         getGuideByNameFunc
 	deleteGuideAttr            deleteGuideFunc
 	getDeleteJobStatusByIdAttr getDeleteJobStatusByIdFunc
+	guideCache                 rc.CacheInterface[Guide]
 }
 
 func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
+	guideCache := rc.NewResourceCache[Guide]()
 	return &guideProxy{
 		clientConfig:               clientConfig,
 		getAllGuidesAttr:           getAllGuidesFn,
@@ -39,6 +42,7 @@ func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
 		getGuideByNameAttr:         getGuideByNameFn,
 		deleteGuideAttr:            deleteGuideFn,
 		getDeleteJobStatusByIdAttr: getDeleteJobStatusByIdFn,
+		guideCache:                 guideCache,
 	}
 }
 func getGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
@@ -60,10 +64,10 @@ func (p *guideProxy) getGuideById(ctx context.Context, id string) (*Guide, *plat
 func (p *guideProxy) getGuideByName(ctx context.Context, name string) (string, bool, *platformclientv2.APIResponse, error) {
 	return p.getGuideByNameAttr(ctx, p, name)
 }
-func (p *guideProxy) deleteGuide(ctx context.Context, id string) (*DeleteObject, *platformclientv2.APIResponse, error) {
+func (p *guideProxy) deleteGuide(ctx context.Context, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	return p.deleteGuideAttr(ctx, p, id)
 }
-func (p *guideProxy) getDeleteJobStatusById(ctx context.Context, id string, guideId string) (*DeleteObject, *platformclientv2.APIResponse, error) {
+func (p *guideProxy) getDeleteJobStatusById(ctx context.Context, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	return getDeleteJobStatusByIdFn(ctx, p, id, guideId)
 }
 
@@ -131,8 +135,15 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 			return nil, resp, fmt.Errorf("error unmarshaling response: %v", err)
 		}
 
-		allGuides = append(allGuides, *respBody.Entities...)
+		if respBody.Entities != nil {
+			allGuides = append(allGuides, *respBody.Entities...)
+		}
 	}
+
+	for _, guide := range allGuides {
+		rc.SetCache(p.guideCache, *guide.Id, guide)
+	}
+
 	return &allGuides, resp, nil
 }
 
@@ -175,6 +186,9 @@ func sdkPostGuide(ctx context.Context, p *guideProxy, body *CreateGuide) (*Guide
 // Read Functions
 
 func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
+	if guide := rc.GetCacheItem(p.guideCache, id); guide != nil {
+		return guide, nil, nil
+	}
 	return sdkGetGuideById(ctx, p, id)
 }
 
@@ -226,11 +240,11 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 
 // Delete Functions
 
-func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObject, *platformclientv2.APIResponse, error) {
+func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	return sdkDeleteGuide(ctx, p, id)
 }
 
-func sdkDeleteGuide(ctx context.Context, p *guideProxy, id string) (*DeleteObject, *platformclientv2.APIResponse, error) {
+func sdkDeleteGuide(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 	action := http.MethodDelete
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id + "/jobs"
@@ -247,7 +261,7 @@ func sdkDeleteGuide(ctx context.Context, p *guideProxy, id string) (*DeleteObjec
 		return nil, resp, err
 	}
 
-	var jobResponse DeleteObject
+	var jobResponse DeleteObjectJob
 	err = json.Unmarshal(respBody, &jobResponse)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error unmarshaling response: %v", err)
@@ -257,11 +271,11 @@ func sdkDeleteGuide(ctx context.Context, p *guideProxy, id string) (*DeleteObjec
 	return &jobResponse, resp, nil
 }
 
-func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObject, *platformclientv2.APIResponse, error) {
+func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	return sdkGetJobDeletionStatus(ctx, p, jobId, guideId)
 }
 
-func sdkGetJobDeletionStatus(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObject, *platformclientv2.APIResponse, error) {
+func sdkGetJobDeletionStatus(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/jobs/" + jobId
@@ -278,12 +292,16 @@ func sdkGetJobDeletionStatus(ctx context.Context, p *guideProxy, jobId string, g
 		return nil, resp, err
 	}
 
-	var jobResponse DeleteObject
+	var jobResponse DeleteObjectJob
 	err = json.Unmarshal(respBody, &jobResponse)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error unmarshaling response: %v", err)
 	}
 	jobResponse.GuideId = guideId
+
+	if jobResponse.Status == "Succeeded" {
+		rc.DeleteCacheItem(p.guideCache, guideId)
+	}
 
 	return &jobResponse, resp, nil
 }

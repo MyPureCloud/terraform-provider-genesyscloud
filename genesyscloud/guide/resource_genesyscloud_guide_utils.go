@@ -9,10 +9,20 @@ func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
 	return r
 }
 
-type DeleteObject struct {
-	Id      string `json:"id,omitempty"`
-	GuideId string `json:"guideId,omitempty"`
-	Status  string `json:"status,omitempty"`
+type ErrorBody struct {
+	Message           string `json:"message,omitempty"`
+	Code              string `json:"code,omitempty"`
+	Status            int    `json:"status,omitempty"`
+	EntityId          string `json:"entityId,omitempty"`
+	EntityName        string `json:"entityName,omitempty"`
+	MessageWithParams string `json:"messageWithParams,omitempty"`
+}
+
+type DeleteObjectJob struct {
+	Id      string      `json:"id,omitempty"`
+	GuideId string      `json:"guideId,omitempty"`
+	Status  string      `json:"status,omitempty"`
+	Errors  []ErrorBody `json:"errors,omitempty"`
 }
 
 type Guide struct {

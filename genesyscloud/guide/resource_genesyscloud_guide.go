@@ -122,7 +122,7 @@ func deleteGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	// Large Timeout to allow for delete job to complete before context deadline exceeded
 	return util.WithRetries(ctx, 20*time.Second, func() *retry.RetryError {
-		guide, resp, err := proxy.getGuideById(ctx, d.Id())
+		_, resp, err := proxy.getGuideById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Deleted Guide: %s", d.Id())
@@ -131,21 +131,29 @@ func deleteGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error retrieving guide %s | error: %s", d.Id(), err), resp))
 		}
 
-		if guide != nil {
-			jobStatus, jobResp, jobErr := proxy.getDeleteJobStatusById(ctx, job.Id, d.Id())
-			if jobErr != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error checking delete job status for guide %s | Error: %s", d.Id(), jobErr), jobResp))
-			}
-
-			if jobStatus.Status == "InProgress" {
-				return retry.RetryableError(fmt.Errorf("delete job for guide %s still in progress: %s", d.Id(), jobStatus.Status))
-			}
-
-			if jobStatus.Status == "Succeeded" {
-				log.Printf("Deleted Guide: %s", d.Id())
-				return nil
-			}
+		jobStatus, jobResp, jobErr := proxy.getDeleteJobStatusById(ctx, job.Id, d.Id())
+		if jobErr != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error checking delete job status for guide %s | Error: %s", d.Id(), jobErr), jobResp))
 		}
-		return retry.RetryableError(fmt.Errorf("guide: %s still exists", d.Id()))
+		status := jobStatus.Status
+
+		// Check the status of the delete job
+		if status == "InProgress" {
+			return retry.RetryableError(fmt.Errorf("delete job for guide %s still in progress: %s", d.Id(), status))
+		}
+
+		if status == "Succeeded" {
+			log.Printf("Deleted Guide: %s | Status: %s", d.Id(), status)
+			return nil
+		}
+
+		if status == "Failed" {
+			if len(jobStatus.Errors) > 0 && jobStatus.Errors[0].Message != "" {
+				return retry.NonRetryableError(fmt.Errorf("delete job failed for guide %s: %s", d.Id(), jobStatus.Errors[0].Message))
+			}
+			return retry.NonRetryableError(fmt.Errorf("delete job failed for guide %s | Status: %s", d.Id(), status))
+		}
+
+		return retry.RetryableError(fmt.Errorf("unexpected job status for: %s | Status: %s", d.Id(), status))
 	})
 }

@@ -8,10 +8,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"os"
 	"testing"
 )
 
 func TestAccResourceGuide(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" {
+		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
+		return
+	}
 	var (
 		resourceLabel = "guide"
 
@@ -31,13 +36,13 @@ func TestAccResourceGuide(t *testing.T) {
 					source,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_guide."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr("genesyscloud_guide."+resourceLabel, "source", source),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "source", source),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_guide." + resourceLabel,
+				ResourceName:      ResourceType + "." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -51,12 +56,12 @@ func testVerifyGuideDestroyed(state *terraform.State) error {
 	proxy := getGuideProxy(sdkConfig)
 
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_guide" {
+		if rs.Type != ResourceType {
 			continue
 		}
 		guide, resp, err := proxy.getGuideById(context.Background(), rs.Primary.ID)
 		if guide != nil {
-			return fmt.Errorf("guide (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("%s (%s) still exists", ResourceType, rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
 			continue
 		} else {
@@ -68,9 +73,9 @@ func testVerifyGuideDestroyed(state *terraform.State) error {
 
 // GenerateGuideResource generates terraform for a guide resource
 func GenerateGuideResource(resourceID string, name string, source string) string {
-	return fmt.Sprintf(`resource "genesyscloud_guide" "%s" {
+	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		source = "%s"
 	}
-	`, resourceID, name, source)
+	`, ResourceType, resourceID, name, source)
 }
