@@ -10,7 +10,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
@@ -114,33 +113,12 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func deleteScript(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getScriptsProxy(sdkConfig)
-	var response *platformclientv2.APIResponse
 
 	log.Printf("Deleting script %s", d.Id())
 	if err := proxy.deleteScript(ctx, d.Id()); err != nil {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to delete script %s", d.Id()), err)
 	}
-
-	retryErr := util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		log.Printf("Reading script '%s'", d.Id())
-		_, resp, err := proxy.getScriptById(ctx, d.Id())
-		response = resp
-		if err != nil {
-			if util.IsStatus404(resp) {
-				log.Printf("Successfully deleted script %s", d.Id())
-				return nil
-			}
-			log.Printf("Unexpected error occurred reading script '%s': %s", d.Id(), err.Error())
-			return retry.NonRetryableError(err)
-		}
-
-		return retry.RetryableError(fmt.Errorf("script '%s' still exists", d.Id()))
-	})
-
-	if retryErr != nil {
-		summary := fmt.Sprintf("failed to validate that script '%s' was deleted: %v", d.Id(), retryErr)
-		diags = append(diags, util.BuildAPIDiagnosticError(ResourceType, summary, response)...)
-	}
+	log.Printf("Successfully deleted script %s", d.Id())
 
 	return
 }
