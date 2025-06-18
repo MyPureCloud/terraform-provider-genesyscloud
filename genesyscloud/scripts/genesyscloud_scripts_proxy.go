@@ -74,7 +74,7 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 		accessToken:                       scriptsAPI.Configuration.AccessToken,
 		createScriptAttr:                  createScriptFn,
 		updateScriptAttr:                  updateScriptFn,
-		getAllScriptsAttr:                 getAllPublishedScriptsFn,
+		getAllScriptsAttr:                 getAllPublishedScriptsV2,
 		publishScriptAttr:                 publishScriptFn,
 		getScriptIdByNameAttr:             getScriptIdByNameFn,
 		getScriptsByNameAttr:              getScriptsByNameFn,
@@ -145,6 +145,40 @@ func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*plat
 	}
 	_, resp, err := p.scriptsApi.PostScriptsPublished("0", *publishScriptBody)
 	return resp, err
+}
+
+func getAllPublishedScriptsV2(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	var allPublishedScripts []platformclientv2.Script
+	var resp *platformclientv2.APIResponse
+	const pageSize = 100
+
+	data, resp, err := p.scriptsApi.GetScriptsPublished(pageSize, 1, "", "", "", "", "", "")
+	if err != nil {
+		return nil, resp, err
+	}
+	if data.Entities == nil || len(*data.Entities) == 0 {
+		return &allPublishedScripts, resp, nil
+	}
+
+	allPublishedScripts = append(allPublishedScripts, *data.Entities...)
+
+	pageCount := *data.PageCount
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
+		data, resp, err = p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", "", "", "", "", "")
+		if err != nil {
+			return nil, resp, err
+		}
+		if data.Entities == nil || len(*data.Entities) == 0 {
+			break
+		}
+		allPublishedScripts = append(allPublishedScripts, *data.Entities...)
+	}
+
+	for _, script := range allPublishedScripts {
+		rc.SetCache(p.scriptCache, *script.Id, script)
+	}
+
+	return &allPublishedScripts, resp, nil
 }
 
 // getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud instance
@@ -291,7 +325,7 @@ func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (_ s
 	}
 	if len(sdkScripts) > 1 {
 		var extraErrorInfo string
-		if isNameOfDefaultScript(name) {
+		if isDefaultScriptByName(name) {
 			extraErrorInfo = fmt.Sprintf("'%s' is the name of a reserved script in Genesys Cloud that cannot be deleted. Please select another name.", name)
 		}
 		return "", false, resp, fmt.Errorf("more than one script found with name '%s'. %s", name, extraErrorInfo)
@@ -302,8 +336,12 @@ func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (_ s
 	return *sdkScripts[0].Id, false, resp, nil
 }
 
-func isNameOfDefaultScript(name string) bool {
+func isDefaultScriptByName(name string) bool {
 	return name == constants.DefaultOutboundScriptName || name == constants.DefaultInboundScriptName || name == constants.DefaultCallbackScriptName
+}
+
+func isDefaultScriptById(id string) bool {
+	return id == constants.DefaultCallbackScriptID || id == constants.DefaultOutboundScriptID || id == constants.DefaultInboundScriptID
 }
 
 // verifyScriptUploadSuccessFn checks to see if a file has successfully uploaded
