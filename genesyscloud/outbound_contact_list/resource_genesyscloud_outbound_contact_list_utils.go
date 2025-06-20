@@ -3,17 +3,16 @@ package outbound_contact_list
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -219,13 +218,21 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	retryAttempt := 1
 	diagErr = util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Waiting for signed export URL for contact list %s", contactListName)
-		// Sleep at least 30 secs before attempting to retrieve export url to give the system time to be able to generate the URL
-		// This has an exponential backoff to permit large lists the time to process and serve up the export signed url
-		time.Sleep(time.Duration(30*retryAttempt) * time.Second)
 		var err error
 		var resp *platformclientv2.APIResponse
 		exportUrl, resp, err = cp.getContactListContactsExportUrl(ctx, contactListId)
 		if err != nil {
+			// Sleep at least 30 secs before attempting to retrieve export url to give the system time to be able to generate the URL
+			// This has an exponential backoff to permit large lists the time to process and serve up the export signed url
+			waitTime := time.Duration(30*retryAttempt) * time.Second
+
+			// for the first attempt - wait a small amount of time. A 30 second sleep is a lot for a contact list that
+			// just needed a few extra milliseconds
+			if retryAttempt == 1 {
+				waitTime = 2 * time.Second
+			}
+
+			time.Sleep(waitTime)
 			retryAttempt += 1
 			return resp, diag.FromErr(err)
 		}
