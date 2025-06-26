@@ -29,4 +29,4 @@ data "genesyscloud_integration_webhook" "webhook_integration" {
 
 - `id` (String) The ID of this resource.
 - `invocation_url` (String) The invocation URL from the integration attributes
-- `web_hook_id` (String) The webhook ID from the integration attributes 
+- `web_hook_id` (String) The webhook ID from the integration attributes
