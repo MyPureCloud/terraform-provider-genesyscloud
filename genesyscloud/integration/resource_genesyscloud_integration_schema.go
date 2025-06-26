@@ -20,10 +20,12 @@ resource_genesyscloud_integration_schema.go should hold four types of functions 
 4.  The resource exporter configuration for the integration exporter.
 */
 const ResourceType = "genesyscloud_integration"
+const WebhookResourceType = "genesyscloud_integration_webhook"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterDataSource(ResourceType, DataSourceIntegration())
+	l.RegisterDataSource(WebhookResourceType, DataSourceIntegrationWebhook())
 	l.RegisterResource(ResourceType, ResourceIntegration())
 	l.RegisterExporter(ResourceType, IntegrationExporter())
 }
@@ -129,6 +131,31 @@ func DataSourceIntegration() *schema.Resource {
 				Description: "The name of the integration",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+		},
+	}
+}
+
+// DataSourceIntegrationWebhook registers the genesyscloud_integration_webhook data source
+func DataSourceIntegrationWebhook() *schema.Resource {
+	return &schema.Resource{
+		Description: "Data source for Genesys Cloud webhook integration. Select a webhook integration by name",
+		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationWebhookRead),
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Description: "The name of the webhook integration",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"web_hook_id": {
+				Description: "The webhook ID from the integration attributes",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"invocation_url": {
+				Description: "The invocation URL from the integration attributes",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 	}
