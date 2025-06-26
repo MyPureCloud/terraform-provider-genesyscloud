@@ -59,17 +59,32 @@ func dataSourceIntegrationWebhookRead(ctx context.Context, d *schema.ResourceDat
 
 			// Extract webhookId
 			if webhookId, exists := attributes["webhookId"]; exists {
-				if webhookIdStr, ok := webhookId.(string); ok {
+				if webhookIdStr, ok := webhookId.(string); ok && webhookIdStr != "" {
 					d.Set("web_hook_id", webhookIdStr)
+				} else {
+					// If webhookId exists but is empty, this might be a timing issue
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("webhookId is empty for integration %s, retrying...", integrationName), resp))
 				}
+			} else {
+				// If webhookId doesn't exist in attributes, this might be a timing issue
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("webhookId not found in attributes for integration %s, retrying...", integrationName), resp))
 			}
 
 			// Extract invocation URL
 			if invocationURL, exists := attributes["invocationUrl"]; exists {
-				if invocationURLStr, ok := invocationURL.(string); ok {
+				if invocationURLStr, ok := invocationURL.(string); ok && invocationURLStr != "" {
 					d.Set("invocation_url", invocationURLStr)
+				} else {
+					// If invocationUrl exists but is empty, this might be a timing issue
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("invocationUrl is empty for integration %s, retrying...", integrationName), resp))
 				}
+			} else {
+				// If invocationUrl doesn't exist in attributes, this might be a timing issue
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("invocationUrl not found in attributes for integration %s, retrying...", integrationName), resp))
 			}
+		} else {
+			// If attributes is nil, this might be a timing issue
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("attributes is nil for integration %s, retrying...", integrationName), resp))
 		}
 
 		return nil
