@@ -2,21 +2,22 @@ package telephony_providers_edges_site
 
 import (
 	"fmt"
-	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	location "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 func TestAccResourceSite(t *testing.T) {

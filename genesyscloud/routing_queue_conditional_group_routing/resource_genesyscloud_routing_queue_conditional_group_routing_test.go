@@ -2,12 +2,6 @@ package routing_queue_conditional_group_routing
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"log"
 	"os"
 	"strings"
@@ -15,10 +9,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 var (
@@ -396,7 +397,7 @@ func verifyConditionalGroupRoutingExists(queueResourcePath string) resource.Test
 		queueID := queueResource.Primary.ID
 
 		routingApi := platformclientv2.NewRoutingApi()
-		queue, _, err := routingApi.GetRoutingQueue(queueID)
+		queue, _, err := routingApi.GetRoutingQueue(queueID, nil)
 		if err != nil {
 			return err
 		}

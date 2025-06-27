@@ -3,10 +3,11 @@ package routing_wrapupcode
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 /*

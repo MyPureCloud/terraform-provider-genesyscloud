@@ -3,12 +3,13 @@ package knowledge_document_variation
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 
 	"time"
 )

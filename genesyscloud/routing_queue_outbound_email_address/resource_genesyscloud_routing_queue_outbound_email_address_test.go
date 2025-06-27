@@ -2,22 +2,23 @@ package routing_queue_outbound_email_address
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
-	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"log"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
@@ -213,7 +214,7 @@ func verifyOutboundEmailAddressExists(queueResourcePath string) resource.TestChe
 		queueID := queueResource.Primary.ID
 
 		routingApi := platformclientv2.NewRoutingApi()
-		queue, _, err := routingApi.GetRoutingQueue(queueID)
+		queue, _, err := routingApi.GetRoutingQueue(queueID, nil)
 		if err != nil {
 			return err
 		}

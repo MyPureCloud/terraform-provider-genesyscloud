@@ -2,9 +2,10 @@ package architect_flow
 
 import (
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"strings"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 func TestUnitGenerateDownloadUrlFn(t *testing.T) {

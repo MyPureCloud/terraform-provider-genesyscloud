@@ -3,7 +3,6 @@ package provider
 import (
 	"bytes"
 	"context"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"log"
 	"os"
 	"strings"
@@ -11,9 +10,11 @@ import (
 	"testing"
 	"time"
 
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 

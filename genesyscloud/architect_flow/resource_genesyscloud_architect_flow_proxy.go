@@ -8,7 +8,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
@@ -299,7 +299,27 @@ func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name strin
 	const pageSize = 100
 	var totalFlows []platformclientv2.Flow
 
-	flows, resp, err := p.api.GetFlows(varType, 1, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
+	flows, resp, err := p.api.GetFlows(
+		varType,
+		1,
+		pageSize,
+		"",
+		"",
+		nil,
+		name,
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"", false,
+		true,
+		false,
+		"",
+		"",
+		nil,
+	)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get page of flows: %v %v", err, resp)
 	}
@@ -310,7 +330,7 @@ func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name strin
 	totalFlows = append(totalFlows, *flows.Entities...)
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		flows, resp, err = p.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, "", "", nil)
+		flows, resp, err = p.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, false, "", "", nil)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page %d of flows: %v", pageNum, err)
 		}

@@ -3,10 +3,11 @@ package external_contacts_external_source
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
