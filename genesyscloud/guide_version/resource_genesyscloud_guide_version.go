@@ -19,7 +19,7 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 	proxy := getGuideVersionProxy(skdConfig)
 	guideId := d.Get("guide_id").(string)
 
-	log.Printf("Creating Guide Version")
+	log.Printf("Creating Guide Version for Guide: %s", guideId)
 
 	versionReq := buildGuideVersionFromResourceData(d)
 
@@ -30,7 +30,7 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	version.Id = &version.Version
 	d.SetId(*version.Id)
-	log.Printf("Created Guide Version")
+	log.Printf("Created Guide Version: %s for Guide: %s", *version.Id, guideId)
 
 	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
 		log.Printf("Guide Version is not Draft")
@@ -104,6 +104,7 @@ func deleteGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGuideVersionProxy(skdConfig)
+
 	guideId := d.Get("guide_id").(string)
 	versionId := d.Id()
 	state := d.Get("state").(string)

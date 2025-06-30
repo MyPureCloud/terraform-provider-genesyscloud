@@ -109,7 +109,7 @@ func ResourceGuideVersion() *schema.Resource {
 				Elem:        resourcesElem,
 			},
 			"state": {
-				Description:  "The state of the guide version. Defaults to Draft",
+				Description:  "The state of the guide version. Valid Values: Draft, ProductionReady, TestReady. Defaults to Draft",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "Draft",

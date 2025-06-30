@@ -107,7 +107,7 @@ func sdkGetGuideVersionById(p *guideVersionProxy, id string, guideId string) (*V
 	client := &http.Client{}
 	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/versions/" + id
-	log.Println(baseURL)
+
 	req, err := http.NewRequest(action, baseURL, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
