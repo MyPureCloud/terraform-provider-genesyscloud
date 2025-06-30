@@ -1,0 +1,5 @@
+* [GET /api/v2/guides](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides)
+* [POST /api/v2/guides](https://apicentral.genesys.cloud/api-explorer-standalone#post-api-v2-guides)
+* [GET /api/v2/guides/{guideId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId-)
+* [DELETE /api/v2/guides/{guideId}/jobs](https://apicentral.genesys.cloud/api-explorer-standalone#delete-api-v2-guides--guideId--jobs)
+* [GET /api/v2/guides/{guideId}/jobs/{jobId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId--jobs--jobId-)
