@@ -235,8 +235,8 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 		}
 
 		// Give the system time to generate the URL
-		// Exponential backoff - 1st sleep: 1 second, 10th sleep: 200 seconds
-		waitTime := time.Duration(math.Pow(200, float64(retryAttempt)/10)) * time.Second
+		// Exponential backoff - 1st sleep: 2 seconds, 10th sleep: 1024 seconds (total: 2046 seconds/34 minutes)
+		waitTime := time.Duration(2*math.Pow(2, float64(retryAttempt)-1)) * time.Second
 		log.Printf("Sleeping for %f seconds before retrying", waitTime.Seconds())
 		time.Sleep(waitTime)
 
