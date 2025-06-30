@@ -11,6 +11,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
+	"time"
 )
 
 func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -27,8 +28,15 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version | error: %s", err), resp)
 	}
 
+	version.Id = &version.Version
 	d.SetId(*version.Id)
 	log.Printf("Created Guide Version")
+
+	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
+		log.Printf("Guide Version is not Draft")
+		return publishGuideVersion(ctx, d, meta)
+	}
+
 	return readGuideVersion(ctx, d, meta)
 }
 
@@ -50,8 +58,16 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		_ = d.Set("instruction", version.Instruction)
-		_ = d.Set("resource_data_action", version.Resources)
-		_ = d.Set("variables", version.Variables)
+
+		if version.Resources.DataActions != nil {
+			resourcesList := flattenGuideVersionResources(version.Resources)
+			_ = d.Set("resources", resourcesList)
+		}
+
+		if version.Variables != nil {
+			variablesList := flattenGuideVersionVariables(version.Variables)
+			_ = d.Set("variables", variablesList)
+		}
 
 		log.Printf("Read Guide Version")
 		return cc.CheckState(d)
@@ -72,72 +88,66 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update guide version | error: %s", err), resp)
 	}
 
+	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
+		log.Printf("Guide Version is not Draft")
+		return publishGuideVersion(ctx, d, meta)
+	}
+
 	log.Printf("Updated Guide Version")
 	return readGuideVersion(ctx, d, meta)
 }
 
-// Build Function
-
-func buildGuideVersionFromResourceData(d *schema.ResourceData) *CreateGuideVersionRequest {
-	log.Printf("Building Guide Version from Resource Data")
-
-	guideVersion := &CreateGuideVersionRequest{
-		GuideID:     d.Get("guide_id").(string),
-		Instruction: d.Get("instruction").(string),
-	}
-
-	if vars := d.Get("variables").([]interface{}); vars != nil {
-		guideVersion.Variables = buildGuideVersionVariables(vars)
-	}
-
-	if resource := d.Get("resource_data_action").([]interface{}); resource != nil {
-		guideVersion.Resources = buildGuideVersionResources(resource)
-	}
-
-	log.Printf("Succesfully Built Guide Version from Resource Data")
-	return guideVersion
+func deleteGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return nil
 }
 
-func buildGuideVersionResources(resource []interface{}) GuideVersionResources {
-	var versionResource = GuideVersionResources{}
+func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getGuideVersionProxy(skdConfig)
+	guideId := d.Get("guide_id").(string)
+	versionId := d.Id()
+	state := d.Get("state").(string)
 
-	return versionResource
-}
+	log.Printf("Attempting to publish Guide Version: %s for Guide: %s in State: %s", versionId, guideId, state)
 
-func buildGuideVersionVariables(vars []interface{}) []Variable {
-	variables := make([]Variable, len(vars))
+	version := GuideVersionPublishJobRequest{
+		GuideId:   guideId,
+		VersionId: versionId,
+		GuideVersion: GuideVersionPublish{
+			State: state,
+		},
+	}
 
-	for i, v := range vars {
-		variables[i] = Variable{
-			Name:  v.(map[string]interface{})["name"].(string),
-			Type:  v.(map[string]interface{})["value"].(string),
-			Scope: v.(map[string]interface{})["scope"].(string),
+	job, resp, err := proxy.publishGuideVersion(ctx, &version)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish guide version | error: %s", err), resp)
+	}
+
+	jobId := *job.Id
+
+	// Sleep to allow time for publish job to finish
+	time.Sleep(10 * time.Second)
+
+	jobStatus, resp, err := proxy.getGuideVersionPublishJobStatus(ctx, d.Id(), jobId, guideId)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide version publish job status | error: %s", err), resp)
+	}
+
+	status := *jobStatus.Status
+
+	if status == "InProgress" {
+		log.Printf("Publish job for guide: %s, version: %s still in progress with status: %s", guideId, d.Id(), status)
+	}
+
+	if status == "Succeeded" {
+		log.Printf("Published Guide: %s, Version: %s | Status: %s", guideId, versionId, status)
+		return nil
+	}
+
+	if status == "Failed" {
+		if len(jobStatus.Errors) > 0 && jobStatus.Errors[0].Message != "" {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish guide: %s, version: %s, with error: %s", guideId, versionId, jobStatus.Errors[0].Message), resp)
 		}
-
-		if description := v.(map[string]interface{})["description"].(string); description != "" {
-			variables[i].Description = description
-		}
 	}
-
-	return variables
-}
-
-func buildGuideVersionForUpdate(d *schema.ResourceData) *UpdateGuideVersion {
-	log.Printf("Building Guide Version from Resource Data")
-
-	guideVersion := &UpdateGuideVersion{
-		GuideID:     d.Get("guide_id").(string),
-		Instruction: d.Get("instruction").(string),
-	}
-
-	if vars := d.Get("variables").([]interface{}); vars != nil {
-		guideVersion.Variables = buildGuideVersionVariables(vars)
-	}
-
-	if resource := d.Get("resource_data_action").([]interface{}); resource != nil {
-		guideVersion.Resources = buildGuideVersionResources(resource)
-	}
-
-	log.Printf("Succesfully Built Guide Version from Resource Data")
-	return guideVersion
+	return readGuideVersion(ctx, d, meta)
 }

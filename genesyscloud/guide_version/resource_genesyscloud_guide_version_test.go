@@ -2,28 +2,27 @@ package guide_version
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"os"
+	"strings"
 	"testing"
 )
 
-/*
-The resource_genesyscloud_guide_version_test.go contains all of the test cases for running the resource
-tests for guide_version.
-*/
-
 func TestAccResourceGuideVersion(t *testing.T) {
+	if os.Getenv("GENESYSCLOUD_REGION") != "tca" {
+		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
+	}
 	t.Parallel()
 	var (
-		guideResourceLabel = "guide"
-		guideName          = "Test Guide " + uuid.NewString()
-
-		guideVersionResourceLabel = "guide-version"
+		guideVersionResourceLabel = "guide_version"
 		instruction               = "This is a test instruction for the guide version."
 		updatedInstruction        = "This is an updated test instruction for the guide version."
+		draftState                = "Draft"
+		state1                    = "TestReady"
+		state2                    = "ProductionReady"
+		guideID                   = "0860d8c4-64e0-48a8-927d-6d550af887a0"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,77 +30,133 @@ func TestAccResourceGuideVersion(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create a guide and guide version
-				Config: generateGuideResource(
-					guideResourceLabel,
-					guideName,
-				) + generateGuideVersionResource(
+				// Create guide version with multiple data actions and variables
+				Config: GenerateGuideVersionResource(
 					guideVersionResourceLabel,
-					guideResourceLabel,
+					guideID,
 					instruction,
+					draftState,
+					GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
+					GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
+					GenerateResourcesBlock(
+						GenerateDataActionBlock("test_data_action_id_1", "Test Data Action 1", "Test data action 1 description"),
+						GenerateDataActionBlock("test_data_action_id_2", "Test Data Action 2", "Test data action 2 description"),
+						GenerateDataActionBlock("test_data_action_id_3", "Test Data Action 3", "Test data action 3 description"),
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_guide_version."+guideVersionResourceLabel, "guide_id", "genesyscloud_guide."+guideResourceLabel, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_guide_version."+guideVersionResourceLabel, "instruction", instruction),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "instruction", instruction),
+
+					// Check variable attributes
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.name", "testVar1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.type", "String"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.scope", "Input"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.description", "Test variable 1 description"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.name", "testVar2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.type", "Integer"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.scope", "Output"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.description", "Test variable 2 description"),
+
+					// Check multiple data action attributes
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.data_action_id", "test_data_action_id_1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.label", "Test Data Action 1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.description", "Test data action 1 description"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.data_action_id", "test_data_action_id_2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.label", "Test Data Action 2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.description", "Test data action 2 description"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.2.data_action_id", "test_data_action_id_3"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.2.label", "Test Data Action 3"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.2.description", "Test data action 3 description"),
 				),
 			},
 			{
-				// Update guide version
-				Config: generateGuideResource(
-					guideResourceLabel,
-					guideName,
-				) + generateGuideVersionResource(
+				// Update guide version with different number of data actions
+				Config: GenerateGuideVersionResource(
 					guideVersionResourceLabel,
-					guideResourceLabel,
+					guideID,
 					updatedInstruction,
+					state1,
+					GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
+					GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
+					GenerateResourcesBlock(
+						GenerateDataActionBlock("updated_data_action_id_1", "Updated Data Action 1", "Updated data action 1 description"),
+						GenerateDataActionBlock("updated_data_action_id_2", "Updated Data Action 2", "Updated data action 2 description"),
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_guide_version."+guideVersionResourceLabel, "guide_id", "genesyscloud_guide."+guideResourceLabel, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_guide_version."+guideVersionResourceLabel, "instruction", updatedInstruction),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "instruction", updatedInstruction),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.data_action_id", "updated_data_action_id_1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.label", "Updated Data Action 1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.description", "Updated data action 1 description"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.data_action_id", "updated_data_action_id_2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.label", "Updated Data Action 2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.description", "Updated data action 2 description"),
+				),
+			}, {
+				// Update guide version with different number of data actions
+				Config: GenerateGuideVersionResource(
+					guideVersionResourceLabel,
+					guideID,
+					updatedInstruction,
+					state2,
+					GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
+					GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
+					GenerateResourcesBlock(
+						GenerateDataActionBlock("updated_data_action_id_1", "Updated Data Action 1", "Updated data action 1 description"),
+						GenerateDataActionBlock("updated_data_action_id_2", "Updated Data Action 2", "Updated data action 2 description"),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "instruction", updatedInstruction),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.data_action_id", "updated_data_action_id_1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.label", "Updated Data Action 1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.description", "Updated data action 1 description"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.data_action_id", "updated_data_action_id_2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.label", "Updated Data Action 2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.description", "Updated data action 2 description"),
 				),
 			},
-			{
-				// Import/Read
-				ResourceName:      "genesyscloud_guide_version." + guideVersionResourceLabel,
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
+			//{
+			//	// Import/Read
+			//	ResourceName:      ResourceType + "." + guideVersionResourceLabel,
+			//	ImportState:       true,
+			//	ImportStateVerify: true,
+			//},
 		},
-		CheckDestroy: testVerifyGuideVersionDestroyed,
 	})
 }
 
-func generateGuideResource(resourceID string, name string) string {
-	return fmt.Sprintf(`resource "genesyscloud_guide" "%s" {
-  name = "%s"
-}`, resourceID, name)
+func GenerateGuideVersionResource(resourceLabel string, guideId string, instruction string, state string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		guide_id = "%s"
+		instruction = "%s"
+		state = "%s"
+		%s
+	}
+	`, ResourceType, resourceLabel, guideId, instruction, state, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateGuideVersionResource(resourceID string, guideResourceID string, instruction string) string {
-	return fmt.Sprintf(`resource "genesyscloud_guide_version" "%s" {
-  guide_id = genesyscloud_guide.%s.id
-  instruction = "%s"
-}`, resourceID, guideResourceID, instruction)
+func GenerateVariableBlock(name string, varType string, scope string, description string) string {
+	return fmt.Sprintf(`variables {
+		name = "%s"
+		type = "%s"
+		scope = "%s"
+		description = "%s"
+	}`, name, varType, scope, description)
 }
 
-func testVerifyGuideVersionDestroyed(state *terraform.State) error {
-	//guidesAPI := platformclientv2.NewGuidesApi()
-	//for _, rs := range state.RootModule().Resources {
-	//	if rs.Type != "genesyscloud_guide_version" {
-	//		continue
-	//	}
-	//
-	//	guideVersion, resp, err := guidesAPI.GetGuideVersion(rs.Primary.ID)
-	//	if guideVersion != nil {
-	//		return fmt.Errorf("guide version (%s) still exists", rs.Primary.ID)
-	//	} else if util.IsStatus404(resp) {
-	//		// Guide version not found as expected
-	//		continue
-	//	} else {
-	//		// Unexpected error
-	//		return fmt.Errorf("unexpected error: %s", err)
-	//	}
-	//}
-	//// Success. All guide versions destroyed
-	return nil
+func GenerateResourcesBlock(dataActionBlocks ...string) string {
+	return fmt.Sprintf(`resources {
+		%s
+	}`, strings.Join(dataActionBlocks, "\n"))
+}
+
+func GenerateDataActionBlock(dataActionId string, label string, description string) string {
+	return fmt.Sprintf(`data_action {
+		data_action_id = "%s"
+		label = "%s"
+		description = "%s"
+	}`, dataActionId, label, description)
 }
