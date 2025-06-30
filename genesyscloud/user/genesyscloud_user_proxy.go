@@ -68,6 +68,9 @@ type userProxy struct {
 	extensionPoolCache                       rc.CacheInterface[platformclientv2.Extensionpool]
 }
 
+var userCache = rc.NewResourceCache[platformclientv2.User]()
+var extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+
 /*
 The function newUserProxy sets up the user proxy by providing it
 with all the necessary information to communicate effectively with Genesys Cloud.
@@ -79,8 +82,6 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewRoutingApiWithConfig creates a Genesys Cloud API instance using the provided configuration
 	voicemailApi := platformclientv2.NewVoicemailApiWithConfig(clientConfig)
 	extensionPoolApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
-	userCache := rc.NewResourceCache[platformclientv2.User]() // Create Cache for User resource
-	extensionPoolCache := rc.NewResourceCache[platformclientv2.Extensionpool]()
 	return &userProxy{
 		clientConfig:                             clientConfig,
 		userApi:                                  userApi,
@@ -113,10 +114,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func GetUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
-	if internalProxy == nil {
-		internalProxy = newUserProxy(clientConfig)
-	}
-	return internalProxy
+	return newUserProxy(clientConfig)
 }
 
 // createUser creates a Genesys Cloud User
