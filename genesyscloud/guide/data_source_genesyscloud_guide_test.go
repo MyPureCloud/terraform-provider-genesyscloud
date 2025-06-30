@@ -6,10 +6,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"os"
 	"testing"
 )
 
 func TestAccDataSourceGuide(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" {
+		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
+		return
+	}
 	var (
 		guideResourceLabel   = "test-guide"
 		guideDataSourceLabel = "guide-data"
