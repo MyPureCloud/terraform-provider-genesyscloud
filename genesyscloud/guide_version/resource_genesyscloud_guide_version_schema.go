@@ -10,7 +10,7 @@ import (
 const ResourceType = "genesyscloud_guide_version"
 
 var (
-	variableResource = &schema.Resource{
+	variableElem = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the variable.",
@@ -37,9 +37,20 @@ var (
 		},
 	}
 
+	resourcesElem = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"data_action": {
+				Description: "The data actions associated with this version of the guide.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        dataActionResource,
+			},
+		},
+	}
+
 	dataActionResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"id": {
+			"data_action_id": {
 				Description: "The id of the data action.",
 				Type:        schema.TypeString,
 				Required:    true,
@@ -68,6 +79,7 @@ func ResourceGuideVersion() *schema.Resource {
 		CreateContext: provider.CreateWithPooledClient(createGuideVersion),
 		ReadContext:   provider.ReadWithPooledClient(readGuideVersion),
 		UpdateContext: provider.UpdateWithPooledClient(updateGuideVersion),
+		DeleteContext: provider.DeleteWithPooledClient(deleteGuideVersion),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -87,14 +99,21 @@ func ResourceGuideVersion() *schema.Resource {
 				Description: "The variables associated with this version of the guide. Includes input variables (provided) and output variables (captured during execution).",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem:        variableResource,
+				Elem:        variableElem,
 			},
-			"resource_data_action": {
+			"resources": {
 				Description: "The resources associated with this version of the guide.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
-				Elem:        dataActionResource,
+				Elem:        resourcesElem,
+			},
+			"state": {
+				Description:  "The state of the guide version. Defaults to Draft",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "Draft",
+				ValidateFunc: validation.StringInSlice([]string{"Draft", "ProductionReady", "TestReady"}, false),
 			},
 		},
 	}
