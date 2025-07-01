@@ -3,7 +3,6 @@ package guide_jobs
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -17,7 +16,6 @@ type GenerateGuideContentRequest struct {
 
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(ResourceType, ResourceGuideJobs())
-	l.RegisterExporter(ResourceType, GuideJobsExporter())
 }
 
 func ResourceGuideJobs() *schema.Resource {
@@ -36,19 +34,21 @@ func ResourceGuideJobs() *schema.Resource {
 				Description: "The description that you wish to use to generate the guide content from",
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
 			},
 			"url": {
 				Description: "The URL of the file you wish to use to generate the guide content from",
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
+			},
+			"status": {
+				Description: "The status of the guide job",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    false,
+				Required:    false,
 			},
 		},
-	}
-}
-
-func GuideJobsExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGuideJobs),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }

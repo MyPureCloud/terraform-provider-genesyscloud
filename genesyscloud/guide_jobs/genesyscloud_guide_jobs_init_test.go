@@ -1,10 +1,11 @@
 package guide_jobs
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	"sync"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 )
 
 /*

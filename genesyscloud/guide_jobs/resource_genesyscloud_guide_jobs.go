@@ -3,23 +3,17 @@ package guide_jobs
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"log"
-	"time"
 )
-
-func getAllGuideJobs(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	return nil, nil
-}
 
 func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -31,6 +25,18 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 	job, resp, err := proxy.createGuideJob(ctx, &guideJobRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide job error: %s", err), resp)
+	}
+
+	switch job.Status {
+	case "InProgress":
+		log.Printf("Create job still in progress with status: %s", job.Status)
+	case "Succeeded":
+		log.Printf("Created successfully")
+		return readGuideJob(ctx, d, meta)
+	case "Failed":
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide job, with error: %s", job.Errors[0].Message), resp)
+	default:
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Unknown job status: %s", job.Status), nil)
 	}
 
 	d.SetId(job.Id)
@@ -56,34 +62,11 @@ func readGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 		resourcedata.SetNillableValue(d, "status", &job.Status)
 
-		// TODO: Set Guide, The Addressable Entity Ref
-		//resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "guide_id", job.Guide, flattenAddressableEntityRefs)
-
 		log.Printf("Read Guide Job: %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
 
 func deleteGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGuideJobsProxy(sdkConfig)
-
-	log.Printf("Deleting Guide Job: %s", d.Id())
-	resp, err := proxy.deleteGuideJob(ctx, d.Id())
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete guide job | error: %s", err), resp)
-	}
-
-	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getGuideJobById(ctx, d.Id())
-
-		if err != nil {
-			if util.IsStatus404(resp) {
-				log.Printf("Deleted Guide Job: %s", d.Id())
-				return nil
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Guide Job %s | error: %s", d.Id(), err), resp))
-		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Guide Job %s still exists", d.Id()), resp))
-	})
+	return nil
 }

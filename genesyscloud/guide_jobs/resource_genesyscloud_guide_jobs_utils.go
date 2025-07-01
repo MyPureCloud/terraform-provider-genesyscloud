@@ -1,19 +1,13 @@
 package guide_jobs
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
-)
+	"net/http"
 
-type GuideJob struct {
-	Id     string `json:"id,omitempty"`
-	Status string `json:"status,omitempty"`
-}
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
 
 func buildGuideJobFromResourceData(d *schema.ResourceData) GenerateGuideContentRequest {
 	guideJobReq := GenerateGuideContentRequest{}
-
-	// Set Optional Attributes if they are not null
 
 	description := d.Get("description").(string)
 	if description != "" {
@@ -28,10 +22,57 @@ func buildGuideJobFromResourceData(d *schema.ResourceData) GenerateGuideContentR
 	return guideJobReq
 }
 
-func flattenAddressableEntityRefs(addressableEntityRefs *[]platformclientv2.Addressableentityref) *schema.Set {
-	addressableEntityRefList := make([]interface{}, len(*addressableEntityRefs))
-	for i, v := range *addressableEntityRefs {
-		addressableEntityRefList[i] = *v.Id
-	}
-	return schema.NewSet(schema.HashString, addressableEntityRefList)
+func setRequestHeader(r *http.Request, p *guideJobsProxy) *http.Request {
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept", "application/json")
+	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	return r
+}
+
+// structs
+
+type GuideJob struct {
+	Id           string       `json:"id,omitempty"`
+	Guide        Guide        `json:"guide,omitempty"`
+	Status       string       `json:"status,omitempty"`
+	Errors       []ErrorBody  `json:"errors,omitempty"`
+	GuideContent GuideContent `json:"guideContent,omitempty"`
+	SelfUri      string       `json:"selfUri,omitempty"`
+}
+
+type ErrorBody struct {
+	Message           string `json:"message,omitempty"`
+	Code              string `json:"code,omitempty"`
+	Status            int    `json:"status,omitempty"`
+	EntityId          string `json:"entityId,omitempty"`
+	EntityName        string `json:"entityName,omitempty"`
+	MessageWithParams string `json:"messageWithParams,omitempty"`
+}
+
+type GuideContent struct {
+	Instruction string                `json:"instruction,omitempty"`
+	Variables   []Variable            `json:"variables,omitempty"`
+	Resources   GuideVersionResources `json:"resources,omitempty"`
+}
+
+type Variable struct {
+	Name        string `json:"name,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Scope       string `json:"scope,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+type DataAction struct {
+	ID          string `json:"id,omitempty"`
+	Label       string `json:"label,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+type GuideVersionResources struct {
+	DataActions []DataAction `json:"dataActions,omitempty"`
+}
+
+type Guide struct {
+	Id      string `json:"id,omitempty"`
+	SelfUri string `json:"selfUri,omitempty"`
 }
