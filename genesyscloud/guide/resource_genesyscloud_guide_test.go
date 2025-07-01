@@ -70,12 +70,3 @@ func testVerifyGuideDestroyed(state *terraform.State) error {
 	}
 	return nil
 }
-
-// GenerateGuideResource generates terraform for a guide resource
-func GenerateGuideResource(resourceID string, name string, source string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		name = "%s"
-		source = "%s"
-	}
-	`, ResourceType, resourceID, name, source)
-}

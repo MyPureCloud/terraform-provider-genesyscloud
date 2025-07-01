@@ -218,7 +218,6 @@ func sdkPublishGuideVersion(p *guideVersionProxy, body *GuideVersionPublishJobRe
 
 	if apiResp.StatusCode == 202 {
 		if len(respBody) == 0 {
-			// Some APIs return 202 with empty body - this is acceptable for async operations
 			log.Println("Received 202 with empty body - job started successfully")
 			return nil, apiResp, nil
 		}

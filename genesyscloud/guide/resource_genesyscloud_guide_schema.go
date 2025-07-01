@@ -43,22 +43,19 @@ func ResourceGuide() *schema.Resource {
 			"status": {
 				Description: "The status of the guide",
 				Type:        schema.TypeString,
-				Optional:    false,
-				Required:    false,
+				Optional:    true,
 				Computed:    true,
 			},
 			"latest_saved_version": {
 				Description: "The latest saved version of the guide",
 				Type:        schema.TypeString,
-				Optional:    false,
-				Required:    false,
+				Optional:    true,
 				Computed:    true,
 			},
 			"latest_production_ready_version": {
 				Description: "The latest production ready version of the guide",
 				Type:        schema.TypeString,
-				Optional:    false,
-				Required:    false,
+				Optional:    true,
 				Computed:    true,
 			},
 		},
@@ -82,5 +79,6 @@ func DataSourceGuide() *schema.Resource {
 func GuideExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGuides),
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }

@@ -1,10 +1,28 @@
 package guide_version
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
+	"strings"
 )
+
+func parseId(id string) (string, string, error) {
+	ids := strings.Split(id, "/")
+	if len(ids) != 2 {
+		return "", "", fmt.Errorf("invalid resource ID format: %s", id)
+	}
+
+	if ids[0] == "" || ids[1] == "" {
+		return "", "", fmt.Errorf("invalid resource ID format: %s", id)
+	}
+
+	guideId := ids[0]
+	versionId := ids[1]
+
+	return guideId, versionId, nil
+}
 
 func buildRequestHeader(r *http.Request, p *guideVersionProxy) *http.Request {
 	r.Header.Set("Content-Type", "application/json")
@@ -189,9 +207,14 @@ type UpdateGuideVersion struct {
 	Resources   GuideVersionResources `json:"resources,omitempty"`
 }
 
+type Guide struct {
+	Id      string `json:"id,omitempty"`
+	SelfUri string `json:"selfUri,omitempty"`
+}
+
 type VersionResponse struct {
 	Id          *string               `json:"id,omitempty"`
-	GuideID     string                `json:"guideId,omitempty"`
+	Guide       Guide                 `json:"guide,omitempty"`
 	Instruction string                `json:"instruction,omitempty"`
 	Variables   []Variable            `json:"variables,omitempty"`
 	Resources   GuideVersionResources `json:"resources,omitempty"`

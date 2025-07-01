@@ -2,6 +2,7 @@ package guide_version
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	"sync"
 	"testing"
 )
@@ -20,6 +21,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceGuideVersion()
+	providerResources["genesyscloud_guide"] = guide.ResourceGuide()
 
 }
 
