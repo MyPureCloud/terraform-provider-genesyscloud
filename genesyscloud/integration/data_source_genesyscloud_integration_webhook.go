@@ -44,48 +44,48 @@ func dataSourceIntegrationWebhookRead(ctx context.Context, d *schema.ResourceDat
 		// Set the integration ID
 		d.SetId(*integration.Id)
 
-		// Extract webhookId and invocation URL from attributes
-		if integration.Attributes != nil {
-			// Convert attributes to JSON string first
-			attrJSONStr, err := json.Marshal(*integration.Attributes)
-			if err != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to marshal integration attributes for %s | error: %s", integrationName, err), resp))
-			}
-
-			var attributes map[string]interface{}
-			if err := json.Unmarshal(attrJSONStr, &attributes); err != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to parse integration attributes for %s | error: %s", integrationName, err), resp))
-			}
-
-			// Extract webhookId
-			if webhookId, exists := attributes["webhookId"]; exists {
-				if webhookIdStr, ok := webhookId.(string); ok && webhookIdStr != "" {
-					d.Set("web_hook_id", webhookIdStr)
-				} else {
-					// If webhookId exists but is empty, this might be a timing issue
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("webhookId is empty for integration %s, retrying...", integrationName), resp))
-				}
-			} else {
-				// If webhookId doesn't exist in attributes, this might be a timing issue
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("webhookId not found in attributes for integration %s, retrying...", integrationName), resp))
-			}
-
-			// Extract invocation URL
-			if invocationURL, exists := attributes["invocationUrl"]; exists {
-				if invocationURLStr, ok := invocationURL.(string); ok && invocationURLStr != "" {
-					d.Set("invocation_url", invocationURLStr)
-				} else {
-					// If invocationUrl exists but is empty, this might be a timing issue
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("invocationUrl is empty for integration %s, retrying...", integrationName), resp))
-				}
-			} else {
-				// If invocationUrl doesn't exist in attributes, this might be a timing issue
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("invocationUrl not found in attributes for integration %s, retrying...", integrationName), resp))
-			}
-		} else {
-			// If attributes is nil, this might be a timing issue
+		// Check if attributes exist
+		if integration.Attributes == nil {
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("attributes is nil for integration %s, retrying...", integrationName), resp))
 		}
+
+		// Convert attributes to JSON string
+		attrJSONStr, err := json.Marshal(*integration.Attributes)
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to marshal integration attributes for %s | error: %s", integrationName, err), resp))
+		}
+
+		// Parse attributes JSON
+		var attributes map[string]interface{}
+		if err := json.Unmarshal(attrJSONStr, &attributes); err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to parse integration attributes for %s | error: %s", integrationName, err), resp))
+		}
+
+		// Extract webhookId
+		webhookId, exists := attributes["webhookId"]
+		if !exists {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("webhookId not found in attributes for integration %s, retrying...", integrationName), resp))
+		}
+
+		webhookIdStr, ok := webhookId.(string)
+		if !ok || webhookIdStr == "" {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("webhookId is empty for integration %s, retrying...", integrationName), resp))
+		}
+
+		d.Set("web_hook_id", webhookIdStr)
+
+		// Extract invocation URL
+		invocationURL, exists := attributes["invocationUrl"]
+		if !exists {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("invocationUrl not found in attributes for integration %s, retrying...", integrationName), resp))
+		}
+
+		invocationURLStr, ok := invocationURL.(string)
+		if !ok || invocationURLStr == "" {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("invocationUrl is empty for integration %s, retrying...", integrationName), resp))
+		}
+
+		d.Set("invocation_url", invocationURLStr)
 
 		return nil
 	})
