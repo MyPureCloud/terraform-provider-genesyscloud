@@ -2,10 +2,11 @@ package guide_version
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func parseId(id string) (string, string, error) {
@@ -39,48 +40,80 @@ func buildGuideVersionFromResourceData(d *schema.ResourceData) *CreateGuideVersi
 	}
 
 	variables := d.Get("variables").([]interface{})
-	if variables != nil && len(variables) != 0 {
+	if len(variables) != 0 {
 		guideVersion.Variables = buildGuideVersionVariables(variables)
 	}
 
 	resources := d.Get("resources").([]interface{})
-	if resources != nil && len(resources) != 0 {
-		guideVersion.Resources = buildGuideVersionResources(resources)
+	if len(resources) != 0 {
+		builtResources := buildGuideVersionResources(resources)
+		// Only set resources if there are valid data actions
+		if len(builtResources.DataActions) > 0 {
+			guideVersion.Resources = builtResources
+		}
 	}
 
-	log.Printf("Succesfully Built Guide Version from Resource Data")
+	log.Printf("Successfully Built Guide Version from Resource Data")
 	return guideVersion
 }
 
 func buildGuideVersionResources(resourcesList []interface{}) GuideVersionResources {
+	if len(resourcesList) == 0 {
+		log.Printf("Warning: Resources list is nil or empty")
+		return GuideVersionResources{
+			DataActions: []DataAction{},
+		}
+	}
+
 	log.Printf("Building Resource Attributes for Guide")
-	resourcesMap := resourcesList[0].(map[string]interface{})
+
+	resourcesMap, ok := resourcesList[0].(map[string]interface{})
+	if !ok {
+		log.Printf("Warning: Invalid resources map structure")
+		return GuideVersionResources{
+			DataActions: []DataAction{},
+		}
+	}
 
 	var dataActions []DataAction
 	if dataActionsList, ok := resourcesMap["data_action"].([]interface{}); ok {
 		for _, v := range dataActionsList {
-			dataActionMap := v.(map[string]interface{})
-			dataAction := DataAction{
-				ID:    dataActionMap["data_action_id"].(string),
-				Label: dataActionMap["label"].(string),
+			dataActionMap, ok := v.(map[string]interface{})
+			if !ok {
+				log.Printf("Warning: Invalid data action map structure")
+				continue
 			}
 
-			if description, ok := dataActionMap["description"].(string); ok && description != "" {
-				dataAction.Description = description
-			}
+			if dataActionID, ok := dataActionMap["data_action_id"].(string); ok && dataActionID != "" {
+				if label, ok := dataActionMap["label"].(string); ok && label != "" {
+					dataAction := DataAction{
+						ID:    dataActionID,
+						Label: label,
+					}
 
-			dataActions = append(dataActions, dataAction)
+					if description, ok := dataActionMap["description"].(string); ok && description != "" {
+						dataAction.Description = description
+					}
+
+					dataActions = append(dataActions, dataAction)
+				}
+			}
 		}
 	}
 
-	log.Printf("Succesfully Built Resource Attributes for Guide")
+	log.Printf("Successfully Built Resource Attributes for Guide with %d valid data actions", len(dataActions))
 	return GuideVersionResources{
 		DataActions: dataActions,
 	}
 }
 
 func buildGuideVersionVariables(vars []interface{}) []Variable {
-	variables := make([]Variable, len(vars))
+	if len(vars) == 0 {
+		log.Printf("Warning: Variables list is nil or empty")
+		return []Variable{}
+	}
+
+	variables := make([]Variable, 0, len(vars))
 
 	for i, v := range vars {
 		variables[i] = Variable{
@@ -94,6 +127,7 @@ func buildGuideVersionVariables(vars []interface{}) []Variable {
 		}
 	}
 
+	log.Printf("Successfully built %d valid variables", len(variables))
 	return variables
 }
 
@@ -110,10 +144,13 @@ func buildGuideVersionForUpdate(d *schema.ResourceData) *UpdateGuideVersion {
 	}
 
 	if resource := d.Get("resources").([]interface{}); resource != nil {
-		guideVersion.Resources = buildGuideVersionResources(resource)
+		builtResources := buildGuideVersionResources(resource)
+		if len(builtResources.DataActions) > 0 {
+			guideVersion.Resources = builtResources
+		}
 	}
 
-	log.Printf("Succesfully Built Guide Version from Resource Data")
+	log.Printf("Successfully Built Guide Version from Resource Data")
 	return guideVersion
 }
 
@@ -122,23 +159,31 @@ func flattenGuideVersionResources(resources GuideVersionResources) []interface{}
 		return nil
 	}
 
+	var validDataActions []DataAction
+	for _, action := range resources.DataActions {
+		if action.ID != "" && action.Label != "" {
+			validDataActions = append(validDataActions, action)
+		}
+	}
+
+	if len(validDataActions) == 0 {
+		return nil
+	}
+
 	resourceMap := map[string]interface{}{}
 
-	// Convert data actions
-	if len(resources.DataActions) > 0 {
-		dataActions := make([]interface{}, len(resources.DataActions))
-		for i, action := range resources.DataActions {
-			actionMap := map[string]interface{}{
-				"data_action_id": action.ID,
-				"label":          action.Label,
-			}
-			if action.Description != "" {
-				actionMap["description"] = action.Description
-			}
-			dataActions[i] = actionMap
+	dataActions := make([]interface{}, len(validDataActions))
+	for i, action := range validDataActions {
+		actionMap := map[string]interface{}{
+			"data_action_id": action.ID,
+			"label":          action.Label,
 		}
-		resourceMap["data_action"] = dataActions
+		if action.Description != "" {
+			actionMap["description"] = action.Description
+		}
+		dataActions[i] = actionMap
 	}
+	resourceMap["data_action"] = dataActions
 
 	return []interface{}{resourceMap}
 }
@@ -208,8 +253,13 @@ type UpdateGuideVersion struct {
 }
 
 type Guide struct {
-	Id      string `json:"id,omitempty"`
-	SelfUri string `json:"selfUri,omitempty"`
+	Id                           *string          `json:"id,omitempty"`
+	Name                         *string          `json:"name,omitempty"`
+	Source                       *string          `json:"source,omitempty"`
+	Status                       *string          `json:"status,omitempty"`
+	LatestSavedVersion           *GuideVersionRef `json:"latestSavedVersion,omitempty"`
+	LatestProductionReadyVersion *GuideVersionRef `json:"latestProductionReadyVersion,omitempty"`
+	SelfUri                      string           `json:"selfUri,omitempty"`
 }
 
 type VersionResponse struct {
@@ -237,4 +287,21 @@ type ErrorBody struct {
 	EntityId          string `json:"entityId,omitempty"`
 	EntityName        string `json:"entityName,omitempty"`
 	MessageWithParams string `json:"messageWithParams,omitempty"`
+}
+
+type GuideVersionRef struct {
+	Version *string `json:"version,omitempty"`
+	SelfUri *string `json:"selfUri,omitempty"`
+}
+
+type GuideEntityListing struct {
+	SetFieldNames map[string]bool `json:"-"`
+	Entities      *[]Guide        `json:"entities,omitempty"`
+	PageNumber    *int            `json:"pageNumber,omitempty"`
+	PageSize      *int            `json:"pageSize,omitempty"`
+	NextUri       *string         `json:"nextUri,omitempty"`
+	PreviousUri   *string         `json:"previousUri,omitempty"`
+	FirstUri      *string         `json:"firstUri,omitempty"`
+	SelfUri       *string         `json:"selfUri,omitempty"`
+	PageCount     *int            `json:"pageCount,omitempty"`
 }

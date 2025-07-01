@@ -84,6 +84,8 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		resourcedata.SetNillableValue(d, "name", guide.Name)
 
+		d.SetId(*guide.Id)
+
 		if guide.Status != nil {
 			_ = d.Set("status", *guide.Status)
 		}

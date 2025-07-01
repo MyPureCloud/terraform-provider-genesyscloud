@@ -1,5 +1,5 @@
 resource "genesyscloud_guide_version" "sample-guide" {
-  guide_id    = "data.genesyscloud_guide.id"
+  guide_id    = data.genesyscloud_guide.id
   instruction = "This is a test Instruction"
   variables {
     name        = "TestVariable"

@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -70,7 +71,9 @@ var (
 )
 
 func SetRegistrar(l registrar.Registrar) {
+	l.RegisterDataSource(ResourceType, DataSourceGuideVersion())
 	l.RegisterResource(ResourceType, ResourceGuideVersion())
+	l.RegisterExporter(ResourceType, GuideVersionExporter())
 }
 
 func ResourceGuideVersion() *schema.Resource {
@@ -115,6 +118,34 @@ func ResourceGuideVersion() *schema.Resource {
 				Default:      "Draft",
 				ValidateFunc: validation.StringInSlice([]string{"Draft", "ProductionReady", "TestReady"}, false),
 			},
+		},
+	}
+}
+
+func DataSourceGuideVersion() *schema.Resource {
+	return &schema.Resource{
+		Description: "Data source for Genesys Cloud Guide Version. Select a guide version by guide_id and version_id.",
+		ReadContext: provider.ReadWithPooledClient(dataSourceGuideVersionRead),
+		Schema: map[string]*schema.Schema{
+			"guide_id": {
+				Description: "The ID of the guide this version belongs to.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"version_id": {
+				Description: "The ID of the guide version.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+}
+
+func GuideVersionExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGuideVersions),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"guide_id": {RefType: "genesyscloud_guide"},
 		},
 	}
 }
