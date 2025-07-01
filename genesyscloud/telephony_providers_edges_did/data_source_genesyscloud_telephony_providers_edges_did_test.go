@@ -7,6 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
@@ -26,13 +27,14 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 	)
 
 	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
+	resp, err := didPool.DeleteDidPoolWithStartAndEndNumber(context.Background(), didPoolStartPhoneNumber, didPoolEndPhoneNumber, sdkConfig)
+	if err != nil {
+		respStr := "<nil>"
+		if resp != nil {
+			respStr = strconv.Itoa(resp.StatusCode)
 		}
-		ctx := context.TODO()
-		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
-	}()
+		t.Logf("Failed to delete DID pool: %s. API Response: %s", err.Error(), respStr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -67,8 +69,8 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 func generateDidDataSource(
 	resourceLabel string,
 	phoneNumber string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		phone_number = "%s"
