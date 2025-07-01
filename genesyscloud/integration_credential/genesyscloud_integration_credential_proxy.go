@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 /*
@@ -38,6 +38,7 @@ type getIntegrationCredByNameFunc func(ctx context.Context, p *integrationCredsP
 type updateIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 type deleteIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string) (response *platformclientv2.APIResponse, err error)
 type getIntegrationByIdFunc func(ctx context.Context, p *integrationCredsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
+type getPagedIntegrationCredsFunc func(ctx context.Context, p *integrationCredsProxy, before string, after string, pageSize string) (*[]platformclientv2.Credentialinfo, string, string, *platformclientv2.APIResponse, error)
 
 // integrationCredsProxy contains all of the methods that call genesys cloud APIs.
 type integrationCredsProxy struct {
@@ -50,6 +51,7 @@ type integrationCredsProxy struct {
 	updateIntegrationCredAttr    updateIntegrationCredFunc
 	deleteIntegrationCredAttr    deleteIntegrationCredFunc
 	getIntegrationByIdAttr       getIntegrationByIdFunc
+	getPagedIntegrationCredsAttr getPagedIntegrationCredsFunc
 }
 
 // newIntegrationCredsProxy initializes the Integration Credentials proxy with all of the data needed to communicate with Genesys Cloud
@@ -65,6 +67,7 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 		updateIntegrationCredAttr:    updateIntegrationCredFn,
 		deleteIntegrationCredAttr:    deleteIntegrationCredFn,
 		getIntegrationByIdAttr:       getIntegrationByIdFn,
+		getPagedIntegrationCredsAttr: getPagedIntegrationCredsFn,
 	}
 }
 
@@ -110,6 +113,11 @@ func (p *integrationCredsProxy) deleteIntegrationCred(ctx context.Context, crede
 // getIntegrationById gets Genesys Cloud Integration by id
 func (p *integrationCredsProxy) getIntegrationById(ctx context.Context, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationByIdAttr(ctx, p, integrationId)
+}
+
+// GetPagedIntegrationCreds gets a page of Genesys Cloud Integration Credentials with cursor-based paging
+func (p *integrationCredsProxy) GetPagedIntegrationCreds(ctx context.Context, before string, after string, pageSize string) (*[]platformclientv2.Credentialinfo, string, string, *platformclientv2.APIResponse, error) {
+	return p.getPagedIntegrationCredsAttr(ctx, p, before, after, pageSize)
 }
 
 // getAllIntegrationCredsFn is the implementation for getting all integration credentials in Genesys Cloud
@@ -206,4 +214,34 @@ func getIntegrationByIdFn(ctx context.Context, p *integrationCredsProxy, integra
 		return nil, resp, err
 	}
 	return integration, resp, nil
+}
+
+// getPagedIntegrationCredsFn is the implementation for getting a page of integration credentials with cursor-based paging
+func getPagedIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy, before string, after string, pageSize string) (*[]platformclientv2.Credentialinfo, string, string, *platformclientv2.APIResponse, error) {
+	credentials, resp, err := p.integrationsApi.GetIntegrationsCredentialsListing(before, after, pageSize)
+	if err != nil {
+		return nil, "", "", resp, err
+	}
+
+	if credentials.Entities == nil {
+		return &[]platformclientv2.Credentialinfo{}, "", "", resp, nil
+	}
+
+	var nextCursor, prevCursor string
+	if len(*credentials.Entities) == len(pageSize) {
+		// If we got a full page, there might be more
+		lastItem := (*credentials.Entities)[len(*credentials.Entities)-1]
+		if lastItem.Id != nil {
+			nextCursor = *lastItem.Id
+		}
+	}
+
+	if len(*credentials.Entities) > 0 {
+		firstItem := (*credentials.Entities)[0]
+		if firstItem.Id != nil {
+			prevCursor = *firstItem.Id
+		}
+	}
+
+	return credentials.Entities, nextCursor, prevCursor, resp, nil
 }

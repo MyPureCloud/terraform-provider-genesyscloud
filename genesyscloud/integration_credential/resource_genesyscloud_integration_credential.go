@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 /*
@@ -41,6 +41,44 @@ Two things to note:
 
 utils function in the package.  This will keep the code manageable and easy to work through.
 */
+
+// getAllCredentialsPaged retrieves all of the integration credentials via Terraform in the Genesys Cloud and is used for the exporter
+func getAllCredentialsPaged(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	ip := getIntegrationCredsProxy(clientConfig)
+
+	allCreds, diagErr := fetchAllCredentialsByCursor(ctx, clientConfig)
+	if diagErr != nil {
+		return nil, diagErr
+	}
+
+	for _, cred := range allCreds {
+		log.Printf("Dealing with credential id : %s, credential name : %s", *cred.Id, util.StringOrNil(cred.Name))
+		if cred.Name != nil { // Credential is possible to have no name
+
+			// Export integration credential only if it matches the expected format: DEVTOOLING-310
+			regexPattern := regexp.MustCompile("Integration-.+")
+			if !regexPattern.MatchString(*cred.Name) {
+				log.Printf("integration credential name [%s] does not match the expected format [%s], not exporting integration credential id %s", *cred.Name, regexPattern.String(), *cred.Id)
+				continue
+			}
+			// Verify that the integration entity itself exist before exporting the integration credentials associated to it: DEVTOOLING-282
+			integrationId := strings.Split(*cred.Name, "Integration-")[1]
+			integration, resp, err := ip.getIntegrationById(ctx, integrationId)
+			if err != nil {
+				if util.IsStatus404(resp) {
+					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", integrationId, *cred.Id)
+					continue
+				} else {
+					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
+				}
+			}
+			// Block Label: DEVTOOLING-1135
+			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: "Integration-" + *integration.Name}
+		}
+	}
+	return resources, nil
+}
 
 // getAllCredentials retrieves all of the integration credentials via Terraform in the Genesys Cloud and is used for the exporter
 func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {

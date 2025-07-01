@@ -6,7 +6,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 )
 
 type getAllRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, name string) (*[]platformclientv2.Skillgroupdefinition, *platformclientv2.APIResponse, error)

@@ -1,11 +1,13 @@
 package integration_credential
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
 	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -97,4 +99,30 @@ func GenerateCredentialResource(resourceLabel string, name string, credentialTyp
 // GenerateCredentialFields builds a terraform string for multiple credential fields
 func GenerateCredentialFields(fields map[string]string) string {
 	return util.GenerateMapAttrWithMapProperties("fields", fields)
+}
+
+// fetchAllCredentialsByCursor retrieves successive pages of credentials until all credentials are fetched
+func fetchAllCredentialsByCursor(ctx context.Context, clientConfig *platformclientv2.Configuration) ([]platformclientv2.Credentialinfo, diag.Diagnostics) {
+	ip := getIntegrationCredsProxy(clientConfig)
+	var allCreds []platformclientv2.Credentialinfo
+	var after string
+	pageSize := "200"
+
+	for {
+		credentials, nextCursor, _, resp, err := ip.GetPagedIntegrationCreds(ctx, "", after, pageSize)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get paged credentials error: %s", err), resp)
+		}
+
+		if credentials != nil {
+			allCreds = append(allCreds, *credentials...)
+		}
+
+		if nextCursor == "" {
+			break
+		}
+		after = nextCursor
+	}
+
+	return allCreds, nil
 }
