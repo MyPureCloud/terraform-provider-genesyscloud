@@ -27,7 +27,8 @@ import (
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
-	guide "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
+	guideVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide_version"
 	idpAdfs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_adfs"
 	idpGeneric "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
@@ -245,6 +246,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[guide.ResourceType] = guide.ResourceGuide()
+	providerResources[guideVersion.ResourceType] = guideVersion.ResourceGuideVersion()
 	providerResources[ResourceType] = ResourceTfExport()
 }
 

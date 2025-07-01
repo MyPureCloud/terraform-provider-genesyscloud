@@ -34,10 +34,13 @@ resource "genesyscloud_guide" "sample_guide" {
 - `name` (String) The name of the guide
 - `source` (String) Indicates how the guide content was generated.Valid values: Manual, Prompt, Document
 
-### Read-Only
+### Optional
 
-- `id` (String) The ID of this resource.
 - `latest_production_ready_version` (String) The latest production ready version of the guide
 - `latest_saved_version` (String) The latest saved version of the guide
 - `status` (String) The status of the guide
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
