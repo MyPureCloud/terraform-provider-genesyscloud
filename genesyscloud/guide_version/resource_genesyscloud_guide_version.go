@@ -3,15 +3,64 @@ package guide_version
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"log"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
+
+func getAllGuideVersions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	proxy := getGuideVersionProxy(clientConfig)
+
+	log.Printf("Retrieving all Guides")
+
+	guides, resp, err := proxy.GetAllGuides(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all guides | error: %s", err), resp)
+	}
+
+	if guides == nil {
+		log.Printf("No guides found")
+		return resources, nil
+	}
+
+	// Loop through all guides and retrieve the latest saved and production ready versions
+	for _, guide := range *guides {
+		guideId := *guide.Id
+		guideName := *guide.Name
+
+		// Add latest saved version if available
+		if guide.LatestSavedVersion != nil && guide.LatestSavedVersion.Version != nil {
+			versionId := *guide.LatestSavedVersion.Version
+			id := guideId + "/" + versionId
+			resources[id] = &resourceExporter.ResourceMeta{
+				BlockLabel: guideName + "_" + versionId,
+			}
+		}
+
+		// Add latest production ready version if different from saved version
+		if guide.LatestProductionReadyVersion != nil && guide.LatestProductionReadyVersion.Version != nil {
+			versionId := *guide.LatestProductionReadyVersion.Version
+			// Only add if different from saved version
+			if guide.LatestSavedVersion == nil || guide.LatestSavedVersion.Version == nil || *guide.LatestSavedVersion.Version != versionId {
+				id := guideId + "/" + versionId
+				resources[id] = &resourceExporter.ResourceMeta{
+					BlockLabel: guideName + "_" + versionId,
+				}
+			}
+		}
+	}
+	return resources, nil
+}
 
 func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -49,7 +98,7 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	guideId, versionId, err := parseId(d.Id())
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to Parse Guide id"), err)
+		return util.BuildDiagnosticError(ResourceType, "failed to Parse Guide id", err)
 	}
 
 	log.Printf("Reading Guide Version for guide: %s", guideId)
@@ -63,14 +112,11 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read guide version %s | Error: %s", d.Id(), err), resp))
 		}
 
-		_ = d.Set("guide_id", version.Guide.Id)
-		_ = d.Set("instruction", version.Instruction)
+		resourcedata.SetNillableValue(d, "guide_id", version.Guide.Id)
+		resourcedata.SetNillableValue(d, "instruction", &version.Instruction)
+		resourcedata.SetNillableValue(d, "state", &version.State)
 
-		if version.State != "" {
-			_ = d.Set("state", version.State)
-		}
-
-		if version.Resources.DataActions != nil {
+		if len(version.Resources.DataActions) > 0 {
 			resourcesList := flattenGuideVersionResources(version.Resources)
 			_ = d.Set("resources", resourcesList)
 		}
@@ -80,7 +126,7 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 			_ = d.Set("variables", variablesList)
 		}
 
-		log.Printf("Read Guide Version")
+		log.Printf("Read Guide Version %s", d.Id())
 		return cc.CheckState(d)
 	})
 }
@@ -91,7 +137,7 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	guideId, versionId, err := parseId(d.Id())
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to Parse Guide id"), err)
+		return util.BuildDiagnosticError(ResourceType, "Failed to Parse Guide id", err)
 	}
 
 	log.Printf("Updating Guide Version %s", d.Id())
@@ -130,7 +176,7 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 
 	guideId, versionId, err := parseId(d.Id())
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to Parse Guide id"), err)
+		return util.BuildDiagnosticError(ResourceType, "Failed to Parse Guide id", err)
 	}
 
 	log.Printf("Attempting to publish Guide Version: %s for Guide: %s in State: %s", versionId, guideId, state)

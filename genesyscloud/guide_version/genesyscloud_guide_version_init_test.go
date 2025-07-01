@@ -22,16 +22,26 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceGuideVersion()
 	providerResources["genesyscloud_guide"] = guide.ResourceGuide()
+}
 
+// registerTestDataSources registers all data sources used in the tests
+func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
+	providerDataSources[ResourceType] = DataSourceGuideVersion()
+	providerDataSources["genesyscloud_guide"] = guide.DataSourceGuide()
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
+	providerDataSources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when running the test
