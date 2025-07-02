@@ -69,8 +69,8 @@ func TestAccDataSourceDidBasic(t *testing.T) {
 func generateDidDataSource(
 	resourceLabel string,
 	phoneNumber string,
-// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		phone_number = "%s"
