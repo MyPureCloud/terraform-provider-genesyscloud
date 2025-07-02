@@ -17,6 +17,7 @@ import (
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"log"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -1820,6 +1821,15 @@ func isUserDeleted(id string) (bool, error) {
 }
 
 func getBasicInQueueCallFlow(name string) string {
+	voiceEngineConfig := `textToSpeech:
+        defaultEngine:
+          voice: Jill`
+	// In usw2, validation fails if we reference "Jill" (even though it is there by default in that region when creating a flow via Architect UI)
+	// In use1, validation fails if it is not there.
+	// To address this, we're adding it conditionally
+	if os.Getenv("GENESYSCLOUD_REGION") == "us-west-2" {
+		voiceEngineConfig = ""
+	}
 	return fmt.Sprintf(`
 inqueueCall:
   name: %s
@@ -1828,9 +1838,7 @@ inqueueCall:
     en-us:
       defaultLanguageSkill:
         noValue: true
-      textToSpeech:
-        defaultEngine:
-          voice: Jill
+      %s
   settingsInQueueCall:
     holdMusic:
       lit:
@@ -1889,7 +1897,7 @@ inqueueCall:
         playStyle:
           entirePrompt: true
 
-`, name)
+`, name, voiceEngineConfig)
 }
 
 func getBasicInQueueShortMessageFlow(name string) string {
