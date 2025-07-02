@@ -32,7 +32,7 @@ testunit:
 # Run example docs tests
 testexamples:
 	TF_UNIT=1 go test ./examples/... -run TestUnitLoadExample -v $(TESTARGS) -timeout 5m || exit 1
-	TF_ACC=1 go test ./examples -run TestAccExampleResources -v -timeout 120m -parallel 1
+	TF_ACC=1 go test ./examples -run TestAccExampleResourcesComplete -v -timeout 120m -parallel 1
 
 # Generate docs
 docs:

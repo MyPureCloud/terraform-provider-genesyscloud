@@ -1,3 +1,8 @@
+// Package examples provides testing functionality for Terraform examples.
+//
+// This file contains acceptance tests that validate the examples against a real
+// Genesys Cloud environment. These tests create real resources, verify they were
+// created correctly, and then clean them up.
 package examples
 
 import (
@@ -21,20 +26,37 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
-// Set to TRUE to display the full output of the content being passed to Terraform with line numbers
-// This is useful for debugging the output of the Terraform configuration
+// SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES controls whether to display the full output
+// of the Terraform configuration with line numbers during test execution.
+// Set to TRUE to enable this feature, which is useful for debugging configuration issues.
 var SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES = false
 
+// If you need to just test a specific resource type, you can manually override the resource(s)
+// under test by adding resources to this string list like so:
+//
+//	var TEST_SPECIFIC_RESOURCE_TYPES = []string{
+//		"genesyscloud_foo",
+//	}
+var TEST_SPECIFIC_RESOURCE_TYPES = []string{}
+
+// ResultsStatus represents the outcome of a test execution.
 type ResultsStatus string
 
 const (
+	// ResultsStatusSuccess indicates the test passed successfully
 	ResultsStatusSuccess ResultsStatus = "success"
+	// ResultsStatusSkipped indicates the test was skipped due to constraints
 	ResultsStatusSkipped ResultsStatus = "skipped"
-	ResultsStatusFailed  ResultsStatus = "failed"
+	// ResultsStatusFailed indicates the test failed
+	ResultsStatusFailed ResultsStatus = "failed"
+	// ResultsStatusErrored indicates the test encountered an error before completion
 	ResultsStatusErrored ResultsStatus = "errored"
 )
 
-func TestAccExampleResources(t *testing.T) {
+// TestAccExampleResourceComplete runs acceptance tests for all resource examples.
+// It creates real resources in the Genesys Cloud environment, verifies they were created correctly,
+// and then cleans them up. Tests can be skipped based on domain and product availability.
+func TestAccExampleResourcesComplete(t *testing.T) {
 
 	var domain string
 	var authorizationProducts []string
@@ -54,11 +76,11 @@ func TestAccExampleResources(t *testing.T) {
 	domain = strings.Join(strings.Split(api.Response.Request.URL.Host, ".")[1:], ".")
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
-	resources := provider_registrar.GetResourceTypeNames()
-	// If you need to just test a specific resource type, you can manually override the resource(s)
-	// under test by uncommenting these lines and updating them
-	resources = []string{
-		"genesyscloud_recording_media_retention_policy",
+	var resources = []string{}
+	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
+		resources = provider_registrar.GetResourceTypeNames()
+	} else {
+		resources = TEST_SPECIFIC_RESOURCE_TYPES
 	}
 	sort.Strings(resources)
 
@@ -101,7 +123,7 @@ func TestAccExampleResources(t *testing.T) {
 			// Add arbitrary sleep to allow API to catch up before attempting to delete
 			// Also provides a great place to place a breakpoint if needing to pause after Terraform Create and before Delete
 			checks = append(checks, func(s *terraform.State) error {
-				time.Sleep(2 * time.Second)
+				time.Sleep(3 * time.Second)
 				return nil
 			})
 
@@ -159,7 +181,7 @@ func TestAccExampleResources(t *testing.T) {
 	}
 	sort.Strings(successfulResourceTypesKeys)
 
-	io.WriteString(os.Stdout, "The following resources were successfull:\n")
+	io.WriteString(os.Stdout, "The following resources were successful:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
 		status := resourceTypesResults[srtKey]
 		if status == ResultsStatusSuccess {
@@ -189,6 +211,9 @@ func TestAccExampleResources(t *testing.T) {
 	}
 }
 
+// TestUnitExampleResourcesPlanOnly runs plan-only tests for all resource examples.
+// This test validates that the Terraform configurations are syntactically correct and can be planned,
+// but does not create any real resources. It's useful for quick validation of example correctness.
 func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 
 	fmt.Fprintln(os.Stdout, "Sanity testing the resources defined in the examples directory...")
@@ -275,25 +300,20 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 
 }
 
-// Utilize this test to explicitly test the simplest functionality available for each resource
+// TestAccExampleResourcesAudit tests the simplest functionality available for each resource.
+// It uses simplest_resource.tf when available, otherwise falls back to resource.tf.
+// This test is useful for validating basic resource functionality and ensuring backward compatibility.
 func TestAccExampleResourcesAudit(t *testing.T) {
 
 	fmt.Fprintln(os.Stdout, "Acceptance testing the resources defined in the examples directory...")
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
-	resources := provider_registrar.GetResourceTypeNames()
-	// If you need to just test a specific resource type, you can manually override the resource(s)
-	// under test by uncommenting these lines and updating them
-	// resources := []string{
-	// 	"genesyscloud_knowledge_category",
-	// 	"genesyscloud_knowledge_document_variation",
-	// 	"genesyscloud_knowledge_document",
-	// 	"genesyscloud_knowledge_knowledgebase",
-	// 	"genesyscloud_knowledge_label",
-	// 	"genesyscloud_quality_forms_survey",
-	// 	"genesyscloud_webdeployments_configuration",
-	// 	"genesyscloud_webdeployments_deployment",
-	// }
+	var resources = []string{}
+	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
+		resources = provider_registrar.GetResourceTypeNames()
+	} else {
+		resources = TEST_SPECIFIC_RESOURCE_TYPES
+	}
 	sort.Strings(resources)
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
@@ -396,7 +416,7 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 	}
 	sort.Strings(successfulResourceTypesKeys)
 
-	io.WriteString(os.Stdout, "The following resources were successfull:\n")
+	io.WriteString(os.Stdout, "The following resources were successful:\n")
 	for _, srtKey := range successfulResourceTypesKeys {
 		status := resourceTypeResults[srtKey]
 		if status == ResultsStatusSuccess {
