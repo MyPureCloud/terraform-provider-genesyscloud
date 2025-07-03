@@ -109,7 +109,7 @@ func fetchAllCredentialsByCursor(ctx context.Context, clientConfig *platformclie
 	pageSize := "200"
 
 	for {
-		credentials, nextCursor, _, resp, err := ip.GetPagedIntegrationCreds(ctx, "", after, pageSize)
+		credentials, nextCursor, _, resp, err := ip.GetIntegrationCredsPage(ctx, "", after, pageSize)
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get paged credentials error: %s", err), resp)
 		}

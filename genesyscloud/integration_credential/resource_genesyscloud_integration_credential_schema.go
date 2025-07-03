@@ -64,7 +64,7 @@ func ResourceIntegrationCredential() *schema.Resource {
 // IntegrationCredentialExporter returns the resourceExporter object used to hold the genesyscloud_integration_credential exporter's config
 func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllCredentialsPaged),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllCredentials),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": ResourceIntegrationCredential().Schema["fields"],
