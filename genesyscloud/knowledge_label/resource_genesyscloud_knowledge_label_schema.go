@@ -48,7 +48,9 @@ var (
 
 func ResourceKnowledgeLabel() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Knowledge Label",
+		Description: `Genesys Cloud Knowledge Label.
+
+Export block label: "{parent knowledge base name}_{knowledge_label.name}"`,
 
 		CreateContext: provider.CreateWithPooledClient(createKnowledgeLabel),
 		ReadContext:   provider.ReadWithPooledClient(readKnowledgeLabel),

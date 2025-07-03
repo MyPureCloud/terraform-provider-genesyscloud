@@ -9,8 +9,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
-var internalProxy *routingSkillGroupsProxy
-
 type getAllRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, name string) (*[]platformclientv2.Skillgroupdefinition, *platformclientv2.APIResponse, error)
 type createRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, skillGroupWithMemberDivisions *platformclientv2.Skillgroupwithmemberdivisions) (*platformclientv2.Skillgroupwithmemberdivisions, *platformclientv2.APIResponse, error)
 type getRoutingSkillGroupsByIdFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error)

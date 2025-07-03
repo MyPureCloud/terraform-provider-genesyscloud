@@ -33,6 +33,7 @@ import (
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
+	guide "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	idpAdfs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_adfs"
 	idpGeneric "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
@@ -219,6 +220,7 @@ func registerResources() {
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
+	guide.SetRegistrar(regInstance)                                        //Registering guide
 	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony  providers edges phone
 	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
 	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony providers edges site outbound routes
