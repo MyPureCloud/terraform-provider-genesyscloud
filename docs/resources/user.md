@@ -2,11 +2,14 @@
 page_title: "genesyscloud_user Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud User
+  Genesys Cloud User.
+  Export block label: "{email}"
 ---
 # genesyscloud_user (Resource)
 
-Genesys Cloud User
+Genesys Cloud User.
+
+Export block label: "{email}"
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -15,28 +18,32 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [GET /api/v2/users/{userId}](https://developer.mypurecloud.com/api/rest/v2/users/#get-api-v2-users--userId-)
 - [PATCH /api/v2/users/{userId}](https://developer.mypurecloud.com/api/rest/v2/users/#patch-api-v2-users--userId-)
 - [DELETE /api/v2/users/{userId}](https://developer.mypurecloud.com/api/rest/v2/users/#delete-api-v2-users--userId-)
+- [POST /api/v2/users/search](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-users-search)
 - [PUT /api/v2/users/{userId}/routingskills/bulk](https://developer.mypurecloud.com/api/rest/v2/users/#put-api-v2-users--userId--routingskills-bulk)
 - [DELETE /api/v2/users/{userId}/routinglanguages/{languageId}](https://developer.mypurecloud.com/api/rest/v2/users/#delete-api-v2-users--userId--routinglanguages--languageId-)
 - [PATCH /api/v2/users/{userId}/routinglanguages/bulk](https://developer.mypurecloud.com/api/rest/v2/users/#patch-api-v2-users--userId--routinglanguages-bulk)
 - [GET /api/v2/users/{userId}/routinglanguages](https://developer.mypurecloud.com/api/rest/v2/users/#get-api-v2-users--userId--routinglanguages)
 - [PUT /api/v2/users/{userId}/profileskills](https://developer.mypurecloud.com/api/rest/v2/users/#put-api-v2-users--userId--profileskills)
+- [POST /api/v2/users/{userId}/password](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-users--userId--password)
 - [GET /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#get-api-v2-routing-users--userId--utilization)
 - [PUT /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#put-api-v2-routing-users--userId--utilization)
 - [DELETE /api/v2/routing/users/{userId}/utilization](https://developer.mypurecloud.com/api/rest/v2/users/#delete-api-v2-routing-users--userId--utilization)
-
+- [GET /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-voicemail-userpolicies--userId-)
+- [PATCH /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-voicemail-userpolicies--userId-)
+- [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-extensionpools)
 
 ## Example Usage
 
 ```terraform
 resource "genesyscloud_user" "example_user" {
-  email           = "john@example.com"
-  name            = "John Doe"
-  password        = "initial-password"
-  division_id     = genesyscloud_auth_division.home.id
+  email           = "johnny${random_uuid.uuid.result}@example.com"
+  name            = "Johnny Doe"
+  password        = "initialP@ssW0rd"
+  division_id     = data.genesyscloud_auth_division_home.home.id
   state           = "active"
   department      = "Development"
   title           = "Senior Director"
-  manager         = genesyscloud_user.example-user-manager.id
+  manager         = genesyscloud_user.example_user2.id
   acd_auto_answer = true
   profile_skills  = ["Java", "Go"]
   certifications  = ["Certified Developer"]
@@ -52,7 +59,7 @@ resource "genesyscloud_user" "example_user" {
     }
   }
   routing_skills {
-    skill_id    = genesyscloud_routing_skill.test-skill.id
+    skill_id    = genesyscloud_routing_skill.example_skill.id
     proficiency = 4.5
   }
   routing_languages {
@@ -60,7 +67,7 @@ resource "genesyscloud_user" "example_user" {
     proficiency = 4
   }
   locations {
-    location_id = genesyscloud_location.main-site.id
+    location_id = genesyscloud_location.hq.id
     notes       = "Office 201"
   }
   employer_info {
@@ -104,6 +111,13 @@ resource "genesyscloud_user" "example_user" {
       interrupting_label_ids = [genesyscloud_routing_utilization_label.red_label.id]
     }
   }
+}
+
+resource "genesyscloud_user" "example_user2" {
+  email = "bobby${random_uuid.uuid.result}@example.com"
+  name  = "Bobby Drop Tables"
+  title = "CEO"
+  state = "active"
 }
 ```
 

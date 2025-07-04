@@ -1,19 +1,20 @@
 package routing_skill_group
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,11 +28,11 @@ func testAccCheckSkillConditions(resourcePath string, targetSkillConditionJson s
 		rs, ok := s.RootModule().Resources[resourcePath]
 
 		if !ok {
-			return fmt.Errorf("Resource Not found: %s", resourcePath)
+			return fmt.Errorf("resource Not found: %s", resourcePath)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("Resource ID is not set")
+			return fmt.Errorf("resource ID is not set")
 		}
 
 		//Retrieve the skills condition
@@ -73,12 +74,13 @@ func testAccCheckSkillConditions(resourcePath string, targetSkillConditionJson s
 func TestAccResourceRoutingSkillGroupBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		skillGroupResourceLabel = "testskillgroup1"
-		skillGroupName1         = "SkillGroup1" + uuid.NewString()
-		skillGroupDescription1  = "Description1" + uuid.NewString()
-		skillGroupName2         = "SkillGroup2" + uuid.NewString()
-		skillGroupDescription2  = "Description2" + uuid.NewString()
-		skillCondition1         = `[
+		skillGroupResourceLabel    = "testskillgroup1"
+		skillGroupResourceFullPath = ResourceType + "." + skillGroupResourceLabel
+		skillGroupName1            = "SkillGroup1" + uuid.NewString()
+		skillGroupDescription1     = "Description1" + uuid.NewString()
+		skillGroupName2            = "SkillGroup2" + uuid.NewString()
+		skillGroupDescription2     = "Description2" + uuid.NewString()
+		skillCondition1            = `[
 			{
 			  "routingSkillConditions" : [
 				{
@@ -115,9 +117,9 @@ func TestAccResourceRoutingSkillGroupBasic(t *testing.T) {
 		  }]`
 	)
 
-	config1 := fmt.Sprintf(`
+	config1 := `
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateRoutingSkillGroupResource(
+` + generateRoutingSkillGroupResource(
 		skillGroupResourceLabel,
 		"data.genesyscloud_auth_division_home.home",
 		skillGroupName1,
@@ -127,9 +129,9 @@ data "genesyscloud_auth_division_home" "home" {}
 		util.NullValue,
 	)
 
-	config2 := fmt.Sprintf(`
+	config2 := `
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateRoutingSkillGroupResource(
+` + generateRoutingSkillGroupResource(
 		skillGroupResourceLabel,
 		"data.genesyscloud_auth_division_home.home",
 		skillGroupName2,
@@ -147,25 +149,25 @@ data "genesyscloud_auth_division_home" "home" {}
 				// Create
 				Config: config1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "name", skillGroupName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "description", skillGroupDescription1),
-					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResourceLabel, skillCondition1),
-					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "name", skillGroupName1),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "description", skillGroupDescription1),
+					testAccCheckSkillConditions(skillGroupResourceFullPath, skillCondition1),
+					provider.TestDefaultHomeDivision(skillGroupResourceFullPath),
 				),
 			},
 			{
 				// Update
 				Config: config2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "name", skillGroupName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "description", skillGroupDescription2),
-					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResourceLabel, skillCondition2),
-					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "name", skillGroupName2),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "description", skillGroupDescription2),
+					testAccCheckSkillConditions(skillGroupResourceFullPath, skillCondition2),
+					provider.TestDefaultHomeDivision(skillGroupResourceFullPath),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_skill_group." + skillGroupResourceLabel,
+				ResourceName:      skillGroupResourceFullPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -177,12 +179,13 @@ data "genesyscloud_auth_division_home" "home" {}
 func TestAccResourceRoutingSkillGroupMemberDivisionsBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		skillGroupResourceLabel = "testskillgroup2"
-		skillGroupName1         = "SkillGroup3" + uuid.NewString()
-		skillGroupDescription1  = "Description3" + uuid.NewString()
-		skillGroupName2         = "SkillGroup4" + uuid.NewString()
-		skillGroupDescription2  = "Description4" + uuid.NewString()
-		skillCondition1         = `[
+		skillGroupResourceLabel    = "testskillgroup2"
+		skillGroupResourceFullPath = ResourceType + "." + skillGroupResourceLabel
+		skillGroupName1            = "SkillGroup3" + uuid.NewString()
+		skillGroupDescription1     = "Description3" + uuid.NewString()
+		skillGroupName2            = "SkillGroup4" + uuid.NewString()
+		skillGroupDescription2     = "Description4" + uuid.NewString()
+		skillCondition1            = `[
 			{
 			  "routingSkillConditions" : [
 				{
@@ -240,9 +243,9 @@ func TestAccResourceRoutingSkillGroupMemberDivisionsBasic(t *testing.T) {
 		"genesyscloud_auth_division." + authDivision1ResourceLabel + ".id",
 	}, ", "))
 
-	config1 := fmt.Sprintf(`
+	config1 := `
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateRoutingSkillGroupResource(
+` + generateRoutingSkillGroupResource(
 		skillGroupResourceLabel,
 		"data.genesyscloud_auth_division_home.home",
 		skillGroupName1,
@@ -252,9 +255,9 @@ data "genesyscloud_auth_division_home" "home" {}
 		memberDivisionIds1,
 	)
 
-	config2 := fmt.Sprintf(`
+	config2 := `
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateRoutingSkillGroupResource(
+` + generateRoutingSkillGroupResource(
 		skillGroupResourceLabel,
 		"data.genesyscloud_auth_division_home.home",
 		skillGroupName2,
@@ -264,9 +267,9 @@ data "genesyscloud_auth_division_home" "home" {}
 		memberDivisionIds2,
 	) + authDivision1 + authDivision2
 
-	config3 := fmt.Sprintf(`
+	config3 := `
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateRoutingSkillGroupResource(
+` + generateRoutingSkillGroupResource(
 		skillGroupResourceLabel,
 		"data.genesyscloud_auth_division_home.home",
 		skillGroupName2,
@@ -276,9 +279,9 @@ data "genesyscloud_auth_division_home" "home" {}
 		memberDivisionIds3,
 	) + authDivision1
 
-	config4 := fmt.Sprintf(`
+	config4 := `
 	data "genesyscloud_auth_division_home" "home" {}
-	`) + generateRoutingSkillGroupResource(
+	` + generateRoutingSkillGroupResource(
 		skillGroupResourceLabel,
 		"data.genesyscloud_auth_division_home.home",
 		skillGroupName2,
@@ -288,9 +291,9 @@ data "genesyscloud_auth_division_home" "home" {}
 		"[]",
 	)
 
-	config5 := fmt.Sprintf(`
+	config5 := `
 data "genesyscloud_auth_division_home" "home" {}
-`) + generateRoutingSkillGroupResource(
+` + generateRoutingSkillGroupResource(
 		skillGroupResourceLabel,
 		"data.genesyscloud_auth_division_home.home",
 		skillGroupName2,
@@ -307,45 +310,45 @@ data "genesyscloud_auth_division_home" "home" {}
 			{
 				Config: config1,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "name", skillGroupName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "description", skillGroupDescription1),
-					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResourceLabel, skillCondition1),
-					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "name", skillGroupName1),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "description", skillGroupDescription1),
+					testAccCheckSkillConditions(skillGroupResourceFullPath, skillCondition1),
+					provider.TestDefaultHomeDivision(skillGroupResourceFullPath),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids.#", "1"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids",
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "member_division_ids.#", "1"),
+					util.ValidateResourceAttributeInArray(skillGroupResourceFullPath, "member_division_ids",
 						"data.genesyscloud_auth_division_home.home", "id"),
 				),
 			},
 			{
 				Config: config2,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "name", skillGroupName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "description", skillGroupDescription2),
-					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResourceLabel, skillCondition2),
-					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "name", skillGroupName2),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "description", skillGroupDescription2),
+					testAccCheckSkillConditions(skillGroupResourceFullPath, skillCondition2),
+					provider.TestDefaultHomeDivision(skillGroupResourceFullPath),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids.#", "3"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids",
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "member_division_ids.#", "3"),
+					util.ValidateResourceAttributeInArray(skillGroupResourceFullPath, "member_division_ids",
 						"data.genesyscloud_auth_division_home.home", "id"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids",
+					util.ValidateResourceAttributeInArray(skillGroupResourceFullPath, "member_division_ids",
 						"genesyscloud_auth_division."+authDivision1ResourceLabel, "id"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids",
+					util.ValidateResourceAttributeInArray(skillGroupResourceFullPath, "member_division_ids",
 						"genesyscloud_auth_division."+authDivision2ResourceLabel, "id"),
 				),
 			},
 			{
 				Config: config3,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "name", skillGroupName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "description", skillGroupDescription2),
-					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResourceLabel, skillCondition2),
-					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "name", skillGroupName2),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "description", skillGroupDescription2),
+					testAccCheckSkillConditions(skillGroupResourceFullPath, skillCondition2),
+					provider.TestDefaultHomeDivision(skillGroupResourceFullPath),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids.#", "2"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids",
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "member_division_ids.#", "2"),
+					util.ValidateResourceAttributeInArray(skillGroupResourceFullPath, "member_division_ids",
 						"data.genesyscloud_auth_division_home.home", "id"),
-					util.ValidateResourceAttributeInArray("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids",
+					util.ValidateResourceAttributeInArray(skillGroupResourceFullPath, "member_division_ids",
 						"genesyscloud_auth_division."+authDivision1ResourceLabel, "id"),
 				),
 			},
@@ -353,31 +356,31 @@ data "genesyscloud_auth_division_home" "home" {}
 				// Update members array to [] and verify skill group's division is still in there
 				Config: config4,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "name", skillGroupName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "description", skillGroupDescription2),
-					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResourceLabel, skillCondition2),
-					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "name", skillGroupName2),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "description", skillGroupDescription2),
+					testAccCheckSkillConditions(skillGroupResourceFullPath, skillCondition2),
+					provider.TestDefaultHomeDivision(skillGroupResourceFullPath),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids.#", "0"),
-					testVerifyMemberDivisionsCleared("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "member_division_ids.#", "0"),
+					testVerifyMemberDivisionsCleared(skillGroupResourceFullPath),
 				),
 			},
 			{
 				// Update members array to ["*"] and verify all division ids are in there.
 				Config: config5,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "name", skillGroupName2),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "description", skillGroupDescription2),
-					testAccCheckSkillConditions("genesyscloud_routing_skill_group."+skillGroupResourceLabel, skillCondition2),
-					provider.TestDefaultHomeDivision("genesyscloud_routing_skill_group."+skillGroupResourceLabel),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "name", skillGroupName2),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "description", skillGroupDescription2),
+					testAccCheckSkillConditions(skillGroupResourceFullPath, skillCondition2),
+					provider.TestDefaultHomeDivision(skillGroupResourceFullPath),
 
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids.0", "*"),
-					testVerifyAllDivisionsAssigned("genesyscloud_routing_skill_group."+skillGroupResourceLabel, "member_division_ids"),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "member_division_ids.#", "1"),
+					resource.TestCheckResourceAttr(skillGroupResourceFullPath, "member_division_ids.0", "*"),
+					testVerifyAllDivisionsAssigned(skillGroupResourceFullPath, "member_division_ids"),
 				),
 			},
 			{
-				ResourceName:            "genesyscloud_routing_skill_group." + skillGroupResourceLabel,
+				ResourceName:            skillGroupResourceFullPath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"member_division_ids"},
@@ -394,9 +397,10 @@ data "genesyscloud_auth_division_home" "home" {}
 */
 func TestAccResourceRoutingSkillGroupMemberDivisionsUsersAssigned(t *testing.T) {
 	var (
-		skillGroupResourceLabel = "testskillgroup3"
-		skillGroupName          = "testskillgroup3 " + uuid.NewString()
-		skillGroupDescription   = uuid.NewString()
+		skillGroupResourceLabel    = "testskillgroup3"
+		skillGroupName             = "testskillgroup3 " + uuid.NewString()
+		skillGroupDescription      = uuid.NewString()
+		skillGroupResourceFullPath = ResourceType + "." + skillGroupResourceLabel
 
 		routingSkillResourceLabel = "routing_skill"
 		routingSkillName          = "Skill " + uuid.NewString()
@@ -502,6 +506,15 @@ resource "genesyscloud_routing_skill_group" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				Config: routingSkillResource +
+					division1Resource +
+					division2Resource +
+					division3Resource +
+					user1Resource +
+					user2Resource +
+					user3Resource,
+			},
+			{
 				PreConfig: func() {
 					time.Sleep(45 * time.Second)
 				},
@@ -514,11 +527,11 @@ resource "genesyscloud_routing_skill_group" "%s" {
 					user2Resource +
 					user3Resource,
 				Check: resource.ComposeTestCheckFunc(
-					testVerifySkillGroupMemberCount("genesyscloud_routing_skill_group."+skillGroupResourceLabel, 3),
+					testVerifySkillGroupMemberCount(skillGroupResourceFullPath, 3),
 				),
 			},
 			{
-				ResourceName:            "genesyscloud_routing_skill_group." + skillGroupResourceLabel,
+				ResourceName:            skillGroupResourceFullPath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"member_division_ids"},
@@ -552,31 +565,34 @@ func generateRoutingSkillGroupResource(
 }
 
 func testVerifySkillGroupMemberCount(resourcePath string, count int) resource.TestCheckFunc {
+	const logPrefix = "testVerifySkillGroupMemberCount:"
 	return func(state *terraform.State) error {
-		// Authorize client credentials
-		config, err := provider.AuthorizeSdk()
-		if err != nil {
-			return fmt.Errorf("unexpected error while trying to authorize client in testVerifyAllDivisionsAssigned : %s", err)
-		}
-		routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
+		retryErr := util.WithRetries(context.Background(), 2*time.Minute, func() *retry.RetryError {
+			routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
-		resourceState, ok := state.RootModule().Resources[resourcePath]
-		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
-		}
-		resourceLabel := resourceState.Primary.ID
+			resourceState, ok := state.RootModule().Resources[resourcePath]
+			if !ok {
+				return retry.NonRetryableError(fmt.Errorf("failed to find resourceState %s in state", resourcePath))
+			}
+			resourceId := resourceState.Primary.ID
 
-		log.Print("Sleeping to allow for skillgroups member count to update.")
-		time.Sleep(10 * time.Second)
+			log.Printf("%s Reading skill group '%s'", logPrefix, resourceId)
+			skillGroup, resp, err := routingAPI.GetRoutingSkillgroup(resourceId)
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(fmt.Errorf("%s skill group '%s' not found", logPrefix, resourceId))
+			}
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("%s failed to get skill group %s: %s. Response: %s", logPrefix, resourceId, err.Error(), resp.String()))
+			}
 
-		// get skill group via GET /api/v2/routing/skillgroups/{skillGroupId}
-		skillGroup, resp, err := routingAPI.GetRoutingSkillgroup(resourceLabel)
-		if err != nil {
-			return fmt.Errorf("Failed to get skill group %s: %v %s", resourceLabel, err, resp)
-		}
+			if *skillGroup.MemberCount != count {
+				return retry.RetryableError(fmt.Errorf("expected member count to be %d, got %d for skill group '%s'", count, *skillGroup.MemberCount, resourceId))
+			}
 
-		if *skillGroup.MemberCount != count {
-			return fmt.Errorf("Expected member count to be %v, got %v for skill group %s", count, *skillGroup.MemberCount, resourceLabel)
+			return nil
+		})
+		if retryErr != nil {
+			return fmt.Errorf("%v", retryErr)
 		}
 		return nil
 	}
@@ -586,35 +602,27 @@ func testVerifyMemberDivisionsCleared(resourcePath string) resource.TestCheckFun
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
+			return fmt.Errorf("failed to find resourceState %s in state", resourcePath)
 		}
-		resourceLabel := resourceState.Primary.ID
-
-		// Authorize client credentials
-		config := platformclientv2.GetDefaultConfiguration()
-		routingAPI := platformclientv2.NewRoutingApi()
-		err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-		if err != nil {
-			return fmt.Errorf("Unexpected error while trying to authorize client in testVerifyAllDivisionsAssigned : %s", err)
-		}
+		resourceId := resourceState.Primary.ID
 
 		// get member divisions for this skill group via GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions
-		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(routingAPI, resourceLabel)
+		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(resourceId)
 		if diagErr != nil {
 			return fmt.Errorf("%v", diagErr)
 		}
 
 		divisionId, ok := resourceState.Primary.Attributes["division_id"]
 		if !ok {
-			return fmt.Errorf("No divisionId found for %s in state", resourceLabel)
+			return fmt.Errorf("no divisionId found for %s in state", resourceId)
 		}
 
 		if len(skillGroupMemberDivisionIds) != 1 {
-			return fmt.Errorf("Expected skill group %s to only have one member division assigned", resourceLabel)
+			return fmt.Errorf("expected skill group %s to only have one member division assigned", resourceId)
 		}
 
 		if divisionId != skillGroupMemberDivisionIds[0] {
-			return fmt.Errorf("Expected division_id %s to equal the assigned member division ID %s for skill group %s", divisionId, skillGroupMemberDivisionIds[0], resourceLabel)
+			return fmt.Errorf("expected division_id %s to equal the assigned member division ID %s for skill group %s", divisionId, skillGroupMemberDivisionIds[0], resourceId)
 		}
 
 		return nil
@@ -625,41 +633,33 @@ func testVerifyAllDivisionsAssigned(resourcePath string, attrName string) resour
 	return func(state *terraform.State) error {
 		resourceState, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
-			return fmt.Errorf("Failed to find resourceState %s in state", resourcePath)
+			return fmt.Errorf("failed to find resourceState %s in state", resourcePath)
 		}
 
-		resourceLabel := resourceState.Primary.ID
+		resourceId := resourceState.Primary.ID
 		numValuesStr, ok := resourceState.Primary.Attributes[attrName+".#"]
 		if !ok {
-			return fmt.Errorf("No %s found for %s in state", attrName, resourceLabel)
+			return fmt.Errorf("no %s found for %s in state", attrName, resourceId)
 		}
 
 		if numValuesStr != "1" || resourceState.Primary.Attributes[attrName+".0"] != "*" {
-			return fmt.Errorf(`Expected %s to contain one item: "*"`, attrName)
-		}
-
-		// Authorize client credentials
-		config := platformclientv2.GetDefaultConfiguration()
-		routingAPI := platformclientv2.NewRoutingApi()
-		err := config.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-		if err != nil {
-			return fmt.Errorf("Unexpected error while trying to authorize client in testVerifyAllDivisionsAssigned : %s", err)
+			return fmt.Errorf(`expected %s to contain one item: "*"`, attrName)
 		}
 
 		// get member divisions for this skill group via GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions
-		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(routingAPI, resourceLabel)
+		skillGroupMemberDivisionIds, diagErr := getAllSkillGroupMemberDivisionIds(resourceId)
 		if diagErr != nil {
 			return fmt.Errorf("%v", diagErr)
 		}
 
 		// get all auth divisions via GET /api/v2/authorization/divisions
 		allAuthDivisionIds := make([]string, 0)
-		divisionResourcesMap, diagErr := getAllAuthDivisions(nil, config)
-		if err != nil {
+		divisionResourcesMap, diagErr := getAllAuthDivisions(context.Background(), sdkConfig)
+		if diagErr != nil {
 			return fmt.Errorf("%v", diagErr)
 		}
 
-		for id, _ := range divisionResourcesMap {
+		for id := range divisionResourcesMap {
 			allAuthDivisionIds = append(allAuthDivisionIds, id)
 		}
 
@@ -669,39 +669,35 @@ func testVerifyAllDivisionsAssigned(resourcePath string, attrName string) resour
 		} else if lists.AreEquivalent(allAuthDivisionIds, skillGroupMemberDivisionIds) {
 			return nil
 		} else {
-			return fmt.Errorf("Expected %s to equal the list of all auth divisions", attrName)
+			return fmt.Errorf("expected %s to equal the list of all auth divisions", attrName)
 		}
 
 	}
 }
 
 func testVerifySkillGroupDestroyed(state *terraform.State) error {
-	// Get default config to set config options
-	config, err := provider.AuthorizeSdk()
-	if err != nil {
-		return fmt.Errorf("unexpected error while trying to authorize client in testVerifySkillGroupDestroyed : %s", err)
-	}
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(config)
+	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_routing_skill_group" {
+		if rs.Type != ResourceType {
 			continue
 		}
 
 		skillGroup, resp, err := routingAPI.GetRoutingSkillgroup(rs.Primary.ID)
 
 		if skillGroup != nil {
-			return fmt.Errorf("Skill Group (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("skill Group (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
 			// Division not found as expected
 			continue
 		} else {
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 	}
 	// Success. All skills destroyed
 	return nil
 }
+
 func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 	config, err := provider.AuthorizeSdk()
 	if err != nil {
@@ -711,7 +707,7 @@ func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApiWithConfig(config)
 
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type == "genesyscloud_routing_skill_group" {
+		if rs.Type == ResourceType {
 			group, response, err := routingAPI.GetRoutingSkillgroup(rs.Primary.ID)
 
 			if group != nil {
@@ -720,35 +716,35 @@ func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 			if util.IsStatus404(response) {
 				continue
 			}
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err)
 		}
 
 		if rs.Type == "genesyscloud_user" {
-			err := checkUserDeleted(rs.Primary.ID)(state)
+			err = checkUserDeleted(rs.Primary.ID)(state)
 			if err != nil {
 				continue
 			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
 			if user != nil {
-				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
+				return fmt.Errorf("user Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
 				continue
 			} else {
-				return fmt.Errorf("Unexpected error: %s", err)
+				return fmt.Errorf("unexpected error: %s", err)
 			}
 		}
 	}
 	// Success. All skills destroyed
 	return nil
 }
-func getAllSkillGroupMemberDivisionIds(routingAPI *platformclientv2.RoutingApi, resourceLabel string) ([]string, diag.Diagnostics) {
-	sdkconfig, _ := provider.AuthorizeSdk()
-	api := platformclientv2.NewRoutingApiWithConfig(sdkconfig)
+
+func getAllSkillGroupMemberDivisionIds(resourceLabel string) ([]string, diag.Diagnostics) {
+	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 
 	divisions, resp, err := api.GetRoutingSkillgroupMembersDivisions(resourceLabel, "")
 
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError("genesyscloud_routing_skill_group", fmt.Sprintf("Failed to update Routing Utilization %s error: %s", resourceLabel, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Routing Utilization %s error: %s", resourceLabel, err), resp)
 	}
 
 	apiSkillGroupMemberDivisionIds := make([]string, 0)
@@ -780,7 +776,6 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 }
 
 func isUserDeleted(id string) (bool, error) {
-	sdkConfig, _ := provider.AuthorizeSdk()
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// Attempt to get the user
 	_, response, err := usersAPI.GetUser(id, nil, "", "")

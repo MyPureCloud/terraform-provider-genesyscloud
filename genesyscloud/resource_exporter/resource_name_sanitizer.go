@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -59,11 +60,11 @@ func (sod *sanitizerOriginal) Sanitize(idMetaMap ResourceIDMetaMap) {
 		labelOccurrences[sanitizedLabel] += 1
 
 		// Append a hash of the original label to ensure uniqueness for labels to prevent duplicates
-		// A hash will only be appended to the second occurrence of a BlockLabel. On the third occurrence,
-		// two will be appended, and so on...
+		// A hash will only be appended to the second occurrence of a BlockLabel and onward.
+		// The input to the hash algorithm is "{block label}{number of occurrences}" e.g. "foobar3"
 		numOfOccurrences := labelOccurrences[sanitizedLabel]
-		for i := 1; i < numOfOccurrences; i++ {
-			sanitizedLabel = sanitizedLabel + "_" + sod.SanitizeResourceHash(meta.BlockLabel)
+		if numOfOccurrences > 1 {
+			sanitizedLabel = sanitizedLabel + "_" + sod.SanitizeResourceHash(meta.BlockLabel+strconv.Itoa(numOfOccurrences))
 		}
 
 		if meta.OriginalLabel == "" {

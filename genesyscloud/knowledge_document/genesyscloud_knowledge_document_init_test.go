@@ -29,7 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
+	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[ResourceType] = ResourceKnowledgeDocument()
 }

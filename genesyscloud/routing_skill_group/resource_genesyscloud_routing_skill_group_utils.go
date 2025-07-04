@@ -90,8 +90,10 @@ func assignMemberDivisionIds(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func createListsForSkillgroupsMembersDivisions(schemaMemberDivisionIds []string, skillGroupDivisionIds []string, create bool, meta interface{}) ([]string, []string, diag.Diagnostics) {
-	toAdd := make([]string, 0)
-	toRemove := make([]string, 0)
+	var (
+		toAdd    []string
+		toRemove []string
+	)
 
 	if allMemberDivisionsSpecified(schemaMemberDivisionIds) {
 		// member_division_ids should not contain more than one item when the value of an item is "*"

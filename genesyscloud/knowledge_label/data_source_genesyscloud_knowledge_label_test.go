@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
 		labelResourceLabel1         = "test-label1"

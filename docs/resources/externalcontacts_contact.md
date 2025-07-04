@@ -27,31 +27,29 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
   salutation  = "salutation"
   title       = "genesys staff"
   work_phone {
-    display      = "+33 0 00 00 00 00"
+    display      = "+33 03 20 45 67 89"
     extension    = 4
     accepts_sms  = false
-    e164         = "+330000000000"
+    e164         = "+33320456789"
     country_code = "FR"
   }
   cell_phone {
-    display      = "+33 0 00 00 00 01"
-    extension    = 4
-    accepts_sms  = false
-    e164         = "+330000000001"
+    display      = "+33 09 20 45 67 89"
+    accepts_sms  = true
+    e164         = "+33920456789"
     country_code = "FR"
   }
   home_phone {
-    display      = "+33 0 00 00 00 02"
-    extension    = 4
+    display      = "+33 02 12 32 30 30"
     accepts_sms  = false
-    e164         = "+330000000002"
+    e164         = "+33212323030"
     country_code = "FR"
   }
   other_phone {
-    display      = "+33 0 00 00 00 03"
+    display      = "+33 02 12 32 30 30"
     extension    = 4
     accepts_sms  = false
-    e164         = "+330000000003"
+    e164         = "+33212323030"
     country_code = "FR"
   }
   work_email     = "workEmail@example.com"
@@ -78,10 +76,10 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
   }
   whatsapp_id {
     phone_number {
-      display      = "+33 0 00 00 00 01"
+      display      = "+33 01 72 80 92 96"
       extension    = 4
       accepts_sms  = false
-      e164         = "+330000000001"
+      e164         = "+33172809296"
       country_code = "FR"
     }
     display_name = "whatsappName"
@@ -94,7 +92,7 @@ resource "genesyscloud_externalcontacts_contact" "contact" {
   }
   survey_opt_out           = false
   external_system_url      = "https://systemUrl.com"
-  external_organization_id = genesyscloud_externalcontacts_organization.example.id
+  external_organization_id = genesyscloud_externalcontacts_organization.example_org.id
 }
 ```
 

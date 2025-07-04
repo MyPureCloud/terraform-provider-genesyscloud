@@ -131,6 +131,7 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 			`timeout_settings`: {
 				Description: `the time out settings for the tokens`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        timeOutSettings,

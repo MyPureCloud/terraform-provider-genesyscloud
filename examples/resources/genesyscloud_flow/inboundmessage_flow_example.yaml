@@ -1,0 +1,20 @@
+inboundShortMessage:
+  name: "{{flow_name}}"
+  division: "{{home_division_name}}"
+  startUpRef: "/inboundShortMessage/states/state[Initial State_10]"
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+  settingsErrorHandling:
+    errorHandling:
+      disconnect:
+        none: true
+  states:
+    - state:
+        name: Initial State
+        refId: Initial State_10
+        actions:
+          - disconnect:
+              name: Disconnect
