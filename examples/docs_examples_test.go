@@ -14,6 +14,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -58,7 +59,8 @@ func TestAccExampleResources(t *testing.T) {
 	// If you need to just test a specific resource type, you can manually override the resource(s)
 	// under test by uncommenting these lines and updating them
 	resources = []string{
-		"genesyscloud_recording_media_retention_policy",
+		"genesyscloud_guide",
+		"genesyscloud_guide_version",
 	}
 	sort.Strings(resources)
 
@@ -82,6 +84,13 @@ func TestAccExampleResources(t *testing.T) {
 	resourceTypesResults := make(map[string]ResultsStatus, len(resources))
 
 	for _, resourceType := range resources {
+		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
+			if !feature_toggles.GuideToggleExists() {
+				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
+				resourceTypesResults[resourceType] = ResultsStatusSkipped
+				continue
+			}
+		}
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
 
 		t.Run(resourceType, func(t *testing.T) {
@@ -219,6 +228,12 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 	processedState := NewProcessedExampleState()
 
 	for _, resourceType := range resources {
+		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
+			if !feature_toggles.GuideToggleExists() {
+				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
+				continue
+			}
+		}
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
 
 		// Warn if the exampleDir doesn't exist
@@ -284,16 +299,18 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 	resources := provider_registrar.GetResourceTypeNames()
 	// If you need to just test a specific resource type, you can manually override the resource(s)
 	// under test by uncommenting these lines and updating them
-	// resources := []string{
-	// 	"genesyscloud_knowledge_category",
-	// 	"genesyscloud_knowledge_document_variation",
-	// 	"genesyscloud_knowledge_document",
-	// 	"genesyscloud_knowledge_knowledgebase",
-	// 	"genesyscloud_knowledge_label",
-	// 	"genesyscloud_quality_forms_survey",
-	// 	"genesyscloud_webdeployments_configuration",
-	// 	"genesyscloud_webdeployments_deployment",
-	// }
+	resources = []string{
+		// "genesyscloud_knowledge_category",
+		// "genesyscloud_knowledge_document_variation",
+		// "genesyscloud_knowledge_document",
+		// "genesyscloud_knowledge_knowledgebase",
+		// "genesyscloud_knowledge_label",
+		// "genesyscloud_quality_forms_survey",
+		// "genesyscloud_webdeployments_configuration",
+		// "genesyscloud_webdeployments_deployment",
+		"genesyscloud_guide",
+		"genesyscloud_guide_version",
+	}
 	sort.Strings(resources)
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
@@ -321,6 +338,13 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 	resourceTypeResults := make(map[string]ResultsStatus, len(resources))
 
 	for _, resourceType := range resources {
+		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
+			if !feature_toggles.GuideToggleExists() {
+				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
+				resourceTypeResults[resourceType] = ResultsStatusSkipped
+				continue
+			}
+		}
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
 
 		t.Run(orgName+"/"+resourceType, func(t *testing.T) {

@@ -1,7 +1,8 @@
 locals {
   dependencies = {
     resource = [
-      "../../data-sources/genesyscloud_guide/data-source.tf",
+      "../genesyscloud_guide/resource.tf",
+      "../genesyscloud_integration_action/resource.tf",
     ]
   }
 }

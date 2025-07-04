@@ -79,6 +79,5 @@ func DataSourceGuide() *schema.Resource {
 func GuideExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGuides),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }

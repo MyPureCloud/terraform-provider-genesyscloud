@@ -2,20 +2,28 @@ package guide_version
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"os"
-	"strings"
-	"testing"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 func TestAccResourceGuideVersion(t *testing.T) {
 	if os.Getenv("GENESYSCLOUD_REGION") != "tca" {
 		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
 	}
+
+	if !feature_toggles.GuideToggleExists() {
+		t.Skipf("Skipping test for genesyscloud_guide as feature toggle not enabled")
+		return
+	}
+
 	t.Parallel()
 	var (
 		guideVersionResourceLabel = "guide_version"
