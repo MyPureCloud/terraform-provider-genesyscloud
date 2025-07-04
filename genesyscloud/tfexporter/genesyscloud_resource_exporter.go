@@ -21,7 +21,6 @@ import (
 	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -103,6 +102,14 @@ type GenesysCloudResourceExporter struct {
 	ignoreCyclicDeps      bool
 	flowResourcesList     []string
 	exportComputed        bool
+	maxConcurrentOps      int // New field to control concurrency
+
+	// New mutexes for protecting shared state
+	replaceWithDatasourceMutex sync.Mutex
+	resourcesMutex             sync.Mutex
+	resourceTypesMapsMutex     sync.RWMutex
+	dataSourceTypesMapsMutex   sync.RWMutex
+	unresolvedAttrsMutex       sync.Mutex
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -141,11 +148,6 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 }
 
 func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
-
-	if providerResources == nil {
-		providerResources, providerDataSources = rRegistrar.GetResources()
-	}
-
 	gre := &GenesysCloudResourceExporter{
 		exportFormat:         identifyExportFormat(d),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
@@ -157,10 +159,16 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
 		version:              meta.(*provider.ProviderMeta).Version,
 		providerRegistry:     meta.(*provider.ProviderMeta).Registry,
-		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
+		provider:             provider.New(meta.(*provider.ProviderMeta).Version, nil, nil)(),
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,
+		maxConcurrentOps:     10, // Default to 10 concurrent operations
+	}
+
+	// Set max concurrent operations based on provider configuration if available
+	if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
+		gre.maxConcurrentOps = providerMeta.MaxClients
 	}
 
 	err := gre.setUpExportDirPath()
@@ -173,6 +181,50 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 	//Setting up the filter
 	configureExporterType(ctx, d, gre, filterType)
 	return gre, nil
+}
+
+// NewThreadSafeGenesysCloudResourceExporter creates a new exporter with thread-safe features
+func NewThreadSafeGenesysCloudResourceExporter(d *schema.ResourceData, ctx context.Context, meta interface{}, provider *schema.Provider, exporters *map[string]*resourceExporter.ResourceExporter) *GenesysCloudResourceExporter {
+	exporter := &GenesysCloudResourceExporter{
+		configExporter:        nil,                         // Will be set later based on export format
+		filterType:            LegacyInclude,               // Default value
+		resourceTypeFilter:    IncludeFilterByResourceType, // Default value
+		resourceFilter:        FilterResourceByLabel,       // Default value
+		filterList:            &[]string{},
+		exportFormat:          d.Get("export_format").(string),
+		splitFilesByResource:  d.Get("split_files_by_resource").(bool),
+		logPermissionErrors:   d.Get("log_permission_errors").(bool),
+		addDependsOn:          d.Get("add_depends_on").(bool),
+		replaceWithDatasource: []string{},
+		includeStateFile:      d.Get("include_state_file").(bool),
+		version:               d.Get("version").(string),
+		providerRegistry:      d.Get("provider_registry").(string),
+		provider:              provider,
+		exportDirPath:         d.Get("export_dir_path").(string),
+		exporters:             exporters,
+		resources:             []resourceExporter.ResourceInfo{},
+		resourceTypesMaps:     make(map[string]resourceJSONMaps),
+		dataSourceTypesMaps:   make(map[string]resourceJSONMaps),
+		unresolvedAttrs:       []unresolvableAttributeInfo{},
+		d:                     d,
+		ctx:                   ctx,
+		meta:                  meta,
+		dependsList:           make(map[string][]string),
+		buildSecondDeps:       make(map[string][]string),
+		exMutex:               sync.RWMutex{},
+		cyclicDependsList:     []string{},
+		ignoreCyclicDeps:      d.Get("ignore_cyclic_dependencies").(bool),
+		flowResourcesList:     []string{},
+		exportComputed:        d.Get("export_computed").(bool),
+		maxConcurrentOps:      10, // Default to 10 concurrent operations
+	}
+
+	// Set max concurrent operations based on configuration if available
+	if maxClients, ok := d.GetOk("max_concurrent_operations"); ok {
+		exporter.maxConcurrentOps = maxClients.(int)
+	}
+
+	return exporter
 }
 
 func identifyExportFormat(d *schema.ResourceData) string {
@@ -336,12 +388,13 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	log.Printf("Retrieving Genesys Cloud objects from Genesys Cloud")
 	// Retrieves data on each individual Genesys Cloud object from each registered exporter
 
-	errorChan := make(chan diag.Diagnostics)
+	errorChan := make(chan diag.Diagnostics, len(*g.exporters))
 	wgDone := make(chan bool)
 	var wg sync.WaitGroup
 
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
+
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range *g.exporters {
 		wg.Add(1)
@@ -359,7 +412,9 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 				cancel()
 				return
 			}
-			g.resources = append(g.resources, typeResources...)
+
+			// Use thread-safe method to add resources
+			g.addResources(typeResources)
 		}(resType, exporter)
 	}
 
@@ -371,21 +426,29 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	// Wait until either WaitGroup is done or an error is received
 	select {
 	case <-wgDone:
+		log.Printf("Successfully retrieved all Genesys Cloud object instances")
+		return nil
 	case err := <-errorChan:
+		// Give other goroutines a chance to clean up
+		go func() {
+			<-wgDone // Wait for all goroutines to finish
+		}()
 		return err
 	}
-
-	return nil
 }
 
 // buildResourceConfigMap Builds a map of all the Terraform resources data returned for each resource
 func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics diag.Diagnostics) {
 	log.Printf("Build Genesys Cloud Resources Map")
-	g.resourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
-	g.unresolvedAttrs = make([]unresolvableAttributeInfo, 0)
 
-	for _, resource := range g.resources {
+	// Initialize maps using thread-safe methods
+	g.setResourceTypesMaps(make(map[string]resourceJSONMaps))
+	g.setDataSourceTypesMaps(make(map[string]resourceJSONMaps))
+
+	// Get resources using thread-safe method
+	resources := g.getResources()
+
+	for _, resource := range resources {
 		// 1. Get instance state as JSON Map
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
 		if diagErr != nil {
@@ -395,19 +458,26 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		// 2. Determine if instance is a data source
 		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
 		if isDataSource {
-			if g.dataSourceTypesMaps[resource.Type] == nil {
-				g.dataSourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			dataSourceMaps := g.getDataSourceTypesMaps()
+			if dataSourceMaps[resource.Type] == nil {
+				dataSourceMaps[resource.Type] = make(resourceJSONMaps)
 			}
+			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
 			// 3. Ensure the resource type is instantiated
-			if g.resourceTypesMaps[resource.Type] == nil {
-				g.resourceTypesMaps[resource.Type] = make(resourceJSONMaps)
+			resourceMaps := g.getResourceTypesMaps()
+			if resourceMaps[resource.Type] == nil {
+				resourceMaps[resource.Type] = make(resourceJSONMaps)
 			}
+			g.setResourceTypesMaps(resourceMaps)
 		}
 
 		// Theoretically this should only ever occur when using the Original Sanitizer as it doesn't have guaranteed
 		// uniqueness for generating the block labels. See resource_name_sanitizer_test.go
-		if len(g.resourceTypesMaps[resource.Type][resource.BlockLabel]) > 0 || len(g.dataSourceTypesMaps[resource.Type][resource.BlockLabel]) > 0 {
+		resourceMaps := g.getResourceTypesMaps()
+		dataSourceMaps := g.getDataSourceTypesMaps()
+
+		if len(resourceMaps[resource.Type][resource.BlockLabel]) > 0 || len(dataSourceMaps[resource.Type][resource.BlockLabel]) > 0 {
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			// The _BRCM prefix is meant to be an identifier so we can tell that the hash was generated here and not in the sanitizer.
@@ -419,29 +489,35 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
 		}
 
-		// 6. Removes zero values and sets proper reference expressions. Returns any resources that have references that
-		// were not able to be resolved. We'll handle those later.
-		unresolved, _ := g.sanitizeConfigMap(resource, jsonResult, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
-		if len(unresolved) > 0 {
-			g.unresolvedAttrs = append(g.unresolvedAttrs, unresolved...)
+		// 4. Convert the instance state to a map
+		configMap := make(map[string]interface{})
+		for key, value := range jsonResult {
+			configMap[key] = value
 		}
 
-		// 7. Adds resource to list of data resources if its a data source
+		// 5. Sanitize the config map
+		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, false, g.exportFormat, false)
+		if len(unresolvableAttrs) > 0 {
+			g.addUnresolvedAttrs(unresolvableAttrs)
+		}
+
+		// 6. Add the resource to the appropriate map
 		if isDataSource {
-			g.dataSourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
+			dataSourceMaps = g.getDataSourceTypesMaps()
+			dataSourceMaps[resource.Type][resource.BlockLabel] = configMap
+			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
-			// 8. Handles writing external files as part of the export process
-			diagnostics = append(diagnostics, g.customWriteAttributes(jsonResult, resource)...)
-			if diagnostics.HasError() {
-				return diagnostics
-			}
-			// 9. Adds resource to list of resources
-			g.resourceTypesMaps[resource.Type][resource.BlockLabel] = jsonResult
+			resourceMaps = g.getResourceTypesMaps()
+			resourceMaps[resource.Type][resource.BlockLabel] = configMap
+			g.setResourceTypesMaps(resourceMaps)
 		}
 
+		// 7. Update instance state attributes
+		g.updateInstanceStateAttributes(jsonResult, resource)
 	}
 
-	return diagnostics
+	log.Printf("Successfully built resource config map with %d resources", len(resources))
+	return nil
 }
 
 func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
@@ -900,29 +976,41 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 }
 
 func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resourceExporter.ResourceInfo) {
+	log.Printf("Appending %d resources to existing resources", len(resourcesToAdd))
 
-	existingResources := g.copyResource()
+	// Get existing resources using thread-safe method
+	existingResources := g.getResources()
 
+	// Create a map for efficient duplicate checking
+	existingResourceMap := make(map[string]bool)
+	for _, resource := range existingResources {
+		key := resource.Type + ":" + resource.State.ID
+		existingResourceMap[key] = true
+	}
+
+	var newResources []resourceExporter.ResourceInfo
 	for _, resourceToAdd := range resourcesToAdd {
-		// Check if the resource with the same ID already exists
-		duplicate := false
-		for _, existingResource := range g.resources {
-			if existingResource.State.ID == resourceToAdd.State.ID && existingResource.Type == resourceToAdd.Type {
-				duplicate = true
-				break
-			}
-		}
-
-		// No duplicate found, append the resource
-		if !duplicate {
-			existingResources = append(existingResources, resourceToAdd)
+		key := resourceToAdd.Type + ":" + resourceToAdd.State.ID
+		if !existingResourceMap[key] {
+			newResources = append(newResources, resourceToAdd)
+			existingResourceMap[key] = true // Mark as added
+		} else {
+			log.Printf("Skipping duplicate resource: %s", key)
 		}
 	}
 
-	g.copyResourceAddtoG(existingResources)
+	if len(newResources) > 0 {
+		// Use thread-safe method to add new resources
+		g.addResources(newResources)
+		log.Printf("Successfully added %d new resources", len(newResources))
+	} else {
+		log.Printf("No new resources to add")
+	}
 }
 
 func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
+	log.Printf("Starting to build sanitized resource maps for %d exporters", len(exporters))
+
 	// Buffer error channel to prevent goroutine leaks or deadlocks
 	errorChan := make(chan diag.Diagnostics, len(exporters))
 	wgDone := make(chan bool)
@@ -931,9 +1019,8 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
 
-	// Create semaphore to limit concurrent operations to the maximum number of clients
-	maxClients := g.meta.(*provider.ProviderMeta).MaxClients
-	sem := make(chan struct{}, maxClients)
+	// Create semaphore to limit concurrent operations to the configured maximum
+	sem := make(chan struct{}, g.maxConcurrentOps)
 
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
@@ -987,12 +1074,14 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	// Wait until either WaitGroup is done or an error is received
 	select {
 	case <-wgDone:
+		log.Printf("Successfully completed building sanitized resource maps")
 		return nil
 	case err := <-errorChan:
 		// Give other goroutines a chance to clean up
 		go func() {
 			<-wgDone // Wait for all goroutines to finish
 		}()
+		log.Printf("Error occurred while building sanitized resource maps: %v", err)
 		return err
 	}
 }
@@ -1069,41 +1158,65 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 }
 
 func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schemaProvider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
-	lenResources := len(exporter.SanitizedResourceMap)
+	// Use thread-safe method to get resource map size
+	lenResources := exporter.GetSanitizedResourceMapSize()
+	if lenResources == 0 {
+		log.Printf("No resources found for type %s", resType)
+		return []resourceExporter.ResourceInfo{}, nil
+	}
+
+	// Buffer channels to prevent goroutine leaks
 	errorChan := make(chan diag.Diagnostics, lenResources)
 	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
-	removeChan := make(chan string, lenResources)
 
 	res := schemaProvider.ResourcesMap[resType]
-
 	if res == nil {
 		return nil, diag.Errorf("Resource type %v not defined", resType)
 	}
 
 	exportComputed := g.exportComputed
+	ctx, cancel := context.WithCancel(g.ctx)
+	defer cancel()
 
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
-	for id, resMeta := range exporter.SanitizedResourceMap {
+
+	// Track resources to remove to avoid race conditions
+	var toRemove []string
+	var toRemoveMutex sync.Mutex
+
+	// Get a copy of the resource map to avoid race conditions during iteration
+	resourceMap := exporter.GetSanitizedResourceMap()
+
+	for id, resMeta := range resourceMap {
 		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
+
+			// Check if context was cancelled
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			fetchResourceState := func() error {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30)*time.Minute)
-				defer cancel()
-				// This calls into the resource's ReadContext method which
-				// will block until it can acquire a pooled client config object.
+				// Use a shorter timeout for individual resource fetches
+				resourceCtx, resourceCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+				defer resourceCancel()
+
 				ctyType := res.CoreConfigSchema().ImpliedType()
-				instanceState, err := getResourceState(ctx, res, id, resMeta, meta)
+				instanceState, err := getResourceState(resourceCtx, res, id, resMeta, meta)
 
 				if err != nil {
 					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, err)
-					errString := fmt.Sprintf("Failed to get state for %s instance %s: %v", resType, id, err)
-					return fmt.Errorf(errString)
+					return fmt.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
 				}
 
 				if instanceState == nil {
 					log.Printf("Resource %s no longer exists. Skipping.", resMeta.BlockLabel)
-					removeChan <- id // Mark for removal from the map
+					toRemoveMutex.Lock()
+					toRemove = append(toRemove, id)
+					toRemoveMutex.Unlock()
 					return nil
 				}
 
@@ -1115,7 +1228,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 						return fmt.Errorf("an error has occurred while trying to export as a data resource block for %s::%s : %v", resType, resMeta.BlockLabel, err)
 					} else {
 						if exportAsData {
-							g.replaceWithDatasource = append(g.replaceWithDatasource, resType+"::"+resMeta.BlockLabel)
+							g.addReplaceWithDatasource(resType + "::" + resMeta.BlockLabel)
 						}
 					}
 				}
@@ -1167,48 +1280,96 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				return nil
 			}
 
-			isTimeoutError := func(err error) bool {
-				return strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") ||
-					strings.Contains(fmt.Sprintf("%v", err), "context deadline exceeded")
-			}
+			// Improved retry logic with exponential backoff
+			maxRetries := 3
+			var lastErr error
 
-			var err error
-			for ok := true; ok; ok = isTimeoutError(err) {
-				err = fetchResourceState()
+			for attempt := 0; attempt < maxRetries; attempt++ {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
+				err := fetchResourceState()
 				if err == nil {
+					return // Success
+				}
+
+				lastErr = err
+
+				// Check if it's a timeout error that we should retry
+				isTimeoutError := func(err error) bool {
+					return strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") ||
+						strings.Contains(fmt.Sprintf("%v", err), "context deadline exceeded") ||
+						strings.Contains(fmt.Sprintf("%v", err), "timeout")
+				}
+
+				if !isTimeoutError(err) {
+					// Non-retryable error, send to error channel
+					select {
+					case errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err):
+					case <-ctx.Done():
+						return
+					}
 					return
 				}
-				if !isTimeoutError(err) {
-					errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
+
+				// Exponential backoff for retryable errors
+				if attempt < maxRetries-1 {
+					backoffDuration := time.Duration(1<<attempt) * time.Second
+					log.Printf("Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration)
+
+					select {
+					case <-time.After(backoffDuration):
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+
+			// If we get here, all retries failed
+			if lastErr != nil {
+				select {
+				case errorChan <- diag.Errorf("Failed to get state for %s instance %s after %d retries: %v", resType, id, maxRetries, lastErr):
+				case <-ctx.Done():
+					return
 				}
 			}
 		}(id, resMeta)
 	}
 
-	go func() {
-		wg.Wait()
-		close(resourceChan)
-		close(removeChan)
-	}()
+	// Wait for all goroutines to complete
+	wg.Wait()
+	close(resourceChan)
+	close(errorChan)
 
+	// Collect all resources
 	var resources []resourceExporter.ResourceInfo
 	for r := range resourceChan {
 		resources = append(resources, r)
 	}
 
-	// Remove resources that weren't found in this pass
-	for id := range removeChan {
-		log.Printf("Deleted resource %v", id)
-		delete(exporter.SanitizedResourceMap, id)
+	// Remove resources that weren't found using thread-safe method
+	for _, id := range toRemove {
+		log.Printf("Removing resource %v from export map", id)
+		exporter.RemoveFromSanitizedResourceMap(id)
 	}
 
-	// Return the first error if one was received
-	select {
-	case err := <-errorChan:
-		return nil, err
-	default:
-		return resources, nil
+	// Collect all errors
+	var allErrors diag.Diagnostics
+	for err := range errorChan {
+		allErrors = append(allErrors, err...)
 	}
+
+	// Return errors if any occurred
+	if len(allErrors) > 0 {
+		log.Printf("Export completed for %s with %d errors out of %d resources", resType, len(allErrors), lenResources)
+		return resources, allErrors
+	}
+
+	log.Printf("Export completed for %s: %d resources successfully exported", resType, len(resources))
+	return resources, nil
 }
 
 func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
@@ -1829,4 +1990,59 @@ func (g *GenesysCloudResourceExporter) matchesExportFormat(formats ...string) bo
 		}
 	}
 	return false
+}
+
+// Helper methods for thread-safe access to shared state
+func (g *GenesysCloudResourceExporter) addReplaceWithDatasource(item string) {
+	g.replaceWithDatasourceMutex.Lock()
+	defer g.replaceWithDatasourceMutex.Unlock()
+	g.replaceWithDatasource = append(g.replaceWithDatasource, item)
+}
+
+func (g *GenesysCloudResourceExporter) addResources(newResources []resourceExporter.ResourceInfo) {
+	g.resourcesMutex.Lock()
+	defer g.resourcesMutex.Unlock()
+	g.resources = append(g.resources, newResources...)
+}
+
+func (g *GenesysCloudResourceExporter) addUnresolvedAttrs(attrs []unresolvableAttributeInfo) {
+	g.unresolvedAttrsMutex.Lock()
+	defer g.unresolvedAttrsMutex.Unlock()
+	g.unresolvedAttrs = append(g.unresolvedAttrs, attrs...)
+}
+
+func (g *GenesysCloudResourceExporter) setResourceTypesMaps(maps map[string]resourceJSONMaps) {
+	g.resourceTypesMapsMutex.Lock()
+	defer g.resourceTypesMapsMutex.Unlock()
+	g.resourceTypesMaps = maps
+}
+
+func (g *GenesysCloudResourceExporter) setDataSourceTypesMaps(maps map[string]resourceJSONMaps) {
+	g.dataSourceTypesMapsMutex.Lock()
+	defer g.dataSourceTypesMapsMutex.Unlock()
+	g.dataSourceTypesMaps = maps
+}
+
+func (g *GenesysCloudResourceExporter) getResourceTypesMaps() map[string]resourceJSONMaps {
+	g.resourceTypesMapsMutex.RLock()
+	defer g.resourceTypesMapsMutex.RUnlock()
+	return g.resourceTypesMaps
+}
+
+func (g *GenesysCloudResourceExporter) getDataSourceTypesMaps() map[string]resourceJSONMaps {
+	g.dataSourceTypesMapsMutex.RLock()
+	defer g.dataSourceTypesMapsMutex.RUnlock()
+	return g.dataSourceTypesMaps
+}
+
+func (g *GenesysCloudResourceExporter) getResources() []resourceExporter.ResourceInfo {
+	g.resourcesMutex.Lock()
+	defer g.resourcesMutex.Unlock()
+	return g.resources
+}
+
+func (g *GenesysCloudResourceExporter) getUnresolvedAttrs() []unresolvableAttributeInfo {
+	g.unresolvedAttrsMutex.Lock()
+	defer g.unresolvedAttrsMutex.Unlock()
+	return g.unresolvedAttrs
 }
