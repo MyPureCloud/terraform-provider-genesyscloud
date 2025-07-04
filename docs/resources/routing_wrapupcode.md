@@ -1,10 +1,10 @@
 ---
-page_title: "genesyscloud_routing_wrapupcode_v2 Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_routing_wrapupcode Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud Routing Wrapup Code
 ---
-# genesyscloud_routing_wrapupcode_v2 (Resource)
+# genesyscloud_routing_wrapupcode (Resource)
 
 Genesys Cloud Routing Wrapup Code
 
@@ -20,11 +20,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_routing_wrapupcode_v2" "win" {
+resource "genesyscloud_routing_wrapupcode" "win" {
   name        = "Win"
   description = "Win test description"
 }
-resource "genesyscloud_routing_wrapupcode_v2" "unknown" {
+resource "genesyscloud_routing_wrapupcode" "unknown" {
   name        = "Unknown"
   description = "Unknown test description"
 }
@@ -44,5 +44,5 @@ resource "genesyscloud_routing_wrapupcode_v2" "unknown" {
 
 ### Read-Only
 
-- `id` (String) API generated identifier for the wrap-up code.
+- `id` (String) The ID of this resource.
 

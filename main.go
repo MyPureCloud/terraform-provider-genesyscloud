@@ -50,6 +50,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// At the moment, the only resource supported by the framework provider is genesyscloud_routing_wrapupcode_v2; a replicate of genesyscloud_routing_wrapupcode
 	frameworkProvider := providerserver.NewProtocol6(provider.NewFrameWorkProvider(version)())
 
 	bothServers := []func() tfprotov6.ProviderServer{
