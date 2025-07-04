@@ -11,6 +11,7 @@ const (
 	sdkDebugFilePathEnvVar       = "GENESYSCLOUD_SDK_DEBUG_FILE_PATH"
 	sdkDebugFormatEnvVar         = "GENESYSCLOUD_SDK_DEBUG_FORMAT"
 	tokenPoolSizeEnvVar          = "GENESYSCLOUD_TOKEN_POOL_SIZE"
+	tokenInitTimeoutEnvVar       = "GENESYSCLOUD_TOKEN_INIT_TIMEOUT"
 	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
 	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
 	gatewayHostEnvVar            = "GENESYSCLOUD_GATEWAY_HOST"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
+	customvalidators "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider/framework_custom_validators"
 	"log"
 	"regexp"
 
@@ -216,7 +217,9 @@ func (f *GenesysCloudProvider) Schema(_ context.Context, request provider.Schema
 			AttrTokenAcquireTimeout: schema.StringAttribute{
 				Optional:            true,
 				MarkdownDescription: "Timeout for acquiring a token from the pool. Can be set with the `GENESYSCLOUD_TOKEN_ACQUIRE_TIMEOUT` environment variable.",
-				//ValidateFunc: validateDuration,
+				Validators: []validator.String{
+					customvalidators.ValidateDuration(),
+				},
 			},
 			"sdk_debug_file_path": schema.StringAttribute{
 				Optional:            true,
@@ -230,6 +233,13 @@ func (f *GenesysCloudProvider) Schema(_ context.Context, request provider.Schema
 				MarkdownDescription: fmt.Sprintf("Max number of OAuth tokens in the token pool. Can be set with the `%s` environment variable.", tokenPoolSizeEnvVar),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 20),
+				},
+			},
+			AttrTokenInitTimeout: schema.StringAttribute{
+				Optional:            true,
+				MarkdownDescription: fmt.Sprintf("Timeout for initializing the token pool. Can be set with the `%s` environment variable.", tokenInitTimeoutEnvVar),
+				Validators: []validator.String{
+					customvalidators.ValidateDuration(),
 				},
 			},
 			"log_stack_traces": schema.BoolAttribute{

@@ -22,6 +22,7 @@ func ProviderSchema() map[string]*schema.Schema {
 		"access_token": {
 			Type:        schema.TypeString,
 			Optional:    true,
+			Sensitive:   true,
 			DefaultFunc: schema.EnvDefaultFunc(accessTokenEnvVar, nil),
 			Description: fmt.Sprintf("A string that the OAuth client uses to make requests. Can be set with the `%s` environment variable.", accessTokenEnvVar),
 		},
@@ -208,13 +209,14 @@ If you encounter any stack traces, please report them so we can address the unde
 							Schema: map[string]*schema.Schema{
 								"username": {
 									Type:        schema.TypeString,
-									Optional:    true,
+									Required:    true,
 									DefaultFunc: schema.EnvDefaultFunc(proxyAuthUsernameEnvVar, nil),
 									Description: fmt.Sprintf("UserName for the Auth can be set with the `%s` environment variable.", proxyAuthUsernameEnvVar),
 								},
 								"password": {
 									Type:        schema.TypeString,
 									Optional:    true,
+									Sensitive:   true,
 									DefaultFunc: schema.EnvDefaultFunc(proxyAuthPasswordEnvVar, nil),
 									Description: fmt.Sprintf("Password for the Auth can be set with the `%s` environment variable.", proxyAuthPasswordEnvVar),
 								},

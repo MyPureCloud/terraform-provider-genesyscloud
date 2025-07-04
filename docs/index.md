@@ -24,7 +24,7 @@ provider "genesyscloud" {
 
 ### Optional
 
-- `access_token` (String) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
+- `access_token` (String, Sensitive) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
 - `aws_region` (String) AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.
 - `gateway` (Block Set) (see [below for nested schema](#nestedblock--gateway))
 - `log_stack_traces` (Boolean) If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.
@@ -36,7 +36,7 @@ If you encounter any stack traces, please report them so we can address the unde
 - `oauthclient_secret` (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
 - `proxy` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy))
 - `sdk_client_pool_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK client pool. Output will be written to standard log output. Can be set with the `GENESYSCLOUD_SDK_CLIENT_POOL_DEBUG` environment variable.
-- `sdk_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'. Can be set with the `GENESYSCLOUD_SDK_DEBUG` environment variable.
+- `sdk_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to `sdk_debug_file_path`. Can be set with the `GENESYSCLOUD_SDK_DEBUG` environment variable.
 - `sdk_debug_file_path` (String) Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log
 - `sdk_debug_format` (String) Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FORMAT` environment variable. Default value is Text.
 - `token_acquire_timeout` (String) Timeout for acquiring a token from the pool. Can be set with the `GENESYSCLOUD_TOKEN_ACQUIRE_TIMEOUT` environment variable.
