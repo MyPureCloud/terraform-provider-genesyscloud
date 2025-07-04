@@ -3,6 +3,9 @@ package guide
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -13,8 +16,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"log"
-	"time"
 )
 
 func getAllGuides(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -82,6 +83,8 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		resourcedata.SetNillableValue(d, "name", guide.Name)
+
+		d.SetId(*guide.Id)
 
 		if guide.Status != nil {
 			_ = d.Set("status", *guide.Status)

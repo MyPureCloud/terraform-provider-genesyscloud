@@ -1,6 +1,9 @@
 package guide
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
 	r.Header.Set("Content-Type", "application/json")
@@ -55,4 +58,13 @@ type GuideEntityListing struct {
 type GuideVersionRef struct {
 	Version *string `json:"version,omitempty"`
 	SelfUri *string `json:"selfUri,omitempty"`
+}
+
+// GenerateGuideResource generates terraform for a guide resource
+func GenerateGuideResource(resourceID string, name string, source string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		name = "%s"
+		source = "%s"
+	}
+	`, ResourceType, resourceID, name, source)
 }
