@@ -29,9 +29,14 @@ func (f *GenesysCloudProvider) InitSDKClientPool() diag.Diagnostics {
 			return
 		}
 
+		maxClients := MaxClients
+		if v := f.TokenPoolSize; v != 0 {
+			maxClients = int(v)
+		}
+
 		log.Printf("(Framework) Initializing %d SDK clients in the Pool.", f.TokenPoolSize)
 		f.SdkClientPool = SDKClientPool{
-			Pool: make(chan *platformclientv2.Configuration, f.TokenPoolSize),
+			Pool: make(chan *platformclientv2.Configuration, maxClients),
 		}
 		SdkClientPoolFrameWorkDiagErr = f.frameworkPreFill()
 	})

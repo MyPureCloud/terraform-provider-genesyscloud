@@ -97,9 +97,9 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			return
 		}
 
-		max := MaxClients
+		maxClients := MaxClients
 		if v, ok := providerConfig.GetOk(AttrTokenPoolSize); ok {
-			max = v.(int)
+			maxClients = v.(int)
 		}
 
 		// Get timeouts from provider config
@@ -124,19 +124,19 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 		}
 
 		config := &SDKClientPoolConfig{
-			MaxClients:     max,
+			MaxClients:     maxClients,
 			AcquireTimeout: acquireTimeout,
 			InitTimeout:    initTimeout,
 			DebugLogging:   providerConfig.Get(AttrSdkClientPoolDebug).(bool),
 		}
 
 		SdkClientPool = &SDKClientPool{
-			Pool:    make(chan *platformclientv2.Configuration, max),
+			Pool:    make(chan *platformclientv2.Configuration, maxClients),
 			config:  config,
 			metrics: &poolMetrics{},
 			done:    make(chan struct{}),
 		}
-		SdkClientPool.logDebug("Initialized %d SDK clients in the Pool with acquire timeout %v and init timeout %v.", max, acquireTimeout, initTimeout)
+		SdkClientPool.logDebug("Initialized %d SDK clients in the Pool with acquire timeout %v and init timeout %v.", maxClients, acquireTimeout, initTimeout)
 
 		SdkClientPool.startMetricsLogging()
 		SdkClientPoolErr = SdkClientPool.preFill(ctx, providerConfig, version)

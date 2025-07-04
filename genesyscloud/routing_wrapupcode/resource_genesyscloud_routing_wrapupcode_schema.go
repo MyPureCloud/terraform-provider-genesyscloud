@@ -10,9 +10,9 @@ import (
 
 const ResourceType = "genesyscloud_routing_wrapupcode"
 
-// SetRegistrar registers all of the resources, datasources and exporters in the pakage
+// SetRegistrar registers all resources, datasources and exporters in the pakage
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceType, ResourceRoutingWrapupCode())
+	//regInstance.RegisterResource(ResourceType, ResourceRoutingWrapupCode())
 	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingWrapupCode())
 	regInstance.RegisterExporter(ResourceType, RoutingWrapupCodeExporter())
 }

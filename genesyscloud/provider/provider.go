@@ -13,8 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -162,7 +160,6 @@ func configure(version string) schema.ConfigureContextFunc {
 		if v, ok := data.GetOk(AttrTokenPoolSize); ok {
 			maxClients = v.(int)
 		}
-		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
 		meta := &ProviderMeta{
 			Version:               version,

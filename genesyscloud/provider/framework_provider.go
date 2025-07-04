@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 	customvalidators "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider/framework_custom_validators"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode_v2"
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"log"
 	"regexp"
 
@@ -261,8 +263,8 @@ If you encounter any stack traces, please report them so we can address the unde
 }
 
 func (f *GenesysCloudProvider) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
-	const logPrefix = "(Framework) "
-	log.Println(logPrefix, "Calling genesyscloud provider")
+
+	frameworkLog("Calling genesyscloud provider")
 	var data GenesysCloudProviderModel
 
 	response.Diagnostics.Append(request.Config.Get(ctx, &data)...)
@@ -275,7 +277,7 @@ func (f *GenesysCloudProvider) Configure(ctx context.Context, request provider.C
 
 	providerSourceRegistry := getRegistry(&platformInstance, f.Version)
 
-	log.Println(logPrefix, "Configuring provider schema attributes")
+	frameworkLog("Configuring provider schema attributes")
 	f.AttributeEnvValues = readProviderEnvVars()
 	f.configureAuthInfo(data)
 	f.configureSdkDebugInfo(data)
@@ -283,21 +285,20 @@ func (f *GenesysCloudProvider) Configure(ctx context.Context, request provider.C
 	f.configureProxyAttributes(data)
 	f.configureGatewayAttributes(data)
 
-	log.Println(logPrefix, "Initialising SDK client pool")
+	frameworkLog("Initialising SDK client pool")
 	err := f.InitSDKClientPool()
 	if err.HasError() {
 		response.Diagnostics.AddError(fmt.Sprintf("%v", err), "Failed to init SDK client pool")
 	}
 
-	log.Println(logPrefix, "Establishing current org")
+	frameworkLog("Establishing current org")
 	defaultConfig := platformclientv2.GetDefaultConfiguration()
 	currentOrg, getOrgMeErr := getOrganizationMe(defaultConfig)
 	if getOrgMeErr != nil { // plugin sdk diagnostic error
 		response.Diagnostics.AddError(fmt.Sprintf("%v", getOrgMeErr), "Failed to establish current organisation.")
 	}
 
-	// probably not necessary because this is being called in the Plugin SDK configure function
-	//prl.InitPanicRecoveryLoggerInstance(data.LogStackTraces.ValueBool(), data.LogStackTracesFilePath.ValueString())
+	prl.InitPanicRecoveryLoggerInstance(data.LogStackTraces.ValueBool(), data.LogStackTracesFilePath.ValueString())
 
 	meta := ProviderMeta{
 		Version:      f.Version,
@@ -325,6 +326,11 @@ func (f *GenesysCloudProvider) DataSources(_ context.Context) []func() datasourc
 
 func (f *GenesysCloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		// TODO: add a resource
+		routing_wrapupcode_v2.NewWrapupCodeResource,
 	}
+}
+
+func frameworkLog(s string) {
+	const logPrefix = "(Framework) "
+	log.Println(logPrefix, s)
 }
