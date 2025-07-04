@@ -19,6 +19,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -76,6 +77,7 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 	domain = strings.Join(strings.Split(api.Response.Request.URL.Host, ".")[1:], ".")
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
+
 	var resources = []string{}
 	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
@@ -104,6 +106,13 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 	resourceTypesResults := make(map[string]ResultsStatus, len(resources))
 
 	for _, resourceType := range resources {
+		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
+			if !feature_toggles.GuideToggleExists() {
+				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
+				resourceTypesResults[resourceType] = ResultsStatusSkipped
+				continue
+			}
+		}
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
 
 		t.Run(resourceType, func(t *testing.T) {
@@ -244,6 +253,12 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 	processedState := NewProcessedExampleState()
 
 	for _, resourceType := range resources {
+		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
+			if !feature_toggles.GuideToggleExists() {
+				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
+				continue
+			}
+		}
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
 
 		// Warn if the exampleDir doesn't exist
@@ -341,6 +356,13 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 	resourceTypeResults := make(map[string]ResultsStatus, len(resources))
 
 	for _, resourceType := range resources {
+		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
+			if !feature_toggles.GuideToggleExists() {
+				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
+				resourceTypeResults[resourceType] = ResultsStatusSkipped
+				continue
+			}
+		}
 		exampleDir := filepath.Join(testrunner.RootDir, "examples", "resources", resourceType)
 
 		t.Run(orgName+"/"+resourceType, func(t *testing.T) {

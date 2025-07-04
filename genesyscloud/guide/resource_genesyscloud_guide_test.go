@@ -3,13 +3,15 @@ package guide
 import (
 	"context"
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"os"
-	"testing"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 func TestAccResourceGuide(t *testing.T) {
@@ -17,6 +19,12 @@ func TestAccResourceGuide(t *testing.T) {
 		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
 		return
 	}
+
+	if !feature_toggles.GuideToggleExists() {
+		t.Skipf("Skipping test for genesyscloud_guide as feature toggle not enabled")
+		return
+	}
+
 	var (
 		resourceLabel = "guide"
 

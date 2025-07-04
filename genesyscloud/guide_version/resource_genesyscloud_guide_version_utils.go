@@ -113,18 +113,20 @@ func buildGuideVersionVariables(vars []interface{}) []Variable {
 		return []Variable{}
 	}
 
-	variables := make([]Variable, 0, len(vars))
+	var variables []Variable
 
-	for i, v := range vars {
-		variables[i] = Variable{
+	for _, v := range vars {
+		variable := Variable{
 			Name:  v.(map[string]interface{})["name"].(string),
 			Type:  v.(map[string]interface{})["type"].(string),
 			Scope: v.(map[string]interface{})["scope"].(string),
 		}
 
 		if description := v.(map[string]interface{})["description"].(string); description != "" {
-			variables[i].Description = description
+			variable.Description = description
 		}
+
+		variables = append(variables, variable)
 	}
 
 	log.Printf("Successfully built %d valid variables", len(variables))

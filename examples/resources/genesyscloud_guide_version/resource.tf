@@ -1,5 +1,5 @@
 resource "genesyscloud_guide_version" "sample-guide" {
-  guide_id    = data.genesyscloud_guide.id
+  guide_id    = genesyscloud_guide.sample_guide.id
   instruction = "This is a test Instruction"
   variables {
     name        = "TestVariable"
@@ -9,12 +9,12 @@ resource "genesyscloud_guide_version" "sample-guide" {
   }
   resources {
     data_action {
-      data_action_id = "DataActionId"
+      data_action_id = genesyscloud_integration_action.example_action.id
       label          = "Genesys Cloud Data Actions (1)"
       description    = "This is a test Description"
     }
     data_action {
-      data_action_id = "DataActionId"
+      data_action_id = genesyscloud_integration_action.example_action.id
       label          = "Genesys Cloud Data Actions (1)"
       description    = "This is a test Description"
     }
