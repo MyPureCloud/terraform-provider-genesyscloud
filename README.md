@@ -99,13 +99,16 @@ GENESYSCLOUD_PROXY_AUTH_PASSWORD
 ```
 
 ### Customizing the consistency checker
-The provider uses a consistency checker to help deal with eventual consistency problems that might occur when a GET api does not return up-to-date data after a resource is updated. By default, the consistency checker will throw an error if, after retrying, there is still an unexpected mismatch between states. 
+
+The provider uses a consistency checker to help deal with eventual consistency problems that might occur when a GET api does not return up-to-date data after a resource is updated. By default, the consistency checker will throw an error if, after retrying, there is still an unexpected mismatch between states.
 To change this behaviour and make the consistency checker write errors to a file, you can set the following environment variable:
+
 ```
 BYPASS_CONSISTENCY_CHECKER
 ```
 
 When `BYPASS_CONSISTENCY_CHECKER` is set the provider will retry 5 times by default when it encounters a problem before writing the error to a file. You can specifically set how many times you want the consistency checker to run by setting the following environment variable.
+
 ```
 CONSISTENCY_CHECKS=5
 ```
@@ -140,12 +143,16 @@ In order to run the full suite of Acceptance tests, run `make testacc`. You can 
 $ make testacc TESTARGS="-run TestAccResourceUserBasic"
 ```
 
-All new resources must have passing acceptance tests and docs in order to be merged. Most of the docs are generated automatically from the schema and examples folder by running `make docs`.
+All new resources must have passing acceptance tests, examples and docs in order to be merged.
+
+Examples can be tested for conformity to existing resource specs by running `make testexamples`. The [Examples README](./examples/README.md) has more details on developing examples for new and existing resources.
+
+Most of the docs are generated automatically from the schema and examples folder by running `make docs`.
 
 To run all of the unit tests:
 
 ```sh
-$make testunit
+$ make testunit
 ```
 
 ### Adding a new resource type

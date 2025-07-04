@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -27,15 +28,17 @@ import (
 )
 
 func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
+	if feature_toggles.BcpModeEnabledExists() {
+		return nil
+	}
 	if numberStr, ok := number.(string); ok {
-
 		utilE164 := util.NewUtilE164Service()
-		formattedNum, err := utilE164.FormatAsValidE164Number(numberStr)
+		validNum, err := utilE164.IsValidE164Number(numberStr)
 		if err != nil {
 			return err
 		}
-		if formattedNum != numberStr {
-			return diag.Errorf("Failed to parse number in an E.164 format.  Passed %s and expected: %s", numberStr, formattedNum)
+		if !validNum {
+			return diag.Errorf("Failed to validate number is in an E.164 format: %s", numberStr)
 		}
 		return nil
 	}

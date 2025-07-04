@@ -1,3 +1,4 @@
+// Package examples provides unit tests for the example loading and processing functionality.
 package examples
 
 import (
@@ -7,7 +8,9 @@ import (
 	"testing"
 )
 
-// TestLoadExampleWithDependencies tests the basic functionality of loading examples
+// TestUnitLoadExampleWithDependencies tests the basic functionality of loading examples.
+// It creates temporary test files and verifies that the example loading process correctly
+// loads resources and locals from those files.
 func TestUnitLoadExampleWithDependencies(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
@@ -62,7 +65,9 @@ locals {
 	}
 }
 
-// TestLoadExampleWithSimpleDependency tests loading an example with a dependency
+// TestUnitLoadExampleWithSimpleDependency tests loading an example with a dependency.
+// It verifies that dependencies defined in locals.tf are correctly loaded and that
+// resources from those dependencies are included in the final example.
 func TestUnitLoadExampleWithSimpleDependency(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
@@ -125,7 +130,10 @@ locals {
 	}
 }
 
-// TestLoadExampleCyclicDependencyDetection tests that cyclic dependencies are detected
+// TestUnitLoadExampleCyclicDependencyDetection tests that cyclic dependencies are detected.
+// It creates a circular dependency between two example files and verifies that the
+// loading process detects the cycle, logs a warning, and continues processing without error or
+// getting caught in a cycle.
 func TestUnitLoadExampleCyclicDependencyDetection(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
@@ -205,7 +213,8 @@ locals {
 	}
 }
 
-// TestLoadExampleProcessedExampleState tests that the ProcessedExampleState correctly tracks processed files
+// TestUnitLoadExampleProcessedExampleState tests that the ProcessedExampleState correctly tracks processed files.
+// It verifies that files are properly marked as processed and that the dependency chain is maintained.
 func TestUnitLoadExampleProcessedExampleState(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
@@ -238,7 +247,9 @@ func TestUnitLoadExampleProcessedExampleState(t *testing.T) {
 	}
 }
 
-// TestLoadExampleDependencyChainTracking tests that the dependency chain is correctly tracked
+// TestUnitLoadExampleDependencyChainTracking tests that the dependency chain is correctly tracked.
+// It verifies that paths are added to and removed from the dependency chain as expected,
+// which is essential for detecting cyclic dependencies.
 func TestUnitLoadExampleDependencyChainTracking(t *testing.T) {
 	// Create a ProcessedExampleState
 	state := NewProcessedExampleState()
@@ -268,7 +279,9 @@ func TestUnitLoadExampleDependencyChainTracking(t *testing.T) {
 	}
 }
 
-// TestLoadExampleLocalsMerging tests that locals are properly merged from dependencies
+// TestUnitLoadExampleLocalsMerging tests that locals are properly merged from dependencies.
+// It verifies that working directories, skip constraints, and environment variables from
+// multiple locals.tf files are correctly combined in the final example.
 func TestUnitLoadExampleLocalsMerging(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
@@ -423,7 +436,9 @@ locals {
 	}
 }
 
-// TestLoadExampleLocalsNilHandling tests that nil locals are handled properly during merging
+// TestUnitLoadExampleLocalsNilHandling tests that nil locals are handled properly during merging.
+// It verifies that when a main example has minimal locals and a dependency has more extensive
+// locals, the merge operation correctly handles the nil fields and produces a valid result.
 func TestUnitLoadExampleLocalsNilHandling(t *testing.T) {
 	// Create a temporary directory for our test files
 	tempDir, err := os.MkdirTemp("", "example-test")
@@ -514,7 +529,9 @@ locals {
 	}
 }
 
-// TestLoadExampleLocalsMergeDirectly tests the merge function directly
+// TestUnitLoadExampleLocalsMergeDirectly tests the Locals.Merge function directly.
+// It creates two Locals objects with various attributes and verifies that merging them
+// produces the expected combined result with all fields properly merged.
 func TestUnitLoadExampleLocalsMergeDirectly(t *testing.T) {
 	// Create two Locals objects
 	locals1 := &Locals{

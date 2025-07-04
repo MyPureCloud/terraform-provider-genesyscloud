@@ -10,7 +10,18 @@ const (
 	DefaultOutboundScriptName = "Default Outbound Script"
 	DefaultInboundScriptName  = "Default Inbound Script"
 	DefaultCallbackScriptName = "Default Callback Script"
+
+	DefaultOutboundScriptID = "476c2b71-7429-11e4-9a5b-3f91746bffa3"
+	DefaultCallbackScriptID = "ffde0662-8395-9b04-7dcb-b90172109065"
+	DefaultInboundScriptID  = "766f1221-047a-11e5-bba2-db8c0964d007"
 )
+
+// DefaultScriptMap can be used to get a script name by its ID
+var DefaultScriptMap = map[string]string{
+	DefaultCallbackScriptID: DefaultCallbackScriptName,
+	DefaultInboundScriptID:  DefaultInboundScriptName,
+	DefaultOutboundScriptID: DefaultOutboundScriptName,
+}
 
 // ConsistencyChecks will return the number of times the consistency checker should retry.
 // The user can specify this by setting the env variable CONSISTENCY_CHECKS

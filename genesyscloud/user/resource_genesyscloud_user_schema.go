@@ -1,12 +1,14 @@
 package user
 
 import (
+	"context"
 	"fmt"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -181,6 +183,28 @@ var (
 	}
 )
 
+// customizeDiffAddressRemoval is a CustomizeDiffFunc that detects when addresses are removed from the configuration
+func customizeDiffAddressRemoval(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Only run this for updates, not for resource creation
+	if diff.Id() == "" {
+		return nil
+	}
+
+	// Check if addresses exist in the configuration
+	_, addressesExistInConfig := diff.GetOk("addresses")
+
+	// If addresses don't exist in config but exist in state, mark it as a change
+	if !addressesExistInConfig {
+		oldAddresses, _ := diff.GetOk("addresses")
+		if oldAddresses != nil && len(oldAddresses.([]interface{})) > 0 {
+			// Force a change on addresses to trigger an update
+			diff.SetNew("addresses", []interface{}{})
+		}
+	}
+
+	return nil
+}
+
 func ResourceUser() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud User.
@@ -195,6 +219,7 @@ Export block label: "{email}"`,
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: customizeDiffAddressRemoval,
 		Schema: map[string]*schema.Schema{
 			"email": {
 				Description: "User's primary email and username.",
@@ -275,7 +300,6 @@ Export block label: "{email}"`,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{

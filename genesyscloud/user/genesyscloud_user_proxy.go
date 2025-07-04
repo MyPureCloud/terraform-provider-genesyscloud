@@ -3,12 +3,10 @@ package user
 import (
 	"context"
 	"fmt"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 	"net/http"
 	"strconv"
-	"time"
-
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
@@ -70,6 +68,9 @@ type userProxy struct {
 	extensionPoolCache                       rc.CacheInterface[platformclientv2.Extensionpool]
 }
 
+var userCache = rc.NewResourceCache[platformclientv2.User]()
+var extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+
 /*
 The function newUserProxy sets up the user proxy by providing it
 with all the necessary information to communicate effectively with Genesys Cloud.
@@ -77,12 +78,10 @@ This includes configuring the proxy with the required data and settings so that 
 seamlessly with the Genesys Cloud platform.
 */
 func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
-	userApi := platformclientv2.NewUsersApiWithConfig(clientConfig)      // NewUsersApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
-	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewRoutingApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
+	userApi := platformclientv2.NewUsersApiWithConfig(clientConfig)      // NewUsersApiWithConfig creates a Genesys Cloud API instance using the provided configuration
+	routingApi := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewRoutingApiWithConfig creates a Genesys Cloud API instance using the provided configuration
 	voicemailApi := platformclientv2.NewVoicemailApiWithConfig(clientConfig)
 	extensionPoolApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
-	userCache := rc.NewResourceCache[platformclientv2.User]() // Create Cache for User resource
-	extensionPoolCache := rc.NewResourceCache[platformclientv2.Extensionpool]()
 	return &userProxy{
 		clientConfig:                             clientConfig,
 		userApi:                                  userApi,
@@ -115,10 +114,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func GetUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
-	if internalProxy == nil {
-		internalProxy = newUserProxy(clientConfig)
-	}
-	return internalProxy
+	return newUserProxy(clientConfig)
 }
 
 // createUser creates a Genesys Cloud User
@@ -189,27 +185,27 @@ func (p *userProxy) getTelephonyExtensionPoolByExtension(ctx context.Context, ex
 }
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
-func createUserFn(ctx context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+func createUserFn(_ context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
 	return p.userApi.PostUsers(*createUser)
 }
 
 // getUserByIdFn is an implementation of the function to get a Genesys Cloud user by Id
-func getUserByIdFn(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error) {
+func getUserByIdFn(_ context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error) {
 	return p.userApi.GetUser(id, expand, "", state)
 }
 
 // hydrateUserCacheFn
-func hydrateUserCacheFn(ctx context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error) {
+func hydrateUserCacheFn(_ context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error) {
 	return p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", "")
 }
 
 // getUserByNameFn
-func getUserByNameFn(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
+func getUserByNameFn(_ context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
 	return p.userApi.PostUsersSearch(searchUser)
 }
 
 // deleteUserFn is an implementation function for deleting a Genesys Cloud user
-func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
+func deleteUserFn(_ context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
 	data, resp, err := p.userApi.DeleteUser(id)
 	if err != nil {
 		return nil, resp, err
@@ -218,19 +214,16 @@ func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *
 	return data, nil, nil
 }
 
-func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+func patchUserWithStateFn(_ context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
 	return p.userApi.PatchUser(id, *updateUser)
 }
 
-func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+func updateUserFn(_ context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
 	return p.userApi.PatchUser(id, *updateUser)
 }
 
-// getAllUserFn is the implementation for retrieving all user in Genesys Cloud
-func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
-
-	//Newly created resources often aren't returned unless there's a delay
-	time.Sleep(5 * time.Second)
+// GetAllUserFn is the implementation for retrieving all user in Genesys Cloud
+func GetAllUserFn(_ context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 
 	//Inner function to get user based on status
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
@@ -315,22 +308,22 @@ func getUserIdByNameFn(ctx context.Context, p *userProxy, name string) (id strin
 	return "", true, apiResponse, fmt.Errorf("Unable to find user with name %s", name)
 }
 
-func updateVoicemailUserpoliciesFn(ctx context.Context, p *userProxy, userId string, updatePolicy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+func updateVoicemailUserpoliciesFn(_ context.Context, p *userProxy, userId string, updatePolicy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
 	return p.voicemailApi.PatchVoicemailUserpolicy(userId, *updatePolicy)
 }
 
-func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+func getVoicemailUserpoliciesByUserIdFn(_ context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
 	return p.voicemailApi.GetVoicemailUserpolicy(id)
 }
 
-func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
+func updatePasswordFn(_ context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
 	// Get the user's current password
 	return p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
 		NewPassword: &newPassword,
 	})
 }
 
-func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+func getTelephonyExtensionPoolByExtensionFn(_ context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var allPools []platformclientv2.Extensionpool
 

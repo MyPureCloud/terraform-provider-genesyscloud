@@ -18,13 +18,12 @@ type DidPoolStruct struct {
 
 // DeleteDidPoolWithStartAndEndNumber deletes a did pool by start and end number. Used as a cleanup function in tests which
 // utilise the did pool resource
-func DeleteDidPoolWithStartAndEndNumber(ctx context.Context, startNumber, endNumber string) (*platformclientv2.APIResponse, error) {
-	config := platformclientv2.GetDefaultConfiguration()
-	proxy := getTelephonyDidPoolProxy(config)
+func DeleteDidPoolWithStartAndEndNumber(ctx context.Context, startNumber, endNumber string, sdkConfig *platformclientv2.Configuration) (*platformclientv2.APIResponse, error) {
+	proxy := getTelephonyDidPoolProxy(sdkConfig)
 
-	didPoolId, _, _, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, startNumber, endNumber)
+	didPoolId, _, resp, err := proxy.getTelephonyDidPoolIdByStartAndEndNumber(ctx, startNumber, endNumber)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	return proxy.deleteTelephonyDidPool(ctx, didPoolId)
