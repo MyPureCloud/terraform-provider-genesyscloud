@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
@@ -22,7 +23,7 @@ type groupProxy struct {
 	clientConfig           *platformclientv2.Configuration
 	groupsApi              *platformclientv2.GroupsApi
 	createGroupAttr        createGroupFunc
-	getAllGroupAttr        getAllGroupFunc
+	getAllGroupsAttr       getAllGroupFunc
 	updateGroupAttr        updateGroupFunc
 	deleteGroupAttr        deleteGroupFunc
 	getGroupByNameAttr     getGroupByNameFunc
@@ -41,7 +42,7 @@ func newGroupProxy(clientConfig *platformclientv2.Configuration) *groupProxy {
 		clientConfig:           clientConfig,
 		groupsApi:              api,
 		createGroupAttr:        createGroupFn,
-		getAllGroupAttr:        getAllGroupFn,
+		getAllGroupsAttr:       getAllGroupsFn,
 		updateGroupAttr:        updateGroupFn,
 		deleteGroupAttr:        deleteGroupFn,
 		getGroupByNameAttr:     getGroupByNameFn,
@@ -70,7 +71,7 @@ func (p *groupProxy) deleteGroup(ctx context.Context, id string) (*platformclien
 }
 
 func (p *groupProxy) getAllGroups(ctx context.Context) (*[]platformclientv2.Group, *platformclientv2.APIResponse, error) {
-	return p.getAllGroupAttr(ctx, p)
+	return p.getAllGroupsAttr(ctx, p)
 }
 
 func (p *groupProxy) getGroupById(ctx context.Context, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
@@ -101,13 +102,13 @@ func updateGroupFn(_ context.Context, p *groupProxy, id string, group *platformc
 	return p.groupsApi.PutGroup(id, *group)
 }
 
-func deleteGroupFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error) {
-	resp, err := p.groupsApi.DeleteGroup(id)
+func deleteGroupFn(_ context.Context, p *groupProxy, id string) (resp *platformclientv2.APIResponse, err error) {
+	resp, err = p.groupsApi.DeleteGroup(id)
 	if err != nil {
-		return resp, err
+		return
 	}
 	rc.DeleteCacheItem(p.groupCache, id)
-	return nil, nil
+	return
 }
 
 func getGroupByIdFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
@@ -160,22 +161,37 @@ func getGroupByNameFn(_ context.Context, p *groupProxy, name string) (*platformc
 	return groups, resp, getErr
 }
 
-func getAllGroupFn(_ context.Context, p *groupProxy) (*[]platformclientv2.Group, *platformclientv2.APIResponse, error) {
+func getAllGroupsFn(_ context.Context, p *groupProxy) (*[]platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	var allGroups []platformclientv2.Group
 	const pageSize = 100
 
 	groups, resp, getErr := p.groupsApi.GetGroups(pageSize, 1, nil, nil, "")
 	if getErr != nil {
-		return nil, resp, fmt.Errorf("failed to get first page of groups: %v", getErr)
+		return nil, resp, fmt.Errorf("failed to get first page of groups: %w", getErr)
+	}
+
+	if groups == nil || groups.Entities == nil || len(*groups.Entities) == 0 {
+		log.Println("No group entities returned")
+		return &allGroups, resp, getErr
 	}
 
 	allGroups = append(allGroups, *groups.Entities...)
 
-	for pageNum := 2; pageNum <= *groups.PageCount; pageNum++ {
-		groups, resp, getErr := p.groupsApi.GetGroups(pageSize, pageNum, nil, nil, "")
+	if groups.PageCount == nil {
+		log.Printf("No page count returned from GET /api/v2/groups. Exiting pagination process")
+		return &allGroups, nil, nil
+	}
+	pageCount := *groups.PageCount
+
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
+		groups, resp, getErr = p.groupsApi.GetGroups(pageSize, pageNum, nil, nil, "")
 		if getErr != nil {
-			return nil, resp, fmt.Errorf("failed to get page of groups: %v", getErr)
+			return nil, resp, fmt.Errorf("failed to get page of groups: %w", getErr)
 		}
+		if groups == nil || groups.Entities == nil || len(*groups.Entities) == 0 {
+			continue
+		}
+
 		allGroups = append(allGroups, *groups.Entities...)
 	}
 

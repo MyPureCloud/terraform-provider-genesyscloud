@@ -111,31 +111,25 @@ func readArchitectSchedules(ctx context.Context, d *schema.ResourceData, meta in
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		scheduleResponse, proxyResponse, err := proxy.getArchitectSchedulesById(ctx, d.Id())
 		if err != nil {
+			log.Printf("Failed to read architect schedule '%s'. Error: %s", d.Id(), err.Error())
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse)
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read schedule %s | error: %s", d.Id(), err), proxyResponse))
+			return retry.NonRetryableError(diagErr)
 		}
 
-		start := new(string)
 		if scheduleResponse.Start != nil {
-			*start = timeutil.Strftime(scheduleResponse.Start, "%Y-%m-%dT%H:%M:%S.%f")
-		} else {
-			start = nil
+			_ = d.Set("start", timeutil.Strftime(scheduleResponse.Start, "%Y-%m-%dT%H:%M:%S.%f"))
 		}
 
-		end := new(string)
 		if scheduleResponse.End != nil {
-			*end = timeutil.Strftime(scheduleResponse.End, "%Y-%m-%dT%H:%M:%S.%f")
-		} else {
-			end = nil
+			_ = d.Set("end", timeutil.Strftime(scheduleResponse.End, "%Y-%m-%dT%H:%M:%S.%f"))
 		}
 
 		resourcedata.SetNillableValue(d, "name", scheduleResponse.Name)
 		resourcedata.SetNillableValue(d, "division_id", scheduleResponse.Division.Id)
 		resourcedata.SetNillableValue(d, "description", scheduleResponse.Description)
-		resourcedata.SetNillableValue(d, "start", start)
-		resourcedata.SetNillableValue(d, "end", end)
 		resourcedata.SetNillableValue(d, "rrule", scheduleResponse.Rrule)
 
 		log.Printf("Read schedule %s %s", d.Id(), *scheduleResponse.Name)
