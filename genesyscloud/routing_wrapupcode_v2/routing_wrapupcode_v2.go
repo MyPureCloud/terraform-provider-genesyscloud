@@ -4,62 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
-	"log"
 	"os"
 	"strconv"
 )
-
-var (
-	_ resource.Resource = &WrapupCodeResource{}
-)
-
-type WrapupCodeResource struct {
-	clientConfig *platformclientv2.Configuration
-}
-
-type WrapupCodeResourceApiModel struct {
-	Id          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	DivisionId  types.String `tfsdk:"division_id"`
-	Description types.String `tfsdk:"description"`
-}
-
-func (r *WrapupCodeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "API generated identifier for the wrap-up code.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"name": schema.StringAttribute{
-				Required:    true,
-				Description: "Wrapup Code name.",
-			},
-			"division_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "The division to which this routing wrapupcode will belong. If not set, * will be used to indicate all divisions.",
-			},
-			"description": schema.StringAttribute{
-				Optional:    true,
-				Description: "The wrap-up code description.",
-			},
-		},
-		Description: "Genesys Cloud Routing Wrapup Code",
-	}
-}
-
-func (r *WrapupCodeResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_routing_wrapupcode_v2"
-}
 
 func (r *WrapupCodeResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	if r.clientConfig == nil {
@@ -234,30 +182,4 @@ func (r *WrapupCodeResource) Configure(ctx context.Context, req resource.Configu
 
 func NewWrapupCodeResource() resource.Resource {
 	return &WrapupCodeResource{}
-}
-
-func buildWrapupCodeRequestBody(data WrapupCodeResourceApiModel) platformclientv2.Wrapupcoderequest {
-	wrapupCodeReqBody := platformclientv2.Wrapupcoderequest{
-		Name:        data.Name.ValueStringPointer(),
-		Description: data.Description.ValueStringPointer(),
-	}
-	if !data.DivisionId.IsNull() && !data.DivisionId.IsUnknown() && data.DivisionId.ValueString() != "" {
-		wrapupCodeReqBody.Division = &platformclientv2.Writablestarrabledivision{Id: data.DivisionId.ValueStringPointer()}
-	}
-	return wrapupCodeReqBody
-}
-
-func flattenWrapupCodeResponse(data *WrapupCodeResourceApiModel, respBody platformclientv2.Wrapupcode) {
-	data.Id = types.StringValue(*respBody.Id)
-	data.Name = types.StringValue(*respBody.Name)
-	if respBody.Description != nil {
-		data.Description = types.StringValue(*respBody.Description)
-	}
-	if respBody.Division != nil && respBody.Division.Id != nil {
-		data.DivisionId = types.StringValue(*respBody.Division.Id)
-	}
-}
-
-func frameworkLog(s string) {
-	log.Println("(Framework) ", s)
 }

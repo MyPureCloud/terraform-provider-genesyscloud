@@ -263,8 +263,6 @@ If you encounter any stack traces, please report them so we can address the unde
 }
 
 func (f *GenesysCloudProvider) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
-
-	frameworkLog("Calling genesyscloud provider")
 	var data GenesysCloudProviderModel
 
 	response.Diagnostics.Append(request.Config.Get(ctx, &data)...)
