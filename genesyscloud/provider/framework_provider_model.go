@@ -11,6 +11,9 @@ type GenesysCloudProviderModel struct {
 	SdkDebugFormat         types.String   `tfsdk:"sdk_debug_format"`
 	SdkDebugFilePath       types.String   `tfsdk:"sdk_debug_file_path"`
 	TokenPoolSize          types.Int32    `tfsdk:"token_pool_size"`
+	TokenAcquireTimeout    types.String   `tfsdk:"token_acquire_timeout"`
+	TokenInitTimeout       types.String   `tfsdk:"token_init_timeout"`
+	SdkClientPoolDebug     types.Bool     `tfsdk:"sdk_client_pool_debug"`
 	LogStackTraces         types.Bool     `tfsdk:"log_stack_traces"`
 	LogStackTracesFilePath types.String   `tfsdk:"log_stack_traces_file_path"`
 	Gateway                []GatewayModel `tfsdk:"gateway"`

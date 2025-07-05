@@ -73,7 +73,6 @@ func (r *WrapupCodeResource) Create(ctx context.Context, request resource.Create
 	api := platformclientv2.NewRoutingApiWithConfig(r.clientConfig)
 
 	var data WrapupCodeResourceApiModel
-
 	response.Diagnostics.Append(request.Plan.Get(ctx, &data)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -153,7 +152,7 @@ func (r *WrapupCodeResource) Update(ctx context.Context, request resource.Update
 	reqBody := buildWrapupCodeRequestBody(data)
 
 	frameworkLog("Updating wrap up code " + strconv.Quote(data.Name.ValueString()))
-	_, resp, err := api.PutRoutingWrapupcode(data.Id.ValueString(), reqBody)
+	respObj, resp, err := api.PutRoutingWrapupcode(data.Id.ValueString(), reqBody)
 	if err != nil {
 		var apiResponseDetails = "No API response data returned"
 		if resp != nil {
@@ -164,6 +163,7 @@ func (r *WrapupCodeResource) Update(ctx context.Context, request resource.Update
 	}
 
 	frameworkLog("Successfully updated wrap up code " + strconv.Quote(data.Name.ValueString()))
+	flattenWrapupCodeResponse(&data, *respObj)
 
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
@@ -241,8 +241,8 @@ func buildWrapupCodeRequestBody(data WrapupCodeResourceApiModel) platformclientv
 		Name:        data.Name.ValueStringPointer(),
 		Description: data.Description.ValueStringPointer(),
 	}
-	if !data.DivisionId.IsNull() {
-		wrapupCodeReqBody.Division.Id = data.DivisionId.ValueStringPointer()
+	if !data.DivisionId.IsNull() && !data.DivisionId.IsUnknown() && data.DivisionId.ValueString() != "" {
+		wrapupCodeReqBody.Division = &platformclientv2.Writablestarrabledivision{Id: data.DivisionId.ValueStringPointer()}
 	}
 	return wrapupCodeReqBody
 }
