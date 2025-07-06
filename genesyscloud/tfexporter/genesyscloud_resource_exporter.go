@@ -389,54 +389,114 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 
 // retrieveGenesysCloudObjectInstances will take a list of exporters and then return the actual terraform Genesys Cloud data
 func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() diag.Diagnostics {
-	log.Printf("Retrieving Genesys Cloud objects from Genesys Cloud")
+	log.Printf("[retrieveGenesysCloudObjectInstances] Starting to retrieve Genesys Cloud objects from Genesys Cloud")
+	log.Printf("[retrieveGenesysCloudObjectInstances] Number of exporters to process: %d", len(*g.exporters))
+
+	// Log all exporter types being processed
+	for resType, exporter := range *g.exporters {
+		log.Printf("[retrieveGenesysCloudObjectInstances] Exporter for %s has %d resources in SanitizedResourceMap", resType, len(exporter.SanitizedResourceMap))
+	}
+
 	// Retrieves data on each individual Genesys Cloud object from each registered exporter
 
+	// Buffer error channel to prevent goroutine leaks or deadlocks
 	errorChan := make(chan diag.Diagnostics, len(*g.exporters))
 	wgDone := make(chan bool)
 	var wg sync.WaitGroup
 
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
+	log.Printf("[retrieveGenesysCloudObjectInstances] Created context with cancellation")
+
+	// Track successful and failed resource types
+	var successfulTypes []string
+	var failedTypes []string
+	var statsMutex sync.Mutex
 
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range *g.exporters {
+		log.Printf("[retrieveGenesysCloudObjectInstances] Starting processing for resource type: %s", resType)
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
+			log.Printf("[retrieveGenesysCloudObjectInstances] Starting goroutine for resource type: %s", resType)
 
-			log.Printf("Getting exported resources for [%s]", resType)
+			// Check if context was cancelled before processing
+			select {
+			case <-ctx.Done():
+				log.Printf("[retrieveGenesysCloudObjectInstances] Context cancelled before processing resource type: %s", resType)
+				return
+			default:
+			}
+
+			log.Printf("[retrieveGenesysCloudObjectInstances] Getting exported resources for [%s]", resType)
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
+				log.Printf("[retrieveGenesysCloudObjectInstances] ERROR getting resources for type %s: %v", resType, err)
+
+				// Track failed resource type
+				statsMutex.Lock()
+				failedTypes = append(failedTypes, resType)
+				statsMutex.Unlock()
+
 				select {
 				case <-ctx.Done():
+					log.Printf("[retrieveGenesysCloudObjectInstances] Context cancelled while handling error for %s", resType)
 				case errorChan <- err:
+					log.Printf("[retrieveGenesysCloudObjectInstances] Successfully sent error to channel for resource type: %s", resType)
+				default:
+					log.Printf("[retrieveGenesysCloudObjectInstances] ERROR: Could not send error to channel for resource type: %s (channel full)", resType)
 				}
 				cancel()
 				return
 			}
 
+			log.Printf("[retrieveGenesysCloudObjectInstances] Successfully retrieved %d resources for type %s", len(typeResources), resType)
+
 			// Use thread-safe method to add resources
-			g.addResources(typeResources)
+			if len(typeResources) > 0 {
+				g.addResources(typeResources)
+				log.Printf("[retrieveGenesysCloudObjectInstances] Successfully added %d resources for type %s to global resources list", len(typeResources), resType)
+
+				// Track successful resource type
+				statsMutex.Lock()
+				successfulTypes = append(successfulTypes, resType)
+				statsMutex.Unlock()
+			} else {
+				log.Printf("[retrieveGenesysCloudObjectInstances] WARNING: No resources found for type %s", resType)
+			}
+
+			log.Printf("[retrieveGenesysCloudObjectInstances] Completed processing for resource type: %s", resType)
 		}(resType, exporter)
 	}
 
+	log.Printf("[retrieveGenesysCloudObjectInstances] Started all goroutines, waiting for completion")
+
 	go func() {
 		wg.Wait()
+		log.Printf("[retrieveGenesysCloudObjectInstances] All resource type processing completed")
 		close(wgDone)
 	}()
 
 	// Wait until either WaitGroup is done or an error is received
 	select {
 	case <-wgDone:
-		log.Printf("Successfully retrieved all Genesys Cloud object instances")
+		log.Printf("[retrieveGenesysCloudObjectInstances] Successfully retrieved all Genesys Cloud object instances")
+		log.Printf("[retrieveGenesysCloudObjectInstances] Summary - Successful types: %v", successfulTypes)
+		log.Printf("[retrieveGenesysCloudObjectInstances] Summary - Failed types: %v", failedTypes)
+		log.Printf("[retrieveGenesysCloudObjectInstances] Summary - Total successful: %d, Total failed: %d", len(successfulTypes), len(failedTypes))
 		return nil
 	case err := <-errorChan:
+		log.Printf("[retrieveGenesysCloudObjectInstances] Error received from channel: %v", err)
+
 		// Give other goroutines a chance to clean up
 		go func() {
 			<-wgDone // Wait for all goroutines to finish
+			log.Printf("[retrieveGenesysCloudObjectInstances] All goroutines finished after error")
 		}()
+
+		log.Printf("[retrieveGenesysCloudObjectInstances] Returning error: %v", err)
 		return err
 	}
 }
@@ -1162,79 +1222,112 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 }
 
 func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schemaProvider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
+	log.Printf("[getResourcesForType] Starting export for resource type: %s", resType)
+
 	// Use thread-safe method to get resource map size
 	lenResources := exporter.GetSanitizedResourceMapSize()
+	log.Printf("[getResourcesForType] Found %d resources for type %s", lenResources, resType)
+
 	if lenResources == 0 {
-		log.Printf("No resources found for type %s", resType)
+		log.Printf("[getResourcesForType] No resources found for type %s, returning empty slice", resType)
 		return []resourceExporter.ResourceInfo{}, nil
 	}
 
 	// Buffer channels to prevent goroutine leaks
 	errorChan := make(chan diag.Diagnostics, lenResources)
 	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
+	log.Printf("[getResourcesForType] Created buffered channels for %d resources", lenResources)
 
 	res := schemaProvider.ResourcesMap[resType]
 	if res == nil {
+		log.Printf("[getResourcesForType] ERROR: Resource type %v not defined in schema provider", resType)
 		return nil, diag.Errorf("Resource type %v not defined", resType)
 	}
+	log.Printf("[getResourcesForType] Successfully retrieved resource schema for type %s", resType)
 
 	exportComputed := g.exportComputed
+	log.Printf("[getResourcesForType] Export computed setting: %t", exportComputed)
+
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
+	log.Printf("[getResourcesForType] Created context with cancellation for resource type %s", resType)
 
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
+	log.Printf("[getResourcesForType] Initialized WaitGroup with %d resources", lenResources)
 
 	// Track resources to remove to avoid race conditions
 	var toRemove []string
 	var toRemoveMutex sync.Mutex
+	log.Printf("[getResourcesForType] Initialized resource removal tracking for type %s", resType)
 
 	// Get a copy of the resource map to avoid race conditions during iteration
 	resourceMap := exporter.GetSanitizedResourceMap()
+	log.Printf("[getResourcesForType] Retrieved sanitized resource map with %d entries for type %s", len(resourceMap), resType)
 
 	for id, resMeta := range resourceMap {
+		log.Printf("[getResourcesForType] Starting goroutine for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel)
+
 		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
+			log.Printf("[getResourcesForType] Starting processing for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel)
 
 			// Check if context was cancelled
 			select {
 			case <-ctx.Done():
+				log.Printf("[getResourcesForType] Context cancelled for resource ID: %s", id)
 				return
 			default:
+				log.Printf("[getResourcesForType] Context check passed for resource ID: %s", id)
 			}
 
 			fetchResourceState := func() error {
+				log.Printf("[getResourcesForType] Starting fetchResourceState for resource ID: %s", id)
+
 				// Use a shorter timeout for individual resource fetches
 				resourceCtx, resourceCancel := context.WithTimeout(context.Background(), 5*time.Minute)
 				defer resourceCancel()
+				log.Printf("[getResourcesForType] Created resource context with 5-minute timeout for ID: %s", id)
 
 				ctyType := res.CoreConfigSchema().ImpliedType()
+				log.Printf("[getResourcesForType] Retrieved CTY type for resource ctyType: %v", ctyType)
+
+				log.Printf("[getResourcesForType] Calling getResourceState for resource ID: %s", id)
 				instanceState, err := getResourceState(resourceCtx, res, id, resMeta, meta)
 
 				if err != nil {
-					log.Printf("Error while fetching read context type %s and instance %s : %v", resType, id, err)
+					log.Printf("[getResourcesForType] Error while fetching read context type %s and instance %s : %v", resType, id, err)
 					return fmt.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
 				}
 
 				if instanceState == nil {
-					log.Printf("Resource %s no longer exists. Skipping.", resMeta.BlockLabel)
+					log.Printf("[getResourcesForType] Resource %s no longer exists. Skipping.", resMeta.BlockLabel)
 					toRemoveMutex.Lock()
 					toRemove = append(toRemove, id)
 					toRemoveMutex.Unlock()
+					log.Printf("[getResourcesForType] Added resource ID %s to removal list", id)
 					return nil
 				}
+				log.Printf("[getResourcesForType] Successfully retrieved instance state for resource ID: %s", id)
 
 				// Export the resource as a data resource
 				if exporter.ExportAsDataFunc != nil {
+					log.Printf("[getResourcesForType] Checking if resource should be exported as data source for ID: %s", id)
 					sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
 					exportAsData, err := exporter.ExportAsDataFunc(g.ctx, sdkConfig, instanceState.Attributes)
 					if err != nil {
+						log.Printf("[getResourcesForType] Error in ExportAsDataFunc for resource ID %s: %v", id, err)
 						return fmt.Errorf("an error has occurred while trying to export as a data resource block for %s::%s : %v", resType, resMeta.BlockLabel, err)
 					} else {
 						if exportAsData {
+							log.Printf("[getResourcesForType] Resource ID %s will be exported as data source", id)
 							g.addReplaceWithDatasource(resType + "::" + resMeta.BlockLabel)
+						} else {
+							log.Printf("[getResourcesForType] Resource ID %s will NOT be exported as data source", id)
 						}
 					}
+				} else {
+					log.Printf("[getResourcesForType] No ExportAsDataFunc defined for resource ID: %s", id)
 				}
 
 				blockType := ""
@@ -1271,7 +1364,9 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 						continue
 					}
 				}
+				log.Printf("[getResourcesForType] Finished processing schema attributes for resource ID: %s", id)
 
+				log.Printf("[getResourcesForType] Creating ResourceInfo for resource ID: %s", id)
 				resourceChan <- resourceExporter.ResourceInfo{
 					State:         instanceState,
 					BlockLabel:    resMeta.BlockLabel,
@@ -1280,6 +1375,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					BlockType:     blockType,
 					OriginalLabel: resMeta.OriginalLabel,
 				}
+				log.Printf("[getResourcesForType] Successfully sent ResourceInfo to channel for resource ID: %s", id)
 
 				return nil
 			}
@@ -1287,20 +1383,26 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			// Improved retry logic with exponential backoff
 			maxRetries := 3
 			var lastErr error
+			log.Printf("[getResourcesForType] Starting retry logic for resource ID: %s (max retries: %d)", id, maxRetries)
 
 			for attempt := 0; attempt < maxRetries; attempt++ {
+				log.Printf("[getResourcesForType] Attempt %d/%d for resource ID: %s", attempt+1, maxRetries, id)
+
 				select {
 				case <-ctx.Done():
+					log.Printf("[getResourcesForType] Context cancelled during retry attempt %d for resource ID: %s", attempt+1, id)
 					return
 				default:
 				}
 
 				err := fetchResourceState()
 				if err == nil {
+					log.Printf("[getResourcesForType] Successfully processed resource ID: %s on attempt %d", id, attempt+1)
 					return // Success
 				}
 
 				lastErr = err
+				log.Printf("[getResourcesForType] Error on attempt %d for resource ID %s: %v", attempt+1, id, err)
 
 				// Check if it's a timeout error that we should retry
 				isTimeoutError := func(err error) bool {
@@ -1310,10 +1412,13 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				}
 
 				if !isTimeoutError(err) {
+					log.Printf("[getResourcesForType] Non-retryable error for resource ID %s, sending to error channel", id)
 					// Non-retryable error, send to error channel
 					select {
 					case errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err):
+						log.Printf("[getResourcesForType] Successfully sent error to channel for resource ID: %s", id)
 					case <-ctx.Done():
+						log.Printf("[getResourcesForType] Context cancelled while sending error for resource ID: %s", id)
 						return
 					}
 					return
@@ -1322,11 +1427,13 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				// Exponential backoff for retryable errors
 				if attempt < maxRetries-1 {
 					backoffDuration := time.Duration(1<<attempt) * time.Second
-					log.Printf("Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration)
+					log.Printf("[getResourcesForType] Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration)
 
 					select {
 					case <-time.After(backoffDuration):
+						log.Printf("[getResourcesForType] Backoff completed for resource ID: %s", id)
 					case <-ctx.Done():
+						log.Printf("[getResourcesForType] Context cancelled during backoff for resource ID: %s", id)
 						return
 					}
 				}
@@ -1334,87 +1441,122 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 			// If we get here, all retries failed
 			if lastErr != nil {
+				log.Printf("[getResourcesForType] All retries failed for resource ID %s, sending final error to channel", id)
 				select {
 				case errorChan <- diag.Errorf("Failed to get state for %s instance %s after %d retries: %v", resType, id, maxRetries, lastErr):
+					log.Printf("[getResourcesForType] Successfully sent final error to channel for resource ID: %s", id)
 				case <-ctx.Done():
+					log.Printf("[getResourcesForType] Context cancelled while sending final error for resource ID: %s", id)
 					return
 				}
 			}
 		}(id, resMeta)
 	}
 
+	log.Printf("[getResourcesForType] Started all goroutines for resource type %s, waiting for completion", resType)
+
 	// Wait for all goroutines to complete
 	wg.Wait()
+	log.Printf("[getResourcesForType] All goroutines completed for resource type %s", resType)
+
 	close(resourceChan)
 	close(errorChan)
+	log.Printf("[getResourcesForType] Closed resource and error channels for resource type %s", resType)
 
 	// Collect all resources
 	var resources []resourceExporter.ResourceInfo
+	log.Printf("[getResourcesForType] Collecting resources from channel for resource type %s", resType)
 	for r := range resourceChan {
+		log.Printf("[getResourcesForType] Collected resource: Type=%s, BlockLabel=%s, ID=%s", r.Type, r.BlockLabel, r.State.ID)
 		resources = append(resources, r)
 	}
+	log.Printf("[getResourcesForType] Collected %d resources from channel for resource type %s", len(resources), resType)
 
 	// Remove resources that weren't found using thread-safe method
+	log.Printf("[getResourcesForType] Processing %d resources for removal", len(toRemove))
 	for _, id := range toRemove {
-		log.Printf("Removing resource %v from export map", id)
+		log.Printf("[getResourcesForType] Removing resource %v from export map", id)
 		exporter.RemoveFromSanitizedResourceMap(id)
 	}
 
 	// Collect all errors
 	var allErrors diag.Diagnostics
+	log.Printf("[getResourcesForType] Collecting errors from channel for resource type %s", resType)
 	for err := range errorChan {
+		log.Printf("[getResourcesForType] Collected error: %v", err)
 		allErrors = append(allErrors, err...)
 	}
+	log.Printf("[getResourcesForType] Collected %d errors for resource type %s", len(allErrors), resType)
 
 	// Return errors if any occurred
 	if len(allErrors) > 0 {
-		log.Printf("Export completed for %s with %d errors out of %d resources", resType, len(allErrors), lenResources)
+		log.Printf("[getResourcesForType] Export completed for %s with %d errors out of %d resources", resType, len(allErrors), lenResources)
 		return resources, allErrors
 	}
 
-	log.Printf("Export completed for %s: %d resources successfully exported", resType, len(resources))
+	log.Printf("[getResourcesForType] Export completed successfully for %s: %d resources successfully exported", resType, len(resources))
 	return resources, nil
 }
 
 func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+	log.Printf("[getResourceState] Starting to get resource state for ID: %s, BlockLabel: %s", resID, resMeta.BlockLabel)
+
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
+	log.Printf("[getResourceState] Created initial instance state with ID: %s", instanceState.ID)
 
 	resourceMutex := &sync.Mutex{}
+	log.Printf("[getResourceState] Created resource mutex for ID: %s", resID)
 
 	resourceMutex.Lock()
+	log.Printf("[getResourceState] Acquired mutex lock for resource ID: %s", resID)
 	resourceData := resource.Data(instanceState)
 	resourceMutex.Unlock()
+	log.Printf("[getResourceState] Released mutex lock for resource ID: %s", resID)
+	log.Printf("[getResourceState] Created resource data for ID: %s", resID)
 
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
+		log.Printf("[getResourceState] Resource has importer with StateContext, calling for ID: %s", resID)
 		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, meta)
 		if err != nil {
-			log.Printf("Error with resource Importer %v for id %s", resID, err)
+			log.Printf("[getResourceState] Error with resource Importer %v for id %s: %v", resID, err)
 			return nil, diag.FromErr(err)
 		}
 		if len(resourceDataArr) > 0 {
+			log.Printf("[getResourceState] Importer returned %d resource data entries for ID: %s", len(resourceDataArr), resID)
 			instanceState = resourceDataArr[0].State()
+			log.Printf("[getResourceState] Updated instance state from importer for ID: %s", resID)
+		} else {
+			log.Printf("[getResourceState] Importer returned no resource data entries for ID: %s", resID)
 		}
+	} else {
+		log.Printf("[getResourceState] Resource has no importer or StateContext for ID: %s", resID)
 	}
 
 	resourceMutex.Lock()
+	log.Printf("[getResourceState] Acquiring mutex lock for RefreshWithoutUpgrade for ID: %s", resID)
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
 	resourceMutex.Unlock()
+	log.Printf("[getResourceState] Released mutex lock after RefreshWithoutUpgrade for ID: %s", resID)
 
 	if err != nil {
+		log.Printf("[getResourceState] Error during RefreshWithoutUpgrade for resource %s: %v", resID, err)
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
+			log.Printf("[getResourceState] Resource not found (404/410 error) for ID: %s, returning nil", resID)
 			return nil, nil
 		}
-		log.Printf("Error during RefreshWithoutUpgrade for resource  %s, %v", resID, err)
+		log.Printf("[getResourceState] Non-404/410 error during RefreshWithoutUpgrade for resource %s: %v", resID, err)
 		return nil, err
 	}
+
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
-		log.Printf("Empty State for resource %s, %v", resID, state)
+		log.Printf("[getResourceState] Empty State for resource %s, state: %v", resID, state)
 		return nil, nil
 	}
 
+	log.Printf("[getResourceState] Successfully retrieved state for resource %s with ID: %s", resID, state.ID)
 	return state, nil
 }
 
