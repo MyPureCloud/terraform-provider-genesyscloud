@@ -21,6 +21,7 @@ import (
 	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -148,6 +149,9 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 }
 
 func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+	if providerResources == nil {
+		providerResources, providerDataSources = rRegistrar.GetResources()
+	}
 	gre := &GenesysCloudResourceExporter{
 		exportFormat:         identifyExportFormat(d),
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
@@ -159,7 +163,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
 		version:              meta.(*provider.ProviderMeta).Version,
 		providerRegistry:     meta.(*provider.ProviderMeta).Registry,
-		provider:             provider.New(meta.(*provider.ProviderMeta).Version, nil, nil)(),
+		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,
