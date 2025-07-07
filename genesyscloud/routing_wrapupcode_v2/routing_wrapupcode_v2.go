@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
-	"os"
+	sdkConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider/sdk_config"
 	"strconv"
 )
 
@@ -148,36 +148,7 @@ func (r *WrapupCodeResource) Delete(ctx context.Context, request resource.Delete
 }
 
 func (r *WrapupCodeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	// TODO: Figure out cyclic issue between this package and 'provider' package
-
-	//
-	//client, ok := req.ProviderData.(provider.GenesysCloudProvider)
-	//if !ok {
-	//	resp.Diagnostics.AddError(
-	//		"Unexpected Resource Configure Type",
-	//		fmt.Sprintf("Expected *GenesysCloudProvider, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-	//	)
-	//	return
-	//}
-	//
-	//clientConfig, err := provider.AcquireSdkClient(ctx, client)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("Failed to acquire sdk client from pool", err.Error())
-	//	return
-	//}
-
-	clientConfig := platformclientv2.GetDefaultConfiguration()
-
-	err := clientConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
-	if err != nil {
-		return
-	}
-
-	r.clientConfig = clientConfig
+	r.clientConfig = sdkConfig.GetConfig()
 }
 
 func NewWrapupCodeResource() resource.Resource {
