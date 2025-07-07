@@ -296,10 +296,30 @@ func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId stri
 
 // getAllArchitectFlowsFn is the implementation function for GetAllFlows
 func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	totalFlows, resp, err := p.getAllFlows(name, varType, false)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	totalFlowsWithVirtualAgentEnabled, resp, err := p.getAllFlows(name, varType, true)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	totalFlows = append(totalFlows, totalFlowsWithVirtualAgentEnabled...)
+
+	for _, flow := range totalFlows {
+		rc.SetCache(p.flowCache, *flow.Id, flow)
+	}
+
+	return &totalFlows, resp, nil
+}
+
+func (a *architectFlowProxy) getAllFlows(name string, varType []string, virtualAgentEnabled bool) ([]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var totalFlows []platformclientv2.Flow
 
-	flows, resp, err := p.api.GetFlows(
+	flows, resp, err := a.api.GetFlows(
 		varType,
 		1,
 		pageSize,
@@ -315,7 +335,7 @@ func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name strin
 		"",
 		"", false,
 		true,
-		false,
+		virtualAgentEnabled,
 		"",
 		"",
 		nil,
@@ -324,13 +344,13 @@ func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name strin
 		return nil, resp, fmt.Errorf("failed to get page of flows: %v %v", err, resp)
 	}
 	if flows.Entities == nil || len(*flows.Entities) == 0 {
-		return &totalFlows, nil, nil
+		return totalFlows, nil, nil
 	}
 
 	totalFlows = append(totalFlows, *flows.Entities...)
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		flows, resp, err = p.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, false, "", "", nil)
+		flows, resp, err = a.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, false, "", "", nil)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page %d of flows: %v", pageNum, err)
 		}
@@ -340,11 +360,7 @@ func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name strin
 		totalFlows = append(totalFlows, *flows.Entities...)
 	}
 
-	for _, flow := range totalFlows {
-		rc.SetCache(p.flowCache, *flow.Id, flow)
-	}
-
-	return &totalFlows, resp, nil
+	return totalFlows, resp, nil
 }
 
 // generateDownloadUrlFn is the implementation function for the generateDownloadUrl method
@@ -352,6 +368,7 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error in generateDownloadUrlFn: %w", err)
+			log.Println(err.Error())
 		}
 	}()
 	log.Printf("Creating export job for flow %s", flowId)
@@ -360,7 +377,6 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 		if resp != nil {
 			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
 		}
-		log.Printf("Error in generateDownloadUrlFn: %s", err.Error())
 		return "", err
 	}
 
@@ -374,7 +390,6 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 	const pollTimeoutInSeconds float64 = 90
 	downloadUrl, err = a.pollExportJobForDownloadUrl(*exportJob.Id, pollTimeoutInSeconds)
 	if err != nil {
-		log.Printf("Error in generateDownloadUrlFn: %s", err.Error())
 		return "", err
 	}
 	log.Printf("Successfully read download URL. Export job: %s", exportJob)
