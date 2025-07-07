@@ -3,11 +3,12 @@ package architect_ivr
 import (
 	"context"
 	"fmt"
-	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"log"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -170,7 +171,7 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 	)
 	const pageSize = 100
 
-	ivrs, resp, err := a.api.GetArchitectIvrs(1, pageSize, "", "", name, "", "")
+	ivrs, resp, err := a.api.GetArchitectIvrs(1, pageSize, "", "", name, "", "", nil)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error requesting page of architect ivrs: %v", err)
 	}
@@ -185,7 +186,7 @@ func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string)
 	}
 
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		ivrs, resp, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "")
+		ivrs, resp, err := a.api.GetArchitectIvrs(pageNum, pageSize, "", "", name, "", "", nil)
 		if err != nil {
 			return nil, resp, fmt.Errorf("error requesting page of architect ivrs: %v", err)
 		}

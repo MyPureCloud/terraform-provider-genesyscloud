@@ -1,7 +1,7 @@
 package sdk_config
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 	"log"
 )
 

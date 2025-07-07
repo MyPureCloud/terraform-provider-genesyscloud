@@ -2,18 +2,19 @@ package scripts
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"log"
 	"net/http"
 	"testing"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*

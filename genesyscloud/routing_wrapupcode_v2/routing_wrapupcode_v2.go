@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 	sdkConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider/sdk_config"
 	"strconv"
 )

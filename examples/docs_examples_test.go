@@ -23,7 +23,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 // SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES controls whether to display the full output

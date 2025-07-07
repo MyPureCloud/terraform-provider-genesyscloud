@@ -2,7 +2,7 @@ package routing_wrapupcode_v2
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 	"log"
 )
 
