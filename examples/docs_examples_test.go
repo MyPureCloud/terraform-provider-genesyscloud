@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -107,7 +107,7 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 
 	for _, resourceType := range resources {
 		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
-			if !feature_toggles.GuideToggleExists() {
+			if !guide.GuideFtIsEnabled() {
 				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
 				resourceTypesResults[resourceType] = ResultsStatusSkipped
 				continue
@@ -254,7 +254,7 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 
 	for _, resourceType := range resources {
 		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
-			if !feature_toggles.GuideToggleExists() {
+			if !guide.GuideFtIsEnabled() {
 				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
 				continue
 			}
@@ -357,7 +357,7 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 
 	for _, resourceType := range resources {
 		if resourceType == "genesyscloud_guide_version" || resourceType == "genesyscloud_guide" {
-			if !feature_toggles.GuideToggleExists() {
+			if !guide.GuideFtIsEnabled() {
 				io.WriteString(os.Stdout, "\nSkipping "+resourceType+" tests because the feature toggle is not enabled\n")
 				resourceTypeResults[resourceType] = ResultsStatusSkipped
 				continue
