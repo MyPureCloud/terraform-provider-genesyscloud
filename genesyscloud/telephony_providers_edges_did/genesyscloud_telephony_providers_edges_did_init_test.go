@@ -1,13 +1,14 @@
 package telephony_providers_edges_did
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
-	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	"log"
 	"sync"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
