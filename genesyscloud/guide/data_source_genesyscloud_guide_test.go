@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 func TestAccDataSourceGuide(t *testing.T) {
@@ -18,8 +17,8 @@ func TestAccDataSourceGuide(t *testing.T) {
 		return
 	}
 
-	if !feature_toggles.GuideToggleExists() {
-		t.Skipf("Skipping test for genesyscloud_guide as feature toggle not enabled")
+	if !GuideFtIsEnabled() {
+		t.Skip("Skipping test as guide feature toggle is not enabled")
 		return
 	}
 

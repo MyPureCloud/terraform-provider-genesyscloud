@@ -22,7 +22,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceGuideVersion()
-	providerResources["genesyscloud_guide"] = guide.ResourceGuide()
+	providerResources[guide.ResourceType] = guide.ResourceGuide()
 }
 
 // registerTestDataSources registers all data sources used in the tests
@@ -30,7 +30,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources["genesyscloud_guide"] = guide.DataSourceGuide()
+	providerDataSources[guide.ResourceType] = guide.DataSourceGuide()
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -2,7 +2,11 @@ package guide
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
 )
 
 func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
@@ -67,4 +71,33 @@ func GenerateGuideResource(resourceID string, name string, source string) string
 		source = "%s"
 	}
 	`, ResourceType, resourceID, name, source)
+}
+
+func GuideFtIsEnabled() bool {
+	clientConfig := platformclientv2.GetDefaultConfiguration()
+	client := &http.Client{}
+	baseURL := clientConfig.BasePath + "/api/v2/guides"
+
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		log.Printf("Error parsing URL: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		log.Printf("Error creating request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+clientConfig.AccessToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending request: %v", err)
+	}
+
+	defer resp.Body.Close()
+
+	return resp.StatusCode < 500
 }

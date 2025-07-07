@@ -11,7 +11,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 func TestAccResourceGuideVersion(t *testing.T) {
@@ -19,22 +18,23 @@ func TestAccResourceGuideVersion(t *testing.T) {
 		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
 	}
 
-	if !feature_toggles.GuideToggleExists() {
-		t.Skipf("Skipping test for genesyscloud_guide as feature toggle not enabled")
+	if !guide.GuideFtIsEnabled() {
+		t.Skip("Skipping test as guide feature toggle is not enabled")
 		return
 	}
 
 	t.Parallel()
 	var (
-		guideVersionResourceLabel = "guide_version"
-		guideResourceLabel        = "guide"
-		guideName                 = "Test Guide " + uuid.NewString()
-		guideSource               = "Manual"
-		instruction               = "This is a test instruction for the guide version."
-		updatedInstruction        = "This is an updated test instruction for the guide version."
-		draftState                = "Draft"
-		state1                    = "TestReady"
-		state2                    = "ProductionReady"
+		guideVersionResourceLabel    = "guide_version"
+		guideResourceLabel           = "guide"
+		guideName                    = "Test Guide " + uuid.NewString()
+		guideSource                  = "Manual"
+		instruction                  = "This is a test instruction for the guide version."
+		updatedInstruction           = "This is an updated test instruction for the guide version."
+		draftState                   = "Draft"
+		state1                       = "TestReady"
+		state2                       = "ProductionReady"
+		guideVersionResourceFullPath = ResourceType + "." + guideVersionResourceLabel
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -58,28 +58,28 @@ func TestAccResourceGuideVersion(t *testing.T) {
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "instruction", instruction),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "instruction", instruction),
 
 					// Check variable attributes
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.name", "testVar1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.type", "String"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.scope", "Input"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.0.description", "Test variable 1 description"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.name", "testVar2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.type", "Integer"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.scope", "Output"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "variables.1.description", "Test variable 2 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "testVar1"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.scope", "Input"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.description", "Test variable 1 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.name", "testVar2"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.type", "Integer"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.description", "Test variable 2 description"),
 
 					// Check multiple data action attributes
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.data_action_id", "test_data_action_id_1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.label", "Test Data Action 1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.description", "Test data action 1 description"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.data_action_id", "test_data_action_id_2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.label", "Test Data Action 2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.description", "Test data action 2 description"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.2.data_action_id", "test_data_action_id_3"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.2.label", "Test Data Action 3"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.2.description", "Test data action 3 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.data_action_id", "test_data_action_id_1"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.label", "Test Data Action 1"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.description", "Test data action 1 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.data_action_id", "test_data_action_id_2"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.label", "Test Data Action 2"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.description", "Test data action 2 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.2.data_action_id", "test_data_action_id_3"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.2.label", "Test Data Action 3"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.2.description", "Test data action 3 description"),
 				),
 			},
 			{
@@ -98,14 +98,14 @@ func TestAccResourceGuideVersion(t *testing.T) {
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "instruction", updatedInstruction),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "instruction", updatedInstruction),
 
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.data_action_id", "updated_data_action_id_1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.label", "Updated Data Action 1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.description", "Updated data action 1 description"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.data_action_id", "updated_data_action_id_2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.label", "Updated Data Action 2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.description", "Updated data action 2 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.data_action_id", "updated_data_action_id_1"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.label", "Updated Data Action 1"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.description", "Updated data action 1 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.data_action_id", "updated_data_action_id_2"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.label", "Updated Data Action 2"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.description", "Updated data action 2 description"),
 				),
 			},
 			{
@@ -124,19 +124,19 @@ func TestAccResourceGuideVersion(t *testing.T) {
 						),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "instruction", updatedInstruction),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "instruction", updatedInstruction),
 
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.data_action_id", "updated_data_action_id_1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.label", "Updated Data Action 1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.0.description", "Updated data action 1 description"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.data_action_id", "updated_data_action_id_2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.label", "Updated Data Action 2"),
-					resource.TestCheckResourceAttr(ResourceType+"."+guideVersionResourceLabel, "resources.0.data_action.1.description", "Updated data action 2 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.data_action_id", "updated_data_action_id_1"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.label", "Updated Data Action 1"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.description", "Updated data action 1 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.data_action_id", "updated_data_action_id_2"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.label", "Updated Data Action 2"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.1.description", "Updated data action 2 description"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      ResourceType + "." + guideVersionResourceLabel,
+				ResourceName:      guideVersionResourceFullPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
