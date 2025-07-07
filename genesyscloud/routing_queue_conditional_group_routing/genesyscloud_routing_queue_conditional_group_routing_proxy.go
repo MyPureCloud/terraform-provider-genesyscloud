@@ -3,10 +3,11 @@ package routing_queue_conditional_group_routing
 import (
 	"context"
 	"fmt"
+
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -153,5 +154,5 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 
 // getRoutingQueueByIdFn is an implementation function for getting a queue by ID
 func getRoutingQueueByIdFn(_ context.Context, p *routingQueueConditionalGroupRoutingProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	return p.routingApi.GetRoutingQueue(id)
+	return p.routingApi.GetRoutingQueue(id, nil)
 }

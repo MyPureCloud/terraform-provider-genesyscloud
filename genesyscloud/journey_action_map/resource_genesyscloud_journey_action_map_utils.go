@@ -2,6 +2,10 @@ package journey_action_map
 
 import (
 	"fmt"
+	"log"
+	"strings"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -9,12 +13,9 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/typeconv"
-	"log"
-	"strings"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
@@ -466,7 +467,7 @@ func cleanupFlows(idPrefix string, sdkConfig *platformclientv2.Configuration) {
 
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 50
-		flows, _, getErr := architectApi.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, "", "", nil)
+		flows, _, getErr := architectApi.GetFlows(nil, pageNum, pageSize, "", "", nil, "", "", "", "", "", "", "", "", false, true, false, "", "", nil)
 		if getErr != nil {
 			return
 		}

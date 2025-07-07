@@ -1,3 +1,4 @@
+// Package examples provides utilities for testing Terraform examples.
 package examples
 
 import (
@@ -7,7 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Create a simple utils provider that implements just what you need
+// utilsProvider creates a simple Terraform provider that implements utility resources
+// needed for testing examples, such as certificate generation.
 func utilsProvider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
@@ -41,6 +43,9 @@ func utilsProvider() *schema.Provider {
 	}
 }
 
+// ExampleUtilsProviderFactory returns a provider factory map for the utils provider.
+// This can be combined with other provider factories to make utility resources available
+// during testing of examples.
 func ExampleUtilsProviderFactory() map[string]func() (*schema.Provider, error) {
 	return map[string]func() (*schema.Provider, error){
 		"utils": func() (*schema.Provider, error) { return utilsProvider(), nil },

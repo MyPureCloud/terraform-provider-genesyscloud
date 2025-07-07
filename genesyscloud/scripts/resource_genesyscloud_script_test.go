@@ -2,17 +2,19 @@ package scripts
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"log"
 	"net/http"
 	"testing"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -140,6 +142,37 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 
 	if scriptIdAfterCreate != scriptIdAfterUpdate {
 		t.Errorf("Expected script ID to remain the same after update. Before: %s After: %s", scriptIdAfterCreate, scriptIdAfterUpdate)
+	}
+}
+
+// TestAccDefaultScriptIDS validates that the default script IDs we have defined as constants are still correct.
+// In every Genesys Cloud org, there are default scripts that share the same ID. This test case will alert us if that ID
+// changes, or if they take a different approach as opposed to reusing **Globally Unique Identifiers**
+func TestAccDefaultScriptIDS(t *testing.T) {
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Skipf("Skipping because we failed to authorize client credentials: %s", err.Error())
+	}
+
+	apiInstance := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
+
+	allDefaultScriptIDs := []string{
+		constants.DefaultCallbackScriptID,
+		constants.DefaultInboundScriptID,
+		constants.DefaultOutboundScriptID,
+	}
+
+	for _, id := range allDefaultScriptIDs {
+		t.Logf("Reading '%s' by '%s'", constants.DefaultScriptMap[id], id)
+		_, resp, err := apiInstance.GetScriptsPublishedScriptId(id, "")
+		if err == nil {
+			t.Logf("Successfully read '%s' by '%s'", constants.DefaultScriptMap[id], id)
+			continue
+		}
+		if util.IsStatus404(resp) {
+			t.Fatalf("Expected '%s' to be found using ID '%s'. Error: %s", constants.DefaultScriptMap[id], id, err.Error())
+		}
+		t.Fatalf("Unexpected error occurred while validating script '%s' by ID '%s': %s", constants.DefaultScriptMap[id], id, err.Error())
 	}
 }
 

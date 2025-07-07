@@ -6,7 +6,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -101,7 +101,7 @@ func getAllRoutingEmailRouteByDomainIdFn(_ context.Context, p *routingEmailRoute
 		var allDomainRoutes = make([]platformclientv2.Inboundroute, 0)
 
 		for pageNum := 1; ; pageNum++ {
-			routes, resp, err := p.routingApi.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, pattern)
+			routes, resp, err := p.routingApi.GetRoutingEmailDomainRoutes(*domain.Id, pageSize, pageNum, pattern, nil)
 			if err != nil {
 				apiResponse = resp
 				return nil, apiResponse, fmt.Errorf("failed to get routing email route: %s", err.Error())
@@ -182,7 +182,7 @@ func deleteRoutingEmailRouteFn(_ context.Context, p *routingEmailRouteProxy, dom
 
 // getRoutingEmailRouteByIdFn is an implementation of the function to get a Genesys Cloud routing email route by Id
 func getRoutingEmailRouteByIdFn(_ context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
-	inboundRoute, resp, err := p.routingApi.GetRoutingEmailDomainRoute(domainId, id)
+	inboundRoute, resp, err := p.routingApi.GetRoutingEmailDomainRoute(domainId, id, nil)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to retrieve routing email route by id %s: %s", id, err)
 	}

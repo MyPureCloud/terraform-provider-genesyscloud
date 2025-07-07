@@ -2,10 +2,11 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 type ExtensionPoolStruct struct {

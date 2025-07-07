@@ -3,14 +3,15 @@ package telephony_providers_edges_did_pool
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
 	"testing"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func TestAccResourceDidPoolBasic(t *testing.T) {
@@ -19,13 +20,14 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolEndPhoneNumber1 := "+14175540015"
 
 	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
+	resp, err := DeleteDidPoolWithStartAndEndNumber(context.Background(), didPoolStartPhoneNumber1, didPoolEndPhoneNumber1, sdkConfig)
+	if err != nil {
+		respStr := "<nil>"
+		if resp != nil {
+			respStr = strconv.Itoa(resp.StatusCode)
 		}
-		ctx := context.TODO()
-		_, _ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber1, didPoolEndPhoneNumber1)
-	}()
+		t.Logf("Failed to delete did pool: %s. API Response: %s", err.Error(), respStr)
+	}
 
 	didPoolDescription1 := "Test description"
 	didPoolComments1 := "Test comments"

@@ -1,15 +1,16 @@
 package routing_skill_group
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"log"
+	"sync"
+	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-	"log"
-	"sync"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
