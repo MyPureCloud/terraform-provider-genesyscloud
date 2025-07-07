@@ -31,25 +31,25 @@ Each proxy implementation:
 var internalProxy *integrationCredsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
+type getAllIntegrationCredsFunc func(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 type createIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, createCredential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 type getIntegrationCredByIdFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string) (credential *platformclientv2.Credential, response *platformclientv2.APIResponse, err error)
 type getIntegrationCredByNameFunc func(ctx context.Context, p *integrationCredsProxy, credentialName string) (credential *platformclientv2.Credentialinfo, retryable bool, response *platformclientv2.APIResponse, err error)
 type updateIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 type deleteIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string) (response *platformclientv2.APIResponse, err error)
 type getIntegrationByIdFunc func(ctx context.Context, p *integrationCredsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
-type getAllIntegrationCredsFunc func(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 
 // integrationCredsProxy contains all of the methods that call genesys cloud APIs.
 type integrationCredsProxy struct {
 	clientConfig                 *platformclientv2.Configuration
 	integrationsApi              *platformclientv2.IntegrationsApi
+	getAllIntegrationCredsAttr   getAllIntegrationCredsFunc
 	createIntegrationCredAttr    createIntegrationCredFunc
 	getIntegrationCredByIdAttr   getIntegrationCredByIdFunc
 	getIntegrationCredByNameAttr getIntegrationCredByNameFunc
 	updateIntegrationCredAttr    updateIntegrationCredFunc
 	deleteIntegrationCredAttr    deleteIntegrationCredFunc
 	getIntegrationByIdAttr       getIntegrationByIdFunc
-	getAllIntegrationCredsAttr   getAllIntegrationCredsFunc
 }
 
 // newIntegrationCredsProxy initializes the Integration Credentials proxy with all of the data needed to communicate with Genesys Cloud
@@ -58,13 +58,13 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 	return &integrationCredsProxy{
 		clientConfig:                 clientConfig,
 		integrationsApi:              api,
+		getAllIntegrationCredsAttr:   getAllIntegrationCredsFn,
 		createIntegrationCredAttr:    createIntegrationCredFn,
 		getIntegrationCredByIdAttr:   getIntegrationCredByIdFn,
 		getIntegrationCredByNameAttr: getIntegrationCredByNameFn,
 		updateIntegrationCredAttr:    updateIntegrationCredFn,
 		deleteIntegrationCredAttr:    deleteIntegrationCredFn,
 		getIntegrationByIdAttr:       getIntegrationByIdFn,
-		getAllIntegrationCredsAttr:   getAllIntegrationCredsFn,
 	}
 }
 
@@ -75,6 +75,11 @@ func getIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 		internalProxy = newIntegrationCredsProxy(clientConfig)
 	}
 	return internalProxy
+}
+
+// getAllIntegrationCreds gets all Genesys Cloud Integration Credentials using cursor-based paging
+func (p *integrationCredsProxy) getAllIntegrationCreds(ctx context.Context) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
+	return p.getAllIntegrationCredsAttr(ctx, p)
 }
 
 // createIntegrationCred creates a Genesys Cloud Crdential
@@ -107,9 +112,38 @@ func (p *integrationCredsProxy) getIntegrationById(ctx context.Context, integrat
 	return p.getIntegrationByIdAttr(ctx, p, integrationId)
 }
 
-// getAllIntegrationCreds gets all Genesys Cloud Integration Credentials using cursor-based paging
-func (p *integrationCredsProxy) getAllIntegrationCreds(ctx context.Context) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
-	return p.getAllIntegrationCredsAttr(ctx, p)
+// getAllIntegrationCredsFn is the implementation for getting all integration credentials using cursor-based paging
+func getAllIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
+	var allCreds []platformclientv2.Credentialinfo
+	var after string
+	pageSize := "200"
+	var lastResp *platformclientv2.APIResponse
+
+	for {
+		credentials, resp, err := p.integrationsApi.GetIntegrationsCredentialsListing("", after, pageSize)
+		lastResp = resp
+		if err != nil {
+			return nil, resp, err
+		}
+
+		if credentials.Entities != nil {
+			allCreds = append(allCreds, *credentials.Entities...)
+		}
+
+		// Check if there are more pages
+		if credentials.Entities == nil || len(*credentials.Entities) == 0 {
+			break
+		}
+
+		// Use the last item's ID as the cursor for the next page
+		lastItem := (*credentials.Entities)[len(*credentials.Entities)-1]
+		if lastItem.Id == nil {
+			break
+		}
+		after = *lastItem.Id
+	}
+
+	return &allCreds, lastResp, nil
 }
 
 // createIntegrationCredFn is the implementation for creating an integration credential in Genesys Cloud
@@ -174,38 +208,4 @@ func getIntegrationByIdFn(ctx context.Context, p *integrationCredsProxy, integra
 		return nil, resp, err
 	}
 	return integration, resp, nil
-}
-
-// getAllIntegrationCredsFn is the implementation for getting all integration credentials using cursor-based paging
-func getAllIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
-	var allCreds []platformclientv2.Credentialinfo
-	var after string
-	pageSize := "200"
-	var lastResp *platformclientv2.APIResponse
-
-	for {
-		credentials, resp, err := p.integrationsApi.GetIntegrationsCredentialsListing("", after, pageSize)
-		lastResp = resp
-		if err != nil {
-			return nil, resp, err
-		}
-
-		if credentials.Entities != nil {
-			allCreds = append(allCreds, *credentials.Entities...)
-		}
-
-		// Check if there are more pages
-		if credentials.Entities == nil || len(*credentials.Entities) == 0 {
-			break
-		}
-
-		// Use the last item's ID as the cursor for the next page
-		lastItem := (*credentials.Entities)[len(*credentials.Entities)-1]
-		if lastItem.Id == nil {
-			break
-		}
-		after = *lastItem.Id
-	}
-
-	return &allCreds, lastResp, nil
 }
