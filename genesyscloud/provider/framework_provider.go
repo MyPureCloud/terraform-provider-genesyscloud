@@ -31,7 +31,6 @@ type GenesysCloudProvider struct {
 	SdkClientPool SDKClientPool
 
 	AttributeEnvValues     *providerEnvVars
-	TokenPoolSize          int32
 	LogStackTraces         bool
 	LogStackTracesFilePath string
 
@@ -283,8 +282,8 @@ func (f *GenesysCloudProvider) Configure(ctx context.Context, request provider.C
 	f.configureProxyAttributes(data)
 	f.configureGatewayAttributes(data)
 
-	frameworkLog("Initialising SDK client pool")
-	err := f.InitSDKClientPool()
+	frameworkLog("Initialising SDK client")
+	err := f.InitClientConfig(platformclientv2.GetDefaultConfiguration())
 	if err.HasError() {
 		response.Diagnostics.AddError(fmt.Sprintf("%v", err), "Failed to init SDK client pool")
 	}

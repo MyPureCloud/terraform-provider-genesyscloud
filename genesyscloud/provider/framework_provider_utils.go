@@ -1,10 +1,5 @@
 package provider
 
-import (
-	"log"
-	"strconv"
-)
-
 // configureAuthDetails sets up authentication configuration for the Genesys Cloud provider.
 // It populates the AuthDetails struct using values from either the provider configuration
 // or environment variables, with provider configuration taking precedence.
@@ -89,18 +84,6 @@ func (f *GenesysCloudProvider) configureSdkDebugInfo(data GenesysCloudProviderMo
 func (f *GenesysCloudProvider) configureRootAttributes(data GenesysCloudProviderModel) {
 	if f.AttributeEnvValues == nil {
 		f.AttributeEnvValues = readProviderEnvVars()
-	}
-
-	f.TokenPoolSize = tokenPoolSizeDefault
-	if !data.TokenPoolSize.IsNull() {
-		f.TokenPoolSize = data.TokenPoolSize.ValueInt32()
-	} else if f.AttributeEnvValues.tokenPoolSize != "" {
-		tokenPoolSize, err := strconv.Atoi(f.AttributeEnvValues.tokenPoolSize)
-		if err != nil {
-			log.Printf("Failed to parse %s env var to int. Defaulting to %d. Error: %s", tokenPoolSizeEnvVar, tokenPoolSizeDefault, err.Error())
-		} else {
-			f.TokenPoolSize = int32(tokenPoolSize)
-		}
 	}
 
 	if !data.LogStackTraces.IsNull() {
