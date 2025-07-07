@@ -3,6 +3,7 @@ package tfexporter
 import (
 	"archive/zip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -72,45 +73,68 @@ const (
 	formatHCLJSON = "hcl_json"
 )
 
-type GenesysCloudResourceExporter struct {
-	configExporter        Exporter
-	filterType            ExporterFilterType
-	resourceTypeFilter    ExporterResourceTypeFilter
-	resourceFilter        ExporterResourceFilter
-	filterList            *[]string
-	exportFormat          string
-	splitFilesByResource  bool
-	logPermissionErrors   bool
-	addDependsOn          bool
-	replaceWithDatasource []string
-	includeStateFile      bool
-	version               string
-	providerRegistry      string
-	provider              *schema.Provider
-	exportDirPath         string
-	exporters             *map[string]*resourceExporter.ResourceExporter
-	resources             []resourceExporter.ResourceInfo
-	resourceTypesMaps     map[string]resourceJSONMaps
-	dataSourceTypesMaps   map[string]resourceJSONMaps
-	unresolvedAttrs       []unresolvableAttributeInfo
-	d                     *schema.ResourceData
-	ctx                   context.Context
-	meta                  interface{}
-	dependsList           map[string][]string
-	buildSecondDeps       map[string][]string
-	exMutex               sync.RWMutex
-	cyclicDependsList     []string
-	ignoreCyclicDeps      bool
-	flowResourcesList     []string
-	exportComputed        bool
-	maxConcurrentOps      int // New field to control concurrency
+type ResourceErrorInfo struct {
+	ErrorMessage  string `json:"error_message"`
+	ResourceID    string `json:"resource_id"`
+	ResourceLabel string `json:"resource_label"`
+	ResourceType  string `json:"resource_type"`
+	IsTimeout     bool   `json:"is_timeout"`
+}
 
-	// New mutexes for protecting shared state
+type GenesysCloudResourceExporter struct {
+	// Ordering of objects in a struct is important with regards to 32-bit systems.
+	// To align padding, put complex objects at the top, grouping like objects together
+
+	// 8-byte alignment
+	// .. Pointers and reference types
+	buildSecondDeps     map[string][]string
+	configExporter      Exporter
+	ctx                 context.Context
+	cyclicDependsList   []string
+	d                   *schema.ResourceData
+	dataSourceTypesMaps map[string]resourceJSONMaps
+	dependsList         map[string][]string
+	exporters           *map[string]*resourceExporter.ResourceExporter
+	filterList          *[]string
+	filterType          ExporterFilterType
+	flowResourcesList   []string
+
+	meta                  interface{}
+	provider              *schema.Provider
+	replaceWithDatasource []string
+	resources             []resourceExporter.ResourceInfo
+	resourceErrors        map[string][]ResourceErrorInfo
+	resourceFilter        ExporterResourceFilter
+	resourceTypeFilter    ExporterResourceTypeFilter
+	resourceTypesMaps     map[string]resourceJSONMaps
+	unresolvedAttrs       []unresolvableAttributeInfo
+
+	// .. Strings
+	exportDirPath    string
+	exportFormat     string
+	providerRegistry string
+	version          string
+
+	// 4-byte alignment
+	// .. Mutex
+	dataSourceTypesMapsMutex   sync.RWMutex
+	exMutex                    sync.RWMutex
 	replaceWithDatasourceMutex sync.Mutex
 	resourcesMutex             sync.Mutex
 	resourceTypesMapsMutex     sync.RWMutex
-	dataSourceTypesMapsMutex   sync.RWMutex
 	unresolvedAttrsMutex       sync.Mutex
+
+	// .. Int
+	maxConcurrentOps int // New field to control concurrency
+
+	// 1-byte alignment
+	// .. Booleans
+	addDependsOn         bool
+	exportComputed       bool
+	ignoreCyclicDeps     bool
+	includeStateFile     bool
+	logPermissionErrors  bool
+	splitFilesByResource bool
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -294,6 +318,68 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 
 	// step #8 Verify the terraform state file with Exporter Resources
 	diagErr = append(diagErr, g.verifyTerraformState()...)
+
+	// step #9 Report any resources that errored
+	if len(g.resourceErrors) > 0 {
+		var timeoutErrorsTotalLen, otherErrorsTotalLen int
+		var errorSummary strings.Builder
+		errorSummary.WriteString("WARNING: Some resources encountered errors during export:\n")
+
+		for resType, errors := range g.resourceErrors {
+			var timeoutCount, otherCount int
+			errorSummary.WriteString(fmt.Sprintf("  %s: %d resources\n", resType, len(errors)))
+
+			// Count timeouts vs other errors
+			for _, errorInfo := range errors {
+				if errorInfo.IsTimeout {
+					timeoutCount++
+					timeoutErrorsTotalLen++
+				} else {
+					otherCount++
+					otherErrorsTotalLen++
+				}
+			}
+
+			errorSummary.WriteString(fmt.Sprintf("  - Timeout errors: %d\n", timeoutCount))
+			errorSummary.WriteString(fmt.Sprintf("  - Other errors: %d\n", otherCount))
+
+			// List individual errors
+			for _, errorInfo := range errors {
+				errorType := "Error"
+				if errorInfo.IsTimeout {
+					errorType = "Timeout"
+				}
+				errorSummary.WriteString(fmt.Sprintf("    - %s: %s (%s) - %v\n",
+					errorType, errorInfo.ResourceLabel, errorInfo.ResourceID, errorInfo.ErrorMessage))
+			}
+		}
+
+		log.Print(errorSummary.String())
+
+		// Write JSON error data
+		jsonFilepath := filepath.Join(g.exportDirPath, "export_errors.json")
+		jsonData, err := json.MarshalIndent(g.resourceErrors, "", "  ")
+		if err == nil {
+			diagErr = append(diagErr, files.WriteToFile(jsonData, jsonFilepath)...)
+		}
+
+		// Add a warning diagnostic
+		if timeoutErrorsTotalLen > 0 {
+			diagErr = append(diagErr, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("%d resources were not exported due to timeouts. Consider increasing the token_pool_size and/or token_acquire_timeout provider configs.", timeoutErrorsTotalLen),
+				Detail:   fmt.Sprintf("See %s for details", jsonFilepath),
+			})
+		}
+
+		if otherErrorsTotalLen > 0 {
+			diagErr = append(diagErr, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("%d resources encountered non-timeout errors during export.", otherErrorsTotalLen),
+				Detail:   fmt.Sprintf("See %s for details", jsonFilepath),
+			})
+		}
+	}
 	return diagErr
 }
 
@@ -1234,7 +1320,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	}
 
 	// Buffer channels to prevent goroutine leaks
-	errorChan := make(chan diag.Diagnostics, lenResources)
+	errorsChan := make(chan ResourceErrorInfo, lenResources)
 	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
 	log.Printf("[getResourcesForType] Created buffered channels for %d resources", lenResources)
 
@@ -1284,8 +1370,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			fetchResourceState := func() error {
 				log.Printf("[getResourcesForType] Starting fetchResourceState for resource ID: %s", id)
 
-				// Use a shorter timeout for individual resource fetches
-				resourceCtx, resourceCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+				resourceCtx, resourceCancel := context.WithCancel(ctx)
 				defer resourceCancel()
 				log.Printf("[getResourcesForType] Created resource context with 5-minute timeout for ID: %s", id)
 
@@ -1381,6 +1466,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			}
 
 			// Improved retry logic with exponential backoff
+			// Allows retries up to three times before reporting error
 			maxRetries := 3
 			var lastErr error
 			log.Printf("[getResourcesForType] Starting retry logic for resource ID: %s (max retries: %d)", id, maxRetries)
@@ -1396,6 +1482,8 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				}
 
 				err := fetchResourceState()
+
+				// Return immediately if no errors
 				if err == nil {
 					log.Printf("[getResourcesForType] Successfully processed resource ID: %s on attempt %d", id, attempt+1)
 					return // Success
@@ -1404,18 +1492,17 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				lastErr = err
 				log.Printf("[getResourcesForType] Error on attempt %d for resource ID %s: %v", attempt+1, id, err)
 
-				// Check if it's a timeout error that we should retry
-				isTimeoutError := func(err error) bool {
-					return strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") ||
-						strings.Contains(fmt.Sprintf("%v", err), "context deadline exceeded") ||
-						strings.Contains(fmt.Sprintf("%v", err), "timeout")
-				}
-
-				if !isTimeoutError(err) {
+				if !util.IsTimeoutError(err) {
 					log.Printf("[getResourcesForType] Non-retryable error for resource ID %s, sending to error channel", id)
 					// Non-retryable error, send to error channel
 					select {
-					case errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err):
+					case errorsChan <- ResourceErrorInfo{
+						ResourceType:  resType,
+						ResourceID:    id,
+						ResourceLabel: resMeta.BlockLabel,
+						ErrorMessage:  lastErr.Error(),
+						IsTimeout:     false,
+					}:
 						log.Printf("[getResourcesForType] Successfully sent error to channel for resource ID: %s", id)
 					case <-ctx.Done():
 						log.Printf("[getResourcesForType] Context cancelled while sending error for resource ID: %s", id)
@@ -1442,13 +1529,20 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			// If we get here, all retries failed
 			if lastErr != nil {
 				log.Printf("[getResourcesForType] All retries failed for resource ID %s, sending final error to channel", id)
+
 				select {
-				case errorChan <- diag.Errorf("Failed to get state for %s instance %s after %d retries: %v", resType, id, maxRetries, lastErr):
-					log.Printf("[getResourcesForType] Successfully sent final error to channel for resource ID: %s", id)
+				case errorsChan <- ResourceErrorInfo{
+					ResourceType:  resType,
+					ResourceID:    id,
+					ResourceLabel: resMeta.BlockLabel,
+					ErrorMessage:  lastErr.Error(),
+					IsTimeout:     true,
+				}:
+					log.Printf("[getResourcesForType] Failed to get state for %s instance %s after %d retries due to error: %v", resType, id, maxRetries, lastErr)
 				case <-ctx.Done():
 					log.Printf("[getResourcesForType] Context cancelled while sending final error for resource ID: %s", id)
-					return
 				}
+
 			}
 		}(id, resMeta)
 	}
@@ -1460,7 +1554,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	log.Printf("[getResourcesForType] All goroutines completed for resource type %s", resType)
 
 	close(resourceChan)
-	close(errorChan)
+	close(errorsChan)
 	log.Printf("[getResourcesForType] Closed resource and error channels for resource type %s", resType)
 
 	// Collect all resources
@@ -1479,22 +1573,26 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 		exporter.RemoveFromSanitizedResourceMap(id)
 	}
 
-	// Collect all errors
-	var allErrors diag.Diagnostics
+	// Track resources that errored
 	log.Printf("[getResourcesForType] Collecting errors from channel for resource type %s", resType)
-	for err := range errorChan {
-		log.Printf("[getResourcesForType] Collected error: %v", err)
-		allErrors = append(allErrors, err...)
-	}
-	log.Printf("[getResourcesForType] Collected %d errors for resource type %s", len(allErrors), resType)
-
-	// Return errors if any occurred
-	if len(allErrors) > 0 {
-		log.Printf("[getResourcesForType] Export completed for %s with %d errors out of %d resources", resType, len(allErrors), lenResources)
-		return resources, allErrors
+	var erroredResources []ResourceErrorInfo
+	for erroredResource := range errorsChan {
+		log.Printf("[getResourcesForType] Collected error: %v", erroredResource)
+		erroredResources = append(erroredResources, erroredResource)
 	}
 
-	log.Printf("[getResourcesForType] Export completed successfully for %s: %d resources successfully exported", resType, len(resources))
+	log.Printf("[getResourcesForType] Collected %d errors for resource type %s", len(erroredResources), resType)
+	// Store errored resources in the exporter for later reporting
+	if len(erroredResources) > 0 {
+		if g.resourceErrors == nil {
+			g.resourceErrors = make(map[string][]ResourceErrorInfo)
+		}
+		g.resourceErrors[resType] = erroredResources
+		log.Printf("[getResourcesForType] Export completed for %s with %d errors out of %d resources", resType, len(erroredResources), lenResources)
+	} else {
+		log.Printf("[getResourcesForType] Export completed successfully for %s: %d resources successfully exported", resType, len(resources))
+	}
+
 	return resources, nil
 }
 
