@@ -48,12 +48,12 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	ip := getIntegrationCredsProxy(clientConfig)
 
-	allCreds, diagErr := fetchAllCredentialsByCursor(ctx, clientConfig)
-	if diagErr != nil {
-		return nil, diagErr
+	allCreds, resp, err := ip.getAllIntegrationCreds(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get credentials error: %s", err), resp)
 	}
 
-	for _, cred := range allCreds {
+	for _, cred := range *allCreds {
 		log.Printf("Dealing with credential id : %s, credential name : %s", *cred.Id, util.StringOrNil(cred.Name))
 		if cred.Name != nil { // Credential is possible to have no name
 
