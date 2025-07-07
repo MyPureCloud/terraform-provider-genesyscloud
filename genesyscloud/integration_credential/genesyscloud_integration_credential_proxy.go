@@ -121,10 +121,10 @@ func getAllIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy) (*[
 
 	for {
 		credentials, resp, err := p.integrationsApi.GetIntegrationsCredentialsListing("", after, pageSize)
-		lastResp = resp
 		if err != nil {
 			return nil, resp, err
 		}
+		lastResp = resp
 
 		if credentials.Entities != nil {
 			allCreds = append(allCreds, *credentials.Entities...)
