@@ -77,7 +77,7 @@ func getIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 	return internalProxy
 }
 
-// getAllIntegrationCreds gets all Genesys Cloud Integration Credentials using cursor-based paging
+// getAllIntegrationCreds retrieves all Genesys Cloud Integration Credentials using cursor-based paging
 func (p *integrationCredsProxy) getAllIntegrationCreds(ctx context.Context) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	return p.getAllIntegrationCredsAttr(ctx, p)
 }
@@ -112,7 +112,7 @@ func (p *integrationCredsProxy) getIntegrationById(ctx context.Context, integrat
 	return p.getIntegrationByIdAttr(ctx, p, integrationId)
 }
 
-// getAllIntegrationCredsFn is the implementation for getting all integration credentials using cursor-based paging
+// getAllIntegrationCredsFn is the implementation for getting all integration credentials in Genesys Cloud using cursor-based paging
 func getAllIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	var allCreds []platformclientv2.Credentialinfo
 	var after string
@@ -166,19 +166,45 @@ func getIntegrationCredByIdFn(ctx context.Context, p *integrationCredsProxy, cre
 
 // getIntegrationCredByNameFn is the implementation for getting an integration credential by name in Genesys Cloud
 func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, credentialName string) (*platformclientv2.Credentialinfo, bool, *platformclientv2.APIResponse, error) {
-	allCreds, resp, err := p.getAllIntegrationCreds(ctx)
-	if err != nil {
-		return nil, false, resp, fmt.Errorf("failed to fetch credentials: %v", err)
-	}
+	var foundCred *platformclientv2.Credentialinfo
+	var resp *platformclientv2.APIResponse
+	var after string
+	pageSize := "200"
 
-	// Search through all credentials for the one with matching name
-	for _, credential := range *allCreds {
-		if credential.Name != nil && *credential.Name == credentialName {
-			return &credential, false, resp, nil
+	for {
+		integrationCredentials, response, err := p.integrationsApi.GetIntegrationsCredentialsListing("", after, pageSize)
+		resp = response
+		if err != nil {
+			return nil, false, response, err
 		}
+
+		if integrationCredentials.Entities == nil || len(*integrationCredentials.Entities) == 0 {
+			break
+		}
+
+		for _, credential := range *integrationCredentials.Entities {
+			if credential.Name != nil && *credential.Name == credentialName {
+				foundCred = &credential
+				break
+			}
+		}
+		if foundCred != nil {
+			break
+		}
+
+		// Use the last item's ID as the cursor for the next page
+		lastItem := (*integrationCredentials.Entities)[len(*integrationCredentials.Entities)-1]
+		if lastItem.Id == nil {
+			break
+		}
+		after = *lastItem.Id
 	}
 
-	return nil, true, resp, fmt.Errorf("no integration credentials found with name: %s", credentialName)
+	if foundCred == nil {
+		return nil, true, resp, fmt.Errorf("no integration credentials found with name: %s", credentialName)
+	}
+
+	return foundCred, false, resp, nil
 }
 
 // updateIntegrationCredFn is the implementation for updating an integration credential in Genesys Cloud
