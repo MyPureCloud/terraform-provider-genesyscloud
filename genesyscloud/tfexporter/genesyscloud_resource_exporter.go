@@ -1519,7 +1519,7 @@ func getResourceState(ctx context.Context, resource *schema.Resource, resID stri
 		log.Printf("[getResourceState] Resource has importer with StateContext, calling for ID: %s", resID)
 		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, meta)
 		if err != nil {
-			log.Printf("[getResourceState] Error with resource Importer %v for id %s: %v", resID, err)
+			log.Printf("[getResourceState] Error with resource Importer for id %s: %v", resID, err)
 			return nil, diag.FromErr(err)
 		}
 		if len(resourceDataArr) > 0 {
