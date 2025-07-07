@@ -90,6 +90,41 @@ var (
 			},
 		},
 	}
+
+	errorBodyElem = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"message": {
+				Description: "The error message.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"code": {
+				Description: "The error code.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"status": {
+				Description: "The HTTP status code.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"entity_id": {
+				Description: "The entity ID associated with the error.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"entity_name": {
+				Description: "The entity name associated with the error.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"message_with_params": {
+				Description: "The error message with parameters.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+		},
+	}
 )
 
 type GenerateGuideContentRequest struct {
@@ -127,7 +162,7 @@ func ResourceGuideJobs() *schema.Resource {
 				ForceNew:    true,
 			},
 			"status": {
-				Description: "The status of the guide job",
+				Description: "The status of the guide job. Valid values: InProgress, Succeeded, Failed.",
 				Type:        schema.TypeString,
 				Computed:    true,
 				Optional:    false,

@@ -53,7 +53,7 @@ func TestAccResourceGuideJobs(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      resourcePath,
+				ResourceName:      ResourceType + "." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

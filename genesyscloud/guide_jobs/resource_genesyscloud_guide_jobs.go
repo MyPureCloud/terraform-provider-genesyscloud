@@ -60,9 +60,9 @@ func readGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{})
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read guide job: %s | Error: %s", d.Id(), err), resp))
 		}
 
-		resourcedata.SetNillableValue(d, "status", &job.Status)
+		resourcedata.SetNillableValue(d, "status", job.Status)
 		resourcedata.SetNillableValue(d, "guide_content", flattenGuideContent(job.GuideContent))
-		resourcedata.SetNillableValue(d, "guide_id", &job.GuideId)
+		resourcedata.SetNillableValue(d, "guide_id", job.GuideId)
 
 		log.Printf("Read Guide Job: %s", d.Id())
 		return cc.CheckState(d)
