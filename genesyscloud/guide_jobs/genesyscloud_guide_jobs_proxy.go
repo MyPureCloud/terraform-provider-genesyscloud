@@ -13,8 +13,8 @@ import (
 
 var internalProxy *guideJobsProxy
 
-type createGuideJobFunc func(ctx context.Context, p *guideJobsProxy, guideJob *GenerateGuideContentRequest) (*GuideJob, *platformclientv2.APIResponse, error)
-type getGuideJobByIdFunc func(ctx context.Context, p *guideJobsProxy, id string) (guideJob *GuideJob, resp *platformclientv2.APIResponse, err error)
+type createGuideJobFunc func(ctx context.Context, p *guideJobsProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error)
+type getGuideJobByIdFunc func(ctx context.Context, p *guideJobsProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error)
 
 type guideJobsProxy struct {
 	clientConfig        *platformclientv2.Configuration
@@ -37,21 +37,21 @@ func getGuideJobsProxy(config *platformclientv2.Configuration) *guideJobsProxy {
 	return internalProxy
 }
 
-func (p *guideJobsProxy) createGuideJob(ctx context.Context, guideJob *GenerateGuideContentRequest) (*GuideJob, *platformclientv2.APIResponse, error) {
+func (p *guideJobsProxy) createGuideJob(ctx context.Context, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
 	return p.createGuideJobAttr(ctx, p, guideJob)
 }
 
-func (p *guideJobsProxy) getGuideJobById(ctx context.Context, id string) (guideJob *GuideJob, resp *platformclientv2.APIResponse, err error) {
+func (p *guideJobsProxy) getGuideJobById(ctx context.Context, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
 	return p.getGuideJobByIdAttr(ctx, p, id)
 }
 
 // Create Functions
 
-func createGuideJobFn(ctx context.Context, p *guideJobsProxy, guideJob *GenerateGuideContentRequest) (*GuideJob, *platformclientv2.APIResponse, error) {
+func createGuideJobFn(ctx context.Context, p *guideJobsProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
 	return sdkCreateGuideJob(ctx, p, guideJob)
 }
 
-func sdkCreateGuideJob(ctx context.Context, p *guideJobsProxy, guideJob *GenerateGuideContentRequest) (*GuideJob, *platformclientv2.APIResponse, error) {
+func sdkCreateGuideJob(ctx context.Context, p *guideJobsProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 	action := http.MethodPost
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs"
@@ -73,7 +73,7 @@ func sdkCreateGuideJob(ctx context.Context, p *guideJobsProxy, guideJob *Generat
 		return nil, resp, err
 	}
 
-	var job GuideJob
+	var job JobResponse
 	err = json.Unmarshal(respBody, &job)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error unmarshaling guide job | error: %w", err)
@@ -84,11 +84,11 @@ func sdkCreateGuideJob(ctx context.Context, p *guideJobsProxy, guideJob *Generat
 
 // Read Functions
 
-func getGuideJobByIdFn(ctx context.Context, p *guideJobsProxy, id string) (*GuideJob, *platformclientv2.APIResponse, error) {
+func getGuideJobByIdFn(ctx context.Context, p *guideJobsProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
 	return sdkGetGuideJobById(ctx, p, id)
 }
 
-func sdkGetGuideJobById(ctx context.Context, p *guideJobsProxy, id string) (*GuideJob, *platformclientv2.APIResponse, error) {
+func sdkGetGuideJobById(ctx context.Context, p *guideJobsProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
 	client := &http.Client{}
 	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs/" + id
@@ -105,7 +105,7 @@ func sdkGetGuideJobById(ctx context.Context, p *guideJobsProxy, id string) (*Gui
 		return nil, resp, err
 	}
 
-	var job GuideJob
+	var job JobResponse
 	err = json.Unmarshal(respBody, &job)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error unmarshaling guide job | error: %w", err)

@@ -27,20 +27,20 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide job error: %s", err), resp)
 	}
 
-	switch job.Status {
+	switch *job.Status {
 	case "InProgress":
-		log.Printf("Create job still in progress with status: %s", job.Status)
+		log.Printf("Create job still in progress with status: %s", *job.Status)
 	case "Succeeded":
 		log.Printf("Created successfully")
 		return readGuideJob(ctx, d, meta)
 	case "Failed":
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide job, with error: %s", job.Errors[0].Message), resp)
 	default:
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Unknown job status: %s", job.Status), nil)
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Unknown job status: %s", *job.Status), nil)
 	}
 
-	d.SetId(job.Id)
-	log.Printf("Created guide: %s", job.Id)
+	d.SetId(*job.Id)
+	log.Printf("Created guide: %s", *job.Id)
 	return readGuideJob(ctx, d, meta)
 }
 
@@ -61,6 +61,8 @@ func readGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		resourcedata.SetNillableValue(d, "status", &job.Status)
+		resourcedata.SetNillableValue(d, "guide_content", flattenGuideContent(job.GuideContent))
+		resourcedata.SetNillableValue(d, "guide_id", &job.GuideId)
 
 		log.Printf("Read Guide Job: %s", d.Id())
 		return cc.CheckState(d)
