@@ -7,7 +7,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v161/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -233,9 +233,9 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 	var allWrapupcodes []platformclientv2.Wrapupcode
 	const pageSize = 100
 
-	wrapupcodes, apiResponse, err := p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, 1)
+	wrapupcodes, apiResponse, err := p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, 1, "")
 	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
+		return nil, apiResponse, fmt.Errorf("failed to get page 1 of routing wrapupcodes: %w", err)
 	}
 
 	if wrapupcodes.Total != nil {
@@ -247,19 +247,19 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 		}
 	}
 
-	if wrapupcodes == nil || wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
+	if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
 		return &allWrapupcodes, apiResponse, nil
 	}
 
 	allWrapupcodes = append(allWrapupcodes, *wrapupcodes.Entities...)
 
 	for pageNum := 2; pageNum <= *wrapupcodes.PageCount; pageNum++ {
-		wrapupcodes, apiResponse, err := p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, pageNum)
+		wrapupcodes, apiResponse, err = p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, pageNum, "")
 		if err != nil {
 			return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
 		}
 
-		if wrapupcodes == nil || wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
+		if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
 			break
 		}
 
