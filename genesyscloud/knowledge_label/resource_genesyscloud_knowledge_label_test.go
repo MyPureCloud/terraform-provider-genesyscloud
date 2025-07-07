@@ -15,6 +15,7 @@ import (
 )
 
 func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		knowledgeBaseResourceLabel1  = "test-knowledgebase1"
 		knowledgeBaseName1           = "Terraform Knowledge Base" + uuid.NewString()

@@ -42,8 +42,8 @@ type labelUtilization struct {
 }
 
 func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, diag.Diagnostics) {
+	sdkAddresses := make([]platformclientv2.Contact, 0)
 	if addresses := d.Get("addresses").([]interface{}); addresses != nil {
-		sdkAddresses := make([]platformclientv2.Contact, 0)
 		var otherEmails *schema.Set
 		var phoneNumbers *schema.Set
 		if len(addresses) > 0 {
@@ -67,7 +67,7 @@ func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, dia
 		}
 		return &sdkAddresses, nil
 	}
-	return nil, nil
+	return &sdkAddresses, nil
 }
 
 func executeUpdateUser(ctx context.Context, d *schema.ResourceData, proxy *userProxy, updateUser platformclientv2.Updateuser) diag.Diagnostics {

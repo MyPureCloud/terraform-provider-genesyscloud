@@ -1,3 +1,6 @@
+// Package examples provides functionality for loading, processing, and testing Terraform examples
+// for the Genesys Cloud Terraform Provider. It handles dependency resolution, test generation,
+// and conditional test execution based on environment constraints.
 package examples
 
 import (
@@ -17,15 +20,23 @@ import (
 	zclCty "github.com/zclconf/go-cty/cty"
 )
 
+// Example represents a Terraform example configuration with its resources, dependencies,
+// and constraints. It manages the loading and processing of example files.
 type Example struct {
-	Locals            *Locals
-	Resources         []*Resource
-	Dependencies      []*Example
+	// Locals contains local variables defined in the locals.tf file
+	Locals *Locals
+	// Resources contains the Terraform resources defined in the example
+	Resources []*Resource
+	// Dependencies contains other examples that this example depends on
+	Dependencies []*Example
+	// SkipIfConstraints defines conditions under which this example should be skipped during testing
 	SkipIfConstraints *SkipIfConstraints
-	Warnings          []string
+	// Warnings contains any warnings encountered during example processing
+	Warnings []string
 }
 
-// NewExample creates a new initialized Example
+// NewExample creates a new initialized Example with empty slices for Resources and Dependencies.
+// This is the starting point for loading and processing example files.
 func NewExample() *Example {
 	return &Example{
 		Resources:    make([]*Resource, 0),
@@ -33,7 +44,8 @@ func NewExample() *Example {
 	}
 }
 
-// GenerateCheck creates a resource.TestCheckFunc that validates all resources
+// GenerateChecks creates a slice of resource.TestCheckFunc that validates all resources in the example.
+// These check functions are used in Terraform acceptance tests to verify that resources were created correctly.
 func (e *Example) GenerateChecks() []resource.TestCheckFunc {
 	var checks []resource.TestCheckFunc
 
@@ -45,13 +57,17 @@ func (e *Example) GenerateChecks() []resource.TestCheckFunc {
 	return checks
 }
 
-// GenerateOutput generates the complete Terraform configuration
+// GenerateOutput generates the complete Terraform configuration by combining all resources
+// and locals into a single string. This is used to create the configuration that will be
+// passed to Terraform during testing.
 func (e *Example) GenerateOutput() (string, error) {
 	var output string
 	var err error
+	// Add all resources to the output
 	for _, resource := range e.Resources {
 		output += resource.HCL + "\n\n"
 	}
+	// Add locals if they exist
 	if e.Locals != nil {
 		localOutput, err := e.Locals.generateOutput()
 		if err != nil {
@@ -62,6 +78,9 @@ func (e *Example) GenerateOutput() (string, error) {
 	return output, err
 }
 
+// LoadExampleWithDependencies loads a Terraform example file and all of its dependencies.
+// It handles cyclic dependency detection and ensures each file is processed only once.
+// The processedState parameter tracks which files have been processed and the current dependency chain.
 func (e *Example) LoadExampleWithDependencies(resourcePath string, processedState *ProcessedExampleState) (*Example, error) {
 
 	// Check for cycles in dependency chain
@@ -289,10 +308,15 @@ func (e *Example) setEnvironmentVars(locals *Locals) error {
 	return nil
 }
 
+// Resource represents a Terraform resource defined in an example file.
+// It contains the file path, the raw HCL content, and the parsed AST for analysis.
 type Resource struct {
+	// FilePath is the path to the file containing the resource
 	FilePath string
-	HCL      string
-	AST      *hcl.File
+	// HCL is the raw HCL content of the resource
+	HCL string
+	// AST is the parsed abstract syntax tree of the resource
+	AST *hcl.File
 }
 
 // GenerateResourceChecks creates TestCheckFuncs for a single resource
@@ -337,12 +361,19 @@ type LocalsConfig struct {
 	Locals *Locals `hcl:"locals,block"`
 }
 
+// Locals represents the contents of a locals.tf file in a Terraform example.
+// It defines dependencies, working directories, test constraints, and environment variables.
 type Locals struct {
-	Dependencies      map[string][]string    `hcl:"dependencies,optional"`
-	WorkingDir        map[string]string      `hcl:"working_dir,optional"`
-	SkipIfConstraints map[string][]string    `hcl:"skip_if,optional"`
-	EnvironmentVars   map[string]string      `hcl:"environment_vars,optional"`
-	ExtraAttributes   map[string]interface{} `hcl:",remain"`
+	// Dependencies defines which other example files this example depends on
+	Dependencies map[string][]string `hcl:"dependencies,optional"`
+	// WorkingDir defines paths to working directories for resources that need file references
+	WorkingDir map[string]string `hcl:"working_dir,optional"`
+	// SkipIfConstraints defines conditions under which tests should be skipped
+	SkipIfConstraints map[string][]string `hcl:"skip_if,optional"`
+	// EnvironmentVars defines environment variables to set during testing
+	EnvironmentVars map[string]string `hcl:"environment_vars,optional"`
+	// ExtraAttributes captures any additional attributes defined in the locals block
+	ExtraAttributes map[string]interface{} `hcl:",remain"`
 }
 
 func NewLocals() *Locals {
@@ -465,16 +496,27 @@ func (l *Locals) Merge(other *Locals) {
 	}
 }
 
+// SkipIfConstraints defines conditions under which tests should be skipped.
+// This allows examples to be conditionally tested based on the environment.
 type SkipIfConstraints struct {
-	NotInDomains        []string `hcl:"not_in_domains,optional"`
-	OnlyInDomains       []string `hcl:"only_in_domains,optional"`
-	ProductsMissingAny  []string `hcl:"products_missing_any,optional"`
-	ProductsMissingAll  []string `hcl:"products_missing_all,optional"`
+	// NotInDomains specifies domains where the test should not run
+	NotInDomains []string `hcl:"not_in_domains,optional"`
+	// OnlyInDomains specifies domains where the test should run
+	OnlyInDomains []string `hcl:"only_in_domains,optional"`
+	// ProductsMissingAny specifies that the test should run if any of these products are missing
+	ProductsMissingAny []string `hcl:"products_missing_any,optional"`
+	// ProductsMissingAll specifies that the test should run if all of these products are missing
+	ProductsMissingAll []string `hcl:"products_missing_all,optional"`
+	// ProductsExistingAny specifies that the test should run if any of these products exist
 	ProductsExistingAny []string `hcl:"products_existing_any,optional"`
+	// ProductsExistingAll specifies that the test should run if all of these products exist
 	ProductsExistingAll []string `hcl:"products_existing_all,optional"`
 }
 
+// ProcessedFiles tracks which files have been processed during example loading.
+// This prevents processing the same file multiple times and helps detect cycles.
 type ProcessedFiles struct {
+	// Paths contains the base filenames of processed files
 	Paths []string
 }
 
@@ -499,9 +541,13 @@ func (p *ProcessedFiles) markFileAsProcessed(resourcePath string) {
 	p.Paths = append(p.Paths, filepath.Base(resourcePath))
 }
 
+// ProcessedExampleState tracks the state of example processing across multiple directories.
+// It maintains a record of processed files and the current dependency chain to detect cycles.
 type ProcessedExampleState struct {
+	// DirectoryTracker maps directory paths to their processed files
 	DirectoryTracker map[string]*ProcessedFiles
-	DependencyChain  []string
+	// DependencyChain tracks the current chain of dependencies being processed
+	DependencyChain []string
 }
 
 // NewProcessedExampleState creates a new initialized ProcessedExampleState

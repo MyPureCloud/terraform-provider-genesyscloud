@@ -140,6 +140,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "manager", ""),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "profile_skills.0", profileSkill2),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "certifications.0", cert2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "addresses.#", "0"),
 				),
 			},
 			{
@@ -529,6 +530,20 @@ func TestAccResourceUserAddresses(t *testing.T) {
 
 					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.0.other_emails.0.address"),
 					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.0.other_emails.0.type"),
+				),
+			},
+			{
+				// Update the user by removing all addresses (DEVTOOLING-1238)
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel4,
+					addrEmail4,
+					addrUserName4,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Basic resource attributes
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "email", addrEmail4),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "name", addrUserName4),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.#", "0"),
 				),
 			},
 		},
@@ -1663,6 +1678,19 @@ func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension_pool_id",
 						extensionPool.ResourceType+"."+extensionPoolResourceLabel2, "id"),
+				),
+			},
+			{
+				// Remove the address from the user and ensure it is gone (DEVTOOLING-1238)
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel1,
+					addrEmail1,
+					addrUserName,
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource1) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource2),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.#", "0"),
 				),
 			},
 		},

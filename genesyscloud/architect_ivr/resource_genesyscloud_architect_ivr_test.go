@@ -10,7 +10,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
-	util "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -20,6 +20,8 @@ import (
 
 func TestAccResourceIvrConfigBasic(t *testing.T) {
 	ivrConfigResourceLabel := "test-ivrconfig1"
+	ivrFullResourcePath := ResourceType + "." + ivrConfigResourceLabel
+
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
 	ivrConfigDescription := "Terraform IVR config"
 	number1 := "+14175550011"
@@ -28,13 +30,14 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	didPoolResourceLabel := "test-didpool1"
 
 	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
+	resp, err := didPool.DeleteDidPoolWithStartAndEndNumber(context.Background(), number1, number2, sdkConfig)
+	if err != nil {
+		respStr := "<nil>"
+		if resp != nil {
+			respStr = strconv.Itoa(resp.StatusCode)
 		}
-		ctx := context.TODO()
-		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number1, number2)
-	}()
+		t.Logf("Failed to delete DID pool: %s. API Response: %s", err.Error(), respStr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -50,9 +53,9 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 					DependsOn:     "",  // No depends_on
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "name", ivrConfigName),
-					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "description", ivrConfigDescription),
-					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "dnis.#", "0"),
+					resource.TestCheckResourceAttr(ivrFullResourcePath, "name", ivrConfigName),
+					resource.TestCheckResourceAttr(ivrFullResourcePath, "description", ivrConfigDescription),
+					resource.TestCheckResourceAttr(ivrFullResourcePath, "dnis.#", "0"),
 				),
 			},
 			{
@@ -69,19 +72,19 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 					Name:          ivrConfigName,
 					Description:   ivrConfigDescription,
 					Dnis:          ivrConfigDnis,
-					DependsOn:     "genesyscloud_telephony_providers_edges_did_pool." + didPoolResourceLabel,
+					DependsOn:     didPool.ResourceType + "." + didPoolResourceLabel,
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "name", ivrConfigName),
-					resource.TestCheckResourceAttr("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "description", ivrConfigDescription),
-					resource.TestCheckResourceAttr(ResourceType+"."+ivrConfigResourceLabel, "dnis.#", "2"),
-					util.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "dnis", ivrConfigDnis[0]),
-					util.ValidateStringInArray("genesyscloud_architect_ivr."+ivrConfigResourceLabel, "dnis", ivrConfigDnis[1]),
+					resource.TestCheckResourceAttr(ivrFullResourcePath, "name", ivrConfigName),
+					resource.TestCheckResourceAttr(ivrFullResourcePath, "description", ivrConfigDescription),
+					resource.TestCheckResourceAttr(ivrFullResourcePath, "dnis.#", "2"),
+					util.ValidateStringInArray(ivrFullResourcePath, "dnis", ivrConfigDnis[0]),
+					util.ValidateStringInArray(ivrFullResourcePath, "dnis", ivrConfigDnis[1]),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_architect_ivr." + ivrConfigResourceLabel,
+				ResourceName:      ivrFullResourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -106,13 +109,14 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	fullResourceLabel := ResourceType + "." + ivrConfigResourceLabel1
 
 	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
+	resp, err := didPool.DeleteDidPoolWithStartAndEndNumber(context.Background(), number1, number2, sdkConfig)
+	if err != nil {
+		respStr := "<nil>"
+		if resp != nil {
+			respStr = strconv.Itoa(resp.StatusCode)
 		}
-		ctx := context.TODO()
-		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, number1, number2)
-	}()
+		t.Logf("Failed to delete DID pool: %s. API Response: %s", err.Error(), respStr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -238,13 +242,14 @@ func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
 	})
 
 	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
+	resp, err := didPool.DeleteDidPoolWithStartAndEndNumber(context.Background(), startNumberStr, endNumberStr, sdkConfig)
+	if err != nil {
+		respStr := "<nil>"
+		if resp != nil {
+			respStr = strconv.Itoa(resp.StatusCode)
 		}
-		ctx := context.TODO()
-		_, _ = didPool.DeleteDidPoolWithStartAndEndNumber(ctx, startNumberStr, endNumberStr)
-	}()
+		t.Logf("Failed to delete DID pool: %s. API Response: %s", err.Error(), respStr)
+	}
 
 	resourcePath := ResourceType + "." + resourceLabel
 

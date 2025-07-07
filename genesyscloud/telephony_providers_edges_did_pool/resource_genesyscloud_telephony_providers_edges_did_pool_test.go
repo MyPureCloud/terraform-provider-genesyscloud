@@ -20,13 +20,14 @@ func TestAccResourceDidPoolBasic(t *testing.T) {
 	didPoolEndPhoneNumber1 := "+14175540015"
 
 	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
+	resp, err := DeleteDidPoolWithStartAndEndNumber(context.Background(), didPoolStartPhoneNumber1, didPoolEndPhoneNumber1, sdkConfig)
+	if err != nil {
+		respStr := "<nil>"
+		if resp != nil {
+			respStr = strconv.Itoa(resp.StatusCode)
 		}
-		ctx := context.TODO()
-		_, _ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber1, didPoolEndPhoneNumber1)
-	}()
+		t.Logf("Failed to delete did pool: %s. API Response: %s", err.Error(), respStr)
+	}
 
 	didPoolDescription1 := "Test description"
 	didPoolComments1 := "Test comments"

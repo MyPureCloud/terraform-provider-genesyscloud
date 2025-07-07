@@ -32,9 +32,6 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 	proxy := GetUserProxy(sdkConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	// Newly created resources often aren't returned unless there's a delay
-	time.Sleep(5 * time.Second)
-
 	users, proxyResponse, err := proxy.GetAllUser(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of users error: %s", err), proxyResponse)
@@ -154,10 +151,11 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 			"")
 
 		if errGet != nil {
+			readErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), errGet), proxyResponse)
 			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), errGet), proxyResponse))
+				return retry.RetryableError(readErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s", d.Id(), errGet), proxyResponse))
+			return retry.NonRetryableError(readErr)
 		}
 
 		// Required attributes
@@ -168,19 +166,19 @@ func readUser(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableValue(d, "department", currentUser.Department)
 		resourcedata.SetNillableValue(d, "title", currentUser.Title)
 		resourcedata.SetNillableValue(d, "acd_auto_answer", currentUser.AcdAutoAnswer)
+
+		_ = d.Set("manager", nil)
 		if currentUser.Manager != nil {
-			d.Set("manager", *(*currentUser.Manager).Id)
-		} else {
-			d.Set("manager", nil)
+			_ = d.Set("manager", *(*currentUser.Manager).Id)
 		}
 
-		d.Set("addresses", flattenUserAddresses(ctx, currentUser.Addresses, proxy))
-		d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
-		d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
-		d.Set("locations", flattenUserLocations(currentUser.Locations))
-		d.Set("profile_skills", flattenUserData(currentUser.ProfileSkills))
-		d.Set("certifications", flattenUserData(currentUser.Certifications))
-		d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
+		_ = d.Set("addresses", flattenUserAddresses(ctx, currentUser.Addresses, proxy))
+		_ = d.Set("routing_skills", flattenUserSkills(currentUser.Skills))
+		_ = d.Set("routing_languages", flattenUserLanguages(currentUser.Languages))
+		_ = d.Set("locations", flattenUserLocations(currentUser.Locations))
+		_ = d.Set("profile_skills", flattenUserData(currentUser.ProfileSkills))
+		_ = d.Set("certifications", flattenUserData(currentUser.Certifications))
+		_ = d.Set("employer_info", flattenUserEmployerInfo(currentUser.EmployerInfo))
 
 		//Get attributes from Voicemail/Userpolicies resource
 		currentVoicemailUserpolicies, resp, err := proxy.getVoicemailUserpoliciesById(ctx, d.Id())
@@ -217,16 +215,16 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// If state changes, it is the only modifiable field, so it must be updated separately
 	if d.HasChange("state") {
 		log.Printf("Updating state for user %s", email)
-		updateUser := platformclientv2.Updateuser{
+		updateUserRequestBody := platformclientv2.Updateuser{
 			State: platformclientv2.String(d.Get("state").(string)),
 		}
-		diagErr := executeUpdateUser(ctx, d, proxy, updateUser)
+		diagErr := executeUpdateUser(ctx, d, proxy, updateUserRequestBody)
 		if diagErr != nil {
 			return diagErr
 		}
 	}
 
-	updateUser := platformclientv2.Updateuser{
+	updateUserRequestBody := platformclientv2.Updateuser{
 		Name:           platformclientv2.String(d.Get("name").(string)),
 		Department:     platformclientv2.String(d.Get("department").(string)),
 		Title:          platformclientv2.String(d.Get("title").(string)),
@@ -238,7 +236,7 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		Certifications: buildSdkCertifications(d),
 		EmployerInfo:   buildSdkEmployerInfo(d),
 	}
-	diagErr := executeUpdateUser(ctx, d, proxy, updateUser)
+	diagErr := executeUpdateUser(ctx, d, proxy, updateUserRequestBody)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -263,7 +261,6 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, proxyDelResponse, err := proxy.deleteUser(ctx, d.Id())
 		if err != nil {
-			time.Sleep(5 * time.Second)
 			return proxyDelResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete user %s error: %s", d.Id(), err), proxyDelResponse)
 		}
 		log.Printf("Deleted user %s", email)
@@ -274,13 +271,13 @@ func deleteUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	// Verify user in deleted state and search index has been updated
-	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 3*time.Minute, func() *retry.RetryError {
 		id, err := getDeletedUserId(email, proxy)
 		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("Error searching for deleted user %s: %v", email, err))
+			return retry.NonRetryableError(fmt.Errorf("error searching for deleted user %s: %v", email, err))
 		}
 		if id == nil {
-			return retry.RetryableError(fmt.Errorf("User %s not yet in deleted state", email))
+			return retry.RetryableError(fmt.Errorf("user %s not yet in deleted state", email))
 		}
 		return nil
 	})

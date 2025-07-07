@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -16,16 +17,20 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 		didPoolEndPhoneNumber    = "+45465550008"
 		didPoolResourceLabel     = "didPool"
 		didPoolDataResourceLabel = "didPoolData"
+
+		resourceFullPath   = ResourceType + "." + didPoolResourceLabel
+		dataSourceFullPath = "data." + ResourceType + "." + didPoolDataResourceLabel
 	)
 
 	// did pool cleanup
-	defer func() {
-		if _, err := provider.AuthorizeSdk(); err != nil {
-			return
+	resp, err := DeleteDidPoolWithStartAndEndNumber(context.Background(), didPoolStartPhoneNumber, didPoolEndPhoneNumber, sdkConfig)
+	if err != nil {
+		respStr := "<nil>"
+		if resp != nil {
+			respStr = strconv.Itoa(resp.StatusCode)
 		}
-		ctx := context.TODO()
-		_, _ = DeleteDidPoolWithStartAndEndNumber(ctx, didPoolStartPhoneNumber, didPoolEndPhoneNumber)
-	}()
+		t.Logf("Failed to delete did pool: %s. API Response: %s", err.Error(), respStr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -45,7 +50,7 @@ func TestAccDataSourceDidPoolBasic(t *testing.T) {
 					didPoolEndPhoneNumber,
 					ResourceType+"."+didPoolResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+didPoolDataResourceLabel, "id", "genesyscloud_telephony_providers_edges_did_pool."+didPoolResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(dataSourceFullPath, "id", resourceFullPath, "id"),
 				),
 			},
 		},

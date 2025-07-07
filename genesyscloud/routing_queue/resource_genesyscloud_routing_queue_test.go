@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -626,8 +627,9 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 func TestAccResourceRoutingQueueFlows(t *testing.T) {
 	var (
-		queueResourceLabel1 = "test-queue"
-		queueName1          = "Terraform Test Queue1-" + uuid.NewString()
+		queueResourceLabel1   = "test-queue"
+		queueName1            = "Terraform Test Queue1-" + uuid.NewString()
+		queueResourceFullPath = ResourceType + "." + queueResourceLabel1
 
 		queueFlowResourceLabel1          = "test_flow1"
 		queueFlowResourceLabel2          = "test_flow2"
@@ -635,15 +637,15 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		emailInQueueFlowResourceLabel2   = "email_test_flow2"
 		messageInQueueFlowResourceLabel1 = "message_test_flow1"
 		messageInQueueFlowResourceLabel2 = "message_test_flow2"
-		queueFlowName1                   = "Terraform Flow Test-" + uuid.NewString()
-		queueFlowName2                   = "Terraform Flow Test-" + uuid.NewString()
-		queueFlowName3                   = "Terraform Flow Test-" + uuid.NewString()
+		inqueueCallFlowName              = "TF Test inqueueCall Flow " + uuid.NewString()
+		inqueueEmailFlowName             = "TF Test inqueueEmail Flow " + uuid.NewString()
+		inqueueShortMessageFlowName      = "TF Test inqueueShortMessage Flow " + uuid.NewString()
 		queueFlowFilePath1               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
 		queueFlowFilePath2               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml")
 		queueFlowFilePath3               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml")
 
-		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
-		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
+		queueFlowInqueueCallConfig    = getBasicInQueueCallFlow(inqueueCallFlowName)
+		inQueueShortMessageFlowConfig = getBasicInQueueShortMessageFlow(inqueueShortMessageFlowName)
 
 		//variables for testing 'on_hold_prompt_id'
 		userPromptResourceLabel1    = "test-user_prompt_1"
@@ -686,31 +688,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		},
 	})
 
-	emailInQueueFlowInboundcallConfig2 := fmt.Sprintf(`inboundEmail:
-    name: %s
-    division: %s
-    startUpRef: "/inboundEmail/states/state[Initial State_10]"
-    defaultLanguage: en-us
-    supportedLanguages:
-        en-us:
-            defaultLanguageSkill:
-                noValue: true
-    settingsInboundEmailHandling:
-        emailHandling:
-            disconnect:
-                none: true
-    settingsErrorHandling:
-        errorHandling:
-            disconnect:
-                none: true
-    states:
-        - state:
-            name: Initial State
-            refId: Initial State_10
-            actions:
-                - disconnect:
-                    name: Disconnect
-`, queueFlowName2, homeDivisionName)
+	emailInQueueFlowInboundcallConfig2 := getBasicInQueueEmailFlow(inqueueEmailFlowName, homeDivisionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -721,7 +699,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel1,
 					queueFlowFilePath1,
-					queueFlowInboundcallConfig1,
+					queueFlowInqueueCallConfig,
 					false,
 				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel1,
@@ -731,7 +709,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel1,
 					queueFlowFilePath3,
-					messageInQueueFlowInboundcallConfig3,
+					inQueueShortMessageFlowConfig,
 					false,
 				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
@@ -747,10 +725,41 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					"on_hold_prompt_id = genesyscloud_architect_user_prompt."+userPromptResourceLabel1+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel1, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel1, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel1, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
+				),
+			},
+			{
+				// Update queue fields to null before deleting re-creating flows to avoid errors
+				Config: architectFlow.GenerateFlowResource(
+					queueFlowResourceLabel1,
+					queueFlowFilePath1,
+					queueFlowInqueueCallConfig,
+					false,
+				) + architectFlow.GenerateFlowResource(
+					emailInQueueFlowResourceLabel1,
+					queueFlowFilePath2,
+					emailInQueueFlowInboundcallConfig2,
+					false,
+				) + architectFlow.GenerateFlowResource(
+					messageInQueueFlowResourceLabel1,
+					queueFlowFilePath3,
+					inQueueShortMessageFlowConfig,
+					false,
+				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+					ResourceLabel: userPromptResourceLabel1,
+					Name:          userPromptName1,
+					Description:   strconv.Quote(userPromptDescription1),
+					Resources:     userPromptResources1,
+				}) + GenerateRoutingQueueResourceBasic(
+					queueResourceLabel1,
+					queueName1,
+					"queue_flow_id = null",
+					"email_in_queue_flow_id = null",
+					"message_in_queue_flow_id = null",
+					"on_hold_prompt_id = null",
 				),
 			},
 			{
@@ -758,7 +767,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel2,
 					queueFlowFilePath1,
-					queueFlowInboundcallConfig1,
+					queueFlowInqueueCallConfig,
 					false,
 				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel2,
@@ -768,7 +777,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel2,
 					queueFlowFilePath3,
-					messageInQueueFlowInboundcallConfig3,
+					inQueueShortMessageFlowConfig,
 					false,
 				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
@@ -784,10 +793,10 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					"on_hold_prompt_id = genesyscloud_architect_user_prompt."+userPromptResourceLabel1+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
 					func(s *terraform.State) error {
 						time.Sleep(45 * time.Second) // Wait for 45 seconds for proper deletion of user
 						return nil
@@ -796,7 +805,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel1,
+				ResourceName:      queueResourceFullPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -1810,4 +1819,142 @@ func isUserDeleted(id string) (bool, error) {
 
 	// If user is found, it means the user is not deleted
 	return false, nil
+}
+
+func getBasicInQueueCallFlow(name string) string {
+	voiceEngineConfig := `textToSpeech:
+        defaultEngine:
+          voice: Jill`
+	// In usw2, validation fails if we reference "Jill" (even though it is there by default in that region when creating a flow via Architect UI)
+	// In use1, validation fails if it is not there.
+	// To address this, we're adding it conditionally
+	if os.Getenv("GENESYSCLOUD_REGION") == "us-west-2" {
+		voiceEngineConfig = ""
+	}
+	return fmt.Sprintf(`
+inqueueCall:
+  name: %s
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+      %s
+  settingsInQueueCall:
+    holdMusic:
+      lit:
+        name: PromptSystem.on_hold_music
+  settingsActionDefaults:
+    playAudioOnSilence:
+      timeout:
+        lit:
+          seconds: 40
+    detectSilence:
+      timeout:
+        lit:
+          seconds: 40
+    callData:
+      processingPrompt:
+        noValue: true
+    collectInput:
+      noEntryTimeout:
+        lit:
+          seconds: 5
+    dialByExtension:
+      interDigitTimeout:
+        lit:
+          seconds: 6
+    transferToUser:
+      connectTimeout:
+        noValue: true
+    transferToNumber:
+      connectTimeout:
+        noValue: true
+    transferToGroup:
+      connectTimeout:
+        noValue: true
+    transferToFlowSecure:
+      connectTimeout:
+        lit:
+          seconds: 15
+  settingsErrorHandling:
+    errorHandling:
+      disconnect:
+        none: true
+    preHandlingAudio:
+      tts: Sorry, an error occurred. Please try your call again.
+  settingsPrompts:
+    ensureAudioInPrompts: false
+    promptMediaToValidate:
+      - mediaType: audio
+      - mediaType: tts
+  startUpTaskActions:
+    - holdMusic:
+        name: Hold Music
+        prompt:
+          exp: Flow.HoldPrompt
+        bargeInEnabled:
+          lit: false
+        playStyle:
+          entirePrompt: true
+
+`, name, voiceEngineConfig)
+}
+
+func getBasicInQueueShortMessageFlow(name string) string {
+	return fmt.Sprintf(`
+inqueueShortMessage:
+  name: %s
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+  settingsErrorHandling:
+    errorHandling:
+      endInQueueState:
+        none: true
+  startUpState:
+    name: Initial State
+    refId: Initial State_10
+    actions:
+      - endState:
+          name: End State
+  periodicState:
+    name: Recurring State
+    refId: Recurring State_12
+    actions:
+      - endState:
+          name: End State
+`, name)
+}
+
+func getBasicInQueueEmailFlow(name, divisionName string) string {
+	return fmt.Sprintf(`
+inqueueEmail:
+  name: %s
+  division: %s
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+  settingsErrorHandling:
+    errorHandling:
+      endInQueueState:
+        none: true
+  startUpState:
+    name: Initial State
+    refId: Initial State_10
+    actions:
+      - endState:
+          name: End State
+  periodicState:
+    name: Recurring State
+    refId: Recurring State_12
+    actions:
+      - endState:
+          name: End State
+
+`, name, divisionName)
 }
