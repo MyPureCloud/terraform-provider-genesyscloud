@@ -3,12 +3,13 @@ package resource_cache
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"sync"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 // Cache for Data Sources
