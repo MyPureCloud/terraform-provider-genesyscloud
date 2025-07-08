@@ -111,7 +111,12 @@ func IntegrationExporter() *resourceExporter.ResourceExporter {
 		},
 		JsonEncodeAttributes: []string{"config.properties", "config.advanced"},
 		EncodedRefAttrs: map[*resourceExporter.JsonEncodeRefAttr]*resourceExporter.RefAttrSettings{
-			{Attr: "config.properties", NestedAttr: "groups"}: {RefType: "genesyscloud_group"},
+			{Attr: "config.properties", NestedAttr: "groups"}:                {RefType: "genesyscloud_group"},
+			{Attr: "config.properties", NestedAttr: "createTimeOffRequests"}: {RefType: "genesyscloud_flow"},
+			{Attr: "config.properties", NestedAttr: "timeOffBalances"}:       {RefType: "genesyscloud_flow"},
+			{Attr: "config.properties", NestedAttr: "timeOffTypes"}:          {RefType: "genesyscloud_flow"},
+			{Attr: "config.properties", NestedAttr: "updateTimeOffRequests"}: {RefType: "genesyscloud_flow"},
+			{Attr: "config.properties", NestedAttr: "userAccountIds"}:        {RefType: "genesyscloud_flow"},
 		},
 		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
 			{Attr: "name"}: {Attr: "^config\\.\\d+\\.name$"},
