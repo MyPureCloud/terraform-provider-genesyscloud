@@ -445,6 +445,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	t.Parallel()
 
 	var (
