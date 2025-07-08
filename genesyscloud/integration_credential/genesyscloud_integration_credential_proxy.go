@@ -77,7 +77,7 @@ func getIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 	return internalProxy
 }
 
-// getAllIntegrationCredentials retrieves all Genesys Cloud Integrations
+// getAllIntegrationCreds retrieves all Genesys Cloud Integration Credentials using cursor-based paging
 func (p *integrationCredsProxy) getAllIntegrationCreds(ctx context.Context) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	return p.getAllIntegrationCredsAttr(ctx, p)
 }
@@ -97,7 +97,7 @@ func (p *integrationCredsProxy) getIntegrationCredByName(ctx context.Context, cr
 	return p.getIntegrationCredByNameAttr(ctx, p, credentialName)
 }
 
-// updateIntegrationCred udpates a Genesys Cloud Integration Credential
+// updateIntegrationCred updates a Genesys Cloud Integration Credential
 func (p *integrationCredsProxy) updateIntegrationCred(ctx context.Context, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	return p.updateIntegrationCredAttr(ctx, p, credentialId, credential)
 }
@@ -112,24 +112,38 @@ func (p *integrationCredsProxy) getIntegrationById(ctx context.Context, integrat
 	return p.getIntegrationByIdAttr(ctx, p, integrationId)
 }
 
-// getAllIntegrationCredsFn is the implementation for getting all integration credentials in Genesys Cloud
+// getAllIntegrationCredsFn is the implementation for getting all integration credentials in Genesys Cloud using cursor-based paging
 func getAllIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	var allCreds []platformclientv2.Credentialinfo
-	var resp *platformclientv2.APIResponse
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		credentials, response, err := p.integrationsApi.GetIntegrationsCredentials(pageNum, pageSize)
+	var after string
+	pageSize := "200"
+	var lastResp *platformclientv2.APIResponse
+
+	for {
+		credentials, resp, err := p.integrationsApi.GetIntegrationsCredentialsListing("", after, pageSize)
 		if err != nil {
-			return nil, response, err
+			return nil, resp, err
 		}
-		resp = response
+		lastResp = resp
+
+		if credentials.Entities != nil {
+			allCreds = append(allCreds, *credentials.Entities...)
+		}
+
+		// Check if there are more pages
 		if credentials.Entities == nil || len(*credentials.Entities) == 0 {
 			break
 		}
 
-		allCreds = append(allCreds, *credentials.Entities...)
+		// Use the last item's ID as the cursor for the next page
+		lastItem := (*credentials.Entities)[len(*credentials.Entities)-1]
+		if lastItem.Id == nil {
+			break
+		}
+		after = *lastItem.Id
 	}
-	return &allCreds, resp, nil
+
+	return &allCreds, lastResp, nil
 }
 
 // createIntegrationCredFn is the implementation for creating an integration credential in Genesys Cloud
@@ -154,16 +168,18 @@ func getIntegrationCredByIdFn(ctx context.Context, p *integrationCredsProxy, cre
 func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, credentialName string) (*platformclientv2.Credentialinfo, bool, *platformclientv2.APIResponse, error) {
 	var foundCred *platformclientv2.Credentialinfo
 	var resp *platformclientv2.APIResponse
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		integrationCredentials, response, err := p.integrationsApi.GetIntegrationsCredentials(pageNum, pageSize)
+	var after string
+	pageSize := "200"
+
+	for {
+		integrationCredentials, response, err := p.integrationsApi.GetIntegrationsCredentialsListing("", after, pageSize)
 		resp = response
 		if err != nil {
 			return nil, false, response, err
 		}
 
 		if integrationCredentials.Entities == nil || len(*integrationCredentials.Entities) == 0 {
-			return nil, true, response, fmt.Errorf("no integration credentials found with name: %s", credentialName)
+			break
 		}
 
 		for _, credential := range *integrationCredentials.Entities {
@@ -175,7 +191,19 @@ func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, c
 		if foundCred != nil {
 			break
 		}
+
+		// Use the last item's ID as the cursor for the next page
+		lastItem := (*integrationCredentials.Entities)[len(*integrationCredentials.Entities)-1]
+		if lastItem.Id == nil {
+			break
+		}
+		after = *lastItem.Id
 	}
+
+	if foundCred == nil {
+		return nil, true, resp, fmt.Errorf("no integration credentials found with name: %s", credentialName)
+	}
+
 	return foundCred, false, resp, nil
 }
 
