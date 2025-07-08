@@ -52,9 +52,9 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	policies := buildSdkRolePermPolicies(d)
 	if policies != nil {
 		for _, policy := range *policies {
-			resp, err := validatePermissionPolicy(proxy, policy)
+			_, err := validatePermissionPolicy(proxy, policy)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
+				log.Printf("Permission policy may be missing or not assigned: %s, ensure your org has the required product for this permission", err)
 			}
 		}
 	}
@@ -140,9 +140,9 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	policies := buildSdkRolePermPolicies(d)
 	if policies != nil {
 		for _, policy := range *policies {
-			resp, err := validatePermissionPolicy(proxy, policy)
+			_, err := validatePermissionPolicy(proxy, policy)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
+				log.Printf("Permission policy might be missing or not assigned: %s, ensure your org has the required product for this permission", err)
 			}
 		}
 	}
