@@ -3,10 +3,11 @@ package routing_wrapupcode_v2
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 	sdkConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider/sdk_config"
-	"strconv"
 )
 
 func (r *WrapupCodeResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
@@ -148,7 +149,7 @@ func (r *WrapupCodeResource) Delete(ctx context.Context, request resource.Delete
 }
 
 func (r *WrapupCodeResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.clientConfig = sdkConfig.GetConfig()
+	r.clientConfig = sdkConfig.GetConfigOrDefault()
 }
 
 func NewWrapupCodeResource() resource.Resource {
