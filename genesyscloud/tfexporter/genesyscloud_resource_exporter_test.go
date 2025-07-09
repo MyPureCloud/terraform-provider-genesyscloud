@@ -649,7 +649,7 @@ func TestContainsElement(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := exporter.containsElement(tt.elements, tt.resType, tt.resLabel, tt.originalLabel)
+			result := exporter.containsElementUnsafe(tt.elements, tt.resType, tt.resLabel, tt.originalLabel)
 			assert.Equal(t, tt.expectedResult, result)
 		})
 	}
