@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
@@ -22,6 +22,12 @@ type getGuideByNameFunc func(ctx context.Context, p *guideProxy, name string) (s
 type deleteGuideFunc func(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
 type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
 
+type createGuideJobFunc func(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error)
+type getGuideJobByIdFunc func(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error)
+
+// Guide Version
+type createGuideVersionFunc func(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error)
+
 type guideProxy struct {
 	clientConfig               *platformclientv2.Configuration
 	getAllGuidesAttr           getAllGuidesFunc
@@ -30,6 +36,9 @@ type guideProxy struct {
 	getGuideByNameAttr         getGuideByNameFunc
 	deleteGuideAttr            deleteGuideFunc
 	getDeleteJobStatusByIdAttr getDeleteJobStatusByIdFunc
+	createGuideJobAttr         createGuideJobFunc
+	getGuideJobByIdAttr        getGuideJobByIdFunc
+	createGuideVersionAttr     createGuideVersionFunc
 	guideCache                 rc.CacheInterface[Guide]
 }
 
@@ -43,6 +52,9 @@ func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
 		getGuideByNameAttr:         getGuideByNameFn,
 		deleteGuideAttr:            deleteGuideFn,
 		getDeleteJobStatusByIdAttr: getDeleteJobStatusByIdFn,
+		createGuideJobAttr:         createGuideJobFn,
+		getGuideJobByIdAttr:        getGuideJobByIdFn,
+		createGuideVersionAttr:     createGuideVersionFn,
 		guideCache:                 guideCache,
 	}
 }
@@ -69,7 +81,16 @@ func (p *guideProxy) deleteGuide(ctx context.Context, id string) (*DeleteObjectJ
 	return p.deleteGuideAttr(ctx, p, id)
 }
 func (p *guideProxy) getDeleteJobStatusById(ctx context.Context, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
-	return getDeleteJobStatusByIdFn(ctx, p, id, guideId)
+	return p.getDeleteJobStatusByIdAttr(ctx, p, id, guideId)
+}
+func (p *guideProxy) createGuideJob(ctx context.Context, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
+	return p.createGuideJobAttr(ctx, p, guideJob)
+}
+func (p *guideProxy) getGuideJobById(ctx context.Context, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
+	return p.getGuideJobByIdAttr(ctx, p, id)
+}
+func (p *guideProxy) createGuideVersion(ctx context.Context, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return p.createGuideVersionAttr(ctx, p, guideVersion, guideId)
 }
 
 // GetAll Functions
@@ -231,8 +252,11 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 	}
 
 	for _, guide := range *guides {
-		if *guide.Name == name {
-			return *guide.Id, false, resp, nil
+		if guide.Name != nil && *guide.Name == name {
+			if guide.Id != nil {
+				return *guide.Id, false, resp, nil
+			}
+			return "", false, resp, fmt.Errorf("guide found but has nil ID: %s", name)
 		}
 	}
 
@@ -305,6 +329,113 @@ func sdkGetJobDeletionStatus(ctx context.Context, p *guideProxy, jobId string, g
 	}
 
 	return &jobResponse, resp, nil
+}
+
+// Create Job Functions
+
+func createGuideJobFn(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
+	return sdkCreateGuideJob(ctx, p, guideJob)
+}
+
+func sdkCreateGuideJob(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
+	client := &http.Client{}
+	action := http.MethodPost
+	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs"
+
+	jsonBody, err := json.Marshal(guideJob)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error marshaling guide job: %v", err)
+	}
+
+	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating guide job request: %v", err)
+	}
+
+	req = setRequestHeader(req, p)
+
+	respBody, resp, err := callAPI(ctx, client, req)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var job JobResponse
+	err = json.Unmarshal(respBody, &job)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error unmarshaling guide job: %v", err)
+	}
+
+	return &job, resp, nil
+}
+
+// Get Job Functions
+
+func getGuideJobByIdFn(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
+	return sdkGetGuideJobById(ctx, p, id)
+}
+
+func sdkGetGuideJobById(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
+	client := &http.Client{}
+	action := http.MethodGet
+	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs/" + id
+
+	req, err := http.NewRequest(action, baseURL, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	req = setRequestHeader(req, p)
+
+	respBody, resp, err := callAPI(ctx, client, req)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var job JobResponse
+	err = json.Unmarshal(respBody, &job)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error unmarshaling guide job: %v", err)
+	}
+
+	return &job, resp, nil
+}
+
+// Guide Version
+
+func createGuideVersionFn(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	return sdkPostGuideVersion(guideVersion, p, guideId)
+}
+
+func sdkPostGuideVersion(body *CreateGuideVersionRequest, p *guideProxy, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	action := http.MethodPost
+	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/versions"
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
+	}
+
+	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	req = setRequestHeader(req, p)
+
+	respBody, apiResp, err := callAPI(context.Background(), client, req)
+	if err != nil {
+		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
+	}
+
+	var guideVersion VersionResponse
+	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
+		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
+	}
+
+	return &guideVersion, apiResp, nil
 }
 
 // callAPI is a helper function which will be removed when the endpoints are public

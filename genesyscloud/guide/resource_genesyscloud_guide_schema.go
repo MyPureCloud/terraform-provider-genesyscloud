@@ -40,6 +40,18 @@ func ResourceGuide() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Manual", "Prompt", "Document"}, true),
 			},
+			"prompt": {
+				Description: "The prompt used to generate the guide. This is only applicable when source is set to Prompt",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"url": {
+				Description: "The URL of the file to use for generating the guide. This is only applicable when source is set to Prompt",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"status": {
 				Description: "The status of the guide",
 				Type:        schema.TypeString,
