@@ -168,6 +168,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		}
 
 		setProviderMeta(meta)
+		setProviderConfig(data) // Store the provider configuration for later use
 
 		return meta, nil
 

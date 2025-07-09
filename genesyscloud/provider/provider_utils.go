@@ -90,8 +90,9 @@ func validateLogFilePath(filepath any, _ cty.Path) (err diag.Diagnostics) {
 // Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially
 // within acceptance testing
 var (
-	providerMeta *ProviderMeta
-	mutex        sync.RWMutex
+	providerMeta   *ProviderMeta
+	mutex          sync.RWMutex
+	providerConfig *schema.ResourceData
 )
 
 func GetProviderMeta() *ProviderMeta {
@@ -104,6 +105,18 @@ func setProviderMeta(p *ProviderMeta) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	providerMeta = p
+}
+
+func GetProviderConfig() *schema.ResourceData {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return providerConfig
+}
+
+func setProviderConfig(p *schema.ResourceData) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	providerConfig = p
 }
 
 func GetOrgDefaultCountryCode() string {

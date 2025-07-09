@@ -1285,7 +1285,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				log.Printf("[getResourcesForType] Starting fetchResourceState for resource ID: %s", id)
 
 				// Use a shorter timeout for individual resource fetches
-				resourceCtx, resourceCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+				resourceCtx, resourceCancel := context.WithCancel(context.Background())
 				defer resourceCancel()
 				log.Printf("[getResourcesForType] Created resource context with 5-minute timeout for ID: %s", id)
 
@@ -1365,7 +1365,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					}
 				}
 				log.Printf("[getResourcesForType] Finished processing schema attributes for resource ID: %s", id)
-
 				log.Printf("[getResourcesForType] Creating ResourceInfo for resource ID: %s", id)
 				resourceChan <- resourceExporter.ResourceInfo{
 					State:         instanceState,
@@ -1380,7 +1379,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				return nil
 			}
 
-			// Improved retry logic with exponential backoff
+			// Enhanced retry logic with timeout handling and SDK client pool adjustment
 			maxRetries := 3
 			var lastErr error
 			log.Printf("[getResourcesForType] Starting retry logic for resource ID: %s (max retries: %d)", id, maxRetries)
@@ -1406,12 +1405,56 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 				// Check if it's a timeout error that we should retry
 				isTimeoutError := func(err error) bool {
-					return strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") ||
-						strings.Contains(fmt.Sprintf("%v", err), "context deadline exceeded") ||
-						strings.Contains(fmt.Sprintf("%v", err), "timeout")
+					errStr := fmt.Sprintf("%v", err)
+					return strings.Contains(errStr, "timeout while waiting for state to become") ||
+						strings.Contains(errStr, "context deadline exceeded") ||
+						strings.Contains(errStr, "timeout") ||
+						strings.Contains(errStr, "Client acquisition timeout") ||
+						strings.Contains(errStr, "timeout after") ||
+						strings.Contains(errStr, "waiting for available client")
 				}
 
-				if !isTimeoutError(err) {
+				if isTimeoutError(err) {
+					log.Printf("[getResourcesForType] Timeout error detected for resource ID %s on attempt %d", id, attempt+1)
+
+					// On timeout errors, try to add new client connections to the existing pool
+					if attempt == 0 {
+						log.Printf("[getResourcesForType] Attempting to add new client connections to pool for resource ID: %s", id)
+
+						// Get the current version from provider meta
+						version := "1.0.0" // Default version
+						if providerMeta, ok := g.meta.(*provider.ProviderMeta); ok && providerMeta.Version != "" {
+							version = providerMeta.Version
+						}
+
+						// Call the pool's adjustment method
+						provider.SdkClientPool.AdjustPoolForTimeout(version)
+
+						// Add a small delay to allow the new clients to be available
+						log.Printf("[getResourcesForType] Waiting 5 seconds for new clients to be available for resource ID: %s", id)
+						select {
+						case <-time.After(5 * time.Second):
+							log.Printf("[getResourcesForType] Pool adjustment delay completed for resource ID: %s", id)
+						case <-ctx.Done():
+							log.Printf("[getResourcesForType] Context cancelled during pool adjustment delay for resource ID: %s", id)
+							return
+						}
+					}
+
+					// Exponential backoff for retryable errors
+					if attempt < maxRetries-1 {
+						backoffDuration := time.Duration(1<<attempt) * time.Second
+						log.Printf("[getResourcesForType] Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration)
+
+						select {
+						case <-time.After(backoffDuration):
+							log.Printf("[getResourcesForType] Backoff completed for resource ID: %s", id)
+						case <-ctx.Done():
+							log.Printf("[getResourcesForType] Context cancelled during backoff for resource ID: %s", id)
+							return
+						}
+					}
+				} else {
 					log.Printf("[getResourcesForType] Non-retryable error for resource ID %s, sending to error channel", id)
 					// Non-retryable error, send to error channel
 					select {
@@ -1422,20 +1465,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 						return
 					}
 					return
-				}
-
-				// Exponential backoff for retryable errors
-				if attempt < maxRetries-1 {
-					backoffDuration := time.Duration(1<<attempt) * time.Second
-					log.Printf("[getResourcesForType] Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration)
-
-					select {
-					case <-time.After(backoffDuration):
-						log.Printf("[getResourcesForType] Backoff completed for resource ID: %s", id)
-					case <-ctx.Done():
-						log.Printf("[getResourcesForType] Context cancelled during backoff for resource ID: %s", id)
-						return
-					}
 				}
 			}
 
