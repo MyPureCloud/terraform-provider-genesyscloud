@@ -107,13 +107,21 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 }
 
 /*
-The function getUserProxy serves a dual purpose: first, it functions as a singleton for
+GetUserProxy serves a dual purpose: first, it functions as a singleton for
 the internalProxy, meaning it ensures that only one instance of the internalProxy exists. Second,
 it enables us to proxy our tests by allowing us to directly set the internalProxy package variable.
 This ensures consistency and control in managing the internalProxy across our codebase, while also
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
+
+Note: The singleton pattern has been abandoned for this proxy because DEVTOOLING-991 introduced new endpoints that are sensitive
+to rate limiting and ultimately increased the export time (we believe the singleton pattern prevents the resource from pulling
+from the client pool and instead uses the one api token, leading to more 429s)
 */
 func GetUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
+	// use singleton approach if certain tests are running
+	if userTestsAreActive() {
+		return internalProxy
+	}
 	return newUserProxy(clientConfig)
 }
 
@@ -122,7 +130,7 @@ func (p *userProxy) createUser(ctx context.Context, createUser *platformclientv2
 	return p.createUserAttr(ctx, p, createUser)
 }
 
-// getUser retrieves all Genesys Cloud User
+// GetAllUser retrieves all Genesys Cloud User
 func (p *userProxy) GetAllUser(ctx context.Context) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 	return p.GetAllUserAttr(ctx, p)
 }

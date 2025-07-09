@@ -1473,6 +1473,16 @@ func TestAccResourceUserPassword(t *testing.T) {
 		lastPasswordUpdate   string
 	)
 
+	err := setUserTestsActiveEnvVar()
+	if err != nil {
+		t.Logf("failed to set env var: %s", err.Error())
+	}
+	defer func() {
+		if err = unsetUserTestsActiveEnvVar(); err != nil {
+			t.Logf("failed to unset env var: %s", err.Error())
+		}
+	}()
+
 	// Reset tracking variables
 	passwordUpdateCalled = false
 	lastPasswordUpdate = ""
@@ -1490,8 +1500,7 @@ func TestAccResourceUserPassword(t *testing.T) {
 	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
 		passwordUpdateCalled = true
 		lastPasswordUpdate = password
-		resp, err := originalUpdatePassword(ctx, p, id, password)
-		return resp, err
+		return originalUpdatePassword(ctx, p, id, password)
 	}
 
 	// Initialize internal proxy

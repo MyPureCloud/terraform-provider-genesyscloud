@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/mail"
+	"os"
 	"sort"
 	"strings"
 
@@ -1121,4 +1122,25 @@ func GenerateVoicemailUserpolicies(timeout int, sendEmailNotifications bool) str
 		send_email_notifications = %t
 	}
 	`, timeout, sendEmailNotifications)
+}
+
+/*
+The code below is used for testing purposes. When the env var is set, the singleton pattern will be in effect for the proxy
+instance, which will allow us to mock out certain methods.
+(See the comments above GetUserProxy to understand why we avoid the singleton proxy outside of testing)
+*/
+
+const userTestsActiveEnvVar string = "TF_GC_USER_TESTS_ACTIVE"
+
+func setUserTestsActiveEnvVar() error {
+	return os.Setenv(userTestsActiveEnvVar, "true")
+}
+
+func unsetUserTestsActiveEnvVar() error {
+	return os.Unsetenv(userTestsActiveEnvVar)
+}
+
+func userTestsAreActive() bool {
+	_, isSet := os.LookupEnv(userTestsActiveEnvVar)
+	return isSet
 }

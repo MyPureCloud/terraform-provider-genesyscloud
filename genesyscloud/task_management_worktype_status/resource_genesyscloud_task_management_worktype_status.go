@@ -2,6 +2,7 @@ package task_management_worktype_status
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -103,14 +104,18 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 
 	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		workitemStatus, resp, err = proxy.createTaskManagementWorktypeStatus(ctx, worktypeId, &taskManagementWorktypeStatus)
-		if err != nil {
-			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
-			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp))
+		if err == nil {
+			return nil
 		}
-		return nil
+		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err), resp)
+		// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
+		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
+			return retry.RetryableError(builtDiagErr)
+		}
+		if util.IsStatus409(resp) {
+			return retry.RetryableError(builtDiagErr)
+		}
+		return retry.NonRetryableError(builtDiagErr)
 	})
 	if diagErr != nil {
 		return diagErr
@@ -185,7 +190,7 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 }
 
 // updateTaskManagementWorktypeStatus is used by the task_management_worktype_status resource to update an task management worktype status in Genesys Cloud
-func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementWorktypeStatusProxy(sdkConfig)
 	worktypeId, statusId := SplitWorktypeStatusTerraformId(d.Id())
@@ -193,7 +198,7 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	err := validateSchema(d)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err)
-		return util.BuildDiagnosticError(ResourceType, errorMsg, fmt.Errorf(errorMsg))
+		return util.BuildDiagnosticError(ResourceType, errorMsg, errors.New(errorMsg))
 	}
 
 	taskManagementWorktypeStatus := platformclientv2.Workitemstatusupdate{
@@ -223,36 +228,41 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 
 	log.Printf("Updating task management worktype %s status %s %s", worktypeId, statusId, *taskManagementWorktypeStatus.Name)
 
-	var (
-		workitemStatus *platformclientv2.Workitemstatus
-		resp           *platformclientv2.APIResponse
-	)
-	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+	var workitemStatus *platformclientv2.Workitemstatus
+	var resp *platformclientv2.APIResponse
+
+	diags = append(diags, util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		workitemStatus, resp, err = proxy.updateTaskManagementWorktypeStatus(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
-		if err != nil {
-			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
-			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+		if err == nil {
+			return nil
 		}
-		return nil
-	})
-	if diagErr != nil {
-		return diagErr
+		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
+		// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
+		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
+			return retry.RetryableError(builtDiagErr)
+		}
+		if util.IsStatus409(resp) {
+			return retry.RetryableError(builtDiagErr)
+		}
+		return retry.NonRetryableError(builtDiagErr)
+	})...)
+
+	if diags.HasError() {
+		return
 	}
 
 	// Check if we need to set this status as the default status on the worktype
 	if d.Get("default").(bool) {
 		log.Printf("Setting status %s as default for worktype %s", statusId, worktypeId)
-		if diagErr := updateWorktypeDefaultStatus(ctx, proxy, worktypeId, *workitemStatus.Id); diagErr != nil {
-			return diagErr
+		diags = append(diags, updateWorktypeDefaultStatus(ctx, proxy, worktypeId, *workitemStatus.Id)...)
+		if diags.HasError() {
+			return
 		}
 		log.Printf("Status %s set as default for worktype %s", statusId, worktypeId)
 	}
 
 	log.Printf("Updated task management worktype %s status %s %s", worktypeId, *workitemStatus.Id, *workitemStatus.Id)
-	return readTaskManagementWorktypeStatus(ctx, d, meta)
+	return append(diags, readTaskManagementWorktypeStatus(ctx, d, meta)...)
 }
 
 // deleteTaskManagementWorktypeStatus is used by the task_management_worktype_status resource to delete an task management worktype status from Genesys cloud
@@ -280,11 +290,15 @@ func deleteTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		resp, err = proxy.deleteTaskManagementWorktypeStatus(ctx, worktypeId, statusId)
 		if err != nil {
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
 			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+			if util.IsStatus409(resp) {
+				return retry.RetryableError(diagErr)
+			}
+			return retry.NonRetryableError(diagErr)
 		}
 		return nil
 	})
