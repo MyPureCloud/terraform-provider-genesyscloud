@@ -28,7 +28,6 @@ type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowl
 type createKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
 type deleteKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error)
 type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
-type getAllVariationsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId, documentId string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error)
 
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
@@ -44,7 +43,6 @@ type knowledgeDocumentProxy struct {
 	createKnowledgebaseDocumentVersionsAttr  createKnowledgebaseDocumentVersionsFunc
 	deleteKnowledgeKnowledgebaseDocumentAttr deleteKnowledgeKnowledgebaseDocumentFunc
 	updateKnowledgeKnowledgebaseDocumentAttr updateKnowledgeKnowledgebaseDocumentFunc
-	getAllVariationsAttr                     getAllVariationsFunc
 	knowledgeDocumentCache                   rc.CacheInterface[platformclientv2.Knowledgedocumentresponse]
 	knowledgeLabelCache                      rc.CacheInterface[platformclientv2.Labelresponse]
 	knowledgeCategoryCache                   rc.CacheInterface[platformclientv2.Categoryresponse]
@@ -118,10 +116,6 @@ func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx contex
 	return p.createKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, body)
 }
 
-func (p *knowledgeDocumentProxy) createKnowledgebaseDocumentVersions(ctx context.Context, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error) {
-	return p.createKnowledgebaseDocumentVersionsAttr(ctx, p, knowledgeBaseId, documentId, body)
-}
-
 func (p *knowledgeDocumentProxy) deleteKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, documentId)
 }
@@ -147,11 +141,6 @@ func getKnowledgeKnowledgebaseLabelsFn(ctx context.Context, p *knowledgeDocument
 	pageSize := 1
 	labels, resp, err := p.KnowledgeApi.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
 	return labels, resp, err
-}
-
-// getVariationRequest retrieves all Genesys Cloud variation request
-func (p *knowledgeDocumentProxy) getAllVariations(ctx context.Context, knowledgeBaseId, documentId string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
-	return p.getAllVariationsAttr(ctx, p, knowledgeBaseId, documentId, expand)
 }
 
 func getKnowledgeKnowledgebaseLabelFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {

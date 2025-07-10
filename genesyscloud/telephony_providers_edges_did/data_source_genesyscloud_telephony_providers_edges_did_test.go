@@ -16,13 +16,13 @@ import (
 
 func TestAccDataSourceDidBasic(t *testing.T) {
 	var (
-		didPoolStartPhoneNumber = "+45465550001"
-		didPoolEndPhoneNumber   = "+45465550003"
+		didPoolStartPhoneNumber = "+14546555001"
+		didPoolEndPhoneNumber   = "+14546555003"
 		didPoolResourceLabel    = "didPool"
 		ivrConfigResourceLabel  = "ivrConfig"
 		ivrConfigName           = "test-config" + uuid.NewString()
-		ivrConfigDnis           = []string{"+45465550002"}
-		didPhoneNumber          = "+45465550002"
+		ivrConfigDnis           = []string{"+14546555002"}
+		didPhoneNumber          = "+14546555002"
 		didDataResourceLabel    = "didData"
 	)
 

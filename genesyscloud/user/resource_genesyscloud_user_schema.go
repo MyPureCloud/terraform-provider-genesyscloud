@@ -198,7 +198,7 @@ func customizeDiffAddressRemoval(ctx context.Context, diff *schema.ResourceDiff,
 		oldAddresses, _ := diff.GetOk("addresses")
 		if oldAddresses != nil && len(oldAddresses.([]interface{})) > 0 {
 			// Force a change on addresses to trigger an update
-			diff.SetNew("addresses", []interface{}{})
+			_ = diff.SetNew("addresses", []interface{}{})
 		}
 	}
 

@@ -2,6 +2,7 @@ package knowledge_label
 
 import (
 	"fmt"
+	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"strings"
 	"testing"
 
@@ -17,14 +18,17 @@ import (
 func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
-		knowledgeBaseResourceLabel1  = "test-knowledgebase1"
-		knowledgeBaseName1           = "Terraform Knowledge Base" + uuid.NewString()
-		knowledgeBaseDescription1    = "test-knowledgebase-description1"
-		knowledgeBaseCoreLanguage1   = "en-US"
-		knowledgeLabelResourceLabel1 = "test-knowledge-label1"
-		labelName                    = "Terraform Knowledge Label" + uuid.NewString()
-		labelColor                   = "#0F0F0F"
-		labelColor2                  = "#FFFFFF"
+		knowledgeBaseResourceLabel1   = "test-knowledgebase1"
+		knowledgeBaseName1            = "Terraform Knowledge Base" + uuid.NewString()
+		knowledgeBaseDescription1     = "test-knowledgebase-description1"
+		knowledgeBaseCoreLanguage1    = "en-US"
+		knowledgeBaseFullResourcePath = knowledgeKnowledgebase.ResourceType + "." + knowledgeBaseResourceLabel1
+
+		knowledgeLabelResourceLabel1   = "test-knowledge-label1"
+		knowledgeLabelFullResourcePath = ResourceType + "." + knowledgeLabelResourceLabel1
+		labelName                      = "Terraform Knowledge Label" + uuid.NewString()
+		labelColor                     = "#0F0F0F"
+		labelColor2                    = "#FFFFFF"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -33,7 +37,7 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -46,14 +50,17 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 						labelColor,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_label."+knowledgeLabelResourceLabel1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_label."+knowledgeLabelResourceLabel1, "knowledge_label.0.name", labelName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_label."+knowledgeLabelResourceLabel1, "knowledge_label.0.color", labelColor),
+					resource.TestCheckResourceAttrPair(
+						knowledgeLabelFullResourcePath, "knowledge_base_id",
+						knowledgeBaseFullResourcePath, "id",
+					),
+					resource.TestCheckResourceAttr(knowledgeLabelFullResourcePath, "knowledge_label.0.name", labelName),
+					resource.TestCheckResourceAttr(knowledgeLabelFullResourcePath, "knowledge_label.0.color", labelColor),
 				),
 			},
 			{
 				// Update
-				Config: GenerateKnowledgeKnowledgebaseResource(
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -66,14 +73,17 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 						labelColor2,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_knowledge_label."+knowledgeLabelResourceLabel1, "knowledge_base_id", "genesyscloud_knowledge_knowledgebase."+knowledgeBaseResourceLabel1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_label."+knowledgeLabelResourceLabel1, "knowledge_label.0.name", labelName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_label."+knowledgeLabelResourceLabel1, "knowledge_label.0.color", labelColor2),
+					resource.TestCheckResourceAttrPair(
+						knowledgeLabelFullResourcePath, "knowledge_base_id",
+						knowledgeBaseFullResourcePath, "id",
+					),
+					resource.TestCheckResourceAttr(knowledgeLabelFullResourcePath, "knowledge_label.0.name", labelName),
+					resource.TestCheckResourceAttr(knowledgeLabelFullResourcePath, "knowledge_label.0.color", labelColor2),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_knowledge_label." + knowledgeLabelResourceLabel1,
+				ResourceName:      knowledgeLabelFullResourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -84,11 +94,12 @@ func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
 
 func generateKnowledgeLabelResource(resourceLabel string, knowledgeBaseResource string, labelName string, labelColor string) string {
 	label := fmt.Sprintf(`
-        resource "genesyscloud_knowledge_label" "%s" {
+        resource "%s" "%s" {
             knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
             %s
         }
-        `, resourceLabel,
+        `, ResourceType,
+		resourceLabel,
 		knowledgeBaseResource,
 		generateKnowledgeLabelRequestBody(labelName, labelColor),
 	)
@@ -111,41 +122,28 @@ func testVerifyKnowledgeLabelDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	var knowledgeBaseId string
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type == "genesyscloud_knowledge_knowledgebase" {
+		if rs.Type == knowledgeKnowledgebase.ResourceType {
 			knowledgeBaseId = rs.Primary.ID
 			break
 		}
 	}
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_knowledge_label" {
+		if rs.Type != ResourceType {
 			continue
 		}
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeLabelId := id[0]
-		knowledgeLabel, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
-		if knowledgeLabel != nil {
-			return fmt.Errorf("Knowledge label (%s) still exists", knowledgeLabelId)
+		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
+		if err == nil {
+			return fmt.Errorf("knowledge label (%s) still exists", knowledgeLabelId)
 		} else if util.IsStatus404(resp) || util.IsStatus400(resp) {
 			// Knowledge base label not found as expected
 			continue
 		} else {
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err.Error())
 		}
 	}
 	// Success. All knowledge labels destroyed
 	return nil
-}
-
-func GenerateKnowledgeKnowledgebaseResource(
-	resourceLabel string,
-	name string,
-	description string,
-	coreLanguage string) string {
-	return fmt.Sprintf(`resource "genesyscloud_knowledge_knowledgebase" "%s" {
-		name = "%s"
-        description = "%s"
-        core_language = "%s"
-	}
-	`, resourceLabel, name, description, coreLanguage)
 }

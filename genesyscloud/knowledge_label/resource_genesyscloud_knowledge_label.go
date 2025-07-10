@@ -104,8 +104,8 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 
 		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)
-		d.Set("knowledge_base_id", knowledgeBaseId)
-		d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
+		_ = d.Set("knowledge_base_id", knowledgeBaseId)
+		_ = d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
 		log.Printf("Read knowledge label %s", knowledgeLabelId)
 		return cc.CheckState(d)
 	})

@@ -13,8 +13,8 @@ import (
 
 func TestAccDataSourceDidPoolBasic(t *testing.T) {
 	var (
-		didPoolStartPhoneNumber  = "+45465550007"
-		didPoolEndPhoneNumber    = "+45465550008"
+		didPoolStartPhoneNumber  = "+14546555007"
+		didPoolEndPhoneNumber    = "+14546555008"
 		didPoolResourceLabel     = "didPool"
 		didPoolDataResourceLabel = "didPoolData"
 
