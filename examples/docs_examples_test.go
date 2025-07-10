@@ -76,6 +76,7 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 	domain = strings.Join(strings.Split(api.Response.Request.URL.Host, ".")[1:], ".")
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
+
 	var resources = []string{}
 	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
