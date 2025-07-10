@@ -1,14 +1,20 @@
 package guide
 
 import (
+<<<<<<< HEAD
 
+=======
+>>>>>>> cd89a00b (minor fixes)
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+<<<<<<< HEAD
 
+=======
+>>>>>>> cd89a00b (minor fixes)
 )
 
 func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
@@ -75,6 +81,23 @@ func GenerateGuideResource(resourceID string, name string, source string) string
 	`, ResourceType, resourceID, name, source)
 }
 
+type CreateGuideVersionRequest struct {
+	GuideID     string                `json:"guideId,omitempty"`
+	Instruction string                `json:"instruction,omitempty"`
+	Variables   []Variable            `json:"variables,omitempty"`
+	Resources   GuideVersionResources `json:"resources,omitempty"`
+}
+
+// GenerateGuideResource generates terraform for a guide resource
+func GenerateGuideResource(resourceID string, name string, source string, prompt string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		name = "%s"
+		source = "%s"
+		prompt = "%s"
+	}
+	`, ResourceType, resourceID, name, source, prompt)
+}
+
 func GuideFtIsEnabled() bool {
 	clientConfig := platformclientv2.GetDefaultConfiguration()
 	client := &http.Client{}
@@ -103,3 +126,4 @@ func GuideFtIsEnabled() bool {
 
 	return resp.StatusCode < 500
 }
+

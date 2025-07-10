@@ -64,7 +64,8 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	d.SetId(*guide.Id)
 	log.Printf("Created guide: %s with ID: %s", *guide.Name, *guide.Id)
 
-	// If source is Prompt, create a content generation job, which will be used to create a guide version
+	// If source is Prompt, a content generation job will need to be executed
+	// This will return the instruction, variables, and resources for the guide, which is used to create a guide version
 	if source == "Prompt" {
 		content, diagErr := createGuideJob(ctx, d, meta, name)
 		if diagErr != nil {
