@@ -26,14 +26,12 @@ var internalProxy *userProxy
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createUserFunc func(ctx context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 type GetAllUserFunc func(ctx context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error)
-type getUserIdByNameFunc func(ctx context.Context, p *userProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getUserByIdFunc func(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error)
 type updateUserFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 type deleteUserFunc func(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error)
 type patchUserWithStateFunc func(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error)
 type hydrateUserCacheFunc func(ctx context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error)
 type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error)
-type updateVoicemailUserpoliciesFunc func(ctx context.Context, p *userProxy, id string, policy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type getVoicemailUserpoliciesByIdFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error)
 type getTelephonyExtensionPoolByExtensionFunc func(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
@@ -53,14 +51,12 @@ type userProxy struct {
 	extensionPoolApi                         *platformclientv2.TelephonyProvidersEdgeApi
 	createUserAttr                           createUserFunc
 	GetAllUserAttr                           GetAllUserFunc
-	getUserIdByNameAttr                      getUserIdByNameFunc
 	getUserByIdAttr                          getUserByIdFunc
 	updateUserAttr                           updateUserFunc
 	deleteUserAttr                           deleteUserFunc
 	patchUserWithStateAttr                   patchUserWithStateFunc
 	hydrateUserCacheAttr                     hydrateUserCacheFunc
 	getUserByNameAttr                        getUserByNameFunc
-	updateVoicemailUserpoliciesAttr          updateVoicemailUserpoliciesFunc
 	getVoicemailUserpolicicesByIdAttr        getVoicemailUserpoliciesByIdFunc
 	updatePasswordAttr                       updatePasswordFunc
 	getTelephonyExtensionPoolByExtensionAttr getTelephonyExtensionPoolByExtensionFunc
@@ -92,14 +88,12 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		extensionPoolCache:                       extensionPoolCache,
 		createUserAttr:                           createUserFn,
 		GetAllUserAttr:                           GetAllUserFn,
-		getUserIdByNameAttr:                      getUserIdByNameFn,
 		getUserByIdAttr:                          getUserByIdFn,
 		updateUserAttr:                           updateUserFn,
 		deleteUserAttr:                           deleteUserFn,
 		patchUserWithStateAttr:                   patchUserWithStateFn,
 		hydrateUserCacheAttr:                     hydrateUserCacheFn,
 		getUserByNameAttr:                        getUserByNameFn,
-		updateVoicemailUserpoliciesAttr:          updateVoicemailUserpoliciesFn,
 		getVoicemailUserpolicicesByIdAttr:        getVoicemailUserpoliciesByUserIdFn,
 		updatePasswordAttr:                       updatePasswordFn,
 		getTelephonyExtensionPoolByExtensionAttr: getTelephonyExtensionPoolByExtensionFn,
@@ -135,11 +129,6 @@ func (p *userProxy) GetAllUser(ctx context.Context) (*[]platformclientv2.User, *
 	return p.GetAllUserAttr(ctx, p)
 }
 
-// getUserIdByName returns a single Genesys Cloud User by a name
-func (p *userProxy) getUserIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	return p.getUserIdByNameAttr(ctx, p, name)
-}
-
 // getUserById returns a single Genesys Cloud User by Id
 func (p *userProxy) getUserById(ctx context.Context, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error) {
 	if user := rc.GetCacheItem(p.userCache, id); user != nil { // Get the user from the cache, if not there in the cache then call p.getUserByIdAttr()
@@ -171,11 +160,6 @@ func (p *userProxy) hydrateUserCache(ctx context.Context, pageSize int, pageNum 
 // getUserByName
 func (p *userProxy) getUserByName(ctx context.Context, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
 	return p.getUserByNameAttr(ctx, p, searchUser)
-}
-
-// updateVoicemailUserpolicies
-func (p *userProxy) updateVoicemailUserpolicies(ctx context.Context, userId string, updatePolicy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
-	return p.updateVoicemailUserpoliciesAttr(ctx, p, userId, updatePolicy)
 }
 
 // getVoicemailUserpoliciesById
@@ -293,31 +277,6 @@ func GetAllUserFn(_ context.Context, p *userProxy) (*[]platformclientv2.User, *p
 	}
 
 	return &allUsers, apiResponse, nil
-}
-
-// getUserIdByNameFn is an implementation of the function to get a Genesys Cloud user by name
-func getUserIdByNameFn(ctx context.Context, p *userProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	users, apiResponse, err := GetAllUserFn(ctx, p)
-	if err != nil {
-		return "", false, apiResponse, err
-	}
-
-	if users == nil || len(*users) == 0 {
-		return "", false, apiResponse, fmt.Errorf("No User found with name %s", name)
-	}
-
-	for _, user := range *users {
-		if *user.Name == name {
-			log.Printf("Retrieved the user id %s by name %s", *user.Id, name)
-			return *user.Id, false, apiResponse, nil
-		}
-	}
-
-	return "", true, apiResponse, fmt.Errorf("Unable to find user with name %s", name)
-}
-
-func updateVoicemailUserpoliciesFn(_ context.Context, p *userProxy, userId string, updatePolicy *platformclientv2.Voicemailuserpolicy) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
-	return p.voicemailApi.PatchVoicemailUserpolicy(userId, *updatePolicy)
 }
 
 func getVoicemailUserpoliciesByUserIdFn(_ context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {

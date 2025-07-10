@@ -573,7 +573,11 @@ func TestAccResourceUserPhone(t *testing.T) {
 		Description:   util.NullValue, // No description
 	}
 
-	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber1)
+	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	if err != nil {
+		t.Log(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1452,7 +1456,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 	})
 
 	if diagErr != nil {
-		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+		return fmt.Errorf("%v", diagErr)
 	}
 
 	// Success. All users destroyed
@@ -1628,8 +1632,16 @@ func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 		Description:   util.NullValue, // No description
 	}
 
-	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
-	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber2)
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber1)
+	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	if err != nil {
+		t.Log(err)
+	}
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber2)
+	err = extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber2)
+	if err != nil {
+		t.Log(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

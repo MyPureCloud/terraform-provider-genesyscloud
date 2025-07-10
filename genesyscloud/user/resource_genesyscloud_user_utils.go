@@ -308,7 +308,7 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 				allSettings := utilConfig[0].(map[string]interface{})
 				labelUtilizations := allSettings["label_utilizations"].([]interface{})
 
-				if labelUtilizations != nil && len(labelUtilizations) > 0 {
+				if len(labelUtilizations) > 0 {
 					apiClient := &proxy.routingApi.Configuration.APIClient
 
 					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
@@ -539,13 +539,16 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 	}
 
 	agentUtilization := &agentUtilizationWithLabels{}
-	json.Unmarshal(response.RawBody, &agentUtilization)
+	err = json.Unmarshal(response.RawBody, &agentUtilization)
+	if err != nil {
+		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
+	}
 
 	if agentUtilization == nil {
-		d.Set("routing_utilization", nil)
+		_ = d.Set("routing_utilization", nil)
 	} else if agentUtilization.Level == "Organization" {
 		// If the settings are org-wide, set to empty to indicate no settings on the user
-		d.Set("routing_utilization", []interface{}{})
+		_ = d.Set("routing_utilization", []interface{}{})
 	} else {
 		allSettings := map[string]interface{}{}
 
@@ -559,7 +562,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 
 		if agentUtilization.LabelUtilizations != nil {
 			utilConfig := d.Get("routing_utilization").([]interface{})
-			if utilConfig != nil && len(utilConfig) > 0 && utilConfig[0] != nil {
+			if len(utilConfig) > 0 && utilConfig[0] != nil {
 				originalSettings := utilConfig[0].(map[string]interface{})
 				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
 
@@ -572,7 +575,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 			}
 		}
 
-		d.Set("routing_utilization", []interface{}{allSettings})
+		_ = d.Set("routing_utilization", []interface{}{allSettings})
 	}
 
 	return nil
@@ -689,37 +692,6 @@ func buildSdkCertifications(d *schema.ResourceData) *[]string {
 		return lists.SetToStringList(certs.(*schema.Set))
 	}
 	return nil
-}
-
-func getNumbers(d *schema.ResourceData, index int) (bool, bool) {
-	isNumber := false
-	isExtension := false
-
-	if addresses1 := d.Get("addresses").([]interface{}); addresses1 != nil {
-		var phoneNumbers *schema.Set
-		if len(addresses1) > 0 {
-			addressMap := addresses1[0].(map[string]interface{})
-			phoneNumbers = addressMap["phone_numbers"].(*schema.Set)
-		}
-
-		if phoneNumbers != nil {
-			phoneNumberSlice := phoneNumbers.List()
-			for ii, configPhone := range phoneNumberSlice {
-				if ii != index {
-					continue
-				}
-				phoneMap := configPhone.(map[string]interface{})
-				if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
-					isNumber = true
-				}
-				if phoneExt, ok := phoneMap["extension"].(string); ok && phoneExt != "" {
-					isExtension = true
-				}
-				break
-			}
-		}
-	}
-	return isNumber, isExtension
 }
 
 func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) string {
@@ -900,7 +872,7 @@ func buildMediaTypeUtilizations(allUtilizations map[string]interface{}) *map[str
 
 	for sdkType, schemaType := range getUtilizationMediaTypes() {
 		mediaSettings := allUtilizations[schemaType].([]interface{})
-		if mediaSettings != nil && len(mediaSettings) > 0 {
+		if len(mediaSettings) > 0 {
 			settings[sdkType] = buildSdkMediaUtilization(mediaSettings)
 		}
 	}
@@ -1051,52 +1023,7 @@ func flattenVoicemailUserpolicies(d *schema.ResourceData, voicemail *platformcli
 	return []interface{}{voicemailUserpolicy}
 }
 
-func generateRoutingUtilMediaType(
-	mediaType string,
-	maxCapacity string,
-	includeNonAcd string,
-	interruptTypes ...string) string {
-	return fmt.Sprintf(`%s {
-		maximum_capacity = %s
-		include_non_acd = %s
-		interruptible_media_types = [%s]
-	}
-	`, mediaType, maxCapacity, includeNonAcd, strings.Join(interruptTypes, ","))
-}
-
-func generateLabelUtilization(
-	labelResource string,
-	maxCapacity string,
-	interruptingLabelResourceLabels ...string) string {
-
-	interruptingLabelResources := make([]string, 0)
-	for _, resourceLabel := range interruptingLabelResourceLabels {
-		interruptingLabelResources = append(interruptingLabelResources, "genesyscloud_routing_utilization_label."+resourceLabel+".id")
-	}
-
-	return fmt.Sprintf(`label_utilizations {
-		label_id = genesyscloud_routing_utilization_label.%s.id
-		maximum_capacity = %s
-		interrupting_label_ids = [%s]
-	}
-	`, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
-}
-
-func generateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
-	dependsOn := ""
-
-	if dependsOnResource != "" {
-		dependsOn = fmt.Sprintf("depends_on=[genesyscloud_routing_utilization_label.%s]", dependsOnResource)
-	}
-
-	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
-		name = "%s"
-		%s
-	}
-	`, resourceLabel, name, dependsOn)
-}
-
-// Basic user with minimum required fields
+// GenerateBasicUserResource generates a basic user resource with minimum required fields
 func GenerateBasicUserResource(resourceLabel string, email string, name string) string {
 	return GenerateUserResource(resourceLabel, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
 }
