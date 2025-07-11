@@ -1,6 +1,7 @@
 package location
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -159,4 +160,12 @@ func GenerateLocationAddress(street1, city, state, country, zip string) string {
 		zip_code = "%s"
 	}
 	`, street1, city, state, country, zip)
+}
+
+func shouldExportLocationAsData(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (bool, error) {
+	locationName := configMap["name"]
+	if locationName == "Default PCV Location" {
+		return true, nil
+	}
+	return false, nil
 }
