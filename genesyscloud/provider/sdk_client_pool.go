@@ -13,6 +13,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
@@ -46,6 +47,7 @@ const (
 // increases throughput as each token will have its own rate limit.
 type SDKClientPool struct {
 	Pool    chan *platformclientv2.Configuration
+	ctx     context.Context
 	config  *SDKClientPoolConfig
 	metrics *poolMetrics
 	done    chan struct{} // For cleanup
@@ -136,6 +138,7 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			config:  config,
 			metrics: &poolMetrics{},
 			done:    make(chan struct{}),
+			ctx:     ctx,
 		}
 		SdkClientPool.logDebug("Initialized %d SDK clients in the Pool with acquire timeout %v and init timeout %v.", max, acquireTimeout, initTimeout)
 
@@ -165,7 +168,7 @@ func (p *SDKClientPool) startMetricsLogging() {
 
 func (p *SDKClientPool) logDebug(msg string, args ...interface{}) {
 	if p.config.DebugLogging {
-		log.Printf("[DEBUG] "+msg, args...)
+		tflog.Debug(p.ctx, fmt.Sprintf("[DEBUG] "+msg, args...))
 	}
 }
 

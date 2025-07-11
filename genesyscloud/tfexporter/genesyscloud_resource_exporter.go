@@ -3,10 +3,10 @@ package tfexporter
 import (
 	"archive/zip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"io"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,10 +26,12 @@ import (
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -72,45 +74,71 @@ const (
 	formatHCLJSON = "hcl_json"
 )
 
-type GenesysCloudResourceExporter struct {
-	configExporter        Exporter
-	filterType            ExporterFilterType
-	resourceTypeFilter    ExporterResourceTypeFilter
-	resourceFilter        ExporterResourceFilter
-	filterList            *[]string
-	exportFormat          string
-	splitFilesByResource  bool
-	logPermissionErrors   bool
-	addDependsOn          bool
-	replaceWithDatasource []string
-	includeStateFile      bool
-	version               string
-	providerRegistry      string
-	provider              *schema.Provider
-	exportDirPath         string
-	exporters             *map[string]*resourceExporter.ResourceExporter
-	resources             []resourceExporter.ResourceInfo
-	resourceTypesMaps     map[string]resourceJSONMaps
-	dataSourceTypesMaps   map[string]resourceJSONMaps
-	unresolvedAttrs       []unresolvableAttributeInfo
-	d                     *schema.ResourceData
-	ctx                   context.Context
-	meta                  interface{}
-	dependsList           map[string][]string
-	buildSecondDeps       map[string][]string
-	exMutex               sync.RWMutex
-	cyclicDependsList     []string
-	ignoreCyclicDeps      bool
-	flowResourcesList     []string
-	exportComputed        bool
-	maxConcurrentOps      int // New field to control concurrency
+type ResourceErrorInfo struct {
+	ErrorMessage  string `json:"error_message"`
+	ResourceID    string `json:"resource_id"`
+	ResourceLabel string `json:"resource_label"`
+	ResourceType  string `json:"resource_type"`
+	IsTimeout     bool   `json:"is_timeout"`
+}
 
-	// New mutexes for protecting shared state
-	replaceWithDatasourceMutex sync.Mutex
-	resourcesMutex             sync.Mutex
-	resourceTypesMapsMutex     sync.RWMutex
+type GenesysCloudResourceExporter struct {
+	// Ordering of objects in a struct is important with regards to 32-bit systems.
+	// To align padding, put complex objects at the top, grouping like objects together
+
+	// 8-byte alignment
+	// .. Pointers and reference types
+	buildSecondDeps     map[string][]string
+	configExporter      Exporter
+	ctx                 context.Context
+	cyclicDependsList   []string
+	d                   *schema.ResourceData
+	dataSourceTypesMaps map[string]resourceJSONMaps
+	dependsList         map[string][]string
+	exporters           *map[string]*resourceExporter.ResourceExporter
+	filterList          *[]string
+	filterType          ExporterFilterType
+	flowResourcesList   []string
+
+	meta                  interface{}
+	provider              *schema.Provider
+	replaceWithDatasource []string
+	resources             []resourceExporter.ResourceInfo
+	resourceErrors        map[string][]ResourceErrorInfo
+	resourceFilter        ExporterResourceFilter
+	resourceTypeFilter    ExporterResourceTypeFilter
+	resourceTypesMaps     map[string]resourceJSONMaps
+	unresolvedAttrs       []unresolvableAttributeInfo
+
+	// .. Strings
+	exportDirPath    string
+	exportFormat     string
+	providerRegistry string
+	version          string
+
+	// 4-byte alignment
+	// .. Mutex
+	buildSecondDepsMutex       sync.RWMutex
 	dataSourceTypesMapsMutex   sync.RWMutex
+	exMutex                    sync.RWMutex
+	replaceWithDatasourceMutex sync.Mutex
+	resourceErrorsMutex        sync.RWMutex
+	resourcesMutex             sync.Mutex
+	resourceStateMutex         sync.Mutex
+	resourceTypesMapsMutex     sync.RWMutex
 	unresolvedAttrsMutex       sync.Mutex
+
+	// .. Int
+	maxConcurrentOps int // New field to control concurrency
+
+	// 1-byte alignment
+	// .. Booleans
+	addDependsOn         bool
+	exportComputed       bool
+	ignoreCyclicDeps     bool
+	includeStateFile     bool
+	logPermissionErrors  bool
+	splitFilesByResource bool
 }
 
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
@@ -252,8 +280,10 @@ func computeDependsOn(d *schema.ResourceData) bool {
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// Step #1 Retrieve the exporters we are have registered and have been requested by the user
+	tflog.Info(g.ctx, "Retrieving exporters")
 	diagErr = append(diagErr, g.retrieveExporters()...)
 	if diagErr.HasError() {
+		tflog.Error(g.ctx, fmt.Sprintf("Failed to retrieve exporters: %v", diagErr))
 		return diagErr
 	}
 	// Step #2 Retrieve all the individual resources we are going to export
@@ -294,11 +324,76 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 
 	// step #8 Verify the terraform state file with Exporter Resources
 	diagErr = append(diagErr, g.verifyTerraformState()...)
+
+	// step #9 Report any resources that errored
+	if len(g.resourceErrors) > 0 {
+		var timeoutErrorsTotalLen, otherErrorsTotalLen int
+		var errorSummary strings.Builder
+		errorSummary.WriteString("WARNING: Some resources encountered errors during export:\n")
+
+		for resType, errors := range g.resourceErrors {
+			var timeoutCount, otherCount int
+			errorSummary.WriteString(fmt.Sprintf("  %s: %d resources\n", resType, len(errors)))
+
+			// Count timeouts vs other errors
+			for _, errorInfo := range errors {
+				if errorInfo.IsTimeout {
+					timeoutCount++
+					timeoutErrorsTotalLen++
+				} else {
+					otherCount++
+					otherErrorsTotalLen++
+				}
+			}
+
+			errorSummary.WriteString(fmt.Sprintf("  - Timeout errors: %d\n", timeoutCount))
+			errorSummary.WriteString(fmt.Sprintf("  - Other errors: %d\n", otherCount))
+
+			// List individual errors
+			for _, errorInfo := range errors {
+				errorType := "Error"
+				if errorInfo.IsTimeout {
+					errorType = "Timeout"
+				}
+				errorSummary.WriteString(fmt.Sprintf("    - %s: %s (%s) - %v\n",
+					errorType, errorInfo.ResourceLabel, errorInfo.ResourceID, errorInfo.ErrorMessage))
+			}
+		}
+
+		tflog.Warn(g.ctx, errorSummary.String())
+
+		// Write JSON error data
+		jsonFilepath := filepath.Join(g.exportDirPath, "export_errors.json")
+		jsonData, err := json.MarshalIndent(g.resourceErrors, "", "  ")
+		if err == nil {
+			diagErr = append(diagErr, files.WriteToFile(jsonData, jsonFilepath)...)
+			tflog.Info(g.ctx, fmt.Sprintf("Export errors written to %s", jsonFilepath))
+		}
+
+		// Add a warning diagnostic
+		if timeoutErrorsTotalLen > 0 {
+			diagErr = append(diagErr, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("%d resources were not exported due to timeouts. Consider increasing the token_pool_size and/or token_acquire_timeout provider configs.", timeoutErrorsTotalLen),
+				Detail:   fmt.Sprintf("See %s for details", jsonFilepath),
+			})
+		}
+
+		if otherErrorsTotalLen > 0 {
+			diagErr = append(diagErr, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("%d resources encountered non-timeout errors during export.", otherErrorsTotalLen),
+				Detail:   fmt.Sprintf("See %s for details", jsonFilepath),
+			})
+		}
+	} else {
+		tflog.Info(g.ctx, "Export completed successfully with no errors")
+	}
 	return diagErr
 }
 
 func (g *GenesysCloudResourceExporter) setUpExportDirPath() (diagErr diag.Diagnostics) {
-	log.Printf("Setting up export directory path")
+	tflog.Info(g.ctx, "Setting up export directory path")
 
 	g.exportDirPath, diagErr = getDirPath(g.d)
 	if diagErr != nil {
@@ -320,10 +415,10 @@ func (g *GenesysCloudResourceExporter) setupDataSource() {
 // retrieveExporters will return a list of all the registered exporters. If the resource_type on the exporter contains any elements, only the defined
 // elements in the resource_type attribute will be returned.
 func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnostics) {
-	log.Printf("Retrieving exporters list")
+	tflog.Debug(g.ctx, "Retrieving exporters list")
 	exports := resourceExporter.GetResourceExporters()
 
-	log.Printf("Retrieving exporters list %v", g.filterList)
+	tflog.Trace(g.ctx, fmt.Sprintf("Retrieving exporters filtered list %v", g.filterList))
 
 	if g.resourceTypeFilter != nil && g.filterList != nil {
 		exports = g.resourceTypeFilter(exports, *g.filterList)
@@ -352,7 +447,7 @@ func formatFilter(filter []string) []string {
 // retrieveSanitizedResourceMaps will retrieve a list of all of the resources to be exported.  It will also apply a filter (e.g the :: ) and only return the specific Genesys Cloud
 // resources that are specified via :: delimiter
 func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr diag.Diagnostics) {
-	log.Printf("Retrieving map of Genesys Cloud resources to export")
+	tflog.Info(g.ctx, "Retrieving map of Genesys Cloud resources to export")
 	var filter []string
 	if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
 		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
@@ -389,12 +484,12 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 
 // retrieveGenesysCloudObjectInstances will take a list of exporters and then return the actual terraform Genesys Cloud data
 func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() diag.Diagnostics {
-	log.Printf("[retrieveGenesysCloudObjectInstances] Starting to retrieve Genesys Cloud objects from Genesys Cloud")
-	log.Printf("[retrieveGenesysCloudObjectInstances] Number of exporters to process: %d", len(*g.exporters))
+	tflog.Info(g.ctx, "Starting to retrieve Genesys Cloud objects from Genesys Cloud")
+	tflog.Info(g.ctx, fmt.Sprintf("Number of exporters to process: %d", len(*g.exporters)))
 
 	// Log all exporter types being processed
 	for resType, exporter := range *g.exporters {
-		log.Printf("[retrieveGenesysCloudObjectInstances] Exporter for %s has %d resources in SanitizedResourceMap", resType, len(exporter.SanitizedResourceMap))
+		tflog.Debug(g.ctx, fmt.Sprintf("Exporter for %s has %d resources in SanitizedResourceMap", resType, len(exporter.SanitizedResourceMap)))
 	}
 
 	// Retrieves data on each individual Genesys Cloud object from each registered exporter
@@ -406,7 +501,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
-	log.Printf("[retrieveGenesysCloudObjectInstances] Created context with cancellation")
+	tflog.Trace(g.ctx, "Created context with cancellation")
 
 	// Track successful and failed resource types
 	var successfulTypes []string
@@ -415,25 +510,25 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range *g.exporters {
-		log.Printf("[retrieveGenesysCloudObjectInstances] Starting processing for resource type: %s", resType)
+		tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource type: %s", resType))
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-			log.Printf("[retrieveGenesysCloudObjectInstances] Starting goroutine for resource type: %s", resType)
+			tflog.Trace(g.ctx, fmt.Sprintf("Starting goroutine for resource type: %s", resType))
 
 			// Check if context was cancelled before processing
 			select {
 			case <-ctx.Done():
-				log.Printf("[retrieveGenesysCloudObjectInstances] Context cancelled before processing resource type: %s", resType)
+				tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled before processing resource type: %s", resType))
 				return
 			default:
 			}
 
-			log.Printf("[retrieveGenesysCloudObjectInstances] Getting exported resources for [%s]", resType)
+			tflog.Debug(g.ctx, fmt.Sprintf("Getting exported resources for [%s]", resType))
 			typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 
 			if err != nil {
-				log.Printf("[retrieveGenesysCloudObjectInstances] ERROR getting resources for type %s: %v", resType, err)
+				tflog.Error(g.ctx, fmt.Sprintf("Error getting resources for type %s: %v", resType, err))
 
 				// Track failed resource type
 				statsMutex.Lock()
@@ -442,68 +537,68 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 
 				select {
 				case <-ctx.Done():
-					log.Printf("[retrieveGenesysCloudObjectInstances] Context cancelled while handling error for %s", resType)
+					tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while handling error for %s", resType))
 				case errorChan <- err:
-					log.Printf("[retrieveGenesysCloudObjectInstances] Successfully sent error to channel for resource type: %s", resType)
+					tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent error to channel for resource type: %s", resType))
 				default:
-					log.Printf("[retrieveGenesysCloudObjectInstances] ERROR: Could not send error to channel for resource type: %s (channel full)", resType)
+					tflog.Error(g.ctx, fmt.Sprintf("Could not send error to channel for resource type: %s (channel full)", resType))
 				}
 				cancel()
 				return
 			}
 
-			log.Printf("[retrieveGenesysCloudObjectInstances] Successfully retrieved %d resources for type %s", len(typeResources), resType)
+			tflog.Info(g.ctx, fmt.Sprintf("Successfully retrieved %d resources for type %s", len(typeResources), resType))
 
 			// Use thread-safe method to add resources
 			if len(typeResources) > 0 {
 				g.addResources(typeResources)
-				log.Printf("[retrieveGenesysCloudObjectInstances] Successfully added %d resources for type %s to global resources list", len(typeResources), resType)
+				tflog.Debug(g.ctx, fmt.Sprintf("Successfully added %d resources for type %s to global resources list", len(typeResources), resType))
 
 				// Track successful resource type
 				statsMutex.Lock()
 				successfulTypes = append(successfulTypes, resType)
 				statsMutex.Unlock()
 			} else {
-				log.Printf("[retrieveGenesysCloudObjectInstances] WARNING: No resources found for type %s", resType)
+				tflog.Warn(g.ctx, fmt.Sprintf("No resources found for type %s", resType))
 			}
 
-			log.Printf("[retrieveGenesysCloudObjectInstances] Completed processing for resource type: %s", resType)
+			tflog.Debug(g.ctx, fmt.Sprintf("Completed processing for resource type: %s", resType))
 		}(resType, exporter)
 	}
 
-	log.Printf("[retrieveGenesysCloudObjectInstances] Started all goroutines, waiting for completion")
+	tflog.Trace(g.ctx, "Started all goroutines, waiting for completion")
 
 	go func() {
 		wg.Wait()
-		log.Printf("[retrieveGenesysCloudObjectInstances] All resource type processing completed")
+		tflog.Info(g.ctx, "All resource type exports completed")
 		close(wgDone)
 	}()
 
 	// Wait until either WaitGroup is done or an error is received
 	select {
 	case <-wgDone:
-		log.Printf("[retrieveGenesysCloudObjectInstances] Successfully retrieved all Genesys Cloud object instances")
-		log.Printf("[retrieveGenesysCloudObjectInstances] Summary - Successful types: %v", successfulTypes)
-		log.Printf("[retrieveGenesysCloudObjectInstances] Summary - Failed types: %v", failedTypes)
-		log.Printf("[retrieveGenesysCloudObjectInstances] Summary - Total successful: %d, Total failed: %d", len(successfulTypes), len(failedTypes))
+		tflog.Info(g.ctx, "Successfully retrieved all Genesys Cloud object instances")
+		tflog.Info(g.ctx, fmt.Sprintf("Summary - Successful types: %v", successfulTypes))
+		tflog.Info(g.ctx, fmt.Sprintf("Summary - Failed types: %v", failedTypes))
+		tflog.Info(g.ctx, fmt.Sprintf("Summary - Total successful: %d, Total failed: %d", len(successfulTypes), len(failedTypes)))
 		return nil
 	case err := <-errorChan:
-		log.Printf("[retrieveGenesysCloudObjectInstances] Error received from channel: %v", err)
+		tflog.Error(g.ctx, fmt.Sprintf("Error received from channel: %v", err))
 
 		// Give other goroutines a chance to clean up
 		go func() {
 			<-wgDone // Wait for all goroutines to finish
-			log.Printf("[retrieveGenesysCloudObjectInstances] All goroutines finished after error")
+			tflog.Trace(g.ctx, "All goroutines finished after error")
 		}()
 
-		log.Printf("[retrieveGenesysCloudObjectInstances] Returning error: %v", err)
+		tflog.Error(g.ctx, fmt.Sprintf("Returning error retrieving cloud object instances: %v", err))
 		return err
 	}
 }
 
 // buildResourceConfigMap Builds a map of all the Terraform resources data returned for each resource
 func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics diag.Diagnostics) {
-	log.Printf("Build Genesys Cloud Resources Map")
+	tflog.Info(g.ctx, "Build Genesys Cloud Resources Map")
 
 	// Initialize maps using thread-safe methods
 	g.setResourceTypesMaps(make(map[string]resourceJSONMaps))
@@ -580,7 +675,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		g.updateInstanceStateAttributes(jsonResult, resource)
 	}
 
-	log.Printf("Successfully built resource config map with %d resources", len(resources))
+	tflog.Info(g.ctx, fmt.Sprintf("Successfully built resource config map with %d resources", len(resources)))
 	return nil
 }
 
@@ -590,7 +685,7 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 		exportDir, _ := getFilePath(g.d, "")
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
-			log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
+			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
 				Severity: diag.Warning,
 				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
@@ -776,7 +871,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 		exists := util.StringExists(resourceKeys.State.ID, g.flowResourcesList)
 		if exists {
-			log.Printf("dependent consumers retrieved %v", resourceKeys.State.ID)
+			tflog.Debug(g.ctx, fmt.Sprintf("dependent consumers retrieved %v", resourceKeys.State.ID))
 			continue
 		}
 
@@ -808,7 +903,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 }
 
 func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
-	log.Printf("rebuild exporters list")
+	tflog.Info(g.ctx, "Rebuilding exporters list")
 	diagErr = g.retrieveExporters()
 	if diagErr != nil {
 		return diagErr
@@ -831,7 +926,7 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	g.filterList = &filterList
 	existingExporters := g.copyExporters()
 	existingResources := g.copyResources()
-	log.Printf("rebuild exports from exportDependentResources")
+	tflog.Info(g.ctx, "Rebuilding exports from exportDependentResources")
 
 	err := g.rebuildExports(filterList)
 	if err != nil {
@@ -935,7 +1030,7 @@ func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExpo
 			}
 		}
 		for _, removeId := range removeChan {
-			log.Printf("Deleted removeId %v", removeId)
+			tflog.Debug(g.ctx, fmt.Sprintf("Deleted removeId %v", removeId))
 			delete(exporter.SanitizedResourceMap, removeId)
 		}
 	}
@@ -996,7 +1091,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 					if !g.resourceIdExists(guid, existingResources) {
 						filterListById = append(filterListById, fmt.Sprintf("%s::%s", refType, guid))
 					} else {
-						log.Printf("Resource already present in the resources. %v", guid)
+						tflog.Warn(g.ctx, fmt.Sprintf("Resource already present in the resources. %v", guid))
 					}
 
 				}
@@ -1009,7 +1104,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 	if len(*g.filterList) > 0 {
 		g.resources = nil
 		g.exporters = nil
-		log.Printf("rebuild exporters list from chainDependencies")
+		tflog.Debug(g.ctx, "Rebuilding exporters list from chainDependencies")
 		err := g.rebuildExports(*g.filterList)
 		if err != nil {
 			return err
@@ -1040,7 +1135,7 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 }
 
 func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resourceExporter.ResourceInfo) {
-	log.Printf("Appending %d resources to existing resources", len(resourcesToAdd))
+	tflog.Debug(g.ctx, fmt.Sprintf("Appending %d resources to existing resources", len(resourcesToAdd)))
 
 	// Get existing resources using thread-safe method
 	existingResources := g.getResources()
@@ -1059,21 +1154,21 @@ func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resource
 			newResources = append(newResources, resourceToAdd)
 			existingResourceMap[key] = true // Mark as added
 		} else {
-			log.Printf("Skipping duplicate resource: %s", key)
+			tflog.Warn(g.ctx, fmt.Sprintf("Skipping duplicate resource: %s", key))
 		}
 	}
 
 	if len(newResources) > 0 {
 		// Use thread-safe method to add new resources
 		g.addResources(newResources)
-		log.Printf("Successfully added %d new resources", len(newResources))
+		tflog.Debug(g.ctx, fmt.Sprintf("Successfully added %d new resources", len(newResources)))
 	} else {
-		log.Printf("No new resources to add")
+		tflog.Debug(g.ctx, "No new resources to add")
 	}
 }
 
 func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
-	log.Printf("Starting to build sanitized resource maps for %d exporters", len(exporters))
+	tflog.Info(g.ctx, fmt.Sprintf("Starting to build sanitized resource maps for %d exporters", len(exporters)))
 
 	// Buffer error channel to prevent goroutine leaks or deadlocks
 	errorChan := make(chan diag.Diagnostics, len(exporters))
@@ -1085,6 +1180,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 
 	// Create semaphore to limit concurrent operations to the configured maximum
 	sem := make(chan struct{}, g.maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", g.maxConcurrentOps))
 
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
@@ -1100,7 +1196,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				return
 			}
 
-			log.Printf("Getting all resources for type %s", resourceType)
+			tflog.Info(g.ctx, fmt.Sprintf("Getting all resources for type %s", resourceType))
 			exporter.FilterResource = g.resourceFilter
 
 			err := exporter.LoadSanitizedResourceMap(ctx, resourceType, filter)
@@ -1110,8 +1206,8 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				err = mockError
 			}
 			if containsPermissionsErrorOnly(err) && logErrors {
-				log.Printf("%v", err[0].Summary)
-				log.Printf("Logging permission error for %s. Resuming export...", resourceType)
+				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
+				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
 			}
 			if err != nil {
@@ -1125,27 +1221,27 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				}
 				return
 			}
-			log.Printf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), resourceType)
+			tflog.Info(g.ctx, fmt.Sprintf("Found %d resources for type %s", len(exporter.SanitizedResourceMap), resourceType))
 		}(resourceType, exporter)
 	}
 
 	go func() {
 		wg.Wait()
-		log.Print(`Finished building sanitized resource maps`)
+		tflog.Info(g.ctx, `Finished building sanitized resource maps`)
 		close(wgDone)
 	}()
 
 	// Wait until either WaitGroup is done or an error is received
 	select {
 	case <-wgDone:
-		log.Printf("Successfully completed building sanitized resource maps")
+		tflog.Info(g.ctx, "Successfully completed building sanitized resource maps")
 		return nil
 	case err := <-errorChan:
 		// Give other goroutines a chance to clean up
 		go func() {
 			<-wgDone // Wait for all goroutines to finish
 		}()
-		log.Printf("Error occurred while building sanitized resource maps: %v", err)
+		tflog.Warn(g.ctx, fmt.Sprintf("Error occurred while building sanitized resource maps: %v", err))
 		return err
 	}
 }
@@ -1222,112 +1318,118 @@ func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
 }
 
 func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schemaProvider *schema.Provider, exporter *resourceExporter.ResourceExporter, meta interface{}) ([]resourceExporter.ResourceInfo, diag.Diagnostics) {
-	log.Printf("[getResourcesForType] Starting export for resource type: %s", resType)
+	tflog.Debug(g.ctx, fmt.Sprintf("Starting export for resource type: %s", resType))
 
 	// Use thread-safe method to get resource map size
 	lenResources := exporter.GetSanitizedResourceMapSize()
-	log.Printf("[getResourcesForType] Found %d resources for type %s", lenResources, resType)
+	tflog.Info(g.ctx, fmt.Sprintf("Found %d resources for type %s", lenResources, resType))
 
 	if lenResources == 0 {
-		log.Printf("[getResourcesForType] No resources found for type %s, returning empty slice", resType)
+		tflog.Debug(g.ctx, fmt.Sprintf("No resources found for type %s, returning empty slice", resType))
 		return []resourceExporter.ResourceInfo{}, nil
 	}
 
 	// Buffer channels to prevent goroutine leaks
-	errorChan := make(chan diag.Diagnostics, lenResources)
+	errorsChan := make(chan ResourceErrorInfo, lenResources)
 	resourceChan := make(chan resourceExporter.ResourceInfo, lenResources)
-	log.Printf("[getResourcesForType] Created buffered channels for %d resources", lenResources)
+	tflog.Trace(g.ctx, fmt.Sprintf("Created buffered channels for %d resources", lenResources))
 
 	res := schemaProvider.ResourcesMap[resType]
 	if res == nil {
-		log.Printf("[getResourcesForType] ERROR: Resource type %v not defined in schema provider", resType)
+		tflog.Error(g.ctx, fmt.Sprintf("Resource type %v not defined in schema provider", resType))
 		return nil, diag.Errorf("Resource type %v not defined", resType)
 	}
-	log.Printf("[getResourcesForType] Successfully retrieved resource schema for type %s", resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("Successfully retrieved resource schema for type %s", resType))
 
 	exportComputed := g.exportComputed
-	log.Printf("[getResourcesForType] Export computed setting: %t", exportComputed)
+	tflog.Debug(g.ctx, fmt.Sprintf("Export computed setting: %t", exportComputed))
 
+	// Create a context with cancellation for this operation
 	ctx, cancel := context.WithCancel(g.ctx)
 	defer cancel()
-	log.Printf("[getResourcesForType] Created context with cancellation for resource type %s", resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("Created context with cancellation for resource type %s", resType))
 
 	var wg sync.WaitGroup
 	wg.Add(lenResources)
-	log.Printf("[getResourcesForType] Initialized WaitGroup with %d resources", lenResources)
+	tflog.Trace(g.ctx, fmt.Sprintf("Initialized WaitGroup with %d resources", lenResources))
 
 	// Track resources to remove to avoid race conditions
 	var toRemove []string
 	var toRemoveMutex sync.Mutex
-	log.Printf("[getResourcesForType] Initialized resource removal tracking for type %s", resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("Initialized resource removal tracking for type %s", resType))
 
 	// Get a copy of the resource map to avoid race conditions during iteration
 	resourceMap := exporter.GetSanitizedResourceMap()
-	log.Printf("[getResourcesForType] Retrieved sanitized resource map with %d entries for type %s", len(resourceMap), resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("Retrieved sanitized resource map with %d entries for type %s", len(resourceMap), resType))
+
+	// Create a semaphore to limit concurrent operations
+	sem := make(chan struct{}, g.maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations"))
 
 	for id, resMeta := range resourceMap {
-		log.Printf("[getResourcesForType] Starting goroutine for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel)
+		tflog.Trace(g.ctx, fmt.Sprintf("Starting goroutine for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))
 
 		go func(id string, resMeta *resourceExporter.ResourceMeta) {
 			defer wg.Done()
-			log.Printf("[getResourcesForType] Starting processing for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel)
+			tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))
 
-			// Check if context was cancelled
+			// Acquire semaphore slot or return if context is cancelled
 			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }() // Release semaphore when done
 			case <-ctx.Done():
-				log.Printf("[getResourcesForType] Context cancelled for resource ID: %s", id)
+				tflog.Trace(g.ctx, fmt.Sprintf("Context cancelled for resource ID: %s", id))
 				return
-			default:
-				log.Printf("[getResourcesForType] Context check passed for resource ID: %s", id)
 			}
 
-			fetchResourceState := func() error {
-				log.Printf("[getResourcesForType] Starting fetchResourceState for resource ID: %s", id)
+			tflog.Trace(g.ctx, fmt.Sprintf("Started processing for resource: %s.%s (%s)", resType, resMeta.BlockLabel, id))
 
-				// Use a shorter timeout for individual resource fetches
-				resourceCtx, resourceCancel := context.WithCancel(context.Background())
+			fetchResourceState := func() error {
+				tflog.Trace(g.ctx, fmt.Sprintf("Starting fetchResourceState for resource ID: %s", id))
+
+				resourceCtx, resourceCancel := context.WithCancel(ctx)
 				defer resourceCancel()
-				log.Printf("[getResourcesForType] Created resource context with 5-minute timeout for ID: %s", id)
+				tflog.Trace(g.ctx, fmt.Sprintf("Created resource context for ID: %s", id))
 
 				ctyType := res.CoreConfigSchema().ImpliedType()
-				log.Printf("[getResourcesForType] Retrieved CTY type for resource ctyType: %v", ctyType)
+				tflog.Trace(g.ctx, fmt.Sprintf("Retrieved CTY type for resource ctyType: %v", ctyType))
 
-				log.Printf("[getResourcesForType] Calling getResourceState for resource ID: %s", id)
-				instanceState, err := getResourceState(resourceCtx, res, id, resMeta, meta)
+				tflog.Trace(g.ctx, fmt.Sprintf("Calling getResourceState for resource ID: %s", id))
+				instanceState, err := g.getResourceState(resourceCtx, res, id, resMeta, meta)
 
 				if err != nil {
-					log.Printf("[getResourcesForType] Error while fetching read context type %s and instance %s : %v", resType, id, err)
+					tflog.Error(g.ctx, fmt.Sprintf("Error while fetching read context type %s and instance %s : %v", resType, id, err))
 					return fmt.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
 				}
 
 				if instanceState == nil {
-					log.Printf("[getResourcesForType] Resource %s no longer exists. Skipping.", resMeta.BlockLabel)
+					tflog.Warn(g.ctx, fmt.Sprintf("Resource %s no longer exists. Skipping.", resMeta.BlockLabel))
 					toRemoveMutex.Lock()
 					toRemove = append(toRemove, id)
 					toRemoveMutex.Unlock()
-					log.Printf("[getResourcesForType] Added resource ID %s to removal list", id)
+					tflog.Debug(g.ctx, fmt.Sprintf("Added resource ID %s to removal list", id))
 					return nil
 				}
-				log.Printf("[getResourcesForType] Successfully retrieved instance state for resource ID: %s", id)
+				tflog.Info(g.ctx, fmt.Sprintf("Successfully retrieved instance state for resource ID: %s", id))
 
 				// Export the resource as a data resource
 				if exporter.ExportAsDataFunc != nil {
-					log.Printf("[getResourcesForType] Checking if resource should be exported as data source for ID: %s", id)
+					tflog.Trace(g.ctx, fmt.Sprintf("Checking if resource should be exported as data source for ID: %s", id))
 					sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
 					exportAsData, err := exporter.ExportAsDataFunc(g.ctx, sdkConfig, instanceState.Attributes)
 					if err != nil {
-						log.Printf("[getResourcesForType] Error in ExportAsDataFunc for resource ID %s: %v", id, err)
+						tflog.Error(g.ctx, fmt.Sprintf("Error in ExportAsDataFunc for resource ID %s: %v", id, err))
 						return fmt.Errorf("an error has occurred while trying to export as a data resource block for %s::%s : %v", resType, resMeta.BlockLabel, err)
 					} else {
 						if exportAsData {
-							log.Printf("[getResourcesForType] Resource ID %s will be exported as data source", id)
+							tflog.Debug(g.ctx, fmt.Sprintf("Resource ID %s will be exported as data source", id))
 							g.addReplaceWithDatasource(resType + "::" + resMeta.BlockLabel)
 						} else {
-							log.Printf("[getResourcesForType] Resource ID %s will NOT be exported as data source", id)
+							tflog.Debug(g.ctx, fmt.Sprintf("Resource ID %s will NOT be exported as data source", id))
 						}
 					}
 				} else {
-					log.Printf("[getResourcesForType] No ExportAsDataFunc defined for resource ID: %s", id)
+					tflog.Debug(g.ctx, fmt.Sprintf("No ExportAsDataFunc defined for resource ID: %s", id))
 				}
 
 				blockType := ""
@@ -1364,62 +1466,62 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 						continue
 					}
 				}
-				log.Printf("[getResourcesForType] Finished processing schema attributes for resource ID: %s", id)
-				log.Printf("[getResourcesForType] Creating ResourceInfo for resource ID: %s", id)
-				resourceChan <- resourceExporter.ResourceInfo{
+				tflog.Debug(g.ctx, fmt.Sprintf("Finished processing schema attributes for resource ID: %s", id))
+
+				tflog.Trace(g.ctx, fmt.Sprintf("Creating ResourceInfo for resource ID: %s", id))
+				select {
+				case resourceChan <- resourceExporter.ResourceInfo{
 					State:         instanceState,
 					BlockLabel:    resMeta.BlockLabel,
 					Type:          resType,
 					CtyType:       ctyType,
 					BlockType:     blockType,
 					OriginalLabel: resMeta.OriginalLabel,
+				}:
+					tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent ResourceInfo to channel for resource ID: %s", id))
+				case <-ctx.Done():
+					tflog.Warn(g.ctx, fmt.Sprintf("Context canceled while sending ResourceInfo for resource ID: %s", id))
+					return fmt.Errorf("context cancelled")
 				}
-				log.Printf("[getResourcesForType] Successfully sent ResourceInfo to channel for resource ID: %s", id)
+				tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent ResourceInfo to channel for resource ID: %s", id))
 
 				return nil
 			}
 
-			// Enhanced retry logic with timeout handling and SDK client pool adjustment
+			// Improved retry logic with exponential backoff
+			// Allows retries up to three times before reporting error
 			maxRetries := 3
 			var lastErr error
-			log.Printf("[getResourcesForType] Starting retry logic for resource ID: %s (max retries: %d)", id, maxRetries)
+			tflog.Debug(g.ctx, fmt.Sprintf("Starting retry logic for resource ID: %s (max retries: %d)", id, maxRetries))
 
 			for attempt := 0; attempt < maxRetries; attempt++ {
-				log.Printf("[getResourcesForType] Attempt %d/%d for resource ID: %s", attempt+1, maxRetries, id)
+				tflog.Debug(g.ctx, fmt.Sprintf("Attempt %d/%d for resource ID: %s", attempt+1, maxRetries, id))
 
 				select {
 				case <-ctx.Done():
-					log.Printf("[getResourcesForType] Context cancelled during retry attempt %d for resource ID: %s", attempt+1, id)
+					tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled during retry attempt %d for resource ID: %s", attempt+1, id))
 					return
 				default:
 				}
 
 				err := fetchResourceState()
+
+				// Return immediately if no errors
 				if err == nil {
-					log.Printf("[getResourcesForType] Successfully processed resource ID: %s on attempt %d", id, attempt+1)
+					tflog.Info(g.ctx, fmt.Sprintf("Successfully processed resource ID: %s on attempt %d", id, attempt+1))
 					return // Success
 				}
 
 				lastErr = err
-				log.Printf("[getResourcesForType] Error on attempt %d for resource ID %s: %v", attempt+1, id, err)
 
-				// Check if it's a timeout error that we should retry
-				isTimeoutError := func(err error) bool {
-					errStr := fmt.Sprintf("%v", err)
-					return strings.Contains(errStr, "timeout while waiting for state to become") ||
-						strings.Contains(errStr, "context deadline exceeded") ||
-						strings.Contains(errStr, "timeout") ||
-						strings.Contains(errStr, "Client acquisition timeout") ||
-						strings.Contains(errStr, "timeout after") ||
-						strings.Contains(errStr, "waiting for available client")
-				}
+				tflog.Error(g.ctx, fmt.Sprintf("Error on attempt %d for resource ID %s: %v", attempt+1, id, err))
 
-				if isTimeoutError(err) {
-					log.Printf("[getResourcesForType] Timeout error detected for resource ID %s on attempt %d", id, attempt+1)
+				if util.IsTimeoutError(err) {
+					tflog.Debug(g.ctx, fmt.Sprintf("Timeout error detected for resource ID %s on attempt %d", id, attempt+1))
 
 					// On timeout errors, try to add new client connections to the existing pool
 					if attempt == 0 {
-						log.Printf("[getResourcesForType] Attempting to add new client connections to pool for resource ID: %s", id)
+						tflog.Debug(g.ctx, fmt.Sprintf("Attempting to add new client connections to pool for resource ID: %s", id))
 
 						// Get the current version from provider meta
 						version := "1.0.0" // Default version
@@ -1431,37 +1533,42 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 						provider.SdkClientPool.AdjustPoolForTimeout(version)
 
 						// Add a small delay to allow the new clients to be available
-						log.Printf("[getResourcesForType] Waiting 5 seconds for new clients to be available for resource ID: %s", id)
+						tflog.Debug(g.ctx, fmt.Sprintf("Waiting 5 seconds for new clients to be available for resource ID: %s", id))
 						select {
 						case <-time.After(5 * time.Second):
-							log.Printf("[getResourcesForType] Pool adjustment delay completed for resource ID: %s", id)
+							tflog.Debug(g.ctx, fmt.Sprintf("Pool adjustment delay completed for resource ID: %s", id))
 						case <-ctx.Done():
-							log.Printf("[getResourcesForType] Context cancelled during pool adjustment delay for resource ID: %s", id)
+							tflog.Warn(g.ctx, fmt.Sprintf("[getResourcesForType] Context cancelled during pool adjustment delay for resource ID: %s", id))
 							return
 						}
 					}
-
 					// Exponential backoff for retryable errors
 					if attempt < maxRetries-1 {
 						backoffDuration := time.Duration(1<<attempt) * time.Second
-						log.Printf("[getResourcesForType] Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration)
+						tflog.Info(g.ctx, fmt.Sprintf("Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration))
 
 						select {
 						case <-time.After(backoffDuration):
-							log.Printf("[getResourcesForType] Backoff completed for resource ID: %s", id)
+							tflog.Debug(g.ctx, fmt.Sprintf("Backoff completed for resource ID: %s", id))
 						case <-ctx.Done():
-							log.Printf("[getResourcesForType] Context cancelled during backoff for resource ID: %s", id)
+							tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled during backoff for resource ID: %s", id))
 							return
 						}
 					}
 				} else {
-					log.Printf("[getResourcesForType] Non-retryable error for resource ID %s, sending to error channel", id)
+					tflog.Error(g.ctx, fmt.Sprintf("Non-retryable error for resource ID %s, sending to error channel", id))
 					// Non-retryable error, send to error channel
 					select {
-					case errorChan <- diag.Errorf("Failed to get state for %s instance %s: %v", resType, id, err):
-						log.Printf("[getResourcesForType] Successfully sent error to channel for resource ID: %s", id)
+					case errorsChan <- ResourceErrorInfo{
+						ResourceType:  resType,
+						ResourceID:    id,
+						ResourceLabel: resMeta.BlockLabel,
+						ErrorMessage:  fmt.Sprintf("Non-retryable error: %v", err),
+						IsTimeout:     false,
+					}:
+						tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent error to channel for resource ID: %s", id))
 					case <-ctx.Done():
-						log.Printf("[getResourcesForType] Context cancelled while sending error for resource ID: %s", id)
+						tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while sending error for resource ID: %s", id))
 						return
 					}
 					return
@@ -1470,122 +1577,135 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 			// If we get here, all retries failed
 			if lastErr != nil {
-				log.Printf("[getResourcesForType] All retries failed for resource ID %s, sending final error to channel", id)
+				tflog.Trace(g.ctx, fmt.Sprintf("All retries failed for resource ID %s, sending final error to channel", id))
+
 				select {
-				case errorChan <- diag.Errorf("Failed to get state for %s instance %s after %d retries: %v", resType, id, maxRetries, lastErr):
-					log.Printf("[getResourcesForType] Successfully sent final error to channel for resource ID: %s", id)
+				case errorsChan <- ResourceErrorInfo{
+					ResourceType:  resType,
+					ResourceID:    id,
+					ResourceLabel: resMeta.BlockLabel,
+					ErrorMessage:  fmt.Sprintf("Failed after %d retries: %v", maxRetries, lastErr),
+					IsTimeout:     util.IsTimeoutError(lastErr),
+				}:
+					tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent final error to channel for resource ID: %s", id))
 				case <-ctx.Done():
-					log.Printf("[getResourcesForType] Context cancelled while sending final error for resource ID: %s", id)
+					tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while sending final error for resource ID: %s", id))
 					return
 				}
+
 			}
+
 		}(id, resMeta)
 	}
 
-	log.Printf("[getResourcesForType] Started all goroutines for resource type %s, waiting for completion", resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("Started all goroutines for resource type %s, waiting for completion", resType))
 
 	// Wait for all goroutines to complete
 	wg.Wait()
-	log.Printf("[getResourcesForType] All goroutines completed for resource type %s", resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("All goroutines completed for resource type %s", resType))
 
 	close(resourceChan)
-	close(errorChan)
-	log.Printf("[getResourcesForType] Closed resource and error channels for resource type %s", resType)
+	close(errorsChan)
+	tflog.Trace(g.ctx, fmt.Sprintf("Closed resource and error channels for resource type %s", resType))
 
 	// Collect all resources
 	var resources []resourceExporter.ResourceInfo
-	log.Printf("[getResourcesForType] Collecting resources from channel for resource type %s", resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("Collecting resources from channel for resource type %s", resType))
 	for r := range resourceChan {
-		log.Printf("[getResourcesForType] Collected resource: Type=%s, BlockLabel=%s, ID=%s", r.Type, r.BlockLabel, r.State.ID)
+		tflog.Trace(g.ctx, fmt.Sprintf("Collected resource: Type=%s, BlockLabel=%s, ID=%s", r.Type, r.BlockLabel, r.State.ID))
 		resources = append(resources, r)
 	}
-	log.Printf("[getResourcesForType] Collected %d resources from channel for resource type %s", len(resources), resType)
+	tflog.Trace(g.ctx, fmt.Sprintf("Collected %d resources from channel for resource type %s", len(resources), resType))
 
 	// Remove resources that weren't found using thread-safe method
-	log.Printf("[getResourcesForType] Processing %d resources for removal", len(toRemove))
+	tflog.Debug(g.ctx, fmt.Sprintf("Processing %d resources for removal", len(toRemove)))
 	for _, id := range toRemove {
-		log.Printf("[getResourcesForType] Removing resource %v from export map", id)
+		tflog.Debug(g.ctx, fmt.Sprintf("Removing resource %v from export map", id))
 		exporter.RemoveFromSanitizedResourceMap(id)
 	}
 
-	// Collect all errors
-	var allErrors diag.Diagnostics
-	log.Printf("[getResourcesForType] Collecting errors from channel for resource type %s", resType)
-	for err := range errorChan {
-		log.Printf("[getResourcesForType] Collected error: %v", err)
-		allErrors = append(allErrors, err...)
-	}
-	log.Printf("[getResourcesForType] Collected %d errors for resource type %s", len(allErrors), resType)
-
-	// Return errors if any occurred
-	if len(allErrors) > 0 {
-		log.Printf("[getResourcesForType] Export completed for %s with %d errors out of %d resources", resType, len(allErrors), lenResources)
-		return resources, allErrors
+	// Track resources that errored
+	tflog.Trace(g.ctx, fmt.Sprintf("Collecting errors from channel for resource type %s", resType))
+	var erroredResources []ResourceErrorInfo
+	for erroredResource := range errorsChan {
+		tflog.Debug(g.ctx, fmt.Sprintf("Collected error: %v", erroredResource))
+		erroredResources = append(erroredResources, erroredResource)
 	}
 
-	log.Printf("[getResourcesForType] Export completed successfully for %s: %d resources successfully exported", resType, len(resources))
+	tflog.Warn(g.ctx, fmt.Sprintf("Collected %d errors for resource type %s", len(erroredResources), resType))
+	// Store errored resources in the exporter for later reporting
+	if len(erroredResources) > 0 {
+		g.resourceErrorsMutex.Lock()
+		if g.resourceErrors == nil {
+			g.resourceErrors = make(map[string][]ResourceErrorInfo)
+		}
+		g.resourceErrors[resType] = erroredResources
+		g.resourceErrorsMutex.Unlock()
+		tflog.Warn(g.ctx, fmt.Sprintf("Export completed for %s with %d errors out of %d resources", resType, len(erroredResources), lenResources))
+	} else {
+		tflog.Info(g.ctx, fmt.Sprintf("Export completed successfully for %s: %d resources successfully exported", resType, len(resources)))
+	}
+
 	return resources, nil
 }
 
-func getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
-	log.Printf("[getResourceState] Starting to get resource state for ID: %s, BlockLabel: %s", resID, resMeta.BlockLabel)
+func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+	tflog.Trace(g.ctx, fmt.Sprintf("Starting to get resource state for ID: %s, BlockLabel: %s", resID, resMeta.BlockLabel))
 
 	// If defined, pass the full ID through the import method to generate a readable state
 	instanceState := &terraform.InstanceState{ID: resMeta.IdPrefix + resID}
-	log.Printf("[getResourceState] Created initial instance state with ID: %s", instanceState.ID)
+	tflog.Trace(g.ctx, fmt.Sprintf("Created initial instance state with ID: %s", instanceState.ID))
 
-	resourceMutex := &sync.Mutex{}
-	log.Printf("[getResourceState] Created resource mutex for ID: %s", resID)
-
-	resourceMutex.Lock()
-	log.Printf("[getResourceState] Acquired mutex lock for resource ID: %s", resID)
+	tflog.Trace(g.ctx, fmt.Sprintf("Created resource mutex for ID: %s", resID))
+	g.resourceStateMutex.Lock()
+	tflog.Trace(g.ctx, fmt.Sprintf("Acquired mutex lock for resource ID: %s", resID))
 	resourceData := resource.Data(instanceState)
-	resourceMutex.Unlock()
-	log.Printf("[getResourceState] Released mutex lock for resource ID: %s", resID)
-	log.Printf("[getResourceState] Created resource data for ID: %s", resID)
+	g.resourceStateMutex.Unlock()
+	tflog.Trace(g.ctx, fmt.Sprintf("Released mutex lock for resource ID: %s", resID))
+	tflog.Trace(g.ctx, fmt.Sprintf("Created resource data for ID: %s", resID))
 
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
-		log.Printf("[getResourceState] Resource has importer with StateContext, calling for ID: %s", resID)
+		tflog.Trace(g.ctx, fmt.Sprintf("Resource has importer with StateContext, calling for ID: %s", resID))
 		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, meta)
 		if err != nil {
-			log.Printf("[getResourceState] Error with resource Importer for id %s: %v", resID, err)
+			tflog.Error(g.ctx, fmt.Sprintf("Error with resource Importer for id %s: %v", resID, err))
 			return nil, diag.FromErr(err)
 		}
 		if len(resourceDataArr) > 0 {
-			log.Printf("[getResourceState] Importer returned %d resource data entries for ID: %s", len(resourceDataArr), resID)
+			tflog.Trace(g.ctx, fmt.Sprintf("Importer returned %d resource data entries for ID: %s", len(resourceDataArr), resID))
 			instanceState = resourceDataArr[0].State()
-			log.Printf("[getResourceState] Updated instance state from importer for ID: %s", resID)
+			tflog.Trace(g.ctx, fmt.Sprintf("Updated instance state from importer for ID: %s", resID))
 		} else {
-			log.Printf("[getResourceState] Importer returned no resource data entries for ID: %s", resID)
+			tflog.Trace(g.ctx, fmt.Sprintf("Importer returned no resource data entries for ID: %s", resID))
 		}
 	} else {
-		log.Printf("[getResourceState] Resource has no importer or StateContext for ID: %s", resID)
+		tflog.Debug(g.ctx, fmt.Sprintf("Resource has no importer or StateContext for ID: %s", resID))
 	}
 
-	resourceMutex.Lock()
-	log.Printf("[getResourceState] Acquiring mutex lock for RefreshWithoutUpgrade for ID: %s", resID)
+	g.resourceStateMutex.Lock()
+	tflog.Trace(g.ctx, fmt.Sprintf("Acquiring mutex lock for RefreshWithoutUpgrade for ID: %s", resID))
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
-	resourceMutex.Unlock()
-	log.Printf("[getResourceState] Released mutex lock after RefreshWithoutUpgrade for ID: %s", resID)
+	g.resourceStateMutex.Unlock()
+	tflog.Trace(g.ctx, fmt.Sprintf("Released mutex lock after RefreshWithoutUpgrade for ID: %s", resID))
 
 	if err != nil {
-		log.Printf("[getResourceState] Error during RefreshWithoutUpgrade for resource %s: %v", resID, err)
+		tflog.Error(g.ctx, fmt.Sprintf("Error during RefreshWithoutUpgrade for resource %s: %v", resID, err))
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") ||
 			strings.Contains(fmt.Sprintf("%v", err), "API Error: 410") {
-			log.Printf("[getResourceState] Resource not found (404/410 error) for ID: %s, returning nil", resID)
+			tflog.Info(g.ctx, fmt.Sprintf("Resource not found (404/410 error) for ID: %s, returning nil", resID))
 			return nil, nil
 		}
-		log.Printf("[getResourceState] Non-404/410 error during RefreshWithoutUpgrade for resource %s: %v", resID, err)
+		tflog.Error(g.ctx, fmt.Sprintf("Non-404/410 error during RefreshWithoutUpgrade for resource %s: %v", resID, err))
 		return nil, err
 	}
 
 	if state == nil || state.ID == "" {
 		// Resource no longer exists
-		log.Printf("[getResourceState] Empty State for resource %s, state: %v", resID, state)
+		tflog.Trace(g.ctx, fmt.Sprintf("Empty State for resource %s, state: %v", resID, state))
 		return nil, nil
 	}
 
-	log.Printf("[getResourceState] Successfully retrieved state for resource %s with ID: %s", resID, state.ID)
+	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))
 	return state, nil
 }
 
@@ -1723,7 +1843,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			if _, ok := exporter.ContainsNestedRefAttrs(currAttr); ok {
 				resolvedJsonString, err := g.resolveRefAttributesInJsonString(currAttr, val.(string), exporter, exporters, exportingState)
 				if err != nil {
-					log.Println(err)
+					tflog.Error(g.ctx, err.Error())
 				} else {
 					keys := strings.Split(currAttr, ".")
 					configMap[keys[len(keys)-1]] = resolvedJsonString
@@ -1788,20 +1908,20 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 
 		//If the exporter as has customer resolver for an attribute, invoke it.
 		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
-			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
+			tflog.Debug(g.ctx, fmt.Sprintf("Custom resolver invoked for attribute: %s", currAttr))
 			if resolverFunc := refAttrCustomResolver.ResolverFunc; resolverFunc != nil {
 				if err := resolverFunc(configMap, exporters, resourceLabel); err != nil {
-					log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
+					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err))
 				}
 			}
 		}
 
 		// Check if the exporter has custom flow resolver (Only applicable for flow resource)
 		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
-			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
+			tflog.Debug(g.ctx, fmt.Sprintf("Custom resolver invoked for attribute: %s", currAttr))
 			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, "filepath")
 			if err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference); err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
+				tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err))
 			}
 		}
 
@@ -1809,7 +1929,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr, currAttr)
 				if err != nil {
-					log.Printf("Error decoding JSON string: %v\n", err)
+					tflog.Error(g.ctx, fmt.Sprintf("Error decoding JSON string: %v\n", err))
 					configMap[key] = vStr
 				} else {
 					uid := uuid.NewString()
@@ -1992,7 +2112,7 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 				if match {
 					excludedAttr := excluded[resourceIdx+1:]
 					exporter1.AddExcludedAttribute(excludedAttr)
-					log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern)
+					tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
 					matchFound = true
 					continue
 				}
@@ -2001,7 +2121,7 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 			if !matchFound {
 				if g.addDependsOn {
 					excludedAttr := excluded[resourceIdx+1:]
-					log.Printf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceTypePattern)
+					tflog.Warn(g.ctx, fmt.Sprintf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceTypePattern))
 					continue
 				} else {
 					return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceTypePattern)
@@ -2010,7 +2130,7 @@ func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[stri
 		} else {
 			excludedAttr := excluded[resourceIdx+1:]
 			exporter.AddExcludedAttribute(excludedAttr)
-			log.Printf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern)
+			tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
 		}
 	}
 	return nil
@@ -2036,11 +2156,15 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 			}
 		}
 	}
+	g.buildSecondDepsMutex.Lock()
+	defer g.buildSecondDepsMutex.Unlock()
+
 	if g.buildSecondDeps == nil || len(g.buildSecondDeps) == 0 {
 		g.buildSecondDeps = make(map[string][]string)
 	}
-	if g.buildSecondDeps[refSettings.RefType] != nil {
-		guidList := g.buildSecondDeps[refSettings.RefType]
+	guidList, exists := g.buildSecondDeps[refSettings.RefType]
+	if exists {
+		// Check if refID already exists in list
 		present := false
 		for _, element := range guidList {
 			if element == refID {
@@ -2048,8 +2172,7 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 			}
 		}
 		if !present {
-			guidList = append(guidList, refID)
-			g.buildSecondDeps[refSettings.RefType] = guidList
+			g.buildSecondDeps[refSettings.RefType] = append(guidList, refID)
 		}
 	} else {
 		g.buildSecondDeps[refSettings.RefType] = []string{refID}
@@ -2064,31 +2187,36 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 }
 
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {
-	if g.addDependsOn {
-		if existingResources != nil {
-			for _, resource := range existingResources {
-				if refID == resource.State.ID {
-					return true
-				}
-			}
-		}
-		for _, resource := range g.resources {
+	if !g.addDependsOn {
+		return true
+	}
+	if existingResources != nil {
+		for _, resource := range existingResources {
 			if refID == resource.State.ID {
 				return true
 			}
 		}
-		log.Printf("Resource present in sanitizedConfigMap and not present in resources section %v", refID)
-		return false
 	}
-	return true
+	// Thread-safe access to resources
+	resources := g.getResources()
+	for _, resource := range resources {
+		if refID == resource.State.ID {
+			return true
+		}
+	}
+	tflog.Warn(g.ctx, fmt.Sprintf("Resource present in sanitizedConfigMap and not present in resources section %v", refID))
+	return false
 }
 
 func (g *GenesysCloudResourceExporter) isDataSource(resType string, resLabel, originalLabel string) bool {
-	return g.containsElement(g.replaceWithDatasource, resType, resLabel, originalLabel)
+	// Thread-safe access to replaceWithDatasource
+	g.replaceWithDatasourceMutex.Lock()
+	defer g.replaceWithDatasourceMutex.Unlock()
+	return g.containsElementUnsafe(g.replaceWithDatasource, resType, resLabel, originalLabel)
 }
 
-func (g *GenesysCloudResourceExporter) containsElement(elements []string, resType, resLabel, originalLabel string) bool {
-
+// containsElementUnsafe is not thread-safe and should only be called with proper locking
+func (g *GenesysCloudResourceExporter) containsElementUnsafe(elements []string, resType, resLabel, originalLabel string) bool {
 	for _, element := range elements {
 		if element == resType+"::"+resLabel || fetchByRegex(element, resType, resLabel, originalLabel) {
 			return true
@@ -2154,7 +2282,7 @@ func (g *GenesysCloudResourceExporter) matchesExportFormat(formats ...string) bo
 			pattern := strings.Trim(format, "/")
 			regex, err := regexp.Compile(pattern)
 			if err != nil {
-				log.Printf("Invalid regex pattern: %s", pattern)
+				tflog.Warn(g.ctx, fmt.Sprintf("Invalid regex pattern: %s", pattern))
 				continue
 			}
 			if regex.MatchString(exportFormat) {
