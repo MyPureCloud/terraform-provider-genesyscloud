@@ -207,6 +207,31 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourc
 	return nil
 }
 
+// Thread-safe methods for accessing SanitizedResourceMap
+func (r *ResourceExporter) GetSanitizedResourceMap() ResourceIDMetaMap {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return r.SanitizedResourceMap
+}
+
+func (r *ResourceExporter) SetSanitizedResourceMap(resourceMap ResourceIDMetaMap) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.SanitizedResourceMap = resourceMap
+}
+
+func (r *ResourceExporter) RemoveFromSanitizedResourceMap(id string) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.SanitizedResourceMap, id)
+}
+
+func (r *ResourceExporter) GetSanitizedResourceMapSize() int {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return len(r.SanitizedResourceMap)
+}
+
 func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings {
 	if r.RefAttrs == nil {
 		return nil
