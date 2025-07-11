@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"net/url"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 var internalProxy *knowledgeDocumentProxy

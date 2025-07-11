@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	zclCty "github.com/zclconf/go-cty/cty"
 )
@@ -290,6 +291,8 @@ func (e *Example) processSkipConstraints(locals *Locals) {
 			e.SkipIfConstraints.NotInDomains = append(e.SkipIfConstraints.NotInDomains, v...)
 		} else if k == "only_in_domains" {
 			e.SkipIfConstraints.OnlyInDomains = append(e.SkipIfConstraints.OnlyInDomains, v...)
+		} else if k == "feature_toggles_required" {
+			e.SkipIfConstraints.FeatureTogglesRequired = append(e.SkipIfConstraints.FeatureTogglesRequired, v...)
 		}
 	}
 }
@@ -511,6 +514,8 @@ type SkipIfConstraints struct {
 	ProductsExistingAny []string `hcl:"products_existing_any,optional"`
 	// ProductsExistingAll specifies that the test should run if all of these products exist
 	ProductsExistingAll []string `hcl:"products_existing_all,optional"`
+	// FeatureTogglesRequired specifies feature toggles that must be enabled for the test to run
+	FeatureTogglesRequired []string `hcl:"feature_toggles_required,optional"`
 }
 
 // ProcessedFiles tracks which files have been processed during example loading.
@@ -641,6 +646,11 @@ func (s *SkipIfConstraints) String() string {
 			fmt.Sprintf("Existing all of these products: %s", strings.Join(s.ProductsExistingAll, ", ")))
 	}
 
+	if len(s.FeatureTogglesRequired) > 0 {
+		constraints = append(constraints,
+			fmt.Sprintf("Feature toggles required: %s", strings.Join(s.FeatureTogglesRequired, ", ")))
+	}
+
 	if len(constraints) == 0 {
 		return "No constraints"
 	}
@@ -666,6 +676,13 @@ func (s *SkipIfConstraints) ShouldSkip(domain string, authorizationProducts []st
 	}
 	if len(s.ProductsExistingAll) > 0 && containsAll(authorizationProducts, s.ProductsExistingAll) {
 		return true
+	}
+	if len(s.FeatureTogglesRequired) > 0 {
+		for _, toggle := range s.FeatureTogglesRequired {
+			if toggle == "guide" && !guide.GuideFtIsEnabled() {
+				return true
+			}
+		}
 	}
 	return false
 }

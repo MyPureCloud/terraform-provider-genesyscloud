@@ -109,6 +109,7 @@ func TrunkBaseSettingsExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTrunkBaseSettings),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"inbound_site_id": {RefType: "genesyscloud_telephony_providers_edges_site"},
+			"site_id":         {RefType: "genesyscloud_telephony_providers_edges_site"},
 		},
 		JsonEncodeAttributes: []string{"properties"},
 		ExportAsDataFunc:     shouldExportTrunkBaseSettingsAsDataSource,

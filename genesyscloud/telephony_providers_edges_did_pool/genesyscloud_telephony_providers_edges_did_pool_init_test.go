@@ -1,11 +1,12 @@
 package telephony_providers_edges_did_pool
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"log"
 	"sync"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

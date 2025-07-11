@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 	"log"
 	"net/http"
 	"os"
@@ -14,13 +13,15 @@ import (
 	"syscall"
 	"time"
 
+	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func init() {
@@ -170,6 +171,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		}
 
 		setProviderMeta(meta)
+		setProviderConfig(data) // Store the provider configuration for later use
 
 		return meta, nil
 

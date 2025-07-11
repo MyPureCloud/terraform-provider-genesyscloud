@@ -37,7 +37,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -1483,6 +1483,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					tflog.Warn(g.ctx, fmt.Sprintf("Context canceled while sending ResourceInfo for resource ID: %s", id))
 					return fmt.Errorf("context cancelled")
 				}
+				tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent ResourceInfo to channel for resource ID: %s", id))
 
 				return nil
 			}
@@ -1512,9 +1513,49 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				}
 
 				lastErr = err
+
 				tflog.Error(g.ctx, fmt.Sprintf("Error on attempt %d for resource ID %s: %v", attempt+1, id, err))
 
-				if !util.IsTimeoutError(err) {
+				if util.IsTimeoutError(err) {
+					tflog.Debug(g.ctx, fmt.Sprintf("Timeout error detected for resource ID %s on attempt %d", id, attempt+1))
+
+					// On timeout errors, try to add new client connections to the existing pool
+					if attempt == 0 {
+						tflog.Debug(g.ctx, fmt.Sprintf("Attempting to add new client connections to pool for resource ID: %s", id))
+
+						// Get the current version from provider meta
+						version := "1.0.0" // Default version
+						if providerMeta, ok := g.meta.(*provider.ProviderMeta); ok && providerMeta.Version != "" {
+							version = providerMeta.Version
+						}
+
+						// Call the pool's adjustment method
+						provider.SdkClientPool.AdjustPoolForTimeout(version)
+
+						// Add a small delay to allow the new clients to be available
+						tflog.Debug(g.ctx, fmt.Sprintf("Waiting 5 seconds for new clients to be available for resource ID: %s", id))
+						select {
+						case <-time.After(5 * time.Second):
+							tflog.Debug(g.ctx, fmt.Sprintf("Pool adjustment delay completed for resource ID: %s", id))
+						case <-ctx.Done():
+							tflog.Warn(g.ctx, fmt.Sprintf("[getResourcesForType] Context cancelled during pool adjustment delay for resource ID: %s", id))
+							return
+						}
+					}
+					// Exponential backoff for retryable errors
+					if attempt < maxRetries-1 {
+						backoffDuration := time.Duration(1<<attempt) * time.Second
+						tflog.Info(g.ctx, fmt.Sprintf("Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration))
+
+						select {
+						case <-time.After(backoffDuration):
+							tflog.Debug(g.ctx, fmt.Sprintf("Backoff completed for resource ID: %s", id))
+						case <-ctx.Done():
+							tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled during backoff for resource ID: %s", id))
+							return
+						}
+					}
+				} else {
 					tflog.Error(g.ctx, fmt.Sprintf("Non-retryable error for resource ID %s, sending to error channel", id))
 					// Non-retryable error, send to error channel
 					select {
@@ -1532,20 +1573,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					}
 					return
 				}
-
-				// Exponential backoff for retryable errors
-				if attempt < maxRetries-1 {
-					backoffDuration := time.Duration(1<<attempt) * time.Second
-					tflog.Info(g.ctx, fmt.Sprintf("Retrying resource %s (attempt %d/%d) after %v backoff", id, attempt+1, maxRetries, backoffDuration))
-
-					select {
-					case <-time.After(backoffDuration):
-						tflog.Debug(g.ctx, fmt.Sprintf("Backoff completed for resource ID: %s", id))
-					case <-ctx.Done():
-						tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled during backoff for resource ID: %s", id))
-						return
-					}
-				}
 			}
 
 			// If we get here, all retries failed
@@ -1560,12 +1587,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					ErrorMessage:  fmt.Sprintf("Failed after %d retries: %v", maxRetries, lastErr),
 					IsTimeout:     util.IsTimeoutError(lastErr),
 				}:
-					tflog.Error(g.ctx, fmt.Sprintf("Failed to get state for %s instance %s after %d retries due to error: %v", resType, id, maxRetries, lastErr))
+					tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent final error to channel for resource ID: %s", id))
 				case <-ctx.Done():
 					tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while sending final error for resource ID: %s", id))
+					return
 				}
 
 			}
+
 		}(id, resMeta)
 	}
 

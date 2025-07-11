@@ -2,12 +2,13 @@ package guide
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"os"
-	"testing"
 )
 
 func TestAccDataSourceGuide(t *testing.T) {
@@ -15,6 +16,12 @@ func TestAccDataSourceGuide(t *testing.T) {
 		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
 		return
 	}
+
+	if !GuideFtIsEnabled() {
+		t.Skip("Skipping test as guide feature toggle is not enabled")
+		return
+	}
+
 	var (
 		guideResourceLabel   = "test-guide"
 		guideDataSourceLabel = "guide-data"

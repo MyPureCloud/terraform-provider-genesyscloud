@@ -3,13 +3,14 @@ package telephony_providers_edges_site
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -19,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 var (

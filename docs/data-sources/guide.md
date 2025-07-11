@@ -14,7 +14,7 @@ Data source for Genesys Cloud Guide. Select a guide by name.
 
 ```terraform
 data "genesyscloud_guide" "sample_guide" {
-  name = "guide name"
+  name = "Cx as Code Guide"
 }
 ```
 

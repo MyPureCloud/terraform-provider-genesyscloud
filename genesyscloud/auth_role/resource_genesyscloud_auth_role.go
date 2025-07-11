@@ -3,6 +3,9 @@ package auth_role
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -10,13 +13,11 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -51,9 +52,9 @@ func createAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	policies := buildSdkRolePermPolicies(d)
 	if policies != nil {
 		for _, policy := range *policies {
-			resp, err := validatePermissionPolicy(proxy, policy)
+			_, err := validatePermissionPolicy(proxy, policy)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
+				log.Printf("Permission policy may be missing or not assigned: %s, ensure your org has the required product for this permission", err)
 			}
 		}
 	}
@@ -139,9 +140,9 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 	policies := buildSdkRolePermPolicies(d)
 	if policies != nil {
 		for _, policy := range *policies {
-			resp, err := validatePermissionPolicy(proxy, policy)
+			_, err := validatePermissionPolicy(proxy, policy)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Permission policy not found: %s, ensure your org has the required product for this permission", err), resp)
+				log.Printf("Permission policy might be missing or not assigned: %s, ensure your org has the required product for this permission", err)
 			}
 		}
 	}
