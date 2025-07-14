@@ -27,9 +27,15 @@ type registerTestInstance struct {
 func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
-	providerResources["genesyscloud_knowledge_knowledgebase"] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
-	providerDataSources[ResourceType] = dataSourceKnowledgeLabel()
+	providerResources[knowledgeKnowledgebase.ResourceType] = knowledgeKnowledgebase.ResourceKnowledgeKnowledgebase()
 	providerResources[ResourceType] = ResourceKnowledgeLabel()
+}
+
+// registerTestDataSources registers all data sources used in the tests
+func (r *registerTestInstance) registerTestDataSources() {
+	r.resourceMapMutex.Lock()
+	defer r.resourceMapMutex.Unlock()
+	providerDataSources[ResourceType] = dataSourceKnowledgeLabel()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -39,7 +45,7 @@ func initTestResources() {
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
-
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

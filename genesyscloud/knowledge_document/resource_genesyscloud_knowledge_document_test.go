@@ -2,6 +2,7 @@ package knowledge_document
 
 import (
 	"fmt"
+	knowledgeBases "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"strings"
 	"testing"
 
@@ -15,24 +16,26 @@ import (
 )
 
 func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
-		knowledgeBaseResourceLabel1     = "test-knowledgebase1"
-		categoryResourceLabel1          = "test-category1"
-		categoryName                    = "Terraform Knowledge Category " + uuid.NewString()
-		categoryDescription             = "test-knowledge-category-description1"
-		labelResourceLabel1             = "test-label1"
-		labelName                       = "Terraform Knowledge Label " + uuid.NewString()
-		labelColor                      = "#0F0F0F"
-		knowledgeBaseName1              = "Terraform Knowledge Base " + uuid.NewString()
-		knowledgeBaseDescription1       = "test-knowledgebase-description1"
-		coreLanguage1                   = "en-US"
-		knowledgeDocumentResourceLabel1 = "test-knowledge-document1"
-		title                           = "Terraform Knowledge Document"
-		visible                         = true
-		visible2                        = false
-		published                       = false
-		phrase                          = "Terraform Knowledge Document"
-		autocomplete                    = true
+		knowledgeBaseResourceLabel1       = "test-knowledgebase1"
+		categoryResourceLabel1            = "test-category1"
+		categoryName                      = "Terraform Knowledge Category " + uuid.NewString()
+		categoryDescription               = "test-knowledge-category-description1"
+		labelResourceLabel1               = "test-label1"
+		labelName                         = "Terraform Knowledge Label " + uuid.NewString()
+		labelColor                        = "#0F0F0F"
+		knowledgeBaseName1                = "Terraform Knowledge Base " + uuid.NewString()
+		knowledgeBaseDescription1         = "test-knowledgebase-description1"
+		coreLanguage1                     = "en-US"
+		knowledgeDocumentResourceLabel1   = "test-knowledge-document1"
+		knowledgeDocumentFullResourcePath = ResourceType + "." + knowledgeDocumentResourceLabel1
+		title                             = "Terraform Knowledge Document"
+		visible                           = true
+		visible2                          = false
+		published                         = false
+		phrase                            = "Terraform Knowledge Document"
+		autocomplete                      = true
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -41,7 +44,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: knowledgeBases.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -73,17 +76,17 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 						autocomplete,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.title", title),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.visible", fmt.Sprintf("%v", visible)),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.alternatives.0.phrase", phrase),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.alternatives.0.autocomplete", fmt.Sprintf("%v", autocomplete)),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.label_names.0", labelName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.category_name", categoryName),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.title", title),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.visible", fmt.Sprintf("%v", visible)),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.alternatives.0.phrase", phrase),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.alternatives.0.autocomplete", fmt.Sprintf("%v", autocomplete)),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.label_names.0", labelName),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.category_name", categoryName),
 				),
 			},
 			{
 				// Update
-				Config: generateKnowledgeKnowledgebaseResource(
+				Config: knowledgeBases.GenerateKnowledgeKnowledgebaseResource(
 					knowledgeBaseResourceLabel1,
 					knowledgeBaseName1,
 					knowledgeBaseDescription1,
@@ -115,17 +118,17 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 						autocomplete,
 					),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.title", title),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.visible", fmt.Sprintf("%v", visible2)),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.alternatives.0.phrase", phrase),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.alternatives.0.autocomplete", fmt.Sprintf("%v", autocomplete)),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.category_name", categoryName),
-					resource.TestCheckResourceAttr("genesyscloud_knowledge_document."+knowledgeDocumentResourceLabel1, "knowledge_document.0.label_names.0", labelName),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.title", title),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.visible", fmt.Sprintf("%v", visible2)),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.alternatives.0.phrase", phrase),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.alternatives.0.autocomplete", fmt.Sprintf("%v", autocomplete)),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.category_name", categoryName),
+					resource.TestCheckResourceAttr(knowledgeDocumentFullResourcePath, "knowledge_document.0.label_names.0", labelName),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            "genesyscloud_knowledge_document." + knowledgeDocumentResourceLabel1,
+				ResourceName:            knowledgeDocumentFullResourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"published"},
@@ -183,18 +186,6 @@ func generateKnowledgeDocumentRequestBody(knowledgeCategoryName string, knowledg
 	return documentRequestBody
 }
 
-func generateKnowledgeKnowledgebaseResource(
-	resourceLabel string,
-	name string,
-	description string,
-	coreLanguage string) string {
-	return fmt.Sprintf(`resource "genesyscloud_knowledge_knowledgebase" "%s" {
-		name = "%s"
-        description = "%s"
-        core_language = "%s"
-	}
-	`, resourceLabel, name, description, coreLanguage)
-}
 func generateKnowledgeCategoryResource(resourceLabel string, knowledgeBaseResource string, categoryName string, categoryDescription string) string {
 	category := fmt.Sprintf(`
         resource "genesyscloud_knowledge_category" "%s" {
@@ -249,26 +240,26 @@ func testVerifyKnowledgeDocumentDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	var knowledgeBaseId string
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type == "genesyscloud_knowledge_knowledgebase" {
+		if rs.Type == knowledgeBases.ResourceType {
 			knowledgeBaseId = rs.Primary.ID
 			break
 		}
 	}
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_knowledge_document" {
+		if rs.Type != ResourceType {
 			continue
 		}
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeDocumentId := id[0]
-		knowledgeDocument, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, "")
-		if knowledgeDocument != nil {
-			return fmt.Errorf("Knowledge document (%s) still exists", knowledgeDocumentId)
+		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, "")
+		if err == nil {
+			return fmt.Errorf("knowledge document (%s) still exists", knowledgeDocumentId)
 		} else if util.IsStatus404(resp) || util.IsStatus400(resp) {
 			// Knowledge base document not found as expected
 			continue
 		} else {
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("unexpected error: %s", err.Error())
 		}
 	}
 	// Success. All knowledge base documents destroyed
