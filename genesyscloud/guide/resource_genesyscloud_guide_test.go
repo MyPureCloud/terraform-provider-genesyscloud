@@ -42,6 +42,7 @@ func TestAccResourceGuideManual(t *testing.T) {
 					name,
 					source,
 					"",
+					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
@@ -83,6 +84,7 @@ func TestAccResourceGuidePrompt(t *testing.T) {
 					name,
 					source,
 					prompt,
+					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),

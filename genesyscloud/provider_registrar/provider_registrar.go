@@ -2,6 +2,7 @@ package provider_registrar
 
 import (
 	"sync"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -34,12 +35,8 @@ import (
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
-<<<<<<< HEAD
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	guideVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide_version"
-=======
-	guide "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
->>>>>>> 302850b1 (Added functionality to generate ai prompt using the prompt source)
 	idpAdfs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_adfs"
 	idpGeneric "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_gsuite"

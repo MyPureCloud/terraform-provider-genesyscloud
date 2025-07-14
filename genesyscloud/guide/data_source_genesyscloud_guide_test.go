@@ -40,6 +40,7 @@ func TestAccDataSourceGuide(t *testing.T) {
 					guideName,
 					guideSource,
 					"",
+					"",
 				) + generateGuideDataSource(
 					guideDataSourceLabel,
 					guideName,

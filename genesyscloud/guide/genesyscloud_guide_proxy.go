@@ -1,13 +1,12 @@
 package guide
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
@@ -21,11 +20,8 @@ type getGuideByIdFunc func(ctx context.Context, p *guideProxy, id string) (*Guid
 type getGuideByNameFunc func(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error)
 type deleteGuideFunc func(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
 type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
-
 type createGuideJobFunc func(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error)
 type getGuideJobByIdFunc func(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error)
-
-// Guide Version
 type createGuideVersionFunc func(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error)
 
 type guideProxy struct {
@@ -105,7 +101,6 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides"
 	var allGuides []Guide
 
-	// Create URL with query parameters
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing URL: %v", err)
@@ -120,12 +115,10 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(action, u.String(), nil)
+	req, err := createHTTPRequest(action, u.String(), nil, p)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
+		return nil, nil, err
 	}
-
-	req = setRequestHeader(req, p)
 
 	body, resp, err := callAPI(ctx, client, req)
 	if err != nil {
@@ -133,8 +126,8 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 	}
 
 	var guides GuideEntityListing
-	if err := json.Unmarshal([]byte(body), &guides); err != nil {
-		return nil, resp, fmt.Errorf("error unmarshaling response: %v", err)
+	if err := unmarshalResponse(body, &guides); err != nil {
+		return nil, resp, err
 	}
 
 	if guides.Entities == nil {
@@ -153,8 +146,8 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 		}
 
 		var respBody GuideEntityListing
-		if err := json.Unmarshal([]byte(body), &respBody); err != nil {
-			return nil, resp, fmt.Errorf("error unmarshaling response: %v", err)
+		if err := unmarshalResponse(body, &respBody); err != nil {
+			return nil, resp, err
 		}
 
 		if respBody.Entities != nil {
@@ -169,77 +162,18 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 	return &allGuides, resp, nil
 }
 
-// Create Functions
-
 func createGuideFn(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
-	return sdkPostGuide(ctx, p, guide)
-}
-
-func sdkPostGuide(ctx context.Context, p *guideProxy, body *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
-	client := &http.Client{}
-	action := http.MethodPost
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides"
-
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error marshaling guide: %v", err)
-	}
-
-	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req = setRequestHeader(req, p)
-
-	respBody, resp, err := callAPI(ctx, client, req)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	var guide Guide
-	if err := json.Unmarshal(respBody, &guide); err != nil {
-		return nil, resp, fmt.Errorf("error unmarshaling response: %v", err)
-	}
-
-	return &guide, resp, nil
+	return makeAPIRequest[Guide](ctx, http.MethodPost, baseURL, guide, p)
 }
-
-// Read Functions
 
 func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
 	if guide := rc.GetCacheItem(p.guideCache, id); guide != nil {
 		return guide, nil, nil
 	}
-	return sdkGetGuideById(ctx, p, id)
-}
-
-func sdkGetGuideById(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
-	client := &http.Client{}
-	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id
-
-	req, err := http.NewRequest(action, baseURL, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req = setRequestHeader(req, p)
-
-	respBody, resp, err := callAPI(ctx, client, req)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	var guide Guide
-	if err := json.Unmarshal(respBody, &guide); err != nil {
-		return nil, resp, fmt.Errorf("error unmarshaling response: %v", err)
-	}
-
-	return &guide, resp, nil
+	return makeAPIRequest[Guide](ctx, http.MethodGet, baseURL, nil, p)
 }
-
-// Get By Name Functions
 
 func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
 	guides, resp, err := getAllGuidesFn(ctx, p, name)
@@ -263,64 +197,21 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 	return "", false, resp, fmt.Errorf("unable to find guide with name %s", name)
 }
 
-// Delete Functions
-
 func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
-	return sdkDeleteGuide(ctx, p, id)
-}
-
-func sdkDeleteGuide(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
-	client := &http.Client{}
-	action := http.MethodDelete
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id + "/jobs"
-
-	req, err := http.NewRequest(action, baseURL, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req = setRequestHeader(req, p)
-
-	respBody, resp, err := callAPI(ctx, client, req)
+	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodDelete, baseURL, nil, p)
 	if err != nil {
 		return nil, resp, err
 	}
-
-	var jobResponse DeleteObjectJob
-	err = json.Unmarshal(respBody, &jobResponse)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error unmarshaling response: %v", err)
-	}
 	jobResponse.GuideId = id
-
-	return &jobResponse, resp, nil
+	return jobResponse, resp, nil
 }
 
 func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
-	return sdkGetJobDeletionStatus(ctx, p, jobId, guideId)
-}
-
-func sdkGetJobDeletionStatus(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
-	client := &http.Client{}
-	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/jobs/" + jobId
-
-	req, err := http.NewRequest(action, baseURL, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req = setRequestHeader(req, p)
-
-	respBody, resp, err := callAPI(ctx, client, req)
+	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodGet, baseURL, nil, p)
 	if err != nil {
 		return nil, resp, err
-	}
-
-	var jobResponse DeleteObjectJob
-	err = json.Unmarshal(respBody, &jobResponse)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error unmarshaling response: %v", err)
 	}
 	jobResponse.GuideId = guideId
 
@@ -328,114 +219,51 @@ func sdkGetJobDeletionStatus(ctx context.Context, p *guideProxy, jobId string, g
 		rc.DeleteCacheItem(p.guideCache, guideId)
 	}
 
-	return &jobResponse, resp, nil
+	return jobResponse, resp, nil
 }
-
-// Create Job Functions
 
 func createGuideJobFn(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return sdkCreateGuideJob(ctx, p, guideJob)
-}
-
-func sdkCreateGuideJob(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
-	client := &http.Client{}
-	action := http.MethodPost
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs"
-
-	jsonBody, err := json.Marshal(guideJob)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error marshaling guide job: %v", err)
-	}
-
-	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating guide job request: %v", err)
-	}
-
-	req = setRequestHeader(req, p)
-
-	respBody, resp, err := callAPI(ctx, client, req)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	var job JobResponse
-	err = json.Unmarshal(respBody, &job)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error unmarshaling guide job: %v", err)
-	}
-
-	return &job, resp, nil
+	return makeAPIRequest[JobResponse](ctx, http.MethodPost, baseURL, guideJob, p)
 }
-
-// Get Job Functions
 
 func getGuideJobByIdFn(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return sdkGetGuideJobById(ctx, p, id)
+	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs/" + id
+	return makeAPIRequest[JobResponse](ctx, http.MethodGet, baseURL, nil, p)
 }
 
-func sdkGetGuideJobById(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
-	client := &http.Client{}
-	action := http.MethodGet
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs/" + id
+func createGuideVersionFn(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/versions"
+	return makeAPIRequest[VersionResponse](ctx, http.MethodPost, baseURL, guideVersion, p)
+}
 
-	req, err := http.NewRequest(action, baseURL, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
+// makeAPIRequest performs a complete API request for any of the guide endpoints
+func makeAPIRequest[T any](ctx context.Context, method, url string, requestBody interface{}, p *guideProxy) (*T, *platformclientv2.APIResponse, error) {
+	var req *http.Request
+	var err error
+
+	if requestBody != nil {
+		req, err = marshalAndCreateRequest(method, url, requestBody, p)
+	} else {
+		req, err = createHTTPRequest(method, url, nil, p)
 	}
 
-	req = setRequestHeader(req, p)
+	if err != nil {
+		return nil, nil, err
+	}
 
+	client := &http.Client{}
 	respBody, resp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	var job JobResponse
-	err = json.Unmarshal(respBody, &job)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error unmarshaling guide job: %v", err)
+	var result T
+	if err := unmarshalResponse(respBody, &result); err != nil {
+		return nil, resp, err
 	}
 
-	return &job, resp, nil
-}
-
-// Guide Version
-
-func createGuideVersionFn(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
-	return sdkPostGuideVersion(guideVersion, p, guideId)
-}
-
-func sdkPostGuideVersion(body *CreateGuideVersionRequest, p *guideProxy, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	action := http.MethodPost
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/versions"
-
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
-	}
-
-	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req = setRequestHeader(req, p)
-
-	respBody, apiResp, err := callAPI(context.Background(), client, req)
-	if err != nil {
-		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
-	}
-
-	var guideVersion VersionResponse
-	if err := json.Unmarshal(respBody, &guideVersion); err != nil {
-		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
-	}
-
-	return &guideVersion, apiResp, nil
+	return &result, resp, nil
 }
 
 // callAPI is a helper function which will be removed when the endpoints are public

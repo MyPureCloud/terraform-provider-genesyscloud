@@ -49,12 +49,32 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	name := d.Get("name").(string)
 	source := d.Get("source").(string)
 
-	log.Printf("Creating Guide: %s", name)
-
 	guideReq := &CreateGuide{
 		Name:   &name,
 		Source: &source,
 	}
+
+	// If source is Prompt, a content generation job will need to be executed
+	// This will return the instruction, variables, and resources for the guide, which is used to create a guide version
+	var versionReq *CreateGuideVersionRequest
+	if source == "Prompt" {
+		log.Printf("Source is Prompt, creating guide job for Guide: %s", name)
+		content, diagErr := createGuideJob(ctx, d, meta, name)
+		if diagErr != nil {
+			return diagErr
+		}
+		versionReq = &CreateGuideVersionRequest{
+			Instruction: content.Instruction,
+		}
+	} else {
+		// For non-Prompt sources, create a default version with empty instruction
+		log.Printf("Source is not Prompt, creating default guide version for Guide: %s", name)
+		versionReq = &CreateGuideVersionRequest{
+			Instruction: " ",
+		}
+	}
+
+	log.Printf("Creating Guide: %s", name)
 
 	guide, resp, err := proxy.createGuide(ctx, guideReq)
 	if err != nil {
@@ -64,27 +84,12 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	d.SetId(*guide.Id)
 	log.Printf("Created guide: %s with ID: %s", *guide.Name, *guide.Id)
 
-	// If source is Prompt, a content generation job will need to be executed
-	// This will return the instruction, variables, and resources for the guide, which is used to create a guide version
-	if source == "Prompt" {
-		content, diagErr := createGuideJob(ctx, d, meta, name)
-		if diagErr != nil {
-			return diagErr
-		}
-
-		versionReq := &CreateGuideVersionRequest{
-			Instruction: content.Instruction,
-			Variables:   content.Variables,
-			Resources:   content.Resources,
-		}
-
-		version, resp, err := proxy.createGuideVersion(ctx, versionReq, d.Id())
-		if err != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create guide version for %s: %s", name, err), resp)
-		}
-
-		log.Printf("Created guide version %s for guide %s", version.Version, name)
+	version, resp, err := proxy.createGuideVersion(ctx, versionReq, d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create guide version for %s: %s", name, err), resp)
 	}
+
+	log.Printf("Created guide version %s for guide %s", version.Version, name)
 
 	return readGuide(ctx, d, meta)
 }

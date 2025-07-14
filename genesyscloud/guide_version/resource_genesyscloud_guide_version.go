@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -73,7 +74,28 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	version, resp, err := proxy.createGuideVersion(ctx, versionReq, guideId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version | error: %s", err), resp)
+		if resp.StatusCode == 409 && strings.Contains(err.Error(), "Latest version is not in Production Ready state") {
+			log.Printf("Got 409 error - latest version is not in Production Ready state. Getting latest saved version and updating it instead.")
+
+			guide, resp, err := proxy.getGuideById(ctx, guideId)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide %s: %v", guideId, err), resp)
+			}
+
+			if guide.LatestSavedVersion == nil || guide.LatestSavedVersion.Version == nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Guide %s has no latest saved version to update", guideId), resp)
+			}
+
+			latestSavedVersionId := *guide.LatestSavedVersion.Version
+			log.Printf("Found latest saved version %s for guide %s, updating it instead of creating new version", latestSavedVersionId, guideId)
+
+			// Set the ID to the latest saved version so we can update it
+			d.SetId(guideId + "/" + latestSavedVersionId)
+
+			// Update the existing version instead of creating a new one
+			return updateGuideVersion(ctx, d, meta)
+		}
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
 	}
 
 	version.Id = &version.Version
@@ -82,6 +104,14 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("Created Guide Version: %s for Guide: %s", *version.Id, guideId)
+
+	// Trigger a guide refresh to ensure the guide's latest_saved_version is updated
+	// This is necessary because the API should automatically update the guide's latest saved version
+	// when a new version is created, but we want to ensure this happens consistently
+	if err := refreshGuideAfterVersionCreation(ctx, meta, guideId); err != nil {
+		log.Printf("Warning: Failed to refresh guide after version creation: %v", err)
+		// Don't fail the operation, just log the warning
+	}
 
 	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
 		log.Printf("Guide Version is not Draft")
@@ -155,6 +185,14 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	_ = d.Set("guide_id", version.Guide.Id)
+
+	// Trigger a guide refresh to ensure the guide's latest_saved_version is updated
+	// This is necessary because the API should automatically update the guide's latest saved version
+	// when a version is updated, but we want to ensure this happens consistently
+	if err := refreshGuideAfterVersionCreation(ctx, meta, guideId); err != nil {
+		log.Printf("Warning: Failed to refresh guide after version update: %v", err)
+		// Don't fail the operation, just log the warning
+	}
 
 	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
 		log.Printf("Guide Version is not Draft")

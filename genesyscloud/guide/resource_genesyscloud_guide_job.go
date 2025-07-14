@@ -21,7 +21,7 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 	url := d.Get("url").(string)
 
 	if prompt == "" && url == "" {
-		return nil, diag.Errorf("either prompt or url is required when source is set to Prompt")
+		return nil, diag.Errorf("either prompt or url is required when source is set to Prompt to generate guide content")
 	}
 
 	jobReq := buildGuideJobRequest(prompt, url)
