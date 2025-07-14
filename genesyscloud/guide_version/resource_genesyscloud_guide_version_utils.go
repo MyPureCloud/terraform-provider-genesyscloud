@@ -1,15 +1,12 @@
 package guide_version
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 func parseId(id string) (string, string, error) {
@@ -212,40 +209,6 @@ func flattenGuideVersionVariables(variables []Variable) []interface{} {
 	}
 
 	return result
-}
-
-// refreshGuideAfterVersionCreation triggers a refresh of the guide to ensure
-// the latest_saved_version is updated after creating a new version
-func refreshGuideAfterVersionCreation(ctx context.Context, meta interface{}, guideId string) error {
-	// Get the client config from the meta interface
-	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
-
-	// Make a direct HTTP request to refresh the guide
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	baseURL := skdConfig.BasePath + "/api/v2/guides/" + guideId
-	req, err := http.NewRequest(http.MethodGet, baseURL, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request to refresh guide %s: %v", guideId, err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+skdConfig.AccessToken)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to refresh guide %s: %v", guideId, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("failed to refresh guide %s: HTTP %d", guideId, resp.StatusCode)
-	}
-
-	log.Printf("Successfully refreshed guide %s after version creation", guideId)
-	return nil
 }
 
 // Structs

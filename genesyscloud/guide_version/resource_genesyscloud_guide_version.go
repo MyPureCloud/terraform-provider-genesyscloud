@@ -89,7 +89,6 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 			latestSavedVersionId := *guide.LatestSavedVersion.Version
 			log.Printf("Found latest saved version %s for guide %s, updating it instead of creating new version", latestSavedVersionId, guideId)
 
-			// Set the ID to the latest saved version so we can update it
 			d.SetId(guideId + "/" + latestSavedVersionId)
 
 			// Update the existing version instead of creating a new one
@@ -104,14 +103,6 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("Created Guide Version: %s for Guide: %s", *version.Id, guideId)
-
-	// Trigger a guide refresh to ensure the guide's latest_saved_version is updated
-	// This is necessary because the API should automatically update the guide's latest saved version
-	// when a new version is created, but we want to ensure this happens consistently
-	if err := refreshGuideAfterVersionCreation(ctx, meta, guideId); err != nil {
-		log.Printf("Warning: Failed to refresh guide after version creation: %v", err)
-		// Don't fail the operation, just log the warning
-	}
 
 	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
 		log.Printf("Guide Version is not Draft")
@@ -156,7 +147,12 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 			_ = d.Set("variables", variablesList)
 		}
 
-		log.Printf("Read Guide Version %s", d.Id())
+		guide, resp, err := proxy.getGuideById(ctx, guideId)
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide %s: %v", guideId, err), resp))
+		}
+
+		log.Printf("Read Guide Version %s for guide %s", d.Id(), *guide.Name)
 		return cc.CheckState(d)
 	})
 }
@@ -186,14 +182,6 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	_ = d.Set("guide_id", version.Guide.Id)
 
-	// Trigger a guide refresh to ensure the guide's latest_saved_version is updated
-	// This is necessary because the API should automatically update the guide's latest saved version
-	// when a version is updated, but we want to ensure this happens consistently
-	if err := refreshGuideAfterVersionCreation(ctx, meta, guideId); err != nil {
-		log.Printf("Warning: Failed to refresh guide after version update: %v", err)
-		// Don't fail the operation, just log the warning
-	}
-
 	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
 		log.Printf("Guide Version is not Draft")
 		return publishGuideVersion(ctx, d, meta)
@@ -201,10 +189,6 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("Updated Guide Version")
 	return readGuideVersion(ctx, d, meta)
-}
-
-func deleteGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
 }
 
 func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -254,4 +238,8 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	return readGuideVersion(ctx, d, meta)
+}
+
+func deleteGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return nil
 }
