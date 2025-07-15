@@ -264,6 +264,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 
 	// Test Resource Exporter
 	testResourceExporter := GenesysCloudResourceExporter{
+		ctx:                context.Background(),
 		filterType:         IncludeResources,
 		resourceTypeFilter: IncludeFilterByResourceType,
 		resourceFilter:     IncludeFilterResourceByRegex,
@@ -445,6 +446,7 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 
 	gre := &GenesysCloudResourceExporter{
+		ctx:                  context.Background(),
 		exportFormat:         "json",
 		splitFilesByResource: true,
 	}
@@ -914,6 +916,7 @@ func TestUnitMatchesFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			exporter := &GenesysCloudResourceExporter{
 				exportFormat: tt.exportFormat,
+				ctx:          context.Background(),
 			}
 			result := exporter.matchesExportFormat(tt.formats...)
 			if result != tt.expected {
