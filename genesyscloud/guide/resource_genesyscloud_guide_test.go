@@ -3,13 +3,14 @@ package guide
 import (
 	"context"
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"os"
-	"testing"
 )
 
 func TestAccResourceGuide(t *testing.T) {
@@ -17,6 +18,12 @@ func TestAccResourceGuide(t *testing.T) {
 		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
 		return
 	}
+
+	if !GuideFtIsEnabled() {
+		t.Skip("Skipping test as guide feature toggle is not enabled")
+		return
+	}
+
 	var (
 		resourceLabel = "guide"
 
@@ -69,13 +76,4 @@ func testVerifyGuideDestroyed(state *terraform.State) error {
 		}
 	}
 	return nil
-}
-
-// GenerateGuideResource generates terraform for a guide resource
-func GenerateGuideResource(resourceID string, name string, source string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		name = "%s"
-		source = "%s"
-	}
-	`, ResourceType, resourceID, name, source)
 }

@@ -2,6 +2,15 @@ package routing_queue
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
@@ -16,19 +25,11 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
-	"log"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"sync"
-	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 var (
@@ -1437,9 +1438,9 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_routing_queue" {
 			continue
 		}
-		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
+		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID, nil)
 		if queue != nil {
-			return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("queue (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
 			// Queue not found as expected
 			continue
@@ -1457,7 +1458,7 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_routing_queue" {
-			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
+			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID, nil)
 			if queue != nil {
 				return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {

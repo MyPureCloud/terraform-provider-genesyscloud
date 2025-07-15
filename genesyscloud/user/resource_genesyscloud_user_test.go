@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func TestAccResourceUserBasic(t *testing.T) {
@@ -573,7 +573,11 @@ func TestAccResourceUserPhone(t *testing.T) {
 		Description:   util.NullValue, // No description
 	}
 
-	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber1)
+	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	if err != nil {
+		t.Log(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1452,7 +1456,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 	})
 
 	if diagErr != nil {
-		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+		return fmt.Errorf("%v", diagErr)
 	}
 
 	// Success. All users destroyed
@@ -1473,6 +1477,16 @@ func TestAccResourceUserPassword(t *testing.T) {
 		lastPasswordUpdate   string
 	)
 
+	err := setUserTestsActiveEnvVar()
+	if err != nil {
+		t.Logf("failed to set env var: %s", err.Error())
+	}
+	defer func() {
+		if err = unsetUserTestsActiveEnvVar(); err != nil {
+			t.Logf("failed to unset env var: %s", err.Error())
+		}
+	}()
+
 	// Reset tracking variables
 	passwordUpdateCalled = false
 	lastPasswordUpdate = ""
@@ -1490,8 +1504,7 @@ func TestAccResourceUserPassword(t *testing.T) {
 	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
 		passwordUpdateCalled = true
 		lastPasswordUpdate = password
-		resp, err := originalUpdatePassword(ctx, p, id, password)
-		return resp, err
+		return originalUpdatePassword(ctx, p, id, password)
 	}
 
 	// Initialize internal proxy
@@ -1619,8 +1632,16 @@ func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 		Description:   util.NullValue, // No description
 	}
 
-	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
-	extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber2)
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber1)
+	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	if err != nil {
+		t.Log(err)
+	}
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber2)
+	err = extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber2)
+	if err != nil {
+		t.Log(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

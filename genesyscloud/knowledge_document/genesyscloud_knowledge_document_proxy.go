@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"net/url"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 var internalProxy *knowledgeDocumentProxy
@@ -27,7 +28,6 @@ type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowl
 type createKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
 type deleteKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error)
 type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
-type getAllVariationsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId, documentId string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error)
 
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
@@ -43,7 +43,6 @@ type knowledgeDocumentProxy struct {
 	createKnowledgebaseDocumentVersionsAttr  createKnowledgebaseDocumentVersionsFunc
 	deleteKnowledgeKnowledgebaseDocumentAttr deleteKnowledgeKnowledgebaseDocumentFunc
 	updateKnowledgeKnowledgebaseDocumentAttr updateKnowledgeKnowledgebaseDocumentFunc
-	getAllVariationsAttr                     getAllVariationsFunc
 	knowledgeDocumentCache                   rc.CacheInterface[platformclientv2.Knowledgedocumentresponse]
 	knowledgeLabelCache                      rc.CacheInterface[platformclientv2.Labelresponse]
 	knowledgeCategoryCache                   rc.CacheInterface[platformclientv2.Categoryresponse]
@@ -117,10 +116,6 @@ func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx contex
 	return p.createKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, body)
 }
 
-func (p *knowledgeDocumentProxy) createKnowledgebaseDocumentVersions(ctx context.Context, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error) {
-	return p.createKnowledgebaseDocumentVersionsAttr(ctx, p, knowledgeBaseId, documentId, body)
-}
-
 func (p *knowledgeDocumentProxy) deleteKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, documentId)
 }
@@ -146,11 +141,6 @@ func getKnowledgeKnowledgebaseLabelsFn(ctx context.Context, p *knowledgeDocument
 	pageSize := 1
 	labels, resp, err := p.KnowledgeApi.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
 	return labels, resp, err
-}
-
-// getVariationRequest retrieves all Genesys Cloud variation request
-func (p *knowledgeDocumentProxy) getAllVariations(ctx context.Context, knowledgeBaseId, documentId string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
-	return p.getAllVariationsAttr(ctx, p, knowledgeBaseId, documentId, expand)
 }
 
 func getKnowledgeKnowledgebaseLabelFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {

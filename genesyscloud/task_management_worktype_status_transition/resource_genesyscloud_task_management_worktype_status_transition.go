@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -128,14 +128,18 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 
 	diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		workitemStatus, resp, err = proxy.updateTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
-		if err != nil {
-			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
-			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+		if err == nil {
+			return nil
 		}
-		return nil
+		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
+		// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
+		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
+			return retry.RetryableError(builtDiagErr)
+		}
+		if util.IsStatus409(resp) {
+			return retry.RetryableError(builtDiagErr)
+		}
+		return retry.NonRetryableError(builtDiagErr)
 	})
 	if diagErr != nil {
 		return diagErr

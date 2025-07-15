@@ -3,13 +3,14 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -263,6 +264,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 
 	// Test Resource Exporter
 	testResourceExporter := GenesysCloudResourceExporter{
+		ctx:                context.Background(),
 		filterType:         IncludeResources,
 		resourceTypeFilter: IncludeFilterByResourceType,
 		resourceFilter:     IncludeFilterResourceByRegex,
@@ -444,6 +446,7 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
 
 	gre := &GenesysCloudResourceExporter{
+		ctx:                  context.Background(),
 		exportFormat:         "json",
 		splitFilesByResource: true,
 	}
@@ -649,7 +652,7 @@ func TestContainsElement(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := exporter.containsElement(tt.elements, tt.resType, tt.resLabel, tt.originalLabel)
+			result := exporter.containsElementUnsafe(tt.elements, tt.resType, tt.resLabel, tt.originalLabel)
 			assert.Equal(t, tt.expectedResult, result)
 		})
 	}
@@ -913,6 +916,7 @@ func TestUnitMatchesFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			exporter := &GenesysCloudResourceExporter{
 				exportFormat: tt.exportFormat,
+				ctx:          context.Background(),
 			}
 			result := exporter.matchesExportFormat(tt.formats...)
 			if result != tt.expected {

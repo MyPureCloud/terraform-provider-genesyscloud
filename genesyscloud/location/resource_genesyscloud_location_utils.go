@@ -1,13 +1,15 @@
 package location
 
 import (
+	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -158,4 +160,12 @@ func GenerateLocationAddress(street1, city, state, country, zip string) string {
 		zip_code = "%s"
 	}
 	`, street1, city, state, country, zip)
+}
+
+func shouldExportLocationAsData(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (bool, error) {
+	locationName := configMap["name"]
+	if locationName == "Default PCV Location" {
+		return true, nil
+	}
+	return false, nil
 }

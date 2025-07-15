@@ -189,6 +189,9 @@ func PhoneExporter() *resourceExporter.ResourceExporter {
 			"site_id":                {RefType: "genesyscloud_telephony_providers_edges_site"},
 			"phone_base_settings_id": {RefType: "genesyscloud_telephony_providers_edges_phonebasesettings"},
 		},
+		ExcludedAttributes: []string{
+			"line_base_settings_id",
+		},
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -205,6 +205,31 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourc
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)
 
 	return nil
+}
+
+// Thread-safe methods for accessing SanitizedResourceMap
+func (r *ResourceExporter) GetSanitizedResourceMap() ResourceIDMetaMap {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return r.SanitizedResourceMap
+}
+
+func (r *ResourceExporter) SetSanitizedResourceMap(resourceMap ResourceIDMetaMap) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	r.SanitizedResourceMap = resourceMap
+}
+
+func (r *ResourceExporter) RemoveFromSanitizedResourceMap(id string) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	delete(r.SanitizedResourceMap, id)
+}
+
+func (r *ResourceExporter) GetSanitizedResourceMapSize() int {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return len(r.SanitizedResourceMap)
 }
 
 func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings {
