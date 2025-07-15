@@ -289,19 +289,6 @@ func determineVarType(s *schema.Schema) string {
 	return varType
 }
 
-func WriteConfigForMrMo(jsonMap map[string]interface{}, path string) (diags diag.Diagnostics) {
-	sortedJsonMap := sortJSONMap(jsonMap)
-	dataJSONBytes, err := json.MarshalIndent(sortedJsonMap, "", "  ")
-	if err != nil {
-		diags = append(diags, diag.FromErr(err)...)
-		return
-	}
-
-	log.Printf("Writing export config file to %s", path)
-	diags = append(diags, files.WriteToFile(postProcessJsonBytes(dataJSONBytes), path)...)
-	return
-}
-
 func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 	sortedJsonMap := sortJSONMap(jsonMap)
 	dataJSONBytes, err := json.MarshalIndent(sortedJsonMap, "", "  ")
