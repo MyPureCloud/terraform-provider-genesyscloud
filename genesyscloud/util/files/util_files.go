@@ -181,6 +181,14 @@ func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
 
+	// Check if the path is an S3 URI
+	if IsS3Path(path) {
+		// For S3 paths, we need a context, so we'll use a background context
+		// In a real implementation, this should be passed from the calling function
+		ctx := context.Background()
+		return GetS3FileReader(ctx, path)
+	}
+
 	// Check if the path has a protocol scheme to call as an HTTP request
 	if u, err := url.ParseRequestURI(path); err == nil && u.Scheme != "" {
 		resp, err := http.Get(path)
@@ -269,14 +277,8 @@ func HashFileContent(path string) (string, error) {
 	}
 
 	hash := sha256.New()
-	if file == nil {
-		if _, err := io.Copy(hash, reader); err != nil {
-			return "", fmt.Errorf("unable to copy file content: %v", err.Error())
-		}
-	} else {
-		if _, err := io.Copy(hash, file); err != nil {
-			return "", fmt.Errorf("unable to copy file content: %v", err.Error())
-		}
+	if _, err := io.Copy(hash, reader); err != nil {
+		return "", fmt.Errorf("unable to copy file content: %v", err.Error())
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil

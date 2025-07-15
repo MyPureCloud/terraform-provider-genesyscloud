@@ -291,3 +291,150 @@ func testVerifyUserPromptsDestroyed(state *terraform.State) error {
 	// Success. All User Prompts destroyed
 	return nil
 }
+
+func TestAccResourceUserPromptS3File(t *testing.T) {
+	userPromptResourceLabel1 := "test-user_prompt_s3_file"
+	userPromptName1 := "TestUserPromptS3_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptDescription1 := "Test prompt with S3 audio file"
+	userPromptResourceLang1 := "en-us"
+	userPromptResourceText1 := "This is a test S3 greeting!"
+	userPromptResourceFileName1 := "s3://test-bucket/prompts/test-prompt-01.wav"
+	userPromptResourceFileName2 := "s3://test-bucket/prompts/test-prompt-02.wav"
+
+	userPromptAsset1 := UserPromptResourceStruct{
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName1),
+		FileContentHash: userPromptResourceFileName1,
+	}
+
+	userPromptAsset2 := UserPromptResourceStruct{
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(userPromptResourceFileName2),
+		FileContentHash: userPromptResourceFileName2,
+	}
+
+	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
+	userPromptResources2 := []*UserPromptResourceStruct{&userPromptAsset2}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create user prompt with an S3 audio file
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources1,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "resources.0.filename", userPromptResourceFileName1),
+				),
+			},
+			{
+				// Replace S3 audio file for the prompt
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources2,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "resources.0.filename", userPromptResourceFileName2),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            "genesyscloud_architect_user_prompt." + userPromptResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"resources"},
+			},
+		},
+		CheckDestroy: testVerifyUserPromptsDestroyed,
+	})
+}
+
+func TestAccResourceUserPromptMixedFiles(t *testing.T) {
+	userPromptResourceLabel1 := "test-user_prompt_mixed_files"
+	userPromptName1 := "TestUserPromptMixed_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptDescription1 := "Test prompt with mixed local and S3 files"
+	userPromptResourceLang1 := "en-us"
+	userPromptResourceLang2 := "es-es"
+	userPromptResourceText1 := "This is a test mixed greeting!"
+	userPromptResourceText2 := "¡Este es un saludo de prueba mixto!"
+	localFileName := testrunner.GetTestDataPath("resource", ResourceType, "test-prompt-01.wav")
+	s3FileName := "s3://test-bucket/prompts/test-prompt-es.wav"
+
+	userPromptAsset1 := UserPromptResourceStruct{
+		Language:        userPromptResourceLang1,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText1),
+		Filename:        strconv.Quote(localFileName),
+		FileContentHash: localFileName,
+	}
+
+	userPromptAsset2 := UserPromptResourceStruct{
+		Language:        userPromptResourceLang2,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText2),
+		Filename:        strconv.Quote(s3FileName),
+		FileContentHash: s3FileName,
+	}
+
+	userPromptResources1 := []*UserPromptResourceStruct{&userPromptAsset1}
+	userPromptResources2 := []*UserPromptResourceStruct{&userPromptAsset1, &userPromptAsset2}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create user prompt with local file only
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources1,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "resources.0.filename", localFileName),
+				),
+			},
+			{
+				// Add S3 file to the prompt
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel1,
+					userPromptName1,
+					strconv.Quote(userPromptDescription1),
+					userPromptResources2,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "name", userPromptName1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "description", userPromptDescription1),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "resources.0.filename", localFileName),
+					resource.TestCheckResourceAttr("genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "resources.1.filename", s3FileName),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            "genesyscloud_architect_user_prompt." + userPromptResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"resources"},
+			},
+		},
+		CheckDestroy: testVerifyUserPromptsDestroyed,
+	})
+}

@@ -20,7 +20,28 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-prompts--promptId--resources--languageCode-)
 * [PUT /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-prompts--promptId--resources--languageCode-)
 
+## File Support
+
+This resource supports both local filesystem and Amazon S3 file sources:
+
+### Local Files
+- Standard file paths: `/path/to/audio.wav`
+- Relative paths: `./audio/welcome.wav`
+
+### S3 Files
+- S3 URI format: `s3://bucket-name/path/to/audio.wav`
+- Alternative format: `s3a://bucket-name/path/to/audio.wav`
+
+### AWS Credentials
+S3 files use the standard AWS credential chain:
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
+- AWS credentials file (`~/.aws/credentials`)
+- IAM roles (EC2 instance profiles, EKS service accounts)
+- AWS SSO profiles
+
 ## Example Usage
+
+### Basic User Prompt with TTS
 
 ```terraform
 resource "genesyscloud_architect_user_prompt" "welcome_greeting" {
@@ -36,6 +57,48 @@ resource "genesyscloud_architect_user_prompt" "welcome_greeting" {
     text              = "良い一日。お電話ありがとうございます。"
     filename          = "${local.working_dir.architect_user_prompt}/jp-welcome-greeting.wav"
     file_content_hash = filesha256("${local.working_dir.architect_user_prompt}/jp-welcome-greeting.wav")
+  }
+}
+```
+
+### User Prompt with S3 Audio Files
+
+```terraform
+resource "genesyscloud_architect_user_prompt" "s3_audio_prompt" {
+  name        = "S3_Audio_Prompt"
+  description = "Audio prompt with files from S3"
+  resources {
+    language          = "en-us"
+    text              = "Welcome to our service"
+    filename          = "s3://my-audio-bucket/prompts/welcome-en.wav"
+    file_content_hash = filesha256("s3://my-audio-bucket/prompts/welcome-en.wav")
+  }
+  resources {
+    language          = "es-es"
+    text              = "Bienvenido a nuestro servicio"
+    filename          = "s3://my-audio-bucket/prompts/welcome-es.wav"
+    file_content_hash = filesha256("s3://my-audio-bucket/prompts/welcome-es.wav")
+  }
+}
+```
+
+### Mixed Local and S3 Files
+
+```terraform
+resource "genesyscloud_architect_user_prompt" "mixed_prompt" {
+  name        = "Mixed_Prompt"
+  description = "Prompt with both local and S3 files"
+  resources {
+    language          = "en-us"
+    text              = "Local file greeting"
+    filename          = "./local-audio/greeting.wav"
+    file_content_hash = filesha256("./local-audio/greeting.wav")
+  }
+  resources {
+    language          = "fr-fr"
+    text              = "S3 file greeting"
+    filename          = "s3://audio-bucket/french/greeting.wav"
+    file_content_hash = filesha256("s3://audio-bucket/french/greeting.wav")
   }
 }
 ```
@@ -61,9 +124,9 @@ resource "genesyscloud_architect_user_prompt" "welcome_greeting" {
 
 Optional:
 
-- `file_content_hash` (String)
-- `filename` (String)
-- `language` (String)
-- `text` (String)
-- `tts_string` (String)
+- `file_content_hash` (String) Hash value of the audio file content. Used to detect changes. Only required when uploading a local audio file.
+- `filename` (String) Path or URL to the file to be uploaded as prompt. Supports local filesystem paths and S3 URIs (s3://bucket-name/path/to/file.wav).
+- `language` (String) Language for the prompt resource. (eg. en-us)
+- `text` (String) Text value for the prompt.
+- `tts_string` (String) Text to Speech (TTS) value for the prompt.
 

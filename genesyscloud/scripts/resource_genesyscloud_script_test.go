@@ -258,3 +258,157 @@ func validateScriptPublished(scriptResourcePath string) resource.TestCheckFunc {
 		return nil
 	}
 }
+
+func TestAccResourceScriptS3File(t *testing.T) {
+	var (
+		resourceLabel = "script-s3"
+		name          = "testscriptname" + uuid.NewString()
+		filePath      = "s3://test-bucket/scripts/test_script.json"
+		substitutions = make(map[string]string)
+	)
+
+	substitutions["foo"] = "bar"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateScriptResource(
+					resourceLabel,
+					name,
+					filePath,
+					util.GenerateSubstitutionsMap(substitutions),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "script_name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "filepath", filePath),
+					validateScriptPublished(ResourceType+"."+resourceLabel),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"filepath",
+					"file_content_hash",
+					"substitutions",
+				},
+			},
+		},
+		CheckDestroy: testVerifyScriptDestroyed,
+	})
+}
+
+func TestAccResourceScriptS3FileUpdate(t *testing.T) {
+	var (
+		resourceLabel       = "script-s3-update"
+		name                = "testscriptname" + uuid.NewString()
+		filePath            = "s3://test-bucket/scripts/test_script.json"
+		filePathUpdated     = "s3://test-bucket/scripts/test_script_updated.json"
+		substitutions       = make(map[string]string)
+		substitutionsUpdate = make(map[string]string)
+
+		scriptIdAfterCreate string
+		scriptIdAfterUpdate string
+	)
+
+	substitutions["foo"] = "bar"
+	substitutionsUpdate["hello"] = "world"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateScriptResource(
+					resourceLabel,
+					name,
+					filePath,
+					util.GenerateSubstitutionsMap(substitutions),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "script_name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "filepath", filePath),
+					validateScriptPublished(ResourceType+"."+resourceLabel),
+					getScriptId(ResourceType+"."+resourceLabel, &scriptIdAfterCreate),
+				),
+			},
+			// Update with different S3 file
+			{
+				Config: generateScriptResource(
+					resourceLabel,
+					name,
+					filePathUpdated,
+					util.GenerateSubstitutionsMap(substitutionsUpdate),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "script_name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "filepath", filePathUpdated),
+					validateScriptPublished(ResourceType+"."+resourceLabel),
+					getScriptId(ResourceType+"."+resourceLabel, &scriptIdAfterUpdate),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"filepath",
+					"file_content_hash",
+					"substitutions",
+				},
+			},
+		},
+		CheckDestroy: testVerifyScriptDestroyed,
+	})
+
+	if scriptIdAfterCreate != scriptIdAfterUpdate {
+		t.Errorf("Expected script ID to remain the same after update. Before: %s After: %s", scriptIdAfterCreate, scriptIdAfterUpdate)
+	}
+}
+
+func TestAccResourceScriptMixedFiles(t *testing.T) {
+	var (
+		resourceLabel = "script-mixed"
+		name1         = "testscriptname" + uuid.NewString()
+		name2         = "testscriptname" + uuid.NewString()
+		localFilePath = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
+		s3FilePath    = "s3://test-bucket/scripts/test_script.json"
+		substitutions = make(map[string]string)
+	)
+
+	substitutions["foo"] = "bar"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateScriptResource(
+					resourceLabel+"1",
+					name1,
+					localFilePath,
+					util.GenerateSubstitutionsMap(substitutions),
+				) + generateScriptResource(
+					resourceLabel+"2",
+					name2,
+					s3FilePath,
+					util.GenerateSubstitutionsMap(substitutions),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel+"1", "script_name", name1),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel+"1", "filepath", localFilePath),
+					validateScriptPublished(ResourceType+"."+resourceLabel+"1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel+"2", "script_name", name2),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel+"2", "filepath", s3FilePath),
+					validateScriptPublished(ResourceType+"."+resourceLabel+"2"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyScriptDestroyed,
+	})
+}
