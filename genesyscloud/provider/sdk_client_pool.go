@@ -693,7 +693,10 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 func runWithPooledClient(method resContextFunc) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
 		if mrmo.IsActive() {
-			clientConfig := mrmo.GetClientConfig()
+			clientConfig, err := mrmo.GetClientConfig()
+			if err != nil {
+				return diag.FromErr(err)
+			}
 			newMeta := *meta.(*ProviderMeta)
 			newMeta.ClientConfig = clientConfig
 			return method(ctx, r, &newMeta)
@@ -726,7 +729,10 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 // GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
 	if mrmo.IsActive() {
-		clientConfig := mrmo.GetClientConfig()
+		clientConfig, err := mrmo.GetClientConfig()
+		if err != nil {
+			log.Printf("[WARN] Error getting client config: %s", err.Error())
+		}
 		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 			return method(ctx, clientConfig)
 		}
