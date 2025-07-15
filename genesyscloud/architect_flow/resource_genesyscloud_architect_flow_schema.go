@@ -1,5 +1,9 @@
 package architect_flow
 
+// @team: Architect Team
+// @chat: #Genesys Cloud Architect support
+// @description: Manages Genesys Cloud architect datatables and their schemas
+
 import (
 	"strings"
 
