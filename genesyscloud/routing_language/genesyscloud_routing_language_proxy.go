@@ -3,10 +3,11 @@ package routing_language
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 var internalProxy *routingLanguageProxy
@@ -85,13 +86,12 @@ func getAllRoutingLanguagesFn(ctx context.Context, p *routingLanguageProxy, name
 		pageSize     = 100
 	)
 
-	languages, resp, err := p.routingApi.GetRoutingLanguages(pageSize, 1, "", name, []string{})
+	languages, response, err := p.routingApi.GetRoutingLanguages(pageSize, 1, "", name, []string{})
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get language: %v", err)
+		return nil, response, fmt.Errorf("failed to get language: %v", err)
 	}
-
 	if languages.Entities == nil || len(*languages.Entities) == 0 {
-		return &allLanguages, resp, nil
+		return &allLanguages, response, nil
 	}
 	allLanguages = append(allLanguages, *languages.Entities...)
 

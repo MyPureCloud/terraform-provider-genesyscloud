@@ -3,12 +3,13 @@ package group
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -21,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -48,6 +49,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	rulesVisible := d.Get("rules_visible").(bool)
 	rolesEnabled := d.Get("roles_enabled").(bool)
 	callsEnabled := d.Get("calls_enabled").(bool)
+	includeOwners := d.Get("include_owners").(bool)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getGroupProxy(sdkConfig)
@@ -58,14 +60,15 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	createGroup := &platformclientv2.Groupcreate{
-		Name:         &name,
-		VarType:      &groupType,
-		Visibility:   &visibility,
-		RulesVisible: &rulesVisible,
-		Addresses:    addresses,
-		RolesEnabled: &rolesEnabled,
-		CallsEnabled: &callsEnabled,
-		OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
+		Name:          &name,
+		VarType:       &groupType,
+		Visibility:    &visibility,
+		RulesVisible:  &rulesVisible,
+		Addresses:     addresses,
+		RolesEnabled:  &rolesEnabled,
+		CallsEnabled:  &callsEnabled,
+		OwnerIds:      lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
+		IncludeOwners: &includeOwners,
 	}
 	log.Printf("Creating group %s", name)
 	group, resp, err := gp.createGroup(ctx, createGroup)
@@ -117,6 +120,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "description", group.Description)
 		resourcedata.SetNillableValue(d, "roles_enabled", group.RolesEnabled)
 		resourcedata.SetNillableValue(d, "calls_enabled", group.CallsEnabled)
+		resourcedata.SetNillableValue(d, "include_owners", group.IncludeOwners)
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "owner_ids", group.Owners, flattenGroupOwners)
 
@@ -144,6 +148,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	rulesVisible := d.Get("rules_visible").(bool)
 	rolesEnabled := d.Get("roles_enabled").(bool)
 	callsEnabled := d.Get("calls_enabled").(bool)
+	includeOwners := d.Get("include_owners").(bool)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	gp := getGroupProxy(sdkConfig)
@@ -162,15 +167,16 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 		log.Printf("Updating group %s", name)
 		updateGroup := &platformclientv2.Groupupdate{
-			Version:      group.Version,
-			Name:         &name,
-			Description:  &description,
-			Visibility:   &visibility,
-			RulesVisible: &rulesVisible,
-			Addresses:    addresses,
-			RolesEnabled: &rolesEnabled,
-			CallsEnabled: &callsEnabled,
-			OwnerIds:     lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
+			Version:       group.Version,
+			Name:          &name,
+			Description:   &description,
+			Visibility:    &visibility,
+			RulesVisible:  &rulesVisible,
+			Addresses:     addresses,
+			RolesEnabled:  &rolesEnabled,
+			CallsEnabled:  &callsEnabled,
+			OwnerIds:      lists.BuildSdkStringListFromInterfaceArray(d, "owner_ids"),
+			IncludeOwners: &includeOwners,
 		}
 
 		// If no owner IDs are provided, assign a list with an empty space, otherwise use the provided owner IDs

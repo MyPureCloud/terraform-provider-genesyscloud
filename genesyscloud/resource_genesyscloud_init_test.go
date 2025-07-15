@@ -28,7 +28,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 var (
@@ -89,7 +89,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingWrapupCode.ResourceType] = routingWrapupCode.DataSourceRoutingWrapupCode()
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
-	providerDataSources["genesyscloud_organizations_me"] = DataSourceOrganizationsMe()
+	providerDataSources[DataSourceOrganizationsMeResourceType] = DataSourceOrganizationsMe()
 	providerDataSources["genesyscloud_auth_division_home"] = DataSourceAuthDivisionHome()
 }
 

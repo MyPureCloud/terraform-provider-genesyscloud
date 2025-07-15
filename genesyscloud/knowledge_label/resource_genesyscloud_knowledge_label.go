@@ -3,12 +3,13 @@ package knowledge_label
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -18,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func getAllKnowledgeLabels(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -103,8 +104,8 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 
 		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)
-		d.Set("knowledge_base_id", knowledgeBaseId)
-		d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
+		_ = d.Set("knowledge_base_id", knowledgeBaseId)
+		_ = d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
 		log.Printf("Read knowledge label %s", knowledgeLabelId)
 		return cc.CheckState(d)
 	})

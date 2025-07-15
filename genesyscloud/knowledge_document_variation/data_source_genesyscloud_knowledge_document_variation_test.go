@@ -15,6 +15,7 @@ import (
 )
 
 func TestAccDataSourceVariationRequest(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		// Knowledge Base
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"

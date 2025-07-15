@@ -2,17 +2,17 @@ package outbound_messagingcampaign
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -51,9 +51,11 @@ func createOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
-	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-	if !valid {
-		return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+	if _, sms := d.GetOk("sms_config"); sms {
+		err := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+		if err != nil {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", err)
+		}
 	}
 
 	log.Printf("Creating outbound messagingcampaign %s", *outboundMessagingcampaign.Name)
@@ -103,8 +105,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "errors", messagingCampaign.Errors, flattenRestErrorDetails)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", messagingCampaign.DynamicContactQueueingSettings, flattenDynamicContactQueueingSettingss)
-		// TODO: add email configs in future as it is linked with contact list templates which isn't a resource yet
-		// resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
 		d.Set("sms_config", flattenSmsConfigs(messagingCampaign.SmsConfig))
 
 		log.Printf("Read outbound messagingcampaign %s %s", d.Id(), *messagingCampaign.Name)
@@ -119,10 +120,11 @@ func updateOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData
 
 	outboundMessagingcampaign := getOutboundMessagingcampaignFromResourceData(d)
 
-	msg, valid := validateSmsconfig(d.Get("sms_config").(*schema.Set))
-
-	if !valid {
-		return util.BuildDiagnosticError(ResourceType, "Configuration error", errors.New(msg))
+	if _, sms := d.GetOk("sms_config"); sms {
+		err := validateSmsconfig(d.Get("sms_config").(*schema.Set))
+		if err != nil {
+			return util.BuildDiagnosticError(ResourceType, "Configuration error", err)
+		}
 	}
 
 	log.Printf("Updating outbound messagingcampaign %s", *outboundMessagingcampaign.Name)

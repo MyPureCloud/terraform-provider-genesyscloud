@@ -24,8 +24,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_outbound_digitalruleset" "test_ruleset_sample" {
   name            = "Test Digital RuleSet - 13"
-  version         = 1
-  contact_list_id = "c2406f62-63e3-4826-a6f9-ae635bd731e0"
+  contact_list_id = genesyscloud_outbound_contact_list.contact_list.id
   rules {
     name     = "Rule-1"
     order    = 0

@@ -3,20 +3,21 @@ package routing_email_domain
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"log"
-	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -149,11 +150,15 @@ func deleteRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Deleting routing email domain %s", d.Id())
 	resp, err := proxy.deleteRoutingEmailDomain(ctx, d.Id())
 	if err != nil {
+		if util.IsStatus404(resp) {
+			log.Printf("Routing email domain '%s' already does not exist: %s", d.Id(), err.Error())
+			return nil
+		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete routing email domain %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 90*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getRoutingEmailDomainById(ctx, d.Id())
+		_, resp, err = proxy.getRoutingEmailDomainById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Deleted Routing email domain %s", d.Id())

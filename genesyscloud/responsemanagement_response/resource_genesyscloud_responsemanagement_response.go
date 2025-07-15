@@ -3,19 +3,20 @@ package responsemanagement_response
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -34,14 +35,19 @@ func getAllAuthResponsemanagementResponses(ctx context.Context, clientConfig *pl
 
 	for _, response := range *responseManagementResponses {
 		libraryNames := []string{}
+		var blockLabel string
 		for _, library := range *response.Libraries {
+			if library.Name != nil {
+				blockLabel += *library.Name + "_"
+			}
 			libraryNames = append(libraryNames, *library.Name)
 		}
 		hashedUniqueFields, err := util.QuickHashFields(libraryNames)
 		if err != nil {
 			return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to hash unique fields of response management response %s error: %s", *response.Id, err), err)
 		}
-		resources[*response.Id] = &resourceExporter.ResourceMeta{BlockLabel: *response.Name, BlockHash: hashedUniqueFields}
+		blockLabel += *response.Name
+		resources[*response.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel, BlockHash: hashedUniqueFields}
 	}
 	return resources, nil
 }

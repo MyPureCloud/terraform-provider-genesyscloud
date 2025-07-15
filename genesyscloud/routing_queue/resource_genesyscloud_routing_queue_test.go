@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -28,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 var (
@@ -102,7 +103,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.NullValue,               // enable_manual_assignment false
 					util.NullValue,               // enable_transcription false
 					strconv.Quote(scoringMethod), // scoring Method
-					util.NullValue,
+					strconv.Quote("Disabled"),    // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -123,6 +124,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "auto_answer_only", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "Disabled"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
@@ -163,7 +165,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					util.TrueValue, // enable_manual_assignment true
 					util.TrueValue, // enable_transcription true
 					strconv.Quote(scoringMethod),
-					util.NullValue, // last_agent_routing_mode
+					strconv.Quote("QueueMembersOnly"), // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
@@ -187,6 +189,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_name", callingPartyName),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "calling_party_number", callingPartyNumber),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "scoring_method", scoringMethod),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "QueueMembersOnly"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.TrueValue),
@@ -226,7 +229,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 	if exists := featureToggles.CSGToggleExists(); exists {
 		t.Skip("conditional group routing is deprecated in this resource, skipping test")
 	}
-
+	const lastAgentRoutingModeComputedValue = "AnyAgent"
 	var (
 		queueResourceLabel1     = "test-queue"
 		queueName1              = "Terraform Test Queue1-" + uuid.NewString()
@@ -280,18 +283,18 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					queueResourceLabel1,
 					queueName1,
 					queueDesc1,
-					util.NullValue,  // MANDATORY_TIMEOUT
-					"200000",        // acw_timeout
-					util.NullValue,  // ALL
-					util.NullValue,  // auto_answer_only true
-					util.NullValue,  // No calling party name
-					util.NullValue,  // No calling party number
-					util.NullValue,  // enable_transcription false
-					util.FalseValue, // suppress_in_queue_call_recording false
-					util.NullValue,  // enable_audio_monitoring false
-					util.NullValue,  // enable_manual_assignment false
-					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
+					util.NullValue,                        // MANDATORY_TIMEOUT
+					"200000",                              // acw_timeout
+					util.NullValue,                        // ALL
+					util.NullValue,                        // auto_answer_only true
+					util.NullValue,                        // No calling party name
+					util.NullValue,                        // No calling party number
+					util.NullValue,                        // enable_transcription false
+					util.FalseValue,                       // suppress_in_queue_call_recording false
+					util.NullValue,                        // enable_audio_monitoring false
+					util.NullValue,                        // enable_manual_assignment false
+					strconv.Quote("TimestampAndPriority"), // scoring_method
+					util.NullValue,                        // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateMediaSettings(
@@ -348,7 +351,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
-
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingModeComputedValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.condition_value", conditionalGroupRouting1ConditionValue),
@@ -386,18 +389,18 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					queueResourceLabel1,
 					queueName1,
 					queueDesc1,
-					util.NullValue,  // MANDATORY_TIMEOUT
-					"200000",        // acw_timeout
-					util.NullValue,  // ALL
-					util.NullValue,  // auto_answer_only true
-					util.NullValue,  // No calling party name
-					util.NullValue,  // No calling party number
-					util.NullValue,  // enable_transcription false
-					util.FalseValue, // suppress_in_queue_call_recording false
-					util.NullValue,  // enable_audio_monitoring false
-					util.NullValue,  // enable_manual_assignment false
-					strconv.Quote("TimestampAndPriority"),
-					util.NullValue,
+					util.NullValue,                        // MANDATORY_TIMEOUT
+					"200000",                              // acw_timeout
+					util.NullValue,                        // ALL
+					util.NullValue,                        // auto_answer_only true
+					util.NullValue,                        // No calling party name
+					util.NullValue,                        // No calling party number
+					util.NullValue,                        // enable_transcription false
+					util.FalseValue,                       // suppress_in_queue_call_recording false
+					util.NullValue,                        // enable_audio_monitoring false
+					util.NullValue,                        // enable_manual_assignment false
+					strconv.Quote("TimestampAndPriority"), // scoring_method
+					strconv.Quote("Disabled"),             // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateMediaSettings("media_settings_call", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
@@ -441,6 +444,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "Disabled"),
 
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.operator", conditionalGroupRouting1Operator),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "conditional_group_routing_rules.0.metric", conditionalGroupRouting1Metric),
@@ -543,6 +547,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 		skillEvalAll            = "ALL"
 		callbackHours           = "7"
 		scoringMethod           = "TimestampAndPriority"
+		lastAgentRoutingMode    = "Disabled"
 		skillGroupResourceLabel = "skillgroup"
 		skillGroupName          = "test skillgroup " + uuid.NewString()
 		callbackModeAgentFirst  = "AgentFirst"
@@ -574,7 +579,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 					util.NullValue, // enable_manual_assignment false
 					strconv.Quote(scoringMethod),
-					util.NullValue, // last_agent_routing_mode
+					strconv.Quote(lastAgentRoutingMode), // last_agent_routing_mode
 					util.NullValue,
 					util.NullValue,
 					GenerateAgentOwnedRouting("agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
@@ -596,6 +601,7 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", lastAgentRoutingMode),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback"+".0.mode", callbackModeAgentFirst),
 					provider.TestDefaultHomeDivision("genesyscloud_routing_queue."+queueResourceLabel1),
@@ -621,8 +627,9 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 func TestAccResourceRoutingQueueFlows(t *testing.T) {
 	var (
-		queueResourceLabel1 = "test-queue"
-		queueName1          = "Terraform Test Queue1-" + uuid.NewString()
+		queueResourceLabel1   = "test-queue"
+		queueName1            = "Terraform Test Queue1-" + uuid.NewString()
+		queueResourceFullPath = ResourceType + "." + queueResourceLabel1
 
 		queueFlowResourceLabel1          = "test_flow1"
 		queueFlowResourceLabel2          = "test_flow2"
@@ -630,15 +637,15 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		emailInQueueFlowResourceLabel2   = "email_test_flow2"
 		messageInQueueFlowResourceLabel1 = "message_test_flow1"
 		messageInQueueFlowResourceLabel2 = "message_test_flow2"
-		queueFlowName1                   = "Terraform Flow Test-" + uuid.NewString()
-		queueFlowName2                   = "Terraform Flow Test-" + uuid.NewString()
-		queueFlowName3                   = "Terraform Flow Test-" + uuid.NewString()
+		inqueueCallFlowName              = "TF Test inqueueCall Flow " + uuid.NewString()
+		inqueueEmailFlowName             = "TF Test inqueueEmail Flow " + uuid.NewString()
+		inqueueShortMessageFlowName      = "TF Test inqueueShortMessage Flow " + uuid.NewString()
 		queueFlowFilePath1               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
 		queueFlowFilePath2               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml")
 		queueFlowFilePath3               = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml")
 
-		queueFlowInboundcallConfig1          = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName1)
-		messageInQueueFlowInboundcallConfig3 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", queueFlowName3)
+		queueFlowInqueueCallConfig    = getBasicInQueueCallFlow(inqueueCallFlowName)
+		inQueueShortMessageFlowConfig = getBasicInQueueShortMessageFlow(inqueueShortMessageFlowName)
 
 		//variables for testing 'on_hold_prompt_id'
 		userPromptResourceLabel1    = "test-user_prompt_1"
@@ -681,31 +688,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		},
 	})
 
-	emailInQueueFlowInboundcallConfig2 := fmt.Sprintf(`inboundEmail:
-    name: %s
-    division: %s
-    startUpRef: "/inboundEmail/states/state[Initial State_10]"
-    defaultLanguage: en-us
-    supportedLanguages:
-        en-us:
-            defaultLanguageSkill:
-                noValue: true
-    settingsInboundEmailHandling:
-        emailHandling:
-            disconnect:
-                none: true
-    settingsErrorHandling:
-        errorHandling:
-            disconnect:
-                none: true
-    states:
-        - state:
-            name: Initial State
-            refId: Initial State_10
-            actions:
-                - disconnect:
-                    name: Disconnect
-`, queueFlowName2, homeDivisionName)
+	emailInQueueFlowInboundcallConfig2 := getBasicInQueueEmailFlow(inqueueEmailFlowName, homeDivisionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -716,7 +699,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel1,
 					queueFlowFilePath1,
-					queueFlowInboundcallConfig1,
+					queueFlowInqueueCallConfig,
 					false,
 				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel1,
@@ -726,7 +709,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel1,
 					queueFlowFilePath3,
-					messageInQueueFlowInboundcallConfig3,
+					inQueueShortMessageFlowConfig,
 					false,
 				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
@@ -742,10 +725,41 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					"on_hold_prompt_id = genesyscloud_architect_user_prompt."+userPromptResourceLabel1+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel1, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel1, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel1, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
+				),
+			},
+			{
+				// Update queue fields to null before deleting re-creating flows to avoid errors
+				Config: architectFlow.GenerateFlowResource(
+					queueFlowResourceLabel1,
+					queueFlowFilePath1,
+					queueFlowInqueueCallConfig,
+					false,
+				) + architectFlow.GenerateFlowResource(
+					emailInQueueFlowResourceLabel1,
+					queueFlowFilePath2,
+					emailInQueueFlowInboundcallConfig2,
+					false,
+				) + architectFlow.GenerateFlowResource(
+					messageInQueueFlowResourceLabel1,
+					queueFlowFilePath3,
+					inQueueShortMessageFlowConfig,
+					false,
+				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+					ResourceLabel: userPromptResourceLabel1,
+					Name:          userPromptName1,
+					Description:   strconv.Quote(userPromptDescription1),
+					Resources:     userPromptResources1,
+				}) + GenerateRoutingQueueResourceBasic(
+					queueResourceLabel1,
+					queueName1,
+					"queue_flow_id = null",
+					"email_in_queue_flow_id = null",
+					"message_in_queue_flow_id = null",
+					"on_hold_prompt_id = null",
 				),
 			},
 			{
@@ -753,7 +767,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel2,
 					queueFlowFilePath1,
-					queueFlowInboundcallConfig1,
+					queueFlowInqueueCallConfig,
 					false,
 				) + architectFlow.GenerateFlowResource(
 					emailInQueueFlowResourceLabel2,
@@ -763,7 +777,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				) + architectFlow.GenerateFlowResource(
 					messageInQueueFlowResourceLabel2,
 					queueFlowFilePath3,
-					messageInQueueFlowInboundcallConfig3,
+					inQueueShortMessageFlowConfig,
 					false,
 				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
@@ -779,10 +793,10 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					"on_hold_prompt_id = genesyscloud_architect_user_prompt."+userPromptResourceLabel1+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel2, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel1, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "queue_flow_id", "genesyscloud_flow."+queueFlowResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "email_in_queue_flow_id", "genesyscloud_flow."+emailInQueueFlowResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "message_in_queue_flow_id", "genesyscloud_flow."+messageInQueueFlowResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(queueResourceFullPath, "on_hold_prompt_id", "genesyscloud_architect_user_prompt."+userPromptResourceLabel1, "id"),
 					func(s *terraform.State) error {
 						time.Sleep(45 * time.Second) // Wait for 45 seconds for proper deletion of user
 						return nil
@@ -791,7 +805,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel1,
+				ResourceName:      queueResourceFullPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -1424,9 +1438,9 @@ func testVerifyQueuesDestroyed(state *terraform.State) error {
 		if rs.Type != "genesyscloud_routing_queue" {
 			continue
 		}
-		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
+		queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID, nil)
 		if queue != nil {
-			return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
+			return fmt.Errorf("queue (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
 			// Queue not found as expected
 			continue
@@ -1444,7 +1458,7 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_routing_queue" {
-			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID)
+			queue, resp, err := routingAPI.GetRoutingQueue(rs.Primary.ID, nil)
 			if queue != nil {
 				return fmt.Errorf("Queue (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
@@ -1805,4 +1819,142 @@ func isUserDeleted(id string) (bool, error) {
 
 	// If user is found, it means the user is not deleted
 	return false, nil
+}
+
+func getBasicInQueueCallFlow(name string) string {
+	voiceEngineConfig := `textToSpeech:
+        defaultEngine:
+          voice: Jill`
+	// In usw2, validation fails if we reference "Jill" (even though it is there by default in that region when creating a flow via Architect UI)
+	// In use1, validation fails if it is not there.
+	// To address this, we're adding it conditionally
+	if os.Getenv("GENESYSCLOUD_REGION") == "us-west-2" {
+		voiceEngineConfig = ""
+	}
+	return fmt.Sprintf(`
+inqueueCall:
+  name: %s
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+      %s
+  settingsInQueueCall:
+    holdMusic:
+      lit:
+        name: PromptSystem.on_hold_music
+  settingsActionDefaults:
+    playAudioOnSilence:
+      timeout:
+        lit:
+          seconds: 40
+    detectSilence:
+      timeout:
+        lit:
+          seconds: 40
+    callData:
+      processingPrompt:
+        noValue: true
+    collectInput:
+      noEntryTimeout:
+        lit:
+          seconds: 5
+    dialByExtension:
+      interDigitTimeout:
+        lit:
+          seconds: 6
+    transferToUser:
+      connectTimeout:
+        noValue: true
+    transferToNumber:
+      connectTimeout:
+        noValue: true
+    transferToGroup:
+      connectTimeout:
+        noValue: true
+    transferToFlowSecure:
+      connectTimeout:
+        lit:
+          seconds: 15
+  settingsErrorHandling:
+    errorHandling:
+      disconnect:
+        none: true
+    preHandlingAudio:
+      tts: Sorry, an error occurred. Please try your call again.
+  settingsPrompts:
+    ensureAudioInPrompts: false
+    promptMediaToValidate:
+      - mediaType: audio
+      - mediaType: tts
+  startUpTaskActions:
+    - holdMusic:
+        name: Hold Music
+        prompt:
+          exp: Flow.HoldPrompt
+        bargeInEnabled:
+          lit: false
+        playStyle:
+          entirePrompt: true
+
+`, name, voiceEngineConfig)
+}
+
+func getBasicInQueueShortMessageFlow(name string) string {
+	return fmt.Sprintf(`
+inqueueShortMessage:
+  name: %s
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+  settingsErrorHandling:
+    errorHandling:
+      endInQueueState:
+        none: true
+  startUpState:
+    name: Initial State
+    refId: Initial State_10
+    actions:
+      - endState:
+          name: End State
+  periodicState:
+    name: Recurring State
+    refId: Recurring State_12
+    actions:
+      - endState:
+          name: End State
+`, name)
+}
+
+func getBasicInQueueEmailFlow(name, divisionName string) string {
+	return fmt.Sprintf(`
+inqueueEmail:
+  name: %s
+  division: %s
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+  settingsErrorHandling:
+    errorHandling:
+      endInQueueState:
+        none: true
+  startUpState:
+    name: Initial State
+    refId: Initial State_10
+    actions:
+      - endState:
+          name: End State
+  periodicState:
+    name: Recurring State
+    refId: Recurring State_12
+    actions:
+      - endState:
+          name: End State
+
+`, name, divisionName)
 }

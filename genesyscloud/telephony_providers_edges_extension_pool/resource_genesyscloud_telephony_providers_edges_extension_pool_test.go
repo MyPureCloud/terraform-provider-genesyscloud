@@ -2,28 +2,27 @@ package telephony_providers_edges_extension_pool
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
 	"testing"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func TestAccResourceExtensionPoolBasic(t *testing.T) {
 	t.Parallel()
 	extensionPoolResourceLabel1 := "test-extensionpool1"
+	extensionPoolResourcePath := ResourceType + "." + extensionPoolResourceLabel1
 	extensionPoolStartNumber1 := "15000"
 	extensionPoolEndNumber1 := "15001"
-	_, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatal(err)
-	}
-	DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
-	DeleteExtensionPoolWithNumber(extensionPoolEndNumber1)
 	extensionPoolDescription1 := "Test description"
+
+	cleanupExtensionPool(t, extensionPoolStartNumber1, extensionPoolEndNumber1)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -37,9 +36,9 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					util.NullValue, // No description
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "start_number", extensionPoolStartNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "end_number", extensionPoolEndNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "description", ""),
+					resource.TestCheckResourceAttr(extensionPoolResourcePath, "start_number", extensionPoolStartNumber1),
+					resource.TestCheckResourceAttr(extensionPoolResourcePath, "end_number", extensionPoolEndNumber1),
+					resource.TestCheckResourceAttr(extensionPoolResourcePath, "description", ""),
 				),
 			},
 			{
@@ -51,14 +50,14 @@ func TestAccResourceExtensionPoolBasic(t *testing.T) {
 					strconv.Quote(extensionPoolDescription1),
 				}),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "start_number", extensionPoolStartNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "end_number", extensionPoolEndNumber1),
-					resource.TestCheckResourceAttr("genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolResourceLabel1, "description", extensionPoolDescription1),
+					resource.TestCheckResourceAttr(extensionPoolResourcePath, "start_number", extensionPoolStartNumber1),
+					resource.TestCheckResourceAttr(extensionPoolResourcePath, "end_number", extensionPoolEndNumber1),
+					resource.TestCheckResourceAttr(extensionPoolResourcePath, "description", extensionPoolDescription1),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_telephony_providers_edges_extension_pool." + extensionPoolResourceLabel1,
+				ResourceName:      extensionPoolResourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -93,4 +92,14 @@ func testVerifyExtensionPoolsDestroyed(state *terraform.State) error {
 	}
 	// Success. All Extension pool destroyed
 	return nil
+}
+
+func cleanupExtensionPool(t *testing.T, startNumber, endNumber string) {
+	if err := DeleteExtensionPoolWithNumber(startNumber); err != nil {
+		t.Logf("Failed to delete extension pool: %s", err.Error())
+	}
+
+	if err := DeleteExtensionPoolWithNumber(endNumber); err != nil {
+		t.Logf("Failed to delete extension pool: %s", err.Error())
+	}
 }

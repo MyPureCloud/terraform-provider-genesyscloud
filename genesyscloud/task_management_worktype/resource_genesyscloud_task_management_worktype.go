@@ -3,16 +3,17 @@ package task_management_worktype
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -22,10 +23,10 @@ import (
 )
 
 /*
-The resource_genesyscloud_task_management_worktype.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_task_management_worktype.go contains all methods that perform the core logic for a resource.
 */
 
-// getAllAuthTaskManagementWorktype retrieves all of the task management worktype via Terraform in the Genesys Cloud and is used for the exporter
+// getAllAuthTaskManagementWorktype retrieves all task management worktype via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthTaskManagementWorktypes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := GetTaskManagementWorktypeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -42,23 +43,30 @@ func getAllAuthTaskManagementWorktypes(ctx context.Context, clientConfig *platfo
 }
 
 // createTaskManagementWorktype is used by the task_management_worktype resource to create Genesys cloud task management worktype
-func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetTaskManagementWorktypeProxy(sdkConfig)
 
 	taskManagementWorktype := getWorktypecreateFromResourceData(d)
 
-	// Create the base worktype
-	log.Printf("Creating task management worktype %s", *taskManagementWorktype.Name)
-	worktype, resp, err := proxy.createTaskManagementWorktype(ctx, &taskManagementWorktype)
+	err := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Create the base worktype
+		log.Printf("Creating task management worktype %s", *taskManagementWorktype.Name)
+		worktype, resp, err := proxy.createTaskManagementWorktype(ctx, &taskManagementWorktype)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management worktype %s error: %s", *taskManagementWorktype.Name, err), resp)
+		}
+
+		log.Printf("Created the base task management worktype %s", *worktype.Id)
+		d.SetId(*worktype.Id)
+		return resp, nil
+	})
+
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create task management worktype %s error: %s", *taskManagementWorktype.Name, err), resp)
+		diags = append(diags, err...)
 	}
 
-	log.Printf("Created the base task management worktype %s", *worktype.Id)
-	d.SetId(*worktype.Id)
-
-	return readTaskManagementWorktype(ctx, d, meta)
+	return append(diags, readTaskManagementWorktype(ctx, d, meta)...)
 }
 
 // readTaskManagementWorktype is used by the task_management_worktype resource to read a task management worktype from genesys cloud
@@ -117,22 +125,28 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 }
 
 // updateTaskManagementWorktype is used by the task_management_worktype resource to update a task management worktype in Genesys Cloud
-func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetTaskManagementWorktypeProxy(sdkConfig)
 
 	// Update the base configuration of the Worktype
 	taskManagementWorktype := getWorktypeupdateFromResourceData(d)
 
-	log.Printf("Updating worktype %s %s", d.Id(), *taskManagementWorktype.Name)
-	_, resp, err := proxy.UpdateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s error: %s", *taskManagementWorktype.Name, err), resp)
+	diags = append(diags, util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Updating worktype %s %s", d.Id(), *taskManagementWorktype.Name)
+		_, resp, err := proxy.UpdateTaskManagementWorktype(ctx, d.Id(), &taskManagementWorktype)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s error: %s", *taskManagementWorktype.Name, err), resp)
+		}
+		log.Printf("Updated worktype %s %s", d.Id(), *taskManagementWorktype.Name)
+		return resp, nil
+	})...)
+
+	if diags.HasError() {
+		return diags
 	}
 
-	log.Printf("Updated worktype %s %s", d.Id(), *taskManagementWorktype.Name)
-
-	return readTaskManagementWorktype(ctx, d, meta)
+	return append(diags, readTaskManagementWorktype(ctx, d, meta)...)
 }
 
 // deleteTaskManagementWorktype is used by the task_management_worktype resource to delete a task management worktype from Genesys cloud

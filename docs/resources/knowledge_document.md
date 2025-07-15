@@ -2,11 +2,14 @@
 page_title: "genesyscloud_knowledge_document Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Knowledge document
+  Genesys Cloud Knowledge document.
+  Export block label: "{parent knowledge base name}_{title}"
 ---
 # genesyscloud_knowledge_document (Resource)
 
-Genesys Cloud Knowledge document
+Genesys Cloud Knowledge document.
+
+Export block label: "{parent knowledge base name}_{title}"
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -21,9 +24,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_knowledge_document" "example_document" {
+resource "genesyscloud_knowledge_document" "example_unpublished_document" {
   knowledge_base_id = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
-  published         = true
+  published         = false
   knowledge_document {
     title   = "Document Title"
     visible = true
@@ -31,8 +34,8 @@ resource "genesyscloud_knowledge_document" "example_document" {
       phrase       = "document phrase"
       autocomplete = true
     }
-    category_name = "ExampleCategory"
-    label_names   = ["ExampleLabel"]
+    category_name = genesyscloud_knowledge_category.example_category.knowledge_category[0].name
+    label_names   = [genesyscloud_knowledge_label.label.knowledge_label[0].name]
   }
 }
 ```
@@ -47,7 +50,7 @@ resource "genesyscloud_knowledge_document" "example_document" {
 
 ### Optional
 
-- `published` (Boolean, Deprecated) If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
+- `published` (Boolean, Deprecated) *DEPRECATED: By Default a document created will be in Draft. In order to Publish a document, use knowledge_document_variation instead.* If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
 
 ### Read-Only
 

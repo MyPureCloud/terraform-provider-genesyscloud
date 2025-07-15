@@ -2,11 +2,14 @@
 page_title: "genesyscloud_knowledge_document_variation Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Knowledge Document Variation
+  Genesys Cloud Knowledge Document Variation.
+  Export block label: "{parent knowledge base name}{parent document title}{knowledge_document_variation.name}
 ---
 # genesyscloud_knowledge_document_variation (Resource)
 
-Genesys Cloud Knowledge Document Variation
+Genesys Cloud Knowledge Document Variation.
+
+Export block label: "{parent knowledge base name}_{parent document title}_{knowledge_document_variation.name}
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -22,7 +25,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 resource "genesyscloud_knowledge_document_variation" "example_document_variation" {
   knowledge_base_id     = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
-  knowledge_document_id = genesyscloud_knowledge_document.examle_document.id
+  knowledge_document_id = genesyscloud_knowledge_document.example_unpublished_document.id
   published             = true
   knowledge_document_variation {
     body {
@@ -69,12 +72,8 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
       blocks {
         type = "Image"
         image {
-          blocks {
-            type = "Text"
-            text {
-              text = "List item"
-            }
-          }
+          url       = "https://example.com/image"
+          hyperlink = "https://example.com/hyperlink"
         }
       }
     }

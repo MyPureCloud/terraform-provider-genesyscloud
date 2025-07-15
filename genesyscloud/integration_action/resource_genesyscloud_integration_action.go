@@ -3,12 +3,13 @@ package integration_action
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -19,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -154,9 +155,9 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			d.Set("contract_input", input)
+			_ = d.Set("contract_input", input)
 		} else {
-			d.Set("contract_input", nil)
+			_ = d.Set("contract_input", nil)
 		}
 
 		if action.Contract != nil && action.Contract.Output != nil && action.Contract.Output.SuccessSchema != nil {
@@ -164,23 +165,23 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			d.Set("contract_output", output)
+			_ = d.Set("contract_output", output)
 		} else {
-			d.Set("contract_output", nil)
+			_ = d.Set("contract_output", nil)
 		}
 
 		if action.Config != nil && action.Config.Request != nil {
 			action.Config.Request.RequestTemplate = reqTemp
-			d.Set("config_request", FlattenActionConfigRequest(*action.Config.Request))
+			_ = d.Set("config_request", FlattenActionConfigRequest(*action.Config.Request))
 		} else {
-			d.Set("config_request", nil)
+			_ = d.Set("config_request", nil)
 		}
 
 		if action.Config != nil && action.Config.Response != nil {
 			action.Config.Response.SuccessTemplate = successTemp
-			d.Set("config_response", FlattenActionConfigResponse(*action.Config.Response))
+			_ = d.Set("config_response", FlattenActionConfigResponse(*action.Config.Response))
 		} else {
-			d.Set("config_response", nil)
+			_ = d.Set("config_response", nil)
 		}
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)

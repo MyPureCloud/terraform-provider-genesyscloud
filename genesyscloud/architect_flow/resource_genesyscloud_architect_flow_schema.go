@@ -1,8 +1,9 @@
 package architect_flow
 
 import (
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -55,7 +56,9 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 
 func ResourceArchitectFlow() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud Flow`,
+		Description: `Genesys Cloud Flow.
+
+Export block label: "{type}_{name}"`,
 
 		CreateContext: provider.CreateWithPooledClient(createFlow),
 		UpdateContext: provider.UpdateWithPooledClient(updateFlow),

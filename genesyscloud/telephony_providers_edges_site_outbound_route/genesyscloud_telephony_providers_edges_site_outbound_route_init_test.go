@@ -1,18 +1,19 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"log"
 	"sync"
 	"testing"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 /*
@@ -23,10 +24,7 @@ import (
 */
 
 // used in sdk authorization for tests
-var (
-	sdkConfig *platformclientv2.Configuration
-	authErr   error
-)
+var sdkConfig *platformclientv2.Configuration
 
 // providerDataSources holds a map of all registered sites
 var providerDataSources map[string]*schema.Resource
@@ -56,16 +54,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[ResourceType] = DataSourceSiteOutboundRoute()
-	providerDataSources["genesyscloud_organizations_me"] = gcloud.DataSourceOrganizationsMe()
+	providerDataSources[gcloud.DataSourceOrganizationsMeResourceType] = gcloud.DataSourceOrganizationsMe()
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk: %v", authErr)
-	}
-
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
@@ -77,6 +70,12 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
+	var err error
+	sdkConfig, err = provider.AuthorizeSdk()
+	if err != nil {
+		log.Fatalf("failed to authorize sdk: %s", err.Error())
+	}
+
 	// Run setup function before starting the test suite for telephony_providers_edges_site_outbound_route package
 	initTestResources()
 

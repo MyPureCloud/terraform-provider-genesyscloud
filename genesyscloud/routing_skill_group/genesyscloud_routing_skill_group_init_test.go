@@ -1,16 +1,21 @@
 package routing_skill_group
 
 import (
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
-	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"log"
 	"sync"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+var sdkConfig *platformclientv2.Configuration
 var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
 
@@ -49,6 +54,12 @@ func initTestResources() {
 
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
+
+	var err error
+	sdkConfig, err = provider.AuthorizeSdk()
+	if err != nil {
+		log.Println("Failed to authorize platform configuration: ", err.Error())
+	}
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

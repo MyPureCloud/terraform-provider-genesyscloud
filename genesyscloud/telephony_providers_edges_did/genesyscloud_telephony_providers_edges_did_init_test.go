@@ -1,10 +1,14 @@
 package telephony_providers_edges_did
 
 import (
-	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
-	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
+	"log"
 	"sync"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -14,6 +18,8 @@ var providerDataSources map[string]*schema.Resource
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
+
+var sdkConfig *platformclientv2.Configuration
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -50,6 +56,13 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
+	var err error
+	sdkConfig, err = provider.AuthorizeSdk()
+	if err != nil {
+		log.Println("telephony_providers_edges_did.TestMain: ", err.Error())
+		sdkConfig = platformclientv2.GetDefaultConfiguration()
+	}
+
 	// Run setup function before starting the test suite for package
 	initTestResources()
 

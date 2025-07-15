@@ -16,7 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 const (
@@ -28,6 +28,8 @@ const (
 	DefaultMaxClients = 10
 	MinClients        = 1
 	MaxClients        = 20
+
+	AbsoluteDynamicMaxClients = 50 // Maximum clients the pool can grow to dynamically
 
 	// Logging intervals
 	MetricsLoggingInterval = 5 * time.Minute
@@ -138,6 +140,7 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 		}
 		SdkClientPool.logDebug("Initialized %d SDK clients in the Pool with acquire timeout %v and init timeout %v.", max, acquireTimeout, initTimeout)
 
+		setProviderConfig(providerConfig)
 		SdkClientPool.startMetricsLogging()
 		SdkClientPoolErr = SdkClientPool.preFill(ctx, providerConfig, version)
 	})
@@ -457,6 +460,188 @@ func (p *SDKClientPool) GetMetrics() poolMetrics {
 		acquireTimeouts: p.metrics.acquireTimeouts,
 		lastAcquireTime: p.metrics.lastAcquireTime,
 	}
+}
+
+// AddClientsToPool adds new client connections to the existing pool without reinitializing it
+func (p *SDKClientPool) AddClientsToPool(ctx context.Context, providerConfig *schema.ResourceData, version string, numClients int) diag.Diagnostics {
+	if numClients <= 0 {
+		return nil
+	}
+
+	p.logDebug("Adding %d new client connections to existing pool", numClients)
+
+	errorChan := make(chan diag.Diagnostics, numClients)
+	var wg sync.WaitGroup
+
+	// Create a semaphore to limit concurrent initializations (similar to preFill)
+	concurrentInits := int(math.Min(
+		float64(numClients),
+		math.Max(5, float64(numClients/4))))
+	sem := make(chan struct{}, concurrentInits)
+
+	// Create a done channel for signaling goroutine cleanup
+	addDone := make(chan struct{})
+	defer close(addDone)
+
+	for i := 0; i < numClients; i++ {
+		sdkConfig := platformclientv2.NewConfiguration()
+		wg.Add(1)
+		go func(config *platformclientv2.Configuration, clientNum int) {
+			defer wg.Done()
+			defer func() {
+				<-sem // Release semaphore
+			}()
+
+			// Try to acquire semaphore with context awareness
+			select {
+			case sem <- struct{}{}: // Acquire semaphore
+			case <-ctx.Done():
+				return
+			case <-addDone:
+				return
+			}
+
+			if err := InitClientConfig(ctx, providerConfig, version, config, false); err != nil {
+				select {
+				case errorChan <- err:
+				case <-ctx.Done():
+					p.logDebug("[WARN] Context cancelled while trying to send error: %v", err)
+				default:
+				}
+				return
+			}
+
+			// Try to add to pool with context awareness
+			cleanup := false
+			select {
+			case p.Pool <- config:
+				// Successfully added to the pool
+				p.logDebug("Successfully added client %d to pool", clientNum+1)
+			case <-ctx.Done():
+				cleanup = true
+			case <-addDone:
+				cleanup = true
+			case <-time.After(30 * time.Second):
+				cleanup = true
+			}
+
+			// Cleanup the config if we can't add it to the pool
+			if cleanup {
+				if err := cleanupConfiguration(config); err != nil {
+					p.logDebug("Error cleaning up configuration during cancellation: %v", err)
+				}
+			}
+		}(sdkConfig, i)
+	}
+
+	// Use a separate goroutine to collect errors
+	var resultErr diag.Diagnostics
+	errDone := make(chan struct{})
+	go func() {
+		defer close(errDone)
+		for {
+			select {
+			case err, ok := <-errorChan:
+				if !ok {
+					return
+				}
+				resultErr = append(resultErr, err...)
+			case <-ctx.Done():
+				return
+			case <-addDone:
+				return
+			}
+		}
+	}()
+
+	// Wait for completion or context cancellation
+	go func() {
+		wg.Wait()
+		close(errorChan)
+	}()
+
+	// Wait until either WaitGroup is done or an error is received
+	select {
+	case <-errDone:
+		if resultErr != nil {
+			p.logDebug("Error adding clients to pool - %s", p.formatMetrics())
+			return resultErr
+		}
+		p.logDebug("Successfully added %d clients to pool - %s", numClients, p.formatMetrics())
+		return nil
+	case <-ctx.Done():
+		p.logDebug("Timed out adding clients to pool - %s", p.formatMetrics())
+		return diag.Errorf("Timed out adding clients to pool: %v", ctx.Err())
+	}
+}
+
+// AdjustPoolForTimeout attempts to add new client connections to the pool when timeout errors are encountered
+// This function is designed to be fail-safe and will not cause the calling process to fail
+func (p *SDKClientPool) AdjustPoolForTimeout(version string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[AdjustPoolForTimeout] PANIC recovered in pool adjustment: %v", r)
+		}
+	}()
+
+	log.Printf("[AdjustPoolForTimeout] Attempting to add new client connections to existing pool")
+
+	// Get current pool configuration
+	currentMaxClients := p.GetMaxClients()
+
+	log.Printf("[AdjustPoolForTimeout] Current pool maximum: %d", currentMaxClients)
+
+	// Add only 1 client per timeout
+	newClientsToAdd := 1
+
+	// Check if adding 1 client would exceed the absolute dynamic maximum
+	if currentMaxClients >= AbsoluteDynamicMaxClients {
+		log.Printf("[AdjustPoolForTimeout] Pool already at absolute dynamic maximum capacity (%d), cannot add more clients", AbsoluteDynamicMaxClients)
+		return
+	}
+
+	// Calculate new maximum
+	newMaxClients := currentMaxClients + newClientsToAdd
+
+	log.Printf("[AdjustPoolForTimeout] Increasing pool maximum from %d to %d", currentMaxClients, newMaxClients)
+
+	// Update the pool configuration to the new maximum
+	p.config.MaxClients = newMaxClients
+
+	log.Printf("[AdjustPoolForTimeout] Adding %d new client connection to existing pool", newClientsToAdd)
+
+	// Create a context with a reasonable timeout for adding new clients
+	// Use a shorter timeout to prevent blocking the export process for too long
+	addCtx, addCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer addCancel()
+
+	// Get the provider configuration
+	providerConfig := GetProviderConfig()
+	if providerConfig == nil {
+		log.Printf("[AdjustPoolForTimeout] WARNING: Could not get provider configuration")
+		return
+	}
+
+	// Use the AddClientsToPool method with error handling
+	// This is blocking but with a timeout to prevent hanging
+	err := p.AddClientsToPool(addCtx, providerConfig, version, newClientsToAdd)
+	if err != nil {
+		log.Printf("[AdjustPoolForTimeout] WARNING: Failed to add clients to pool: %v", err)
+		log.Printf("[AdjustPoolForTimeout] Continuing process without pool adjustment")
+		return
+	}
+
+	log.Printf("[AdjustPoolForTimeout] Successfully added %d new client connection to pool", newClientsToAdd)
+	log.Printf("[AdjustPoolForTimeout] Pool capacity increased from %d to %d clients",
+		currentMaxClients, newMaxClients)
+}
+
+// Helper function to find minimum of two values
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics

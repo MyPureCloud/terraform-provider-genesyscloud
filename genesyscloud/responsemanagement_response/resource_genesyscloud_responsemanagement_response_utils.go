@@ -1,12 +1,15 @@
 package responsemanagement_response
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func getResponseFromResourceData(d *schema.ResourceData) platformclientv2.Response {
@@ -249,4 +252,37 @@ func flattenAddressableEntityRefs(addressableEntityRefs *[]platformclientv2.Addr
 		addressableEntityRefList[i] = *v.Id
 	}
 	return schema.NewSet(schema.HashString, addressableEntityRefList)
+}
+
+func GenerateResponseManagementResponseResource(
+	resourceLabel string,
+	name string,
+	libraryIds []string,
+	interactionType string,
+	schema string,
+	responseType string,
+	assetIds []string,
+	nestedBlocks ...string,
+) string {
+	return fmt.Sprintf(`
+		resource "genesyscloud_responsemanagement_response" "%s" {
+			name = "%s"
+			library_ids = [%s]
+			interaction_type = %s
+			substitutions_schema_id = %s
+			response_type = %s
+			asset_ids = [%s]
+			%s
+		}
+	`, resourceLabel, name, strings.Join(libraryIds, ", "), interactionType, schema, responseType, strings.Join(assetIds, ", "), strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateTextsBlock(content string, contentType string, cType string) string {
+	return fmt.Sprintf(`
+		texts {
+			content = "%s"
+			content_type = "%s"
+			type = %s
+		}
+	`, content, contentType, cType)
 }

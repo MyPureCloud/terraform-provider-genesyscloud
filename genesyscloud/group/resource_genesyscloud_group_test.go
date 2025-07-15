@@ -2,18 +2,19 @@ package group
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -143,6 +144,57 @@ func TestAccResourceGroupBasic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,
+			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
+		},
+	})
+}
+
+func TestAccResourceGroupIncludeOwners(t *testing.T) {
+
+	var (
+		groupDesc1            = "Terraform Group Description 1"
+		typeOfficial          = "official" // Default
+		visPublic             = "public"   // Default
+		testUserResourceLabel = "user_resource1"
+		testUserName          = "nameUser1" + uuid.NewString()
+		testUserEmail         = uuid.NewString() + "@group.com"
+		groupResourceLabel2   = "test-group2"
+		groupName2            = "terraform-" + uuid.NewString()
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create a group with include owners
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel2,
+						groupName2,
+						strconv.Quote(groupDesc1),
+						util.NullValue, // Default type
+						util.NullValue, // Default visibility
+						util.NullValue, // Default rules_visible
+						"roles_enabled = false",
+						"calls_enabled = false",
+						"include_owners = false",
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "name", groupName2),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "type", typeOfficial),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "description", groupDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "visibility", visPublic),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "rules_visible", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "roles_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "calls_enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel2, "include_owners", util.FalseValue),
+				),
 			},
 		},
 		CheckDestroy: func(state *terraform.State) error {

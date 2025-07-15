@@ -5,6 +5,7 @@ import (
 
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -35,6 +36,8 @@ import (
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
+	guideVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide_version"
 	idpAdfs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_adfs"
 	idpGeneric "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_generic"
 	idpGsuite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_gsuite"
@@ -44,6 +47,7 @@ import (
 	idpSalesforce "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/idp_salesforce"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
+	integrationActionDraft "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
@@ -131,8 +135,6 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
@@ -164,9 +166,10 @@ circular dependency issues with the package tf_exporter
 */
 
 var (
-	providerResources   = make(map[string]*schema.Resource)
-	providerDataSources = make(map[string]*schema.Resource)
-	resourceExporters   = make(map[string]*resourceExporter.ResourceExporter)
+	providerResources     = make(map[string]*schema.Resource)
+	providerResourceTypes = make([]string, 0)
+	providerDataSources   = make(map[string]*schema.Resource)
+	resourceExporters     = make(map[string]*resourceExporter.ResourceExporter)
 )
 
 type RegisterInstance struct {
@@ -196,6 +199,13 @@ func GetResourceExporterByResourceType(resourceType string) *resourceExporter.Re
 	return resourceExporters[resourceType]
 }
 
+func GetResourceTypeNames() []string {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	return providerResourceTypes
+}
+
 func resourceMapsAreRegistered() bool {
 	if providerResources == nil || providerDataSources == nil || resourceExporters == nil {
 		return false
@@ -220,6 +230,8 @@ func registerResources() {
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
+	guide.SetRegistrar(regInstance)                                        //Registering guide
+	guideVersion.SetRegistrar(regInstance)                                 //Registering Guide Version
 	edgePhone.SetRegistrar(regInstance)                                    //Registering telephony  providers edges phone
 	edgeSite.SetRegistrar(regInstance)                                     //Registering telephony providers edges site
 	siteOutboundRoutes.SetRegistrar(regInstance)                           //Registering telephony providers edges site outbound routes
@@ -262,6 +274,7 @@ func registerResources() {
 	integration.SetRegistrar(regInstance)                                  //Registering integrations
 	integrationCustomAuth.SetRegistrar(regInstance)                        //Registering integrations custom auth actions
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
+	integrationActionDraft.SetRegistrar(regInstance)                       //Registering integrations action draft
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
@@ -343,6 +356,7 @@ func (r *RegisterInstance) RegisterResource(resourceType string, resource *schem
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 	providerResources[resourceType] = resource
+	providerResourceTypes = append(providerResourceTypes, resourceType)
 }
 
 func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {

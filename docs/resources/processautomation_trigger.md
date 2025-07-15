@@ -25,7 +25,7 @@ resource "genesyscloud_processautomation_trigger" "example-trigger" {
   topic_name = "v2.detail.events.conversation.{id}.customer.end"
   enabled    = true
   target {
-    id   = data.genesyscloud_flow.workflow-trigger.id
+    id   = genesyscloud_flow.workflow_flow.id
     type = "Workflow"
     workflow_target_settings {
       data_format = "TopLevelPrimitives"

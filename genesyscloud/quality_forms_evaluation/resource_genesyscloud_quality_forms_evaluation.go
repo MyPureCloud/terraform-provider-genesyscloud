@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v157/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
 // getAllEvaluationForms retrieves all evaluation forms from Genesys Cloud
@@ -91,7 +91,6 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		d.SetId(*formResponse.Id)
 	}
 
-	d.SetId(*formResponse.Id)
 	d.Set("context_id", *formResponse.ContextId)
 
 	log.Printf("Created evaluation form %s %s", name, *formResponse.Id)
