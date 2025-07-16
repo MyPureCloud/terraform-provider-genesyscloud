@@ -113,7 +113,7 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 	}
 
 	if d.HasChange("default_expiration_seconds") {
-		worktype.SetField("DefaultExpirationSeconds", resourcedata.GetNillableValue[int](d, "default_duration_seconds"))
+		worktype.SetField("DefaultExpirationSeconds", resourcedata.GetNillableValue[int](d, "default_expiration_seconds"))
 	}
 
 	if d.HasChange("default_due_duration_seconds") {
