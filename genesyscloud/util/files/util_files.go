@@ -162,8 +162,15 @@ func (s *S3Uploader) createFormData() error {
 		if x, ok := r.(io.Closer); ok {
 			defer x.Close()
 		}
-		if file, ok := r.(*os.File); ok {
-			fw, err = s.Writer.CreateFormFile(key, file.Name())
+
+		// For the "file" field, always create a form file, even for non-file readers (like S3)
+		if key == "file" {
+			// Try to get filename from the reader if it's a file
+			filename := "script.json" // default filename
+			if file, ok := r.(*os.File); ok {
+				filename = file.Name()
+			}
+			fw, err = s.Writer.CreateFormFile(key, filename)
 		} else {
 			fw, err = s.Writer.CreateFormField(key)
 		}
