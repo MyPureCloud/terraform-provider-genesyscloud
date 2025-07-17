@@ -17,66 +17,16 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/scripts/uploads/{uploadId}/status](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts-uploads--uploadId--status)
 * [POST /api/v2/scripts/published](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-scripts-published)
 
-## File Support
-
-This resource supports both local filesystem and Amazon S3 file sources:
-
-### Local Files
-- Standard file paths: `/path/to/script.json`
-- Relative paths: `./scripts/email.script.json`
-
-### S3 Files
-- S3 URI format: `s3://bucket-name/path/to/script.json`
-- Alternative format: `s3a://bucket-name/path/to/script.json`
-
-### AWS Credentials
-S3 files use the standard AWS credential chain:
-- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-- AWS credentials file (`~/.aws/credentials`)
-- IAM roles (EC2 instance profiles, EKS service accounts)
-- AWS SSO profiles
-
 ## Example Usage
-
-### Basic Script with Local File
 
 ```terraform
 resource "genesyscloud_script" "example_script" {
   script_name       = "Example script name ${random_uuid.uuid.result}"
-  filepath          = "${local.working_dir.script}/email.script.json"
+  filepath          = "${local.working_dir.script}/email.script.json" // Also supports s3:// paths e.g. s3://my-bucket/scripts/example.json
   file_content_hash = filesha256("${local.working_dir.script}/email.script.json")
   substitutions = {
     /* Inside the script file, "{{foo}}" will be replaced with "bar" */
     foo = "bar"
-  }
-}
-```
-
-### Script with S3 File
-
-```terraform
-resource "genesyscloud_script" "s3_script" {
-  script_name       = "S3_Script_Example"
-  filepath          = "s3://my-scripts-bucket/scripts/email-flow.json"
-  file_content_hash = filesha256("s3://my-scripts-bucket/scripts/email-flow.json")
-  substitutions = {
-    company_name = "Acme Corp"
-    support_email = "support@acme.com"
-  }
-}
-```
-
-### Script with Division Assignment
-
-```terraform
-resource "genesyscloud_script" "division_script" {
-  script_name       = "Division_Specific_Script"
-  filepath          = "s3://scripts-bucket/division/call-handling.json"
-  file_content_hash = filesha256("s3://scripts-bucket/division/call-handling.json")
-  division_id       = "division-id-here"
-  substitutions = {
-    queue_name = "Sales Queue"
-    timeout_seconds = "30"
   }
 }
 ```
@@ -87,7 +37,7 @@ resource "genesyscloud_script" "division_script" {
 ### Required
 
 - `file_content_hash` (String) Hash value of the script file content. Used to detect changes.
-- `filepath` (String) Path to the script file to upload. Supports local filesystem paths and S3 URIs (s3://bucket-name/path/to/script.json).
+- `filepath` (String) Path to the script file to upload.
 - `script_name` (String) Display name for the script. A reliably unique name is recommended. Updating this field will result in the script being dropped and recreated with a new GUID.
 
 ### Optional
