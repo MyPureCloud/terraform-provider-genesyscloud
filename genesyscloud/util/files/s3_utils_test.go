@@ -2,13 +2,10 @@ package files
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func TestIsS3Path(t *testing.T) {
@@ -45,6 +42,16 @@ func TestIsS3Path(t *testing.T) {
 		{
 			name:     "Relative path",
 			path:     "./file.yaml",
+			expected: false,
+		},
+		{
+			name:     "HTTPS URL",
+			path:     "https://example.com/file.yaml",
+			expected: false,
+		},
+		{
+			name:     "File protocol",
+			path:     "file:///path/to/file.yaml",
 			expected: false,
 		},
 	}
@@ -89,6 +96,20 @@ func TestParseS3URI(t *testing.T) {
 			expectError:    false,
 		},
 		{
+			name:           "S3 URI with special characters in key",
+			uri:            "s3://my-bucket/path/with spaces and (parentheses)/file.yaml",
+			expectedBucket: "my-bucket",
+			expectedKey:    "path/with spaces and (parentheses)/file.yaml",
+			expectError:    false,
+		},
+		{
+			name:           "S3 URI with file extension",
+			uri:            "s3://my-bucket/data/file.json",
+			expectedBucket: "my-bucket",
+			expectedKey:    "data/file.json",
+			expectError:    false,
+		},
+		{
 			name:        "Invalid S3 URI - missing key",
 			uri:         "s3://my-bucket",
 			expectError: true,
@@ -99,6 +120,13 @@ func TestParseS3URI(t *testing.T) {
 			expectError: true,
 		},
 		{
+			name:           "S3 URI with double slash (valid)",
+			uri:            "s3://my-bucket//path/to/file.yaml",
+			expectedBucket: "my-bucket",
+			expectedKey:    "/path/to/file.yaml",
+			expectError:    false,
+		},
+		{
 			name:        "Not an S3 URI",
 			uri:         "http://example.com/file.yaml",
 			expectError: true,
@@ -106,6 +134,16 @@ func TestParseS3URI(t *testing.T) {
 		{
 			name:        "Empty URI",
 			uri:         "",
+			expectError: true,
+		},
+		{
+			name:        "Invalid S3 URI - only protocol",
+			uri:         "s3://",
+			expectError: true,
+		},
+		{
+			name:        "Invalid S3 URI - s3a with missing key",
+			uri:         "s3a://my-bucket",
 			expectError: true,
 		},
 	}
@@ -178,95 +216,90 @@ func TestGetS3FileReader_NonExistentLocalFile(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for non-existent file")
 	}
-}
-
-func TestHashS3FileContent_LocalFile(t *testing.T) {
-	// Create a temporary file for testing
-	tempFile, err := os.CreateTemp("", "test_*.txt")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
-
-	// Write some test content
-	testContent := "test content for hashing"
-	_, err = tempFile.WriteString(testContent)
-	if err != nil {
-		t.Fatalf("Failed to write to temp file: %v", err)
-	}
-	tempFile.Close()
-
-	// Test hashing local file
-	ctx := context.Background()
-	hash, err := HashS3FileContent(ctx, tempFile.Name())
-	if err != nil {
-		t.Fatalf("HashS3FileContent failed: %v", err)
-	}
-
-	if hash == "" {
-		t.Error("Expected non-empty hash")
-	}
-
-	// Hash should be consistent for same content
-	hash2, err := HashS3FileContent(ctx, tempFile.Name())
-	if err != nil {
-		t.Fatalf("HashS3FileContent failed on second call: %v", err)
-	}
-
-	if hash != hash2 {
-		t.Errorf("Expected consistent hash, got %q and %q", hash, hash2)
+	if !strings.Contains(err.Error(), "failed to open local file") {
+		t.Errorf("Expected error about opening local file, got: %v", err)
 	}
 }
 
-func TestCopyS3FileToLocal_InvalidS3Path(t *testing.T) {
+func TestGetS3FileReader_InvalidS3Path(t *testing.T) {
 	ctx := context.Background()
-	err := CopyS3FileToLocal(ctx, "/local/path/file.txt", "/tmp/test.txt")
+	_, _, err := GetS3FileReader(ctx, "s3://invalid-uri")
 	if err == nil {
-		t.Error("Expected error for non-S3 path")
+		t.Error("Expected error for invalid S3 URI")
+	}
+	if !strings.Contains(err.Error(), "failed to parse S3 URI") {
+		t.Errorf("Expected error about parsing S3 URI, got: %v", err)
 	}
 }
 
-func TestValidateS3Path_InvalidPath(t *testing.T) {
+// Mock tests for AWS-dependent functions
+// These tests demonstrate how to mock the AWS functions for testing
+
+func TestDownloadFile_Mock(t *testing.T) {
+	// This test demonstrates how DownloadFile would be tested with a mock
+	// In a real implementation, you would inject a mock S3 client
 	ctx := context.Background()
-	err := ValidateS3Path(ctx, "/local/path/file.txt")
+
+	// This test would require a mock S3 client to be injected
+	// For now, we'll just test the function signature and error handling
+	// when AWS credentials are not available
+
+	// Test with invalid bucket/key to trigger AWS config error
+	_, err := DownloadFile(ctx, "", "")
 	if err == nil {
-		t.Error("Expected error for non-S3 path")
+		t.Error("Expected error for empty bucket/key")
 	}
 }
 
-// Mock S3 client for testing
-type mockS3Client struct {
-	shouldError bool
-}
-
-func (m *mockS3Client) GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
-	if m.shouldError {
-		return nil, fmt.Errorf("mock S3 error")
+func TestGetS3FileReader_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name        string
+		path        string
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name:        "Empty path",
+			path:        "",
+			expectError: true,
+			errorMsg:    "failed to open local file",
+		},
+		{
+			name:        "Path with spaces",
+			path:        "/path/with spaces/file.txt",
+			expectError: true,
+			errorMsg:    "failed to open local file",
+		},
+		{
+			name:        "Invalid S3 URI format",
+			path:        "s3://",
+			expectError: true,
+			errorMsg:    "failed to parse S3 URI",
+		},
+		{
+			name:        "S3 URI with missing key",
+			path:        "s3://bucket",
+			expectError: true,
+			errorMsg:    "failed to parse S3 URI",
+		},
 	}
 
-	// Return a mock response with test content
-	content := "test S3 content"
-	reader := strings.NewReader(content)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			_, _, err := GetS3FileReader(ctx, tt.path)
 
-	return &s3.GetObjectOutput{
-		Body: io.NopCloser(reader),
-	}, nil
-}
-
-func (m *mockS3Client) HeadObject(ctx context.Context, params *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
-	if m.shouldError {
-		return nil, fmt.Errorf("mock S3 error")
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("Expected error for path %q", tt.path)
+				} else if !strings.Contains(err.Error(), tt.errorMsg) {
+					t.Errorf("Expected error containing %q, got %q", tt.errorMsg, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error for path %q: %v", tt.path, err)
+				}
+			}
+		})
 	}
-
-	return &s3.HeadObjectOutput{}, nil
 }
-
-// Test helper function to create a mock S3 client
-func createMockS3Client(shouldError bool) *mockS3Client {
-	return &mockS3Client{shouldError: shouldError}
-}
-
-// Note: These tests would require more sophisticated mocking of the AWS SDK
-// In a real implementation, you would use a proper mocking framework like testify/mock
-// or create interfaces for the S3 client to make it more testable

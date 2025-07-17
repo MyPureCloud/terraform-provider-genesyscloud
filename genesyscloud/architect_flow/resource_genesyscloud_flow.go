@@ -55,7 +55,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	return resources, nil
 }
 
-func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 
 	proxy := newArchitectFlowProxy(sdkConfig)
@@ -77,12 +77,12 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	})
 }
 
-func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	log.Printf("Creating flow")
 	return updateFlow(ctx, d, meta)
 }
 
-func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 
@@ -115,9 +115,9 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	headers := *flowJob.Headers
 
 	filePath := d.Get("filepath").(string)
-	substitutions := d.Get("substitutions").(map[string]interface{})
+	substitutions := d.Get("substitutions").(map[string]any)
 
-	reader, _, err := files.DownloadOrOpenFile(filePath)
+	reader, _, err := files.DownloadOrOpenFile(ctx, filePath)
 	if err != nil {
 		setFileContentHashToNil(d)
 		return diag.FromErr(err)
@@ -176,7 +176,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	return readFlow(ctx, d, meta)
 }
 
-func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 

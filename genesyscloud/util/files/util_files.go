@@ -62,7 +62,7 @@ func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitution
 
 func (s *S3Uploader) substituteValues() {
 	// Attribute specific to the flows resource
-	if s.substitutions != nil && len(s.substitutions) > 0 {
+	if len(s.substitutions) > 0 {
 		fileContents := s.bodyBuf.String()
 		for k, v := range s.substitutions {
 			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
@@ -184,15 +184,13 @@ func (s *S3Uploader) createFormData() error {
 	return nil
 }
 
-func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
+// DownloadOrOpenFile is a function that downloads or opens a file from a given path.
+func DownloadOrOpenFile(ctx context.Context, path string) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
 
 	// Check if the path is an S3 URI
 	if IsS3Path(path) {
-		// For S3 paths, we need a context, so we'll use a background context
-		// In a real implementation, this should be passed from the calling function
-		ctx := context.Background()
 		return GetS3FileReader(ctx, path)
 	}
 
@@ -275,7 +273,7 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 
 // HashFileContent Hash file content, used in stateFunc for "filepath" type attributes
 func HashFileContent(path string) (string, error) {
-	reader, file, err := DownloadOrOpenFile(path)
+	reader, file, err := DownloadOrOpenFile(context.Background(), path)
 	if err != nil {
 		return "", fmt.Errorf("unable to open file: %v", err.Error())
 	}
@@ -302,7 +300,7 @@ func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 // getCSVRecordCount retrieves the number of records in a CSV file (i.e., number of lines in a file minus the header)
 func GetCSVRecordCount(filepath string) (int, error) {
 	// Open file up and read the record count
-	reader, file, err := DownloadOrOpenFile(filepath)
+	reader, file, err := DownloadOrOpenFile(context.Background(), filepath)
 	if err != nil {
 		return 0, err
 	}

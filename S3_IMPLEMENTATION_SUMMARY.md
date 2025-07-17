@@ -13,11 +13,7 @@ Created comprehensive S3 utility functions:
 - `IsS3Path(path string) bool` - Detects S3 URIs (s3:// and s3a://)
 - `ParseS3URI(uri string) (bucket, key string, err error)` - Parses S3 URIs into bucket and key
 - `DownloadS3File(ctx context.Context, bucket, key string) (io.Reader, error)` - Downloads files from S3
-- `UploadS3File(ctx context.Context, bucket, key string, reader io.Reader) error` - Uploads files to S3
 - `GetS3FileReader(ctx context.Context, path string) (io.Reader, *os.File, error)` - Unified reader for S3 and local files
-- `HashS3FileContent(ctx context.Context, path string) (string, error)` - Calculates SHA256 hash of S3 files
-- `CopyS3FileToLocal(ctx context.Context, s3Path, localPath string) error` - Copies S3 files to local
-- `ValidateS3Path(ctx context.Context, path string) error` - Validates S3 path accessibility
 
 ### 2. **Enhanced File Handling** (`genesyscloud/util/files/util_files.go`)
 

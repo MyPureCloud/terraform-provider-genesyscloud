@@ -555,8 +555,8 @@ func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromp
 	return "", response, fmt.Errorf("no prompts found with name '%s'", name), true
 }
 
-func uploadPromptFileFn(_ context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
-	reader, file, err := files.DownloadOrOpenFile(filename)
+func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
+	reader, file, err := files.DownloadOrOpenFile(ctx, filename)
 	if err != nil {
 		return err
 	}

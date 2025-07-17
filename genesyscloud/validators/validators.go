@@ -207,7 +207,7 @@ func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
 		return warnings, errors
 	}
 
-	_, file, err := files.DownloadOrOpenFile(v)
+	_, file, err := files.DownloadOrOpenFile(context.Background(), v)
 	if err != nil {
 		return warnings, append(errors, err)
 	}
@@ -247,7 +247,7 @@ func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error
 	}
 
 	// Open the file
-	_, fileHandler, err := files.DownloadOrOpenFile(filepath)
+	_, fileHandler, err := files.DownloadOrOpenFile(context.Background(), filepath)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
