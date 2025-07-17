@@ -635,20 +635,20 @@ var (
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Deprecated:  "Deprecated",
+				Deprecated:  "This field has no effect and will be removed in a later version.",
 			},
 			"should_keep_url_fragment": {
 				Description: "Whether or not to keep the URL fragment",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Deprecated:  "Deprecated",
+				Deprecated:  "This field has no effect and will be removed in a later version.",
 			},
 			"search_query_parameters": {
 				Description: "List of query parameters used for search (e.g. 'q')",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
-				Deprecated:  "Deprecated",
+				Deprecated:  "This field has no effect and will be removed in a later version.",
 			},
 			"pageview_config": {
 				Description: "Controls how the pageview events are tracked.Valid values: Auto, Once, Off",
