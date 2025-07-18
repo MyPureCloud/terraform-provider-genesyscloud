@@ -34,14 +34,26 @@ func ResourceGuide() *schema.Resource {
 				ForceNew:    true,
 			},
 			"source": {
-				Description:  "Indicates how the guide content was generated.Valid values: Manual, Prompt, Document",
+				Description:  "Indicates how the guide content was generated.Valid values: Manual, Prompt, Document. A prompt or url is required when the source is set to Prompt",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Manual", "Prompt", "Document"}, true),
 			},
+			"prompt": {
+				Description: "The prompt used to generate the guide. This is only applicable when source is set to Prompt",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"url": {
+				Description: "The URL of the file to use for generating the guide. This is only applicable when source is set to Prompt",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 			"status": {
-				Description: "The status of the guide",
+				Description: "The status of the guide returned from the API. Valid values: Draft, ProductionReady",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
