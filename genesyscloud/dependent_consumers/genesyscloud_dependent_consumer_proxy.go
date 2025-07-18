@@ -118,6 +118,7 @@ func fetchDepConsumers(ctx context.Context,
 
 				// return empty dependsMap and  resources
 				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
+					log.Printf("Retrieved dependencies for ID  noresult %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
 					return resources, dependsMap, cyclicDependsList, nil
 				}
 
@@ -127,6 +128,7 @@ func fetchDepConsumers(ctx context.Context,
 					if err != nil {
 						return nil, nil, nil, err
 					}
+					log.Printf("Retrieved dependencies for resourceKey %s, resources %v, length %d", resourceKey, resources, len(resources))
 					return resources, dependsMap, cyclicDependsList, nil
 				}
 
@@ -147,6 +149,7 @@ func fetchDepConsumers(ctx context.Context,
 			}
 		}
 	}
+	log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
 	return resources, dependsMap, cyclicDependsList, nil
 }
 
