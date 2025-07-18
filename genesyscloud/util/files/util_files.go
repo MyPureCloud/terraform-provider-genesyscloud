@@ -272,8 +272,8 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 }
 
 // HashFileContent Hash file content, used in stateFunc for "filepath" type attributes
-func HashFileContent(path string) (string, error) {
-	reader, file, err := DownloadOrOpenFile(context.Background(), path)
+func HashFileContent(ctx context.Context, path string) (string, error) {
+	reader, file, err := DownloadOrOpenFile(ctx, path)
 	if err != nil {
 		return "", fmt.Errorf("unable to open file: %v", err.Error())
 	}

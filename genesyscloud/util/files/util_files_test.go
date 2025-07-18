@@ -320,6 +320,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 }
 
 func TestHashFileContent(t *testing.T) {
+	ctx := context.Background()
 	// Create a temporary test file
 	tempContent := []byte("test content")
 	tempFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "test_file_*.txt")
@@ -335,7 +336,7 @@ func TestHashFileContent(t *testing.T) {
 
 	// Test successful case
 	t.Run("successful hash", func(t *testing.T) {
-		hash, err := HashFileContent(tempFile.Name())
+		hash, err := HashFileContent(ctx, tempFile.Name())
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -351,7 +352,7 @@ func TestHashFileContent(t *testing.T) {
 
 	// Test non-existent file
 	t.Run("non-existent file", func(t *testing.T) {
-		hash, err := HashFileContent("non_existent_file.txt")
+		hash, err := HashFileContent(ctx, "non_existent_file.txt")
 		if err == nil {
 			t.Error("Expected error for non-existent file, got nil")
 		}

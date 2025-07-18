@@ -401,7 +401,7 @@ func ValidateFileContentHashChanged(filepathAttr, hashAttr string) customdiff.Re
 	return func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
 		filepath := d.Get(filepathAttr).(string)
 
-		newHash, err := files.HashFileContent(filepath)
+		newHash, err := files.HashFileContent(context.Background(), filepath)
 		if err != nil {
 			log.Printf("Error calculating file content hash: %v", err)
 			return false

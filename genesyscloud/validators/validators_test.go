@@ -1,6 +1,7 @@
 package validators
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -241,6 +242,7 @@ func BenchmarkValidateCSVFormatWithConfig(b *testing.B) {
 }
 
 func TestFileContentHashChanged(t *testing.T) {
+	ctx := context.Background()
 	// Create a temporary test file
 	tmpFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "test-content-*.txt")
 	if err != nil {
@@ -315,7 +317,7 @@ func TestFileContentHashChanged(t *testing.T) {
 			)
 
 			// Pre calculate hash
-			priorHash, err := files.HashFileContent(tmpFile.Name())
+			priorHash, err := files.HashFileContent(ctx, tmpFile.Name())
 			if err != nil {
 				t.Fatalf("Failed to calculate hash: %v", err)
 			}

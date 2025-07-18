@@ -3,14 +3,15 @@ package architect_flow
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -137,11 +138,11 @@ func updateResourceConfigAndState(configMap map[string]any, resource resourceExp
 	)
 
 	configMap["filepath"] = exportFilePath
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilePath)
+	//configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilePath)
 
 	resource.State.Attributes["filepath"] = exportFilePath
 	// Update file_content_hash in exported state file with actual hash
-	hash, err := files.HashFileContent(exportFilePathIncludingExportDirName)
+	hash, err := files.HashFileContent(context.Background(), exportFilePathIncludingExportDirName)
 	if err != nil {
 		log.Printf("Error Calculating Hash '%s' ", err)
 	} else {

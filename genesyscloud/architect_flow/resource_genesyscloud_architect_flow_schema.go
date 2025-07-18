@@ -5,6 +5,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -33,9 +34,6 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": ResourceArchitectFlow().Schema["filepath"],
-		},
-		CustomFlowResolver: map[string]*resourceExporter.CustomFlowResolver{
-			"file_content_hash": {ResolverFunc: resourceExporter.FileContentHashResolver},
 		},
 	}
 
@@ -67,6 +65,9 @@ Export block label: "{type}_{name}"`,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChanged("filepath", "file_content_hash")),
+		),
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -90,7 +91,8 @@ Export block label: "{type}_{name}"`,
 			"file_content_hash": {
 				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",

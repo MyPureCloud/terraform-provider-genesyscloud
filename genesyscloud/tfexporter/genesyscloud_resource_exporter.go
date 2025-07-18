@@ -599,9 +599,6 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 		}
 	}
 
-	if len(exporters[resource.Type].CustomFlowResolver) > 0 {
-		g.updateInstanceStateAttributes(jsonResult, resource)
-	}
 	return diagnostics
 }
 
@@ -1793,15 +1790,6 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				if err := resolverFunc(configMap, exporters, resourceLabel); err != nil {
 					log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
 				}
-			}
-		}
-
-		// Check if the exporter has custom flow resolver (Only applicable for flow resource)
-		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
-			log.Printf("Custom resolver invoked for attribute: %s", currAttr)
-			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, "filepath")
-			if err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference); err != nil {
-				log.Printf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err)
 			}
 		}
 
