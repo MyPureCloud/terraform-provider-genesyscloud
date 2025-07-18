@@ -185,12 +185,13 @@ func (s *S3Uploader) createFormData() error {
 }
 
 // DownloadOrOpenFile is a function that downloads or opens a file from a given path.
-func DownloadOrOpenFile(ctx context.Context, path string) (io.Reader, *os.File, error) {
+// Note: supportS3 lets us know if the resource is prepared to handle S3 paths (e.g. architect_flow). Once all resources support S3 paths, we can remove this parameter.
+func DownloadOrOpenFile(ctx context.Context, path string, supportS3 bool) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
 
 	// Check if the path is an S3 URI
-	if IsS3Path(path) {
+	if IsS3Path(path) && supportS3 {
 		return GetS3FileReader(ctx, path)
 	}
 
@@ -272,8 +273,9 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 }
 
 // HashFileContent Hash file content, used in stateFunc for "filepath" type attributes
-func HashFileContent(ctx context.Context, path string) (string, error) {
-	reader, file, err := DownloadOrOpenFile(ctx, path)
+// Note: supportS3 lets us know if the resource is prepared to handle S3 paths (e.g. architect_flow). Once all resources support S3 paths, we can remove this parameter.
+func HashFileContent(ctx context.Context, path string, supportS3 bool) (string, error) {
+	reader, file, err := DownloadOrOpenFile(ctx, path, supportS3)
 	if err != nil {
 		return "", fmt.Errorf("unable to open file: %v", err.Error())
 	}
@@ -300,7 +302,7 @@ func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 // getCSVRecordCount retrieves the number of records in a CSV file (i.e., number of lines in a file minus the header)
 func GetCSVRecordCount(filepath string) (int, error) {
 	// Open file up and read the record count
-	reader, file, err := DownloadOrOpenFile(context.Background(), filepath)
+	reader, file, err := DownloadOrOpenFile(context.Background(), filepath, true)
 	if err != nil {
 		return 0, err
 	}

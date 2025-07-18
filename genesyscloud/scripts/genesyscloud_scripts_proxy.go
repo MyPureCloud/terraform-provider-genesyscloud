@@ -229,7 +229,7 @@ func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (
 
 // createScriptFormData creates the form data attributes to create a script in Genesys Cloud
 func (p *scriptsProxy) createScriptFormData(filePath, scriptName, scriptId string) (map[string]io.Reader, error) {
-	fileReader, _, err := files.DownloadOrOpenFile(context.Background(), filePath)
+	fileReader, _, err := files.DownloadOrOpenFile(context.Background(), filePath, false)
 	if err != nil {
 		return nil, err
 	}

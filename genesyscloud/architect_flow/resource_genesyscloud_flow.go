@@ -126,7 +126,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		})
 	}
 
-	reader, _, err := files.DownloadOrOpenFile(ctx, filePath)
+	reader, _, err := files.DownloadOrOpenFile(ctx, filePath, true)
 	if err != nil {
 		setFileContentHashToNil(d)
 		return append(diags, diag.FromErr(err)...)

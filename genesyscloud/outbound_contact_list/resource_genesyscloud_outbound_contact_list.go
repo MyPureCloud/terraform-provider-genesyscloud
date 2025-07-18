@@ -251,7 +251,7 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 		sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 		cp := GetOutboundContactlistProxy(sdkConfig)
 
-		filePathHash, err := files.HashFileContent(ctx, filePath)
+		filePathHash, err := files.HashFileContent(ctx, filePath, false)
 		if err != nil {
 			return diag.Errorf("Failed to read file content hash: %v", err)
 		}

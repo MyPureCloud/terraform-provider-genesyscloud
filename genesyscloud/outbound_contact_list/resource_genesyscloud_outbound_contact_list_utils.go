@@ -270,7 +270,7 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	// Remove read only attributes from the config file
 	delete(configMap, "contacts_file_content_hash")
 	delete(configMap, "contacts_record_count")
-	hash, err := files.HashFileContent(ctx, fullCurrentPath)
+	hash, err := files.HashFileContent(ctx, fullCurrentPath, false)
 	if err != nil {
 		log.Printf("Error calculating file content hash: %v", err)
 		return err

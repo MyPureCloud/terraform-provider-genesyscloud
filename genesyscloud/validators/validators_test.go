@@ -313,11 +313,11 @@ func TestFileContentHashChanged(t *testing.T) {
 						Computed: true,
 					},
 				},
-				customdiff.ComputedIf("file_content_hash", ValidateFileContentHashChanged("filepath", "file_content_hash")),
+				customdiff.ComputedIf("file_content_hash", ValidateFileContentHashChanged("filepath", "file_content_hash", false)),
 			)
 
 			// Pre calculate hash
-			priorHash, err := files.HashFileContent(ctx, tmpFile.Name())
+			priorHash, err := files.HashFileContent(ctx, tmpFile.Name(), false)
 			if err != nil {
 				t.Fatalf("Failed to calculate hash: %v", err)
 			}

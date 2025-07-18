@@ -138,11 +138,10 @@ func updateResourceConfigAndState(configMap map[string]any, resource resourceExp
 	)
 
 	configMap["filepath"] = exportFilePath
-	//configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilePath)
 
 	resource.State.Attributes["filepath"] = exportFilePath
 	// Update file_content_hash in exported state file with actual hash
-	hash, err := files.HashFileContent(context.Background(), exportFilePathIncludingExportDirName)
+	hash, err := files.HashFileContent(context.Background(), exportFilePathIncludingExportDirName, true)
 	if err != nil {
 		log.Printf("Error Calculating Hash '%s' ", err)
 	} else {

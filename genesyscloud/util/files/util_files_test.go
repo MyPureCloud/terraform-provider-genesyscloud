@@ -218,7 +218,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 		}))
 		defer server.Close()
 
-		reader, file, err := DownloadOrOpenFile(ctx, server.URL)
+		reader, file, err := DownloadOrOpenFile(ctx, server.URL, false)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -242,7 +242,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 		}))
 		defer server.Close()
 
-		reader, file, err := DownloadOrOpenFile(ctx, server.URL)
+		reader, file, err := DownloadOrOpenFile(ctx, server.URL, false)
 		if err == nil {
 			t.Error("Expected error for 404 response, got nil")
 		}
@@ -266,7 +266,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 		}
 		tmpfile.Close()
 
-		reader, file, err := DownloadOrOpenFile(ctx, tmpfile.Name())
+		reader, file, err := DownloadOrOpenFile(ctx, tmpfile.Name(), false)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -287,7 +287,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 
 	t.Run("non-existent local file", func(t *testing.T) {
 		path := filepath.Join(os.TempDir(), "nonexistent-file")
-		reader, file, err := DownloadOrOpenFile(ctx, path)
+		reader, file, err := DownloadOrOpenFile(ctx, path, false)
 		if err == nil {
 			t.Error("Expected error for non-existent file, got nil")
 		}
@@ -300,7 +300,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 	})
 
 	// Test that GetS3FileReader is used when the path is an S3 URI
-	t.Run("S3 util function is used when the path is an S3 URI", func(t *testing.T) {
+	t.Run("S3 util function is used when the path is an S3 URI and supportS3 is true", func(t *testing.T) {
 		originalGetS3FileReader := GetS3FileReader
 		defer func() {
 			GetS3FileReader = originalGetS3FileReader
@@ -309,7 +309,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 			return nil, nil, fmt.Errorf("test error")
 		}
 
-		reader, file, err := DownloadOrOpenFile(ctx, "s3://test-bucket/test-key")
+		reader, file, err := DownloadOrOpenFile(ctx, "s3://test-bucket/test-key", true)
 		if err == nil {
 			t.Error("Expected error for S3 URI, got nil")
 		}
@@ -336,7 +336,7 @@ func TestHashFileContent(t *testing.T) {
 
 	// Test successful case
 	t.Run("successful hash", func(t *testing.T) {
-		hash, err := HashFileContent(ctx, tempFile.Name())
+		hash, err := HashFileContent(ctx, tempFile.Name(), false)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -352,7 +352,7 @@ func TestHashFileContent(t *testing.T) {
 
 	// Test non-existent file
 	t.Run("non-existent file", func(t *testing.T) {
-		hash, err := HashFileContent(ctx, "non_existent_file.txt")
+		hash, err := HashFileContent(ctx, "non_existent_file.txt", false)
 		if err == nil {
 			t.Error("Expected error for non-existent file, got nil")
 		}
