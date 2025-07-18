@@ -1184,17 +1184,7 @@ func validateExportedResourceAttributeValue[T comparable](configFile, resourcePa
 		resourceType := items[0]
 		resourceLabel := items[1]
 
-		// list all files in the directory holding configFile for debugging purposes
-		dir := filepath.Dir(configFile)
-		files, err := os.ReadDir(dir)
-		if err != nil {
-			return fmt.Errorf("failed to read directory %s: %v", dir, err)
-		}
-		for _, file := range files {
-			fmt.Printf(">> file: %s\n", file.Name())
-		}
-
-		_, err = os.ReadFile(configFile)
+		_, err := os.ReadFile(configFile)
 		if err != nil {
 			return fmt.Errorf("failed to read file %s: %v", configFile, err)
 		}

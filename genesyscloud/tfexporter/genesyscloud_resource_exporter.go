@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -652,10 +653,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		}
 
 		// 4. Convert the instance state to a map
-		configMap := make(map[string]interface{})
-		for key, value := range jsonResult {
-			configMap[key] = value
-		}
+		configMap := maps.Clone(jsonResult)
 
 		// 5. Sanitize the config map
 		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
@@ -670,7 +668,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
 			// 6. Handles writing external files as part of the export process
-			diagnostics = append(diagnostics, g.customWriteAttributes(jsonResult, resource)...)
+			diagnostics = append(diagnostics, g.customWriteAttributes(configMap, resource)...)
 			if diagnostics.HasError() {
 				return diagnostics
 			}
