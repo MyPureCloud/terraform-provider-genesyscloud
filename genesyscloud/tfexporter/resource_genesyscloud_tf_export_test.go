@@ -1995,8 +1995,11 @@ func TestAccResourceExporterFormat(t *testing.T) {
 	})
 }
 
-// TestAccResourceTfExportArchitectFlowValidateFilePath Exports a flow and validates the filepath of the exported flow config file
-func TestAccResourceTfExportArchitectFlowValidateFilePath(t *testing.T) {
+// TestAccResourceTfExportArchitectFlowExporterLegacyAndNew Exports a flow using the legacy exporter (creates a tfvars file but does not export flow config files)
+// and then exports using the new archy exporter by setting use_legacy_architect_flow_exporter to false
+// Verifies that the appropriate files are/are not created when use_legacy_architect_flow_exporter is set to true/false
+// Verifies that the appropriate filepath is set inside the exported resource config when use_legacy_architect_flow_exporter is set to true/false
+func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 	const (
 		systemFlowName = "Default Voicemail Flow"
 		systemFlowType = "VOICEMAIL"
@@ -2004,19 +2007,18 @@ func TestAccResourceTfExportArchitectFlowValidateFilePath(t *testing.T) {
 	)
 
 	var (
-		systemFlowNameSanitized = strings.Replace(systemFlowName, " ", "_", -1)
-
-		exportedFlowResourceLabel        = systemFlowType + "_" + systemFlowNameSanitized
+		systemFlowNameSanitized          = strings.Replace(systemFlowName, " ", "_", -1)
 		exportedSystemFlowFileName       = architectFlow.BuildExportFileName(systemFlowName, systemFlowType, systemFlowId)
 		exportResourceLabel              = "export"
 		exportTestDir                    = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		exportFullPath                   = ResourceType + "." + exportResourceLabel
 		pathToFolderHoldingExportedFlows = filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
 
+		exportedFlowResourceLabel               = systemFlowType + "_" + systemFlowNameSanitized
 		pathToExportedTerraformConfig           = filepath.Join(exportTestDir, defaultTfJSONFile)
 		exportedFlowResourceFullPath            = architectFlow.ResourceType + "." + exportedFlowResourceLabel
-		expectedFilepathValueWithNewExporter    = filepath.Join(architectFlow.ExportSubDirectoryName, fmt.Sprintf("%s-%s-%s.yaml", systemFlowNameSanitized, systemFlowType, systemFlowId))
 		expectedFilepathValueWithLegacyExporter = fmt.Sprintf("${var.genesyscloud_flow_%s_%s_filepath}", systemFlowType, systemFlowNameSanitized)
+		expectedFilepathValueWithNewExporter    = filepath.Join(architectFlow.ExportSubDirectoryName, fmt.Sprintf("%s-%s-%s.yaml", systemFlowNameSanitized, systemFlowType, systemFlowId))
 	)
 
 	defer func(path string) {
@@ -2035,7 +2037,7 @@ func TestAccResourceTfExportArchitectFlowValidateFilePath(t *testing.T) {
 					exportTestDir,
 					util.TrueValue,
 					strconv.Quote("json"),
-					util.TrueValue, // use_legacy_architect_flow_exporter
+					util.NullValue, // use_legacy_architect_flow_exporter - should default to true
 					[]string{
 						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
 					},
@@ -2064,70 +2066,6 @@ func TestAccResourceTfExportArchitectFlowValidateFilePath(t *testing.T) {
 					validateFileCreated(pathToFolderHoldingExportedFlows),
 					validateFileCreated(filepath.Join(pathToFolderHoldingExportedFlows, exportedSystemFlowFileName)),
 					validateExportedResourceAttributeValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithNewExporter),
-				),
-			},
-		},
-		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
-	})
-}
-
-// TestAccResourceTfExportArchitectFlowExporterLegacyAndNew Exports a flow using the legacy exporter (creates a tfvars file but does not export flow config files)
-// and then exports using the new archy exporter by setting use_legacy_architect_flow_exporter to false
-func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
-	const (
-		systemFlowName = "Default Voicemail Flow"
-		systemFlowType = "VOICEMAIL"
-		systemFlowId   = "de4c63f0-0be1-11ec-9a03-0242ac130003"
-	)
-	exportedSystemFlowFileName := architectFlow.BuildExportFileName(systemFlowName, systemFlowType, systemFlowId)
-	exportResourceLabel := "export"
-	exportTestDir := testrunner.GetTestTempPath(".terraform" + uuid.NewString())
-	exportFullPath := ResourceType + "." + exportResourceLabel
-	pathToFolderHoldingExportedFlows := filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
-
-	defer func(path string) {
-		if err := os.RemoveAll(path); err != nil {
-			log.Printf("An error occured while removing directory '%s': %s", exportTestDir, err)
-		}
-	}(exportTestDir)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				Config: generateTFExportResourceCustom(
-					exportResourceLabel,
-					exportTestDir,
-					util.TrueValue,
-					strconv.Quote("hcl"),
-					util.NullValue, // use_legacy_architect_flow_exporter - should default to true
-					[]string{
-						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
-					},
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
-					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
-					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
-				),
-			},
-			{
-				Config: generateTFExportResourceCustom(
-					exportResourceLabel,
-					exportTestDir,
-					util.TrueValue,
-					strconv.Quote("hcl"),
-					util.FalseValue, // use_legacy_architect_flow_exporter
-					[]string{
-						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
-					},
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),
-					validateFileNotCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
-					validateFileCreated(pathToFolderHoldingExportedFlows),
-					validateFileCreated(filepath.Join(pathToFolderHoldingExportedFlows, exportedSystemFlowFileName)),
 				),
 			},
 		},
