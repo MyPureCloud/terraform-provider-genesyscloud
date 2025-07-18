@@ -118,6 +118,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]any)
 
+	// TODO: test if this warning will appear on updates when the user did not actually set the field
 	if d.Get("file_content_hash").(string) != "" {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
