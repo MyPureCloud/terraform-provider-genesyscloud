@@ -3,7 +3,6 @@ package tfexporter
 import (
 	"context"
 	"fmt"
-	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,6 +12,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	userPromptResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
@@ -1991,6 +1992,79 @@ func TestAccResourceExporterFormat(t *testing.T) {
 				),
 			},
 		},
+	})
+}
+
+// TestAccResourceTfExportArchitectFlowValidateFileName Exports a flow and validates the filename of the exported flow config file
+func TestAccResourceTfExportArchitectFlowValidateFileName(t *testing.T) {
+	const (
+		systemFlowName = "Default Voicemail Flow"
+		systemFlowType = "VOICEMAIL"
+		systemFlowId   = "de4c63f0-0be1-11ec-9a03-0242ac130003"
+	)
+	systemFlowNameSanitized := strings.Replace(systemFlowName, " ", "_", -1)
+
+	exportedFlowResourceLabel := systemFlowType + "_" + systemFlowNameSanitized
+	exportedSystemFlowFileName := architectFlow.BuildExportFileName(systemFlowName, systemFlowType, systemFlowId)
+	exportResourceLabel := "export"
+	exportTestDir := testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+	exportFullPath := ResourceType + "." + exportResourceLabel
+	pathToFolderHoldingExportedFlows := filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
+
+	pathToExportedTerraformConfig := filepath.Join(exportTestDir, defaultTfJSONFile)
+	exportedFlowResourceFullPath := architectFlow.ResourceType + "." + exportedFlowResourceLabel
+	expectedFileNameValueWithNewExporter := fmt.Sprintf("%s-%s-%s.yaml", systemFlowNameSanitized, systemFlowType, systemFlowId)
+	expectedFileNameValueWithLegacyExporter := fmt.Sprintf("${filesha256(var.genesyscloud_flow_%s_%s_filepath)}", systemFlowType, systemFlowNameSanitized)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("An error occured while removing directory '%s': %s", exportTestDir, err)
+		}
+	}(exportTestDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateTFExportResourceCustom(
+					exportResourceLabel,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("json"),
+					util.TrueValue, // use_legacy_architect_flow_exporter
+					[]string{
+						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
+					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
+					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
+					validateExportedResourceAttributeValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filename", expectedFileNameValueWithLegacyExporter),
+				),
+			},
+			{
+				Config: generateTFExportResourceCustom(
+					exportResourceLabel,
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("json"),
+					util.FalseValue, // use_legacy_architect_flow_exporter
+					[]string{
+						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),
+					validateFileNotCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
+					validateFileCreated(pathToFolderHoldingExportedFlows),
+					validateFileCreated(filepath.Join(pathToFolderHoldingExportedFlows, exportedSystemFlowFileName)),
+					validateExportedResourceAttributeValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filename", expectedFileNameValueWithNewExporter),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
 }
 

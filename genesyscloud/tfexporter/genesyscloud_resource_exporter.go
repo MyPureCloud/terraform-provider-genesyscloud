@@ -611,7 +611,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		// 1. Get instance state as JSON Map
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
 		if diagErr != nil {
-			return diagErr
+			diagnostics = append(diagnostics, diagErr...)
+			if diagnostics.HasError() {
+				return
+			}
 		}
 
 		// 2. Determine if instance is a data source
@@ -678,14 +681,19 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	}
 
 	tflog.Info(g.ctx, fmt.Sprintf("Successfully built resource config map with %d resources", len(resources)))
-	return nil
+	return diagnostics
 }
 
 func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
 	resource resourceExporter.ResourceInfo) (diagnostics diag.Diagnostics) {
 	exporters := *g.exporters
+
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
-		exportDir, _ := getFilePath(g.d, "")
+		exportDir, getFilePathDiags := getFilePath(g.d, "")
+		diagnostics = append(diagnostics, getFilePathDiags...)
+		if diagnostics.HasError() {
+			return
+		}
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
 			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
@@ -973,11 +981,8 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 
 		// rebuild the config map
 		diagErr = g.buildResourceConfigMap()
-		if diagErr.HasError() {
-			return diagErr
-		}
 	}
-	return nil
+	return
 }
 
 func (g *GenesysCloudResourceExporter) copyExporters() map[string]*resourceExporter.ResourceExporter {
@@ -1074,10 +1079,13 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 
 		if len(filterListById) > 0 {
 			g.resourceFilter = FilterResourceById
-			g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
+			diagErr = append(diagErr, g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)...)
+			if diagErr.HasError() {
+				return
+			}
 		}
 	}
-	return nil
+	return
 }
 
 // Recursive function to perform operations based on filterListById length
@@ -1107,19 +1115,19 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		g.resources = nil
 		g.exporters = nil
 		tflog.Debug(g.ctx, "Rebuilding exporters list from chainDependencies")
-		err := g.rebuildExports(*g.filterList)
-		if err != nil {
-			return err
+		diagErr = append(diagErr, g.rebuildExports(*g.filterList)...)
+		if diagErr.HasError() {
+			return
 		}
 		// checks and exports if there are any dependent flow resources
-		err = g.buildAndExportDependsOnResourcesForFlows()
-		if err != nil {
-			return err
+		diagErr = append(diagErr, g.buildAndExportDependsOnResourcesForFlows()...)
+		if diagErr.HasError() {
+			return
 		}
 
-		err = g.buildResourceConfigMap()
-		if err.HasError() {
-			return err
+		diagErr = append(diagErr, g.buildResourceConfigMap()...)
+		if diagErr.HasError() {
+			return
 		}
 		//append the resources and exporters
 		g.appendResources(existingResources)
@@ -1131,9 +1139,9 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		existingResources = g.resources
 
 		// Recursive call until all the dependencies are addressed.
-		return g.chainDependencies(existingResources, existingExporters)
+		return append(diagErr, g.chainDependencies(existingResources, existingExporters)...)
 	}
-	return nil
+	return
 }
 
 func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resourceExporter.ResourceInfo) {
