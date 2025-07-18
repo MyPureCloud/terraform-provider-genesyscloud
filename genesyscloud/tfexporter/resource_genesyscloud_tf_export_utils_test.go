@@ -1178,6 +1178,51 @@ func validatePublishedAndUnpublishedExported(configFile string) resource.TestChe
 	}
 }
 
+func validateExportedResourceAttributeValue[T comparable](configFile, resourcePath, attr string, value T) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		items := strings.Split(resourcePath, ".")
+		resourceType := items[0]
+		resourceLabel := items[1]
+
+		_, err := os.ReadFile(configFile)
+		if err != nil {
+			return fmt.Errorf("failed to read file %s: %v", configFile, err)
+		}
+
+		// Load the JSON content of the export file
+		log.Println("Loading export config into map variable")
+		exportData, err := loadJsonFileToMap(configFile)
+		if err != nil {
+			return err
+		}
+
+		resourceMap, ok := exportData["resource"].(map[string]any)
+		if !ok {
+			return fmt.Errorf("could not find resource block in exported file %s", configFile)
+		}
+
+		resources, ok := resourceMap[resourceType].(map[string]any)
+		if !ok {
+			return fmt.Errorf("no %s resources exported", resourceType)
+		}
+
+		exportedResource, ok := resources[resourceLabel].(map[string]any)
+		if !ok {
+			return fmt.Errorf("no resource %s exported", resourcePath)
+		}
+
+		exportedValue, ok := exportedResource[attr].(T)
+		if !ok {
+			return fmt.Errorf("field %s not exported in resource %s config", attr, resourcePath)
+		}
+
+		if exportedValue != value {
+			return fmt.Errorf("expected %s to equal %v, got %v", attr, value, exportedValue)
+		}
+		return nil
+	}
+}
+
 // validateExportManagedSitesAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
 func validateExportManagedSitesAsData(filename, siteName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
