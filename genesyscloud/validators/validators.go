@@ -411,6 +411,9 @@ func ValidateFileContentHashChanged(filepathAttr, hashAttr string, supportS3 boo
 		// Get the current hash value
 		oldHash := d.Get(hashAttr).(string)
 
+		fmt.Println("oldHash: ", oldHash)
+		fmt.Println("newHash: ", newHash)
+
 		// Return true if the hashes are different
 		return oldHash != newHash
 	}
