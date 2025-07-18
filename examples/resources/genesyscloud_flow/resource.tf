@@ -1,5 +1,5 @@
 resource "genesyscloud_flow" "inbound_call_flow" {
-  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml"
+  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml" // Also supports S3 paths e.g. s3://my-bucket/flows/example.yaml
   file_content_hash = filesha256("${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml")
   // Example flow configuration using substitutions:
   /*

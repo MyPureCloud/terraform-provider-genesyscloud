@@ -180,11 +180,6 @@ func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters ma
 	return nil
 }
 
-func FileContentHashResolver(configMap map[string]interface{}, filepath string) error {
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
-	return nil
-}
-
 func CampaignStatusResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error {
 	if configMap["campaign_status"] != "off" && configMap["campaign_status"] != "on" {
 		configMap["campaign_status"] = "off"
