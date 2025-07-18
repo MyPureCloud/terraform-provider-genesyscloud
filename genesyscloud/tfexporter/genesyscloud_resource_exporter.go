@@ -1531,8 +1531,10 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 							version = providerMeta.Version
 						}
 
-						// Call the pool's adjustment method
-						provider.SdkClientPool.AdjustPoolForTimeout(version)
+						// Call the pool's adjustment method if pool is initialized
+						if provider.SdkClientPool != nil {
+							provider.SdkClientPool.AdjustPoolForTimeout(version)
+						}
 
 						// Add a small delay to allow the new clients to be available
 						tflog.Debug(g.ctx, fmt.Sprintf("Waiting 5 seconds for new clients to be available for resource ID: %s", id))
