@@ -655,7 +655,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		}
 
 		// 5. Sanitize the config map
-		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, false, g.exportFormat, false)
+		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
 		if len(unresolvableAttrs) > 0 {
 			g.addUnresolvedAttrs(unresolvableAttrs)
 		}
@@ -666,13 +666,15 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			dataSourceMaps[resource.Type][resource.BlockLabel] = configMap
 			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
+			// 6. Handles writing external files as part of the export process
+			diagnostics = append(diagnostics, g.customWriteAttributes(jsonResult, resource)...)
+			if diagnostics.HasError() {
+				return diagnostics
+			}
 			resourceMaps = g.getResourceTypesMaps()
 			resourceMaps[resource.Type][resource.BlockLabel] = configMap
 			g.setResourceTypesMaps(resourceMaps)
 		}
-
-		// 7. Update instance state attributes
-		g.updateInstanceStateAttributes(jsonResult, resource)
 	}
 
 	tflog.Info(g.ctx, fmt.Sprintf("Successfully built resource config map with %d resources", len(resources)))
