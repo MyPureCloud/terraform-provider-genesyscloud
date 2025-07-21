@@ -11,11 +11,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/minio/minio-go/v7"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -384,6 +387,110 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
+}
+
+func seedMinIoDatabase(ctx context.Context, minioS3Client *minio.Client, bucketName string) error {
+	location := "us-east-1"
+
+	err := minioS3Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
+	if err != nil {
+		// Check to see if we already own this bucket (which happens if you run this twice)
+		exists, errBucketExists := minioS3Client.BucketExists(ctx, bucketName)
+		if errBucketExists == nil && exists {
+			log.Printf("We already own %s\n", bucketName)
+		} else {
+			return errBucketExists
+		}
+	} else {
+		log.Printf("Successfully created %s\n", bucketName)
+	}
+
+	// Upload the test file
+	// Change the value of filePath if the file is in another location
+	objectName := "testdata.yml"
+	filePath := "/tmp/testdata.yml"
+	contentType := "application/yaml"
+
+	// Upload the test file with FPutObject
+	info, err := minioS3Client.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		return fmt.Errorf("failed to upload test file: %v", err)
+	}
+
+	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
+
+	return nil
+}
+
+// checkMinIOServerAvailability checks if the MinIO server is accessible
+func checkMinIOServerAvailability(endpoint string) bool {
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	resp, err := client.Get("http://" + endpoint)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == 200 || resp.StatusCode == 403 // 403 is expected for MinIO without credentials
+}
+
+func TestAccResourceArchFlowS3(t *testing.T) {
+	// Skip test if MinIO server is not accessible
+	if !checkMinIOServerAvailability("play.min.io") {
+		t.Log("MinIO server (play.min.io) is not accessible")
+	}
+
+	var (
+		filePath = "s3://testbucket/testdata.yml"
+
+		ctx = context.Background()
+
+		//inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription)
+	)
+
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Fatalf("Failed to authorize sdk: %v", err)
+	}
+
+	t.Log("Creating minio client")
+	minioClient, err := files.NewMinIOS3Client("play.min.io")
+	if err != nil {
+		t.Fatalf("Failed to create minio client: %v", err)
+	}
+
+	t.Log("Seeding minio database")
+	err = seedMinIoDatabase(ctx, minioClient.Client(), "testbucket")
+	if err != nil {
+		t.Fatalf("Failed to seed minio database: %v", err)
+	}
+
+	t.Log("Creating s3 client config")
+	customS3Config := files.NewS3ClientConfig().WithS3Client(minioClient)
+
+	proxy := getArchitectFlowProxy(sdkConfig)
+	proxy.s3ClientConfig = customS3Config
+
+	flowConfig := map[string]any{
+		"filepath": filePath,
+	}
+
+	resourceData := schema.TestResourceDataRaw(t, ResourceArchitectFlow().Schema, flowConfig)
+
+	providerMeta := provider.ProviderMeta{
+		ClientConfig: sdkConfig,
+	}
+
+	diags := createFlow(ctx, resourceData, &providerMeta)
+
+	if diags.HasError() {
+		t.Fatalf("Failed to create flow: %v", diags)
+	}
+
+	t.Logf("Flow created: %v", resourceData.Id())
 }
 
 func TestUnitSanitizeFlowName(t *testing.T) {

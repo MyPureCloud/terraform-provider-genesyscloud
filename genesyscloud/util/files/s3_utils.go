@@ -8,29 +8,52 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
+
+// S3ClientConfig holds configuration for S3 client creation
+type S3ClientConfig struct {
+	S3Client S3Client
+}
+
+// Common interface for S3 operations
+type S3Client interface {
+	GetObject(ctx context.Context, bucket, key string) (io.Reader, error)
+	PutObject(ctx context.Context, bucket, key string, reader io.Reader) error
+	DeleteObject(ctx context.Context, bucket, key string) error
+}
+
+func NewS3ClientConfig() *S3ClientConfig {
+	return &S3ClientConfig{}
+}
+
+func (c *S3ClientConfig) WithS3Client(client S3Client) *S3ClientConfig {
+	c.S3Client = client
+	return c
+}
 
 // DownloadFile downloads a file from S3 and returns a reader
 func DownloadFile(ctx context.Context, bucket, key string) (io.Reader, error) {
-	client, err := getS3Client(ctx)
-	if err != nil {
-		return nil, err
-	}
+	return DownloadFileWithConfig(ctx, bucket, key, nil)
+}
 
+// DownloadFileWithConfig downloads a file from S3 using the provided configuration
+func DownloadFileWithConfig(ctx context.Context, bucket, key string, s3Config *S3ClientConfig) (io.Reader, error) {
 	log.Printf("Downloading S3 file: s3://%s/%s", bucket, key)
 
-	result, err := client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get S3 object: %w", err)
+	if s3Config != nil && s3Config.S3Client != nil {
+		log.Printf("Using custom S3 client")
+		return s3Config.S3Client.GetObject(ctx, bucket, key)
 	}
 
-	return result.Body, nil
+	log.Printf("Using default AWS S3 client")
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	defaultClient := NewAWSS3Client(cfg)
+	return defaultClient.GetObject(ctx, bucket, key)
 }
 
 // IsS3Path checks if the given path is an S3 URI
@@ -63,28 +86,23 @@ func ParseS3URI(uri string) (bucket, key string, err error) {
 	return bucket, key, nil
 }
 
-// getS3Client creates an S3 client using AWS credential chain
-func getS3Client(ctx context.Context) (*s3.Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load AWS config: %w", err)
-	}
-
-	return s3.NewFromConfig(cfg), nil
-}
-
 // GetS3FileReader is a variable that holds the function for getting a file reader from S3 or local filesystem.
 var GetS3FileReader = getS3FileReader
 
 // getS3FileReader returns a reader for a file from S3 or local filesystem
 func getS3FileReader(ctx context.Context, path string) (io.Reader, *os.File, error) {
+	return getS3FileReaderWithConfig(ctx, path, nil)
+}
+
+// getS3FileReaderWithConfig returns a reader for a file from S3 or local filesystem using the provided configuration
+func getS3FileReaderWithConfig(ctx context.Context, path string, s3Config *S3ClientConfig) (io.Reader, *os.File, error) {
 	if IsS3Path(path) {
 		bucket, key, err := ParseS3URI(path)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse S3 URI: %w", err)
 		}
 
-		reader, err := DownloadFile(ctx, bucket, key)
+		reader, err := DownloadFileWithConfig(ctx, bucket, key, s3Config)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to download S3 file: %w", err)
 		}
