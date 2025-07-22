@@ -125,7 +125,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		})
 	}
 
-	reader, _, err := files.DownloadOrOpenFileWithConfig(ctx, filePath, true, nil)
+	reader, _, err := files.DownloadOrOpenFile(ctx, filePath, true)
 	if err != nil {
 		setFileContentHashToNil(d)
 		return append(diags, diag.FromErr(err)...)
@@ -178,7 +178,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))...)
 	}
 
-	filePathHash, err := files.HashFileContentWithConfig(ctx, filePath, true, p.s3Client)
+	filePathHash, err := files.HashFileContent(ctx, filePath, true)
 	if err != nil {
 		return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the file content hash for the flow %s", flowID), err)...)
 	}

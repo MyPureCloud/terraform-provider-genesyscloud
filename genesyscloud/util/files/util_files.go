@@ -188,19 +188,11 @@ func (s *S3Uploader) createFormData() error {
 // DownloadOrOpenFile is a function that downloads or opens a file from a given path.
 // Note: supportS3 lets us know if the resource is prepared to handle S3 paths (e.g. architect_flow). Once all resources support S3 paths, we can remove this parameter.
 func DownloadOrOpenFile(ctx context.Context, path string, supportS3 bool) (io.Reader, *os.File, error) {
-	return DownloadOrOpenFileWithConfig(ctx, path, supportS3, nil)
-}
-
-// DownloadOrOpenFileWithConfig downloads or opens a file with custom S3 configuration
-func DownloadOrOpenFileWithConfig(ctx context.Context, path string, supportS3 bool, s3Config *utilAws.S3ClientConfig) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
 
 	// Check if the path is an S3 URI
 	if utilAws.IsS3Path(path) && supportS3 {
-		if s3Config != nil {
-			return utilAws.GetS3FileReaderWithConfig(ctx, path, s3Config)
-		}
 		return utilAws.GetS3FileReader(ctx, path)
 	}
 
@@ -284,12 +276,7 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 // HashFileContent Hash file content, used in stateFunc for "filepath" type attributes
 // Note: supportS3 lets us know if the resource is prepared to handle S3 paths (e.g. architect_flow). Once all resources support S3 paths, we can remove this parameter.
 func HashFileContent(ctx context.Context, path string, supportS3 bool) (string, error) {
-	return HashFileContentWithConfig(ctx, path, supportS3, nil)
-}
-
-// HashFileContentWithConfig hashes file content with custom S3 configuration
-func HashFileContentWithConfig(ctx context.Context, path string, supportS3 bool, s3Config *utilAws.S3ClientConfig) (string, error) {
-	reader, file, err := DownloadOrOpenFileWithConfig(ctx, path, supportS3, s3Config)
+	reader, file, err := DownloadOrOpenFile(ctx, path, supportS3)
 	if err != nil {
 		return "", fmt.Errorf("unable to open file: %v", err.Error())
 	}

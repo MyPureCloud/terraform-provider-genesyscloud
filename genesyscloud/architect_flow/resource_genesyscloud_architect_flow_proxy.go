@@ -7,7 +7,6 @@ import (
 	"time"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
@@ -43,9 +42,6 @@ type architectFlowProxy struct {
 	pollExportJobForDownloadUrlAttr pollExportJobForDownloadUrlFunc
 	generateDownloadUrlAttr         generateDownloadUrlFunc
 
-	// Can be set to a custom s3 client config for testing (see minio_client.go). Nil by default which will use the default AWS S3 client.
-	s3Client *utilAws.S3ClientConfig
-
 	flowCache rc.CacheInterface[platformclientv2.Flow]
 }
 
@@ -69,8 +65,6 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 		getExportJobStatusByIdAttr:      getExportJobStatusByIdFn,
 		pollExportJobForDownloadUrlAttr: pollExportJobForDownloadUrlFn,
 		flowCache:                       flowCache,
-
-		s3Client: nil,
 	}
 }
 

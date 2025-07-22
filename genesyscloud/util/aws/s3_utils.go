@@ -11,34 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
-// S3ClientConfig holds configuration for S3 client creation
-type S3ClientConfig struct {
-	S3Client S3Client
-}
-
-// Common interface for S3 operations
-type S3Client interface {
-	GetObject(ctx context.Context, bucket, key string) (io.Reader, error)
-	PutObject(ctx context.Context, bucket, key string, reader io.Reader) error
-	DeleteObject(ctx context.Context, bucket, key string) error
-}
-
-func NewS3ClientConfig() *S3ClientConfig {
-	return &S3ClientConfig{}
-}
-
-func (c *S3ClientConfig) WithS3Client(client S3Client) *S3ClientConfig {
-	c.S3Client = client
-	return c
-}
-
 // DownloadFile downloads a file from S3 and returns a reader
 func DownloadFile(ctx context.Context, bucket, key string) (io.Reader, error) {
-	return DownloadFileWithConfig(ctx, bucket, key, nil)
-}
-
-// DownloadFileWithConfig downloads a file from S3 using the provided configuration
-func DownloadFileWithConfig(ctx context.Context, bucket, key string, s3Config *S3ClientConfig) (io.Reader, error) {
 	log.Printf("Downloading S3 file: s3://%s/%s", bucket, key)
 
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
@@ -85,18 +59,13 @@ var GetS3FileReader = getS3FileReader
 
 // getS3FileReader returns a reader for a file from S3 or local filesystem
 func getS3FileReader(ctx context.Context, path string) (io.Reader, *os.File, error) {
-	return GetS3FileReaderWithConfig(ctx, path, nil)
-}
-
-// GetS3FileReaderWithConfig returns a reader for a file from S3 or local filesystem using the provided configuration
-func GetS3FileReaderWithConfig(ctx context.Context, path string, s3Config *S3ClientConfig) (io.Reader, *os.File, error) {
 	if IsS3Path(path) {
 		bucket, key, err := ParseS3URI(path)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse S3 URI: %w", err)
 		}
 
-		reader, err := DownloadFileWithConfig(ctx, bucket, key, s3Config)
+		reader, err := DownloadFile(ctx, bucket, key)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to download S3 file: %w", err)
 		}

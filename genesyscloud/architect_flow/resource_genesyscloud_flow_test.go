@@ -6,20 +6,17 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/minio/minio-go/v7"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -390,186 +387,34 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	})
 }
 
-// uploadTestFileToMinIO creates a MinIO S3 bucket and uploads a test file to it.
-// This function is used by integration tests to set up S3-compatible storage
-// for testing architect flow S3 integration functionality.
-//
-// Parameters:
-//   - ctx: Context for the operation
-//   - minioS3Client: MinIO S3 client for bucket and object operations
-//   - bucketName: Name of the S3 bucket to create
-//   - filePath: Local path to the file to upload
-//
-// The function performs the following operations:
-// 1. Creates a new S3 bucket with the specified name
-// 2. Extracts the filename from the file path
-// 3. Uploads the file to the bucket using FPutObject
-// 4. Logs the upload success with file size information
-//
-// Returns an error if any operation fails, nil on success.
-func uploadTestFileToMinIO(ctx context.Context, minioS3Client *minio.Client, bucketName, filePath string) error {
-	location := "us-east-1"
-
-	err := minioS3Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
+func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
+	// Create LocalStack manager
+	localStackManager, err := utilAws.NewLocalStackManager()
 	if err != nil {
-		// Check to see if we already own this bucket (which happens if you run this twice)
-		exists, errBucketExists := minioS3Client.BucketExists(ctx, bucketName)
-		if errBucketExists == nil && exists {
-			log.Printf("We already own %s\n", bucketName)
-		} else {
-			return fmt.Errorf("failed to create bucket %s: %v", bucketName, err)
-		}
-	} else {
-		log.Printf("Successfully created %s\n", bucketName)
+		t.Fatalf("Failed to create LocalStack manager: %v", err)
+	}
+	defer localStackManager.Close()
+
+	// Start LocalStack
+	t.Log("Starting LocalStack...")
+	err = localStackManager.StartLocalStack()
+	if err != nil {
+		t.Fatalf("Failed to start LocalStack: %v", err)
 	}
 
-	fileName := filepath.Base(filePath)
-	contentType := "application/yaml"
-
-	// Upload the test file with FPutObject
-	info, err := minioS3Client.FPutObject(ctx, bucketName, fileName, filePath, minio.PutObjectOptions{ContentType: contentType})
-	if err != nil {
-		return fmt.Errorf("failed to upload test file: %v", err)
-	}
-
-	log.Printf("Successfully uploaded %s of size %d\n", fileName, info.Size)
-	return nil
-}
-
-// TestAccResourceArchFlowS3MinioIntegration tests the S3 integration functionality of the architect flow resource
-// using MinIO as an S3-compatible service. This test validates the complete flow creation process
-// from S3 file upload to flow deployment and verification.
-//
-// Test Flow:
-// 1. Creates a temporary YAML file with flow configuration
-// 2. Uploads the file to MinIO S3 bucket using FPutObject
-// 3. Configures the architect flow resource with S3 filepath
-// 4. Creates the flow in Genesys Cloud using the S3-hosted configuration
-// 5. Verifies the flow was created with correct name and description
-// 6. Cleans up by deleting the flow and temporary files
-//
-// This test ensures that the architect flow resource can successfully:
-// - Read flow configurations from S3-compatible storage
-// - Process YAML files stored in S3 buckets
-// - Deploy flows using S3-hosted configuration files
-// - Handle S3 authentication and file access
-//
-// Dependencies:
-// - MinIO S3-compatible service (play.min.io)
-// - AWS SDK for S3 operations
-// - Genesys Cloud API for flow management
-//
-// Note: This is an integration test that requires external services and may take
-// longer to execute than unit tests. It validates the complete S3 integration
-// workflow rather than individual components.
-func TestAccResourceArchFlowS3MinioIntegration(t *testing.T) {
-	var (
-		bucketName = "testbucket"
-
-		flowName        = "A TF MinIO Test Flow " + uuid.NewString()
-		flowDescription = "Example"
-		fileName        = fmt.Sprintf("testfile-%s.yml", uuid.NewString())
-		filePath        = "s3://" + bucketName + "/" + fileName
-
-		ctx = context.Background()
-
-		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: MinIO says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription)
-	)
-
-	tempFilePath := filepath.Join(os.TempDir(), fileName)
-	err := os.WriteFile(tempFilePath, []byte(inboundcallConfig), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write temp file: %v", err)
-	}
+	// Cleanup LocalStack after test
 	defer func() {
-		os.Remove(tempFilePath)
+		t.Log("Cleaning up LocalStack...")
+		if err := localStackManager.StopLocalStack(); err != nil {
+			t.Logf("[WARN] Failed to stop LocalStack: %v", err)
+		}
 	}()
 
-	sdkConfig, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Fatalf("Failed to authorize sdk: %v", err)
-	}
-
-	t.Log("Creating minio client")
-	minioClient, err := utilAws.NewMinIOS3Client("play.min.io")
-	if err != nil {
-		t.Fatalf("Failed to create minio client: %v", err)
-	}
-
-	t.Log("Uploading test file to minio")
-	err = uploadTestFileToMinIO(ctx, minioClient.Client(), bucketName, tempFilePath)
-	if err != nil {
-		t.Fatalf("Failed to upload test file to minio: %v", err)
-	}
-
-	t.Log("Creating s3 client config")
-	customS3Client := utilAws.NewS3ClientConfig().WithS3Client(minioClient)
-
-	proxy := getArchitectFlowProxy(sdkConfig)
-	proxy.s3Client = customS3Client
-
-	flowConfig := map[string]any{
-		"filepath": filePath,
-	}
-
-	resourceData := schema.TestResourceDataRaw(t, ResourceArchitectFlow().Schema, flowConfig)
-
-	providerMeta := provider.ProviderMeta{
-		ClientConfig: sdkConfig,
-	}
-
-	diags := createFlow(ctx, resourceData, &providerMeta)
-	if diags.HasError() {
-		t.Fatalf("Failed to create flow: %v", diags)
-	}
-
-	t.Logf("Flow created: %v", resourceData.Id())
-	time.Sleep(2 * time.Second)
-
-	t.Logf("Reading flow: %v", resourceData.Id())
-	flow, _, err := proxy.GetFlow(ctx, resourceData.Id())
-	if err != nil || flow == nil {
-		t.Fatalf("Failed to read flow '%s': %v", resourceData.Id(), err)
-	}
-
-	if *flow.Name != flowName {
-		t.Logf("Flow name mismatch: %s != %s", *flow.Name, flowName)
-		t.Fail()
-	}
-
-	if *flow.Description != flowDescription {
-		t.Logf("Flow description mismatch: %s != %s", *flow.Description, flowDescription)
-		t.Fail()
-	}
-
-	t.Logf("Deleting flow: %v", resourceData.Id())
-	resp, err := proxy.DeleteFlow(ctx, resourceData.Id())
-	if err != nil {
-		t.Logf("[WARN] Failed to delete flow: %v", err)
-	} else {
-		t.Logf("Flow deleted: %v", resp.StatusCode)
-	}
-}
-
-func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
-	// // run the command localstack start
-	// err := startLocalStack()
-	// if err != nil {
-	// 	t.Fatalf("Failed to start localstack: %v", err)
-	// }
-
-	// defer func() {
-	// 	err := stopLocalStack()
-	// 	if err != nil {
-	// 		t.Logf("[WARN] Failed to stop localstack: %v", err)
-	// 	}
-	// }()
-
-	err := os.Setenv("LOCALSTACK_ENDPOINT", "http://localhost:4566")
+	// Set environment variable for LocalStack endpoint
+	err = os.Setenv("LOCALSTACK_ENDPOINT", "http://localhost:4566")
 	if err != nil {
 		t.Fatalf("Failed to set LOCALSTACK_ENDPOINT: %v", err)
 	}
-
 	defer func() {
 		_ = os.Unsetenv("LOCALSTACK_ENDPOINT")
 	}()
@@ -577,14 +422,58 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 	var (
 		resourceLabel = "test_flow1"
 		flowName      = "A TF LocalStack Test Flow " + uuid.NewString()
+		bucketName    = "testbucket"
+		objectKey     = "flow.yml"
 
 		fullResourcePath = ResourceType + "." + resourceLabel
-
-		// commands to set this up in localstack:
-		// aws s3api create-bucket --bucket testbucket --region us-east-1
-		// awslocal s3 cp ./path/to/flow.yml s3://testbucket/
-		srcFile = "s3://testbucket/flow.yml"
+		srcFile          = fmt.Sprintf("s3://%s/%s", bucketName, objectKey)
 	)
+
+	// Create test flow content with substitution variable
+	flowContent := `inboundCall:
+  name: {{name}}
+  defaultLanguage: en-us
+  startUpRef: ./menus/menu[mainMenu]
+  initialGreeting:
+    tts: LocalStack says hi!!!
+  menus:
+    - menu:
+        name: Main Menu
+        audio:
+          tts: You are at the Main Menu, press 9 to disconnect.
+        refId: mainMenu
+        choices:
+          - menuDisconnect:
+              name: Disconnect
+              dtmf: digit_9`
+
+	// Create temporary file
+	tempFile, err := os.CreateTemp("", "flow-*.yml")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	// Write flow content to temp file
+	_, err = tempFile.WriteString(flowContent)
+	if err != nil {
+		t.Fatalf("Failed to write flow content: %v", err)
+	}
+	tempFile.Close()
+
+	// Setup S3 bucket and upload test file
+	t.Log("Setting up S3 bucket and uploading test file...")
+	err = localStackManager.SetupS3Bucket(bucketName, tempFile.Name(), objectKey)
+	if err != nil {
+		t.Fatalf("Failed to setup S3 bucket: %v", err)
+	}
+
+	// Cleanup S3 bucket after test
+	defer func() {
+		if err := localStackManager.CleanupS3Bucket(bucketName); err != nil {
+			t.Logf("[WARN] Failed to cleanup S3 bucket: %v", err)
+		}
+	}()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -606,28 +495,6 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
 	})
-}
-
-func startLocalStack() error {
-	cmd := exec.Command("localstack", "start")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Failed to start localstack: %v", err)
-	}
-	return nil
-}
-
-func stopLocalStack() error {
-	cmd := exec.Command("localstack", "stop")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Failed to stop localstack: %v", err)
-	}
-	return nil
 }
 
 func TestUnitSanitizeFlowName(t *testing.T) {
