@@ -2,7 +2,9 @@ package files
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -14,7 +16,13 @@ type AWSS3Client struct {
 
 func NewAWSS3Client(cfg aws.Config) *AWSS3Client {
 	return &AWSS3Client{
-		client: s3.NewFromConfig(cfg),
+		client: s3.NewFromConfig(cfg, func(o *s3.Options) {
+			if localStackEndpoint, _ := os.LookupEnv("LOCALSTACK_ENDPOINT"); localStackEndpoint != "" {
+				fmt.Println("Using localstack endpoint: ", localStackEndpoint)
+				o.BaseEndpoint = aws.String(localStackEndpoint)
+			}
+			o.UsePathStyle = true
+		}),
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -548,6 +549,85 @@ func TestAccResourceArchFlowS3MinioIntegration(t *testing.T) {
 	} else {
 		t.Logf("Flow deleted: %v", resp.StatusCode)
 	}
+}
+
+func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
+	// // run the command localstack start
+	// err := startLocalStack()
+	// if err != nil {
+	// 	t.Fatalf("Failed to start localstack: %v", err)
+	// }
+
+	// defer func() {
+	// 	err := stopLocalStack()
+	// 	if err != nil {
+	// 		t.Logf("[WARN] Failed to stop localstack: %v", err)
+	// 	}
+	// }()
+
+	err := os.Setenv("LOCALSTACK_ENDPOINT", "http://localhost:4566")
+	if err != nil {
+		t.Fatalf("Failed to set LOCALSTACK_ENDPOINT: %v", err)
+	}
+
+	defer func() {
+		_ = os.Unsetenv("LOCALSTACK_ENDPOINT")
+	}()
+
+	var (
+		resourceLabel = "test_flow1"
+		flowName      = "A TF LocalStack Test Flow " + uuid.NewString()
+
+		fullResourcePath = ResourceType + "." + resourceLabel
+
+		// commands to set this up in localstack:
+		// aws s3api create-bucket --bucket testbucket --region us-east-1
+		// awslocal s3 cp ./path/to/flow.yml s3://testbucket/
+		srcFile = "s3://testbucket/flow.yml"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateFlowResourceReferencingS3(
+					resourceLabel,
+					srcFile,
+					false,
+					util.GenerateSubstitutionsMap(map[string]string{
+						"name": flowName,
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow(fullResourcePath, flowName, "", "INBOUNDCALL"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+}
+
+func startLocalStack() error {
+	cmd := exec.Command("localstack", "start")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to start localstack: %v", err)
+	}
+	return nil
+}
+
+func stopLocalStack() error {
+	cmd := exec.Command("localstack", "stop")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to stop localstack: %v", err)
+	}
+	return nil
 }
 
 func TestUnitSanitizeFlowName(t *testing.T) {

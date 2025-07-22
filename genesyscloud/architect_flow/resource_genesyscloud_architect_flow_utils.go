@@ -31,15 +31,24 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 		updateFile(srcFile, fileContent)
 	}
 
-	flowResourceStr := fmt.Sprintf(`resource "genesyscloud_flow" "%s" {
+	flowResourceStr := fmt.Sprintf(`resource "%s" "%s" {
         filepath = %s
 		file_content_hash =  filesha256(%s)
 		force_unlock = %v
 		%s
 	}
-	`, resourceLabel, strconv.Quote(srcFile), strconv.Quote(srcFile), forceUnlock, strings.Join(substitutions, "\n"))
+	`, ResourceType, resourceLabel, strconv.Quote(srcFile), strconv.Quote(srcFile), forceUnlock, strings.Join(substitutions, "\n"))
 
 	return flowResourceStr
+}
+
+func GenerateFlowResourceReferencingS3(resourceLabel, srcFile string, forceUnlock bool, substitutions ...string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+        filepath = %s
+		force_unlock = %v
+		%s
+	}
+	`, ResourceType, resourceLabel, strconv.Quote(srcFile), forceUnlock, strings.Join(substitutions, "\n"))
 }
 
 // architectFlowResolver downloads and processes an architect flow from Genesys Cloud.

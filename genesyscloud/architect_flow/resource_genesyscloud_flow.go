@@ -125,7 +125,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		})
 	}
 
-	reader, _, err := files.DownloadOrOpenFileWithConfig(ctx, filePath, true, p.s3Client)
+	reader, _, err := files.DownloadOrOpenFileWithConfig(ctx, filePath, true, nil)
 	if err != nil {
 		setFileContentHashToNil(d)
 		return append(diags, diag.FromErr(err)...)

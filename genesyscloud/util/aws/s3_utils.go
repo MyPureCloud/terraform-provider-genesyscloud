@@ -41,13 +41,7 @@ func DownloadFile(ctx context.Context, bucket, key string) (io.Reader, error) {
 func DownloadFileWithConfig(ctx context.Context, bucket, key string, s3Config *S3ClientConfig) (io.Reader, error) {
 	log.Printf("Downloading S3 file: s3://%s/%s", bucket, key)
 
-	if s3Config != nil && s3Config.S3Client != nil {
-		log.Printf("Using custom S3 client")
-		return s3Config.S3Client.GetObject(ctx, bucket, key)
-	}
-
-	log.Printf("Using default AWS S3 client")
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
