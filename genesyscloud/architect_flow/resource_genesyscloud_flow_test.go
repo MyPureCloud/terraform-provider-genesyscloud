@@ -14,7 +14,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -424,28 +424,22 @@ func TestAccResourceArchFlowS3(t *testing.T) {
 
 		flowName        = "A TF MinIO Test Flow " + uuid.NewString()
 		flowDescription = "Example"
-		fileName        = "testfile.yml"
+		fileName        = fmt.Sprintf("testfile-%s.yml", uuid.NewString())
 		filePath        = "s3://" + bucketName + "/" + fileName
-		localFilePath   = filepath.Join(os.TempDir(), fileName)
 
 		ctx = context.Background()
 
 		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: MinIO says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription)
 	)
 
-	// Write the file content to the file
-	err := os.WriteFile(localFilePath, []byte(inboundcallConfig), 0644)
+	tempFilePath := filepath.Join(os.TempDir(), fileName)
+	err := os.WriteFile(tempFilePath, []byte(inboundcallConfig), 0644)
 	if err != nil {
-		t.Errorf("failed to write file: %v", err)
+		t.Fatalf("Failed to write temp file: %v", err)
 	}
-
-	defer func(path string) {
-		t.Logf("Cleaning up file %s", path)
-		err = os.Remove(path)
-		if err != nil {
-			t.Logf("failed to clean up file %s: %v", path, err)
-		}
-	}(localFilePath)
+	defer func() {
+		os.Remove(tempFilePath)
+	}()
 
 	sdkConfig, err := provider.AuthorizeSdk()
 	if err != nil {
@@ -453,19 +447,19 @@ func TestAccResourceArchFlowS3(t *testing.T) {
 	}
 
 	t.Log("Creating minio client")
-	minioClient, err := files.NewMinIOS3Client("play.min.io")
+	minioClient, err := utilAws.NewMinIOS3Client("play.min.io")
 	if err != nil {
 		t.Fatalf("Failed to create minio client: %v", err)
 	}
 
 	t.Log("Seeding minio database")
-	err = seedMinIoDatabase(ctx, minioClient.Client(), bucketName, localFilePath, inboundcallConfig)
+	err = seedMinIoDatabase(ctx, minioClient.Client(), bucketName, tempFilePath, inboundcallConfig)
 	if err != nil {
 		t.Fatalf("Failed to seed minio database: %v", err)
 	}
 
 	t.Log("Creating s3 client config")
-	customS3Client := files.NewS3ClientConfig().WithS3Client(minioClient)
+	customS3Client := utilAws.NewS3ClientConfig().WithS3Client(minioClient)
 
 	proxy := getArchitectFlowProxy(sdkConfig)
 	proxy.s3Client = customS3Client

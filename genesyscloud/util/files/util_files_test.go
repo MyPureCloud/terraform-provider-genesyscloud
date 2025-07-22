@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	testrunner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/stretchr/testify/assert"
@@ -207,7 +208,7 @@ func TestUnitScriptUploadSuccess(t *testing.T) {
 	}
 }
 
-func TestDownloadOrOpenFile(t *testing.T) {
+func TestUnitDownloadOrOpenFile(t *testing.T) {
 	ctx := context.Background()
 	// Test HTTP download
 	t.Run("successful HTTP download", func(t *testing.T) {
@@ -301,11 +302,11 @@ func TestDownloadOrOpenFile(t *testing.T) {
 
 	// Test that GetS3FileReader is used when the path is an S3 URI
 	t.Run("S3 util function is used when the path is an S3 URI and supportS3 is true", func(t *testing.T) {
-		originalGetS3FileReader := GetS3FileReader
+		originalGetS3FileReader := utilAws.GetS3FileReader
 		defer func() {
-			GetS3FileReader = originalGetS3FileReader
+			utilAws.GetS3FileReader = originalGetS3FileReader
 		}()
-		GetS3FileReader = func(ctx context.Context, path string) (io.Reader, *os.File, error) {
+		utilAws.GetS3FileReader = func(ctx context.Context, path string) (io.Reader, *os.File, error) {
 			return nil, nil, fmt.Errorf("test error")
 		}
 
@@ -319,7 +320,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 	})
 }
 
-func TestHashFileContent(t *testing.T) {
+func TestUnitHashFileContent(t *testing.T) {
 	ctx := context.Background()
 	// Create a temporary test file
 	tempContent := []byte("test content")
@@ -362,7 +363,7 @@ func TestHashFileContent(t *testing.T) {
 	})
 }
 
-func TestGetCSVRecordCount(t *testing.T) {
+func TestUnitGetCSVRecordCount(t *testing.T) {
 	tests := []struct {
 		name          string
 		fileContent   string
@@ -425,7 +426,7 @@ func TestGetCSVRecordCount(t *testing.T) {
 	}
 }
 
-func TestGetCSVRecordCount_NonexistentFile(t *testing.T) {
+func TestUnitGetCSVRecordCount_NonexistentFile(t *testing.T) {
 	_, err := GetCSVRecordCount("nonexistent.csv")
 	if err == nil {
 		t.Error("Expected error for nonexistent file, got none")

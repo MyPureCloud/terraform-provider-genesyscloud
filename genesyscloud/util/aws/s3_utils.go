@@ -91,11 +91,11 @@ var GetS3FileReader = getS3FileReader
 
 // getS3FileReader returns a reader for a file from S3 or local filesystem
 func getS3FileReader(ctx context.Context, path string) (io.Reader, *os.File, error) {
-	return getS3FileReaderWithConfig(ctx, path, nil)
+	return GetS3FileReaderWithConfig(ctx, path, nil)
 }
 
-// getS3FileReaderWithConfig returns a reader for a file from S3 or local filesystem using the provided configuration
-func getS3FileReaderWithConfig(ctx context.Context, path string, s3Config *S3ClientConfig) (io.Reader, *os.File, error) {
+// GetS3FileReaderWithConfig returns a reader for a file from S3 or local filesystem using the provided configuration
+func GetS3FileReaderWithConfig(ctx context.Context, path string, s3Config *S3ClientConfig) (io.Reader, *os.File, error) {
 	if IsS3Path(path) {
 		bucket, key, err := ParseS3URI(path)
 		if err != nil {

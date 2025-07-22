@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -191,16 +192,16 @@ func DownloadOrOpenFile(ctx context.Context, path string, supportS3 bool) (io.Re
 }
 
 // DownloadOrOpenFileWithConfig downloads or opens a file with custom S3 configuration
-func DownloadOrOpenFileWithConfig(ctx context.Context, path string, supportS3 bool, s3Config *S3ClientConfig) (io.Reader, *os.File, error) {
+func DownloadOrOpenFileWithConfig(ctx context.Context, path string, supportS3 bool, s3Config *utilAws.S3ClientConfig) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
 
 	// Check if the path is an S3 URI
-	if IsS3Path(path) && supportS3 {
+	if utilAws.IsS3Path(path) && supportS3 {
 		if s3Config != nil {
-			return getS3FileReaderWithConfig(ctx, path, s3Config)
+			return utilAws.GetS3FileReaderWithConfig(ctx, path, s3Config)
 		}
-		return GetS3FileReader(ctx, path)
+		return utilAws.GetS3FileReader(ctx, path)
 	}
 
 	// Check if the path has a protocol scheme to call as an HTTP request
@@ -287,7 +288,7 @@ func HashFileContent(ctx context.Context, path string, supportS3 bool) (string, 
 }
 
 // HashFileContentWithConfig hashes file content with custom S3 configuration
-func HashFileContentWithConfig(ctx context.Context, path string, supportS3 bool, s3Config *S3ClientConfig) (string, error) {
+func HashFileContentWithConfig(ctx context.Context, path string, supportS3 bool, s3Config *utilAws.S3ClientConfig) (string, error) {
 	reader, file, err := DownloadOrOpenFileWithConfig(ctx, path, supportS3, s3Config)
 	if err != nil {
 		return "", fmt.Errorf("unable to open file: %v", err.Error())

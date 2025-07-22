@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestIsS3Path(t *testing.T) {
+func TestUnitIsS3Path(t *testing.T) {
 	tests := []struct {
 		name     string
 		path     string
@@ -66,7 +66,7 @@ func TestIsS3Path(t *testing.T) {
 	}
 }
 
-func TestParseS3URI(t *testing.T) {
+func TestUnitParseS3URI(t *testing.T) {
 	tests := []struct {
 		name           string
 		uri            string
@@ -170,7 +170,7 @@ func TestParseS3URI(t *testing.T) {
 	}
 }
 
-func TestGetS3FileReader_LocalFile(t *testing.T) {
+func TestUnitGetS3FileReader_LocalFile(t *testing.T) {
 	// Create a temporary file for testing
 	tempFile, err := os.CreateTemp("", "test_*.txt")
 	if err != nil {
@@ -210,7 +210,7 @@ func TestGetS3FileReader_LocalFile(t *testing.T) {
 	}
 }
 
-func TestGetS3FileReader_NonExistentLocalFile(t *testing.T) {
+func TestUnitGetS3FileReader_NonExistentLocalFile(t *testing.T) {
 	ctx := context.Background()
 	_, _, err := GetS3FileReader(ctx, "/non/existent/file.txt")
 	if err == nil {
@@ -221,7 +221,7 @@ func TestGetS3FileReader_NonExistentLocalFile(t *testing.T) {
 	}
 }
 
-func TestGetS3FileReader_InvalidS3Path(t *testing.T) {
+func TestUnitGetS3FileReader_InvalidS3Path(t *testing.T) {
 	ctx := context.Background()
 	_, _, err := GetS3FileReader(ctx, "s3://invalid-uri")
 	if err == nil {
@@ -235,7 +235,7 @@ func TestGetS3FileReader_InvalidS3Path(t *testing.T) {
 // Mock tests for AWS-dependent functions
 // These tests demonstrate how to mock the AWS functions for testing
 
-func TestDownloadFile_Mock(t *testing.T) {
+func TestUnitDownloadFile_Mock(t *testing.T) {
 	// This test demonstrates how DownloadFile would be tested with a mock
 	// In a real implementation, you would inject a mock S3 client
 	ctx := context.Background()
@@ -251,7 +251,7 @@ func TestDownloadFile_Mock(t *testing.T) {
 	}
 }
 
-func TestGetS3FileReader_EdgeCases(t *testing.T) {
+func TestUnitGetS3FileReader_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name        string
 		path        string
