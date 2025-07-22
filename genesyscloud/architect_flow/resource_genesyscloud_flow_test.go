@@ -389,7 +389,24 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	})
 }
 
-func seedMinIoDatabase(ctx context.Context, minioS3Client *minio.Client, bucketName, filePath, fileContent string) error {
+// uploadTestFileToMinIO creates a MinIO S3 bucket and uploads a test file to it.
+// This function is used by integration tests to set up S3-compatible storage
+// for testing architect flow S3 integration functionality.
+//
+// Parameters:
+//   - ctx: Context for the operation
+//   - minioS3Client: MinIO S3 client for bucket and object operations
+//   - bucketName: Name of the S3 bucket to create
+//   - filePath: Local path to the file to upload
+//
+// The function performs the following operations:
+// 1. Creates a new S3 bucket with the specified name
+// 2. Extracts the filename from the file path
+// 3. Uploads the file to the bucket using FPutObject
+// 4. Logs the upload success with file size information
+//
+// Returns an error if any operation fails, nil on success.
+func uploadTestFileToMinIO(ctx context.Context, minioS3Client *minio.Client, bucketName, filePath string) error {
 	location := "us-east-1"
 
 	err := minioS3Client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
@@ -418,7 +435,33 @@ func seedMinIoDatabase(ctx context.Context, minioS3Client *minio.Client, bucketN
 	return nil
 }
 
-func TestAccResourceArchFlowS3(t *testing.T) {
+// TestAccResourceArchFlowS3MinioIntegration tests the S3 integration functionality of the architect flow resource
+// using MinIO as an S3-compatible service. This test validates the complete flow creation process
+// from S3 file upload to flow deployment and verification.
+//
+// Test Flow:
+// 1. Creates a temporary YAML file with flow configuration
+// 2. Uploads the file to MinIO S3 bucket using FPutObject
+// 3. Configures the architect flow resource with S3 filepath
+// 4. Creates the flow in Genesys Cloud using the S3-hosted configuration
+// 5. Verifies the flow was created with correct name and description
+// 6. Cleans up by deleting the flow and temporary files
+//
+// This test ensures that the architect flow resource can successfully:
+// - Read flow configurations from S3-compatible storage
+// - Process YAML files stored in S3 buckets
+// - Deploy flows using S3-hosted configuration files
+// - Handle S3 authentication and file access
+//
+// Dependencies:
+// - MinIO S3-compatible service (play.min.io)
+// - AWS SDK for S3 operations
+// - Genesys Cloud API for flow management
+//
+// Note: This is an integration test that requires external services and may take
+// longer to execute than unit tests. It validates the complete S3 integration
+// workflow rather than individual components.
+func TestAccResourceArchFlowS3MinioIntegration(t *testing.T) {
 	var (
 		bucketName = "testbucket"
 
@@ -452,10 +495,10 @@ func TestAccResourceArchFlowS3(t *testing.T) {
 		t.Fatalf("Failed to create minio client: %v", err)
 	}
 
-	t.Log("Seeding minio database")
-	err = seedMinIoDatabase(ctx, minioClient.Client(), bucketName, tempFilePath, inboundcallConfig)
+	t.Log("Uploading test file to minio")
+	err = uploadTestFileToMinIO(ctx, minioClient.Client(), bucketName, tempFilePath)
 	if err != nil {
-		t.Fatalf("Failed to seed minio database: %v", err)
+		t.Fatalf("Failed to upload test file to minio: %v", err)
 	}
 
 	t.Log("Creating s3 client config")
