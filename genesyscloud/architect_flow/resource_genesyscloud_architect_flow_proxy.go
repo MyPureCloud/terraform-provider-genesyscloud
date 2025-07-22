@@ -44,7 +44,7 @@ type architectFlowProxy struct {
 	generateDownloadUrlAttr         generateDownloadUrlFunc
 
 	// Can be set to a custom s3 client config for testing (see minio_client.go). Nil by default which will use the default AWS S3 client.
-	s3ClientConfig *files.S3ClientConfig
+	s3Client *files.S3ClientConfig
 
 	flowCache rc.CacheInterface[platformclientv2.Flow]
 }
@@ -70,7 +70,7 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 		pollExportJobForDownloadUrlAttr: pollExportJobForDownloadUrlFn,
 		flowCache:                       flowCache,
 
-		s3ClientConfig: nil,
+		s3Client: nil,
 	}
 }
 

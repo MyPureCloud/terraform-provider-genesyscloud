@@ -14,6 +14,7 @@ type MinIOS3Client struct {
 }
 
 func NewMinIOS3Client(endpoint string) (*MinIOS3Client, error) {
+	// credentials taken from https://github.com/minio/minio-go?tab=readme-ov-file
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4("Q3AM3UQ867SPQQA43P2F", "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG", ""),
 		Secure: true,
