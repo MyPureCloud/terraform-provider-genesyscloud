@@ -42,7 +42,7 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 	return flowResourceStr
 }
 
-func GenerateFlowResourceReferencingS3(resourceLabel, srcFile string, forceUnlock bool, substitutions ...string) string {
+func GenerateFlowResourceNoFileContentHash(resourceLabel, srcFile string, forceUnlock bool, substitutions ...string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
         filepath = %s
 		force_unlock = %v

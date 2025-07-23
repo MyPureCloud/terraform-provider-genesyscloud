@@ -66,43 +66,6 @@ This test will:
 4. Clean up the bucket
 5. Stop the container
 
-### Manual Setup
-
-If you prefer to run LocalStack manually:
-
-1. Start LocalStack:
-   ```bash
-   docker run -d \
-     --name terraform-provider-genesyscloud-localstack \
-     -p 4566:4566 \
-     -e SERVICES=s3 \
-     -e DEBUG=1 \
-     localstack/localstack:latest
-   ```
-
-2. Create S3 bucket:
-   ```bash
-   aws s3api create-bucket \
-     --bucket testbucket \
-     --region us-east-1 \
-     --endpoint-url http://localhost:4566
-   ```
-
-3. Upload test file:
-   ```bash
-   aws s3 cp /path/to/flow.yml \
-     s3://testbucket/flow.yml \
-     --endpoint-url http://localhost:4566
-   ```
-
-4. Clean up:
-   ```bash
-   aws s3 rm s3://testbucket --recursive --endpoint-url http://localhost:4566
-   aws s3api delete-bucket --bucket testbucket --endpoint-url http://localhost:4566
-   docker stop terraform-provider-genesyscloud-localstack
-   docker rm terraform-provider-genesyscloud-localstack
-   ```
-
 ### Troubleshooting
 
 1. **Docker not running**: Ensure Docker daemon is running

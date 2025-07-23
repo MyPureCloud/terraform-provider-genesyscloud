@@ -24,8 +24,8 @@ func UnsetLocalStackEndpoint() error {
 
 // GetLocalStackEndpoint gets the localstack endpoint from the environment variable or the default value
 func GetLocalStackEndpoint() string {
-	if localStackEndpoint, _ := os.LookupEnv(LocalStackEndpointEnvVar); localStackEndpoint != "" {
+	if localStackEndpoint, ok := os.LookupEnv(LocalStackEndpointEnvVar); ok && localStackEndpoint != "" {
 		return localStackEndpoint
 	}
-	return defaultLocalStackEndpoint
+	return ""
 }

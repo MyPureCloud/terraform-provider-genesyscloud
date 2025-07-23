@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 
@@ -13,15 +12,12 @@ import (
 
 // DownloadFile downloads a file from S3 and returns a reader
 func DownloadFile(ctx context.Context, bucket, key string) (io.Reader, error) {
-	log.Printf("Downloading S3 file: s3://%s/%s", bucket, key)
-
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("us-east-1"))
+	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
-	defaultClient := NewAWSS3Client(cfg)
-	return defaultClient.GetObject(ctx, bucket, key)
+	return NewAWSS3Client(cfg).GetObject(ctx, bucket, key)
 }
 
 // IsS3Path checks if the given path is an S3 URI

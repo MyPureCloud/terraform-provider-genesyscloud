@@ -35,20 +35,3 @@ func (a *AWSS3Client) GetObject(ctx context.Context, bucket, key string) (io.Rea
 	}
 	return result.Body, nil
 }
-
-func (a *AWSS3Client) PutObject(ctx context.Context, bucket, key string, reader io.Reader) error {
-	_, err := a.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-		Body:   reader,
-	})
-	return err
-}
-
-func (a *AWSS3Client) DeleteObject(ctx context.Context, bucket, key string) error {
-	_, err := a.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	})
-	return err
-}
