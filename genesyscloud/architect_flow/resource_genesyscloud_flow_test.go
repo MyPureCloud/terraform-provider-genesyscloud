@@ -411,17 +411,19 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 	}()
 
 	// Set environment variable for LocalStack endpoint
-	err = os.Setenv("LOCALSTACK_ENDPOINT", "http://localhost:4566")
+	err = utilAws.SetLocalStackEndpoint()
 	if err != nil {
-		t.Fatalf("Failed to set LOCALSTACK_ENDPOINT: %v", err)
+		t.Fatalf("Failed to set %s: %v", utilAws.LocalStackEndpointEnvVar, err)
 	}
 	defer func() {
-		_ = os.Unsetenv("LOCALSTACK_ENDPOINT")
+		_ = utilAws.UnsetLocalStackEndpoint()
 	}()
 
 	var (
 		resourceLabel = "test_flow1"
 		flowName      = "A TF LocalStack Test Flow " + uuid.NewString()
+		description   = "hello from localstack"
+		description2  = "hello from localstack2"
 		bucketName    = "testbucket"
 		objectKey     = "flow.yml"
 
@@ -430,8 +432,9 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 	)
 
 	// Create test flow content with substitution variable
-	flowContent := `inboundCall:
+	flowContent := fmt.Sprintf(`inboundCall:
   name: {{name}}
+  description: %s
   defaultLanguage: en-us
   startUpRef: ./menus/menu[mainMenu]
   initialGreeting:
@@ -445,21 +448,29 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
         choices:
           - menuDisconnect:
               name: Disconnect
-              dtmf: digit_9`
+              dtmf: digit_9`, description)
 
 	// Create temporary file
 	tempFile, err := os.CreateTemp("", "flow-*.yml")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
 
 	// Write flow content to temp file
 	_, err = tempFile.WriteString(flowContent)
 	if err != nil {
 		t.Fatalf("Failed to write flow content: %v", err)
 	}
-	tempFile.Close()
+
+	defer func() {
+		if err := tempFile.Close(); err != nil {
+			t.Logf("[WARN] Failed to close temp file: %v", err)
+		}
+
+		if err := os.Remove(tempFile.Name()); err != nil {
+			t.Logf("[WARN] Failed to remove temp file: %v", err)
+		}
+	}()
 
 	// Setup S3 bucket and upload test file
 	t.Log("Setting up S3 bucket and uploading test file...")
@@ -489,7 +500,45 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 					}),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validateFlow(fullResourcePath, flowName, "", "INBOUNDCALL"),
+					validateFlow(fullResourcePath, flowName, description, "INBOUNDCALL"),
+				),
+			},
+			{
+				PreConfig: func() {
+					// update flow description from "hello from localstack" to "hello from localstack2"
+					t.Log("Updating flow description from " + description + " to " + description2)
+					flowContent = strings.Replace(flowContent, description, description2, 1)
+
+					t.Log("Writing flow content to temp file")
+					// Seek to beginning and truncate to overwrite the file
+					if _, err := tempFile.Seek(0, 0); err != nil {
+						t.Fatalf("Failed to seek to beginning of file: %v", err)
+					}
+					if err := tempFile.Truncate(0); err != nil {
+						t.Fatalf("Failed to truncate file: %v", err)
+					}
+					_, err := tempFile.WriteString(flowContent)
+					if err != nil {
+						t.Fatalf("Failed to write flow content: %v", err)
+					}
+
+					// Setup S3 bucket and upload test file
+					t.Log("Setting up S3 bucket and uploading updated test file")
+					err = localStackManager.SetupS3Bucket(bucketName, tempFile.Name(), objectKey)
+					if err != nil {
+						t.Fatalf("Failed to setup S3 bucket in PreConfig: %v", err)
+					}
+				},
+				Config: GenerateFlowResourceReferencingS3(
+					resourceLabel,
+					srcFile,
+					false,
+					util.GenerateSubstitutionsMap(map[string]string{
+						"name": flowName,
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow(fullResourcePath, flowName, description2, "INBOUNDCALL"),
 				),
 			},
 		},
