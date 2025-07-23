@@ -262,14 +262,14 @@ Optional:
 
 - `click_event` (Block List) Details about a selector event trigger (see [below for nested schema](#nestedblock--journey_events--click_event))
 - `enabled` (Boolean) Whether or not journey event collection is enabled Defaults to `true`.
-- `excluded_query_parameters` (List of String, Deprecated) *DEPRECATED: This field has no effect and will be removed in a later version.* List of parameters to be excluded from the query string
+- `excluded_query_parameters` (List of String, Deprecated) *Deprecated: This field has no effect and will be removed in a later version.* List of parameters to be excluded from the query string
 - `form_track_event` (Block List) Details about a forms tracking event trigger (see [below for nested schema](#nestedblock--journey_events--form_track_event))
 - `idle_event` (Block List) Details about an idle event trigger (see [below for nested schema](#nestedblock--journey_events--idle_event))
 - `in_viewport_event` (Block List) Details about a selector event trigger (see [below for nested schema](#nestedblock--journey_events--in_viewport_event))
 - `pageview_config` (String) Controls how the pageview events are tracked.Valid values: Auto, Once, Off
 - `scroll_depth_event` (Block List) Details about a scroll percentage event trigger (see [below for nested schema](#nestedblock--journey_events--scroll_depth_event))
-- `search_query_parameters` (List of String, Deprecated) *DEPRECATED: This field has no effect and will be removed in a later version.* List of query parameters used for search (e.g. 'q')
-- `should_keep_url_fragment` (Boolean, Deprecated) *DEPRECATED: This field has no effect and will be removed in a later version.* Whether or not to keep the URL fragment
+- `search_query_parameters` (List of String, Deprecated) *Deprecated: This field has no effect and will be removed in a later version.* List of query parameters used for search (e.g. 'q')
+- `should_keep_url_fragment` (Boolean, Deprecated) *Deprecated: This field has no effect and will be removed in a later version.* Whether or not to keep the URL fragment
 
 <a id="nestedblock--journey_events--click_event"></a>
 ### Nested Schema for `journey_events.click_event`
