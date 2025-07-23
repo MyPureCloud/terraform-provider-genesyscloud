@@ -13,7 +13,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/mozillazg/go-unidecode v0.2.0
 	github.com/mypurecloud/platform-client-sdk-go/v162 v162.0.0
-	github.com/nyaruka/phonenumbers v1.6.3
+	github.com/nyaruka/phonenumbers v1.6.4
 	github.com/rjNemo/underscore v0.7.0
 	github.com/shirou/gopsutil/v4 v4.25.6
 	github.com/zclconf/go-cty v1.16.3
