@@ -116,6 +116,7 @@ import (
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -248,6 +249,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[guide.ResourceType] = guide.ResourceGuide()
 	providerResources[guideVersion.ResourceType] = guideVersion.ResourceGuideVersion()
 	providerResources[businessRulesSchema.ResourceType] = businessRulesSchema.ResourceBusinessRulesSchema()
+
 	providerResources[ResourceType] = ResourceTfExport()
 }
 
@@ -363,6 +365,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(guide.ResourceType, guide.GuideExporter())
 	RegisterExporter(guideVersion.ResourceType, guideVersion.GuideVersionExporter())
 	RegisterExporter(businessRulesSchema.ResourceType, businessRulesSchema.BusinessRulesSchemaExporter())
+
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
 
