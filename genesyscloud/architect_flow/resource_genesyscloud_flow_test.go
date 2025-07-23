@@ -428,6 +428,8 @@ Genesys Cloud Architect Flows from S3-hosted YAML files with proper
 variable substitution, resource management, and update scenarios.
 */
 func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
+	utilAws.SkipIfLocalStackUnavailable(t)
+
 	// Create LocalStack manager
 	localStackManager, err := utilAws.NewLocalStackManager()
 	if err != nil {

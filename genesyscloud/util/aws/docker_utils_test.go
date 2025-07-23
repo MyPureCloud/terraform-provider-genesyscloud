@@ -2,21 +2,12 @@ package files
 
 import (
 	"os"
-	"os/exec"
 	"testing"
 	"time"
 )
 
 func TestLocalStackManager(t *testing.T) {
-	// Skip if Docker is not available
-	if _, err := exec.LookPath("docker"); err != nil {
-		t.Skip("Docker not available, skipping test")
-	}
-
-	// Skip if AWS CLI is not available
-	if _, err := exec.LookPath("aws"); err != nil {
-		t.Skip("AWS CLI not available, skipping test")
-	}
+	SkipIfLocalStackUnavailable(t)
 
 	// Create LocalStack manager
 	manager, err := NewLocalStackManager()

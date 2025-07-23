@@ -27,5 +27,10 @@ func GetLocalStackEndpoint() string {
 	if localStackEndpoint, ok := os.LookupEnv(LocalStackEndpointEnvVar); ok && localStackEndpoint != "" {
 		return localStackEndpoint
 	}
-	return ""
+	return defaultLocalStackEndpoint
+}
+
+// IsLocalStackEndpointSet checks if the localstack endpoint is set
+func IsLocalStackEndpointSet() bool {
+	return GetLocalStackEndpoint() != ""
 }

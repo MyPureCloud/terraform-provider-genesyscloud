@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"testing"
 	"time"
 )
 
@@ -67,7 +68,7 @@ func (l *LocalStackManager) StartLocalStack() error {
 		time.Sleep(2 * time.Second)
 
 		// Test if LocalStack is responding
-		healthCmd := exec.Command("curl", "-f", "http://localhost:4566/_localstack/health")
+		healthCmd := exec.Command("curl", "-f", GetLocalStackEndpoint()+"/_localstack/health")
 		if healthCmd.Run() == nil {
 			log.Printf("LocalStack is ready!")
 			return nil
@@ -103,7 +104,7 @@ func (l *LocalStackManager) SetupS3Bucket(bucketName, filePath, objectKey string
 	createBucketCmd := exec.Command("aws", "s3api", "create-bucket",
 		"--bucket", bucketName,
 		"--region", "us-east-1",
-		"--endpoint-url", "http://localhost:4566")
+		"--endpoint-url", GetLocalStackEndpoint())
 
 	output, err := createBucketCmd.CombinedOutput()
 	if err != nil {
@@ -120,7 +121,7 @@ func (l *LocalStackManager) SetupS3Bucket(bucketName, filePath, objectKey string
 	uploadCmd := exec.Command("aws", "s3", "cp",
 		filePath,
 		fmt.Sprintf("s3://%s/%s", bucketName, objectKey),
-		"--endpoint-url", "http://localhost:4566")
+		"--endpoint-url", GetLocalStackEndpoint())
 
 	output, err = uploadCmd.CombinedOutput()
 	if err != nil {
@@ -137,7 +138,7 @@ func (l *LocalStackManager) CleanupS3Bucket(bucketName string) error {
 	removeObjectsCmd := exec.Command("aws", "s3", "rm",
 		fmt.Sprintf("s3://%s", bucketName),
 		"--recursive",
-		"--endpoint-url", "http://localhost:4566")
+		"--endpoint-url", GetLocalStackEndpoint())
 
 	output, err := removeObjectsCmd.CombinedOutput()
 	if err != nil {
@@ -147,7 +148,7 @@ func (l *LocalStackManager) CleanupS3Bucket(bucketName string) error {
 	// Remove bucket
 	removeBucketCmd := exec.Command("aws", "s3api", "delete-bucket",
 		"--bucket", bucketName,
-		"--endpoint-url", "http://localhost:4566")
+		"--endpoint-url", GetLocalStackEndpoint())
 
 	output, err = removeBucketCmd.CombinedOutput()
 	if err != nil {
@@ -160,4 +161,17 @@ func (l *LocalStackManager) CleanupS3Bucket(bucketName string) error {
 // Close closes the LocalStack manager (no-op for shell-based approach)
 func (l *LocalStackManager) Close() error {
 	return nil
+}
+
+// SkipIfLocalStackUnavailable skips the test if environment is not set up for localstack
+func SkipIfLocalStackUnavailable(t *testing.T) {
+	// Skip if Docker is not available
+	if _, err := exec.LookPath("docker"); err != nil {
+		t.Skip("Docker not available, skipping test")
+	}
+
+	// Skip if AWS CLI is not available
+	if _, err := exec.LookPath("aws"); err != nil {
+		t.Skip("AWS CLI not available, skipping test")
+	}
 }

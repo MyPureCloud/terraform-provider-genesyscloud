@@ -16,9 +16,9 @@ type AWSS3Client struct {
 func NewAWSS3Client(cfg aws.Config) *AWSS3Client {
 	return &AWSS3Client{
 		client: s3.NewFromConfig(cfg, func(o *s3.Options) {
-			if localStackEndpoint := GetLocalStackEndpoint(); localStackEndpoint != "" {
-				log.Println("Using localstack endpoint: ", localStackEndpoint)
-				o.BaseEndpoint = aws.String(localStackEndpoint)
+			if IsLocalStackEndpointSet() {
+				log.Println("Using localstack endpoint: ", GetLocalStackEndpoint())
+				o.BaseEndpoint = aws.String(GetLocalStackEndpoint())
 			}
 			o.UsePathStyle = true
 		}),
