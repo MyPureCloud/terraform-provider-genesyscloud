@@ -3,14 +3,15 @@ package architect_flow
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -75,23 +76,23 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 
 	downloadUrl, err := proxy.generateDownloadUrl(flowId)
 	if err != nil {
-		return err
+		return err // option 1
 	}
 
 	log.Printf("Creating subfolder '%s' inside '%s'", subDirectory, exportDirectory)
 	fullPath := filepath.Join(exportDirectory, subDirectory)
 	if err = os.MkdirAll(fullPath, os.ModePerm); err != nil {
-		return err
+		return err // option 2
 	}
 	log.Printf("Successfully created subfolder '%s' inside '%s'", subDirectory, exportDirectory)
 
 	log.Printf("Downloading export flow '%s' to '%s' from download URL", flowId, filepath.Join(fullPath, filename))
 	if resp, err = files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
 		if resp != nil {
-			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
+			err = fmt.Errorf("%w. API Response: %s", err, resp.String()) // option 3
 		}
 		log.Printf("Failed to download flow file: %s", err.Error())
-		return err
+		return err // option 4
 	}
 	log.Printf("Successfully downloaded export flow '%s' to '%s'", flowId, filepath.Join(fullPath, filename))
 
@@ -104,16 +105,19 @@ func BuildExportFileName(flowName, flowType, flowId string) string {
 	return fmt.Sprintf("%s-%s-%s.yaml", sanitizeFlowName(flowName), flowType, flowId)
 }
 
-// sanitizeFlowName will replace all forward slashes, backslashes and white spaces with an underscore
+// sanitizeFlowName will replace all invalid filename characters with an underscore
 func sanitizeFlowName(s string) string {
-	// First replace empty strings (multiple spaces) with a single underscore
-	noSpaces := strings.ReplaceAll(s, " ", "_")
+	invalidChars := []string{"<", ">", ":", "\"", "|", "?", "*", "\\", "/"}
+	result := s
 
-	// Replace forward slashes with underscore
-	noForwardSlash := strings.ReplaceAll(noSpaces, "/", "_")
+	for _, char := range invalidChars {
+		result = strings.ReplaceAll(result, char, "_")
+	}
 
-	// Replace backslashes with underscore
-	result := strings.ReplaceAll(noForwardSlash, "\\", "_")
+	// Replace multiple spaces with a single underscore
+	result = strings.ReplaceAll(result, " ", "_")
+
+	result = strings.Trim(result, ". ")
 
 	return result
 }

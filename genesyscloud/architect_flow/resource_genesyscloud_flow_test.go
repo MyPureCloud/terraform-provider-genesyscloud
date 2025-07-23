@@ -433,6 +433,16 @@ func TestUnitSanitizeFlowName(t *testing.T) {
 			input:    "  path/to\\file   name  with/\\spaces",
 			expected: "__path_to_file___name__with__spaces",
 		},
+		{
+			name:     "Windows invalid characters",
+			input:    "Tim_Hortons_VendorCE_In-Queue_Ring_PosInQ_EWT_CCB>20CallsinQ-INQUEUECALL",
+			expected: "Tim_Hortons_VendorCE_In-Queue_Ring_PosInQ_EWT_CCB_20CallsinQ-INQUEUECALL",
+		},
+		{
+			name:     "All Windows invalid characters",
+			input:    "Flow<name>:with\"invalid|chars?*",
+			expected: "Flow_name__with_invalid_chars__",
+		},
 	}
 
 	// Run all test cases
