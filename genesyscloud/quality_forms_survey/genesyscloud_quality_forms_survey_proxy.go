@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
 )
 
@@ -23,7 +21,7 @@ var internalProxy *qualityFormsSurveyProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, form *platformclientv2.Surveyform) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error)
-type getAllQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy) (*[]platformclientv2.Surveyform, *platformclientv2.APIResponse, error)
+type getAllQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, name string) (*[]platformclientv2.Surveyform, *platformclientv2.APIResponse, error)
 type getQualityFormsSurveyByNameFunc func(ctx context.Context, p *qualityFormsSurveyProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getQualityFormsSurveyByIdFunc func(ctx context.Context, p *qualityFormsSurveyProxy, id string) (form *platformclientv2.Surveyform, response *platformclientv2.APIResponse, err error)
 type updateQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, id string, form *platformclientv2.Surveyform) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error)
@@ -44,17 +42,14 @@ type qualityFormsSurveyProxy struct {
 	publishQualityFormsSurveyAttr     publishQualityFormsSurveyFunc
 	getQualityFormsSurveyVersionsAttr getQualityFormsSurveyVersionsFunc
 	patchQualityFormsSurveyAttr       patchQualityFormsSurveyFunc
-	formsCache                        rc.CacheInterface[platformclientv2.Surveyform]
 }
 
 // newQualityFormsSurveyProxy initializes the quality forms survey proxy with all the data needed to communicate with Genesys Cloud
 func newQualityFormsSurveyProxy(clientConfig *platformclientv2.Configuration) *qualityFormsSurveyProxy {
 	api := platformclientv2.NewQualityApiWithConfig(clientConfig)
-	formsCache := rc.NewResourceCache[platformclientv2.Surveyform]()
 	return &qualityFormsSurveyProxy{
 		clientConfig:                      clientConfig,
 		qualityApi:                        api,
-		formsCache:                        formsCache,
 		createQualityFormsSurveyAttr:      createQualityFormsSurveyFn,
 		getAllQualityFormsSurveyAttr:      getAllQualityFormsSurveyFn,
 		getQualityFormsSurveyByIdAttr:     getQualityFormsSurveyByIdFn,
@@ -82,21 +77,18 @@ func (p *qualityFormsSurveyProxy) createQualityFormsSurvey(ctx context.Context, 
 }
 
 // getAllQualityFormsSurvey retrieves all Genesys Cloud quality forms surveys
-func (p *qualityFormsSurveyProxy) getAllQualityFormsSurvey(ctx context.Context) (*[]platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
-	return p.getAllQualityFormsSurveyAttr(ctx, p)
+func (p *qualityFormsSurveyProxy) getAllQualityFormsSurvey(ctx context.Context, name string) (*[]platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
+	return p.getAllQualityFormsSurveyAttr(ctx, p, name)
 }
 
 // getQualityFormsSurveyById returns a single Genesys Cloud quality forms survey by Id
 func (p *qualityFormsSurveyProxy) getQualityFormsSurveyById(ctx context.Context, id string) (form *platformclientv2.Surveyform, response *platformclientv2.APIResponse, err error) {
-	if form := rc.GetCacheItem(p.formsCache, id); form != nil {
-		return form, nil, nil
-	}
 	return p.getQualityFormsSurveyByIdAttr(ctx, p, id)
 }
 
 // getQualityFormsSurveyByName returns a single Genesys Cloud quality forms survey by Name
 func (p *qualityFormsSurveyProxy) getQualityFormsSurveyByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	return p.getQualityFormsSurveyByNameAttr(ctx, p, id)
+	return p.getQualityFormsSurveyByNameAttr(ctx, p, name)
 }
 
 // updateQualityFormsSurvey updates a Genesys Cloud quality forms survey
@@ -132,11 +124,11 @@ func createQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy,
 	return surveyForm, resp, nil
 }
 
-func getAllQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy) (*[]platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
+func getAllQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, name string) (*[]platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
 	var allForms []platformclientv2.Surveyform
 	const pageSize = 100
 
-	forms, resp, err := p.qualityApi.GetQualityFormsSurveys(pageSize, 1, "", "", "", "publishHistory", "", "")
+	forms, resp, err := p.qualityApi.GetQualityFormsSurveys(pageSize, 1, "", "", "", "publishHistory", name, "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get quality forms surveys: %s", err)
 	}
@@ -160,11 +152,6 @@ func getAllQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy)
 		allForms = append(allForms, *forms.Entities...)
 	}
 
-	// Cache the forms for later use
-	for _, form := range allForms {
-		rc.SetCache(p.formsCache, *form.Id, form)
-	}
-
 	return &allForms, resp, nil
 }
 
@@ -177,7 +164,7 @@ func getQualityFormsSurveyByIdFn(ctx context.Context, p *qualityFormsSurveyProxy
 }
 
 func getQualityFormsSurveyByNameFn(ctx context.Context, p *qualityFormsSurveyProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	forms, resp, err := p.getAllQualityFormsSurvey(ctx)
+	forms, resp, err := getAllQualityFormsSurveyFn(ctx, p, name)
 	if err != nil {
 		return "", false, resp, err
 	}
