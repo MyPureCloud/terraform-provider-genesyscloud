@@ -69,14 +69,14 @@ func (g *GenesysCloudResourceExporter) filterResourceMetaMapBasedOnID(resType, e
 
 	exporter := (*g.exporters)[resType]
 
-	var newMetMap = make(resourceExporter.ResourceIDMetaMap)
-	for k, m := range exporter.SanitizedResourceMap {
-		if k == entityId {
-			newMetMap[k] = m
+	if rm, ok := exporter.SanitizedResourceMap[entityId]; ok {
+		exporter.SanitizedResourceMap = resourceExporter.ResourceIDMetaMap{
+			entityId: rm,
 		}
+	} else {
+		diags = append(diags, diag.Errorf("Resource %s not found", entityId)...)
+		return
 	}
-
-	exporter.SanitizedResourceMap = newMetMap
 
 	(*g.exporters)[resType] = exporter
 
@@ -88,15 +88,15 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMapsForMrMo() (d
 	log.Printf("Retrieving map of Genesys Cloud resources to export")
 	var filter []string
 	if exportableResourceTypes, ok := g.d.GetOk("resource_types"); ok {
-		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]any))
 	}
 
 	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
-		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]any))
 	}
 
 	if exportableResourceTypes, ok := g.d.GetOk("exclude_filter_resources"); ok {
-		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]any))
 	}
 
 	newFilter := make([]string, 0)
