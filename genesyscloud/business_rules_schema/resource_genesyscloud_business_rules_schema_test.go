@@ -97,7 +97,7 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 		attr7 = customField{
 			title:       "Custom_queue_attribute",
 			description: "Custom_queue_attribute description",
-			varType:     QUEUE,
+			varType:     BUSINESS_RULES_QUEUE,
 		}
 
 		// "string" field

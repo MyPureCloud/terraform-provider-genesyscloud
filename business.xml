@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" errors="0" time="27.523113">
+	<testsuite tests="2" failures="0" time="27.523000" name="github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema" timestamp="2025-07-23T14:43:55+01:00">
+		<properties>
+			<property name="go.version" value="go1.24.5 darwin/arm64"></property>
+		</properties>
+		<testcase classname="github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema" name="TestAccDataSourceBusinessRulesSchema" time="13.220000"></testcase>
+		<testcase classname="github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema" name="TestAccResourceBusinessRulesSchema" time="27.040000"></testcase>
+	</testsuite>
+</testsuites>
