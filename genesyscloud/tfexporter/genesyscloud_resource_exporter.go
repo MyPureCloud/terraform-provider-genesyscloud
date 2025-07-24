@@ -1388,9 +1388,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			case <-ctx.Done():
 				tflog.Trace(g.ctx, fmt.Sprintf("Context cancelled for resource ID: %s", id))
 				return
-			case <-time.After(10 * time.Second): // 10 second timeout for all environments
-				tflog.Error(g.ctx, fmt.Sprintf("Timeout acquiring semaphore for resource ID: %s", id))
-				return
 			}
 
 			tflog.Trace(g.ctx, fmt.Sprintf("Started processing for resource: %s.%s (%s)", resType, resMeta.BlockLabel, id))
@@ -1493,9 +1490,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				case <-ctx.Done():
 					tflog.Warn(g.ctx, fmt.Sprintf("Context canceled while sending ResourceInfo for resource ID: %s", id))
 					return fmt.Errorf("context cancelled")
-				case <-time.After(5 * time.Second): // 5 second timeout for all environments
-					tflog.Error(g.ctx, fmt.Sprintf("Timeout sending ResourceInfo to channel for resource ID: %s", id))
-					return fmt.Errorf("timeout sending resource info to channel")
 				}
 				tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent ResourceInfo to channel for resource ID: %s", id))
 
@@ -1586,9 +1580,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					case <-ctx.Done():
 						tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while sending error for resource ID: %s", id))
 						return
-					case <-time.After(5 * time.Second): // 5 second timeout for all environments
-						tflog.Error(g.ctx, fmt.Sprintf("Timeout sending error to channel for resource ID: %s", id))
-						return
 					}
 					return
 				}
@@ -1610,9 +1601,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				case <-ctx.Done():
 					tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while sending final error for resource ID: %s", id))
 					return
-				case <-time.After(5 * time.Second): // 5 second timeout for all environments
-					tflog.Error(g.ctx, fmt.Sprintf("Timeout sending final error to channel for resource ID: %s", id))
-					return
 				}
 
 			}
@@ -1623,20 +1611,8 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	tflog.Trace(g.ctx, fmt.Sprintf("Started all goroutines for resource type %s, waiting for completion", resType))
 
 	// Wait for all goroutines to complete with timeout
-	done := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		tflog.Trace(g.ctx, fmt.Sprintf("All goroutines completed for resource type %s", resType))
-	case <-time.After(60 * time.Second): // 60 second timeout for all environments
-		tflog.Error(g.ctx, fmt.Sprintf("Timeout waiting for goroutines to complete for resource type %s", resType))
-		cancel() // Cancel the context to signal all goroutines to stop
-		return nil, diag.Errorf("Timeout waiting for resource processing to complete for type %s", resType)
-	}
+	wg.Wait()
+	tflog.Trace(g.ctx, fmt.Sprintf("All goroutines completed for resource type %s", resType))
 
 	close(resourceChan)
 	close(errorsChan)
