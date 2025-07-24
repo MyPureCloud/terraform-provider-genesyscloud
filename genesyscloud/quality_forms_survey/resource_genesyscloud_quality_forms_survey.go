@@ -165,7 +165,6 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 			_ = d.Set("footer", *surveyForm.Footer)
 		}
 		if surveyForm.QuestionGroups != nil {
-			log.Println("surveyForm.QuestionGroups", surveyForm.QuestionGroups)
 			_ = d.Set("question_groups", flattenSurveyQuestionGroups(surveyForm.QuestionGroups))
 		}
 
