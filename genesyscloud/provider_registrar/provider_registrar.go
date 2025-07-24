@@ -1,6 +1,8 @@
 package provider_registrar
 
 import (
+	"sync"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -132,7 +134,6 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
-	"sync"
 )
 
 /*
