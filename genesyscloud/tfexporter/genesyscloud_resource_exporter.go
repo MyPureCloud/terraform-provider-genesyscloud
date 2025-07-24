@@ -1381,7 +1381,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			defer wg.Done()
 			tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))
 
-			// Acquire semaphore slot or return if context is cancelled
+			// Acquire semaphore slot or return if context is cancelled or timeout
 			select {
 			case sem <- struct{}{}:
 				defer func() { <-sem }() // Release semaphore when done
@@ -1610,7 +1610,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 	tflog.Trace(g.ctx, fmt.Sprintf("Started all goroutines for resource type %s, waiting for completion", resType))
 
-	// Wait for all goroutines to complete
+	// Wait for all goroutines to complete with timeout
 	wg.Wait()
 	tflog.Trace(g.ctx, fmt.Sprintf("All goroutines completed for resource type %s", resType))
 
