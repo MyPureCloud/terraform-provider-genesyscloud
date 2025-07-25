@@ -11,9 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
+	awsUtil "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -428,13 +430,27 @@ Genesys Cloud Architect Flows from S3-hosted YAML files with proper
 variable substitution, resource management, and update scenarios.
 */
 func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
-	utilAws.SkipIfLocalStackUnavailable(t)
+	imageURI, ok := os.LookupEnv("LOCAL_STACK_IMAGE_URI")
+	if !ok || imageURI == "" {
+		t.Skip("LOCAL_STACK_IMAGE_URI is not set, skipping test")
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		t.Fatalf("failed to load AWS config: %v", err)
+	}
+
+	_ = os.Setenv(awsUtil.UseLocalStackEnvVar, "true")
+	defer func() {
+		_ = os.Unsetenv(awsUtil.UseLocalStackEnvVar)
+	}()
 
 	// Create LocalStack manager
-	localStackManager, err := utilAws.NewLocalStackManager()
+	localStackManager, err := localstack.NewLocalStackManagerWithConfig(cfg, "terraform-provider-genesyscloud-localstack", imageURI, "")
 	if err != nil {
-		t.Fatalf("Failed to create LocalStack manager: %v", err)
+		t.Fatalf("failed to initialize local stack manager: %v", err)
 	}
+
 	defer localStackManager.Close()
 
 	// Start LocalStack
@@ -447,18 +463,9 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 	// Cleanup LocalStack after test
 	defer func() {
 		t.Log("Cleaning up LocalStack...")
-		if err := localStackManager.StopLocalStack(); err != nil {
+		if err = localStackManager.StopLocalStack(); err != nil {
 			t.Logf("[WARN] Failed to stop LocalStack: %v", err)
 		}
-	}()
-
-	// Set environment variable for LocalStack endpoint
-	err = utilAws.SetLocalStackEndpoint()
-	if err != nil {
-		t.Fatalf("Failed to set %s: %v", utilAws.LocalStackEndpointEnvVar, err)
-	}
-	defer func() {
-		_ = utilAws.UnsetLocalStackEndpoint()
 	}()
 
 	var (
