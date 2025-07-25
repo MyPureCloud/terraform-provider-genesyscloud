@@ -3,6 +3,7 @@ package recording_media_retention_policy
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -294,7 +295,7 @@ func callGetAllPoliciesApi(pageSize, pageNumber int, config *platformclientv2.Co
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
-		err = fmt.Errorf(response.ErrorMessage)
+		err = errors.New(response.ErrorMessage)
 	} else {
 		err = json.Unmarshal(response.RawBody, &successPayload)
 	}

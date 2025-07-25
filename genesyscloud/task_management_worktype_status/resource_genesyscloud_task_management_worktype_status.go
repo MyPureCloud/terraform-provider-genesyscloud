@@ -77,7 +77,7 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	err := validateSchema(d)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Failed to create task management worktype %s status %s: %s", worktypeId, *taskManagementWorktypeStatus.Name, err)
-		return util.BuildDiagnosticError(ResourceType, errorMsg, fmt.Errorf(errorMsg))
+		return util.BuildDiagnosticError(ResourceType, errorMsg, errors.New(errorMsg))
 	}
 
 	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>

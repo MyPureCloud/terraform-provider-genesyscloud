@@ -11,8 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	awsUtil "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -379,6 +382,212 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, "INBOUNDCALL"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+}
+
+/*
+TestAccResourceArchFlowWithLocalStack tests the Genesys Cloud Architect Flow resource
+with S3 file references using LocalStack for local AWS service simulation.
+
+Test Flow:
+1. Starts LocalStack container with S3 service enabled
+2. Creates a temporary YAML file with flow configuration
+3. Sets up S3 bucket and uploads the flow file
+4. Deploys the flow using S3 file reference with variable substitution
+5. Validates the deployed flow matches expected configuration
+6. Updates the flow description in the YAML file
+7. Re-uploads the updated file to S3
+8. Re-deploys the flow and validates the updated configuration
+9. Cleans up all resources (S3 bucket, LocalStack container, temp files)
+
+Key Features Tested:
+- S3 file path resolution: "s3://bucket-name/object-key"
+- Flow deployment from remote S3 sources
+- Resource state validation and cleanup
+- File content updates and re-deployment scenarios
+- Proper file handling (overwrite vs append)
+
+Prerequisites:
+- Docker must be installed and running
+- LocalStack image will be pulled automatically
+- Port 4566 must be available for LocalStack
+
+Environment Variables:
+- LOCALSTACK_ENDPOINT: Set to "http://localhost:4566" during test
+
+Cleanup:
+- Automatically removes LocalStack container
+- Deletes S3 bucket and contents
+- Removes temporary files
+- Unsets environment variables
+
+This test ensures that the Terraform provider can successfully deploy
+Genesys Cloud Architect Flows from S3-hosted YAML files with proper
+variable substitution, resource management, and update scenarios.
+*/
+func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
+	imageURI, ok := os.LookupEnv("LOCAL_STACK_IMAGE_URI")
+	if !ok || imageURI == "" {
+		t.Skip("LOCAL_STACK_IMAGE_URI is not set, skipping test")
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		t.Fatalf("failed to load AWS config: %v", err)
+	}
+
+	_ = os.Setenv(awsUtil.UseLocalStackEnvVar, "true")
+	defer func() {
+		_ = os.Unsetenv(awsUtil.UseLocalStackEnvVar)
+	}()
+
+	// Create LocalStack manager
+	localStackManager, err := localstack.NewLocalStackManagerWithConfig(cfg, "terraform-provider-genesyscloud-localstack", imageURI, "")
+	if err != nil {
+		t.Fatalf("failed to initialize local stack manager: %v", err)
+	}
+
+	defer localStackManager.Close()
+
+	// Start LocalStack
+	t.Log("Starting LocalStack...")
+	err = localStackManager.StartLocalStack()
+	if err != nil {
+		t.Fatalf("Failed to start LocalStack: %v", err)
+	}
+
+	// Cleanup LocalStack after test
+	defer func() {
+		t.Log("Cleaning up LocalStack...")
+		if err = localStackManager.StopLocalStack(); err != nil {
+			t.Logf("[WARN] Failed to stop LocalStack: %v", err)
+		}
+	}()
+
+	var (
+		resourceLabel = "test_flow1"
+		flowName      = "A TF LocalStack Test Flow " + uuid.NewString()
+		description   = "hello from localstack"
+		description2  = "hello from localstack2"
+		bucketName    = "testbucket"
+		objectKey     = "flow.yml"
+
+		fullResourcePath = ResourceType + "." + resourceLabel
+		srcFile          = fmt.Sprintf("s3://%s/%s", bucketName, objectKey)
+	)
+
+	// Create test flow content with substitution variable
+	flowContent := fmt.Sprintf(`inboundCall:
+  name: {{name}}
+  description: %s
+  defaultLanguage: en-us
+  startUpRef: ./menus/menu[mainMenu]
+  initialGreeting:
+    tts: LocalStack says hi!!!
+  menus:
+    - menu:
+        name: Main Menu
+        audio:
+          tts: You are at the Main Menu, press 9 to disconnect.
+        refId: mainMenu
+        choices:
+          - menuDisconnect:
+              name: Disconnect
+              dtmf: digit_9`, description)
+
+	// Create temporary file
+	tempFile, err := os.CreateTemp("", "flow-*.yml")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	// Write flow content to temp file
+	_, err = tempFile.WriteString(flowContent)
+	if err != nil {
+		t.Fatalf("Failed to write flow content: %v", err)
+	}
+
+	defer func() {
+		if err := tempFile.Close(); err != nil {
+			t.Logf("[WARN] Failed to close temp file: %v", err)
+		}
+
+		if err := os.Remove(tempFile.Name()); err != nil {
+			t.Logf("[WARN] Failed to remove temp file: %v", err)
+		}
+	}()
+
+	// Setup S3 bucket and upload test file
+	t.Log("Setting up S3 bucket and uploading test file...")
+	err = localStackManager.SetupS3Bucket(bucketName, tempFile.Name(), objectKey)
+	if err != nil {
+		t.Fatalf("Failed to setup S3 bucket: %v", err)
+	}
+
+	// Cleanup S3 bucket after test
+	defer func() {
+		if err := localStackManager.CleanupS3Bucket(bucketName); err != nil {
+			t.Logf("[WARN] Failed to cleanup S3 bucket: %v", err)
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateFlowResourceNoFileContentHash(
+					resourceLabel,
+					srcFile,
+					false,
+					util.GenerateSubstitutionsMap(map[string]string{
+						"name": flowName,
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow(fullResourcePath, flowName, description, "INBOUNDCALL"),
+				),
+			},
+			{
+				PreConfig: func() {
+					// update flow description from "hello from localstack" to "hello from localstack2"
+					t.Log("Updating flow description from " + description + " to " + description2)
+					flowContent = strings.Replace(flowContent, description, description2, 1)
+
+					t.Log("Writing flow content to temp file")
+					// Seek to beginning and truncate to overwrite the file
+					if _, err := tempFile.Seek(0, 0); err != nil {
+						t.Fatalf("Failed to seek to beginning of file: %v", err)
+					}
+					if err := tempFile.Truncate(0); err != nil {
+						t.Fatalf("Failed to truncate file: %v", err)
+					}
+					_, err := tempFile.WriteString(flowContent)
+					if err != nil {
+						t.Fatalf("Failed to write flow content: %v", err)
+					}
+
+					// Setup S3 bucket and upload test file
+					t.Log("Setting up S3 bucket and uploading updated test file")
+					err = localStackManager.SetupS3Bucket(bucketName, tempFile.Name(), objectKey)
+					if err != nil {
+						t.Fatalf("Failed to setup S3 bucket in PreConfig: %v", err)
+					}
+				},
+				Config: GenerateFlowResourceNoFileContentHash(
+					resourceLabel,
+					srcFile,
+					false,
+					util.GenerateSubstitutionsMap(map[string]string{
+						"name": flowName,
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow(fullResourcePath, flowName, description2, "INBOUNDCALL"),
 				),
 			},
 		},

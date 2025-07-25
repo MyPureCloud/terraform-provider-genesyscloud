@@ -89,7 +89,7 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 
 		testUserResourceLabel1 = "user_resource_1"
 		testUserName1          = "nameUser1" + uuid.NewString()
-		testUserEmail1         = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
+		testUserEmail1         = randString(5) + "@" + randString(5) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -154,7 +154,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 
 		testUserResourceLabel1 = "user_resource_1"
 		testUserName1          = "nameUser1" + uuid.NewString()
-		testUserEmail1         = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
+		testUserEmail1         = randString(5) + "@" + randString(5) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{
