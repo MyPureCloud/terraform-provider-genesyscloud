@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -166,7 +167,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 	})
 
 	if diagErr != nil {
-		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+		return errors.New(fmt.Sprintf("%v", diagErr))
 	}
 
 	// Success. All users destroyed
