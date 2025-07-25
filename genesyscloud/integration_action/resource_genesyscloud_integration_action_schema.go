@@ -5,6 +5,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -151,6 +152,17 @@ func ResourceIntegrationAction() *schema.Resource {
 				Computed:    true,
 				MaxItems:    1,
 				Elem:        actionConfigResponse,
+			},
+			"filepath": {
+				Description:  "the zip file path containing the function data action's code",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validators.ValidatePath,
+			},
+			"file_content_hash": {
+				Description: "Hash value of the zip file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}

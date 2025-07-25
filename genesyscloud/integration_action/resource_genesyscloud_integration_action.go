@@ -256,3 +256,14 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("integration action %s still exists", d.Id()), resp))
 	})
 }
+
+func containsFunctionDataAction(s string) bool {
+	normalized := strings.ToLower(s)
+	normalized = strings.ReplaceAll(normalized, "_", " ")
+	return strings.Contains(normalized, "function data action")
+}
+
+func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, iap *integrationActionsProxy)
+{
+	
+}
