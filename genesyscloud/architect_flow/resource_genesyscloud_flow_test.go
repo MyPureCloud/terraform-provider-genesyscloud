@@ -445,28 +445,36 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 		_ = os.Unsetenv(awsUtil.UseLocalStackEnvVar)
 	}()
 
-	// Create LocalStack manager
-	localStackManager, err := localstack.NewLocalStackManagerWithConfig(cfg, "terraform-provider-genesyscloud-localstack", imageURI, "")
-	if err != nil {
-		t.Fatalf("failed to initialize local stack manager: %v", err)
-	}
+	if false {
 
-	defer localStackManager.Close()
-
-	// Start LocalStack
-	t.Log("Starting LocalStack...")
-	err = localStackManager.StartLocalStack()
-	if err != nil {
-		t.Fatalf("Failed to start LocalStack: %v", err)
-	}
-
-	// Cleanup LocalStack after test
-	defer func() {
-		t.Log("Cleaning up LocalStack...")
-		if err = localStackManager.StopLocalStack(); err != nil {
-			t.Logf("[WARN] Failed to stop LocalStack: %v", err)
+		// Create LocalStack manager
+		localStackManager, err := localstack.NewLocalStackManagerWithConfig(cfg, "terraform-provider-genesyscloud-localstack", imageURI, "")
+		if err != nil {
+			t.Fatalf("failed to initialize local stack manager: %v", err)
 		}
-	}()
+
+		defer localStackManager.Close()
+
+		// Start LocalStack
+		t.Log("Starting LocalStack...")
+		err = localStackManager.StartLocalStack()
+		if err != nil {
+			t.Fatalf("Failed to start LocalStack: %v", err)
+		}
+
+		// Cleanup LocalStack after test
+		defer func() {
+			t.Log("Cleaning up LocalStack...")
+			if err = localStackManager.StopLocalStack(); err != nil {
+				t.Logf("[WARN] Failed to stop LocalStack: %v", err)
+			}
+		}()
+	}
+
+	localStackManager, err := localstack.NewLocalStackManager(os.Getenv("CONTAINER_NAME"), imageURI, "")
+	if err != nil {
+		t.Fatalf("Failed to initialise LocalStackManager: %s", err.Error())
+	}
 
 	var (
 		resourceLabel = "test_flow1"

@@ -97,6 +97,23 @@ func NewLocalStackManagerWithConfig(cfg aws.Config, containerName, image, port s
 	return lsm, nil
 }
 
+func NewLocalStackManager(containerName, image, port string) (*LocalStackManager, error) {
+
+	var lsm LocalStackManager
+
+	lsm.configureLocalStackSettings(containerName, image, port)
+
+	lsm.ctx = context.Background()
+
+	// Set env variable so that the aws client can use it
+	err := setLocalStackPort(lsm.port)
+	if err != nil {
+		log.Printf("failed to set env variable %s: %v", localStackPortEnvVar, err)
+	}
+
+	return &lsm, nil
+}
+
 // StartLocalStack starts a LocalStack container using docker commands
 func (l *LocalStackManager) StartLocalStack() error {
 	err := pullImage(l.ctx, l.dockerClient, l.imageURI, l.password)
