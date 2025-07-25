@@ -22,6 +22,11 @@ func NewAWSS3Client(cfg aws.Config) *AWSS3Client {
 			if shouldUseLocalStack() {
 				log.Println("Using localstack port: ", localstack.GetLocalStackPort())
 				o.BaseEndpoint = aws.String(fmt.Sprintf("http://localhost:%s", localstack.GetLocalStackPort()))
+				region := os.Getenv("GENESYSCLOUD_REGION")
+				if region == "" {
+					region = "us-east-1" // default
+				}
+				o.Region = region
 			}
 			o.UsePathStyle = true
 		}),
