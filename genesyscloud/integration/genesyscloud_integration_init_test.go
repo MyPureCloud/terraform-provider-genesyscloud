@@ -1,11 +1,12 @@
 package integration
 
 import (
+	"sync"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-	"sync"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -45,6 +46,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[ResourceType] = DataSourceIntegration()
+	providerDataSources["genesyscloud_integration_webhook"] = DataSourceIntegrationWebhook()
 }
 
 // initTestResources initializes all test resources and data sources.

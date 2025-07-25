@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -611,7 +612,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		// 1. Get instance state as JSON Map
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
 		if diagErr != nil {
-			return diagErr
+			diagnostics = append(diagnostics, diagErr...)
+			if diagnostics.HasError() {
+				return
+			}
 		}
 
 		// 2. Determine if instance is a data source
@@ -649,13 +653,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		}
 
 		// 4. Convert the instance state to a map
-		configMap := make(map[string]interface{})
-		for key, value := range jsonResult {
-			configMap[key] = value
-		}
+		configMap := maps.Clone(jsonResult)
 
 		// 5. Sanitize the config map
-		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, false, g.exportFormat, false)
+		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
 		if len(unresolvableAttrs) > 0 {
 			g.addUnresolvedAttrs(unresolvableAttrs)
 		}
@@ -666,24 +667,31 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			dataSourceMaps[resource.Type][resource.BlockLabel] = configMap
 			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
+			// 6. Handles writing external files as part of the export process
+			diagnostics = append(diagnostics, g.customWriteAttributes(configMap, resource)...)
+			if diagnostics.HasError() {
+				return diagnostics
+			}
 			resourceMaps = g.getResourceTypesMaps()
 			resourceMaps[resource.Type][resource.BlockLabel] = configMap
 			g.setResourceTypesMaps(resourceMaps)
 		}
-
-		// 7. Update instance state attributes
-		g.updateInstanceStateAttributes(jsonResult, resource)
 	}
 
 	tflog.Info(g.ctx, fmt.Sprintf("Successfully built resource config map with %d resources", len(resources)))
-	return nil
+	return diagnostics
 }
 
 func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
 	resource resourceExporter.ResourceInfo) (diagnostics diag.Diagnostics) {
 	exporters := *g.exporters
+
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
-		exportDir, _ := getFilePath(g.d, "")
+		exportDir, getFilePathDiags := getFilePath(g.d, "")
+		diagnostics = append(diagnostics, getFilePathDiags...)
+		if diagnostics.HasError() {
+			return
+		}
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
 			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
@@ -971,11 +979,8 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 
 		// rebuild the config map
 		diagErr = g.buildResourceConfigMap()
-		if diagErr.HasError() {
-			return diagErr
-		}
 	}
-	return nil
+	return
 }
 
 func (g *GenesysCloudResourceExporter) copyExporters() map[string]*resourceExporter.ResourceExporter {
@@ -1072,10 +1077,13 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 
 		if len(filterListById) > 0 {
 			g.resourceFilter = FilterResourceById
-			g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
+			diagErr = append(diagErr, g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)...)
+			if diagErr.HasError() {
+				return
+			}
 		}
 	}
-	return nil
+	return
 }
 
 // Recursive function to perform operations based on filterListById length
@@ -1105,19 +1113,19 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		g.resources = nil
 		g.exporters = nil
 		tflog.Debug(g.ctx, "Rebuilding exporters list from chainDependencies")
-		err := g.rebuildExports(*g.filterList)
-		if err != nil {
-			return err
+		diagErr = append(diagErr, g.rebuildExports(*g.filterList)...)
+		if diagErr.HasError() {
+			return
 		}
 		// checks and exports if there are any dependent flow resources
-		err = g.buildAndExportDependsOnResourcesForFlows()
-		if err != nil {
-			return err
+		diagErr = append(diagErr, g.buildAndExportDependsOnResourcesForFlows()...)
+		if diagErr.HasError() {
+			return
 		}
 
-		err = g.buildResourceConfigMap()
-		if err.HasError() {
-			return err
+		diagErr = append(diagErr, g.buildResourceConfigMap()...)
+		if diagErr.HasError() {
+			return
 		}
 		//append the resources and exporters
 		g.appendResources(existingResources)
@@ -1129,9 +1137,9 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		existingResources = g.resources
 
 		// Recursive call until all the dependencies are addressed.
-		return g.chainDependencies(existingResources, existingExporters)
+		return append(diagErr, g.chainDependencies(existingResources, existingExporters)...)
 	}
-	return nil
+	return
 }
 
 func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resourceExporter.ResourceInfo) {
@@ -1373,7 +1381,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			defer wg.Done()
 			tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))
 
-			// Acquire semaphore slot or return if context is cancelled
+			// Acquire semaphore slot or return if context is cancelled or timeout
 			select {
 			case sem <- struct{}{}:
 				defer func() { <-sem }() // Release semaphore when done
@@ -1529,8 +1537,10 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 							version = providerMeta.Version
 						}
 
-						// Call the pool's adjustment method
-						provider.SdkClientPool.AdjustPoolForTimeout(version)
+						// Call the pool's adjustment method if pool is initialized
+						if provider.SdkClientPool != nil {
+							provider.SdkClientPool.AdjustPoolForTimeout(version)
+						}
 
 						// Add a small delay to allow the new clients to be available
 						tflog.Debug(g.ctx, fmt.Sprintf("Waiting 5 seconds for new clients to be available for resource ID: %s", id))
@@ -1600,7 +1610,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 	tflog.Trace(g.ctx, fmt.Sprintf("Started all goroutines for resource type %s, waiting for completion", resType))
 
-	// Wait for all goroutines to complete
+	// Wait for all goroutines to complete with timeout
 	wg.Wait()
 	tflog.Trace(g.ctx, fmt.Sprintf("All goroutines completed for resource type %s", resType))
 
