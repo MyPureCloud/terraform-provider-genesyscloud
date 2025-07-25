@@ -94,14 +94,18 @@ func readBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta i
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read business rules schema %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		schemaProps, err := json.Marshal(schema.JsonSchema.Properties)
-		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error in reading json schema properties of %s | error: %v", *schema.Name, err), resp))
-		}
 		var schemaPropsPtr *string
-		if string(schemaProps) != util.NullValue {
-			schemaPropsStr := string(schemaProps)
-			schemaPropsPtr = &schemaPropsStr
+		if schema.JsonSchema != nil {
+			schemaProps, err := json.Marshal(schema.JsonSchema.Properties)
+			if err != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error in reading json schema properties of %s | error: %v", *schema.Name, err), resp))
+			}
+			if string(schemaProps) != util.NullValue {
+				schemaPropsStr := string(schemaProps)
+				schemaPropsPtr = &schemaPropsStr
+			}
+		} else {
+			schemaPropsPtr = nil
 		}
 
 		resourcedata.SetNillableValue(d, "name", schema.Name)

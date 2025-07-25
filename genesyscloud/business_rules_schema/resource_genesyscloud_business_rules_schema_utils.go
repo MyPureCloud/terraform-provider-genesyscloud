@@ -41,12 +41,11 @@ func BuildSdkBusinessRulesSchema(d *schema.ResourceData, version *int) (*platfor
 	}
 
 	// Custom attributes for the schema
-	if d.Get("properties") != "" {
+	if propertiesStr, ok := d.Get("properties").(string); ok && propertiesStr != "" {
 		var properties map[string]interface{}
-		if err := json.Unmarshal([]byte(d.Get("properties").(string)), &properties); err != nil {
-			return nil, err
+		if err := json.Unmarshal([]byte(propertiesStr), &properties); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal properties JSON: %w", err)
 		}
-
 		dataSchema.JsonSchema.Properties = &properties
 	}
 

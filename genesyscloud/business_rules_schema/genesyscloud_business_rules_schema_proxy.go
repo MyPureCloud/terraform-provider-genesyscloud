@@ -112,7 +112,7 @@ func (p *businessRulesSchemaProxy) getBusinessRulesSchemaDeletedStatus(ctx conte
 func createBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
 	log.Printf("Creating business rules schema: %s", *schema.Name)
 	createdSchema, resp, err := p.businessRulesApi.PostBusinessrulesSchemas(*schema)
-	log.Printf("Completed call to create business rules schema %s with status code %d, correlation id %s and err %s", *schema.Name, resp.StatusCode, resp.CorrelationID, err)
+	log.Printf("Completed call to create business rules schema %s with status code %d, correlation id %s", *schema.Name, resp.StatusCode, resp.CorrelationID)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create business rules schema: %s", err)
 	}
