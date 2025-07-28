@@ -606,7 +606,7 @@ func getMockCampaignConfig(originalValueOfScriptId string) map[string]any {
 	return config
 }
 
-func TestContainsElement(t *testing.T) {
+func TestUnitContainsElement(t *testing.T) {
 	// set up
 	exporter := setupGenesysCloudResourceExporter(t)
 
@@ -660,7 +660,7 @@ func TestContainsElement(t *testing.T) {
 	}
 }
 
-func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
+func TestUnitGetResourceStateRemovesComputedAttributes(t *testing.T) {
 
 	testCases := []struct {
 		name            string
@@ -928,7 +928,7 @@ func TestUnitMatchesFormat(t *testing.T) {
 	}
 }
 
-func TestGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
+func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 	tests := []struct {
 		name           string
 		setupExporter  func() *GenesysCloudResourceExporter
@@ -1255,7 +1255,7 @@ func TestGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 }
 
 // Test helper function to create a mock exporter with custom file writer
-func TestGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileWriter(t *testing.T) {
+func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileWriter(t *testing.T) {
 	ctx := context.Background()
 	d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
 		"export_format": {
@@ -1358,7 +1358,7 @@ func TestGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileWrite
 }
 
 // Test error handling in instanceStateToMap
-func TestGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateError(t *testing.T) {
+func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateError(t *testing.T) {
 	ctx := context.Background()
 	d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
 		"export_format": {
