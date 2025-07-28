@@ -9,7 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack"
+	localStackEnv "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack/environment"
 )
 
 type AWSS3Client struct {
@@ -19,9 +19,9 @@ type AWSS3Client struct {
 func NewAWSS3Client(cfg aws.Config) *AWSS3Client {
 	return &AWSS3Client{
 		client: s3.NewFromConfig(cfg, func(o *s3.Options) {
-			if shouldUseLocalStack() {
-				log.Println("Using localstack port: ", localstack.GetLocalStackPort())
-				o.BaseEndpoint = aws.String(fmt.Sprintf("http://localhost:%s", localstack.GetLocalStackPort()))
+			if localStackEnv.LocalStackIsActive() {
+				log.Println("Using localstack port: ", localStackEnv.GetLocalStackPort())
+				o.BaseEndpoint = aws.String(fmt.Sprintf("http://localhost:%s", localStackEnv.GetLocalStackPort()))
 				region := os.Getenv("GENESYSCLOUD_REGION")
 				if region == "" {
 					region = "us-east-1" // default
@@ -33,6 +33,10 @@ func NewAWSS3Client(cfg aws.Config) *AWSS3Client {
 	}
 }
 
+func (a *AWSS3Client) GetClient() *s3.Client {
+	return a.client
+}
+
 func (a *AWSS3Client) GetObject(ctx context.Context, bucket, key string) (io.Reader, error) {
 	result, err := a.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
@@ -42,15 +46,4 @@ func (a *AWSS3Client) GetObject(ctx context.Context, bucket, key string) (io.Rea
 		return nil, err
 	}
 	return result.Body, nil
-}
-
-const UseLocalStackEnvVar = "USE_LOCAL_STACK"
-
-// shouldUseLocalStack checks if the localstack should be used
-func shouldUseLocalStack() bool {
-	v, ok := os.LookupEnv(UseLocalStackEnvVar)
-	if !ok {
-		return false
-	}
-	return v == "true"
 }

@@ -11,11 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	awsUtil "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack"
+	localStackEnv "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack/environment"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -430,48 +429,19 @@ Genesys Cloud Architect Flows from S3-hosted YAML files with proper
 variable substitution, resource management, and update scenarios.
 */
 func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
-	imageURI, ok := os.LookupEnv("LOCAL_STACK_IMAGE_URI")
-	if !ok || imageURI == "" {
-		t.Skip("LOCAL_STACK_IMAGE_URI is not set, skipping test")
+	/*
+		// To run this test locally, set the following environment variables and run `localstack start` from another terminal
+		os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
+		os.Setenv(localStackEnv.LocalStackImageUriEnvVar, "localstack/localstack:latest")
+	*/
+
+	imageURI := os.Getenv(localStackEnv.LocalStackImageUriEnvVar)
+	if imageURI == "" || !localStackEnv.LocalStackIsActive() {
+		t.Skipf("Missing env variables (%s or %s), indicating that localstack is not running", localStackEnv.LocalStackImageUriEnvVar, localStackEnv.UseLocalStackEnvVar)
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		t.Fatalf("failed to load AWS config: %v", err)
-	}
-
-	_ = os.Setenv(awsUtil.UseLocalStackEnvVar, "true")
-	defer func() {
-		_ = os.Unsetenv(awsUtil.UseLocalStackEnvVar)
-	}()
-
-	if false {
-
-		// Create LocalStack manager
-		localStackManager, err := localstack.NewLocalStackManagerWithConfig(cfg, "terraform-provider-genesyscloud-localstack", imageURI, "")
-		if err != nil {
-			t.Fatalf("failed to initialize local stack manager: %v", err)
-		}
-
-		defer localStackManager.Close()
-
-		// Start LocalStack
-		t.Log("Starting LocalStack...")
-		err = localStackManager.StartLocalStack()
-		if err != nil {
-			t.Fatalf("Failed to start LocalStack: %v", err)
-		}
-
-		// Cleanup LocalStack after test
-		defer func() {
-			t.Log("Cleaning up LocalStack...")
-			if err = localStackManager.StopLocalStack(); err != nil {
-				t.Logf("[WARN] Failed to stop LocalStack: %v", err)
-			}
-		}()
-	}
-
-	localStackManager, err := localstack.NewLocalStackManager(os.Getenv("CONTAINER_NAME"), imageURI, "")
+	ctx := context.Background()
+	localStackManager, err := localstack.NewLocalStackManager(ctx)
 	if err != nil {
 		t.Fatalf("Failed to initialise LocalStackManager: %s", err.Error())
 	}
@@ -481,7 +451,7 @@ func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
 		flowName      = "A TF LocalStack Test Flow " + uuid.NewString()
 		description   = "hello from localstack"
 		description2  = "hello from localstack2"
-		bucketName    = "testbucket"
+		bucketName    = "testbucket-" + strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))
 		objectKey     = "flow.yml"
 
 		fullResourcePath = ResourceType + "." + resourceLabel
