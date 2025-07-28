@@ -388,6 +388,32 @@ func TestAccResourceArchitectFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	})
 }
 
+// TestAccResourceArchitectFlowWithLocalStack tests the architect flow resource using LocalStack for S3 operations.
+// This test validates that the terraform-provider-genesyscloud can successfully deploy flows from S3 buckets
+// using LocalStack as a local AWS service emulator.
+//
+// Prerequisites:
+//   - LocalStack must be running (either locally or in CI)
+//   - Environment variables must be set:
+//   - USE_LOCAL_STACK=true
+//   - LOCAL_STACK_IMAGE_URI=<localstack-image-uri>
+//
+// Test Flow:
+//
+//  1. Creates a temporary flow YAML file with substitution variables
+//
+//  2. Sets up LocalStack S3 bucket and uploads the flow file
+//
+//  3. Deploys the flow using terraform with S3 source
+//
+//  4. Updates the flow description and re-uploads to S3
+//
+//  5. Verifies the flow is updated correctly
+//
+//  6. Cleans up S3 bucket and temporary files
+//
+// This test is designed to run in CI environments where LocalStack is available
+// and properly configured with the required environment variables.
 func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
 	/*
 		// To run this test locally, set the following environment variables and run `localstack start` from another terminal
