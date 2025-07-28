@@ -2,10 +2,11 @@ package environment
 
 import "os"
 
+// Environment variables for localstack (set in jenkins)
 const (
 	defaultLocalStackPort    = "4566"
-	LocalStackImageUriEnvVar = "LOCAL_STACK_IMAGE_URI" // Set in jenkins
-	localStackPortEnvVar     = "LOCALSTACK_PORT"
+	localStackPortEnvVar     = "LOCAL_STACK_PORT"
+	LocalStackImageUriEnvVar = "LOCAL_STACK_IMAGE_URI"
 	UseLocalStackEnvVar      = "USE_LOCAL_STACK"
 )
 

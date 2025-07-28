@@ -7,7 +7,7 @@ import (
 	localStackEnv "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack/environment"
 )
 
-// LocalStackManager manages a LocalStack Docker container for testing
+// LocalStackManager performs S3 operations using LocalStack (for testing)
 type LocalStackManager struct {
 	ctx      context.Context
 	endpoint string
