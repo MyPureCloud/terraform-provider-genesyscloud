@@ -60,7 +60,7 @@ func lockFlow(flowName string, flowType string) {
 }
 
 // Tests the force_unlock functionality.
-func TestAccResourceArchFlowForceUnlock(t *testing.T) {
+func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 	var (
 		flowResourceLabel = "test_force_unlock_flow1"
 		flowName          = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
@@ -118,7 +118,7 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 	})
 }
 
-func TestAccResourceArchFlowStandard(t *testing.T) {
+func TestAccResourceArchitectFlowStandard(t *testing.T) {
 	var (
 		flowResourceLabel1 = "test_flow1"
 		flowResourceLabel2 = "test_flow2"
@@ -220,7 +220,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 	})
 }
 
-func TestAccResourceArchFlowSubstitutions(t *testing.T) {
+func TestAccResourceArchitectFlowSubstitutions(t *testing.T) {
 	var (
 		flowResourceLabel1 = "test_flow1"
 		flowName           = "Terraform Flow Test-" + uuid.NewString()
@@ -325,7 +325,7 @@ even if the user was only doing a plan or destroy.
 This test exercises this bug by first deploying a flow file with a substitution.  Then modifying the flow file and rerunning
 the flow with a substitution.
 */
-func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
+func TestAccResourceArchitectFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	var (
 		flowResourceLabel1 = "test_flow1"
 		flowName           = "Terraform Flow Test-" + uuid.NewString()
@@ -388,47 +388,7 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	})
 }
 
-/*
-TestAccResourceArchFlowWithLocalStack tests the Genesys Cloud Architect Flow resource
-with S3 file references using LocalStack for local AWS service simulation.
-
-Test Flow:
-1. Starts LocalStack container with S3 service enabled
-2. Creates a temporary YAML file with flow configuration
-3. Sets up S3 bucket and uploads the flow file
-4. Deploys the flow using S3 file reference with variable substitution
-5. Validates the deployed flow matches expected configuration
-6. Updates the flow description in the YAML file
-7. Re-uploads the updated file to S3
-8. Re-deploys the flow and validates the updated configuration
-9. Cleans up all resources (S3 bucket, LocalStack container, temp files)
-
-Key Features Tested:
-- S3 file path resolution: "s3://bucket-name/object-key"
-- Flow deployment from remote S3 sources
-- Resource state validation and cleanup
-- File content updates and re-deployment scenarios
-- Proper file handling (overwrite vs append)
-
-Prerequisites:
-- Docker must be installed and running
-- LocalStack image will be pulled automatically
-- Port 4566 must be available for LocalStack
-
-Environment Variables:
-- LOCALSTACK_ENDPOINT: Set to "http://localhost:4566" during test
-
-Cleanup:
-- Automatically removes LocalStack container
-- Deletes S3 bucket and contents
-- Removes temporary files
-- Unsets environment variables
-
-This test ensures that the Terraform provider can successfully deploy
-Genesys Cloud Architect Flows from S3-hosted YAML files with proper
-variable substitution, resource management, and update scenarios.
-*/
-func TestAccResourceArchFlowWithLocalStack(t *testing.T) {
+func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
 	/*
 		// To run this test locally, set the following environment variables and run `localstack start` from another terminal
 		os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
