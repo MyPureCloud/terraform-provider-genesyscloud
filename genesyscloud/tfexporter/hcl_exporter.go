@@ -20,8 +20,8 @@ import (
 const resourceHCLFileExt = "tf"
 
 type HCLExporter struct {
-	resourceTypesJSONMaps map[string]resourceJSONMaps
-	dataSourceTypesMaps   map[string]resourceJSONMaps
+	resourceTypesJSONMaps map[string]ResourceJSONMaps
+	dataSourceTypesMaps   map[string]ResourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
 	providerRegistry      string
 	version               string
@@ -29,7 +29,7 @@ type HCLExporter struct {
 	splitFilesByResource  bool
 }
 
-func NewHClExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
+func NewHClExporter(resourceTypesJSONMaps map[string]ResourceJSONMaps, dataSourceTypesMaps map[string]ResourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
 	hclExporter := &HCLExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
 		dataSourceTypesMaps:   dataSourceTypesMaps,

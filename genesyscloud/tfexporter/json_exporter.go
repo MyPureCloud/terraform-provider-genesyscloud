@@ -18,11 +18,11 @@ import (
 
 const resourceJSONFileExt = "tf.json"
 
-type resourceJSONMaps map[string]util.JsonMap
+type ResourceJSONMaps map[string]util.JsonMap
 
 type JsonExporter struct {
-	resourceTypesJSONMaps map[string]resourceJSONMaps
-	dataSourceTypesMaps   map[string]resourceJSONMaps
+	resourceTypesJSONMaps map[string]ResourceJSONMaps
+	dataSourceTypesMaps   map[string]ResourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
 	providerRegistry      string
 	version               string
@@ -30,7 +30,7 @@ type JsonExporter struct {
 	splitFilesByResource  bool
 }
 
-func NewJsonExporter(resourceTypesJSONMaps map[string]resourceJSONMaps, dataSourceTypesMaps map[string]resourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
+func NewJsonExporter(resourceTypesJSONMaps map[string]ResourceJSONMaps, dataSourceTypesMaps map[string]ResourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *JsonExporter {
 	jsonExporter := &JsonExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
 		dataSourceTypesMaps:   dataSourceTypesMaps,
