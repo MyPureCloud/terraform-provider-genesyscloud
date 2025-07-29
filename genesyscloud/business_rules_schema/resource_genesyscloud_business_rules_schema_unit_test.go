@@ -279,7 +279,7 @@ func TestUnitResourceBusinessRulesSchemaUpdate(t *testing.T) {
 	}
 
 	internalProxy = schemaProxy
-	defer func() { internalProxy = nil }()	
+	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}

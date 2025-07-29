@@ -241,5 +241,5 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func deleteGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
+	return nil // No delete operation for guide versions, return nil
 }
