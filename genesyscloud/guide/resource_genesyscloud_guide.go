@@ -26,7 +26,7 @@ func getAllGuides(ctx context.Context, clientConfig *platformclientv2.Configurat
 
 	guides, resp, err := proxy.getAllGuides(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all guides | error: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get guides: %s", err), resp)
 	}
 
 	if guides == nil {
@@ -49,20 +49,48 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	name := d.Get("name").(string)
 	source := d.Get("source").(string)
 
-	log.Printf("Creating Guide: %s", name)
-
 	guideReq := &CreateGuide{
 		Name:   &name,
 		Source: &source,
 	}
 
+	// If source is Prompt, a content generation job will need to be executed
+	// This will return the instruction, variables, and resources for the guide, which is used to create a guide version
+	var versionReq *CreateGuideVersionRequest
+	if source == "Prompt" {
+		log.Printf("Source is Prompt, creating guide job for Guide: %s", name)
+		content, diagErr := createGuideJob(ctx, d, meta, name)
+		if diagErr != nil {
+			return diagErr
+		}
+		versionReq = &CreateGuideVersionRequest{
+			Instruction: content.Instruction,
+		}
+	} else {
+		// For non-Prompt sources, create a default version with empty instruction
+		log.Printf("Source is not Prompt, creating default guide version for Guide: %s", name)
+		versionReq = &CreateGuideVersionRequest{
+			Instruction: " ",
+		}
+	}
+
+	log.Printf("Creating Guide: %s", name)
+
 	guide, resp, err := proxy.createGuide(ctx, guideReq)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide: %s | error: %s", name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create guide %s: %s", name, err), resp)
 	}
 
 	d.SetId(*guide.Id)
-	log.Printf("Created guide: %s", *guide.Name)
+	log.Printf("Created guide: %s with ID: %s", *guide.Name, *guide.Id)
+
+	version, resp, err := proxy.createGuideVersion(ctx, versionReq, d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create guide version for %s: %s", name, err), resp)
+	}
+
+	log.Printf("Created guide version %s for guide %s", version.Version, name)
+
 	return readGuide(ctx, d, meta)
 }
 
@@ -77,12 +105,14 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		guide, resp, err := proxy.getGuideById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read guide %s | Error: %s", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read guide %s: %s", d.Id(), err), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read guide %s | Error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read guide %s: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", guide.Name)
+		resourcedata.SetNillableValue(d, "status", guide.Status)
+		resourcedata.SetNillableValue(d, "source", guide.Source)
 
 		d.SetId(*guide.Id)
 
@@ -92,11 +122,17 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		if guide.Source != nil {
 			_ = d.Set("source", guide.Source)
 		}
+
 		if guide.LatestSavedVersion != nil && guide.LatestSavedVersion.Version != nil {
-			_ = d.Set("latest_saved_version", guide.LatestSavedVersion.Version)
+			_ = d.Set("latest_saved_version", *guide.LatestSavedVersion.Version)
+		} else {
+			_ = d.Set("latest_saved_version", nil)
 		}
+
 		if guide.LatestProductionReadyVersion != nil && guide.LatestProductionReadyVersion.Version != nil {
-			_ = d.Set("latest_production_ready_version", guide.LatestProductionReadyVersion.Version)
+			_ = d.Set("latest_production_ready_version", *guide.LatestProductionReadyVersion.Version)
+		} else {
+			_ = d.Set("latest_production_ready_version", nil)
 		}
 
 		log.Printf("Read Guide: %s", d.Id())
@@ -116,7 +152,7 @@ func deleteGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			log.Printf("Guide %s already deleted", d.Id())
 			return nil
 		}
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete guide %s | Error: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to delete guide %s: %s", d.Id(), err), resp)
 	}
 
 	if resp.StatusCode == 202 {
@@ -131,32 +167,29 @@ func deleteGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				log.Printf("Deleted Guide: %s", d.Id())
 				return nil
 			}
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error retrieving guide %s | error: %s", d.Id(), err), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error retrieving guide %s: %s", d.Id(), err), resp))
 		}
 
 		jobStatus, jobResp, jobErr := proxy.getDeleteJobStatusById(ctx, job.Id, d.Id())
 		if jobErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error checking delete job status for guide %s | Error: %s", d.Id(), jobErr), jobResp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error checking delete job status for guide %s: %s", d.Id(), jobErr), jobResp))
 		}
+
 		status := jobStatus.Status
 
 		// Check the status of the delete job
-		if status == "InProgress" {
+		switch status {
+		case "InProgress":
 			return retry.RetryableError(fmt.Errorf("delete job for guide %s still in progress: %s", d.Id(), status))
-		}
-
-		if status == "Succeeded" {
+		case "Succeeded":
 			log.Printf("Deleted Guide: %s | Status: %s", d.Id(), status)
 			return nil
-		}
-
-		if status == "Failed" {
+		case "Failed":
 			if len(jobStatus.Errors) > 0 && jobStatus.Errors[0].Message != "" {
 				return retry.NonRetryableError(fmt.Errorf("delete job failed for guide %s: %s", d.Id(), jobStatus.Errors[0].Message))
 			}
 			return retry.NonRetryableError(fmt.Errorf("delete job failed for guide %s | Status: %s", d.Id(), status))
 		}
-
 		return retry.RetryableError(fmt.Errorf("unexpected job status for: %s | Status: %s", d.Id(), status))
 	})
 }

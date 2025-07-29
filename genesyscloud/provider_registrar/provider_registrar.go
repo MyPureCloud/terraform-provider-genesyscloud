@@ -20,6 +20,7 @@ import (
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessageSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
@@ -349,6 +350,7 @@ func registerResources() {
 	knowledgeKnowledgebase.SetRegistrar(regInstance)                       //Registering Knowledge base
 	qualityFormsEvaluation.SetRegistrar(regInstance)                       //Registering quality forms evaluation
 	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
+	businessRulesSchema.SetRegistrar(regInstance)                          //Registering business rules schema
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

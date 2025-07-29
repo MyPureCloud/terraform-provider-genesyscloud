@@ -1,21 +1,15 @@
-package integration
+package business_rules_schema
 
 import (
 	"sync"
 	"testing"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
-	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 /*
-   The genesyscloud_integration_init_test.go file is used to initialize the data sources and resources
-   used in testing the integration resource.
-
-   Please make sure you register ALL resources and data sources your test cases will use.
+   The genesyscloud_business_rules_schema_init_test.go file is used to initialize the data sources and resources
+   used in testing the business_rules_schema resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -34,10 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceIntegration()
-	providerResources[group.ResourceType] = group.ResourceGroup()
-	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
-	providerResources[user.ResourceType] = user.ResourceUser()
+	providerResources[ResourceType] = ResourceBusinessRulesSchema()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -45,8 +36,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceIntegration()
-	providerDataSources["genesyscloud_integration_webhook"] = DataSourceIntegrationWebhook()
+	providerDataSources[ResourceType] = DataSourceBusinessRulesSchema()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -56,15 +46,15 @@ func initTestResources() {
 
 	regInstance := &registerTestInstance{}
 
-	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for integration package
+	// Run setup function before starting the test suite for the business_rules_schema package
 	initTestResources()
 
-	// Run the test suite for the integration package
+	// Run the test suite for the business_rules_schema package
 	m.Run()
 }

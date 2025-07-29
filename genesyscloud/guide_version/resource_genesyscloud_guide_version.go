@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -73,7 +74,27 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	version, resp, err := proxy.createGuideVersion(ctx, versionReq, guideId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version | error: %s", err), resp)
+		if resp.StatusCode == 409 && strings.Contains(err.Error(), "Latest version is not in Production Ready state") {
+			log.Printf("Got 409 error - latest version is not in Production Ready state. Getting latest saved version and updating it instead.")
+
+			guide, resp, err := proxy.getGuideById(ctx, guideId)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide %s: %v", guideId, err), resp)
+			}
+
+			if guide.LatestSavedVersion == nil || guide.LatestSavedVersion.Version == nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Guide %s has no latest saved version to update", guideId), resp)
+			}
+
+			latestSavedVersionId := *guide.LatestSavedVersion.Version
+			log.Printf("Found latest saved version %s for guide %s, updating it instead of creating new version", latestSavedVersionId, guideId)
+
+			d.SetId(guideId + "/" + latestSavedVersionId)
+
+			// Update the existing version instead of creating a new one
+			return updateGuideVersion(ctx, d, meta)
+		}
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
 	}
 
 	version.Id = &version.Version
@@ -126,7 +147,12 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 			_ = d.Set("variables", variablesList)
 		}
 
-		log.Printf("Read Guide Version %s", d.Id())
+		guide, resp, err := proxy.getGuideById(ctx, guideId)
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide %s: %v", guideId, err), resp))
+		}
+
+		log.Printf("Read Guide Version %s for guide %s", d.Id(), *guide.Name)
 		return cc.CheckState(d)
 	})
 }
@@ -163,10 +189,6 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("Updated Guide Version")
 	return readGuideVersion(ctx, d, meta)
-}
-
-func deleteGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
 }
 
 func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -216,4 +238,8 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	return readGuideVersion(ctx, d, meta)
+}
+
+func deleteGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return nil // No delete operation for guide versions, return nil
 }

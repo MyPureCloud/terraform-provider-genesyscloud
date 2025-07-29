@@ -139,5 +139,6 @@ func LocationExporter() *resourceExporter.ResourceExporter {
 		CustomValidateExports: map[string][]string{
 			"E164": {"emergency_number.number"},
 		},
+		ExportAsDataFunc: shouldExportLocationAsData,
 	}
 }

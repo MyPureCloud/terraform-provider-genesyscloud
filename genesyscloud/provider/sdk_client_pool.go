@@ -14,6 +14,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
@@ -47,6 +48,7 @@ const (
 // increases throughput as each token will have its own rate limit.
 type SDKClientPool struct {
 	Pool    chan *platformclientv2.Configuration
+	ctx     context.Context
 	config  *SDKClientPoolConfig
 	metrics *poolMetrics
 	done    chan struct{} // For cleanup
@@ -137,6 +139,7 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			config:  config,
 			metrics: &poolMetrics{},
 			done:    make(chan struct{}),
+			ctx:     ctx,
 		}
 		SdkClientPool.logDebug("Initialized %d SDK clients in the Pool with acquire timeout %v and init timeout %v.", max, acquireTimeout, initTimeout)
 
@@ -166,7 +169,10 @@ func (p *SDKClientPool) startMetricsLogging() {
 
 func (p *SDKClientPool) logDebug(msg string, args ...interface{}) {
 	if p.config.DebugLogging {
-		log.Printf("[DEBUG] "+msg, args...)
+		formattedMsg := fmt.Sprintf("[DEBUG] "+msg, args...)
+		tflog.Debug(p.ctx, formattedMsg)
+		// Also log to standard logger for test capture
+		log.Printf(formattedMsg)
 	}
 }
 
@@ -293,9 +299,17 @@ func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.Reso
 			return resultErr
 		}
 		p.logDebug("Successfully pre-filled client pool - %s", p.formatMetrics())
+		// Also log to standard logger for test capture when debug is enabled
+		if p.config.DebugLogging {
+			log.Printf("Successfully pre-filled client pool - %s", p.formatMetrics())
+		}
 		return nil
 	case <-ctx.Done():
 		p.logDebug("Timed out pre-filling client pool - %s", p.formatMetrics())
+		// Also log to standard logger for test capture when debug is enabled
+		if p.config.DebugLogging {
+			log.Printf("Timed out pre-filling client pool - %s", p.formatMetrics())
+		}
 		return diag.Errorf("Timed out pre-filling client pool: %v", ctx.Err())
 	}
 }
@@ -320,6 +334,10 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 			p.logDebug("[WARN] %s with pool near capacity - %s", acquiredMsg, p.formatMetrics())
 		} else {
 			p.logDebug("%s - %s", acquiredMsg, p.formatMetrics())
+		}
+		// Also log to standard logger for test capture when debug is enabled
+		if p.config.DebugLogging {
+			log.Printf("%s - %s", acquiredMsg, p.formatMetrics())
 		}
 		return client, nil
 	case <-timeoutCtx.Done():
@@ -346,6 +364,10 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 
 		if atomic.LoadInt64(&p.metrics.activeClients) <= int64(p.config.MaxClients-PoolCriticalThreshold) {
 			p.logDebug("Client released from full pool - %s", p.formatMetrics())
+			// Also log to standard logger for test capture when debug is enabled
+			if p.config.DebugLogging {
+				log.Printf("Client released from full pool - %s", p.formatMetrics())
+			}
 		}
 		return nil
 
