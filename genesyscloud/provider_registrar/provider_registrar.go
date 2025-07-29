@@ -192,6 +192,8 @@ func GetResourceExporters() (exporters map[string]*resourceExporter.ResourceExpo
 	return resourceExporters
 }
 
+// GetResourceExporterByResourceType returns the resource exporter for a given resource type
+// Needed by MRMO - do not remove if it appears to be unused
 func GetResourceExporterByResourceType(resourceType string) *resourceExporter.ResourceExporter {
 	if providerResources == nil {
 		registerResources()
