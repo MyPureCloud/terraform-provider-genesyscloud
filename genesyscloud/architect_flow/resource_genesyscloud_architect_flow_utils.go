@@ -42,7 +42,11 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 	return flowResourceStr
 }
 
-func GenerateFlowResourceNoFileContentHash(resourceLabel, srcFile string, forceUnlock bool, substitutions ...string) string {
+func GenerateFlowResourceNoFileContentHash(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
+	if fileContent != "" {
+		updateFile(srcFile, fileContent)
+	}
+
 	return fmt.Sprintf(`resource "%s" "%s" {
         filepath = %s
 		force_unlock = %v

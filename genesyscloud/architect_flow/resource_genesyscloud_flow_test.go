@@ -507,6 +507,7 @@ func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
 				Config: GenerateFlowResourceNoFileContentHash(
 					resourceLabel,
 					srcFile,
+					"",
 					false,
 					util.GenerateSubstitutionsMap(map[string]string{
 						"name": flowName,
@@ -545,6 +546,7 @@ func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
 				Config: GenerateFlowResourceNoFileContentHash(
 					resourceLabel,
 					srcFile,
+					"",
 					false,
 					util.GenerateSubstitutionsMap(map[string]string{
 						"name": flowName,
