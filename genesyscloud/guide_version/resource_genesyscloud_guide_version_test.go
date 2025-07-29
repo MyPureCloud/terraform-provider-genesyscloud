@@ -25,8 +25,8 @@ func TestAccResourceGuideVersion(t *testing.T) {
 
 	t.Parallel()
 	var (
-		guideVersionResourceLabel    = "guide_version"
-		guideResourceLabel           = "guide"
+		guideVersionResourceLabel    = "genesyscloud_guide_version"
+		guideResourceLabel           = "genesyscloud_guide"
 		guideName                    = "Test Guide " + uuid.NewString()
 		guideSource                  = "Manual"
 		instruction                  = "This is a test instruction for the guide version."
@@ -42,8 +42,17 @@ func TestAccResourceGuideVersion(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
+					GenerateGuideVersionResource(
+						guideVersionResourceLabel,
+						"${genesyscloud_guide."+guideResourceLabel+".id}",
+						instruction,
+						draftState,
+					),
+			},
+			{
 				// Create guide version with multiple data actions and variables
-				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource) +
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
 					GenerateGuideVersionResource(
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
@@ -59,6 +68,8 @@ func TestAccResourceGuideVersion(t *testing.T) {
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "instruction", instruction),
+					resource.TestCheckResourceAttr("genesyscloud_guide."+guideResourceLabel, "name", guideName),
+					resource.TestCheckResourceAttr("genesyscloud_guide."+guideResourceLabel, "source", guideSource),
 
 					// Check variable attributes
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "testVar1"),
@@ -84,7 +95,7 @@ func TestAccResourceGuideVersion(t *testing.T) {
 			},
 			{
 				// Update guide version with different number of data actions
-				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource) +
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
 					GenerateGuideVersionResource(
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
@@ -110,7 +121,7 @@ func TestAccResourceGuideVersion(t *testing.T) {
 			},
 			{
 				// Update guide version with different number of data actions
-				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource) +
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
 					GenerateGuideVersionResource(
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",

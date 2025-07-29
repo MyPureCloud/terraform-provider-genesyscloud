@@ -9,14 +9,14 @@ import (
 )
 
 const (
-	BOOLEAN    				= "boolean"
-	DATE       				= "date"
-	DATETIME   				= "datetime"
-	ENUM       				= "enum"
-	INTEGER    				= "integer"
-	NUMBER     				= "number"
-	BUSINESS_RULES_QUEUE 	= "businessRulesQueue"
-	STRING     				= "string"
+	BOOLEAN              = "boolean"
+	DATE                 = "date"
+	DATETIME             = "datetime"
+	ENUM                 = "enum"
+	INTEGER              = "integer"
+	NUMBER               = "number"
+	BUSINESS_RULES_QUEUE = "businessRulesQueue"
+	STRING               = "string"
 )
 
 type customField struct {

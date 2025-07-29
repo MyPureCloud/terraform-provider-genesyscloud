@@ -22,7 +22,7 @@ type getGuideVersionByIdFunc func(ctx context.Context, p *guideVersionProxy, id 
 type updateGuideVersionFunc func(ctx context.Context, p *guideVersionProxy, id string, guideId string, guideVersion *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error)
 type publishGuideVersionFunc func(ctx context.Context, p *guideVersionProxy, body *GuideVersionPublishJobRequest) (*VersionJobResponse, *platformclientv2.APIResponse, error)
 type getGuideVersionPublishJobStatusFunc func(ctx context.Context, p *guideVersionProxy, versionId, jobId, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error)
-
+type getGuideByIdFunc func(ctx context.Context, p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error)
 type guideVersionProxy struct {
 	clientConfig                        *platformclientv2.Configuration
 	GetAllGuidesAttr                    GetAllGuidesFunc
@@ -31,6 +31,7 @@ type guideVersionProxy struct {
 	updateGuideVersionAttr              updateGuideVersionFunc
 	publishGuideVersionAttr             publishGuideVersionFunc
 	getGuideVersionPublishJobStatusAttr getGuideVersionPublishJobStatusFunc
+	getGuideByIdAttr                    getGuideByIdFunc
 }
 
 func newGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
@@ -42,6 +43,7 @@ func newGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVe
 		updateGuideVersionAttr:              updateGuideVersionFn,
 		publishGuideVersionAttr:             publishGuideVersionFn,
 		getGuideVersionPublishJobStatusAttr: getGuideVersionPublishJobStatusFn,
+		getGuideByIdAttr:                    getGuideByIdFn,
 	}
 }
 func getGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
@@ -68,6 +70,9 @@ func (p *guideVersionProxy) publishGuideVersion(ctx context.Context, body *Guide
 }
 func (p *guideVersionProxy) getGuideVersionPublishJobStatus(ctx context.Context, versionId, jobId, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
 	return p.getGuideVersionPublishJobStatusAttr(ctx, p, versionId, jobId, guideId)
+}
+func (p *guideVersionProxy) getGuideById(ctx context.Context, id string) (*Guide, *platformclientv2.APIResponse, error) {
+	return p.getGuideByIdAttr(ctx, p, id)
 }
 
 // GetAll Functions
@@ -355,4 +360,34 @@ func sdkGetGuideVersionPublishJobStatus(p *guideVersionProxy, versionId, jobId s
 	}
 
 	return &guideVersion, apiResp, nil
+}
+
+func getGuideByIdFn(ctx context.Context, p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
+	return sdkGetGuideById(p, id)
+}
+func sdkGetGuideById(p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	action := http.MethodGet
+	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id
+
+	req, err := http.NewRequest(action, baseURL, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating request: %v", err)
+	}
+
+	req = buildRequestHeader(req, p)
+
+	respBody, apiResp, err := callAPI(client, req)
+	if err != nil {
+		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
+	}
+
+	var guide Guide
+	if err := json.Unmarshal(respBody, &guide); err != nil {
+		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
+	}
+
+	return &guide, apiResp, nil
 }
