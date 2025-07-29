@@ -550,6 +550,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		}
 
 		if resource.Type == architectFlow.ResourceType && !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+			log.Printf("Replacing legacy flow exporter with new exporter for resource %s", resource.Type)
 			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
 		}
 
@@ -578,18 +579,23 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 
 		// 7. Update instance state attributes
 		g.updateInstanceStateAttributes(jsonResult, resource)
+
+		// 8. Call custom file writer if configured (for downloading YAML files, etc.)
+		if diagErr := g.customWriteAttributes(configMap, resource); diagErr.HasError() {
+			diagnostics = append(diagnostics, diagErr...)
+		}
 	}
 
 	log.Printf("Successfully built resource config map with %d resources", len(resources))
 	return nil
 }
 
-func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
+func (g *GenesysCloudResourceExporter) customWriteAttributes(configMap map[string]interface{},
 	resource resourceExporter.ResourceInfo) (diagnostics diag.Diagnostics) {
 	exporters := *g.exporters
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 		exportDir, _ := getFilePath(g.d, "")
-		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
+		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, configMap, g.meta, resource); err != nil {
 			log.Printf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err)
 			diagnostics = append(diagnostics, diag.Diagnostic{
 				Severity: diag.Warning,
@@ -600,13 +606,13 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 	}
 
 	if len(exporters[resource.Type].CustomFlowResolver) > 0 {
-		g.updateInstanceStateAttributes(jsonResult, resource)
+		g.updateInstanceStateAttributes(configMap, resource)
 	}
 	return diagnostics
 }
 
-func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(jsonResult util.JsonMap, resource resourceExporter.ResourceInfo) {
-	for attr, val := range jsonResult {
+func (g *GenesysCloudResourceExporter) updateInstanceStateAttributes(configMap map[string]interface{}, resource resourceExporter.ResourceInfo) {
+	for attr, val := range configMap {
 		if valStr, ok := val.(string); ok {
 			// Directly add string attribute for rest of the flows
 			resource.State.Attributes[attr] = valStr
