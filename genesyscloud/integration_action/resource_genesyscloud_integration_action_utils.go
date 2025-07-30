@@ -68,6 +68,32 @@ func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 	}, nil
 }
 
+// BuildSdkActionContract takes the resource data and builds the custom ActionContract from it
+func BuildSdkActionContractInput(d *schema.ResourceData) (*platformclientv2.Actioncontractinput, diag.Diagnostics) {
+	configInput := d.Get("contract_input").(string)
+
+	// Parse input schema with proper error handling
+	var inputSchema platformclientv2.Jsonschemadocument
+	err := json.Unmarshal([]byte(configInput), &inputSchema)
+	if err != nil {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
+	}
+
+	configOutput := d.Get("contract_output").(string)
+
+	// Parse output schema with proper error handling
+	var outputSchema platformclientv2.Jsonschemadocument
+	err = json.Unmarshal([]byte(configOutput), &outputSchema)
+	if err != nil {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract output %s", configOutput), err)
+	}
+
+	return &platformclientv2.Actioncontractinput{
+		Input:  &platformclientv2.Postinputcontract{InputSchema: &inputSchema},
+		Output: &platformclientv2.Postoutputcontract{SuccessSchema: &outputSchema},
+	}, nil
+}
+
 // BuildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
 func BuildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
@@ -176,4 +202,70 @@ func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []
 	resourcedata.SetMapValueIfNotNil(responseMap, "success_template", sdkResponse.SuccessTemplate)
 
 	return []interface{}{responseMap}
+}
+
+// FlattenFunctionConfigRequest converts the platformclientv2.Functionconfig into a map
+func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig) []interface{} {
+	functionMap := make(map[string]interface{})
+
+	// Extract function settings from the Function field
+	if functionConfig.Function != nil {
+		resourcedata.SetMapValueIfNotNil(functionMap, "description", functionConfig.Function.Description)
+		resourcedata.SetMapValueIfNotNil(functionMap, "handler", functionConfig.Function.Handler)
+		resourcedata.SetMapValueIfNotNil(functionMap, "runtime", functionConfig.Function.Runtime)
+		resourcedata.SetMapValueIfNotNil(functionMap, "timeout_seconds", functionConfig.Function.TimeoutSeconds)
+		resourcedata.SetMapValueIfNotNil(functionMap, "zip_id", functionConfig.Function.ZipId)
+	}
+
+	return []interface{}{functionMap}
+}
+
+// BuildSdkFunctionConfig takes the resource data and builds the SDK platformclientv2.Functionconfig from it
+func BuildSdkFunctionConfig(d *schema.ResourceData) *platformclientv2.Functionconfig {
+	if functionConfig := d.Get("function_config"); functionConfig != nil {
+		if configList := functionConfig.([]interface{}); len(configList) > 0 {
+			configMap := configList[0].(map[string]interface{})
+
+			// Extract function settings
+			var description string
+			if descVal, ok := configMap["description"]; ok && descVal != nil {
+				description = descVal.(string)
+			}
+
+			var handler string
+			if handlerVal, ok := configMap["handler"]; ok && handlerVal != nil {
+				handler = handlerVal.(string)
+			}
+
+			var runtime string
+			if runtimeVal, ok := configMap["runtime"]; ok && runtimeVal != nil {
+				runtime = runtimeVal.(string)
+			}
+
+			var timeoutSeconds int
+			if timeoutVal, ok := configMap["timeout_seconds"]; ok && timeoutVal != nil {
+				timeoutSeconds = timeoutVal.(int)
+			}
+
+			var zipId string
+			if zipIdVal, ok := configMap["zip_id"]; ok && zipIdVal != nil {
+				zipId = zipIdVal.(string)
+			}
+
+			// Create the Function object
+			function := &platformclientv2.Function{
+				Description:    platformclientv2.String(description),
+				Handler:        platformclientv2.String(handler),
+				Runtime:        platformclientv2.String(runtime),
+				TimeoutSeconds: platformclientv2.Int(timeoutSeconds),
+				ZipId:          platformclientv2.String(zipId),
+			}
+
+			// Create the Functionconfig object
+			return &platformclientv2.Functionconfig{
+				Function: function,
+			}
+		}
+	}
+	return &platformclientv2.Functionconfig{}
 }
