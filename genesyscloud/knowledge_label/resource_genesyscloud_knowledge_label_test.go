@@ -2,9 +2,10 @@ package knowledge_label
 
 import (
 	"fmt"
-	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"strings"
 	"testing"
+
+	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -16,7 +17,6 @@ import (
 )
 
 func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		knowledgeBaseResourceLabel1   = "test-knowledgebase1"
 		knowledgeBaseName1            = "Terraform Knowledge Base" + uuid.NewString()
