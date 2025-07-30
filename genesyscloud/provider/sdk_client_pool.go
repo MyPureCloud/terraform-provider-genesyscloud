@@ -690,7 +690,7 @@ func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 }
 
 func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) resContextFunc {
-	return func(ctx context.Context, r *schema.ResourceData, meta any) (diagErr diag.Diagnostics) {
+	return func(ctx context.Context, r *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 		panicRecoverLogger := prl.GetPanicRecoveryLoggerInstance()
 		if !panicRecoverLogger.LoggerEnabled {
 			return method(ctx, r, meta)
@@ -698,9 +698,11 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("[WARN] Panic recovered in %s: %v", operation, r)
 				err := panicRecoverLogger.HandleRecovery(r, operation)
 				if err != nil {
-					diagErr = diag.FromErr(err)
+					log.Printf("[WARN] Panic recovery failed for operation %s: %s", operation, err.Error())
+					diags = append(diags, diag.FromErr(err)...)
 				}
 			}
 		}()
@@ -712,7 +714,7 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 // Inject a pooled SDK client connection into a resource method's meta argument
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
-	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return func(ctx context.Context, r *schema.ResourceData, meta any) diag.Diagnostics {
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
 			return diag.FromErr(err)
