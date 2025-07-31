@@ -221,7 +221,7 @@ func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig
 }
 
 // BuildSdkFunctionConfig takes the resource data and builds the SDK platformclientv2.Functionconfig from it
-func BuildSdkFunctionConfig(d *schema.ResourceData) *platformclientv2.Functionconfig {
+func BuildSdkFunctionConfig(d *schema.ResourceData, zipId string) *platformclientv2.Functionconfig {
 	if functionConfig := d.Get("function_config"); functionConfig != nil {
 		if configList := functionConfig.([]interface{}); len(configList) > 0 {
 			configMap := configList[0].(map[string]interface{})
@@ -246,12 +246,6 @@ func BuildSdkFunctionConfig(d *schema.ResourceData) *platformclientv2.Functionco
 			if timeoutVal, ok := configMap["timeout_seconds"]; ok && timeoutVal != nil {
 				timeoutSeconds = timeoutVal.(int)
 			}
-
-			var zipId string
-			if zipIdVal, ok := configMap["zip_id"]; ok && zipIdVal != nil {
-				zipId = zipIdVal.(string)
-			}
-
 			// Create the Function object
 			function := &platformclientv2.Function{
 				Description:    platformclientv2.String(description),

@@ -84,7 +84,7 @@ func (p *businessRulesSchemaProxy) getAllBusinessRulesSchema(ctx context.Context
 }
 
 // getBusinessRulesSchemasByName returns a single Genesys Cloud business rules schema by a name
-func (p *businessRulesSchemaProxy) getBusinessRulesSchemasByName(ctx context.Context, name string) (schemas *[]platformclientv2.Dataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {		
+func (p *businessRulesSchemaProxy) getBusinessRulesSchemasByName(ctx context.Context, name string) (schemas *[]platformclientv2.Dataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	return p.getBusinessRulesSchemasByNameAttr(ctx, p, name)
 }
 
@@ -187,7 +187,7 @@ func deleteBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProx
 // getBusinessRulesSchemaDeletedStatusFn is an implementation function to get the 'deleted' status of a Genesys Cloud business rules schema
 func getBusinessRulesSchemaDeletedStatusFn(ctx context.Context, p *businessRulesSchemaProxy, schemaId string) (isDeleted bool, resp *platformclientv2.APIResponse, err error) {
 	apiClient := &p.clientConfig.APIClient
-	// create path and map variables	
+	// create path and map variables
 	path := p.clientConfig.BasePath + "/api/v2/businessrules/schemas/" + schemaId
 
 	headerParams := make(map[string]string)

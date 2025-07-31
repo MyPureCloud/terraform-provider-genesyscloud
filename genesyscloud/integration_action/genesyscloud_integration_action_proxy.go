@@ -58,7 +58,8 @@ type getIntegrationActionTemplateFunc func(ctx context.Context, p *integrationAc
 type createIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionInput *platformclientv2.Postactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
 type uploadIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, filePath string) (*platformclientv2.APIResponse, error)
 type getIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
-type updateIntegrationActionDraftWithFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, updateData *platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
+type updateIntegrationActionDraftWithFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, updateData *platformclientv2.Function) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
+
 type publishIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, version int) (*platformclientv2.APIResponse, error)
 
 // integrationActionsProxy contains all of the methods that call genesys cloud APIs.
@@ -140,7 +141,7 @@ func (p *integrationActionsProxy) getIntegrationActionDraftFunction(ctx context.
 }
 
 // updateIntegrationActionDraftWithFunction updates an integration action draft with function settings
-func (p *integrationActionsProxy) updateIntegrationActionDraftWithFunction(ctx context.Context, actionId string, updateData *platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+func (p *integrationActionsProxy) updateIntegrationActionDraftWithFunction(ctx context.Context, actionId string, updateData *platformclientv2.Function) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
 	return p.updateIntegrationActionDraftWithFunctionAttr(ctx, p, actionId, updateData)
 }
 
@@ -317,9 +318,9 @@ func getIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActi
 }
 
 // updateIntegrationActionDraftWithFunctionFn is the implementation for updating an integration action draft with function settings
-func updateIntegrationActionDraftWithFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string, updateData *platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+func updateIntegrationActionDraftWithFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string, updateData *platformclientv2.Function) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
 	// Use the SDK method to update the draft
-	action, resp, err := p.integrationsApi.PatchIntegrationsActionDraft(actionId, *updateData)
+	action, resp, err := p.integrationsApi.PutIntegrationsActionDraftFunction(actionId, *updateData)
 	if err != nil {
 		return nil, resp, err
 	}

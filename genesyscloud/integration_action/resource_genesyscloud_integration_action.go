@@ -73,9 +73,12 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	category := d.Get("category").(string)
 	integrationId := d.Get("integration_id").(string)
 	secure := d.Get("secure").(bool)
-
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
+
+	if containsFunctionDataAction(category) {
+		return createFunctionDataActionDraft(ctx, d, meta, iap)
+	}
 
 	log.Printf("Creating integration action %s", name)
 
@@ -117,23 +120,14 @@ func containsFunctionDataAction(s string) bool {
 func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}, iap *integrationActionsProxy) diag.Diagnostics {
 	category := d.Get("category").(string)
 	id := ""
-	//zipId := ""
 	version := 1
+	zipid := ""
 	if containsFunctionDataAction(category) {
 		name := d.Get("name").(string)
-		category := d.Get("category").(string)
-		secure := d.Get("secure").(bool)
-		sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-		iap := getIntegrationActionsProxy(sdkConfig)
 		filePath := d.Get("file_path").(string)
 
-		actionContract, diagErr := BuildSdkActionContractInput(d)
-		if diagErr != nil {
-			return diagErr
-		}
-
 		if d.HasChange("file_content_hash") { // upload function zip
-			diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
 				if err != nil {
 					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
@@ -147,12 +141,12 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		}
 
 		// get function for zip id
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			functionData, resp, err := iap.getIntegrationActionDraftFunction(ctx, id)
 			if err != nil {
 				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get function for integration action %s error: %s", name, err), resp)
 			}
-			_, err = extractZipIdFromFunctionData(functionData)
+			zipid, err = extractZipIdFromFunctionData(functionData)
 
 			// use zipid in function settings
 			if err != nil {
@@ -165,25 +159,17 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		}
 		// update draft with function settings
 		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			action, resp, err := iap.updateIntegrationActionDraftWithFunction(ctx, id,
-				&platformclientv2.Updatedraftinput{
-					Name:     &name,
-					Category: &category,
-					Secure:   &secure,
-					Contract: actionContract,
-					Config:   BuildSdkActionConfig(d),
-					Version:  &version,
-					// todo
-					Function: BuildSdkFunctionConfig(d),
-					// id
-					// function settings
-				})
-
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action %s error: %s", name, err), resp)
+			// Get function config from resource data
+			functionConfig := BuildSdkFunctionConfig(d, zipid)
+			if functionConfig != nil && functionConfig.Function != nil {
+				_, resp, err := iap.updateIntegrationActionDraftWithFunction(ctx, id, functionConfig.Function)
+				if err != nil {
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action %s error: %s", name, err), resp)
+				}
+				// Note: Functionconfig doesn't have Version field, so we can't update version here
+				return resp, nil
 			}
-			version = *action.Version
-			return resp, nil
+			return nil, diag.Errorf("No function configuration found")
 		})
 		if diagErr != nil {
 			return diagErr
@@ -208,127 +194,116 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	category := d.Get("category").(string)
 	id := ""
 	version := 1
-	if containsFunctionDataAction(category) {
-		name := d.Get("name").(string)
-		category := d.Get("category").(string)
-		integrationId := d.Get("integration_id").(string)
-		secure := d.Get("secure").(bool)
-		sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-		iap := getIntegrationActionsProxy(sdkConfig)
-		filePath := d.Get("file_path").(string)
+	zipid := ""
+	name := d.Get("name").(string)
+	integrationId := d.Get("integration_id").(string)
+	secure := d.Get("secure").(bool)
+	filePath := d.Get("file_path").(string)
 
-		actionContract, diagErr := BuildSdkActionContractInput(d)
-		if diagErr != nil {
-			return diagErr
-		}
+	actionContract, diagErr := BuildSdkActionContractInput(d)
+	if diagErr != nil {
+		return diagErr
+	}
 
-		// create integration action draft
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			action, resp, err := iap.createIntegrationActionDraft(ctx, &platformclientv2.Postactioninput{
-				Name:          &name,
-				Category:      &category,
-				IntegrationId: &integrationId,
-				Secure:        &secure,
-				Contract:      actionContract,
-				Config:        BuildSdkActionConfig(d),
-			})
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
-			}
-			d.SetId(*action.Id)
-			id = *action.Id
-			log.Printf("Created integration action %s %s", name, *action.Id)
-			return resp, nil
+	// create integration action draft
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		action, resp, err := iap.createIntegrationActionDraft(ctx, &platformclientv2.Postactioninput{
+			Name:          &name,
+			Category:      &category,
+			IntegrationId: &integrationId,
+			Secure:        &secure,
+			Contract:      actionContract,
+			Config:        BuildSdkActionConfig(d),
 		})
-		if diagErr != nil {
-			return diagErr
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
 		}
+		d.SetId(*action.Id)
+		id = *action.Id
+		log.Printf("Created integration action %s %s", name, *action.Id)
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
 
-		// upload function zip
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
-			}
-			log.Printf("Uploaded function zip for integration action %s %s", name, id)
-			return resp, nil
-		})
-		if diagErr != nil {
-			return diagErr
+	// upload function zip
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
 		}
+		log.Printf("Uploaded function zip for integration action %s %s", name, id)
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
 
-		// get function for zip id
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			functionData, resp, err := iap.getIntegrationActionDraftFunction(ctx, id)
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get function for integration action %s error: %s", name, err), resp)
-			}
-			//zipid
-			_, err = extractZipIdFromFunctionData(functionData)
-
-			// use zipid in function settings
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get zipId for integration action %s error: %s", name, err), resp)
-			}
-			return resp, nil
-		})
-		if diagErr != nil {
-			return diagErr
+	// get function for zip id
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		functionData, resp, err := iap.getIntegrationActionDraftFunction(ctx, id)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get function for integration action %s error: %s", name, err), resp)
 		}
+		//zipid
+		zipid, err = extractZipIdFromFunctionData(functionData)
 
-		// get latest version
-		diagErr = util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			// Get the latest action version to send with PATCH
-			action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration action %s error: %s", d.Id(), err), resp)
-			}
-
-			version = *action.Version
-			return resp, nil
-		})
-
-		if diagErr != nil {
-			return diagErr
+		// use zipid in function settings
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get zipId for integration action %s error: %s", name, err), resp)
 		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
 
-		// update draft with function settings
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			action, resp, err := iap.updateIntegrationActionDraftWithFunction(ctx, id,
-				&platformclientv2.Updatedraftinput{
-					Name:     &name,
-					Category: &category,
-					Secure:   &secure,
-					Contract: actionContract,
-					Config:   BuildSdkActionConfig(d),
-					Version:  &version,
-					// todo
-					// id
-					// function settings
-				})
-
+	// update draft with function settings
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Get function config from resource data
+		functionConfig := BuildSdkFunctionConfig(d, zipid)
+		if functionConfig != nil && functionConfig.Function != nil {
+			_, resp, err := iap.updateIntegrationActionDraftWithFunction(ctx, id, functionConfig.Function)
 			if err != nil {
 				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration action %s error: %s", name, err), resp)
 			}
-			version = *action.Version
 			return resp, nil
-		})
-		if diagErr != nil {
-			return diagErr
+		}
+		return nil, diag.Errorf("No function configuration found")
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+
+	// get latest version
+	diagErr = util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		// Get the latest action version to send with PATCH
+		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read integration action %s error: %s", d.Id(), err), resp)
 		}
 
-		// publish draft
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
-			if err != nil {
-				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
-			}
-			return resp, nil
-		})
-		if diagErr != nil {
-			return diagErr
-		}
+		version = *action.Version
+		return resp, nil
+	})
+
+	if diagErr != nil {
+		return diagErr
 	}
+
+	// publish draft
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
+	}
+
 	return readIntegrationActionFunction(ctx, d, meta)
 }
 
@@ -558,6 +533,10 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	})
 	if diagErr != nil {
 		return diagErr
+	}
+
+	if containsFunctionDataAction(category) {
+		return updateFunctionDataActionDraft(ctx, d, meta, iap)
 	}
 
 	log.Printf("Updated integration action %s", name)
