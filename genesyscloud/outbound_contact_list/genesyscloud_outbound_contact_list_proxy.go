@@ -321,7 +321,7 @@ func getContactListContactsExportUrlFn(_ context.Context, p *OutboundContactlist
 
 // createBulkOutboundContactsFormData creates the form data attributes to create a bulk upload of contacts in Genesys Cloud
 func createBulkOutboundContactsFormData(filePath, contactListId, contactIdColumnName string) (map[string]io.Reader, error) {
-	fileReader, _, err := files.DownloadOrOpenFile(context.Background(), filePath, false)
+	fileReader, _, err := files.DownloadOrOpenFile(context.Background(), filePath, S3Enabled)
 	if err != nil {
 		return nil, err
 	}

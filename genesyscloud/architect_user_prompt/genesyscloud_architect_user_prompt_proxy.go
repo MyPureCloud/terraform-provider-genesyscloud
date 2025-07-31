@@ -556,7 +556,7 @@ func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromp
 }
 
 func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
-	reader, file, err := files.DownloadOrOpenFile(ctx, filename, false)
+	reader, file, err := files.DownloadOrOpenFile(ctx, filename, S3Enabled)
 	if err != nil {
 		return err
 	}

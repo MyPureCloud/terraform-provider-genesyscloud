@@ -16,6 +16,7 @@ import (
 
 const (
 	ResourceType = "genesyscloud_flow"
+	S3Enabled    = true
 )
 
 // SetRegistrar registers all resources, data sources and exporters in the package
@@ -66,7 +67,7 @@ Export block label: "{type}_{name}"`,
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChanged("filepath", "file_content_hash", true)),
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChanged("filepath", "file_content_hash", S3Enabled)),
 		),
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

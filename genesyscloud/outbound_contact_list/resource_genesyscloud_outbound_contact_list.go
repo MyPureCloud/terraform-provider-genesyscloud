@@ -246,57 +246,59 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 
 func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	filePath := d.Get("contacts_filepath").(string)
-	if filePath != "" {
+	if filePath == "" {
+		// Shouldn't happen because Terraform should detect this in the schema first
+		return diag.Errorf("File path is required")
+	}
 
-		sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-		cp := GetOutboundContactlistProxy(sdkConfig)
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	cp := GetOutboundContactlistProxy(sdkConfig)
 
-		filePathHash, err := files.HashFileContent(ctx, filePath, false)
+	filePathHash, err := files.HashFileContent(ctx, filePath, S3Enabled)
+	if err != nil {
+		return diag.Errorf("Failed to read file content hash: %v", err)
+	}
+
+	contactListId := d.Id()
+	contactListName := d.Get("name").(string)
+	contactsIdName := d.Get("contacts_id_name").(string)
+
+	if d.Get("contacts_file_content_hash") == filePathHash {
+		return nil
+	}
+
+	csvRecordsCount, err := files.GetCSVRecordCount(filePath)
+	if err != nil {
+		return diag.Errorf("Failed to get CSV record count: %v", err)
+	}
+
+	log.Printf("Clearing existing contacts on contact list %s in preparation for updating the latest contacts", contactListName)
+	resp, err := cp.clearContactListContacts(ctx, d.Id())
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear contacts on contact list %s error: %s", contactListName, err), resp)
+	}
+
+	_, diagErr := validateContactsRecordCount(ctx, cp, d.Id(), 0)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	log.Printf("Uploading %d contact records to %s contact list", csvRecordsCount, contactListName)
+
+	if contactListId != "" {
+		_, err := cp.uploadContactListBulkContacts(ctx, contactListId, filePath, contactsIdName)
 		if err != nil {
-			return diag.Errorf("Failed to read file content hash: %v", err)
-		}
-
-		contactListId := d.Id()
-		contactListName := d.Get("name").(string)
-		contactsIdName := d.Get("contacts_id_name").(string)
-
-		if filePath == "" {
-			// Shouldn't happen because Terraform should detect this in the schema first
-			return diag.Errorf("File path is required")
-		}
-
-		if d.Get("contacts_file_content_hash") != filePathHash {
-			csvRecordsCount, err := files.GetCSVRecordCount(filePath)
-			if err != nil {
-				return diag.Errorf("Failed to get CSV record count: %v", err)
-			}
-
-			log.Printf("Clearing existing contacts on contact list %s in preparation for updating the latest contacts", contactListName)
-			resp, err := cp.clearContactListContacts(ctx, d.Id())
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear contacts on contact list %s error: %s", contactListName, err), resp)
-			}
-
-			_, diagErr := validateContactsRecordCount(ctx, cp, d.Id(), 0)
-			if diagErr != nil {
-				return diagErr
-			}
-
-			log.Printf("Uploading %d contact records to %s contact list", csvRecordsCount, contactListName)
-
-			if contactListId != "" {
-				_, err := cp.uploadContactListBulkContacts(ctx, contactListId, filePath, contactsIdName)
-				if err != nil {
-					return diag.Errorf("Failed to upload contact list bulk contacts: %v", err)
-				}
-			}
-
-			contactCount, diagErr := validateContactsRecordCount(ctx, cp, contactListId, csvRecordsCount)
-
-			d.Set("contacts_file_content_hash", filePathHash)
-			d.Set("contacts_record_count", contactCount)
+			return diag.Errorf("Failed to upload contact list bulk contacts: %v", err)
 		}
 	}
+
+	contactCount, diagErr := validateContactsRecordCount(ctx, cp, contactListId, csvRecordsCount)
+	if diagErr.HasError() {
+		return diagErr
+	}
+	d.Set("contacts_file_content_hash", filePathHash)
+	d.Set("contacts_record_count", contactCount)
+
 	return nil
 }
 

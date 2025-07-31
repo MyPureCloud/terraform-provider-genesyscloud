@@ -42,7 +42,7 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 
 	resource.State.Attributes["filepath"] = fileNameVal
 
-	hash, err := files.HashFileContent(ctx, path.Join(fullPath, exportFileName), false)
+	hash, err := files.HashFileContent(ctx, path.Join(fullPath, exportFileName), S3Enabled)
 	if err != nil {
 		log.Printf("Error Calculating Hash '%s' ", err)
 	} else {

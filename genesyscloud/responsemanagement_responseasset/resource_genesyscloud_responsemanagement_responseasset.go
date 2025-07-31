@@ -66,7 +66,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 
 	headers := *postResponseData.Headers
 	url := *postResponseData.Url
-	reader, _, err := files.DownloadOrOpenFile(ctx, fileName, false)
+	reader, _, err := files.DownloadOrOpenFile(ctx, fileName, S3Enabled)
 	if err != nil {
 		return diag.FromErr(err)
 	}
