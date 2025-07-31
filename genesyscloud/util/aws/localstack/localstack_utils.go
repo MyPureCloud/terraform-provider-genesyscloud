@@ -71,9 +71,7 @@ func (l *localStackManager) createS3Client() (*s3.Client, error) {
 		return nil, fmt.Errorf("failed to load AWS config: %v", err)
 	}
 
-	awsS3Client := utilAws.NewAWSS3Client(cfg)
-
-	return awsS3Client.GetClient(), nil
+	return utilAws.NewAWSS3Client(cfg).Client(), nil
 }
 
 // createBucket creates an S3 bucket

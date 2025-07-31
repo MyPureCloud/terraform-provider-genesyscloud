@@ -33,7 +33,7 @@ func NewAWSS3Client(cfg aws.Config) *AWSS3Client {
 	}
 }
 
-func (a *AWSS3Client) GetClient() *s3.Client {
+func (a *AWSS3Client) Client() *s3.Client {
 	return a.client
 }
 
