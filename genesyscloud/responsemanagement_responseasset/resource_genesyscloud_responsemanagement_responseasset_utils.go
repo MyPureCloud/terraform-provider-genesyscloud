@@ -45,7 +45,7 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 	fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, exportFilename)
 	configMap["file_content_hash"] = fileContentVal
 
-	hash, er := files.HashFileContent(path.Join(fullPath, fileName))
+	hash, er := files.HashFileContent(ctx, path.Join(fullPath, fileName), S3Enabled)
 	if er != nil {
 		log.Printf("Error Calculating Hash '%s' ", er)
 	} else {

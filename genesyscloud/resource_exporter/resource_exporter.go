@@ -81,11 +81,6 @@ type RefAttrCustomResolver struct {
 	ResolveToDataSourceFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
 }
 
-// CustomFlowResolver allows the definition of a custom resolver for an exporter.
-type CustomFlowResolver struct {
-	ResolverFunc func(map[string]interface{}, string) error
-}
-
 type CustomFileWriterSettings struct {
 	// Custom function for dumping data/media stored in an object in a sub directory along
 	// with the exported config. For example: prompt audio files, csv data, jps/pngs
@@ -170,8 +165,6 @@ type ResourceExporter struct {
 	EncodedRefAttrs map[*JsonEncodeRefAttr]*RefAttrSettings
 
 	CustomFileWriter CustomFileWriterSettings
-
-	CustomFlowResolver map[string]*CustomFlowResolver
 
 	ExportAsDataFunc func(context.Context, *platformclientv2.Configuration, map[string]string) (bool, error)
 

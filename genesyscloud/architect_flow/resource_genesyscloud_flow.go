@@ -55,7 +55,7 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	return resources, nil
 }
 
-func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 
 	proxy := newArchitectFlowProxy(sdkConfig)
@@ -63,10 +63,11 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp)
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read flow %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(diagErr)
 		}
 
 		resourcedata.SetNillableValue(d, "name", flow.Name)
@@ -77,12 +78,12 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 	})
 }
 
-func createFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	log.Printf("Creating flow")
 	return updateFlow(ctx, d, meta)
 }
 
-func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 
@@ -115,12 +116,19 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	headers := *flowJob.Headers
 
 	filePath := d.Get("filepath").(string)
-	substitutions := d.Get("substitutions").(map[string]interface{})
+	substitutions := d.Get("substitutions").(map[string]any)
 
-	reader, _, err := files.DownloadOrOpenFile(filePath)
+	if d.HasChange("file_content_hash") {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  fmt.Sprintf("file_content_hash will become a read-only attribute in a future version and should be removed from any %s resource configuration.", ResourceType),
+		})
+	}
+
+	reader, _, err := files.DownloadOrOpenFile(ctx, filePath, S3Enabled)
 	if err != nil {
 		setFileContentHashToNil(d)
-		return diag.FromErr(err)
+		return append(diags, diag.FromErr(err)...)
 	}
 
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
@@ -128,7 +136,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	_, uploadErr := s3Uploader.UploadWithRetries(ctx, filePath, 20*time.Second)
 	if uploadErr != nil {
 		setFileContentHashToNil(d)
-		return diag.FromErr(uploadErr)
+		return append(diags, diag.FromErr(uploadErr)...)
 	}
 
 	// Pre-define here before entering retry function, otherwise it will be overwritten
@@ -162,21 +170,27 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	if retryErr != nil {
 		setFileContentHashToNil(d)
-		return retryErr
+		return append(diags, retryErr...)
 	}
 
 	if flowID == "" {
 		setFileContentHashToNil(d)
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))
+		return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))...)
 	}
+
+	filePathHash, err := files.HashFileContent(ctx, filePath, S3Enabled)
+	if err != nil {
+		return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the file content hash for the flow %s", flowID), err)...)
+	}
+	_ = d.Set("file_content_hash", filePathHash)
 
 	d.SetId(flowID)
 
 	log.Printf("Updated flow %s. ", d.Id())
-	return readFlow(ctx, d, meta)
+	return append(diags, readFlow(ctx, d, meta)...)
 }
 
-func deleteFlow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 

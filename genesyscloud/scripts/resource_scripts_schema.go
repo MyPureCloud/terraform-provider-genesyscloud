@@ -13,7 +13,10 @@ import (
 /*
 Defines the resource schema, the datasource, and the exporters for the scripts package
 */
-const ResourceType = "genesyscloud_script"
+const (
+	ResourceType = "genesyscloud_script"
+	S3Enabled    = false
+)
 
 // SetRegistrar registers all the resources, data sources and exporters in the packages
 func SetRegistrar(l registrar.Registrar) {

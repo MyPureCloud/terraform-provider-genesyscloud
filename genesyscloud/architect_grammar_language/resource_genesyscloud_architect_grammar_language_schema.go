@@ -19,6 +19,7 @@ resource_genesyscloud_architect_grammar_language_schema.go holds four functions 
 4.  The resource exporter configuration for the architect_grammar_language exporter.
 */
 const ResourceType = "genesyscloud_architect_grammar_language"
+const S3Enabled = false
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {

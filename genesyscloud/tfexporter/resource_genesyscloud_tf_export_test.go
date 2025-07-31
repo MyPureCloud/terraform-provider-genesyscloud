@@ -16,7 +16,6 @@ import (
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	userPromptResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -1305,8 +1304,8 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 		userPromptDescription       = "Test description"
 		userPromptResourceLanguage  = "en-us"
 		userPromptResourceText      = "This is a test greeting!"
-		userResourcePromptFilename1 = testrunner.GetTestDataPath("resource", userPromptResource.ResourceType, "test-prompt-01.wav")
-		userResourcePromptFilename2 = testrunner.GetTestDataPath("resource", userPromptResource.ResourceType, "test-prompt-02.wav")
+		userResourcePromptFilename1 = testrunner.GetTestDataPath("resource", userPrompt.ResourceType, "test-prompt-01.wav")
+		userResourcePromptFilename2 = testrunner.GetTestDataPath("resource", userPrompt.ResourceType, "test-prompt-02.wav")
 
 		userPromptResourceLanguage2 = "pt-br"
 		userPromptResourceText2     = "This is a test greeting!!!"

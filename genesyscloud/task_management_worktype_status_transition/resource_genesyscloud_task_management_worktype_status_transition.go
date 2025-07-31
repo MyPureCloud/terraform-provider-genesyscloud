@@ -2,6 +2,7 @@ package task_management_worktype_status_transition
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -76,7 +77,7 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	err := validateSchema(d)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Failed to %s task management worktype transition %s status: %s", operation, worktypeId, err)
-		return util.BuildDiagnosticError(ResourceType, errorMsg, fmt.Errorf(errorMsg))
+		return util.BuildDiagnosticError(ResourceType, errorMsg, errors.New(errorMsg))
 	}
 
 	var (
@@ -205,7 +206,7 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	err := validateSchema(d)
 	if err != nil {
 		errorMsg := fmt.Sprintf("Failed to %s task management worktype transition %s status: %s", "delete", worktypeId, err)
-		return util.BuildDiagnosticError(ResourceType, errorMsg, fmt.Errorf(errorMsg))
+		return util.BuildDiagnosticError(ResourceType, errorMsg, errors.New(errorMsg))
 	}
 
 	var (

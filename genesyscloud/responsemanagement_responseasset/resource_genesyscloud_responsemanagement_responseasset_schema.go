@@ -18,6 +18,7 @@ resource_genesycloud_responsemanagement_responseasset_schema.go holds four funct
 4.  The resource exporter configuration for the responsemanagement_responseasset exporter.
 */
 const ResourceType = "genesyscloud_responsemanagement_responseasset"
+const S3Enabled = false
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
