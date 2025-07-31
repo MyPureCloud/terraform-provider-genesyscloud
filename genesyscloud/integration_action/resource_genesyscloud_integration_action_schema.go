@@ -5,6 +5,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -73,6 +74,41 @@ func ResourceIntegrationAction() *schema.Resource {
 			},
 			"success_template": {
 				Description: "Velocity template to build response to return from Action. Any instances of '${' must be properly escaped as '$${'.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
+	functionConfig := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"description": {
+				Description: "Description of the function.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"handler": {
+				Description: "The handler function name.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"runtime": {
+				Description: "The runtime environment for the function.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"timeout_seconds": {
+				Description: "Timeout in seconds for the function execution.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+			},
+			"zip_id": {
+				Description: "The ID of the uploaded zip file containing the function code.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -151,6 +187,25 @@ func ResourceIntegrationAction() *schema.Resource {
 				Computed:    true,
 				MaxItems:    1,
 				Elem:        actionConfigResponse,
+			},
+			"function_config": {
+				Description: "Configuration of the function settings.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
+				Elem:        functionConfig,
+			},
+			"filepath": {
+				Description:  "the zip file path containing the function data action's code",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validators.ValidatePath,
+			},
+			"file_content_hash": {
+				Description: "Hash value of the zip file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
