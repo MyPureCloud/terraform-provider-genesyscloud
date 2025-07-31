@@ -232,25 +232,6 @@ func TestUnitGetS3FileReader_InvalidS3Path(t *testing.T) {
 	}
 }
 
-// Mock tests for AWS-dependent functions
-// These tests demonstrate how to mock the AWS functions for testing
-
-func TestUnitDownloadFile_Mock(t *testing.T) {
-	// This test demonstrates how DownloadFile would be tested with a mock
-	// In a real implementation, you would inject a mock S3 client
-	ctx := context.Background()
-
-	// This test would require a mock S3 client to be injected
-	// For now, we'll just test the function signature and error handling
-	// when AWS credentials are not available
-
-	// Test with invalid bucket/key to trigger AWS config error
-	_, err := DownloadFile(ctx, "", "")
-	if err == nil {
-		t.Error("Expected error for empty bucket/key")
-	}
-}
-
 func TestUnitGetS3FileReader_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name        string

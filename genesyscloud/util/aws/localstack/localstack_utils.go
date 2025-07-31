@@ -15,7 +15,7 @@ import (
 )
 
 // SetupS3Bucket creates an S3 bucket and uploads test data using AWS SDK
-func (l *LocalStackManager) SetupS3Bucket(bucketName, filePath, objectKey string) error {
+func (l *localStackManager) SetupS3Bucket(bucketName, filePath, objectKey string) error {
 	// Wait a moment for LocalStack to be fully ready
 	time.Sleep(5 * time.Second)
 
@@ -42,7 +42,7 @@ func (l *LocalStackManager) SetupS3Bucket(bucketName, filePath, objectKey string
 }
 
 // CleanupS3Bucket removes the S3 bucket and its contents using AWS SDK
-func (l *LocalStackManager) CleanupS3Bucket(bucketName string) error {
+func (l *localStackManager) CleanupS3Bucket(bucketName string) error {
 	// Create S3 client with LocalStack endpoint
 	s3Client, err := l.createS3Client()
 	if err != nil {
@@ -65,7 +65,7 @@ func (l *LocalStackManager) CleanupS3Bucket(bucketName string) error {
 }
 
 // createS3Client creates an S3 client configured for LocalStack
-func (l *LocalStackManager) createS3Client() (*s3.Client, error) {
+func (l *localStackManager) createS3Client() (*s3.Client, error) {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %v", err)
@@ -77,7 +77,7 @@ func (l *LocalStackManager) createS3Client() (*s3.Client, error) {
 }
 
 // createBucket creates an S3 bucket
-func (l *LocalStackManager) createBucket(s3Client *s3.Client, bucketName string) error {
+func (l *localStackManager) createBucket(s3Client *s3.Client, bucketName string) error {
 	_, err := s3Client.CreateBucket(context.Background(), &s3.CreateBucketInput{
 		Bucket: aws.String(bucketName),
 	})
@@ -96,7 +96,7 @@ func (l *LocalStackManager) createBucket(s3Client *s3.Client, bucketName string)
 }
 
 // uploadFile uploads a file to S3
-func (l *LocalStackManager) uploadFile(s3Client *s3.Client, bucketName, filePath, objectKey string) error {
+func (l *localStackManager) uploadFile(s3Client *s3.Client, bucketName, filePath, objectKey string) error {
 	// Open the file
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -118,7 +118,7 @@ func (l *LocalStackManager) uploadFile(s3Client *s3.Client, bucketName, filePath
 }
 
 // deleteAllObjects deletes all objects in a bucket
-func (l *LocalStackManager) deleteAllObjects(s3Client *s3.Client, bucketName string) error {
+func (l *localStackManager) deleteAllObjects(s3Client *s3.Client, bucketName string) error {
 	// List all objects in the bucket
 	listOutput, err := s3Client.ListObjectsV2(context.Background(), &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucketName),
@@ -142,7 +142,7 @@ func (l *LocalStackManager) deleteAllObjects(s3Client *s3.Client, bucketName str
 }
 
 // deleteBucket deletes an S3 bucket
-func (l *LocalStackManager) deleteBucket(s3Client *s3.Client, bucketName string) error {
+func (l *localStackManager) deleteBucket(s3Client *s3.Client, bucketName string) error {
 	_, err := s3Client.DeleteBucket(context.Background(), &s3.DeleteBucketInput{
 		Bucket: aws.String(bucketName),
 	})
