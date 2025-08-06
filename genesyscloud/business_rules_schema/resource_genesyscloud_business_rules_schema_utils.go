@@ -3,6 +3,7 @@ package business_rules_schema
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -70,4 +71,16 @@ func GenerateBusinessRulesSchemaResource(resourceLabel, name, description, prope
 		enabled = %s
 	}
 	`, ResourceType, resourceLabel, name, description, properties, enabledStr)
+}
+
+func businessRulesSchemaFtIsEnabled() bool {
+	clientConfig := platformclientv2.GetDefaultConfiguration()
+	api := platformclientv2.NewBusinessRulesApiWithConfig(clientConfig)
+
+	_, resp, err := api.GetBusinessrulesSchemas()
+	if err != nil {
+		log.Printf("Error sending request: %v", err)
+	}
+
+	return resp.StatusCode < 500
 }

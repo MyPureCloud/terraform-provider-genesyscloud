@@ -26,6 +26,12 @@ tests for business_rules_schema.
 
 func TestAccResourceBusinessRulesSchema(t *testing.T) {
 	t.Parallel()
+
+	if !businessRulesSchemaFtIsEnabled() {
+		t.Skip("Skipping test as business rules schema feature toggle is not enabled")
+		return
+	}
+
 	var (
 		schemaResourceLabel      = "tf_schema_1"
 		schemaName               = "tf_schema_" + uuid.NewString()
