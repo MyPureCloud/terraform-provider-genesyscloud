@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 const (
@@ -691,7 +691,7 @@ func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 }
 
 func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) resContextFunc {
-	return func(ctx context.Context, r *schema.ResourceData, meta any) (diagErr diag.Diagnostics) {
+	return func(ctx context.Context, r *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 		panicRecoverLogger := prl.GetPanicRecoveryLoggerInstance()
 		if !panicRecoverLogger.LoggerEnabled {
 			return method(ctx, r, meta)
@@ -699,9 +699,11 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("[WARN] Panic recovered in %s: %v", operation, r)
 				err := panicRecoverLogger.HandleRecovery(r, operation)
 				if err != nil {
-					diagErr = diag.FromErr(err)
+					log.Printf("[WARN] Panic recovery failed for operation %s: %s", operation, err.Error())
+					diags = append(diags, diag.FromErr(err)...)
 				}
 			}
 		}()

@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -84,10 +84,10 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	log.Printf("Creating knowledge document for knowledge base '%s'", knowledgeBaseId)
+	log.Printf("Creating knowledge document for knowledge base '%s'. Title: '%s'", knowledgeBaseId, *body.Title)
 	knowledgeDocument, resp, err := proxy.createKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, body)
 	if err != nil {
-		createDiagErr := util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create knowledge document for knowledge base '%s'. Error: %s", knowledgeBaseId, err.Error()), resp)
+		createDiagErr := util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create knowledge document for knowledge base '%s', title '%s'. Error: %s", knowledgeBaseId, *body.Title, err.Error()), resp)
 		log.Println(createDiagErr)
 		diags = append(diags, createDiagErr...)
 		return diags
@@ -96,7 +96,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	id := BuildDocumentResourceDataID(*knowledgeDocument.Id, knowledgeBaseId)
 	d.SetId(id)
 
-	log.Printf("Created knowledge document %s. Resource schema ID: '%s'", *knowledgeDocument.Id, id)
+	log.Printf("Created knowledge document %s, title '%s'. Resource schema ID: '%s'", *knowledgeDocument.Id, *body.Title, id)
 	return append(diags, readKnowledgeDocument(ctx, d, meta)...)
 }
 
@@ -111,7 +111,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		state = "Draft"
 	}
 
-	log.Printf("Reading knowledge document %s", knowledgeDocumentId)
+	log.Printf("Reading knowledge document '%s'", knowledgeDocumentId)
 	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		log.Printf("Reading knowledge document '%s'. Knowledge base '%s'", knowledgeDocumentId, knowledgeBaseId)
 		knowledgeDocument, resp, getErr := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, state)

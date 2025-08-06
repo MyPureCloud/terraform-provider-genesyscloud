@@ -3,7 +3,7 @@ package routing_utilization
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 var internalProxy *routingUtilizationProxy
