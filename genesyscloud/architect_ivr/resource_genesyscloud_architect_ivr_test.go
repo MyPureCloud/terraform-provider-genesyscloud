@@ -18,7 +18,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
-func TestAccResourceIvrConfigBasic(t *testing.T) {
+func TestAccResourceArchitectIvrConfigBasic(t *testing.T) {
 	ivrConfigResourceLabel := "test-ivrconfig1"
 	ivrFullResourcePath := ResourceType + "." + ivrConfigResourceLabel
 
@@ -93,7 +93,7 @@ func TestAccResourceIvrConfigBasic(t *testing.T) {
 	})
 }
 
-func TestAccResourceIvrConfigDivision(t *testing.T) {
+func TestAccResourceArchitectIvrConfigDivision(t *testing.T) {
 	ivrConfigResourceLabel1 := "test-ivrconfig1"
 	ivrConfigName := "terraform-ivrconfig-" + uuid.NewString()
 	ivrConfigDescription := "Terraform IVR config"
@@ -203,7 +203,7 @@ func TestAccResourceIvrConfigDivision(t *testing.T) {
 	})
 }
 
-func TestAccResourceIvrConfigDnisOverload(t *testing.T) {
+func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 	var (
 		resourceLabel = "ivr"
 		name          = "TF Test IVR " + uuid.NewString()

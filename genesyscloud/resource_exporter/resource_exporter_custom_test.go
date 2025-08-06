@@ -23,13 +23,9 @@ type propertyGroupTest struct {
 	ExpectedResult       string
 }
 
-/*
-This test is more of a unit test then am acceptance test.  It is using a table based approach to test the three different types of groups that can be resolved.  We currently support SKILLGROUP and GROUP.  Team has not been implemented
-yet so the custom resolver should return keep the original id associated the config map.
-
-This is a unit test because it is just testing this single function without any dependency of Terraform actually being run.
-*/
-func TestAccExporterCustomMemberGroup(t *testing.T) {
+// TestUnitExporterCustomMemberGroup uses a table based approach to test the three different types of groups that can be resolved.
+// We currently support SKILLGROUP and GROUP.  Team has not been implemented yet so the custom resolver should return keep the original id associated the config map.
+func TestUnitExporterCustomMemberGroup(t *testing.T) {
 	teamID := uuid.NewString()
 	testResults := []*customMemberGroupTest{
 		{MemberGroupID: uuid.NewString(), MemberGroupType: "SKILLGROUP", GroupName: "test_skill_group_name", ExporterResourceType: "genesyscloud_routing_skill_group", ExpectedResult: "${genesyscloud_routing_skill_group.test_skill_group_name.id}"},
@@ -74,7 +70,7 @@ func TestAccExporterCustomMemberGroup(t *testing.T) {
 
 }
 
-func TestRuleSetPropertyGroup(t *testing.T) {
+func TestUnitRuleSetPropertyGroup(t *testing.T) {
 
 	uuid := uuid.NewString()
 

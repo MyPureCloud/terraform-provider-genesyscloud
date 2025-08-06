@@ -2,6 +2,7 @@ package responsemanagement_library
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -76,7 +77,7 @@ func testVerifyResponseManagementLibraryDestroyed(state *terraform.State) error 
 	})
 
 	if diagErr != nil {
-		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+		return errors.New(fmt.Sprintf("%v", diagErr))
 	}
 
 	// Success. All Libraries destroyed

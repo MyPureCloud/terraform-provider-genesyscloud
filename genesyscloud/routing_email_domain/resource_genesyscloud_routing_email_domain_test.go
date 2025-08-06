@@ -2,6 +2,7 @@ package routing_email_domain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -124,7 +125,7 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	})
 
 	if diagErr != nil {
-		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+		return errors.New(fmt.Sprintf("%v", diagErr))
 	}
 
 	// Success. All Domains destroyed

@@ -197,7 +197,7 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platf
 		return apiResponse, fmt.Errorf("failed to get language file presignedUri: %s for file %s", err, filePath)
 	}
 
-	reader, _, err := files.DownloadOrOpenFile(filePath)
+	reader, _, err := files.DownloadOrOpenFile(context.Background(), filePath, S3Enabled)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file '%s': %v", filePath, err)
 	}

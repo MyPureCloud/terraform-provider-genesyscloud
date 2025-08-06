@@ -28,7 +28,7 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	varType = strings.ToLower(varType)
 
-	retryErr := util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		flowId, resp, retryable, err := p.getFlowIdByNameAndType(ctx, name, varType)
 		if err != nil {
 			response = resp

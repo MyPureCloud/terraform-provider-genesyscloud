@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -62,7 +63,7 @@ func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitution
 
 func (s *S3Uploader) substituteValues() {
 	// Attribute specific to the flows resource
-	if s.substitutions != nil && len(s.substitutions) > 0 {
+	if len(s.substitutions) > 0 {
 		fileContents := s.bodyBuf.String()
 		for k, v := range s.substitutions {
 			fileContents = strings.Replace(fileContents, fmt.Sprintf("{{%s}}", k), v.(string), -1)
@@ -162,8 +163,15 @@ func (s *S3Uploader) createFormData() error {
 		if x, ok := r.(io.Closer); ok {
 			defer x.Close()
 		}
-		if file, ok := r.(*os.File); ok {
-			fw, err = s.Writer.CreateFormFile(key, file.Name())
+
+		// For the "file" field, always create a form file, even for non-file readers (like S3)
+		if key == "file" {
+			// Try to get filename from the reader if it's a file
+			filename := "script.json" // default filename
+			if file, ok := r.(*os.File); ok {
+				filename = file.Name()
+			}
+			fw, err = s.Writer.CreateFormFile(key, filename)
 		} else {
 			fw, err = s.Writer.CreateFormField(key)
 		}
@@ -177,9 +185,16 @@ func (s *S3Uploader) createFormData() error {
 	return nil
 }
 
-func DownloadOrOpenFile(path string) (io.Reader, *os.File, error) {
+// DownloadOrOpenFile is a function that downloads or opens a file from a given path.
+// Note: supportS3 lets us know if the resource is prepared to handle S3 paths (e.g. architect_flow). Once all resources support S3 paths, we can remove this parameter.
+func DownloadOrOpenFile(ctx context.Context, path string, supportS3 bool) (io.Reader, *os.File, error) {
 	var reader io.Reader
 	var file *os.File
+
+	// Check if the path is an S3 URI
+	if utilAws.IsS3Path(path) && supportS3 {
+		return utilAws.GetS3FileReader(ctx, path)
+	}
 
 	// Check if the path has a protocol scheme to call as an HTTP request
 	if u, err := url.ParseRequestURI(path); err == nil && u.Scheme != "" {
@@ -259,8 +274,9 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 }
 
 // HashFileContent Hash file content, used in stateFunc for "filepath" type attributes
-func HashFileContent(path string) (string, error) {
-	reader, file, err := DownloadOrOpenFile(path)
+// Note: supportS3 lets us know if the resource is prepared to handle S3 paths (e.g. architect_flow). Once all resources support S3 paths, we can remove this parameter.
+func HashFileContent(ctx context.Context, path string, supportS3 bool) (string, error) {
+	reader, file, err := DownloadOrOpenFile(ctx, path, supportS3)
 	if err != nil {
 		return "", fmt.Errorf("unable to open file: %v", err.Error())
 	}
@@ -269,14 +285,8 @@ func HashFileContent(path string) (string, error) {
 	}
 
 	hash := sha256.New()
-	if file == nil {
-		if _, err := io.Copy(hash, reader); err != nil {
-			return "", fmt.Errorf("unable to copy file content: %v", err.Error())
-		}
-	} else {
-		if _, err := io.Copy(hash, file); err != nil {
-			return "", fmt.Errorf("unable to copy file content: %v", err.Error())
-		}
+	if _, err := io.Copy(hash, reader); err != nil {
+		return "", fmt.Errorf("unable to copy file content: %v", err.Error())
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
@@ -293,7 +303,7 @@ func WriteToFile(bytes []byte, path string) diag.Diagnostics {
 // getCSVRecordCount retrieves the number of records in a CSV file (i.e., number of lines in a file minus the header)
 func GetCSVRecordCount(filepath string) (int, error) {
 	// Open file up and read the record count
-	reader, file, err := DownloadOrOpenFile(filepath)
+	reader, file, err := DownloadOrOpenFile(context.Background(), filepath, true)
 	if err != nil {
 		return 0, err
 	}
