@@ -3,10 +3,11 @@ package routing_queue
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"net/http"
 	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -708,8 +709,8 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 }
 
 func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasettings {
-	subTypeMap := make(map[string]platformclientv2.Basemediasettings)
-	baseMediaSettings := platformclientv2.Basemediasettings{
+	subTypeMap := make(map[string]platformclientv2.Messagesubtypesettings)
+	baseMediaSettings := platformclientv2.Messagesubtypesettings{
 		EnableAutoAnswer: platformclientv2.Bool(true),
 	}
 	subTypeMap["instagram"] = baseMediaSettings
