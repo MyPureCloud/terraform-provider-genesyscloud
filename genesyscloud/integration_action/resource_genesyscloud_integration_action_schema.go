@@ -113,6 +113,12 @@ func ResourceIntegrationAction() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"publish": {
+				Description: "Whether to publish the action after creation. Defaults to true.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
 		},
 	}
 

@@ -3,6 +3,7 @@ package integration_action
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -222,9 +223,13 @@ func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig
 
 // BuildSdkFunctionConfig takes the resource data and builds the SDK platformclientv2.Functionconfig from it
 func BuildSdkFunctionConfig(d *schema.ResourceData, zipId string) *platformclientv2.Functionconfig {
+	log.Printf("DEBUG: BuildSdkFunctionConfig called with zipId: %s", zipId)
+
 	if functionConfig := d.Get("function_config"); functionConfig != nil {
+		log.Printf("DEBUG: function_config found: %v", functionConfig)
 		if configList := functionConfig.([]interface{}); len(configList) > 0 {
 			configMap := configList[0].(map[string]interface{})
+			log.Printf("DEBUG: configMap: %v", configMap)
 
 			// Extract function settings
 			var description string
@@ -246,20 +251,29 @@ func BuildSdkFunctionConfig(d *schema.ResourceData, zipId string) *platformclien
 			if timeoutVal, ok := configMap["timeout_seconds"]; ok && timeoutVal != nil {
 				timeoutSeconds = timeoutVal.(int)
 			}
+
+			log.Printf("DEBUG: Extracted values - description: %s, handler: %s, runtime: %s, timeoutSeconds: %d, zipId: %s",
+				description, handler, runtime, timeoutSeconds, zipId)
+
 			// Create the Function object
+			// Note: zipId is not included as it's set automatically by the upload process
 			function := &platformclientv2.Function{
 				Description:    platformclientv2.String(description),
 				Handler:        platformclientv2.String(handler),
 				Runtime:        platformclientv2.String(runtime),
 				TimeoutSeconds: platformclientv2.Int(timeoutSeconds),
-				ZipId:          platformclientv2.String(zipId),
+				// ZipId is set automatically by the upload process, not manually
 			}
 
 			// Create the Functionconfig object
 			return &platformclientv2.Functionconfig{
 				Function: function,
 			}
+		} else {
+			log.Printf("DEBUG: function_config list is empty")
 		}
+	} else {
+		log.Printf("DEBUG: function_config is nil")
 	}
 	return &platformclientv2.Functionconfig{}
 }
