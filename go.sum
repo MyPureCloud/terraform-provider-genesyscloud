@@ -178,8 +178,8 @@ github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
 github.com/mozillazg/go-unidecode v0.2.0 h1:vFGEzAH9KSwyWmXCOblazEWDh7fOkpmy/Z4ArmamSUc=
 github.com/mozillazg/go-unidecode v0.2.0/go.mod h1:zB48+/Z5toiRolOZy9ksLryJ976VIwmDmpQ2quyt1aA=
-github.com/mypurecloud/platform-client-sdk-go/v162 v162.0.0 h1:Kgjf9ylHNXSK0OrrM5a2bmW5i8gCb+RZBXgB0aPdbYA=
-github.com/mypurecloud/platform-client-sdk-go/v162 v162.0.0/go.mod h1:HxRlNzLm7LrlJbPOwGxcUmfKVOoly6p9kW5jT2i5HNw=
+github.com/mypurecloud/platform-client-sdk-go/v165 v165.1.0 h1:E8ye+nT8k8+eIoIPJUaYCxfIBhHRv5rKCNHbQ6o9h/Q=
+github.com/mypurecloud/platform-client-sdk-go/v165 v165.1.0/go.mod h1:PrDgIcUF/YPVCR2nJ4Mz9+aQ7xB6wJfKn4rZN3ocMno=
 github.com/nyaruka/phonenumbers v1.6.4 h1:GFAa844VqRKJvO7oboosM1q3gFVgYvyNe0O6CCbg33A=
 github.com/nyaruka/phonenumbers v1.6.4/go.mod h1:7gjs+Lchqm49adhAKB5cdcng5ZXgt6x7Jgvi0ZorUtU=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=

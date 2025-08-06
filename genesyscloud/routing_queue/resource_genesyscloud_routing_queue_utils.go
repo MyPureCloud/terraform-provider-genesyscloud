@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 // Build Functions
@@ -164,7 +164,6 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
-		SubTypeSettings: buildSubTypeSettings(settingsMap["sub_type_settings"].([]interface{})),
 	}
 }
 
@@ -250,9 +249,9 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	return &callbackSettings
 }
 
-func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Basemediasettings {
+func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
 
-	returnObj := make(map[string]platformclientv2.Basemediasettings)
+	returnObj := make(map[string]platformclientv2.Messagesubtypesettings)
 
 	for _, subTypeItem := range subTypeList {
 		if subTypeItem == nil {
@@ -261,7 +260,7 @@ func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv
 		subTypeMap := subTypeItem.(map[string]interface{})
 		mediaType := subTypeMap["media_type"].(string)
 		enableAutoAnswer := subTypeMap["enable_auto_answer"].(bool)
-		baseMediaSettings := platformclientv2.Basemediasettings{
+		baseMediaSettings := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
 		returnObj[mediaType] = baseMediaSettings
@@ -535,9 +534,6 @@ func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{}
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
-	if settings.SubTypeSettings != nil {
-		settingsMap["sub_type_settings"] = flattenSubTypeSettings(*settings.SubTypeSettings)
-	}
 	return []interface{}{settingsMap}
 }
 
@@ -560,7 +556,7 @@ func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings
 	return []any{settingsMap}
 }
 
-func flattenSubTypeSettings(subType map[string]platformclientv2.Basemediasettings) []interface{} {
+func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypesettings) []interface{} {
 	if subType == nil {
 		return nil
 	}
