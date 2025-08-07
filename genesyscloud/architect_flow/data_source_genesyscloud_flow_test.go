@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceFlow(t *testing.T) {
+func TestAccDataSourceArchitectFlow(t *testing.T) {
 	var (
 		flowDataSourceLabel = "flow-data"
 		flowName            = "test_data_flow" + uuid.NewString()

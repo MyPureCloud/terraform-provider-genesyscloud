@@ -3,13 +3,14 @@ package scripts
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 // ScriptResolver is used to download all Genesys Cloud scripts from Genesys Cloud
@@ -41,7 +42,7 @@ func ScriptResolver(scriptId, exportDirectory, subDirectory string, configMap ma
 
 	resource.State.Attributes["filepath"] = fileNameVal
 
-	hash, err := files.HashFileContent(path.Join(fullPath, exportFileName))
+	hash, err := files.HashFileContent(ctx, path.Join(fullPath, exportFileName), S3Enabled)
 	if err != nil {
 		log.Printf("Error Calculating Hash '%s' ", err)
 	} else {

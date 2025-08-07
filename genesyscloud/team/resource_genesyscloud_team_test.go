@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 
@@ -89,7 +89,7 @@ func TestAccResourceTeamAddMembers(t *testing.T) {
 
 		testUserResourceLabel1 = "user_resource_1"
 		testUserName1          = "nameUser1" + uuid.NewString()
-		testUserEmail1         = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
+		testUserEmail1         = randString(5) + "@" + randString(5) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -154,7 +154,7 @@ func TestAccResourceTeamRemoveMembers(t *testing.T) {
 
 		testUserResourceLabel1 = "user_resource_1"
 		testUserName1          = "nameUser1" + uuid.NewString()
-		testUserEmail1         = fmt.Sprintf(randString(5) + "@" + randString(5) + ".com")
+		testUserEmail1         = randString(5) + "@" + randString(5) + ".com"
 	)
 
 	resource.Test(t, resource.TestCase{

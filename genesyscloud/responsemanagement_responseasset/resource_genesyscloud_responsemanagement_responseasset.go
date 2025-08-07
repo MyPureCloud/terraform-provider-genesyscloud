@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -66,7 +66,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 
 	headers := *postResponseData.Headers
 	url := *postResponseData.Url
-	reader, _, err := files.DownloadOrOpenFile(fileName)
+	reader, _, err := files.DownloadOrOpenFile(ctx, fileName, S3Enabled)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"maps"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func init() {
@@ -54,15 +55,8 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 		   and data source maps.  If you do not do a deep copy and try to pass in the original maps, you open yourself up to race conditions
 		   because they map are being read and written to concurrently.
 		*/
-		copiedResources := make(map[string]*schema.Resource)
-		for k, v := range providerResources {
-			copiedResources[k] = v
-		}
-
-		copiedDataSources := make(map[string]*schema.Resource)
-		for k, v := range providerDataSources {
-			copiedDataSources[k] = v
-		}
+		copiedResources := maps.Clone(providerResources)
+		copiedDataSources := maps.Clone(providerDataSources)
 
 		setupCleanup()
 

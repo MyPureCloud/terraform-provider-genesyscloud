@@ -52,7 +52,6 @@ resource "genesyscloud_journey_segment" "terraform_test_-TEST-CASE-_action_map_d
 
 resource "genesyscloud_flow" "terraform_test_-TEST-CASE-_action_map_dependency" {
   filepath          = "http://localhost:8111/-TEST-CASE-_journey_action_map_dependency_flow.yaml"
-  file_content_hash = "4e3548b6accc632ca393249769685f029e0af3cb937d10d3ef04993637edddfd"
   substitutions = {
     flow_name            = "terraform_test_-TEST-CASE-_flow_name"
     default_language     = "en-us"
