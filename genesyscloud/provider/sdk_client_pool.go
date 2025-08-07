@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
@@ -714,7 +715,17 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 // Inject a pooled SDK client connection into a resource method's meta argument
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
-	return func(ctx context.Context, r *schema.ResourceData, meta any) diag.Diagnostics {
+	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
+		if mrmo.IsActive() {
+			clientConfig, err := mrmo.GetClientConfig()
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			newMeta := *meta.(*ProviderMeta)
+			newMeta.ClientConfig = clientConfig
+			return method(ctx, r, &newMeta)
+		}
+
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
 			return diag.FromErr(err)
@@ -739,8 +750,18 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 	}
 }
 
-// Inject a pooled SDK client connection into an exporter's getAll* method
+// GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
+	if mrmo.IsActive() {
+		clientConfig, err := mrmo.GetClientConfig()
+		if err != nil {
+			log.Printf("[WARN] Error getting client config: %s", err.Error())
+		}
+		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+			return method(ctx, clientConfig)
+		}
+	}
+
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {

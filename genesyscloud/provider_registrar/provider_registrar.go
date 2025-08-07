@@ -3,6 +3,8 @@ package provider_registrar
 import (
 	"sync"
 
+	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -21,7 +23,6 @@ import (
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
-	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 	cMessageSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -190,6 +191,15 @@ func GetResourceExporters() (exporters map[string]*resourceExporter.ResourceExpo
 		registerResources()
 	}
 	return resourceExporters
+}
+
+// GetResourceExporterByResourceType returns the resource exporter for a given resource type
+// Needed by MRMO - do not remove if it appears to be unused
+func GetResourceExporterByResourceType(resourceType string) *resourceExporter.ResourceExporter {
+	if providerResources == nil {
+		registerResources()
+	}
+	return resourceExporters[resourceType]
 }
 
 func GetResourceTypeNames() []string {

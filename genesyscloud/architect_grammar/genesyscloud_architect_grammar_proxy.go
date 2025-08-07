@@ -3,9 +3,8 @@ package architect_grammar
 import (
 	"context"
 	"fmt"
-	"log"
-
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )

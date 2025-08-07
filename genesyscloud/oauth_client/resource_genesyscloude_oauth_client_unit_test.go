@@ -2,11 +2,10 @@ package oauth_client
 
 import (
 	"context"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"net/http"
 	"sort"
 	"testing"
-
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"

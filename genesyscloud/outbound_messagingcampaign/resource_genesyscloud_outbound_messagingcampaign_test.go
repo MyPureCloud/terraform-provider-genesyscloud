@@ -847,7 +847,7 @@ func CheckOutboundDomainExists(id string) error {
 	if resp.StatusCode == 404 {
 		// outbound domain for test does not exist so create it
 		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
-		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomain{
+		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomainrequest{
 			Id: &id,
 		})
 		if postErr != nil {

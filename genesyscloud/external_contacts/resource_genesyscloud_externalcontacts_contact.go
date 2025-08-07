@@ -3,12 +3,11 @@ package external_contacts
 import (
 	"context"
 	"fmt"
-	"log"
-	"time"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
