@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -279,7 +279,7 @@ func TestUnitResourceBusinessRulesSchemaUpdate(t *testing.T) {
 	}
 
 	internalProxy = schemaProxy
-	defer func() { internalProxy = nil }()	
+	defer func() { internalProxy = nil }()
 
 	ctx := context.Background()
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}

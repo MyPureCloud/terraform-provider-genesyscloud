@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
@@ -16,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 const (
@@ -58,6 +59,7 @@ type SDKClientPoolConfig struct {
 	InitTimeout    time.Duration
 	MaxClients     int
 	DebugLogging   bool
+	Version        string
 }
 
 type poolMetrics struct {
@@ -87,6 +89,18 @@ func (m *poolMetrics) recordRelease() {
 var SdkClientPool *SDKClientPool
 var SdkClientPoolErr diag.Diagnostics
 var Once sync.Once
+
+// ResetSDKClientPool resets the global client pool for testing purposes
+func ResetSDKClientPool() {
+	if SdkClientPool != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = SdkClientPool.Reset(ctx)
+	}
+	SdkClientPool = nil
+	SdkClientPoolErr = nil
+	Once = sync.Once{} // Reset the Once to allow re-initialization
+}
 
 // InitSDKClientPool creates a new Pool of Clients with the given provider config
 // This must be called during provider initialization before the Pool is used
@@ -131,6 +145,7 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			AcquireTimeout: acquireTimeout,
 			InitTimeout:    initTimeout,
 			DebugLogging:   providerConfig.Get(AttrSdkClientPoolDebug).(bool),
+			Version:        version,
 		}
 
 		SdkClientPool = &SDKClientPool{
@@ -171,7 +186,7 @@ func (p *SDKClientPool) logDebug(msg string, args ...interface{}) {
 		formattedMsg := fmt.Sprintf("[DEBUG] "+msg, args...)
 		tflog.Debug(p.ctx, formattedMsg)
 		// Also log to standard logger for test capture
-		log.Printf(formattedMsg)
+		log.Println(formattedMsg)
 	}
 }
 
@@ -314,40 +329,63 @@ func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.Reso
 }
 
 func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configuration, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, p.config.AcquireTimeout)
-	defer cancel()
+	// Try to acquire with retry logic
+	maxRetries := 3
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		timeoutCtx, cancel := context.WithTimeout(ctx, p.config.AcquireTimeout)
 
-	select {
-	case client := <-p.Pool:
-		if client == nil {
-			return nil, fmt.Errorf("received nil client from the pool")
-		}
-		p.metrics.recordAcquire()
+		select {
+		case client := <-p.Pool:
+			cancel()
+			if client == nil {
+				return nil, fmt.Errorf("received nil client from the pool")
+			}
+			p.metrics.recordAcquire()
 
-		acquiredMsg := "Client acquired from pool"
+			acquiredMsg := "Client acquired from pool"
 
-		remaining := int64(p.config.MaxClients) - atomic.LoadInt64(&p.metrics.activeClients)
-		if remaining <= int64(PoolCriticalThreshold) {
-			p.logDebug("[WARN] %s but pool at critical capacity - %s", acquiredMsg, p.formatMetrics())
-		} else if remaining <= int64(PoolNearCapacityThreshold) {
-			p.logDebug("[WARN] %s with pool near capacity - %s", acquiredMsg, p.formatMetrics())
-		} else {
-			p.logDebug("%s - %s", acquiredMsg, p.formatMetrics())
+			remaining := int64(p.config.MaxClients) - atomic.LoadInt64(&p.metrics.activeClients)
+			if remaining <= int64(PoolCriticalThreshold) {
+				p.logDebug("[WARN] %s but pool at critical capacity - %s", acquiredMsg, p.formatMetrics())
+			} else if remaining <= int64(PoolNearCapacityThreshold) {
+				p.logDebug("[WARN] %s with pool near capacity - %s", acquiredMsg, p.formatMetrics())
+			} else {
+				p.logDebug("%s - %s", acquiredMsg, p.formatMetrics())
+			}
+			// Also log to standard logger for test capture when debug is enabled
+			if p.config.DebugLogging {
+				log.Printf("%s - %s", acquiredMsg, p.formatMetrics())
+			}
+			return client, nil
+		case <-timeoutCtx.Done():
+			cancel()
+			p.metrics.mu.Lock()
+			p.metrics.acquireTimeouts++
+			p.metrics.mu.Unlock()
+			p.logDebug("[WARN] Client acquisition timeout (attempt %d/%d) - %s", attempt+1, maxRetries, p.formatMetrics())
+
+			// Try to add more clients to the pool when timeout occurs
+			go p.AdjustPoolForTimeout(p.config.Version)
+
+			// If this is the last attempt, return error
+			if attempt == maxRetries-1 {
+				return nil, fmt.Errorf("timeout after %v waiting for available client (after %d retries): %v", p.config.AcquireTimeout, maxRetries, timeoutCtx.Err())
+			}
+
+			// Wait a bit before retrying
+			select {
+			case <-time.After(2 * time.Second):
+				continue
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		case <-ctx.Done():
+			cancel()
+			return nil, ctx.Err()
 		}
-		// Also log to standard logger for test capture when debug is enabled
-		if p.config.DebugLogging {
-			log.Printf("%s - %s", acquiredMsg, p.formatMetrics())
-		}
-		return client, nil
-	case <-timeoutCtx.Done():
-		p.metrics.mu.Lock()
-		p.metrics.acquireTimeouts++
-		p.metrics.mu.Unlock()
-		p.logDebug("[WARN] Client acquisition timeout - %s", p.formatMetrics())
-		return nil, fmt.Errorf("timeout after %v waiting for available client: %v", p.config.AcquireTimeout, timeoutCtx.Err())
-	case <-ctx.Done():
-		return nil, ctx.Err()
 	}
+
+	return nil, fmt.Errorf("failed to acquire client after %d attempts", maxRetries)
 }
 
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
@@ -465,6 +503,40 @@ func (p *SDKClientPool) Close(ctx context.Context) error {
 			return fmt.Errorf("timeout while draining client pool: %v", drainCtx.Err())
 		default:
 			p.logDebug("Closed SDK client pool - %s", p.formatMetrics())
+			return nil
+		}
+	}
+}
+
+// Reset quickly drains the pool without cleanup for testing purposes
+func (p *SDKClientPool) Reset(ctx context.Context) error {
+	metrics := p.GetMetrics()
+	if metrics.activeClients > 0 {
+		p.logDebug("[WARN] Resetting pool with %d active clients", metrics.activeClients)
+	}
+
+	if p.done == nil {
+		return nil
+	}
+	close(p.done) // Signal all goroutines to stop
+	p.done = nil
+
+	// Quick drain without cleanup - just discard configurations
+	drainCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	drained := 0
+	for {
+		select {
+		case c := <-p.Pool:
+			drained++
+			// Just discard the configuration - no cleanup needed
+			_ = c
+		case <-drainCtx.Done():
+			p.logDebug("Reset SDK client pool after draining %d clients - %s", drained, p.formatMetrics())
+			return nil
+		default:
+			p.logDebug("Reset SDK client pool after draining %d clients - %s", drained, p.formatMetrics())
 			return nil
 		}
 	}
@@ -690,7 +762,7 @@ func DeleteWithPooledClient(method resContextFunc) schema.DeleteContextFunc {
 }
 
 func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) resContextFunc {
-	return func(ctx context.Context, r *schema.ResourceData, meta any) (diagErr diag.Diagnostics) {
+	return func(ctx context.Context, r *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 		panicRecoverLogger := prl.GetPanicRecoveryLoggerInstance()
 		if !panicRecoverLogger.LoggerEnabled {
 			return method(ctx, r, meta)
@@ -698,9 +770,11 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 
 		defer func() {
 			if r := recover(); r != nil {
+				log.Printf("[WARN] Panic recovered in %s: %v", operation, r)
 				err := panicRecoverLogger.HandleRecovery(r, operation)
 				if err != nil {
-					diagErr = diag.FromErr(err)
+					log.Printf("[WARN] Panic recovery failed for operation %s: %s", operation, err.Error())
+					diags = append(diags, diag.FromErr(err)...)
 				}
 			}
 		}()
@@ -713,13 +787,29 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
+		if mrmo.IsActive() {
+			clientConfig, err := mrmo.GetClientConfig()
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			newMeta := *meta.(*ProviderMeta)
+			newMeta.ClientConfig = clientConfig
+			return method(ctx, r, &newMeta)
+		}
+
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
+		// Ensure client is always released, even on panic
+		released := false
 		defer func() {
-			if err := SdkClientPool.release(clientConfig); err != nil {
-				log.Printf("[WARN] Error releasing client to pool: %v", err)
+			if !released {
+				if err := SdkClientPool.release(clientConfig); err != nil {
+					log.Printf("[WARN] Error releasing client to pool: %v", err)
+				}
+				released = true
 			}
 		}()
 
@@ -733,12 +823,31 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 		// Copy to a new providerMeta object and set the sdk config
 		newMeta := *meta.(*ProviderMeta)
 		newMeta.ClientConfig = clientConfig
-		return method(ctx, r, &newMeta)
+
+		result := method(ctx, r, &newMeta)
+
+		// Release client after successful execution
+		if err := SdkClientPool.release(clientConfig); err != nil {
+			log.Printf("[WARN] Error releasing client to pool: %v", err)
+		}
+		released = true
+
+		return result
 	}
 }
 
-// Inject a pooled SDK client connection into an exporter's getAll* method
+// GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
+	if mrmo.IsActive() {
+		clientConfig, err := mrmo.GetClientConfig()
+		if err != nil {
+			log.Printf("[WARN] Error getting client config: %s", err.Error())
+		}
+		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+			return method(ctx, clientConfig)
+		}
+	}
+
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {

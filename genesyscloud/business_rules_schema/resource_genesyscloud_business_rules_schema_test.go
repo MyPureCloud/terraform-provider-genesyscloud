@@ -16,7 +16,7 @@ import (
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -27,10 +27,10 @@ tests for business_rules_schema.
 func TestAccResourceBusinessRulesSchema(t *testing.T) {
 	t.Parallel()
 	var (
-		schemaResourceLabel = "tf_schema_1"
-		schemaName          = "tf_schema_" + uuid.NewString()
-		schemaDescription   = "created for CX as Code test case"
-		updatedSchemaDescription  = "updated description for CX as Code test case"
+		schemaResourceLabel      = "tf_schema_1"
+		schemaName               = "tf_schema_" + uuid.NewString()
+		schemaDescription        = "created for CX as Code test case"
+		updatedSchemaDescription = "updated description for CX as Code test case"
 
 		// "boolean" field
 		attr1 = customField{
@@ -62,10 +62,10 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 				"enum": []interface{}{"option_1", "option_2"},
 				"_enumProperties": map[string]interface{}{
 					"option_1": map[string]interface{}{
-						"title":     "Option 1",
+						"title": "Option 1",
 					},
 					"option_2": map[string]interface{}{
-						"title":     "Option 2",
+						"title": "Option 2",
 					},
 				},
 			},

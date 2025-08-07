@@ -3,6 +3,9 @@ package architect_user_prompt
 import (
 	"context"
 	"fmt"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"io"
 	"log"
 	"net/http"
@@ -10,13 +13,9 @@ import (
 	"strings"
 	"time"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -555,8 +554,8 @@ func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromp
 	return "", response, fmt.Errorf("no prompts found with name '%s'", name), true
 }
 
-func uploadPromptFileFn(_ context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
-	reader, file, err := files.DownloadOrOpenFile(filename)
+func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
+	reader, file, err := files.DownloadOrOpenFile(ctx, filename, S3Enabled)
 	if err != nil {
 		return err
 	}

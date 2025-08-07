@@ -33,7 +33,6 @@ func TestAccDataSourceBusinessRulesSchema(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+schemaDataSourceLabel, "id", ResourceType+"."+schemaResourceLabel, "id"),
 				),
-				
 			},
 		},
 	})

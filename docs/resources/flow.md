@@ -26,7 +26,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_flow" "inbound_call_flow" {
-  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml"
+  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml" // Also supports S3 paths e.g. s3://my-bucket/flows/example.yaml
   file_content_hash = filesha256("${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml")
   // Example flow configuration using substitutions:
   /*
@@ -73,11 +73,11 @@ resource "genesyscloud_flow" "outbound_call_flow" {
 
 ### Required
 
-- `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
 - `filepath` (String) YAML file path for flow configuration. Note: Changing the flow name will result in the creation of a new flow with a new GUID, while the original flow will persist in your org.
 
 ### Optional
 
+- `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
 - `force_unlock` (Boolean) Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.
 - `name` (String) Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file

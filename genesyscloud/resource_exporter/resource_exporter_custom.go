@@ -9,7 +9,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -177,11 +177,6 @@ func RuleSetSkillPropertyResolver(configMap map[string]interface{}, exporters ma
 	} else {
 		return fmt.Errorf("unable to locate genesyscloud_routing_skill in the exporters array")
 	}
-	return nil
-}
-
-func FileContentHashResolver(configMap map[string]interface{}, filepath string) error {
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256(var.%s)}`, filepath)
 	return nil
 }
 

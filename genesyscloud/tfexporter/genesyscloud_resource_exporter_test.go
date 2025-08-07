@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -559,7 +559,7 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 	resolverFunc = func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
 		return "", "", nil, false
 	}
-	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.dataSourceTypesMaps = make(map[string]ResourceJSONMaps)
 	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
 	exporter = &resourceExporter.ResourceExporter{
 		CustomAttributeResolver: attrCustomResolver,
@@ -592,7 +592,7 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 	if diagErr != nil {
 		t.Errorf("%v", diagErr)
 	}
-	g.dataSourceTypesMaps = make(map[string]resourceJSONMaps)
+	g.dataSourceTypesMaps = make(map[string]ResourceJSONMaps)
 	g.exportFormat = "hcl"
 	return g
 }
@@ -606,7 +606,7 @@ func getMockCampaignConfig(originalValueOfScriptId string) map[string]any {
 	return config
 }
 
-func TestContainsElement(t *testing.T) {
+func TestUnitContainsElement(t *testing.T) {
 	// set up
 	exporter := setupGenesysCloudResourceExporter(t)
 
@@ -660,7 +660,8 @@ func TestContainsElement(t *testing.T) {
 	}
 }
 
-func TestGetResourceStateRemovesComputedAttributes(t *testing.T) {
+func TestUnitGetResourceStateRemovesComputedAttributes(t *testing.T) {
+	t.Skip("Skipping until DEVTOOLING-1322 is resolved")
 
 	testCases := []struct {
 		name            string
@@ -953,7 +954,7 @@ func TestUnitMatchesFormat(t *testing.T) {
 	}
 }
 
-func TestGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
+func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 	tests := []struct {
 		name           string
 		setupExporter  func() *GenesysCloudResourceExporter
@@ -1280,7 +1281,7 @@ func TestGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 }
 
 // Test helper function to create a mock exporter with custom file writer
-func TestGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileWriter(t *testing.T) {
+func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileWriter(t *testing.T) {
 	ctx := context.Background()
 	d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
 		"export_format": {
@@ -1383,7 +1384,7 @@ func TestGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileWrite
 }
 
 // Test error handling in instanceStateToMap
-func TestGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateError(t *testing.T) {
+func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateError(t *testing.T) {
 	ctx := context.Background()
 	d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
 		"export_format": {

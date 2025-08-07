@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -112,7 +112,7 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "filename")] = fileNameVal
 				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = fileContentVal
 				fullPath := filepath.Join(exportDir, subDir)
-				hash, er := files.HashFileContent(filepath.Join(fullPath, fileName))
+				hash, er := files.HashFileContent(context.Background(), filepath.Join(fullPath, fileName), S3Enabled)
 				if er != nil {
 					log.Printf("Error Calculating Hash '%s' ", er)
 				} else {

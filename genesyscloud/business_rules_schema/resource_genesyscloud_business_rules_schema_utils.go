@@ -5,18 +5,18 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 const (
-	BOOLEAN    				= "boolean"
-	DATE       				= "date"
-	DATETIME   				= "datetime"
-	ENUM       				= "enum"
-	INTEGER    				= "integer"
-	NUMBER     				= "number"
-	BUSINESS_RULES_QUEUE 	= "businessRulesQueue"
-	STRING     				= "string"
+	BOOLEAN              = "boolean"
+	DATE                 = "date"
+	DATETIME             = "datetime"
+	ENUM                 = "enum"
+	INTEGER              = "integer"
+	NUMBER               = "number"
+	BUSINESS_RULES_QUEUE = "businessRulesQueue"
+	STRING               = "string"
 )
 
 type customField struct {

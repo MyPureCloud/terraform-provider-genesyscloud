@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,12 +16,17 @@ func TestUnitResourceGuideCreate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "Test Guide"
 	tSource := "Manual"
+	version := "1.0"
 
 	testGuide := &Guide{
 		Id:     &tId,
 		Name:   &tName,
 		Source: &tSource,
 		Status: platformclientv2.String("Draft"),
+	}
+
+	testVersionResponse := &VersionResponse{
+		Version: version,
 	}
 
 	var guideProxyObj = &guideProxy{}
@@ -35,6 +40,12 @@ func TestUnitResourceGuideCreate(t *testing.T) {
 		assert.Equal(t, tName, *guide.Name)
 		assert.Equal(t, tSource, *guide.Source)
 		return testGuide, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	guideProxyObj.createGuideVersionAttr = func(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+		assert.Equal(t, tId, guideId)
+		assert.Equal(t, " ", guideVersion.Instruction)
+		return testVersionResponse, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
 	internalProxy = guideProxyObj

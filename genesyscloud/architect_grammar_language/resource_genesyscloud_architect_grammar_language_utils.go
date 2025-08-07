@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -233,7 +233,7 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 			fileDataMap["file_content_hash"] = fileHashVal
 			fullPath := filepath.Join(d.exportDirectory, d.subDirectory)
 			d.resource.State.Attributes["file_name"] = filePath
-			hash, er := files.HashFileContent(filepath.Join(fullPath, d.exportFileName))
+			hash, er := files.HashFileContent(context.Background(), filepath.Join(fullPath, d.exportFileName), S3Enabled)
 			if er != nil {
 				log.Printf("Error Calculating Hash '%s' ", er)
 			} else {
