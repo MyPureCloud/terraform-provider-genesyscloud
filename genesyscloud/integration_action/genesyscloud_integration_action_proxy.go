@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 /*
@@ -279,7 +280,7 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 	// Step 2: Upload the file to the signed URL
 	log.Printf("DEBUG: Attempting to open file: %s", filePath)
-	fileReader, file, err := files.DownloadOrOpenFile(filePath)
+	fileReader, file, err := files.DownloadOrOpenFile(ctx, filePath, false)
 	if err != nil {
 		log.Printf("DEBUG: Error opening file: %v", err)
 		return nil, err
