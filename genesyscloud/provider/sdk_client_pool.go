@@ -186,7 +186,7 @@ func (p *SDKClientPool) logDebug(msg string, args ...interface{}) {
 		formattedMsg := fmt.Sprintf("[DEBUG] "+msg, args...)
 		tflog.Debug(p.ctx, formattedMsg)
 		// Also log to standard logger for test capture
-		log.Printf(formattedMsg)
+		log.Println(formattedMsg)
 	}
 }
 
