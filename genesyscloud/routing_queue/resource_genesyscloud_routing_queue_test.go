@@ -114,6 +114,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
+					GenerateConditionalGroupActivation(queueResourceLabel1, bullseyeMemberGroupLabel), // use bullseye group in CGA config
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "name", queueName1),
@@ -137,6 +138,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateBullseyeSettings(queueResourceLabel1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResourceLabel),
 					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
+					validateConditionalGroupActivation(queueResourceLabel1, "conditional_group_activation"),
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources["genesyscloud_user."+testUserResourceLabel]
 						if !ok {
@@ -179,6 +181,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateBullseyeSettings(alertTimeout2),
 					GenerateRoutingRules(routingRuleOpMeetsThresh, "90", "30"),
 					GenerateRoutingRules(routingRuleOpAny, "45", "15"),
+					GenerateConditionalGroupActivation(queueResourceLabel1, bullseyeMemberGroupLabel),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "name", queueName2),
@@ -205,6 +208,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpMeetsThresh, "90", "30"),
 					validateRoutingRules(queueResourceLabel1, 1, routingRuleOpAny, "45", "15"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours2, callbackHours2),
+					validateConditionalGroupActivation(queueResourceLabel1, "conditional_group_activation"),
 					func(s *terraform.State) error {
 						time.Sleep(3 * time.Second) // Wait for 3 seconds for resources to get deleted properly
 						return nil
@@ -1505,6 +1509,10 @@ func validateAgentOwnedRouting(resourceLabel string, agentattr, enableAgentOwned
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, agentattr+".0.max_owned_callback_hours", maxOwnedCallBackHours),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+resourceLabel, agentattr+".0.max_owned_callback_delay_hours", maxOwnedCallBackDelayHours),
 	)
+}
+
+func validateConditionalGroupActivation(resourceLabel string, todoBody string) resource.TestCheckFunc {
+	// SHM todo
 }
 
 func generateRoutingQueueResourceBasic(resourceLabel string, name string, nestedBlocks ...string) string {

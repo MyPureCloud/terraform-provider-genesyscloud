@@ -256,6 +256,108 @@ var (
 			},
 		},
 	}
+
+	cgaSimpleMetric = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"metric": {
+				Description:  "The queue metric being evaluated.  Valid values: EstimatedWaitTime, ServiceLevel, IdleAgentCount.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime", "ServiceLevel", "IdleAgentCount"}, false),
+			},
+			"queue_id": {
+				Description: "The queue being evaluated for this rule.  If null, the current queue will be used.",
+				Type:        schema.TypeString,
+				Required:    false,
+			},
+		},
+	}
+
+	condition = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"simple_metric": {
+				Description: "Instructs this condition to evaluate a simple queue-level metric.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    false,
+				Computed:    true,
+				Elem:        cgaSimpleMetric,
+			},
+			"operator": {
+				Description:  "The operator used to compare the actual value against the threshold value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo, EqualTo, NotEqualTo.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo", "EqualTo", "NotEqualTo"}, false),
+			},
+			"value": {
+				Description:  "The threshold value, beyond which a rule evaluates as true.",
+				Type:         schema.TypeFloat,
+				Required:     true,
+				ValidateFunc: validation.FloatBetween(0, 1000000),
+			},
+		},
+	}
+
+	conditionalGroupActivationResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"pilot_rule": {
+				Description: "The pilot rule for this queue, which executes periodically to determine queue health.",
+				Type:        schema.TypeList,
+				Required:    true,
+				MinItems:    1,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"condition_expression": {
+							Description: "A string expression that defines the relationships of conditions in this rule.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"conditions": {
+							Description: "The list of conditions used in this rule.",
+							Type:        schema.TypeList,
+							Required:    true,
+							MinItems:    1,
+							MaxItems:    10,
+							Elem:        condition,
+						},
+					},
+				},
+			},
+			"rules": {
+				Description: "The set of rules to be periodically executed on the queue (if the pilot rule evaluates as true or there is no pilot rule).",
+				Type:        schema.TypeList,
+				Required:    true,
+				MinItems:    1,
+				MaxItems:    5,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"condition_expression": {
+							Description: "A string expression that defines the relationships of conditions in this rule.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"conditions": {
+							Description: "The list of conditions used in this rule.",
+							Type:        schema.TypeList,
+							Required:    true,
+							MinItems:    1,
+							MaxItems:    10,
+							Elem:        condition,
+						},
+						"groups": {
+							Description: "The group(s) to activate if the rule evaluates as true.",
+							Type:        schema.TypeSet,
+							Required:    true,
+							MinItems:    1,
+							MaxItems:    5,
+							Elem:        memberGroupResource,
+						},
+					},
+				},
+			},
+		},
+	}
 )
 
 func ResourceRoutingQueue() *schema.Resource {
@@ -404,6 +506,14 @@ func ResourceRoutingQueue() *schema.Resource {
 						},
 					},
 				},
+			},
+			"conditional_group_activation": {
+				Description: "The Conditional Group Activation settings for the queue.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        queueMediaSettingsResource,
 			},
 			"conditional_group_routing_rules": {
 				Description: "The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",

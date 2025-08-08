@@ -395,6 +395,82 @@ func buildMemberGroupList(d *schema.ResourceData, groupKey string, groupType str
 	return &memberGroups
 }
 
+func buildSdkConditionalGroupActivation(d *schema.ResourceData) *platformclientv2.Conditionalgroupactivation {
+	cga, ok := d.GetOk("conditional_group_activation")
+	if !ok {
+		return nil
+	}
+	cgaMap := cga.(map[string]interface{})
+
+	var sdkCga platformclientv2.Conditionalgroupactivation
+
+	// process pilot rule
+	pilotRule := cgaMap["pilot_rule"].(map[string]interface{})
+	if pilotRule != nil {
+		conditionExpression := pilotRule["condition_expression"].(string)
+		sdkConditions := buildSdkCgaConditions(pilotRule)
+
+		var sdkPilotRule platformclientv2.Conditionalgroupactivationpilotrule
+		sdkPilotRule.ConditionExpression = &conditionExpression
+		sdkPilotRule.Conditions = &sdkConditions
+
+		sdkCga.PilotRule = &sdkPilotRule
+	}
+
+	// process numbered rules
+	var sdkRules []platformclientv2.Conditionalgroupactivationrule
+	rules := cgaMap["rules"].([]map[string]interface{})
+	for _, rule := range rules {
+		conditionExpression := rule["condition_expression"].(string)
+		sdkConditions := buildSdkCgaConditions(rule)
+		groups := rule["groups"].([]map[string]interface{})
+
+		// build groups list
+		var sdkGroups []platformclientv2.Membergroup
+		for _, group := range groups {
+			groupId := group["id"].(string)
+			groupType := group["type"].(string)
+			var sdkGroup = platformclientv2.Membergroup{Id: &groupId, VarType: &groupType}
+			sdkGroups = append(sdkGroups, sdkGroup)
+		}
+
+		var sdkRule platformclientv2.Conditionalgroupactivationrule
+		sdkRule.ConditionExpression = &conditionExpression
+		sdkRule.Conditions = &sdkConditions
+		sdkRule.Groups = &sdkGroups
+
+		sdkRules = append(sdkRules, sdkRule)
+	}
+
+	sdkCga.Rules = &sdkRules
+	return &sdkCga
+}
+
+func buildSdkCgaConditions(rule map[string]interface{}) []platformclientv2.Conditionalgroupactivationcondition {
+	var sdkConditions []platformclientv2.Conditionalgroupactivationcondition
+
+	conditions := rule["conditions"].([]map[string]interface{})
+	for _, condition := range conditions {
+		var sdkCondition platformclientv2.Conditionalgroupactivationcondition
+
+		simpleMetric := condition["simple_metric"].(map[string]interface{})
+		metric := simpleMetric["metric"].(string)
+		queueId := simpleMetric["queue_id"].(string)
+		operator := condition["operator"].(string)
+		value := condition["value"].(float64)
+
+		sdkCondition.SimpleMetric = &platformclientv2.Conditionalgroupactivationsimplemetric{
+			Metric: &metric,
+			Queue:  &platformclientv2.Domainentityref{Id: &queueId},
+		}
+
+		sdkCondition.Operator = &operator
+		sdkCondition.Value = &value
+		sdkConditions = append(sdkConditions, sdkCondition)
+	}
+	return sdkConditions
+}
+
 func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye {
 	if configRings, ok := d.GetOk("bullseye_rings"); ok {
 		var sdkRings []platformclientv2.Ring
@@ -737,6 +813,77 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	return nil
 }
 
+func flattenConditionalGroupActivation(queue *platformclientv2.Queue) map[string]interface{} {
+	cgaMap := make(map[string]interface{})
+
+	if queue.ConditionalGroupActivation == nil {
+		return nil
+	}
+
+	// convert pilot rule
+	if queue.ConditionalGroupActivation.PilotRule != nil {
+		pilotRuleMap := make(map[string]interface{})
+
+		// convert pilot rule conditions
+		conditions := make([]interface{}, len(*queue.ConditionalGroupActivation.PilotRule.Conditions))
+		for i, sdkCondition := range *queue.ConditionalGroupActivation.PilotRule.Conditions {
+			conditionMap := make(map[string]interface{})
+
+			simpleMetricMap := make(map[string]interface{})
+			simpleMetricMap["metric"] = sdkCondition.SimpleMetric
+			conditionMap["simpleMetric"] = simpleMetricMap
+
+			resourcedata.SetMapValueIfNotNil(conditionMap, "operator", sdkCondition.Operator)
+			resourcedata.SetMapValueIfNotNil(conditionMap, "value", sdkCondition.Value)
+
+			conditions[i] = conditionMap
+		}
+
+		pilotRuleMap["conditions"] = conditions
+		resourcedata.SetMapValueIfNotNil(pilotRuleMap, "condition_expression", queue.ConditionalGroupActivation.PilotRule.ConditionExpression)
+
+		cgaMap["pilot_rule"] = pilotRuleMap
+	}
+
+	// convert numbered rules
+	rules := make([]interface{}, len(*queue.ConditionalGroupActivation.Rules))
+	for i, sdkRule := range *queue.ConditionalGroupActivation.Rules {
+		ruleMap := make(map[string]interface{})
+
+		// convert numbered rule conditions
+		conditions := make([]interface{}, len(*sdkRule.Conditions))
+		for j, sdkCondition := range *sdkRule.Conditions {
+			conditionMap := make(map[string]interface{})
+
+			simpleMetricMap := make(map[string]interface{})
+			simpleMetricMap["metric"] = sdkCondition.SimpleMetric
+			simpleMetricMap["queue_id"] = sdkCondition.SimpleMetric.Queue.Id
+			conditionMap["simpleMetric"] = simpleMetricMap
+
+			resourcedata.SetMapValueIfNotNil(conditionMap, "operator", sdkCondition.Operator)
+			resourcedata.SetMapValueIfNotNil(conditionMap, "value", sdkCondition.Value)
+
+			conditions[j] = conditionMap
+		}
+
+		resourcedata.SetMapValueIfNotNil(ruleMap, "condition_expression", sdkRule.ConditionExpression)
+
+		groupSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
+		for _, sdkGroup := range *sdkRule.Groups {
+			groupMap := make(map[string]interface{})
+			resourcedata.SetMapValueIfNotNil(groupMap, "member_group_id", sdkGroup.Id)
+			resourcedata.SetMapValueIfNotNil(groupMap, "member_group_type", sdkGroup.VarType)
+			groupSet.Add(groupMap)
+		}
+		ruleMap["groups"] = groupSet
+
+		rules[i] = ruleMap
+	}
+
+	cgaMap["rules"] = rules
+	return cgaMap
+}
+
 /*
 The flattenBullseyeRings function maps the data retrieved from our SDK call over to the bullseye_ring attribute within the provider.
 You might notice in the code that we are always mapping all but the last item in the list of rings retrieved by the API.  The reason for this
@@ -988,6 +1135,47 @@ func GenerateConditionalGroupRoutingRuleGroup(groupId, groupType string) string 
 		member_group_type = "%s"
 	}
 	`, groupId, groupType)
+}
+
+func GenerateConditionalGroupActivation(queueId string, groupId string) string {
+	return fmt.Sprintf(
+		`conditional_group_activation {
+			pilot_rule {
+				condition_expression = "C1"
+				conditions {
+					simple_metric {
+						metric		= "EstimatedWaitTime"
+					}
+					operator        = "GreaterThan"
+					value 			= 30
+				}
+			}
+			rules {
+				condition_expression = "C1 or C2"
+				conditions {
+					simple_metric {
+						metric		= "EstimatedWaitTime"
+						queue_id	= %s
+					}
+					operator        = "GreaterThan"
+					value 			= 60
+				}
+				conditions {
+					simple_metric {
+						metric		= "ServiceLevel"
+						queue_id	= %s
+					}
+					operator        = "LessThan"
+					value 			= 80
+				}
+				groups {
+					member_group_id   = %s
+					member_group_type = "GROUP"
+				}
+			}
+		}
+		`,
+		queueId, queueId, groupId)
 }
 
 func GenerateBullseyeSettingsWithMemberGroup(expTimeout, memberGroupId, memberGroupType string, skillsToRemove ...string) string {
