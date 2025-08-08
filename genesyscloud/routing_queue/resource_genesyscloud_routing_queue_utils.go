@@ -809,20 +809,16 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	return nil
 }
 
-func flattenConditionalGroupActivation(queue *platformclientv2.Queue) map[string]interface{} {
+func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroupactivation) []interface{} {
 	cgaMap := make(map[string]interface{})
 
-	if queue.ConditionalGroupActivation == nil {
-		return nil
-	}
-
 	// convert pilot rule
-	if queue.ConditionalGroupActivation.PilotRule != nil {
+	if sdkCga.PilotRule != nil {
 		pilotRuleMap := make(map[string]interface{})
 
 		// convert pilot rule conditions
-		conditions := make([]interface{}, len(*queue.ConditionalGroupActivation.PilotRule.Conditions))
-		for i, sdkCondition := range *queue.ConditionalGroupActivation.PilotRule.Conditions {
+		conditions := make([]interface{}, len(*sdkCga.PilotRule.Conditions))
+		for i, sdkCondition := range *sdkCga.PilotRule.Conditions {
 			conditionMap := make(map[string]interface{})
 
 			simpleMetricMap := make(map[string]interface{})
@@ -836,14 +832,14 @@ func flattenConditionalGroupActivation(queue *platformclientv2.Queue) map[string
 		}
 
 		pilotRuleMap["conditions"] = conditions
-		resourcedata.SetMapValueIfNotNil(pilotRuleMap, "condition_expression", queue.ConditionalGroupActivation.PilotRule.ConditionExpression)
+		resourcedata.SetMapValueIfNotNil(pilotRuleMap, "condition_expression", sdkCga.PilotRule.ConditionExpression)
 
 		cgaMap["pilot_rule"] = pilotRuleMap
 	}
 
 	// convert numbered rules
-	rules := make([]interface{}, len(*queue.ConditionalGroupActivation.Rules))
-	for i, sdkRule := range *queue.ConditionalGroupActivation.Rules {
+	rules := make([]interface{}, len(*sdkCga.Rules))
+	for i, sdkRule := range *sdkCga.Rules {
 		ruleMap := make(map[string]interface{})
 
 		// convert numbered rule conditions
@@ -877,7 +873,7 @@ func flattenConditionalGroupActivation(queue *platformclientv2.Queue) map[string
 	}
 
 	cgaMap["rules"] = rules
-	return cgaMap
+	return []interface{}{cgaMap}
 }
 
 /*
@@ -1133,45 +1129,49 @@ func GenerateConditionalGroupRoutingRuleGroup(groupId, groupType string) string 
 	`, groupId, groupType)
 }
 
-func GenerateConditionalGroupActivation(queueId string, groupId string) string {
+func GenerateConditionalGroupActivation(queueId string, groupId string, metric string, operator string, value int) string {
+	// SHM todo -- TestAccResourceRoutingQueueBasic fails here due to "Value for unconfigurable attribute" errors
 	return fmt.Sprintf(
 		`conditional_group_activation {
 			pilot_rule {
 				condition_expression = "C1"
 				conditions {
 					simple_metric {
-						metric		= "EstimatedWaitTime"
+						metric		= "%s"
 					}
-					operator        = "GreaterThan"
-					value 			= 30
+					operator        = "%s"
+					value 			= %d
 				}
 			}
 			rules {
 				condition_expression = "C1 or C2"
 				conditions {
 					simple_metric {
-						metric		= "EstimatedWaitTime"
-						queue_id	= %s
+						metric		= "%s"
+						queue_id	= "%s"
 					}
-					operator        = "GreaterThan"
-					value 			= 60
+					operator        = "%s"
+					value 			= %d
 				}
 				conditions {
 					simple_metric {
-						metric		= "ServiceLevel"
-						queue_id	= %s
+						metric		= "%s"
+						queue_id	= "%s"
 					}
-					operator        = "LessThan"
-					value 			= 80
+					operator        = "%s"
+					value 			= %d
 				}
 				groups {
-					member_group_id   = %s
+					member_group_id   = "%s"
 					member_group_type = "GROUP"
 				}
 			}
 		}
 		`,
-		queueId, queueId, groupId)
+		metric, operator, value,
+		metric, queueId, operator, value,
+		metric, queueId, operator, value,
+		groupId)
 }
 
 func GenerateBullseyeSettingsWithMemberGroup(expTimeout, memberGroupId, memberGroupType string, skillsToRemove ...string) string {

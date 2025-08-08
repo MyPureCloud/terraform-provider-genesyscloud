@@ -513,7 +513,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        conditionalGroupActivationResource,
 			},
 			"conditional_group_routing_rules": {
 				Description: "The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
