@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"log"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -37,7 +39,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -93,7 +95,7 @@ type GenesysCloudResourceExporter struct {
 	ctx                 context.Context
 	cyclicDependsList   []string
 	d                   *schema.ResourceData
-	dataSourceTypesMaps map[string]resourceJSONMaps
+	dataSourceTypesMaps map[string]ResourceJSONMaps
 	dependsList         map[string][]string
 	exporters           *map[string]*resourceExporter.ResourceExporter
 	filterList          *[]string
@@ -107,7 +109,7 @@ type GenesysCloudResourceExporter struct {
 	resourceErrors        map[string][]ResourceErrorInfo
 	resourceFilter        ExporterResourceFilter
 	resourceTypeFilter    ExporterResourceTypeFilter
-	resourceTypesMaps     map[string]resourceJSONMaps
+	resourceTypesMaps     map[string]ResourceJSONMaps
 	unresolvedAttrs       []unresolvableAttributeInfo
 
 	// .. Strings
@@ -235,8 +237,8 @@ func NewThreadSafeGenesysCloudResourceExporter(d *schema.ResourceData, ctx conte
 		exportDirPath:         d.Get("export_dir_path").(string),
 		exporters:             exporters,
 		resources:             []resourceExporter.ResourceInfo{},
-		resourceTypesMaps:     make(map[string]resourceJSONMaps),
-		dataSourceTypesMaps:   make(map[string]resourceJSONMaps),
+		resourceTypesMaps:     make(map[string]ResourceJSONMaps),
+		dataSourceTypesMaps:   make(map[string]ResourceJSONMaps),
 		unresolvedAttrs:       []unresolvableAttributeInfo{},
 		d:                     d,
 		ctx:                   ctx,
@@ -444,7 +446,7 @@ func formatFilter(filter []string) []string {
 	return newFilter
 }
 
-// retrieveSanitizedResourceMaps will retrieve a list of all of the resources to be exported.  It will also apply a filter (e.g the :: ) and only return the specific Genesys Cloud
+// retrieveSanitizedResourceMaps will retrieve a list of all resources to be exported.  It will also apply a filter (e.g the :: ) and only return the specific Genesys Cloud
 // resources that are specified via :: delimiter
 func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr diag.Diagnostics) {
 	tflog.Info(g.ctx, "Retrieving map of Genesys Cloud resources to export")
@@ -468,18 +470,20 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 		}
 	}
 
-	//Retrieve a map of all of the objects we are going to build.  Apply the filter that will remove specific classes of an object
+	//Retrieve a map of all objects we are going to build.  Apply the filter that will remove specific classes of an object
+	log.Println("Building sanitized resource maps")
 	diagErr = g.buildSanitizedResourceMaps(*g.exporters, newFilter, g.logPermissionErrors)
-	if diagErr != nil {
+	if diagErr.HasError() {
 		return diagErr
 	}
 
 	//Check to see if we found any exporters.  If we did find the exporter
 	if len(*g.exporters) == 0 {
-		return diag.Errorf("No valid resource types to export.")
+		diagErr = append(diagErr, diag.Errorf("No valid resource types to export.")...)
+		return diagErr
 	}
 
-	return nil
+	return diagErr
 }
 
 // retrieveGenesysCloudObjectInstances will take a list of exporters and then return the actual terraform Genesys Cloud data
@@ -601,8 +605,8 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	tflog.Info(g.ctx, "Build Genesys Cloud Resources Map")
 
 	// Initialize maps using thread-safe methods
-	g.setResourceTypesMaps(make(map[string]resourceJSONMaps))
-	g.setDataSourceTypesMaps(make(map[string]resourceJSONMaps))
+	g.setResourceTypesMaps(make(map[string]ResourceJSONMaps))
+	g.setDataSourceTypesMaps(make(map[string]ResourceJSONMaps))
 
 	// Get resources using thread-safe method
 	resources := g.getResources()
@@ -611,7 +615,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		// 1. Get instance state as JSON Map
 		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
 		if diagErr != nil {
-			return diagErr
+			diagnostics = append(diagnostics, diagErr...)
+			if diagnostics.HasError() {
+				return
+			}
 		}
 
 		// 2. Determine if instance is a data source
@@ -619,14 +626,14 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		if isDataSource {
 			dataSourceMaps := g.getDataSourceTypesMaps()
 			if dataSourceMaps[resource.Type] == nil {
-				dataSourceMaps[resource.Type] = make(resourceJSONMaps)
+				dataSourceMaps[resource.Type] = make(ResourceJSONMaps)
 			}
 			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
 			// 3. Ensure the resource type is instantiated
 			resourceMaps := g.getResourceTypesMaps()
 			if resourceMaps[resource.Type] == nil {
-				resourceMaps[resource.Type] = make(resourceJSONMaps)
+				resourceMaps[resource.Type] = make(ResourceJSONMaps)
 			}
 			g.setResourceTypesMaps(resourceMaps)
 		}
@@ -649,13 +656,10 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		}
 
 		// 4. Convert the instance state to a map
-		configMap := make(map[string]interface{})
-		for key, value := range jsonResult {
-			configMap[key] = value
-		}
+		configMap := maps.Clone(jsonResult)
 
 		// 5. Sanitize the config map
-		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, false, g.exportFormat, false)
+		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
 		if len(unresolvableAttrs) > 0 {
 			g.addUnresolvedAttrs(unresolvableAttrs)
 		}
@@ -666,24 +670,31 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			dataSourceMaps[resource.Type][resource.BlockLabel] = configMap
 			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
+			// 6. Handles writing external files as part of the export process
+			diagnostics = append(diagnostics, g.customWriteAttributes(configMap, resource)...)
+			if diagnostics.HasError() {
+				return diagnostics
+			}
 			resourceMaps = g.getResourceTypesMaps()
 			resourceMaps[resource.Type][resource.BlockLabel] = configMap
 			g.setResourceTypesMaps(resourceMaps)
 		}
-
-		// 7. Update instance state attributes
-		g.updateInstanceStateAttributes(jsonResult, resource)
 	}
 
 	tflog.Info(g.ctx, fmt.Sprintf("Successfully built resource config map with %d resources", len(resources)))
-	return nil
+	return diagnostics
 }
 
 func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
 	resource resourceExporter.ResourceInfo) (diagnostics diag.Diagnostics) {
 	exporters := *g.exporters
+
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
-		exportDir, _ := getFilePath(g.d, "")
+		exportDir, getFilePathDiags := getFilePath(g.d, "")
+		diagnostics = append(diagnostics, getFilePathDiags...)
+		if diagnostics.HasError() {
+			return
+		}
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
 			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
@@ -694,9 +705,6 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 		}
 	}
 
-	if len(exporters[resource.Type].CustomFlowResolver) > 0 {
-		g.updateInstanceStateAttributes(jsonResult, resource)
-	}
 	return diagnostics
 }
 
@@ -971,11 +979,8 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 
 		// rebuild the config map
 		diagErr = g.buildResourceConfigMap()
-		if diagErr.HasError() {
-			return diagErr
-		}
 	}
-	return nil
+	return
 }
 
 func (g *GenesysCloudResourceExporter) copyExporters() map[string]*resourceExporter.ResourceExporter {
@@ -1072,10 +1077,13 @@ func (g *GenesysCloudResourceExporter) exportAndResolveDependencyAttributes() (d
 
 		if len(filterListById) > 0 {
 			g.resourceFilter = FilterResourceById
-			g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)
+			diagErr = append(diagErr, g.chainDependencies(make([]resourceExporter.ResourceInfo, 0), exp)...)
+			if diagErr.HasError() {
+				return
+			}
 		}
 	}
-	return nil
+	return
 }
 
 // Recursive function to perform operations based on filterListById length
@@ -1105,19 +1113,19 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		g.resources = nil
 		g.exporters = nil
 		tflog.Debug(g.ctx, "Rebuilding exporters list from chainDependencies")
-		err := g.rebuildExports(*g.filterList)
-		if err != nil {
-			return err
+		diagErr = append(diagErr, g.rebuildExports(*g.filterList)...)
+		if diagErr.HasError() {
+			return
 		}
 		// checks and exports if there are any dependent flow resources
-		err = g.buildAndExportDependsOnResourcesForFlows()
-		if err != nil {
-			return err
+		diagErr = append(diagErr, g.buildAndExportDependsOnResourcesForFlows()...)
+		if diagErr.HasError() {
+			return
 		}
 
-		err = g.buildResourceConfigMap()
-		if err.HasError() {
-			return err
+		diagErr = append(diagErr, g.buildResourceConfigMap()...)
+		if diagErr.HasError() {
+			return
 		}
 		//append the resources and exporters
 		g.appendResources(existingResources)
@@ -1129,9 +1137,9 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		existingResources = g.resources
 
 		// Recursive call until all the dependencies are addressed.
-		return g.chainDependencies(existingResources, existingExporters)
+		return append(diagErr, g.chainDependencies(existingResources, existingExporters)...)
 	}
-	return nil
+	return
 }
 
 func (g *GenesysCloudResourceExporter) appendResources(resourcesToAdd []resourceExporter.ResourceInfo) {
@@ -1187,7 +1195,6 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 		wg.Add(1)
 		go func(resourceType string, exporter *resourceExporter.ResourceExporter) {
 			defer wg.Done()
-
 			// Acquire semaphore
 			select {
 			case sem <- struct{}{}:
@@ -1373,7 +1380,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 			defer wg.Done()
 			tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))
 
-			// Acquire semaphore slot or return if context is cancelled
+			// Acquire semaphore slot or return if context is cancelled or timeout
 			select {
 			case sem <- struct{}{}:
 				defer func() { <-sem }() // Release semaphore when done
@@ -1529,8 +1536,10 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 							version = providerMeta.Version
 						}
 
-						// Call the pool's adjustment method
-						provider.SdkClientPool.AdjustPoolForTimeout(version)
+						// Call the pool's adjustment method if pool is initialized
+						if provider.SdkClientPool != nil {
+							provider.SdkClientPool.AdjustPoolForTimeout(version)
+						}
 
 						// Add a small delay to allow the new clients to be available
 						tflog.Debug(g.ctx, fmt.Sprintf("Waiting 5 seconds for new clients to be available for resource ID: %s", id))
@@ -1600,7 +1609,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 	tflog.Trace(g.ctx, fmt.Sprintf("Started all goroutines for resource type %s, waiting for completion", resType))
 
-	// Wait for all goroutines to complete
+	// Wait for all goroutines to complete with timeout
 	wg.Wait()
 	tflog.Trace(g.ctx, fmt.Sprintf("All goroutines completed for resource type %s", resType))
 
@@ -1916,15 +1925,6 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			}
 		}
 
-		// Check if the exporter has custom flow resolver (Only applicable for flow resource)
-		if refAttrCustomFlowResolver, ok := exporter.CustomFlowResolver[currAttr]; ok {
-			tflog.Debug(g.ctx, fmt.Sprintf("Custom resolver invoked for attribute: %s", currAttr))
-			varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, "filepath")
-			if err := refAttrCustomFlowResolver.ResolverFunc(configMap, varReference); err != nil {
-				tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err))
-			}
-		}
-
 		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(currAttr) {
 			if vStr, ok := configMap[key].(string); ok {
 				decodedData, err := getDecodedData(vStr, currAttr)
@@ -1968,7 +1968,7 @@ func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resour
 	}
 
 	if g.dataSourceTypesMaps[dataSourceType] == nil {
-		g.dataSourceTypesMaps[dataSourceType] = make(resourceJSONMaps)
+		g.dataSourceTypesMaps[dataSourceType] = make(ResourceJSONMaps)
 	}
 
 	// add the data source to the export if it hasn't already been added
@@ -2314,25 +2314,25 @@ func (g *GenesysCloudResourceExporter) addUnresolvedAttrs(attrs []unresolvableAt
 	g.unresolvedAttrs = append(g.unresolvedAttrs, attrs...)
 }
 
-func (g *GenesysCloudResourceExporter) setResourceTypesMaps(maps map[string]resourceJSONMaps) {
+func (g *GenesysCloudResourceExporter) setResourceTypesMaps(maps map[string]ResourceJSONMaps) {
 	g.resourceTypesMapsMutex.Lock()
 	defer g.resourceTypesMapsMutex.Unlock()
 	g.resourceTypesMaps = maps
 }
 
-func (g *GenesysCloudResourceExporter) setDataSourceTypesMaps(maps map[string]resourceJSONMaps) {
+func (g *GenesysCloudResourceExporter) setDataSourceTypesMaps(maps map[string]ResourceJSONMaps) {
 	g.dataSourceTypesMapsMutex.Lock()
 	defer g.dataSourceTypesMapsMutex.Unlock()
 	g.dataSourceTypesMaps = maps
 }
 
-func (g *GenesysCloudResourceExporter) getResourceTypesMaps() map[string]resourceJSONMaps {
+func (g *GenesysCloudResourceExporter) getResourceTypesMaps() map[string]ResourceJSONMaps {
 	g.resourceTypesMapsMutex.RLock()
 	defer g.resourceTypesMapsMutex.RUnlock()
 	return g.resourceTypesMaps
 }
 
-func (g *GenesysCloudResourceExporter) getDataSourceTypesMaps() map[string]resourceJSONMaps {
+func (g *GenesysCloudResourceExporter) getDataSourceTypesMaps() map[string]ResourceJSONMaps {
 	g.dataSourceTypesMapsMutex.RLock()
 	defer g.dataSourceTypesMapsMutex.RUnlock()
 	return g.dataSourceTypesMaps

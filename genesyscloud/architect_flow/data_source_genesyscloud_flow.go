@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -28,7 +28,7 @@ func dataSourceFlowRead(ctx context.Context, d *schema.ResourceData, m interface
 
 	varType = strings.ToLower(varType)
 
-	retryErr := util.WithRetries(ctx, 5*time.Second, func() *retry.RetryError {
+	retryErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		flowId, resp, retryable, err := p.getFlowIdByNameAndType(ctx, name, varType)
 		if err != nil {
 			response = resp
