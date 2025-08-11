@@ -386,7 +386,7 @@ func extractZipIdFromFunctionData(functionData *platformclientv2.Functionconfig)
 	return "", fmt.Errorf("zipId not found in function data")
 }
 
-// readIntegrationAction is used by the integration action resource to read an action from genesys cloud.
+// readIntegrationActionFunction is used by the integration action resource to read an action from genesys cloud.
 func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, meta interface{}, shouldPublish bool) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
@@ -516,7 +516,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 	log.Printf("Reading integration action %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		action, resp, err := iap.getIntegrationActionDraftById(ctx, d.Id())
+		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
@@ -583,7 +583,30 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			_ = d.Set("config_response", nil)
 		}
 
+		if containsFunctionDataAction(*action.Category) {
+			var functionData *platformclientv2.Functionconfig
+
+			log.Printf("DEBUG: Reading published function for integration action %s", d.Id())
+			functionData, resp, err = iap.getIntegrationActionFunction(ctx, d.Id())
+			if err != nil {
+				log.Printf("DEBUG: Could not read published function, skipping function data")
+				if util.IsStatus404(resp) {
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+				}
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+
+			}
+
+			if functionData != nil {
+				action.Config.Request.RequestTemplate = reqTemp
+				_ = d.Set("function_config", FlattenFunctionConfigRequest(*functionData))
+			} else {
+				_ = d.Set("function_config", nil)
+			}
+		}
+
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
+
 		return cc.CheckState(d)
 	})
 }
