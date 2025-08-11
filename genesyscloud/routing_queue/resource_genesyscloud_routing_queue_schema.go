@@ -268,7 +268,7 @@ var (
 			"queue_id": {
 				Description: "The queue being evaluated for this rule.  If null, the current queue will be used.",
 				Type:        schema.TypeString,
-				Required:    false,
+				Optional:    true,
 			},
 		},
 	}
@@ -279,8 +279,7 @@ var (
 				Description: "Instructs this condition to evaluate a simple queue-level metric.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
-				Optional:    false,
-				Computed:    true,
+				Required:    true,
 				Elem:        cgaSimpleMetric,
 			},
 			"operator": {
@@ -303,7 +302,7 @@ var (
 			"pilot_rule": {
 				Description: "The pilot rule for this queue, which executes periodically to determine queue health.",
 				Type:        schema.TypeList,
-				Required:    true,
+				Optional:    true,
 				MinItems:    1,
 				MaxItems:    1,
 				Elem: &schema.Resource{
