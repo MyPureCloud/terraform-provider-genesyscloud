@@ -73,25 +73,30 @@ func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 func BuildSdkActionContractInput(d *schema.ResourceData) (*platformclientv2.Actioncontractinput, diag.Diagnostics) {
 	configInput := d.Get("contract_input").(string)
 
-	// Parse input schema with proper error handling
-	var inputSchema platformclientv2.Jsonschemadocument
-	err := json.Unmarshal([]byte(configInput), &inputSchema)
+	inputVal, err := util.JsonStringToInterface(configInput)
 	if err != nil {
 		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
 	}
 
 	configOutput := d.Get("contract_output").(string)
 
-	// Parse output schema with proper error handling
-	var outputSchema platformclientv2.Jsonschemadocument
-	err = json.Unmarshal([]byte(configOutput), &outputSchema)
+	outputVal, err := util.JsonStringToInterface(configOutput)
+
 	if err != nil {
-		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract output %s", configOutput), err)
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract output %s", configInput), err)
+	}
+	inputValJson, ok := inputVal.(platformclientv2.Jsonschemadocument)
+	if !ok {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert contract input to Jsonschemadocument: %v", inputVal), err)
 	}
 
+	outputValJson, ok := outputVal.(platformclientv2.Jsonschemadocument)
+	if !ok {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert contract output to Jsonschemadocument: %v", outputVal), err)
+	}
 	return &platformclientv2.Actioncontractinput{
-		Input:  &platformclientv2.Postinputcontract{InputSchema: &inputSchema},
-		Output: &platformclientv2.Postoutputcontract{SuccessSchema: &outputSchema},
+		Input:  &platformclientv2.Postinputcontract{InputSchema: &inputValJson},
+		Output: &platformclientv2.Postoutputcontract{SuccessSchema: &outputValJson},
 	}, nil
 }
 
@@ -117,6 +122,7 @@ func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Reque
 			configMap := configList[0].(map[string]interface{})
 
 			urlTemplate := configMap["request_url_template"].(string)
+			log.Printf("DEBUG: BuildSdkFunctionConfig called with urlTemplate: %s", urlTemplate)
 			template := configMap["request_template"].(string)
 			reqType := configMap["request_type"].(string)
 			headers := map[string]string{}
@@ -185,7 +191,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 // FlattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
 func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
-
+	log.Printf("DEBUG: FlattenActionConfigRequest called with urlTemplate: %s", *sdkRequest.RequestUrlTemplate)
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_url_template", sdkRequest.RequestUrlTemplate)
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_type", sdkRequest.RequestType)
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_template", sdkRequest.RequestTemplate)

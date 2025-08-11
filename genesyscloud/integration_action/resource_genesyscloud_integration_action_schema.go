@@ -35,7 +35,8 @@ func ResourceIntegrationAction() *schema.Resource {
 			"request_url_template": {
 				Description: "URL that may include placeholders for requests to 3rd party service.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"request_type": {
 				Description:  "HTTP method to use for request (GET | PUT | POST | PATCH | DELETE).",
@@ -53,6 +54,7 @@ func ResourceIntegrationAction() *schema.Resource {
 				Description: "Map of headers in name, value pairs to include in request.",
 				Type:        schema.TypeMap,
 				Optional:    true,
+				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -64,12 +66,14 @@ func ResourceIntegrationAction() *schema.Resource {
 				Description: "Map 'attribute name' and 'JSON path' pairs used to extract data from REST response.",
 				Type:        schema.TypeMap,
 				Optional:    true,
+				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"translation_map_defaults": {
 				Description: "Map 'attribute name' and 'default value' pairs used as fallback values if JSON path extraction fails for specified key.",
 				Type:        schema.TypeMap,
 				Optional:    true,
+				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"success_template": {
@@ -113,12 +117,6 @@ func ResourceIntegrationAction() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
-			"publish": {
-				Description: "Whether to publish the action after creation. Defaults to true.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-			},
 			"file_path": {
 				Description:  "The zip file path containing the function data action's code",
 				Type:         schema.TypeString,
@@ -128,7 +126,8 @@ func ResourceIntegrationAction() *schema.Resource {
 			"file_content_hash": {
 				Description: "Hash value of the zip file content. Used to detect changes.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}

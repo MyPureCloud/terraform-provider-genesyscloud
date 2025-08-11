@@ -7,13 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -244,14 +241,13 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		return diag.Errorf("file_path is required in function_config for function data actions")
 	}
 
-	actionContract, diagErr := BuildSdkActionContractInput(d)
+	actionContract, diagErr := BuildSdkActionContract(d)
 	if diagErr != nil {
 		return diagErr
 	}
 
-	// create integration action draft
 	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		action, resp, err := iap.createIntegrationActionDraft(ctx, &platformclientv2.Postactioninput{
+		action, resp, err := iap.createIntegrationAction(ctx, &IntegrationAction{
 			Name:          &name,
 			Category:      &category,
 			IntegrationId: &integrationId,
@@ -271,6 +267,33 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		return diagErr
 	}
 
+	//actionContract, diagErr := BuildSdkActionContractInput(d)
+	//if diagErr != nil {
+	//	return diagErr
+	//}
+	//
+	//// create integration action draft
+	//diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	//	action, resp, err := iap.createIntegrationActionDraft(ctx, &platformclientv2.Postactioninput{
+	//		Name:          &name,
+	//		Category:      &category,
+	//		IntegrationId: &integrationId,
+	//		Secure:        &secure,
+	//		Contract:      actionContract,
+	//		Config:        BuildSdkActionConfig(d),
+	//	})
+	//	if err != nil {
+	//		return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
+	//	}
+	//	d.SetId(*action.Id)
+	//	id = *action.Id
+	//	log.Printf("Created integration action %s %s", name, *action.Id)
+	//	return resp, nil
+	//})
+	//if diagErr != nil {
+	//	return diagErr
+	//}
+
 	// upload function zip
 	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
@@ -279,7 +302,7 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		}
 		log.Printf("Uploaded function zip for integration action %s %s", name, id)
 		return resp, nil
-	}, 501)
+	}, 501, 500)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -380,7 +403,7 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("DEBUG: Skipping publish as publish=false")
 	}
 
-	return readIntegrationActionFunction(ctx, d, meta, shouldPublish)
+	return readIntegrationAction(ctx, d, meta)
 }
 
 // extractZipIdFromFunctionData extracts the zipId from the function data response
@@ -489,27 +512,26 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 
 		var functionData *platformclientv2.Functionconfig
 
-		if shouldPublish {
-			log.Printf("DEBUG: Reading published function for integration action %s", d.Id())
-			functionData, resp, err = iap.getIntegrationActionFunction(ctx, d.Id())
-			if err != nil {
-				log.Printf("DEBUG: Could not read published function, skipping function data")
-				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
-				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+		log.Printf("DEBUG: Reading published function for integration action %s", d.Id())
+		functionData, resp, err = iap.getIntegrationActionFunction(ctx, d.Id())
+		if err != nil {
+			log.Printf("DEBUG: Could not read published function, skipping function data")
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 
-			}
-		} else {
-			log.Printf("DEBUG: Reading draft function for integration action %s", d.Id())
-			functionData, resp, err = iap.getIntegrationActionDraftFunction(ctx, d.Id())
-			if err != nil {
-				if util.IsStatus404(resp) {
-					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
-				}
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
-			}
 		}
+		//} else {
+		//	log.Printf("DEBUG: Reading draft function for integration action %s", d.Id())
+		//	functionData, resp, err = iap.getIntegrationActionDraftFunction(ctx, d.Id())
+		//	if err != nil {
+		//		if util.IsStatus404(resp) {
+		//			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+		//		}
+		//		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
+		//	}
+		//}
 
 		if functionData != nil {
 			action.Config.Request.RequestTemplate = reqTemp
@@ -527,7 +549,7 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.ConsistencyChecks(), ResourceType)
+	//cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationAction(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading integration action %s", d.Id())
 
@@ -623,7 +645,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 		log.Printf("Read integration action %s %s", d.Id(), *action.Name)
 
-		return cc.CheckState(d)
+		return nil
 	})
 }
 

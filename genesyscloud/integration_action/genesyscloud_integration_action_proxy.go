@@ -257,7 +257,7 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	log.Printf("DEBUG: Signed URL response status: %d", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("DEBUG: Failed to get signed URL, status: %d", resp.StatusCode)
+		log.Printf("DEBUG: Failed to get signed URL, status: %d, %v", resp.StatusCode, resp.Body)
 		return &platformclientv2.APIResponse{
 			StatusCode: resp.StatusCode,
 		}, fmt.Errorf("failed to get signed URL, status: %d", resp.StatusCode)
@@ -351,22 +351,6 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 	// Set Accept-Language header
 	uploadReq.Header.Set("Accept-Language", "en-GB,en;q=0.9")
-
-	// Set Origin header
-	uploadReq.Header.Set("Origin", "https://apps.mypurecloud.com")
-
-	// Set Referer header
-	uploadReq.Header.Set("Referer", "https://apps.mypurecloud.com/")
-
-	// Set Sec-Fetch headers
-	uploadReq.Header.Set("Sec-Fetch-Dest", "empty")
-	uploadReq.Header.Set("Sec-Fetch-Mode", "cors")
-	uploadReq.Header.Set("Sec-Fetch-Site", "same-site")
-
-	// Set Sec-Ch-Ua headers
-	uploadReq.Header.Set("Sec-Ch-Ua", "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Google Chrome\";v=\"138\"")
-	uploadReq.Header.Set("Sec-Ch-Ua-Mobile", "?0")
-	uploadReq.Header.Set("Sec-Ch-Ua-Platform", "\"macOS\"")
 
 	// Log the final request details
 	log.Printf("DEBUG: Final upload request - URL: %s", uploadReq.URL.String())
@@ -570,7 +554,7 @@ func sdkPostIntegrationAction(body *IntegrationAction, api *platformclientv2.Int
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/integrations/actions"
+	path := api.Configuration.BasePath + "/api/v2/integrations/actions/drafts"
 
 	headerParams := make(map[string]string)
 
