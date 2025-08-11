@@ -105,7 +105,5 @@ func businessRulesSchemaFtIsEnabled() (bool, *http.Response) {
 		return true, resp
 	}
 
-	log.Printf("Response status code: %d", resp.StatusCode)
-
 	return false, resp
 }
