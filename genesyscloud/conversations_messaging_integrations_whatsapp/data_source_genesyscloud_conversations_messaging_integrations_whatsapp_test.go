@@ -1,9 +1,13 @@
 package conversations_messaging_integrations_whatsapp
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"fmt"
+	"log"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	cmMessagingSetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -12,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -29,10 +34,14 @@ func TestAccDataSourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 		inboundType                   = "*/*"
 
 		resourceLabelMessagingSetting = "testMessagingSetting"
-		nameMessagingSetting          = "Terraform MessagingSetting-" + uuid.NewString()
+		nameMessagingSetting          = "TestTerraformMessagingSetting-" + uuid.NewString()
 
 		embeddedToken = uuid.NewString()
 	)
+
+	if cleanupErr := CleanupMessagingSettings(nameMessagingSetting); cleanupErr != nil {
+		t.Logf("Failed to clean up messaging settings with name '%s': %s", nameMessagingSetting, cleanupErr.Error())
+	}
 
 	supportedContentReference := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",
@@ -80,4 +89,27 @@ func TestAccDataSourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 			},
 		},
 	})
+}
+
+func CleanupMessagingSettings(name string) error {
+	cmMessagingSettingApi := platformclientv2.NewConversationsApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		cmMessagingSetting, _, getErr := cmMessagingSettingApi.GetConversationsMessagingSettings(pageSize, pageNum)
+		if getErr != nil {
+			return fmt.Errorf("failed to get page %v of messaging settings: %v", pageNum, getErr)
+		}
+
+		if cmMessagingSetting.Entities == nil || len(*cmMessagingSetting.Entities) == 0 {
+			break
+		}
+
+		for _, setting := range *cmMessagingSetting.Entities {
+			if setting.Name != nil && strings.HasPrefix(*setting.Name, name) {
+				log.Println("HIT: ", *setting.Name)
+			}
+		}
+	}
+	return nil
 }
