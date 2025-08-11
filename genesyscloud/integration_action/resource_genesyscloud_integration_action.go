@@ -123,9 +123,20 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	zipid := ""
 
 	name := d.Get("name").(string)
-	filePath := d.Get("file_path").(string)
 
-	if d.HasChange("file_content_hash") { // upload function zip
+	// Get file_path from function_config
+	var filePath string
+	if functionConfig := d.Get("function_config"); functionConfig != nil {
+		if configList := functionConfig.([]interface{}); len(configList) > 0 {
+			if configMap := configList[0].(map[string]interface{}); configMap != nil {
+				if filePathVal, exists := configMap["file_path"]; exists {
+					filePath = filePathVal.(string)
+				}
+			}
+		}
+	}
+
+	if d.HasChange("function_config.0.file_content_hash") { // upload function zip
 		diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
 			if err != nil {
@@ -215,17 +226,22 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	integrationId := d.Get("integration_id").(string)
 	secure := d.Get("secure").(bool)
 
-	// Add logging and nil check for file_path
-	filePathInterface := d.Get("filepath")
-	log.Printf("DEBUG: file_path value: %v, type: %T", filePathInterface, filePathInterface)
-
+	// Get file_path from function_config
 	var filePath string
-	if filePathInterface != nil {
-		filePath = filePathInterface.(string)
-		log.Printf("DEBUG: file_path extracted: %s", filePath)
-	} else {
-		log.Printf("DEBUG: file_path is nil, skipping function upload")
-		return diag.Errorf("file_path is required for function data actions")
+	if functionConfig := d.Get("function_config"); functionConfig != nil {
+		if configList := functionConfig.([]interface{}); len(configList) > 0 {
+			if configMap := configList[0].(map[string]interface{}); configMap != nil {
+				if filePathVal, exists := configMap["file_path"]; exists {
+					filePath = filePathVal.(string)
+					log.Printf("DEBUG: file_path extracted from function_config: %s", filePath)
+				}
+			}
+		}
+	}
+
+	if filePath == "" {
+		log.Printf("DEBUG: file_path is empty, skipping function upload")
+		return diag.Errorf("file_path is required in function_config for function data actions")
 	}
 
 	actionContract, diagErr := BuildSdkActionContractInput(d)

@@ -119,6 +119,17 @@ func ResourceIntegrationAction() *schema.Resource {
 				Optional:    true,
 				Default:     true,
 			},
+			"file_path": {
+				Description:  "The zip file path containing the function data action's code",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validators.ValidatePath,
+			},
+			"file_content_hash": {
+				Description: "Hash value of the zip file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
 		},
 	}
 
@@ -201,17 +212,6 @@ func ResourceIntegrationAction() *schema.Resource {
 				Computed:    true,
 				MaxItems:    1,
 				Elem:        functionConfig,
-			},
-			"filepath": {
-				Description:  "the zip file path containing the function data action's code",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validators.ValidatePath,
-			},
-			"file_content_hash": {
-				Description: "Hash value of the zip file content. Used to detect changes.",
-				Type:        schema.TypeString,
-				Required:    true,
 			},
 		},
 	}
