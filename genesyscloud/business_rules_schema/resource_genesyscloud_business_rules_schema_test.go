@@ -27,8 +27,9 @@ tests for business_rules_schema.
 func TestAccResourceBusinessRulesSchema(t *testing.T) {
 	t.Parallel()
 
-	if !businessRulesSchemaFtIsEnabled() {
-		t.Skip("Skipping test as business rules schema feature toggle is not enabled")
+	enabled, resp := businessRulesSchemaFtIsEnabled()
+	if !enabled {
+		t.Skipf("Skipping test as business rules schema is not configured: %s", resp.Status)
 		return
 	}
 
