@@ -30,15 +30,19 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 		resourceName                  = "Terraform Messaging Whatsapp-" + uuid.NewString()
 		resourceName2                 = "Terraform Messaging Whatsapp2-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
-		nameSupportedContent          = "Terraform SupportedContent-" + uuid.NewString()
+		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		inboundType                   = "*/*"
 
 		resourceLabelMessagingSetting = "testMessagingSetting"
-		nameMessagingSetting          = "Terraform MessagingSetting-" + uuid.NewString()
+		nameMessagingSetting          = "TestTerraformMessagingSetting-" + uuid.NewString()
 		phoneNumber                   = "+13172222222"
 		pin                           = "0000"
 		embeddedToken                 = uuid.NewString()
 	)
+
+	if cleanupErr := CleanupMessagingSettings("TestTerraformMessagingSetting"); cleanupErr != nil {
+		t.Logf("Failed to clean up messaging settings with name '%s': %s", nameMessagingSetting, cleanupErr.Error())
+	}
 
 	supportedContentReference := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",

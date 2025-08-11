@@ -2,7 +2,6 @@ package conversations_messaging_integrations_whatsapp
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"testing"
 	"time"
@@ -30,7 +29,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 		dataSourceLabel               = "data_messaging_whatsapp"
 		resourceName                  = "Terraform Messaging Whatsapp-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
-		nameSupportedContent          = "Terraform SupportedContent-" + uuid.NewString()
+		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		inboundType                   = "*/*"
 
 		resourceLabelMessagingSetting = "testMessagingSetting"
@@ -39,7 +38,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 		embeddedToken = uuid.NewString()
 	)
 
-	if cleanupErr := CleanupMessagingSettings(nameMessagingSetting); cleanupErr != nil {
+	if cleanupErr := CleanupMessagingSettings("TestTerraformMessagingSetting"); cleanupErr != nil {
 		t.Logf("Failed to clean up messaging settings with name '%s': %s", nameMessagingSetting, cleanupErr.Error())
 	}
 
@@ -107,7 +106,11 @@ func CleanupMessagingSettings(name string) error {
 
 		for _, setting := range *cmMessagingSetting.Entities {
 			if setting.Name != nil && strings.HasPrefix(*setting.Name, name) {
-				log.Println("HIT: ", *setting.Name)
+				_, err := cmMessagingSettingApi.DeleteConversationsMessagingSetting(*setting.Id)
+				if err != nil {
+					return fmt.Errorf("failed to delete messaging settings: %v", err)
+				}
+				time.Sleep(5 * time.Second)
 			}
 		}
 	}
