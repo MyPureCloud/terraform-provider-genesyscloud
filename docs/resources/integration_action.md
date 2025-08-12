@@ -197,7 +197,6 @@ Required:
 Optional:
 
 - `description` (String) Description of the function.
-- `file_content_hash` (String) Hash value of the zip file content. Used to detect changes.
 - `handler` (String) The handler function name.
 - `runtime` (String) The runtime environment for the function.
 - `timeout_seconds` (Number) Timeout in seconds for the function execution.

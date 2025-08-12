@@ -228,7 +228,7 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		action, resp, err := iap.createIntegrationAction(ctx, &IntegrationAction{
+		action, resp, err := iap.createIntegrationActionDraft(ctx, &IntegrationAction{
 			Name:          &name,
 			Category:      &category,
 			IntegrationId: &integrationId,
@@ -247,34 +247,6 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	if diagErr != nil {
 		return diagErr
 	}
-
-	//actionContract, diagErr := BuildSdkActionContractInput(d)
-	//if diagErr != nil {
-	//	return diagErr
-	//}
-	//
-	//// create integration action draft
-	//diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-	//	action, resp, err := iap.createIntegrationActionDraft(ctx, &platformclientv2.Postactioninput{
-	//		Name:          &name,
-	//		Category:      &category,
-	//		IntegrationId: &integrationId,
-	//		Secure:        &secure,
-	//		Contract:      actionContract,
-	//		Config:        BuildSdkActionConfig(d),
-	//	})
-	//	if err != nil {
-	//		return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
-	//	}
-	//	d.SetId(*action.Id)
-	//	id = *action.Id
-	//	log.Printf("Created integration action %s %s", name, *action.Id)
-	//	return resp, nil
-	//})
-	//if diagErr != nil {
-	//	return diagErr
-	//}
-
 	// upload function zip
 	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
