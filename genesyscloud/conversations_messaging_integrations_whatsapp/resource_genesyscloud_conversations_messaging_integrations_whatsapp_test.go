@@ -41,11 +41,11 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 	)
 
 	if cleanupErr := CleanupMessagingIntegrationsWhatsapp("TestTerraformMessagingWhatsapp"); cleanupErr != nil {
-		t.Logf("Failed to clean up messaging settings with name '%s': %s", nameMessagingSetting, cleanupErr.Error())
+		t.Logf("Failed to clean up conversations messaging integrations whatsapp with name '%s': %s", resourceName, cleanupErr.Error())
 	}
 
 	if cleanupErr := CleanupMessagingIntegrationsWhatsapp("TestTerraformMessagingWhatsapp2"); cleanupErr != nil {
-		t.Logf("Failed to clean up messaging settings with name '%s': %s", nameMessagingSetting, cleanupErr.Error())
+		t.Logf("Failed to clean up conversations messaging integrations whatsapp with name '%s': %s", resourceName2, cleanupErr.Error())
 	}
 
 	supportedContentReference := cmSupportedContent.GenerateSupportedContentResource(

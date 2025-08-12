@@ -34,7 +34,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 	)
 
 	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent"); cleanupErr != nil {
-		t.Logf("Failed to clean up messaging settings with name '%s': %s", name, cleanupErr.Error())
+		t.Logf("Failed to clean up conversations messaging supported content with name '%s': %s", name, cleanupErr.Error())
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -104,7 +104,7 @@ func testVerifySupportedContentDestroyed(state *terraform.State) error {
 }
 
 func CleanupMessagingSettingsSupportedContent(name string) error {
-	log.Printf("Cleaning up messaging settings with name '%s'", name)
+	log.Printf("Cleaning up conversations messaging supported content with name '%s'", name)
 	cmMessagingSettingApi := platformclientv2.NewConversationsApiWithConfig(sdkConfig)
 
 	for pageNum := 1; ; pageNum++ {
@@ -128,5 +128,6 @@ func CleanupMessagingSettingsSupportedContent(name string) error {
 			}
 		}
 	}
+	log.Printf("Cleaned up conversations messaging supported content with name '%s'", name)
 	return nil
 }

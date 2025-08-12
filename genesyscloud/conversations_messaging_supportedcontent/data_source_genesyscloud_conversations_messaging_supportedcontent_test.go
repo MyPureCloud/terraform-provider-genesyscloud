@@ -26,7 +26,7 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 	)
 
 	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent"); cleanupErr != nil {
-		t.Logf("Failed to clean up messaging settings with name '%s': %s", name, cleanupErr.Error())
+		t.Logf("Failed to clean up conversations messaging supported content with name '%s': %s", name, cleanupErr.Error())
 	}
 
 	resource.Test(t, resource.TestCase{
