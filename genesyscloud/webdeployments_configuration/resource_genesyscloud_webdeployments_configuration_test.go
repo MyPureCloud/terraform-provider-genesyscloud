@@ -155,7 +155,6 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		// Knowledge Base Settings
 		kbResourceLabel1 = "test-kb-1"
@@ -445,7 +444,6 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsConfigurationSupportCenter(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	t.Parallel()
 
 	var (
