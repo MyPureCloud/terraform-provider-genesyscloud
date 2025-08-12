@@ -1042,7 +1042,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 	)
 
 	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
-		t.Logf("Failed to clean up routin email domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
+		t.Logf("Failed to clean up routing email domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
 
 	resource.Test(t, resource.TestCase{
