@@ -57,7 +57,7 @@ func initTestResources() {
 	if authErr != nil {
 		log.Fatalf("failed to authorize sdk for package conversations_messaging_integrations_whatsapp: %v", authErr)
 	}
-	
+
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
