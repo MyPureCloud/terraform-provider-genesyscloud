@@ -3,6 +3,9 @@ package business_rules_schema
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"net/url"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -70,4 +73,37 @@ func GenerateBusinessRulesSchemaResource(resourceLabel, name, description, prope
 		enabled = %s
 	}
 	`, ResourceType, resourceLabel, name, description, properties, enabledStr)
+}
+
+func businessRulesSchemaFtIsEnabled() (bool, *http.Response) {
+	clientConfig := platformclientv2.GetDefaultConfiguration()
+	client := &http.Client{}
+	baseURL := clientConfig.BasePath + "/api/v2/businessrules/schemas"
+
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		log.Printf("Error parsing URL: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		log.Printf("Error creating request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+clientConfig.AccessToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending request: %v", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		return true, resp
+	}
+
+	return false, resp
 }
