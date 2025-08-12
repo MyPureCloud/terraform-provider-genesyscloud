@@ -169,12 +169,12 @@ resource "genesyscloud_integration_action" "example_function_action" {
 Required:
 
 - `request_type` (String) HTTP method to use for request (GET | PUT | POST | PATCH | DELETE).
-- `request_url_template` (String) URL that may include placeholders for requests to 3rd party service.
 
 Optional:
 
 - `headers` (Map of String) Map of headers in name, value pairs to include in request.
 - `request_template` (String) Velocity template to define request body sent to 3rd party service. Any instances of '${' must be properly escaped as '$${'
+- `request_url_template` (String) URL that may include placeholders for requests to 3rd party service.
 
 
 <a id="nestedblock--config_response"></a>
@@ -192,14 +192,13 @@ Optional:
 
 Required:
 
-- `file_content_hash` (String) Hash value of the zip file content. Used to detect changes.
-- `file_path` (String) The zip file path containing the function data action's code
+- `file_path` (String) The zip file path containing the function data action's code. During the export just the name of the zip file will be exported
 
 Optional:
 
 - `description` (String) Description of the function.
+- `file_content_hash` (String) Hash value of the zip file content. Used to detect changes.
 - `handler` (String) The handler function name.
-- `publish` (Boolean) Whether to publish the action after creation. Defaults to true. Defaults to `true`.
 - `runtime` (String) The runtime environment for the function.
 - `timeout_seconds` (Number) Timeout in seconds for the function execution.
 - `zip_id` (String) The ID of the uploaded zip file containing the function code.

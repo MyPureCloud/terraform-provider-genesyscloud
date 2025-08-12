@@ -224,9 +224,9 @@ func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig
 		resourcedata.SetMapValueIfNotNil(functionMap, "zip_id", functionConfig.Function.ZipId)
 	}
 
-	// Note: file_path and file_content_hash are not returned by the API
-	// They are only used for input during create/update operations
-	// The API returns zip_id instead
+	if functionConfig.Zip != nil {
+		resourcedata.SetMapValueIfNotNil(functionMap, "file_path", functionConfig.Zip.Name)
+	}
 
 	return []interface{}{functionMap}
 }

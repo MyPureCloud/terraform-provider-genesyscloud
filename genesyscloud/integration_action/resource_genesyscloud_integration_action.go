@@ -133,22 +133,20 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
-	if d.HasChange("function_config.0.file_content_hash") { // upload function zip
-		diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
-			}
-			log.Printf("Uploaded function zip for integration action %s %s", name, id)
-			return resp, nil
-		}, 501)
-		if diagErr != nil {
-			return diagErr
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := iap.uploadIntegrationActionDraftFunction(ctx, id, filePath)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
 		}
+		log.Printf("Uploaded function zip for integration action %s %s", name, id)
+		return resp, nil
+	}, 501)
+	if diagErr != nil {
+		return diagErr
 	}
 
 	// get function for zip id
-	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		functionData, resp, err := iap.getIntegrationActionDraftFunction(ctx, id)
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get function for integration action %s error: %s", name, err), resp)
@@ -182,36 +180,19 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		return diagErr
 	}
 
-	// Check if we should publish the action
-	shouldPublish := true
-	if functionConfig := d.Get("function_config"); functionConfig != nil {
-		if configList := functionConfig.([]interface{}); len(configList) > 0 {
-			if configMap := configList[0].(map[string]interface{}); configMap != nil {
-				if publishVal, exists := configMap["publish"]; exists {
-					shouldPublish = publishVal.(bool)
-				}
-			}
+	log.Printf("DEBUG: Publishing action as publish=true")
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
 		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
-	// publish draft only if shouldPublish is true
-	if shouldPublish {
-		log.Printf("DEBUG: Publishing action as publish=true")
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
-			if err != nil {
-				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
-			}
-			return resp, nil
-		})
-		if diagErr != nil {
-			return diagErr
-		}
-	} else {
-		log.Printf("DEBUG: Skipping publish as publish=false")
-	}
-
-	return readIntegrationActionFunction(ctx, d, meta, shouldPublish)
+	return readIntegrationActionFunction(ctx, d, meta)
 }
 
 func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}, iap *integrationActionsProxy) diag.Diagnostics {
@@ -372,35 +353,18 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		return diagErr
 	}
 
-	// Check if we should publish the action
-	shouldPublish := true
-	if functionConfig := d.Get("function_config"); functionConfig != nil {
-		if configList := functionConfig.([]interface{}); len(configList) > 0 {
-			if configMap := configList[0].(map[string]interface{}); configMap != nil {
-				if publishVal, exists := configMap["publish"]; exists {
-					shouldPublish = publishVal.(bool)
-				}
-			}
+	log.Printf("DEBUG: Publishing action as publish=true")
+	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("DEBUG: Publishing draft with version: %d", version)
+		resp, err := iap.publishIntegrationActionDraft(ctx, id, version)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
 		}
-	}
-
-	// publish draft only if shouldPublish is true
-	if shouldPublish {
-		log.Printf("DEBUG: Publishing action as publish=true")
-		diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-			log.Printf("DEBUG: Publishing draft with version: %d", version)
-			resp, err := iap.publishIntegrationActionDraft(ctx, id, version)
-			if err != nil {
-				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
-			}
-			log.Printf("DEBUG: resp is not null and err is null...")
-			return resp, nil
-		})
-		if diagErr != nil {
-			return diagErr
-		}
-	} else {
-		log.Printf("DEBUG: Skipping publish as publish=false")
+		log.Printf("DEBUG: resp is not null and err is null...")
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return readIntegrationAction(ctx, d, meta)
@@ -426,7 +390,7 @@ func extractZipIdFromFunctionData(functionData *platformclientv2.Functionconfig)
 }
 
 // readIntegrationActionFunction is used by the integration action resource to read an action from genesys cloud.
-func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, meta interface{}, shouldPublish bool) diag.Diagnostics {
+func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
@@ -437,13 +401,9 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 		var resp *platformclientv2.APIResponse
 		var err error
 
-		if shouldPublish {
-			log.Printf("DEBUG: Reading published version of integration action %s", d.Id())
-			action, resp, err = iap.integrationsApi.GetIntegrationsAction(d.Id(), "", true, true)
-		} else {
-			log.Printf("DEBUG: Reading draft version of integration action %s", d.Id())
-			action, resp, err = iap.getIntegrationActionDraftById(ctx, d.Id())
-		}
+		log.Printf("DEBUG: Reading published version of integration action %s", d.Id())
+		action, resp, err = iap.integrationsApi.GetIntegrationsAction(d.Id(), "", true, true)
+
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
@@ -522,16 +482,6 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
 
 		}
-		//} else {
-		//	log.Printf("DEBUG: Reading draft function for integration action %s", d.Id())
-		//	functionData, resp, err = iap.getIntegrationActionDraftFunction(ctx, d.Id())
-		//	if err != nil {
-		//		if util.IsStatus404(resp) {
-		//			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
-		//		}
-		//		return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read integration action %s | error: %s", d.Id(), err), resp))
-		//	}
-		//}
 
 		if functionData != nil {
 			action.Config.Request.RequestTemplate = reqTemp

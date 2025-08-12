@@ -312,9 +312,6 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 		return nil, err
 	}
 
-	// Set headers from the signed URL response
-	log.Printf("DEBUG: Setting upload headers:")
-
 	// Check for required x-amz headers
 	requiredHeaders := []string{
 		"x-amz-meta-correlationid",
@@ -337,19 +334,11 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 		log.Printf("DEBUG:   %s: %s", key, value)
 	}
 
-	// Set Content-Type header for the file upload
+	// Set headers for the file upload
 	uploadReq.Header.Set("Content-Type", "application/zip")
-
-	// Set additional headers that might be required
-	uploadReq.Header.Set("User-Agent", "Terraform-Provider-GenesysCloud/1.0")
-
-	// Set Accept header
+	uploadReq.Header.Set("User-Agent", p.clientConfig.UserAgent)
 	uploadReq.Header.Set("Accept", "*/*")
-
-	// Set Accept-Encoding header
 	uploadReq.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
-
-	// Set Accept-Language header
 	uploadReq.Header.Set("Accept-Language", "en-GB,en;q=0.9")
 
 	// Log the final request details
@@ -374,47 +363,6 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 			StatusCode: uploadResp.StatusCode,
 		}, fmt.Errorf("failed to upload file, status: %d", uploadResp.StatusCode)
 	}
-
-	// Step 3: Finalize the upload with a PATCH request to the same signed URL
-	// log.Printf("DEBUG: Finalizing upload with PATCH request")
-	// patchReq, err := http.NewRequest("PATCH", uploadResponse.URL, nil)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// // Set headers from the signed URL response for the PATCH request
-	// log.Printf("DEBUG: Setting PATCH request headers:")
-	// for key, value := range uploadResponse.Headers {
-	// 	patchReq.Header.Set(key, value)
-	// 	log.Printf("DEBUG:   %s: %s", key, value)
-	// }
-
-	// // Set additional headers for PATCH request
-	// patchReq.Header.Set("User-Agent", "Terraform-Provider-GenesysCloud/1.0")
-	// patchReq.Header.Set("Accept", "*/*")
-	// patchReq.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
-
-	// log.Printf("DEBUG: PATCH request - URL: %s", patchReq.URL.String())
-	// log.Printf("DEBUG: PATCH request - Method: %s", patchReq.Method)
-	// log.Printf("DEBUG: PATCH request - Headers: %+v", patchReq.Header)
-
-	// // Make the PATCH request to finalize
-	// log.Printf("DEBUG: Making PATCH request to finalize upload")
-	// patchResp, err := client.Do(patchReq)
-	// if err != nil {
-	// 	log.Printf("DEBUG: Error making PATCH request: %v", err)
-	// 	return nil, err
-	// }
-	// defer patchResp.Body.Close()
-
-	// log.Printf("DEBUG: PATCH response status: %d", patchResp.StatusCode)
-
-	// if patchResp.StatusCode != http.StatusOK {
-	// 	log.Printf("DEBUG: Failed to finalize upload, status: %d", patchResp.StatusCode)
-	// 	return &platformclientv2.APIResponse{
-	// 		StatusCode: patchResp.StatusCode,
-	// 	}, fmt.Errorf("failed to finalize upload, status: %d", patchResp.StatusCode)
-	// }
 
 	return &platformclientv2.APIResponse{
 		StatusCode: 200,

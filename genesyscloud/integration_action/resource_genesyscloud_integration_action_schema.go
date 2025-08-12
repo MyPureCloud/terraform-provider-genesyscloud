@@ -1,14 +1,14 @@
 package integration_action
 
 import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -115,13 +115,7 @@ func ResourceIntegrationAction() *schema.Resource {
 				Computed:    true,
 			},
 			"file_path": {
-				Description:  "The zip file path containing the function data action's code",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validators.ValidatePath,
-			},
-			"file_content_hash": {
-				Description: "Hash value of the zip file content. Used to detect changes.",
+				Description: "The zip file path containing the function data action's code. During the export just the name of the zip file will be exported",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
@@ -136,6 +130,7 @@ func ResourceIntegrationAction() *schema.Resource {
 		ReadContext:   provider.ReadWithPooledClient(readIntegrationAction),
 		UpdateContext: provider.UpdateWithPooledClient(updateIntegrationAction),
 		DeleteContext: provider.DeleteWithPooledClient(deleteIntegrationAction),
+		CustomizeDiff: customizeIntegrationActionDiff,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -223,6 +218,78 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
 		AllowZeroValuesInMap: []string{"config_response.translation_map_defaults"},
 	}
+}
+
+// customizeIntegrationActionDiff customizes the diff for integration actions to suppress
+// differences in fields that are managed by the API or are input-only
+func customizeIntegrationActionDiff(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
+	// For function data actions, suppress differences in fields that are managed by the API
+	if category, ok := diff.Get("category").(string); ok && category == "Function Data Actions" {
+
+		// For request_url_template, the API sets this to the function ID
+		// We should suppress this difference by setting the new value to match the old value
+		if diff.HasChange("config_request.0.request_url_template") {
+			if oldVal, newVal := diff.GetChange("config_request.0.request_url_template"); oldVal != "" && newVal != "" {
+				// Set the new value to match the old value to suppress the diff
+				diff.SetNew("config_request.0.request_url_template", oldVal)
+			}
+		}
+
+		// For file_path, this is an input-only field that shouldn't cause plan differences
+		// We should suppress this difference by setting the new value to match the old value
+		if diff.HasChange("function_config.0.file_path") {
+			if oldVal, newVal := diff.GetChange("function_config.0.file_path"); oldVal != "" && newVal != "" {
+				// Set the new value to match the old value to suppress the diff
+				diff.SetNew("function_config.0.file_path", oldVal)
+			}
+		}
+
+		// Also handle file_content_hash if it exists
+		if diff.HasChange("function_config.0.file_content_hash") {
+			if oldVal, newVal := diff.GetChange("function_config.0.file_content_hash"); oldVal != "" && newVal != "" {
+				// Set the new value to match the old value to suppress the diff
+				diff.SetNew("function_config.0.file_content_hash", oldVal)
+			}
+		}
+
+		// Handle config_timeout_seconds - suppress changes from null to 0
+		if diff.HasChange("config_timeout_seconds") {
+			oldVal, newVal := diff.GetChange("config_timeout_seconds")
+			// If old value is null/nil and new value is 0, suppress the diff
+			if (oldVal == nil || oldVal == "") && newVal == 0 {
+				diff.SetNew("config_timeout_seconds", oldVal)
+			}
+		}
+
+		// Handle config_request.headers - suppress changes to empty objects
+		if diff.HasChange("config_request.0.headers") {
+			oldVal, newVal := diff.GetChange("config_request.0.headers")
+			// If the API is setting headers to empty object, suppress the diff
+			if oldVal == nil && newVal != nil {
+				diff.SetNew("config_request.0.headers", oldVal)
+			}
+		}
+
+		// Handle config_response.translation_map - suppress changes to empty objects
+		if diff.HasChange("config_response.0.translation_map") {
+			oldVal, newVal := diff.GetChange("config_response.0.translation_map")
+			// If the API is setting translation_map to empty object, suppress the diff
+			if oldVal == nil && newVal != nil {
+				diff.SetNew("config_response.0.translation_map", oldVal)
+			}
+		}
+
+		// Handle config_response.translation_map_defaults - suppress changes to empty objects
+		if diff.HasChange("config_response.0.translation_map_defaults") {
+			oldVal, newVal := diff.GetChange("config_response.0.translation_map_defaults")
+			// If the API is setting translation_map_defaults to empty object, suppress the diff
+			if oldVal == nil && newVal != nil {
+				diff.SetNew("config_response.0.translation_map_defaults", oldVal)
+			}
+		}
+	}
+
+	return nil
 }
 
 // DataSourceIntegrationAction registers the genesyscloud_integration_action data source

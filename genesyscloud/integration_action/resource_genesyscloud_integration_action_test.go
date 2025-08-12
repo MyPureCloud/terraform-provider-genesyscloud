@@ -72,8 +72,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.NullValue,                             // Secure default (false)
-					util.NullValue,                             // Timeout default
+					util.NullValue, // Secure default (false)
+					util.NullValue, // Timeout default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -168,8 +168,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.TrueValue,                             // Secure
-					util.NullValue,                             // time default
+					util.TrueValue, // Secure
+					util.NullValue, // time default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -226,8 +226,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 
 func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 	// Create temporary zip files for testing
-	zipPath1, fileHash1 := createTempTestZipFile(t, "test_function1.zip")
-	zipPath2, fileHash2 := createTempTestZipFile(t, "test_function2.zip")
+	zipPath1, _ := createTempTestZipFile(t, "test_function1.zip")
+	zipPath2, _ := createTempTestZipFile(t, "test_function2.zip")
 
 	var (
 		integResourceLabel1 = "test_integration_function1"
@@ -246,16 +246,14 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 		outputAttr1 = "status"
 
 		// Function configuration values
-		description1     = "Custom function for data processing"
-		description2     = "Updated function for advanced data processing"
-		handler1         = "index.handler"
-		handler2         = "src/main.handler"
-		runtime1         = "nodejs22.x"
-		runtime2         = "nodejs22.x"
-		filePath1        = zipPath1
-		filePath2        = zipPath2
-		fileContentHash1 = fileHash1
-		fileContentHash2 = fileHash2
+		description1 = "Custom function for data processing"
+		description2 = "Updated function for advanced data processing"
+		handler1     = "index.handler"
+		handler2     = "src/main.handler"
+		runtime1     = "nodejs22.x"
+		runtime2     = "nodejs22.x"
+		filePath1    = zipPath1
+		filePath2    = zipPath2
 		// publish field is not in the schema, so removing these
 		// publish1         = "true"
 		// publish2         = "false"
@@ -297,8 +295,8 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.NullValue,                             // Secure default (false)
-					util.NullValue,                             // Timeout default
+					util.NullValue, // Secure default (false)
+					util.NullValue, // Timeout default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -318,8 +316,6 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 						strconv.Quote(runtime1),
 						timeout1,
 						strconv.Quote(filePath1),
-						strconv.Quote(fileContentHash1),
-						"", // publish field not in schema
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -350,8 +346,8 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.TrueValue,                             // Secure
-					util.NullValue,                             // time default
+					util.TrueValue, // Secure
+					util.NullValue, // time default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -386,8 +382,6 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 						strconv.Quote(runtime2),
 						timeout2,
 						strconv.Quote(filePath2),
-						strconv.Quote(fileContentHash2),
-						"", // publish field not in schema
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -448,16 +442,15 @@ func generateIntegrationActionConfigResponse(successTemp string, blocks ...strin
 	`, successTemp, strings.Join(blocks, "\n"))
 }
 
-func generateIntegrationActionFunctionConfig(description, handler, runtime, timeoutSeconds, filePath, fileContentHash, publish string) string {
+func generateIntegrationActionFunctionConfig(description, handler, runtime, timeoutSeconds, filePath string) string {
 	return fmt.Sprintf(`function_config {
         description = %s
         handler = %s
         runtime = %s
         timeout_seconds = %s
         file_path = %s
-        file_content_hash = %s
 	}
-	`, description, handler, runtime, timeoutSeconds, filePath, fileContentHash)
+	`, description, handler, runtime, timeoutSeconds, filePath)
 }
 
 // createTempTestZipFile creates a temporary zip file with some test content for testing purposes
