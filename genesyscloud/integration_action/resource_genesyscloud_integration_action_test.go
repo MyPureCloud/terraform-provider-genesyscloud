@@ -227,6 +227,7 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 	// Create temporary zip files for testing
 	zipPath1, fileHash1 := createTempTestZipFile(t, "test_function1.zip")
+	zipPath2, fileHash2 := createTempTestZipFile(t, "test_function2.zip")
 
 	var (
 		integResourceLabel1 = "test_integration_function1"
@@ -234,46 +235,47 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 
 		actionResourceLabel1 = "test-function-action1"
 		actionName1          = "Terraform Function Action1-" + uuid.NewString()
-		// actionName2          = "Terraform Function Action2-" + uuid.NewString()
-		actionCateg1 = "Function Data Actions"
-		// actionCateg2 = "Function Data Actions"
+		actionName2          = "Terraform Function Action2-" + uuid.NewString()
+		actionCateg1         = "Function Data Actions"
+		actionCateg2         = "Function Data Actions"
 
 		timeout1 = "15"
-		// timeout2 = "10"
+		timeout2 = "10"
 
 		inputAttr1  = "service"
 		outputAttr1 = "status"
 
 		// Function configuration values
-		description1 = "Custom function for data processing"
-		// description2     = "Updated function for advanced data processing"
-		handler1 = "index.handler"
-		// handler2         = "src/main.handler"
-		runtime1 = "nodejs22.x"
-		// runtime2         = "nodejs22.x"
-		filePath1 = zipPath1
-		// filePath2        = zipPath2
+		description1     = "Custom function for data processing"
+		description2     = "Updated function for advanced data processing"
+		handler1         = "index.handler"
+		handler2         = "src/main.handler"
+		runtime1         = "nodejs22.x"
+		runtime2         = "nodejs22.x"
+		filePath1        = zipPath1
+		filePath2        = zipPath2
 		fileContentHash1 = fileHash1
-		// fileContentHash2 = fileHash2
+		fileContentHash2 = fileHash2
 		// publish field is not in the schema, so removing these
 		// publish1         = "true"
 		// publish2         = "false"
+		headerVal2 = "no-store"
 
 		// Request/Response configuration values
 		reqUrlTemplate1 = "/api/v2/users"
-		//reqUrlTemplate2 = "/api/v2/integrations"
-		reqType1 = "GET"
-		//reqType2        = "PUT"
-		//reqTemp         = "{ \\\"service\\\": \\\"$${input.service}\\\" }"
-		//headerKey       = "Cache-Control"
-		//headerVal1      = "no-cache"
-		////headerVal2          = "no-store"
-		//successTemplate = "{ \\\"name\\\": $${nameValue}, \\\"build\\\": $${buildNumber} }"
-		//transMapAttr    = "nameValue"
-		//transMapVal1    = "$.Name"
-		////transMapVal2        = "$.NewName"
-		//transMapValDefault1 = "UNKNOWN"
+		reqUrlTemplate2 = "/api/v2/integrations"
+		reqType1        = "GET"
+		reqType2        = "PUT"
+		reqTemp         = "{ \\\"service\\\": \\\"$${input.service}\\\" }"
+		headerKey       = "Cache-Control"
+		//headerVal2          = "no-store"
+		successTemplate = "{ \\\"name\\\": $${nameValue}, \\\"build\\\": $${buildNumber} }"
+		transMapAttr    = "nameValue"
+		//transMapVal2        = "$.NewName"
 		//transMapValDefault2 = "NotKnown"
+
+		transMapVal2        = "$.NewName"
+		transMapValDefault2 = "NotKnown"
 	)
 
 	// Note: This test validates the schema structure for function_config
@@ -335,73 +337,74 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					// file_path and file_content_hash are input-only fields not returned by the API
 					// so we can't verify them in the state
 				),
+				ExpectNonEmptyPlan: true,
 			},
-			// Temporarily comment out update step to test resource creation first
-			// {
-			// 	// Update function configuration
-			// 	Config: integration.GenerateIntegrationResource(
-			// 		integResourceLabel1,
-			// 		util.NullValue,
-			// 		strconv.Quote(integTypeID),
-			// 	) + generateIntegrationActionResource(
-			// 		actionResourceLabel1,
-			// 		actionName2,
-			// 		actionCateg2,
-			// 		"genesyscloud_integration."+integResourceLabel1+".id",
-			// 		util.NullValue, // Secure default (false)
-			// 		util.NullValue, // Timeout default
-			// 		util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
-			// 		util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
-			// 		generateIntegrationActionConfigRequest(
-			// 			reqUrlTemplate2,
-			// 			reqType2,
-			// 			strconv.Quote(reqTemp),
-			// 			util.GenerateMapAttrWithMapProperties(
-			// 			"headers",
-			// 			map[string]string{
-			// 				headerKey: strconv.Quote(headerVal1),
-			// 			},
-			// 		),
-			// 	),
-			// 	generateIntegrationActionConfigResponse(
-			// 		strconv.Quote(successTemplate),
-			// 		util.GenerateMapAttrWithMapProperties(
-			// 			"translation_map",
-			// 			map[string]string{
-			// 				transMapAttr: strconv.Quote(transMapVal1),
-			// 			},
-			// 		),
-			// 		util.GenerateMapAttrWithMapProperties(
-			// 			"translation_map_defaults",
-			// 			map[string]string{
-			// 				transMapAttr: strconv.Quote(transMapValDefault1),
-			// 			},
-			// 		),
-			// 	),
-			// 	generateIntegrationActionFunctionConfig(
-			// 		strconv.Quote(description2),
-			// 		strconv.Quote(handler2),
-			// 		strconv.Quote(runtime2),
-			// 		timeout2,
-			// 		strconv.Quote(filePath2),
-			// 		strconv.Quote(fileContentHash2),
-			// 		"", // publish field not in schema
-			// 	),
-			// ),
-			// Check: resource.ComposeTestCheckFunc(
-			// 	resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "name", actionName2),
-			// 	resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "category", actionCateg2),
-			// 	resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "secure", util.FalseValue),
-			// 	resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResourceLabel1, "integration_id", "genesyscloud_integration."+integResourceLabel1, "id"),
-			// 	// Check updated function_config attributes
-			// 	resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.description", description2),
-			// 	resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.handler", handler2),
-			// 	resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.runtime", runtime2),
-			// 	resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.timeout_seconds", timeout2),
-			// 	// file_path and file_content_hash are input-only fields not returned by the API
-			// 	// so we can't verify them in the state
-			// ),
-			// },
+			{
+				// Update config values as well as secure field which should force a new action to be created
+				Config: integration.GenerateIntegrationResource(
+					integResourceLabel1,
+					util.NullValue,
+					strconv.Quote(integTypeID),
+				) + generateIntegrationActionResource(
+					actionResourceLabel1,
+					actionName2,
+					actionCateg2,
+					"genesyscloud_integration."+integResourceLabel1+".id",
+					util.TrueValue,                             // Secure
+					util.NullValue,                             // time default
+					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
+					generateIntegrationActionConfigRequest(
+						reqUrlTemplate2,
+						reqType2,
+						strconv.Quote(reqTemp),
+						util.GenerateMapAttrWithMapProperties(
+							"headers",
+							map[string]string{
+								headerKey: strconv.Quote(headerVal2),
+							},
+						),
+					),
+					generateIntegrationActionConfigResponse(
+						strconv.Quote(successTemplate),
+						util.GenerateMapAttrWithMapProperties(
+							"translation_map",
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapVal2),
+							},
+						),
+						util.GenerateMapAttrWithMapProperties(
+							"translation_map_defaults",
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapValDefault2),
+							},
+						),
+					),
+					generateIntegrationActionFunctionConfig(
+						strconv.Quote(description2),
+						strconv.Quote(handler2),
+						strconv.Quote(runtime2),
+						timeout2,
+						strconv.Quote(filePath2),
+						strconv.Quote(fileContentHash2),
+						"", // publish field not in schema
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "name", actionName2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "category", actionCateg2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "secure", util.TrueValue),
+					resource.TestCheckResourceAttrPair("genesyscloud_integration_action."+actionResourceLabel1, "integration_id", "genesyscloud_integration."+integResourceLabel1, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_type", reqType2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_request.0.request_template", strings.ReplaceAll(reqTemp, "$${", "${")),
+
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.description", description2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.handler", handler2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.runtime", runtime2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.timeout_seconds", timeout2),
+				),
+				ExpectNonEmptyPlan: true,
+			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_integration_action." + actionResourceLabel1,

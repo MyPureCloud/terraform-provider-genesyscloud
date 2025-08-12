@@ -54,7 +54,6 @@ func ResourceIntegrationAction() *schema.Resource {
 				Description: "Map of headers in name, value pairs to include in request.",
 				Type:        schema.TypeMap,
 				Optional:    true,
-				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
@@ -66,14 +65,12 @@ func ResourceIntegrationAction() *schema.Resource {
 				Description: "Map 'attribute name' and 'JSON path' pairs used to extract data from REST response.",
 				Type:        schema.TypeMap,
 				Optional:    true,
-				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"translation_map_defaults": {
 				Description: "Map 'attribute name' and 'default value' pairs used as fallback values if JSON path extraction fails for specified key.",
 				Type:        schema.TypeMap,
 				Optional:    true,
-				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"success_template": {
