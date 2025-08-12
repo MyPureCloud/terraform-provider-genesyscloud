@@ -273,7 +273,7 @@ var (
 		},
 	}
 
-	condition = &schema.Resource{
+	cgaCondition = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"simple_metric": {
 				Description: "Instructs this condition to evaluate a simple queue-level metric.",
@@ -318,7 +318,7 @@ var (
 							Required:    true,
 							MinItems:    1,
 							MaxItems:    10,
-							Elem:        condition,
+							Elem:        cgaCondition,
 						},
 					},
 				},
@@ -342,11 +342,11 @@ var (
 							Required:    true,
 							MinItems:    1,
 							MaxItems:    10,
-							Elem:        condition,
+							Elem:        cgaCondition,
 						},
 						"groups": {
 							Description: "The group(s) to activate if the rule evaluates as true.",
-							Type:        schema.TypeSet,
+							Type:        schema.TypeList,
 							Required:    true,
 							MinItems:    1,
 							MaxItems:    5,

@@ -114,7 +114,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
-					GenerateConditionalGroupActivation(queueResourceLabel1, bullseyeMemberGroupLabel, "EstimatedWaitTime", "GreaterThan", 30), // use bullseye group in CGA config
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "name", queueName1),
@@ -181,7 +180,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateBullseyeSettings(alertTimeout2),
 					GenerateRoutingRules(routingRuleOpMeetsThresh, "90", "30"),
 					GenerateRoutingRules(routingRuleOpAny, "45", "15"),
-					GenerateConditionalGroupActivation(queueResourceLabel1, bullseyeMemberGroupLabel, "ServiceLevel", "NotEqualTo", 100), // use bullseye group in CGA config
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "name", queueName2),
@@ -1720,7 +1718,7 @@ func validateDirectRouting(resourceLabel string,
 	)
 }
 
-func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
+func TestAccResourceRoutingQueueSkillGroupsAndConditionalGroupActivation(t *testing.T) {
 	var (
 		queueResourceLabel      = "test-queue-members-seg"
 		queueName               = "Terraform-Test-QueueSkillGroup-" + uuid.NewString()
@@ -1752,7 +1750,9 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 						"groups = [genesyscloud_group."+groupResourceLabel+".id]",
 						GenerateBullseyeSettings("10"),
 						GenerateBullseyeSettings("10"),
-						GenerateBullseyeSettings("10")),
+						GenerateBullseyeSettings("10"),
+						GenerateConditionalGroupActivation("genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id"),
+					),
 				Check: resource.ComposeTestCheckFunc(
 					validateGroups("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "genesyscloud_group."+groupResourceLabel),
 				),
