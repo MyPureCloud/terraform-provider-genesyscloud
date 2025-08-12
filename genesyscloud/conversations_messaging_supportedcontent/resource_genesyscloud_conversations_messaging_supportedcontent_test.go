@@ -33,7 +33,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 		inboundType3  = "video/mpeg"
 	)
 
-	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent-"); cleanupErr != nil {
+	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent"); cleanupErr != nil {
 		t.Logf("Failed to clean up messaging settings with name '%s': %s", name, cleanupErr.Error())
 	}
 

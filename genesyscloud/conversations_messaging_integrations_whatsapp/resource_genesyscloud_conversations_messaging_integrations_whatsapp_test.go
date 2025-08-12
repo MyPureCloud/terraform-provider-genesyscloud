@@ -27,8 +27,8 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	var (
 		resourceLabel                 = "test_messaging_whatsapp"
-		resourceName                  = "Terraform Messaging Whatsapp-" + uuid.NewString()
-		resourceName2                 = "Terraform Messaging Whatsapp2-" + uuid.NewString()
+		resourceName                  = "TestTerraformMessagingWhatsapp-" + uuid.NewString()
+		resourceName2                 = "TestTerraformMessagingWhatsapp2-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
 		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		inboundType                   = "*/*"
@@ -40,7 +40,11 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 		embeddedToken                 = uuid.NewString()
 	)
 
-	if cleanupErr := CleanupMessagingSettings("TestTerraformMessagingSetting"); cleanupErr != nil {
+	if cleanupErr := CleanupMessagingIntegrationsWhatsapp("TestTerraformMessagingWhatsapp"); cleanupErr != nil {
+		t.Logf("Failed to clean up messaging settings with name '%s': %s", nameMessagingSetting, cleanupErr.Error())
+	}
+
+	if cleanupErr := CleanupMessagingIntegrationsWhatsapp("TestTerraformMessagingWhatsapp2"); cleanupErr != nil {
 		t.Logf("Failed to clean up messaging settings with name '%s': %s", nameMessagingSetting, cleanupErr.Error())
 	}
 

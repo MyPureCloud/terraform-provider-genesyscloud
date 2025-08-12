@@ -25,7 +25,7 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 		outboundType    = "image/*"
 	)
 
-	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent-"); cleanupErr != nil {
+	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent"); cleanupErr != nil {
 		t.Logf("Failed to clean up messaging settings with name '%s': %s", name, cleanupErr.Error())
 	}
 
