@@ -51,6 +51,11 @@ func SuppressEquivalentJsonDiffs(k, old, new string, d *schema.ResourceData) boo
 	return EquivalentJsons(old, new)
 }
 
+// SuppressDiffFunc for properties that will accept JSON strings
+func SupressAttr(k, old, new string, d *schema.ResourceData) bool {
+	return false
+}
+
 // Recursively go through decoded JSON map and remove any property that is null.
 // Parameter can also be an array(slice) like in JSON but will only traverse for
 // further map/slice elements. ie null elements in slices are not removed.

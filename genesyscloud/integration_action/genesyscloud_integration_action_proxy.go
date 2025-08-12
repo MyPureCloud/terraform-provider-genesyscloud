@@ -1,12 +1,17 @@
 package integration_action
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 /*
@@ -47,37 +52,59 @@ var internalProxy *integrationActionsProxy
 type getAllIntegrationActionsFunc func(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error)
 type createIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, action *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error)
 type getIntegrationActionByIdFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*IntegrationAction, *platformclientv2.APIResponse, error)
+type getIntegrationActionDraftByIdFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
 type getIntegrationActionsByNameFunc func(ctx context.Context, p *integrationActionsProxy, actionName string) (actions *[]platformclientv2.Action, response *platformclientv2.APIResponse, err error)
 type updateIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, updateAction *platformclientv2.Updateactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
 type deleteIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.APIResponse, error)
 type getIntegrationActionTemplateFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error)
+type createIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error)
+type uploadIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, filePath string) (*platformclientv2.APIResponse, error)
+type getIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
+type getIntegrationActionFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
+type updateIntegrationActionDraftWithFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, updateData *platformclientv2.Function) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
+
+type publishIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, version int) (*platformclientv2.APIResponse, error)
 
 // integrationActionsProxy contains all of the methods that call genesys cloud APIs.
 type integrationActionsProxy struct {
-	clientConfig                     *platformclientv2.Configuration
-	integrationsApi                  *platformclientv2.IntegrationsApi
-	getAllIntegrationActionsAttr     getAllIntegrationActionsFunc
-	createIntegrationActionAttr      createIntegrationActionFunc
-	getIntegrationActionByIdAttr     getIntegrationActionByIdFunc
-	getIntegrationActionsByNameAttr  getIntegrationActionsByNameFunc
-	updateIntegrationActionAttr      updateIntegrationActionFunc
-	deleteIntegrationActionAttr      deleteIntegrationActionFunc
-	getIntegrationActionTemplateAttr getIntegrationActionTemplateFunc
+	clientConfig                                 *platformclientv2.Configuration
+	integrationsApi                              *platformclientv2.IntegrationsApi
+	getAllIntegrationActionsAttr                 getAllIntegrationActionsFunc
+	createIntegrationActionAttr                  createIntegrationActionFunc
+	getIntegrationActionByIdAttr                 getIntegrationActionByIdFunc
+	getIntegrationActionDraftByIdAttr            getIntegrationActionDraftByIdFunc
+	getIntegrationActionsByNameAttr              getIntegrationActionsByNameFunc
+	updateIntegrationActionAttr                  updateIntegrationActionFunc
+	deleteIntegrationActionAttr                  deleteIntegrationActionFunc
+	getIntegrationActionTemplateAttr             getIntegrationActionTemplateFunc
+	createIntegrationActionDraftAttr             createIntegrationActionDraftFunc
+	uploadIntegrationActionDraftFunctionAttr     uploadIntegrationActionDraftFunctionFunc
+	getIntegrationActionDraftFunctionAttr        getIntegrationActionDraftFunctionFunc
+	getIntegrationActionFunctionAttr             getIntegrationActionFunctionFunc
+	updateIntegrationActionDraftWithFunctionAttr updateIntegrationActionDraftWithFunctionFunc
+	publishIntegrationActionDraftAttr            publishIntegrationActionDraftFunc
 }
 
 // newIntegrationActionsProxy initializes the integrationActionsProxy with all of the data needed to communicate with Genesys Cloud
 func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *integrationActionsProxy {
 	api := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 	return &integrationActionsProxy{
-		clientConfig:                     clientConfig,
-		integrationsApi:                  api,
-		getAllIntegrationActionsAttr:     getAllIntegrationActionsFn,
-		createIntegrationActionAttr:      createIntegrationActionFn,
-		getIntegrationActionByIdAttr:     getIntegrationActionByIdFn,
-		getIntegrationActionsByNameAttr:  getIntegrationActionsByNameFn,
-		updateIntegrationActionAttr:      updateIntegrationActionFn,
-		deleteIntegrationActionAttr:      deleteIntegrationActionFn,
-		getIntegrationActionTemplateAttr: getIntegrationActionTemplateFn,
+		clientConfig:                                 clientConfig,
+		integrationsApi:                              api,
+		getAllIntegrationActionsAttr:                 getAllIntegrationActionsFn,
+		createIntegrationActionAttr:                  createIntegrationActionFn,
+		createIntegrationActionDraftAttr:             createIntegrationActionDraftFn,
+		uploadIntegrationActionDraftFunctionAttr:     uploadIntegrationActionDraftFunctionFn,
+		getIntegrationActionDraftFunctionAttr:        getIntegrationActionDraftFunctionFn,
+		getIntegrationActionFunctionAttr:             getIntegrationActionFunctionFn,
+		updateIntegrationActionDraftWithFunctionAttr: updateIntegrationActionDraftWithFunctionFn,
+		publishIntegrationActionDraftAttr:            publishIntegrationActionDraftFn,
+		getIntegrationActionByIdAttr:                 getIntegrationActionByIdFn,
+		getIntegrationActionDraftByIdAttr:            getIntegrationActionDraftByIdFn,
+		getIntegrationActionsByNameAttr:              getIntegrationActionsByNameFn,
+		updateIntegrationActionAttr:                  updateIntegrationActionFn,
+		deleteIntegrationActionAttr:                  deleteIntegrationActionFn,
+		getIntegrationActionTemplateAttr:             getIntegrationActionTemplateFn,
 	}
 }
 
@@ -103,6 +130,41 @@ func (p *integrationActionsProxy) createIntegrationAction(ctx context.Context, a
 // getIntegrationActionById gets a Genesys Cloud Integration Action by id
 func (p *integrationActionsProxy) getIntegrationActionById(ctx context.Context, actionId string) (action *IntegrationAction, response *platformclientv2.APIResponse, err error) {
 	return p.getIntegrationActionByIdAttr(ctx, p, actionId)
+}
+
+// getIntegrationActionDraftById gets a Genesys Cloud Integration Action Draft by id
+func (p *integrationActionsProxy) getIntegrationActionDraftById(ctx context.Context, actionId string) (action *platformclientv2.Action, response *platformclientv2.APIResponse, err error) {
+	return p.getIntegrationActionDraftByIdAttr(ctx, p, actionId)
+}
+
+// getIntegrationActionById gets a Genesys Cloud Integration Action by id
+func (p *integrationActionsProxy) createIntegrationActionDraft(ctx context.Context, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+	return p.createIntegrationActionDraftAttr(ctx, p, actionInput)
+}
+
+// uploadIntegrationActionDraftFunction uploads a function file to a Genesys Cloud Integration Action Draft
+func (p *integrationActionsProxy) uploadIntegrationActionDraftFunction(ctx context.Context, actionId string, filePath string) (*platformclientv2.APIResponse, error) {
+	return p.uploadIntegrationActionDraftFunctionAttr(ctx, p, actionId, filePath)
+}
+
+// getIntegrationActionDraftFunction gets the function details for a Genesys Cloud Integration Action Draft
+func (p *integrationActionsProxy) getIntegrationActionDraftFunction(ctx context.Context, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
+	return p.getIntegrationActionDraftFunctionAttr(ctx, p, actionId)
+}
+
+// getIntegrationActionFunction gets the function details for a Genesys Cloud Integration Action
+func (p *integrationActionsProxy) getIntegrationActionFunction(ctx context.Context, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
+	return p.getIntegrationActionFunctionAttr(ctx, p, actionId)
+}
+
+// updateIntegrationActionDraftWithFunction updates an integration action draft with function settings
+func (p *integrationActionsProxy) updateIntegrationActionDraftWithFunction(ctx context.Context, actionId string, updateData *platformclientv2.Function) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
+	return p.updateIntegrationActionDraftWithFunctionAttr(ctx, p, actionId, updateData)
+}
+
+// publishIntegrationActionDraft publishes a Genesys Cloud Integration Action Draft
+func (p *integrationActionsProxy) publishIntegrationActionDraft(ctx context.Context, actionId string, version int) (*platformclientv2.APIResponse, error) {
+	return p.publishIntegrationActionDraftAttr(ctx, p, actionId, version)
 }
 
 // getIntegrationActionsByName gets a Genesys Cloud Integration Action by name
@@ -144,9 +206,231 @@ func getAllIntegrationActionsFn(ctx context.Context, p *integrationActionsProxy)
 	return &actions, resp, nil
 }
 
+// createIntegrationActionDraftFn is the implementation for retrieving all integration actions in Genesys Cloud
+func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+	action, resp, err := sdkPostIntegrationActionDraft(actionInput, p.integrationsApi)
+	if err != nil {
+		return nil, resp, err
+	}
+	return action, resp, nil
+}
+
+// uploadIntegrationActionDraftFunctionFn is the implementation for uploading a function file to an integration action draft
+func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string, filePath string) (*platformclientv2.APIResponse, error) {
+	log.Printf("DEBUG: Starting upload for actionId: %s, filePath: %s", actionId, filePath)
+
+	// Step 1: Get the signed URL for upload
+	fileName := filepath.Base(filePath)
+	uploadRequest := map[string]interface{}{
+		"fileName":                fileName,
+		"signedUrlTimeoutSeconds": 1200,
+	}
+
+	log.Printf("DEBUG: Upload request payload: %+v", uploadRequest)
+
+	// Make request to get signed URL
+	uploadUrl := p.clientConfig.BasePath + "/api/v2/integrations/actions/" + actionId + "/draft/function/upload"
+	log.Printf("DEBUG: Upload URL: %s", uploadUrl)
+
+	// Create HTTP client and request
+	client := &http.Client{}
+	jsonData, err := json.Marshal(uploadRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", uploadUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("DEBUG: Error making request to get signed URL: %v", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	log.Printf("DEBUG: Signed URL response status: %d", resp.StatusCode)
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("DEBUG: Failed to get signed URL, status: %d, %v", resp.StatusCode, resp.Body)
+		return &platformclientv2.APIResponse{
+			StatusCode: resp.StatusCode,
+		}, fmt.Errorf("failed to get signed URL, status: %d", resp.StatusCode)
+	}
+
+	// Parse the response to get signed URL and headers
+	var uploadResponse struct {
+		URL     string            `json:"url"`
+		Headers map[string]string `json:"headers"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&uploadResponse); err != nil {
+		log.Printf("DEBUG: Error decoding signed URL response: %v", err)
+		return nil, err
+	}
+
+	log.Printf("DEBUG: Signed URL response - URL: %s", uploadResponse.URL)
+	log.Printf("DEBUG: Signed URL response - Headers count: %d", len(uploadResponse.Headers))
+	log.Printf("DEBUG: Signed URL response - Headers: %+v", uploadResponse.Headers)
+
+	// Step 2: Upload the file to the signed URL
+	log.Printf("DEBUG: Attempting to open file: %s", filePath)
+	fileReader, file, err := files.DownloadOrOpenFile(ctx, filePath, false)
+	if err != nil {
+		log.Printf("DEBUG: Error opening file: %v", err)
+		return nil, err
+	}
+
+	// Get file info to check size
+	if file != nil {
+		fileInfo, err := file.Stat()
+		if err != nil {
+			log.Printf("DEBUG: Error getting file info: %v", err)
+		} else {
+			log.Printf("DEBUG: File opened successfully, size: %d bytes", fileInfo.Size())
+
+			// Check if file is empty
+			if fileInfo.Size() == 0 {
+				log.Printf("DEBUG: WARNING - File size is 0 bytes!")
+				return &platformclientv2.APIResponse{
+					StatusCode: 400,
+				}, fmt.Errorf("file is empty (0 bytes)")
+			}
+		}
+	} else {
+		log.Printf("DEBUG: File opened successfully (no file handle)")
+	}
+
+	// Create upload request to signed URL
+	uploadReq, err := http.NewRequest("PUT", uploadResponse.URL, fileReader)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for required x-amz headers
+	requiredHeaders := []string{
+		"x-amz-meta-correlationid",
+		"x-amz-meta-filename",
+		"x-amz-meta-functionid",
+		"x-amz-meta-organizationid",
+		"x-amz-tagging",
+	}
+
+	for _, headerName := range requiredHeaders {
+		if value, exists := uploadResponse.Headers[headerName]; exists {
+			log.Printf("DEBUG: Found required header %s: %s", headerName, value)
+		} else {
+			log.Printf("DEBUG: WARNING - Missing required header: %s", headerName)
+		}
+	}
+
+	for key, value := range uploadResponse.Headers {
+		uploadReq.Header.Set(key, value)
+		log.Printf("DEBUG:   %s: %s", key, value)
+	}
+
+	// Set headers for the file upload
+	uploadReq.Header.Set("Content-Type", "application/zip")
+	uploadReq.Header.Set("User-Agent", p.clientConfig.UserAgent)
+	uploadReq.Header.Set("Accept", "*/*")
+	uploadReq.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	uploadReq.Header.Set("Accept-Language", "en-GB,en;q=0.9")
+
+	// Log the final request details
+	log.Printf("DEBUG: Final upload request - URL: %s", uploadReq.URL.String())
+	log.Printf("DEBUG: Final upload request - Method: %s", uploadReq.Method)
+	log.Printf("DEBUG: Final upload request - Headers: %+v", uploadReq.Header)
+
+	// Upload the file
+	log.Printf("DEBUG: Uploading file to signed URL")
+	uploadResp, err := client.Do(uploadReq)
+	if err != nil {
+		log.Printf("DEBUG: Error uploading file: %v", err)
+		return nil, err
+	}
+	defer uploadResp.Body.Close()
+
+	log.Printf("DEBUG: Upload response status: %d", uploadResp.StatusCode)
+
+	if uploadResp.StatusCode != http.StatusOK {
+		log.Printf("DEBUG: Failed to upload file, status: %d", uploadResp.StatusCode)
+		return &platformclientv2.APIResponse{
+			StatusCode: uploadResp.StatusCode,
+		}, fmt.Errorf("failed to upload file, status: %d", uploadResp.StatusCode)
+	}
+
+	return &platformclientv2.APIResponse{
+		StatusCode: 200,
+	}, nil
+}
+
+// getIntegrationActionDraftFunctionFn is the implementation for getting function details of an integration action draft
+func getIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
+	// Use the SDK method to get function details
+	functionData, resp, err := p.integrationsApi.GetIntegrationsActionDraftFunction(actionId)
+	if err != nil {
+		log.Printf("DEBUG: Error getting function details: %v", err)
+		return nil, resp, err
+	}
+
+	log.Printf("DEBUG: Function details response: %+v", functionData)
+	if functionData.Function != nil {
+		log.Printf("DEBUG: Function data - Description: %s, Handler: %s, Runtime: %s, TimeoutSeconds: %d, ZipId: %s",
+			*functionData.Function.Description, *functionData.Function.Handler, *functionData.Function.Runtime,
+			*functionData.Function.TimeoutSeconds, *functionData.Function.ZipId)
+	}
+
+	return functionData, resp, nil
+}
+
+// getIntegrationActionFunctionFn is the implementation for getting function details of an integration action
+func getIntegrationActionFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
+	functionData, resp, err := p.integrationsApi.GetIntegrationsActionFunction(actionId)
+	if err != nil {
+		return nil, resp, err
+	}
+	return functionData, resp, nil
+}
+
+// updateIntegrationActionDraftWithFunctionFn is the implementation for updating an integration action draft with function settings
+func updateIntegrationActionDraftWithFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string, updateData *platformclientv2.Function) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
+	// Use the SDK method to update the draft
+	action, resp, err := p.integrationsApi.PutIntegrationsActionDraftFunction(actionId, *updateData)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return action, resp, nil
+}
+
+// publishIntegrationActionDraftFn is the implementation for publishing an integration action draft
+func publishIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string, version int) (*platformclientv2.APIResponse, error) {
+	_, resp, err := p.integrationsApi.PostIntegrationsActionDraftPublish(actionId, platformclientv2.Publishdraftinput{
+		Version: &version,
+	})
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
 // createIntegrationActionFn is the implementation for creating an integration action in Genesys Cloud
 func createIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error) {
 	action, resp, err := sdkPostIntegrationAction(actionInput, p.integrationsApi)
+	if err != nil {
+		return nil, resp, err
+	}
+	return action, resp, nil
+}
+
+// getIntegrationActionDraftByIdFn is the implementation for getting an integration action draft by id in Genesys Cloud
+func getIntegrationActionDraftByIdFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	action, resp, err := p.integrationsApi.GetIntegrationsActionDraft(actionId, "contract", true, true)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -270,6 +554,36 @@ func sdkGetIntegrationAction(actionId string, api *platformclientv2.Integrations
 
 	var successPayload *IntegrationAction
 	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
+	if err != nil {
+		// Nothing special to do here, but do avoid processing the response
+	} else if response.Error != nil {
+		err = errors.New(response.ErrorMessage)
+	} else {
+		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
+	}
+	return successPayload, response, err
+}
+
+// sdkPostIntegrationActionDraft is the non-sdk helper method for creating an Integration Action
+func sdkPostIntegrationActionDraft(body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+	apiClient := &api.Configuration.APIClient
+
+	// create path and map variables
+	path := api.Configuration.BasePath + "/api/v2/integrations/actions/drafts"
+
+	headerParams := make(map[string]string)
+
+	// add default headers if any
+	for key := range api.Configuration.DefaultHeader {
+		headerParams[key] = api.Configuration.DefaultHeader[key]
+	}
+
+	headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
+	headerParams["Content-Type"] = "application/json"
+	headerParams["Accept"] = "application/json"
+
+	var successPayload *IntegrationAction
+	response, err := apiClient.CallAPI(path, http.MethodPost, body, headerParams, nil, nil, "", nil, "")
 	if err != nil {
 		// Nothing special to do here, but do avoid processing the response
 	} else if response.Error != nil {
