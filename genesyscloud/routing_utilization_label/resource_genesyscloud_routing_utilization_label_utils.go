@@ -1,8 +1,11 @@
 package routing_utilization_label
 
 import (
+	"context"
 	"fmt"
 	"strings"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func GenerateRoutingUtilizationLabelResource(resourceLabel string, name string, dependsOnResource string) string {
@@ -35,4 +38,12 @@ func GenerateLabelUtilization(
 		interrupting_label_ids = [%s]
 	}
 	`, ResourceType, labelResource, maxCapacity, strings.Join(interruptingLabelResources, ","))
+}
+
+func shouldExportRoutingUtilizationLabelAsData(ctx context.Context, sdkConfig *platformclientv2.Configuration, configMap map[string]string) (bool, error) {
+	labelName := configMap["name"]
+	if labelName == "System Default Label" {
+		return true, nil
+	}
+	return false, nil
 }

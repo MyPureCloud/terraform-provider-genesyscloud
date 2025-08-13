@@ -17,18 +17,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
-	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
-	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
+	err := retry.RetryContext(ctx, timeout, method)
+	if err != nil && IsTimeoutError(err) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		return WithRetries(ctx, timeout, method)
 	}
-	return err
+	return diag.FromErr(err)
 }
 
 func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
@@ -37,16 +37,15 @@ func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func
 
 func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
-	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
+	err := retry.RetryContext(ctx, timeout, method)
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
 			// Set ID empty if the object isn't found after the specified timeout
 			d.SetId("")
 			return nil
 		}
-		errStringLower := strings.ToLower(fmt.Sprintf("%v", err))
-		if strings.Contains(errStringLower, "timeout while waiting for state to become") ||
-			strings.Contains(errStringLower, "context deadline exceeded") {
+
+		if IsTimeoutError(err) {
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 			return WithRetriesForRead(ctx, d, method)
@@ -55,7 +54,7 @@ func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration,
 			consistency_checker.DeleteConsistencyCheck(d.Id())
 		}
 	}
-	return err
+	return diag.FromErr(err)
 }
 
 // wrapReadMethodWithRecover will wrap the method with a recover if the panic recovery logger is enabled
@@ -190,4 +189,10 @@ func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 		}
 	}
 	return false
+}
+
+func IsTimeoutError(errDiag error) bool {
+	errStringLower := strings.ToLower(fmt.Sprintf("%v", errDiag))
+	return strings.Contains(errStringLower, "timeout") ||
+		strings.Contains(errStringLower, "context deadline exceeded")
 }

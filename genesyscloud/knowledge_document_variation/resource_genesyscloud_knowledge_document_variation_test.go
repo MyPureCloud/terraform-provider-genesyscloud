@@ -12,11 +12,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		variationResourceLabel1         = "test-variation1"
 		knowledgeBaseResourceLabel1     = "test-knowledgebase1"
@@ -156,7 +155,6 @@ func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
 }
 
 func TestAccResourceKnowledgeDocumentVariationDifferentTypes(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		variationResourceLabel1         = "test-variation1"
 		knowledgeBaseResourceLabel1     = "test-knowledgebase1"

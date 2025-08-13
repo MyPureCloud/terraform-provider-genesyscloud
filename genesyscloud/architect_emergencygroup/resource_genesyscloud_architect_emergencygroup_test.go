@@ -2,13 +2,12 @@ package architect_emergencygroup
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -16,15 +15,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 
 	var (
-		resourceLabel = "test_emergency_group"
-		name          = "Test Group " + uuid.NewString()
-		description   = "The test description"
+		resourceLabel    = "test_emergency_group"
+		fullResourcePath = ResourceType + "." + resourceLabel
+		name             = "Test Group " + uuid.NewString()
+		description      = "The test description"
 
 		updatedDescription = description + " updated"
 
@@ -34,78 +34,68 @@ func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
 		inboundCallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
 
-	config, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Skip("failed to authorize client credentials")
-	}
-
-	// TODO: Create the IVR inside the test config once emergency group has been moved to its own package.
-	// Currently, the ivr resource cannot be registered for these tests because of a cyclic dependency issue.
-	ivrId := "f94e084e-40eb-470b-80d6-0f99cf22d102"
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
-		ivrId = "770e3998-11b7-4c96-beb8-215b83201c29"
-	}
-
-	if !ivrExists(config, ivrId) {
-		t.Skip("Skipping because IVR does not exists in the target org.")
-	}
-
-	flowResourceConfig := architect_flow.GenerateFlowResource(
+	flowResourceConfig := architect_flow.GenerateFlowResourceNoFileContentHash(
 		flowResourceLabel,
 		flowFilePath,
 		inboundCallConfig,
 		false,
 	)
 
+	ivrResourceLabel := "ivr"
+	ivrConfig := architect_ivr.IvrConfigStruct{
+		ResourceLabel: ivrResourceLabel,
+		Name:          "tf test ivr " + uuid.NewString(),
+		Dnis:          []string{},
+	}
+	ivrConfigResource := architect_ivr.GenerateIvrConfigResource(&ivrConfig)
+	ivrFullResourcePath := architect_ivr.ResourceType + "." + ivrResourceLabel
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: flowResourceConfig + GenerateArchitectEmergencyGroupResource(
+				Config: flowResourceConfig + ivrConfigResource + GenerateArchitectEmergencyGroupResource(
 					resourceLabel,
 					name,
 					util.NullValue,
 					description,
 					util.TrueValue,
-					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceLabel+".id", strconv.Quote(ivrId)),
+					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceLabel+".id", ivrFullResourcePath+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", description),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "enabled", util.TrueValue),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "emergency_call_flows.0.ivr_ids.0", ivrId),
-					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "emergency_call_flows.0.emergency_flow_id",
+					resource.TestCheckResourceAttr(fullResourcePath, "name", name),
+					resource.TestCheckResourceAttr(fullResourcePath, "description", description),
+					resource.TestCheckResourceAttr(fullResourcePath, "enabled", util.TrueValue),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "emergency_call_flows.0.ivr_ids.0",
+						ivrFullResourcePath, "id"),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "emergency_call_flows.0.emergency_flow_id",
 						"genesyscloud_flow."+flowResourceLabel, "id"),
 				),
 			},
 			{
 				// Update
-				Config: architect_flow.GenerateFlowResource(
-					flowResourceLabel,
-					flowFilePath,
-					inboundCallConfig,
-					false,
-				) + GenerateArchitectEmergencyGroupResource(
+				Config: ivrConfigResource + flowResourceConfig + GenerateArchitectEmergencyGroupResource(
 					resourceLabel,
 					name,
 					util.NullValue,
 					updatedDescription,
 					util.FalseValue,
-					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceLabel+".id", strconv.Quote(ivrId)),
+					generateEmergencyCallFlow("genesyscloud_flow."+flowResourceLabel+".id", ivrFullResourcePath+".id"),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", updatedDescription),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "enabled", util.FalseValue),
-					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "emergency_call_flows.0.emergency_flow_id",
+					resource.TestCheckResourceAttr(fullResourcePath, "name", name),
+					resource.TestCheckResourceAttr(fullResourcePath, "description", updatedDescription),
+					resource.TestCheckResourceAttr(fullResourcePath, "enabled", util.FalseValue),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "emergency_call_flows.0.emergency_flow_id",
 						"genesyscloud_flow."+flowResourceLabel, "id"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "emergency_call_flows.0.ivr_ids.0", ivrId),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "emergency_call_flows.0.ivr_ids.0",
+						ivrFullResourcePath, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      ResourceType + "." + resourceLabel,
+				ResourceName:      fullResourcePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -160,13 +150,4 @@ func testVerifyEmergencyGroupDestroyed(state *terraform.State) error {
 	}
 	// Success. All emergency groups destroyed
 	return nil
-}
-
-// TODO Remove the below function when emergency_group is moved to its own package
-func ivrExists(config *platformclientv2.Configuration, ivrId string) bool {
-	api := platformclientv2.NewArchitectApiWithConfig(config)
-	if _, _, err := api.GetArchitectIvr(ivrId); err != nil {
-		return false
-	}
-	return true
 }

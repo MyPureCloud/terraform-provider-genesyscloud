@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -709,8 +709,8 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 }
 
 func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasettings {
-	subTypeMap := make(map[string]platformclientv2.Basemediasettings)
-	baseMediaSettings := platformclientv2.Basemediasettings{
+	subTypeMap := make(map[string]platformclientv2.Messagesubtypesettings)
+	baseMediaSettings := platformclientv2.Messagesubtypesettings{
 		EnableAutoAnswer: platformclientv2.Bool(true),
 	}
 	subTypeMap["instagram"] = baseMediaSettings

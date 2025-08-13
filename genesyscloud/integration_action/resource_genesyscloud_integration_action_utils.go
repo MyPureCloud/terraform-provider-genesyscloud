@@ -3,12 +3,13 @@ package integration_action
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -68,6 +69,37 @@ func BuildSdkActionContract(d *schema.ResourceData) (*ActionContract, diag.Diagn
 	}, nil
 }
 
+// BuildSdkActionContract takes the resource data and builds the custom ActionContract from it
+func BuildSdkActionContractInput(d *schema.ResourceData) (*platformclientv2.Actioncontractinput, diag.Diagnostics) {
+	configInput := d.Get("contract_input").(string)
+
+	inputVal, err := util.JsonStringToInterface(configInput)
+	if err != nil {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract input %s", configInput), err)
+	}
+
+	configOutput := d.Get("contract_output").(string)
+
+	outputVal, err := util.JsonStringToInterface(configOutput)
+
+	if err != nil {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to parse contract output %s", configInput), err)
+	}
+	inputValJson, ok := inputVal.(platformclientv2.Jsonschemadocument)
+	if !ok {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert contract input to Jsonschemadocument: %v", inputVal), err)
+	}
+
+	outputValJson, ok := outputVal.(platformclientv2.Jsonschemadocument)
+	if !ok {
+		return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to convert contract output to Jsonschemadocument: %v", outputVal), err)
+	}
+	return &platformclientv2.Actioncontractinput{
+		Input:  &platformclientv2.Postinputcontract{InputSchema: &inputValJson},
+		Output: &platformclientv2.Postoutputcontract{SuccessSchema: &outputValJson},
+	}, nil
+}
+
 // BuildSdkActionConfig takes the resource data and builds the SDK platformclientv2.Actionconfig from it
 func BuildSdkActionConfig(d *schema.ResourceData) *platformclientv2.Actionconfig {
 	ConfigTimeoutSeconds := d.Get("config_timeout_seconds").(int)
@@ -90,6 +122,7 @@ func BuildSdkActionConfigRequest(d *schema.ResourceData) *platformclientv2.Reque
 			configMap := configList[0].(map[string]interface{})
 
 			urlTemplate := configMap["request_url_template"].(string)
+			log.Printf("DEBUG: BuildSdkFunctionConfig called with urlTemplate: %s", urlTemplate)
 			template := configMap["request_template"].(string)
 			reqType := configMap["request_type"].(string)
 			headers := map[string]string{}
@@ -158,7 +191,7 @@ func flattenActionContract(schema interface{}) (string, diag.Diagnostics) {
 // FlattenActionConfigRequest converts the platformclientv2.Requestconfig into a map
 func FlattenActionConfigRequest(sdkRequest platformclientv2.Requestconfig) []interface{} {
 	requestMap := make(map[string]interface{})
-
+	log.Printf("DEBUG: FlattenActionConfigRequest called with urlTemplate: %s", *sdkRequest.RequestUrlTemplate)
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_url_template", sdkRequest.RequestUrlTemplate)
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_type", sdkRequest.RequestType)
 	resourcedata.SetMapValueIfNotNil(requestMap, "request_template", sdkRequest.RequestTemplate)
@@ -176,4 +209,81 @@ func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []
 	resourcedata.SetMapValueIfNotNil(responseMap, "success_template", sdkResponse.SuccessTemplate)
 
 	return []interface{}{responseMap}
+}
+
+// FlattenFunctionConfigRequest converts the platformclientv2.Functionconfig into a map
+func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig) []interface{} {
+	functionMap := make(map[string]interface{})
+
+	// Extract function settings from the Function field
+	if functionConfig.Function != nil {
+		resourcedata.SetMapValueIfNotNil(functionMap, "description", functionConfig.Function.Description)
+		resourcedata.SetMapValueIfNotNil(functionMap, "handler", functionConfig.Function.Handler)
+		resourcedata.SetMapValueIfNotNil(functionMap, "runtime", functionConfig.Function.Runtime)
+		resourcedata.SetMapValueIfNotNil(functionMap, "timeout_seconds", functionConfig.Function.TimeoutSeconds)
+		resourcedata.SetMapValueIfNotNil(functionMap, "zip_id", functionConfig.Function.ZipId)
+	}
+
+	if functionConfig.Zip != nil {
+		resourcedata.SetMapValueIfNotNil(functionMap, "file_path", functionConfig.Zip.Name)
+	}
+
+	return []interface{}{functionMap}
+}
+
+// BuildSdkFunctionConfig takes the resource data and builds the SDK platformclientv2.Functionconfig from it
+func BuildSdkFunctionConfig(d *schema.ResourceData, zipId string) *platformclientv2.Functionconfig {
+	log.Printf("DEBUG: BuildSdkFunctionConfig called with zipId: %s", zipId)
+
+	if functionConfig := d.Get("function_config"); functionConfig != nil {
+		log.Printf("DEBUG: function_config found: %v", functionConfig)
+		if configList := functionConfig.([]interface{}); len(configList) > 0 {
+			configMap := configList[0].(map[string]interface{})
+			log.Printf("DEBUG: configMap: %v", configMap)
+
+			// Extract function settings
+			var description string
+			if descVal, ok := configMap["description"]; ok && descVal != nil {
+				description = descVal.(string)
+			}
+
+			var handler string
+			if handlerVal, ok := configMap["handler"]; ok && handlerVal != nil {
+				handler = handlerVal.(string)
+			}
+
+			var runtime string
+			if runtimeVal, ok := configMap["runtime"]; ok && runtimeVal != nil {
+				runtime = runtimeVal.(string)
+			}
+
+			var timeoutSeconds int
+			if timeoutVal, ok := configMap["timeout_seconds"]; ok && timeoutVal != nil {
+				timeoutSeconds = timeoutVal.(int)
+			}
+
+			log.Printf("DEBUG: Extracted values - description: %s, handler: %s, runtime: %s, timeoutSeconds: %d, zipId: %s",
+				description, handler, runtime, timeoutSeconds, zipId)
+
+			// Create the Function object
+			// Note: zipId is not included as it's set automatically by the upload process
+			function := &platformclientv2.Function{
+				Description:    platformclientv2.String(description),
+				Handler:        platformclientv2.String(handler),
+				Runtime:        platformclientv2.String(runtime),
+				TimeoutSeconds: platformclientv2.Int(timeoutSeconds),
+				// ZipId is set automatically by the upload process, not manually
+			}
+
+			// Create the Functionconfig object
+			return &platformclientv2.Functionconfig{
+				Function: function,
+			}
+		} else {
+			log.Printf("DEBUG: function_config list is empty")
+		}
+	} else {
+		log.Printf("DEBUG: function_config is nil")
+	}
+	return &platformclientv2.Functionconfig{}
 }

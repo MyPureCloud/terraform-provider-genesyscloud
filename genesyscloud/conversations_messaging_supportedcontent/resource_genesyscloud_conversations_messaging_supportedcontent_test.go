@@ -2,11 +2,14 @@ package conversations_messaging_supportedcontent
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -23,12 +26,16 @@ func TestAccResourceSupportedContent(t *testing.T) {
 	t.Parallel()
 	var (
 		resourceLabel = "testSupportedContent"
-		name          = "Terraform Supported Content - " + uuid.NewString()
+		name          = "TestTerraformSupportedContent-" + uuid.NewString()
 		inboundType   = "*/*"
 		outboundType  = "*/*"
 		inboundType2  = "image/*"
 		inboundType3  = "video/mpeg"
 	)
+
+	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent"); cleanupErr != nil {
+		t.Logf("Failed to clean up conversations messaging supported content with name '%s': %s", name, cleanupErr.Error())
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -93,5 +100,34 @@ func testVerifySupportedContentDestroyed(state *terraform.State) error {
 			return fmt.Errorf("Unexpected error: %s", err)
 		}
 	}
+	return nil
+}
+
+func CleanupMessagingSettingsSupportedContent(name string) error {
+	log.Printf("Cleaning up conversations messaging supported content with name '%s'", name)
+	cmMessagingSettingApi := platformclientv2.NewConversationsApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		cmMessagingSetting, _, getErr := cmMessagingSettingApi.GetConversationsMessagingSupportedcontent(pageSize, pageNum)
+		if getErr != nil {
+			return fmt.Errorf("failed to get page %v of messaging settings: %v", pageNum, getErr)
+		}
+
+		if cmMessagingSetting.Entities == nil || len(*cmMessagingSetting.Entities) == 0 {
+			break
+		}
+
+		for _, setting := range *cmMessagingSetting.Entities {
+			if setting.Name != nil && strings.HasPrefix(*setting.Name, name) {
+				_, err := cmMessagingSettingApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(*setting.Id)
+				if err != nil {
+					return fmt.Errorf("failed to delete messaging settings: %v", err)
+				}
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+	log.Printf("Cleaned up conversations messaging supported content with name '%s'", name)
 	return nil
 }

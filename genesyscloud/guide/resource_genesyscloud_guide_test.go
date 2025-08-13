@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
-func TestAccResourceGuide(t *testing.T) {
+func TestAccResourceGuideManual(t *testing.T) {
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" {
 		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
 		return
@@ -41,6 +41,8 @@ func TestAccResourceGuide(t *testing.T) {
 					resourceLabel,
 					name,
 					source,
+					"",
+					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
@@ -52,6 +54,50 @@ func TestAccResourceGuide(t *testing.T) {
 				ResourceName:      ResourceType + "." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyGuideDestroyed,
+	})
+}
+
+func TestAccResourceGuidePrompt(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" {
+		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
+		return
+	}
+	var (
+		resourceLabel = "guide"
+
+		name   = "Test Guide Manual" + uuid.NewString()
+		source = "Prompt"
+		prompt = "Create a guide that handles customer service interactions"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: GenerateGuideResource(
+					resourceLabel,
+					name,
+					source,
+					prompt,
+					"",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "source", source),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "latest_saved_version", "1.0"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            ResourceType + "." + resourceLabel,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"prompt"},
 			},
 		},
 		CheckDestroy: testVerifyGuideDestroyed,

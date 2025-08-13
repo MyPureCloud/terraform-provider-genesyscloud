@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -79,11 +79,6 @@ type DataSourceResolver struct {
 type RefAttrCustomResolver struct {
 	ResolverFunc            func(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error
 	ResolveToDataSourceFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
-}
-
-// CustomFlowResolver allows the definition of a custom resolver for an exporter.
-type CustomFlowResolver struct {
-	ResolverFunc func(map[string]interface{}, string) error
 }
 
 type CustomFileWriterSettings struct {
@@ -170,8 +165,6 @@ type ResourceExporter struct {
 	EncodedRefAttrs map[*JsonEncodeRefAttr]*RefAttrSettings
 
 	CustomFileWriter CustomFileWriterSettings
-
-	CustomFlowResolver map[string]*CustomFlowResolver
 
 	ExportAsDataFunc func(context.Context, *platformclientv2.Configuration, map[string]string) (bool, error)
 

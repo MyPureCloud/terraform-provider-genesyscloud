@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -113,7 +113,7 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 	}
 
 	if d.HasChange("default_expiration_seconds") {
-		worktype.SetField("DefaultExpirationSeconds", resourcedata.GetNillableValue[int](d, "default_duration_seconds"))
+		worktype.SetField("DefaultExpirationSeconds", resourcedata.GetNillableValue[int](d, "default_expiration_seconds"))
 	}
 
 	if d.HasChange("default_due_duration_seconds") {

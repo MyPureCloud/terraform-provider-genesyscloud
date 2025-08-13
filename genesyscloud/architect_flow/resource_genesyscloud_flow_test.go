@@ -13,6 +13,8 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack"
+	localStackEnv "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack/environment"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -20,7 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -58,7 +60,7 @@ func lockFlow(flowName string, flowType string) {
 }
 
 // Tests the force_unlock functionality.
-func TestAccResourceArchFlowForceUnlock(t *testing.T) {
+func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 	var (
 		flowResourceLabel = "test_force_unlock_flow1"
 		flowName          = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
@@ -116,7 +118,7 @@ func TestAccResourceArchFlowForceUnlock(t *testing.T) {
 	})
 }
 
-func TestAccResourceArchFlowStandard(t *testing.T) {
+func TestAccResourceArchitectFlowStandard(t *testing.T) {
 	var (
 		flowResourceLabel1 = "test_flow1"
 		flowResourceLabel2 = "test_flow2"
@@ -218,7 +220,7 @@ func TestAccResourceArchFlowStandard(t *testing.T) {
 	})
 }
 
-func TestAccResourceArchFlowSubstitutions(t *testing.T) {
+func TestAccResourceArchitectFlowSubstitutions(t *testing.T) {
 	var (
 		flowResourceLabel1 = "test_flow1"
 		flowName           = "Terraform Flow Test-" + uuid.NewString()
@@ -323,7 +325,7 @@ even if the user was only doing a plan or destroy.
 This test exercises this bug by first deploying a flow file with a substitution.  Then modifying the flow file and rerunning
 the flow with a substitution.
 */
-func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
+func TestAccResourceArchitectFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 	var (
 		flowResourceLabel1 = "test_flow1"
 		flowName           = "Terraform Flow Test-" + uuid.NewString()
@@ -379,6 +381,179 @@ func TestAccResourceArchFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validateFlow("genesyscloud_flow."+flowResourceLabel1, flowName, flowDescription2, "INBOUNDCALL"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+}
+
+// TestAccResourceArchitectFlowWithLocalStack tests the architect flow resource using LocalStack for S3 operations.
+// This test validates that the terraform-provider-genesyscloud can successfully deploy flows from S3 buckets
+// using LocalStack as a local AWS service emulator.
+//
+// Prerequisites:
+//   - LocalStack must be running (either locally or in CI)
+//   - Environment variables must be set:
+//   - USE_LOCAL_STACK=true
+//   - LOCAL_STACK_IMAGE_URI=<localstack-image-uri>
+//
+// Test Flow:
+//
+//  1. Creates a temporary flow YAML file with substitution variables
+//
+//  2. Sets up LocalStack S3 bucket and uploads the flow file
+//
+//  3. Deploys the flow using terraform with S3 source
+//
+//  4. Updates the flow description and re-uploads to S3
+//
+//  5. Verifies the flow is updated correctly
+//
+//  6. Cleans up S3 bucket and temporary files
+//
+// This test is designed to run in CI environments where LocalStack is available
+// and properly configured with the required environment variables.
+func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
+	/*
+		// To run this test locally, set the following environment variables and run `localstack start` from another terminal
+		os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
+		os.Setenv(localStackEnv.LocalStackImageUriEnvVar, "localstack/localstack:latest")
+	*/
+
+	imageURI := os.Getenv(localStackEnv.LocalStackImageUriEnvVar)
+	if imageURI == "" || !localStackEnv.LocalStackIsActive() {
+		t.Skipf("Missing env variables (%s or %s), indicating that localstack is not running", localStackEnv.LocalStackImageUriEnvVar, localStackEnv.UseLocalStackEnvVar)
+	}
+
+	ctx := context.Background()
+	localStackManager, err := localstack.NewLocalStackManager(ctx)
+	if err != nil {
+		t.Fatalf("Failed to initialise LocalStackManager: %s", err.Error())
+	}
+
+	var (
+		resourceLabel = "test_flow1"
+		flowName      = "A TF LocalStack Test Flow " + uuid.NewString()
+		description   = "hello from localstack"
+		description2  = "hello from localstack2"
+		bucketName    = "testbucket-" + strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))
+		objectKey     = "flow.yml"
+
+		fullResourcePath = ResourceType + "." + resourceLabel
+		srcFile          = fmt.Sprintf("s3://%s/%s", bucketName, objectKey)
+	)
+
+	// Create test flow content with substitution variable
+	flowContent := fmt.Sprintf(`inboundCall:
+  name: {{name}}
+  description: %s
+  defaultLanguage: en-us
+  startUpRef: ./menus/menu[mainMenu]
+  initialGreeting:
+    tts: LocalStack says hi!!!
+  menus:
+    - menu:
+        name: Main Menu
+        audio:
+          tts: You are at the Main Menu, press 9 to disconnect.
+        refId: mainMenu
+        choices:
+          - menuDisconnect:
+              name: Disconnect
+              dtmf: digit_9`, description)
+
+	// Create temporary file
+	tempFile, err := os.CreateTemp("", "flow-*.yml")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	// Write flow content to temp file
+	_, err = tempFile.WriteString(flowContent)
+	if err != nil {
+		t.Fatalf("Failed to write flow content: %v", err)
+	}
+
+	defer func() {
+		if err := tempFile.Close(); err != nil {
+			t.Logf("[WARN] Failed to close temp file: %v", err)
+		}
+
+		if err := os.Remove(tempFile.Name()); err != nil {
+			t.Logf("[WARN] Failed to remove temp file: %v", err)
+		}
+	}()
+
+	// Setup S3 bucket and upload test file
+	t.Log("Setting up S3 bucket and uploading test file...")
+	err = localStackManager.SetupS3Bucket(bucketName, tempFile.Name(), objectKey)
+	if err != nil {
+		t.Fatalf("Failed to setup S3 bucket: %v", err)
+	}
+
+	// Cleanup S3 bucket after test
+	defer func() {
+		if err := localStackManager.CleanupS3Bucket(bucketName); err != nil {
+			t.Logf("[WARN] Failed to cleanup S3 bucket: %v", err)
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateFlowResourceNoFileContentHash(
+					resourceLabel,
+					srcFile,
+					"",
+					false,
+					util.GenerateSubstitutionsMap(map[string]string{
+						"name": flowName,
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow(fullResourcePath, flowName, description, "INBOUNDCALL"),
+				),
+			},
+			{
+				PreConfig: func() {
+					// update flow description from "hello from localstack" to "hello from localstack2"
+					t.Log("Updating flow description from " + description + " to " + description2)
+					flowContent = strings.Replace(flowContent, description, description2, 1)
+
+					t.Log("Writing flow content to temp file")
+					// Seek to beginning and truncate to overwrite the file
+					if _, err := tempFile.Seek(0, 0); err != nil {
+						t.Fatalf("Failed to seek to beginning of file: %v", err)
+					}
+					if err := tempFile.Truncate(0); err != nil {
+						t.Fatalf("Failed to truncate file: %v", err)
+					}
+					_, err := tempFile.WriteString(flowContent)
+					if err != nil {
+						t.Fatalf("Failed to write flow content: %v", err)
+					}
+
+					// Setup S3 bucket and upload test file
+					t.Log("Setting up S3 bucket and uploading updated test file")
+					err = localStackManager.SetupS3Bucket(bucketName, tempFile.Name(), objectKey)
+					if err != nil {
+						t.Fatalf("Failed to setup S3 bucket in PreConfig: %v", err)
+					}
+				},
+				Config: GenerateFlowResourceNoFileContentHash(
+					resourceLabel,
+					srcFile,
+					"",
+					false,
+					util.GenerateSubstitutionsMap(map[string]string{
+						"name": flowName,
+					}),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFlow(fullResourcePath, flowName, description2, "INBOUNDCALL"),
 				),
 			},
 		},
