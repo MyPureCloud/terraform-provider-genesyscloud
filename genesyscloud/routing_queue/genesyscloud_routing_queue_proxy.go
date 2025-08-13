@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
 )
 
 /*
