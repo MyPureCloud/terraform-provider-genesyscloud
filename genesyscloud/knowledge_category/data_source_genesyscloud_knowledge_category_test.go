@@ -2,17 +2,17 @@ package knowledge_category
 
 import (
 	"fmt"
+	"testing"
+
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
 		categoryResourceLabel1      = "test-category1"
@@ -28,6 +28,7 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		CheckDestroy:      testVerifyKnowledgeCategoryDestroyed,
 		Steps: []resource.TestStep{
 			{
 				// Create

@@ -16,6 +16,13 @@ Test Class for the business rules schema Data Source
 
 func TestAccDataSourceBusinessRulesSchema(t *testing.T) {
 	t.Parallel()
+
+	enabled, resp := businessRulesSchemaFtIsEnabled()
+	if !enabled {
+		t.Skipf("Skipping test as business rules schema is not configured: %s", resp.Status)
+		return
+	}
+
 	var (
 		schemaResourceLabel = "schema_1"
 		schemaName          = "tf_schema_" + uuid.NewString()

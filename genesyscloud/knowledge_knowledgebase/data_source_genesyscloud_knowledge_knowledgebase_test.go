@@ -2,16 +2,16 @@ package knowledge_knowledgebase
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1251 is resolved")
 	var (
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
 		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
