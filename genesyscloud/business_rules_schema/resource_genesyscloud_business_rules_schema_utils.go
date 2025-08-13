@@ -3,9 +3,11 @@ package business_rules_schema
 import (
 	"encoding/json"
 	"fmt"
+
 	"log"
 	"net/http"
 	"net/url"
+
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"

@@ -3,11 +3,9 @@ package routing_queue
 import (
 	"context"
 	"fmt"
-	"log"
-
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
