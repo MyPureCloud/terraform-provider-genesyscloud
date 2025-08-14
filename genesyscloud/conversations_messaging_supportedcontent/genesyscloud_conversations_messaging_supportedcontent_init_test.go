@@ -1,16 +1,24 @@
 package conversations_messaging_supportedcontent
 
 import (
+	"log"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 /*
    The genesyscloud_conversations_messaging_supportedcontent_init_test.go file is used to initialize the data sources and resources
    used in testing the supported_content resource.
 */
+
+var (
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
 
 // providerDataSources holds a map of all registered datasources
 var providerDataSources map[string]*schema.Resource
@@ -41,6 +49,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = provider.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk for package conversations_messaging_integrations_whatsapp: %v", authErr)
+	}
+
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

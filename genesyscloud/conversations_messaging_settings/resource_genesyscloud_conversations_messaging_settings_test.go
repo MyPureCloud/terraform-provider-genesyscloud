@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -16,8 +17,12 @@ import (
 func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 	var (
 		resourceLabel1 = "testConversationsMessagingSettings"
-		name1          = "testSettings"
+		name1          = "TestTerraformMessagingSetting-" + uuid.NewString()
 	)
+
+	if cleanupErr := CleanupMessagingSettings("TestTerraformMessagingSetting"); cleanupErr != nil {
+		t.Logf("Failed to clean up messaging settings with name '%s': %s", name1, cleanupErr.Error())
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -75,8 +80,12 @@ func TestAccResourceConversationsMessagingSettings(t *testing.T) {
 func TestAccResourceConversationsMessagingSettingsContentOnly(t *testing.T) {
 	var (
 		resourceLabel2 = "testConversationsMessagingSettingsContentOnly"
-		name2          = "testSettingsContentOnly"
+		name2          = "TestTerraformMessagingSettingContentOnly-" + uuid.NewString()
 	)
+
+	if cleanupErr := CleanupMessagingSettings("TestTerraformMessagingSettingContentOnly"); cleanupErr != nil {
+		t.Logf("Failed to clean up messaging settings with name '%s': %s", name2, cleanupErr.Error())
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

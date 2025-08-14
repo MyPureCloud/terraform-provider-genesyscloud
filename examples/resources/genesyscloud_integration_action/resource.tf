@@ -1,3 +1,5 @@
+# Basic integration action example (without function configuration)
+# This shows a standard integration action that doesn't require custom function code
 resource "genesyscloud_integration_action" "example_action" {
   name                   = "Example Action"
   category               = "Genesys Cloud Data Action"
@@ -59,5 +61,50 @@ resource "genesyscloud_integration_action" "example_action" {
       buildNumber = "UNKNOWN"
     }
     success_template = "{ \"name\": $${nameValue}, \"build\": $${buildNumber} }"
+  }
+}
+
+# Example with function configuration
+# Note: function_config is only required for function data actions (when category = "Genesys Cloud Data Action")
+# For regular integration actions, this section can be omitted
+resource "genesyscloud_integration_action" "example_function_action" {
+  name                   = "Example Function Action"
+  category               = "Genesys Cloud Data Action"
+  integration_id         = genesyscloud_integration.example_gc_data_integration.id
+  secure                 = true
+  config_timeout_seconds = 20
+
+  contract_input = jsonencode({
+    "type" = "object",
+    "required" = [
+      "inputData"
+    ],
+    "properties" = {
+      "inputData" = {
+        "type" = "string"
+      }
+    }
+  })
+
+  contract_output = jsonencode({
+    "type" = "object",
+    "required" = [
+      "result"
+    ],
+    "properties" = {
+      "result" = {
+        "type" = "string"
+      }
+    }
+  })
+
+  function_config {
+    description       = "Custom function for data processing"
+    handler           = "index.handler"
+    runtime           = "nodejs18.x"
+    timeout_seconds   = 30
+    file_path         = "/path/to/function.zip"
+    file_content_hash = "abc123def456..."
+    publish           = true
   }
 }
