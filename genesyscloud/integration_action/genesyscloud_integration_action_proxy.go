@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -342,6 +343,14 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	uploadReq.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	uploadReq.Header.Set("Accept-Language", "en-GB,en;q=0.9")
 
+	// This prevents Go from using chunked transfer encoding
+	if file != nil {
+		fileInfo, err := file.Stat()
+		if err == nil {
+			uploadReq.ContentLength = fileInfo.Size()
+		}
+	}
+
 	// Log the final request details
 	log.Printf("DEBUG: Final upload request - URL: %s", uploadReq.URL.String())
 	log.Printf("DEBUG: Final upload request - Method: %s", uploadReq.Method)
@@ -360,6 +369,15 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 	if uploadResp.StatusCode != http.StatusOK {
 		log.Printf("DEBUG: Failed to upload file, status: %d", uploadResp.StatusCode)
+		log.Printf("DEBUG: Failed to upload file, body: %v", uploadResp.Body)
+
+		bodyBytes, err := io.ReadAll(uploadResp.Body)
+		if err != nil {
+			log.Printf("DEBUG: Failed to read response body: %v", err)
+		} else {
+			log.Printf("DEBUG: Failed to upload file, status: %d, body: %s", uploadResp.StatusCode, string(bodyBytes))
+		}
+
 		return &platformclientv2.APIResponse{
 			StatusCode: uploadResp.StatusCode,
 		}, fmt.Errorf("failed to upload file, status: %d", uploadResp.StatusCode)
