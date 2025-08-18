@@ -41,8 +41,6 @@ func TestAccResourceGuideManual(t *testing.T) {
 					resourceLabel,
 					name,
 					source,
-					"",
-					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
@@ -68,9 +66,8 @@ func TestAccResourceGuidePrompt(t *testing.T) {
 	var (
 		resourceLabel = "guide"
 
-		name   = "Test Guide Manual" + uuid.NewString()
+		name   = "Test Guide Prompt" + uuid.NewString()
 		source = "Prompt"
-		prompt = "Create a guide that handles customer service interactions"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -83,13 +80,10 @@ func TestAccResourceGuidePrompt(t *testing.T) {
 					resourceLabel,
 					name,
 					source,
-					prompt,
-					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "source", source),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "latest_saved_version", "1.0"),
 				),
 			},
 			{

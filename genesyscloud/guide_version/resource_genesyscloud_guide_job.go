@@ -1,4 +1,4 @@
-package guide
+package guide_version
 
 import (
 	"context"
@@ -13,18 +13,20 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
-func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{}, guideName string) (*GeneratedGuideContent, diag.Diagnostics) {
+func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{}, guideName string, source string) (*GeneratedGuideContent, diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGuideProxy(sdkConfig)
+	proxy := getGuideVersionProxy(sdkConfig)
+	instruction := d.Get("instruction").(string)
 
-	prompt := d.Get("prompt").(string)
-	url := d.Get("url").(string)
+	log.Printf("Creating guide job for guide: %s with source: %s", guideName, source)
 
-	if prompt == "" && url == "" {
-		return nil, diag.Errorf("either prompt or url is required when source is set to Prompt to generate guide content")
+	var jobReq *GenerateGuideContentRequest
+
+	if source == "Prompt" {
+		jobReq = &GenerateGuideContentRequest{
+			Description: &instruction,
+		}
 	}
-
-	jobReq := buildGuideJobRequest(prompt, url)
 
 	job, resp, err := proxy.createGuideJob(ctx, jobReq)
 	if err != nil {
@@ -46,7 +48,7 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 	return nil, diag.Errorf("guide job completed but no content was generated for guide: %s", guideName)
 }
 
-func readGuideJob(ctx context.Context, proxy *guideProxy, jobId string, guideName string) (*GeneratedGuideContent, diag.Diagnostics) {
+func readGuideJob(ctx context.Context, proxy *guideVersionProxy, jobId string, guideName string) (*GeneratedGuideContent, diag.Diagnostics) {
 	log.Printf("Reading guide job %s for guide %s", jobId, guideName)
 
 	var result *GeneratedGuideContent

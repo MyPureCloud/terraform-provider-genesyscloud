@@ -31,9 +31,6 @@ func TestAccResourceGuideVersion(t *testing.T) {
 		guideSource                  = "Manual"
 		instruction                  = "This is a test instruction for the guide version."
 		updatedInstruction           = "This is an updated test instruction for the guide version."
-		draftState                   = "Draft"
-		state1                       = "TestReady"
-		state2                       = "ProductionReady"
 		guideVersionResourceFullPath = ResourceType + "." + guideVersionResourceLabel
 	)
 
@@ -42,22 +39,20 @@ func TestAccResourceGuideVersion(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource) +
 					GenerateGuideVersionResource(
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
 						instruction,
-						draftState,
 					),
 			},
 			{
 				// Create guide version with multiple data actions and variables
-				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource) +
 					GenerateGuideVersionResource(
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
 						instruction,
-						draftState,
 						GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
 						GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
 						GenerateResourcesBlock(
@@ -95,12 +90,11 @@ func TestAccResourceGuideVersion(t *testing.T) {
 			},
 			{
 				// Update guide version with different number of data actions
-				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource) +
 					GenerateGuideVersionResource(
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
 						updatedInstruction,
-						state1,
 						GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
 						GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
 						GenerateResourcesBlock(
@@ -121,12 +115,11 @@ func TestAccResourceGuideVersion(t *testing.T) {
 			},
 			{
 				// Update guide version with different number of data actions
-				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource, "", "") +
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName, guideSource) +
 					GenerateGuideVersionResource(
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
 						updatedInstruction,
-						state2,
 						GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
 						GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
 						GenerateResourcesBlock(
@@ -147,22 +140,22 @@ func TestAccResourceGuideVersion(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      guideVersionResourceFullPath,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            guideVersionResourceFullPath,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"generate_content"},
 			},
 		},
 	})
 }
 
-func GenerateGuideVersionResource(resourceLabel string, guideId string, instruction string, state string, nestedBlocks ...string) string {
+func GenerateGuideVersionResource(resourceLabel string, guideId string, instruction string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		guide_id = "%s"
 		instruction = "%s"
-		state = "%s"
 		%s
 	}
-	`, ResourceType, resourceLabel, guideId, instruction, state, strings.Join(nestedBlocks, "\n"))
+	`, ResourceType, resourceLabel, guideId, instruction, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateVariableBlock(name string, varType string, scope string, description string) string {

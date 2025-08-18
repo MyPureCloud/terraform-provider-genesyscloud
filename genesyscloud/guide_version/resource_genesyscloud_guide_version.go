@@ -34,32 +34,20 @@ func getAllGuideVersions(ctx context.Context, clientConfig *platformclientv2.Con
 		return resources, nil
 	}
 
-	// Loop through all guides and retrieve the latest saved and production ready versions
 	for _, guide := range *guides {
-		guideId := *guide.Id
-		guideName := *guide.Name
-
-		// Add latest saved version if available
-		if guide.LatestSavedVersion != nil && guide.LatestSavedVersion.Version != nil {
-			versionId := *guide.LatestSavedVersion.Version
-			id := guideId + "/" + versionId
-			resources[id] = &resourceExporter.ResourceMeta{
-				BlockLabel: guideName + "_" + versionId,
-			}
+		// For guide versions, we need both guide ID and version ID
+		// Use the latest saved version if available, otherwise skip this guide
+		if guide.LatestSavedVersion == nil || guide.LatestSavedVersion.Version == nil {
+			log.Printf("Skipping guide %s - no latest saved version available", *guide.Id)
+			continue
 		}
 
-		// Add latest production ready version if different from saved version
-		if guide.LatestProductionReadyVersion != nil && guide.LatestProductionReadyVersion.Version != nil {
-			versionId := *guide.LatestProductionReadyVersion.Version
-			// Only add if different from saved version
-			if guide.LatestSavedVersion == nil || guide.LatestSavedVersion.Version == nil || *guide.LatestSavedVersion.Version != versionId {
-				id := guideId + "/" + versionId
-				resources[id] = &resourceExporter.ResourceMeta{
-					BlockLabel: guideName + "_" + versionId,
-				}
-			}
+		resourceId := *guide.Id + "/" + *guide.LatestSavedVersion.Version
+		resources[resourceId] = &resourceExporter.ResourceMeta{
+			BlockLabel: *guide.Name,
 		}
 	}
+
 	return resources, nil
 }
 
@@ -72,24 +60,33 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	versionReq := buildGuideVersionFromResourceData(d)
 
+	guide, resp, err := proxy.getGuideById(ctx, guideId)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide %s: %v", guideId, err), resp)
+	}
+
+	// Check if we need to generate content via guide job
+	if guide.Source != nil && *guide.Source != "Manual" {
+		generateContent := d.Get("generate_content").(bool)
+		if generateContent {
+			log.Printf("generate_content is true, generating content via guide job for guide: %s", *guide.Name)
+			content, diagErr := createGuideJob(ctx, d, meta, *guide.Name, *guide.Source)
+			if diagErr != nil {
+				return diagErr
+			}
+			versionReq.Instruction = content.Instruction
+		}
+	}
+
 	version, resp, err := proxy.createGuideVersion(ctx, versionReq, guideId)
 	if err != nil {
 		if resp.StatusCode == 409 && strings.Contains(err.Error(), "Latest version is not in Production Ready state") {
 			log.Printf("Got 409 error - latest version is not in Production Ready state. Getting latest saved version and updating it instead.")
 
-			guide, resp, err := proxy.getGuideById(ctx, guideId)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide %s: %v", guideId, err), resp)
-			}
+			latestProductionReadyVersionId := *guide.LatestProductionReadyVersion.Version
+			log.Printf("Found latest production ready version %s for guide %s, updating it instead of creating new version", latestProductionReadyVersionId, guideId)
 
-			if guide.LatestSavedVersion == nil || guide.LatestSavedVersion.Version == nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Guide %s has no latest saved version to update", guideId), resp)
-			}
-
-			latestSavedVersionId := *guide.LatestSavedVersion.Version
-			log.Printf("Found latest saved version %s for guide %s, updating it instead of creating new version", latestSavedVersionId, guideId)
-
-			d.SetId(guideId + "/" + latestSavedVersionId)
+			d.SetId(guideId + "/" + latestProductionReadyVersionId)
 
 			// Update the existing version instead of creating a new one
 			return updateGuideVersion(ctx, d, meta)
@@ -104,9 +101,9 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("Created Guide Version: %s for Guide: %s", *version.Id, guideId)
 
-	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
-		log.Printf("Guide Version is not Draft")
-		return publishGuideVersion(ctx, d, meta)
+	publishErr := publishGuideVersion(ctx, d, meta)
+	if publishErr != nil {
+		return publishErr
 	}
 
 	return readGuideVersion(ctx, d, meta)
@@ -135,7 +132,6 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		resourcedata.SetNillableValue(d, "guide_id", version.Guide.Id)
 		resourcedata.SetNillableValue(d, "instruction", &version.Instruction)
-		resourcedata.SetNillableValue(d, "state", &version.State)
 
 		if len(version.Resources.DataActions) > 0 {
 			resourcesList := flattenGuideVersionResources(version.Resources)
@@ -182,9 +178,9 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	_ = d.Set("guide_id", version.Guide.Id)
 
-	if d.Get("state") != nil && d.Get("state").(string) != "Draft" {
-		log.Printf("Guide Version is not Draft")
-		return publishGuideVersion(ctx, d, meta)
+	publishErr := publishGuideVersion(ctx, d, meta)
+	if publishErr != nil {
+		return publishErr
 	}
 
 	log.Printf("Updated Guide Version")
@@ -194,7 +190,7 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGuideVersionProxy(skdConfig)
-	state := d.Get("state").(string)
+	state := "ProductionReady"
 
 	guideId, versionId, err := parseId(d.Id())
 	if err != nil {

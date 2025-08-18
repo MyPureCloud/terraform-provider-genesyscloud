@@ -96,12 +96,20 @@ func ResourceGuideVersion() *schema.Resource {
 				Description: "The instruction given to this version of the guide, for how it should behave when interacting with a User.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
+			},
+			"generate_content": {
+				Description: "When true, generates guide content via AI using the instruction field as a prompt. When false, uses the instruction field as-is. This field is not exported.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"variables": {
 				Description: "The variables associated with this version of the guide. Includes input variables (provided) and output variables (captured during execution).",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        variableElem,
+				ForceNew:    true,
 			},
 			"resources": {
 				Description: "The resources associated with this version of the guide.",
@@ -109,13 +117,7 @@ func ResourceGuideVersion() *schema.Resource {
 				Optional:    true,
 				MaxItems:    1,
 				Elem:        resourcesElem,
-			},
-			"state": {
-				Description:  "The state of the guide version. Valid Values: Draft, ProductionReady, TestReady. Defaults to Draft",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "Draft",
-				ValidateFunc: validation.StringInSlice([]string{"Draft", "ProductionReady", "TestReady"}, false),
+				ForceNew:    true,
 			},
 		},
 	}
@@ -125,7 +127,9 @@ func GuideVersionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGuideVersions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"guide_id": {RefType: "genesyscloud_guide"},
+			"guide_id":                             {RefType: "genesyscloud_guide"},
+			"resources.data_action.data_action_id": {RefType: "genesyscloud_integration_action"},
 		},
+		ExcludedAttributes: []string{"generate_content"},
 	}
 }

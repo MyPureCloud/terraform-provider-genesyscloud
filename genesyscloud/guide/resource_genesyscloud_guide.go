@@ -45,33 +45,12 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGuideProxy(sdkConfig)
 
-	// Required Attributes
 	name := d.Get("name").(string)
 	source := d.Get("source").(string)
 
 	guideReq := &CreateGuide{
 		Name:   &name,
 		Source: &source,
-	}
-
-	// If source is Prompt, a content generation job will need to be executed
-	// This will return the instruction, variables, and resources for the guide, which is used to create a guide version
-	var versionReq *CreateGuideVersionRequest
-	if source == "Prompt" {
-		log.Printf("Source is Prompt, creating guide job for Guide: %s", name)
-		content, diagErr := createGuideJob(ctx, d, meta, name)
-		if diagErr != nil {
-			return diagErr
-		}
-		versionReq = &CreateGuideVersionRequest{
-			Instruction: content.Instruction,
-		}
-	} else {
-		// For non-Prompt sources, create a default version with empty instruction
-		log.Printf("Source is not Prompt, creating default guide version for Guide: %s", name)
-		versionReq = &CreateGuideVersionRequest{
-			Instruction: " ",
-		}
 	}
 
 	log.Printf("Creating Guide: %s", name)
@@ -83,13 +62,6 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	d.SetId(*guide.Id)
 	log.Printf("Created guide: %s with ID: %s", *guide.Name, *guide.Id)
-
-	version, resp, err := proxy.createGuideVersion(ctx, versionReq, d.Id())
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create guide version for %s: %s", name, err), resp)
-	}
-
-	log.Printf("Created guide version %s for guide %s", version.Version, name)
 
 	return readGuide(ctx, d, meta)
 }
@@ -111,29 +83,9 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		resourcedata.SetNillableValue(d, "name", guide.Name)
-		resourcedata.SetNillableValue(d, "status", guide.Status)
 		resourcedata.SetNillableValue(d, "source", guide.Source)
 
 		d.SetId(*guide.Id)
-
-		if guide.Status != nil {
-			_ = d.Set("status", *guide.Status)
-		}
-		if guide.Source != nil {
-			_ = d.Set("source", guide.Source)
-		}
-
-		if guide.LatestSavedVersion != nil && guide.LatestSavedVersion.Version != nil {
-			_ = d.Set("latest_saved_version", *guide.LatestSavedVersion.Version)
-		} else {
-			_ = d.Set("latest_saved_version", nil)
-		}
-
-		if guide.LatestProductionReadyVersion != nil && guide.LatestProductionReadyVersion.Version != nil {
-			_ = d.Set("latest_production_ready_version", *guide.LatestProductionReadyVersion.Version)
-		} else {
-			_ = d.Set("latest_production_ready_version", nil)
-		}
 
 		log.Printf("Read Guide: %s", d.Id())
 		return cc.CheckState(d)

@@ -13,14 +13,12 @@ import (
 )
 
 // GenerateGuideResource generates terraform for a guide resource
-func GenerateGuideResource(resourceID string, name string, source string, prompt string, url string) string {
+func GenerateGuideResource(resourceID string, name string, source string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		source = "%s"
-		prompt = "%s"
-		url = "%s"
 	}
-	`, ResourceType, resourceID, name, source, prompt, url)
+	`, ResourceType, resourceID, name, source)
 }
 
 // Helper function to check if the guide feature toggle is enabled
@@ -91,13 +89,6 @@ func unmarshalResponse(respBody []byte, target interface{}) error {
 
 // Structs
 
-type CreateGuideVersionRequest struct {
-	GuideID     string                `json:"guideId,omitempty"`
-	Instruction string                `json:"instruction,omitempty"`
-	Variables   []Variable            `json:"variables,omitempty"`
-	Resources   GuideVersionResources `json:"resources,omitempty"`
-}
-
 type ErrorBody struct {
 	Message           string `json:"message,omitempty"`
 	Code              string `json:"code,omitempty"`
@@ -115,12 +106,10 @@ type DeleteObjectJob struct {
 }
 
 type Guide struct {
-	Id                           *string          `json:"id,omitempty"`
-	Name                         *string          `json:"name,omitempty"`
-	Source                       *string          `json:"source,omitempty"`
-	Status                       *string          `json:"status,omitempty"`
-	LatestSavedVersion           *GuideVersionRef `json:"latestSavedVersion,omitempty"`
-	LatestProductionReadyVersion *GuideVersionRef `json:"latestProductionReadyVersion,omitempty"`
+	Id     *string `json:"id,omitempty"`
+	Name   *string `json:"name,omitempty"`
+	Source *string `json:"source,omitempty"`
+	Status *string `json:"status,omitempty"`
 }
 
 type CreateGuide struct {
@@ -139,19 +128,4 @@ type GuideEntityListing struct {
 	FirstUri      *string         `json:"firstUri,omitempty"`
 	SelfUri       *string         `json:"selfUri,omitempty"`
 	PageCount     *int            `json:"pageCount,omitempty"`
-}
-
-type GuideVersionRef struct {
-	Version *string `json:"version,omitempty"`
-	SelfUri *string `json:"selfUri,omitempty"`
-}
-
-type VersionResponse struct {
-	Id          *string               `json:"id,omitempty"`
-	Guide       Guide                 `json:"guide,omitempty"`
-	Instruction string                `json:"instruction,omitempty"`
-	Variables   []Variable            `json:"variables,omitempty"`
-	Resources   GuideVersionResources `json:"resources,omitempty"`
-	Version     string                `json:"version,omitempty"`
-	State       string                `json:"state,omitempty"`
 }

@@ -19,10 +19,7 @@ type createGuideFunc func(ctx context.Context, p *guideProxy, guide *CreateGuide
 type getGuideByIdFunc func(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error)
 type getGuideByNameFunc func(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error)
 type deleteGuideFunc func(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
-type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
-type createGuideJobFunc func(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error)
-type getGuideJobByIdFunc func(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error)
-type createGuideVersionFunc func(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error)
+type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)	
 
 type guideProxy struct {
 	clientConfig               *platformclientv2.Configuration
@@ -32,9 +29,6 @@ type guideProxy struct {
 	getGuideByNameAttr         getGuideByNameFunc
 	deleteGuideAttr            deleteGuideFunc
 	getDeleteJobStatusByIdAttr getDeleteJobStatusByIdFunc
-	createGuideJobAttr         createGuideJobFunc
-	getGuideJobByIdAttr        getGuideJobByIdFunc
-	createGuideVersionAttr     createGuideVersionFunc
 	guideCache                 rc.CacheInterface[Guide]
 }
 
@@ -48,9 +42,6 @@ func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
 		getGuideByNameAttr:         getGuideByNameFn,
 		deleteGuideAttr:            deleteGuideFn,
 		getDeleteJobStatusByIdAttr: getDeleteJobStatusByIdFn,
-		createGuideJobAttr:         createGuideJobFn,
-		getGuideJobByIdAttr:        getGuideJobByIdFn,
-		createGuideVersionAttr:     createGuideVersionFn,
 		guideCache:                 guideCache,
 	}
 }
@@ -78,15 +69,6 @@ func (p *guideProxy) deleteGuide(ctx context.Context, id string) (*DeleteObjectJ
 }
 func (p *guideProxy) getDeleteJobStatusById(ctx context.Context, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	return p.getDeleteJobStatusByIdAttr(ctx, p, id, guideId)
-}
-func (p *guideProxy) createGuideJob(ctx context.Context, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return p.createGuideJobAttr(ctx, p, guideJob)
-}
-func (p *guideProxy) getGuideJobById(ctx context.Context, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return p.getGuideJobByIdAttr(ctx, p, id)
-}
-func (p *guideProxy) createGuideVersion(ctx context.Context, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
-	return p.createGuideVersionAttr(ctx, p, guideVersion, guideId)
 }
 
 // GetAll Functions
@@ -220,21 +202,6 @@ func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, 
 	}
 
 	return jobResponse, resp, nil
-}
-
-func createGuideJobFn(ctx context.Context, p *guideProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs"
-	return makeAPIRequest[JobResponse](ctx, http.MethodPost, baseURL, guideJob, p)
-}
-
-func getGuideJobByIdFn(ctx context.Context, p *guideProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs/" + id
-	return makeAPIRequest[JobResponse](ctx, http.MethodGet, baseURL, nil, p)
-}
-
-func createGuideVersionFn(ctx context.Context, p *guideProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/versions"
-	return makeAPIRequest[VersionResponse](ctx, http.MethodPost, baseURL, guideVersion, p)
 }
 
 // makeAPIRequest performs a complete API request for any of the guide endpoints
