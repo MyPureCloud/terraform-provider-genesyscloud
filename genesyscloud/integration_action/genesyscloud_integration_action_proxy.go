@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -258,7 +259,13 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	log.Printf("DEBUG: Signed URL response status: %d", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("DEBUG: Failed to get signed URL, status: %d, %v", resp.StatusCode, resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("DEBUG: Failed to read response body: %v", err)
+		} else {
+			log.Printf("DEBUG: Failed to upload file, status: %d, body: %s", resp.StatusCode, string(bodyBytes))
+		}
+
 		return &platformclientv2.APIResponse{
 			StatusCode: resp.StatusCode,
 		}, fmt.Errorf("failed to get signed URL, status: %d", resp.StatusCode)
@@ -281,7 +288,7 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 	// Step 2: Upload the file to the signed URL
 	log.Printf("DEBUG: Attempting to open file: %s", filePath)
-	fileReader, file, err := files.DownloadOrOpenFile(ctx, filePath, false)
+	fileReader, file, err := files.DownloadOrOpenFile(ctx, filePath, true)
 	if err != nil {
 		log.Printf("DEBUG: Error opening file: %v", err)
 		return nil, err
@@ -342,6 +349,14 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	uploadReq.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	uploadReq.Header.Set("Accept-Language", "en-GB,en;q=0.9")
 
+	// This prevents Go from using chunked transfer encoding
+	if file != nil {
+		fileInfo, err := file.Stat()
+		if err == nil {
+			uploadReq.ContentLength = fileInfo.Size()
+		}
+	}
+
 	// Log the final request details
 	log.Printf("DEBUG: Final upload request - URL: %s", uploadReq.URL.String())
 	log.Printf("DEBUG: Final upload request - Method: %s", uploadReq.Method)
@@ -360,6 +375,14 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 	if uploadResp.StatusCode != http.StatusOK {
 		log.Printf("DEBUG: Failed to upload file, status: %d", uploadResp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(uploadResp.Body)
+		if err != nil {
+			log.Printf("DEBUG: Failed to read response body: %v", err)
+		} else {
+			log.Printf("DEBUG: Failed to upload file, status: %d, body: %s", uploadResp.StatusCode, string(bodyBytes))
+		}
+
 		return &platformclientv2.APIResponse{
 			StatusCode: uploadResp.StatusCode,
 		}, fmt.Errorf("failed to upload file, status: %d", uploadResp.StatusCode)
