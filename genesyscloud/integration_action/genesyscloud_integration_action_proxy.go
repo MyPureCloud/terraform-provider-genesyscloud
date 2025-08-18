@@ -259,7 +259,13 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	log.Printf("DEBUG: Signed URL response status: %d", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("DEBUG: Failed to get signed URL, status: %d, %v", resp.StatusCode, resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("DEBUG: Failed to read response body: %v", err)
+		} else {
+			log.Printf("DEBUG: Failed to upload file, status: %d, body: %s", resp.StatusCode, string(bodyBytes))
+		}
+
 		return &platformclientv2.APIResponse{
 			StatusCode: resp.StatusCode,
 		}, fmt.Errorf("failed to get signed URL, status: %d", resp.StatusCode)
@@ -282,7 +288,7 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 	// Step 2: Upload the file to the signed URL
 	log.Printf("DEBUG: Attempting to open file: %s", filePath)
-	fileReader, file, err := files.DownloadOrOpenFile(ctx, filePath, false)
+	fileReader, file, err := files.DownloadOrOpenFile(ctx, filePath, true)
 	if err != nil {
 		log.Printf("DEBUG: Error opening file: %v", err)
 		return nil, err
@@ -369,7 +375,6 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 	if uploadResp.StatusCode != http.StatusOK {
 		log.Printf("DEBUG: Failed to upload file, status: %d", uploadResp.StatusCode)
-		log.Printf("DEBUG: Failed to upload file, body: %v", uploadResp.Body)
 
 		bodyBytes, err := io.ReadAll(uploadResp.Body)
 		if err != nil {
