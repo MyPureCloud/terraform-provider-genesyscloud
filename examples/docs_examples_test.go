@@ -37,7 +37,7 @@ var SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES = false
 //	var TEST_SPECIFIC_RESOURCE_TYPES = []string{
 //		"genesyscloud_foo",
 //	}
-var TEST_SPECIFIC_RESOURCE_TYPES = []string{}
+var TEST_SPECIFIC_RESOURCE_TYPES = []string{"genesyscloud_guide", "genesyscloud_guide_version"}
 
 // ResultsStatus represents the outcome of a test execution.
 type ResultsStatus string
