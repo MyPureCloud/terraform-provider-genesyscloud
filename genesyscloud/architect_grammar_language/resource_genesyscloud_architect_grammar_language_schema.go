@@ -19,7 +19,7 @@ resource_genesyscloud_architect_grammar_language_schema.go holds four functions 
 4.  The resource exporter configuration for the architect_grammar_language exporter.
 */
 const ResourceType = "genesyscloud_architect_grammar_language"
-const S3Enabled = false
+const S3Enabled = true
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -32,7 +32,7 @@ func ResourceArchitectGrammarLanguage() *schema.Resource {
 	fileMetadataResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`file_name`: {
-				Description: "The name of the file as defined by the user.",
+				Description: "The name of the file as defined by the user. Note: Changes to files stored in S3 will not be detected by Terraform due to a technical limitation in the Terraform Plugin SDK.",
 				Required:    true,
 				Type:        schema.TypeString,
 			},
@@ -43,9 +43,9 @@ func ResourceArchitectGrammarLanguage() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"Gram", "Grxml"}, false),
 			},
 			"file_content_hash": {
-				Description: "Hash value of the file content. Used to detect changes.",
+				Description: "Hash value of the file content. Used to detect changes. Required for non-S3 file paths.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 			},
 		},
 	}

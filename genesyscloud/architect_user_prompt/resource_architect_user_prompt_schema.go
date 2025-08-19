@@ -67,7 +67,7 @@ var userPromptResource = &schema.Resource{
 			Optional:    true,
 		},
 		"filename": {
-			Description: "Path or URL to the file to be uploaded as prompt.",
+			Description: "Path or URL to the file to be uploaded as prompt. Note: Changes to prompts stored in S3 will not be detected by Terraform due to a technical limitation in the Terraform Plugin SDK.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
