@@ -32,15 +32,7 @@ resource "genesyscloud_guide" "sample_guide" {
 ### Required
 
 - `name` (String) The name of the guide
-- `source` (String) Indicates how the guide content was generated.Valid values: Manual, Prompt, Document. A prompt or url is required when the source is set to Prompt
-
-### Optional
-
-- `latest_production_ready_version` (String) The latest production ready version of the guide
-- `latest_saved_version` (String) The latest saved version of the guide
-- `prompt` (String) The prompt used to generate the guide. This is only applicable when source is set to Prompt
-- `status` (String) The status of the guide returned from the API. Valid values: Draft, ProductionReady
-- `url` (String) The URL of the file to use for generating the guide. This is only applicable when source is set to Prompt
+- `source` (String) Indicates how the guide content was generated.Valid values: Manual, Prompt, Document
 
 ### Read-Only
 

@@ -34,7 +34,7 @@ func ResourceGuide() *schema.Resource {
 				ForceNew:    true,
 			},
 			"source": {
-				Description:  "Indicates how the guide content was generated.Valid values: Manual, Prompt, Document. A prompt or url is required when the source is set to Prompt",
+				Description:  "Indicates how the guide content was generated.Valid values: Manual, Prompt, Document",
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,

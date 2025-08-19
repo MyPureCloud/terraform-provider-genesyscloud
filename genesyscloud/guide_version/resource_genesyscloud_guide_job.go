@@ -21,7 +21,6 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 	log.Printf("Creating guide job for guide: %s with source: %s", guideName, source)
 
 	var jobReq *GenerateGuideContentRequest
-
 	if source == "Prompt" {
 		jobReq = &GenerateGuideContentRequest{
 			Description: &instruction,
@@ -30,7 +29,7 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	job, resp, err := proxy.createGuideJob(ctx, jobReq)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create guide job for %s: %s", guideName, err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide job for %s: %s", guideName, err), resp)
 	}
 
 	log.Printf("Created guide job with ID: %s, Status: %s", *job.Id, *job.Status)
@@ -45,7 +44,7 @@ func createGuideJob(ctx context.Context, d *schema.ResourceData, meta interface{
 		return content, nil
 	}
 
-	return nil, diag.Errorf("guide job completed but no content was generated for guide: %s", guideName)
+	return nil, diag.Errorf("Guide job completed but no content was generated for guide: %s", guideName)
 }
 
 func readGuideJob(ctx context.Context, proxy *guideVersionProxy, jobId string, guideName string) (*GeneratedGuideContent, diag.Diagnostics) {
@@ -55,27 +54,27 @@ func readGuideJob(ctx context.Context, proxy *guideVersionProxy, jobId string, g
 	err := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
 		job, resp, err := proxy.getGuideJobById(ctx, jobId)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error checking guide job status for %s: %s", guideName, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error checking guide job status for %s: %s", guideName, err), resp))
 		}
 
 		if job.Status == nil {
-			return retry.NonRetryableError(fmt.Errorf("guide job %s has nil status for %s", jobId, guideName))
+			return retry.NonRetryableError(fmt.Errorf("Guide job %s has nil status for %s", jobId, guideName))
 		}
 
 		log.Printf("Guide job %s status: %s", jobId, *job.Status)
 
 		switch *job.Status {
 		case "InProgress":
-			return retry.RetryableError(fmt.Errorf("guide job for %s still in progress: %s", guideName, *job.Status))
+			return retry.RetryableError(fmt.Errorf("Guide job for %s still in progress: %s", guideName, *job.Status))
 		case "Succeeded":
 			log.Printf("Guide job %s completed successfully", jobId)
 			result = job.GuideContent
 			return nil
 		case "Failed":
 			if len(job.Errors) > 0 && job.Errors[0].Message != "" {
-				return retry.NonRetryableError(fmt.Errorf("guide job failed for %s: %s", guideName, job.Errors[0].Message))
+				return retry.NonRetryableError(fmt.Errorf("Guide job failed for %s: %s", guideName, job.Errors[0].Message))
 			}
-			return retry.NonRetryableError(fmt.Errorf("guide job failed for %s | Status: %s", guideName, *job.Status))
+			return retry.NonRetryableError(fmt.Errorf("Guide job failed for %s | Status: %s", guideName, *job.Status))
 		default:
 			return retry.RetryableError(fmt.Errorf("unexpected job status for %s | Status: %s", guideName, *job.Status))
 		}

@@ -96,10 +96,9 @@ func ResourceGuideVersion() *schema.Resource {
 				Description: "The instruction given to this version of the guide, for how it should behave when interacting with a User.",
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 			},
 			"generate_content": {
-				Description: "When true, generates guide content via AI using the instruction field as a prompt. When false, uses the instruction field as-is. This field is not exported.",
+				Description: "When true, generates guide content using the instruction field as a prompt. This field is not exported.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -109,7 +108,6 @@ func ResourceGuideVersion() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        variableElem,
-				ForceNew:    true,
 			},
 			"resources": {
 				Description: "The resources associated with this version of the guide.",
@@ -117,7 +115,6 @@ func ResourceGuideVersion() *schema.Resource {
 				Optional:    true,
 				MaxItems:    1,
 				Elem:        resourcesElem,
-				ForceNew:    true,
 			},
 		},
 	}

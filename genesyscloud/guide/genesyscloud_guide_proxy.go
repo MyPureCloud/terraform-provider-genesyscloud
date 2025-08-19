@@ -19,7 +19,7 @@ type createGuideFunc func(ctx context.Context, p *guideProxy, guide *CreateGuide
 type getGuideByIdFunc func(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error)
 type getGuideByNameFunc func(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error)
 type deleteGuideFunc func(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
-type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)	
+type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error)
 
 type guideProxy struct {
 	clientConfig               *platformclientv2.Configuration

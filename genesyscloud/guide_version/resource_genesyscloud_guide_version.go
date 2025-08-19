@@ -87,8 +87,6 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 			log.Printf("Found latest production ready version %s for guide %s, updating it instead of creating new version", latestProductionReadyVersionId, guideId)
 
 			d.SetId(guideId + "/" + latestProductionReadyVersionId)
-
-			// Update the existing version instead of creating a new one
 			return updateGuideVersion(ctx, d, meta)
 		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
@@ -116,7 +114,7 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	guideId, versionId, err := parseId(d.Id())
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, "failed to Parse Guide id", err)
+		return util.BuildDiagnosticError(ResourceType, "Failed to parse guide id", err)
 	}
 
 	log.Printf("Reading Guide Version for guide: %s", guideId)
@@ -154,21 +152,22 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Since published versions are immutable, we must create a new version
 	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGuideVersionProxy(skdConfig)
 
-	guideId, versionId, err := parseId(d.Id())
+	guideId, _, err := parseId(d.Id())
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, "Failed to Parse Guide id", err)
+		return util.BuildDiagnosticError(ResourceType, "Failed to parse guide id", err)
 	}
 
 	log.Printf("Updating Guide Version %s", d.Id())
 
-	versionReq := buildGuideVersionForUpdate(d)
+	versionReq := buildGuideVersionFromResourceData(d)
 
-	version, resp, err := proxy.updateGuideVersion(ctx, versionId, guideId, versionReq)
+	version, resp, err := proxy.createGuideVersion(ctx, versionReq, guideId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update guide version | error: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
 	}
 
 	version.Id = &version.Version
@@ -194,7 +193,7 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 
 	guideId, versionId, err := parseId(d.Id())
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, "Failed to Parse Guide id", err)
+		return util.BuildDiagnosticError(ResourceType, "Failed to parse guide id", err)
 	}
 
 	log.Printf("Attempting to publish Guide Version: %s for Guide: %s in State: %s", versionId, guideId, state)
@@ -213,14 +212,12 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	jobId := *job.Id
-
 	jobStatus, resp, err := proxy.getGuideVersionPublishJobStatus(ctx, versionId, jobId, guideId)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide version publish job status | error: %s", err), resp)
 	}
 
 	status := *jobStatus.Status
-
 	switch status {
 	case "InProgress":
 		log.Printf("Publish job for guide: %s, version: %s still in progress with status: %s", guideId, d.Id(), status)
