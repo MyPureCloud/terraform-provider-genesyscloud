@@ -74,10 +74,16 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		filename = BuildExportFileName(*flow.Name, *flow.VarType, flowId)
 	}
 
+	log.Println("--------------------------------")
+	log.Println("YAML DOWNLOAD BEGINNING")
+	log.Println("--------------------------------")
+
 	downloadUrl, err := proxy.generateDownloadUrl(flowId)
 	if err != nil {
 		return err // option 1
 	}
+
+	log.Println("1")
 
 	log.Printf("Creating subfolder '%s' inside '%s'", subDirectory, exportDirectory)
 	fullPath := filepath.Join(exportDirectory, subDirectory)
@@ -85,6 +91,7 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		return err // option 2
 	}
 	log.Printf("Successfully created subfolder '%s' inside '%s'", subDirectory, exportDirectory)
+	log.Println("2")
 
 	log.Printf("Downloading export flow '%s' to '%s' from download URL", flowId, filepath.Join(fullPath, filename))
 	if resp, err = files.DownloadExportFile(fullPath, filename, downloadUrl); err != nil {
@@ -92,10 +99,11 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 			err = fmt.Errorf("%w. API Response: %s", err, resp.String()) // option 3
 		}
 		log.Printf("Failed to download flow file: %s", err.Error())
+		log.Println("3")
 		return err // option 4
 	}
 	log.Printf("Successfully downloaded export flow '%s' to '%s'", flowId, filepath.Join(fullPath, filename))
-
+	log.Println("4")
 	log.Printf("Updating resource config and state file for flow '%s'", flowId)
 	updateResourceConfigAndState(configMap, resource, exportDirectory, subDirectory, filename)
 	return err
@@ -140,10 +148,14 @@ func updateResourceConfigAndState(configMap map[string]any, resource resourceExp
 		exportFilePathIncludingExportDirName = filepath.Join(exportDir, subDir, filename)
 	)
 
-	configMap["filepath"] = exportFilePath
-	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, exportFilePath)
+	// Normalize the export filename by converting backslashes to forward slashes.
+	// This is crucial for consistent path validation (e.g., preventing "\\" checks) and cross-platform compatibility.
+	normalizedFilePath := strings.ReplaceAll(exportFilePath, "\\", "/")
 
-	resource.State.Attributes["filepath"] = exportFilePath
+	configMap["filepath"] = normalizedFilePath
+	configMap["file_content_hash"] = fmt.Sprintf(`${filesha256("%s")}`, normalizedFilePath)
+
+	resource.State.Attributes["filepath"] = normalizedFilePath
 	// Update file_content_hash in exported state file with actual hash
 	hash, err := files.HashFileContent(exportFilePathIncludingExportDirName)
 	if err != nil {
