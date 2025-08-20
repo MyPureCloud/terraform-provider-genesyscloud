@@ -46,7 +46,7 @@ func createGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	proxy := getGuideProxy(sdkConfig)
 
 	name := d.Get("name").(string)
-	source := d.Get("source").(string)
+	source := "Manual"
 
 	guideReq := &CreateGuide{
 		Name:   &name,
@@ -83,7 +83,6 @@ func readGuide(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		}
 
 		resourcedata.SetNillableValue(d, "name", guide.Name)
-		resourcedata.SetNillableValue(d, "source", guide.Source)
 
 		d.SetId(*guide.Id)
 

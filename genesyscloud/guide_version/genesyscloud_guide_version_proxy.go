@@ -23,8 +23,6 @@ type updateGuideVersionFunc func(ctx context.Context, p *guideVersionProxy, id s
 type publishGuideVersionFunc func(ctx context.Context, p *guideVersionProxy, body *GuideVersionPublishJobRequest) (*VersionJobResponse, *platformclientv2.APIResponse, error)
 type getGuideVersionPublishJobStatusFunc func(ctx context.Context, p *guideVersionProxy, versionId, jobId, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error)
 type getGuideByIdFunc func(ctx context.Context, p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error)
-type createGuideJobFunc func(ctx context.Context, p *guideVersionProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error)
-type getGuideJobByIdFunc func(ctx context.Context, p *guideVersionProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error)
 type guideVersionProxy struct {
 	clientConfig                        *platformclientv2.Configuration
 	GetAllGuidesAttr                    GetAllGuidesFunc
@@ -34,8 +32,6 @@ type guideVersionProxy struct {
 	publishGuideVersionAttr             publishGuideVersionFunc
 	getGuideVersionPublishJobStatusAttr getGuideVersionPublishJobStatusFunc
 	getGuideByIdAttr                    getGuideByIdFunc
-	createGuideJobAttr                  createGuideJobFunc
-	getGuideJobByIdAttr                 getGuideJobByIdFunc
 }
 
 func newGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
@@ -48,8 +44,6 @@ func newGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVe
 		publishGuideVersionAttr:             publishGuideVersionFn,
 		getGuideVersionPublishJobStatusAttr: getGuideVersionPublishJobStatusFn,
 		getGuideByIdAttr:                    getGuideByIdFn,
-		createGuideJobAttr:                  createGuideJobFn,
-		getGuideJobByIdAttr:                 getGuideJobByIdFn,
 	}
 }
 func getGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
@@ -79,14 +73,6 @@ func (p *guideVersionProxy) getGuideVersionPublishJobStatus(ctx context.Context,
 }
 func (p *guideVersionProxy) getGuideById(ctx context.Context, id string) (*Guide, *platformclientv2.APIResponse, error) {
 	return p.getGuideByIdAttr(ctx, p, id)
-}
-
-func (p *guideVersionProxy) createGuideJob(ctx context.Context, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return p.createGuideJobAttr(ctx, p, guideJob)
-}
-
-func (p *guideVersionProxy) getGuideJobById(ctx context.Context, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return p.getGuideJobByIdAttr(ctx, p, id)
 }
 
 // GetAll Functions
@@ -132,7 +118,6 @@ func sdkGetAllGuides(_ context.Context, p *guideVersionProxy) (*[]Guide, *platfo
 	}
 
 	if guides.Entities == nil {
-		log.Printf("No guides found in response")
 		return &allGuides, resp, nil
 	}
 
@@ -140,7 +125,7 @@ func sdkGetAllGuides(_ context.Context, p *guideVersionProxy) (*[]Guide, *platfo
 
 	if guides.PageCount != nil && *guides.PageCount > 1 {
 		for pageNum := 2; pageNum <= *guides.PageCount; pageNum++ {
-			q.Set("pageNumber", fmt.Sprintf("%d", pageNum))
+			q.Set("pageNumber", fmt.Sprintf("%v", pageNum))
 			req.URL.RawQuery = q.Encode()
 
 			body, resp, err = callAPI(client, req)
@@ -289,6 +274,7 @@ func callAPI(client *http.Client, req *http.Request) ([]byte, *platformclientv2.
 		StatusCode: resp.StatusCode,
 		Response:   resp,
 	}
+
 	if resp.StatusCode >= 400 {
 		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
 	}
@@ -404,73 +390,4 @@ func sdkGetGuideById(p *guideVersionProxy, id string) (*Guide, *platformclientv2
 	}
 
 	return &guide, apiResp, nil
-}
-
-// Guide Job Functions
-
-func createGuideJobFn(ctx context.Context, p *guideVersionProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return sdkCreateGuideJob(p, guideJob)
-}
-
-func sdkCreateGuideJob(p *guideVersionProxy, guideJob *GenerateGuideContentRequest) (*JobResponse, *platformclientv2.APIResponse, error) {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	action := http.MethodPost
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs"
-
-	jsonBody, err := json.Marshal(guideJob)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error marshaling guide job: %v", err)
-	}
-
-	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req = buildRequestHeader(req, p)
-
-	respBody, apiResp, err := callAPI(client, req)
-	if err != nil {
-		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
-	}
-
-	var jobResponse JobResponse
-	if err := json.Unmarshal(respBody, &jobResponse); err != nil {
-		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
-	}
-
-	return &jobResponse, apiResp, nil
-}
-
-func getGuideJobByIdFn(ctx context.Context, p *guideVersionProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
-	return sdkGetGuideJobById(p, id)
-}
-
-func sdkGetGuideJobById(p *guideVersionProxy, id string) (*JobResponse, *platformclientv2.APIResponse, error) {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	action := http.MethodGet
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/jobs/" + id
-
-	req, err := http.NewRequest(action, baseURL, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	req = buildRequestHeader(req, p)
-
-	respBody, apiResp, err := callAPI(client, req)
-	if err != nil {
-		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
-	}
-
-	var jobResponse JobResponse
-	if err := json.Unmarshal(respBody, &jobResponse); err != nil {
-		return nil, apiResp, fmt.Errorf("error unmarshaling response: %v", err)
-	}
-
-	return &jobResponse, apiResp, nil
 }

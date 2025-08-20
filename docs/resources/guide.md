@@ -21,8 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_guide" "sample_guide" {
-  name   = "Cx as Code Guide"
-  source = "Manual"
+  name = "Cx as Code Guide"
 }
 ```
 
@@ -32,7 +31,6 @@ resource "genesyscloud_guide" "sample_guide" {
 ### Required
 
 - `name` (String) The name of the guide
-- `source` (String) Indicates how the guide content was generated.Valid values: Manual, Prompt, Document
 
 ### Read-Only
 

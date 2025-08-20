@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -60,44 +59,15 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	versionReq := buildGuideVersionFromResourceData(d)
 
-	guide, resp, err := proxy.getGuideById(ctx, guideId)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide %s: %v", guideId, err), resp)
-	}
-
-	// Check if we need to generate content via guide job
-	if guide.Source != nil && *guide.Source != "Manual" {
-		generateContent := d.Get("generate_content").(bool)
-		if generateContent {
-			log.Printf("generate_content is true, generating content via guide job for guide: %s", *guide.Name)
-			content, diagErr := createGuideJob(ctx, d, meta, *guide.Name, *guide.Source)
-			if diagErr != nil {
-				return diagErr
-			}
-			versionReq.Instruction = content.Instruction
-		}
-	}
-
 	version, resp, err := proxy.createGuideVersion(ctx, versionReq, guideId)
 	if err != nil {
-		if resp.StatusCode == 409 && strings.Contains(err.Error(), "Latest version is not in Production Ready state") {
-			log.Printf("Got 409 error - latest version is not in Production Ready state. Getting latest saved version and updating it instead.")
-
-			latestProductionReadyVersionId := *guide.LatestProductionReadyVersion.Version
-			log.Printf("Found latest production ready version %s for guide %s, updating it instead of creating new version", latestProductionReadyVersionId, guideId)
-
-			d.SetId(guideId + "/" + latestProductionReadyVersionId)
-			return updateGuideVersion(ctx, d, meta)
-		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
 	}
 
 	version.Id = &version.Version
-	if version.Id != nil {
-		d.SetId(guideId + "/" + *version.Id)
-	}
+	d.SetId(guideId + "/" + version.Version)
 
-	log.Printf("Created Guide Version: %s for Guide: %s", *version.Id, guideId)
+	log.Printf("Created Guide Version: %s for Guide: %s", version.Version, guideId)
 
 	publishErr := publishGuideVersion(ctx, d, meta)
 	if publishErr != nil {
@@ -171,9 +141,7 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	version.Id = &version.Version
-	if version.Id != nil {
-		d.SetId(guideId + "/" + *version.Id)
-	}
+	d.SetId(guideId + "/" + version.Version)
 
 	_ = d.Set("guide_id", version.Guide.Id)
 
@@ -229,7 +197,6 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 	default:
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Unknown job status: %s", status), nil)
 	}
-
 	return readGuideVersion(ctx, d, meta)
 }
 

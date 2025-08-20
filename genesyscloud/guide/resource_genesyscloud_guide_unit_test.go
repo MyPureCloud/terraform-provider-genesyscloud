@@ -15,13 +15,10 @@ import (
 func TestUnitResourceGuideCreate(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "Test Guide"
-	tSource := "Manual"
 
 	testGuide := &Guide{
-		Id:     &tId,
-		Name:   &tName,
-		Source: &tSource,
-		Status: platformclientv2.String("Draft"),
+		Id:   &tId,
+		Name: &tName,
 	}
 
 	var guideProxyObj = &guideProxy{}
@@ -33,7 +30,6 @@ func TestUnitResourceGuideCreate(t *testing.T) {
 
 	guideProxyObj.createGuideAttr = func(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *guide.Name)
-		assert.Equal(t, tSource, *guide.Source)
 		return testGuide, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
@@ -45,8 +41,7 @@ func TestUnitResourceGuideCreate(t *testing.T) {
 
 	resourceSchema := ResourceGuide().Schema
 	resourceDataMap := map[string]interface{}{
-		"name":   tName,
-		"source": tSource,
+		"name": tName,
 	}
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
@@ -59,13 +54,9 @@ func TestUnitResourceGuideCreate(t *testing.T) {
 func TestUnitResourceGuideRead(t *testing.T) {
 	tId := uuid.NewString()
 	tName := "Test Guide"
-	tSource := "Manual"
-	tStatus := "Draft"
 	testGuide := &Guide{
-		Id:     &tId,
-		Name:   &tName,
-		Source: &tSource,
-		Status: &tStatus,
+		Id:   &tId,
+		Name: &tName,
 	}
 
 	guideProxyObj := &guideProxy{}
@@ -82,8 +73,7 @@ func TestUnitResourceGuideRead(t *testing.T) {
 
 	resourceSchema := ResourceGuide().Schema
 	resourceDataMap := map[string]interface{}{
-		"name":   tName,
-		"source": tSource,
+		"name": tName,
 	}
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
@@ -94,5 +84,4 @@ func TestUnitResourceGuideRead(t *testing.T) {
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, tId, d.Id())
 	assert.Equal(t, tName, d.Get("name").(string))
-	assert.Equal(t, tSource, d.Get("source").(string))
 }

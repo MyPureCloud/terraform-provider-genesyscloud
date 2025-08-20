@@ -42,7 +42,6 @@ resource "genesyscloud_guide_version" "sample-guide" {
       description    = "This is a test Description"
     }
   }
-  state = "ProductionReady"
 }
 ```
 
@@ -56,7 +55,6 @@ resource "genesyscloud_guide_version" "sample-guide" {
 
 ### Optional
 
-- `generate_content` (Boolean) When true, generates guide content using the instruction field as a prompt. This field is not exported. Defaults to `false`.
 - `resources` (Block List, Max: 1) The resources associated with this version of the guide. (see [below for nested schema](#nestedblock--resources))
 - `variables` (Block List) The variables associated with this version of the guide. Includes input variables (provided) and output variables (captured during execution). (see [below for nested schema](#nestedblock--variables))
 

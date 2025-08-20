@@ -252,6 +252,7 @@ func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byt
 		StatusCode: resp.StatusCode,
 		Response:   resp,
 	}
+
 	if resp.StatusCode >= 400 {
 		return nil, response, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
 	}

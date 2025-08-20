@@ -26,7 +26,6 @@ func TestAccDataSourceGuide(t *testing.T) {
 		guideResourceLabel   = "test-guide"
 		guideDataSourceLabel = "guide-data"
 		guideName            = "Test Guide " + uuid.NewString()
-		guideSource          = "Manual"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -38,7 +37,6 @@ func TestAccDataSourceGuide(t *testing.T) {
 				Config: GenerateGuideResource(
 					guideResourceLabel,
 					guideName,
-					guideSource,
 				) + generateGuideDataSource(
 					guideDataSourceLabel,
 					guideName,

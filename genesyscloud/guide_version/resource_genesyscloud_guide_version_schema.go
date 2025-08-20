@@ -97,12 +97,6 @@ func ResourceGuideVersion() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"generate_content": {
-				Description: "When true, generates guide content using the instruction field as a prompt. This field is not exported.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
 			"variables": {
 				Description: "The variables associated with this version of the guide. Includes input variables (provided) and output variables (captured during execution).",
 				Type:        schema.TypeList,
