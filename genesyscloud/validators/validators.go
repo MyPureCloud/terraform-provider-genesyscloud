@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -195,7 +196,7 @@ func ValidateLocalDateTimes(date interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // ValidatePath validates a file path or URL
-func ValidatePath(i interface{}, k string) (warnings []string, errors []error) {
+func ValidatePath(i any, k string) (warnings []string, errors []error) {
 	v, ok := i.(string)
 	if !ok {
 		errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
@@ -422,7 +423,11 @@ func ValidateFileContentHashChanged(filepathAttr, hashAttr string, supportS3 boo
 func ValidateCSVWithColumns(filePathAttr string, columnNamesAttr string) schema.CustomizeDiffFunc {
 
 	// This function ensures that the contacts file is a CSV file and that it includes the columns defined on the resource
-	return func(ctx context.Context, d *schema.ResourceDiff, _ interface{}) error {
+	return func(ctx context.Context, d *schema.ResourceDiff, _ any) error {
+		if aws.IsS3Path(d.Get(filePathAttr).(string)) {
+			return nil
+		}
+
 		if !d.HasChange(filePathAttr) || !d.HasChange(columnNamesAttr) {
 			return nil
 		}
@@ -432,7 +437,7 @@ func ValidateCSVWithColumns(filePathAttr string, columnNamesAttr string) schema.
 			return nil
 		}
 
-		columnNamesRaw := d.Get(columnNamesAttr).([]interface{})
+		columnNamesRaw := d.Get(columnNamesAttr).([]any)
 		requiredColumns := make([]string, len(columnNamesRaw))
 		for i, v := range columnNamesRaw {
 			requiredColumns[i] = v.(string)
