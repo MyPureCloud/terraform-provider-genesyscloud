@@ -3,8 +3,10 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
@@ -92,6 +94,31 @@ func (p *responsemanagementResponseassetProxy) deleteRespManagementRespAsset(ctx
 	return p.deleteRespManagementRespAssetAttr(ctx, p, id)
 }
 
+func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx context.Context, id string, fileName, divisionId string) (respBody *platformclientv2.Createresponseassetresponse, resp *platformclientv2.APIResponse, err error) {
+	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
+		Name: &fileName,
+	}
+	if divisionId != "" {
+		sdkResponseAsset.DivisionId = &divisionId
+	}
+
+	postResponseData, resp, err := p.createRespManagementRespAsset(ctx, &sdkResponseAsset)
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to upload response asset: %s | error: %s", fileName, err)
+	}
+
+	headers := *postResponseData.Headers
+	url := *postResponseData.Url
+	reader, _, err := files.DownloadOrOpenFile(ctx, fileName, S3Enabled)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	s3Uploader := files.NewS3Uploader(reader, nil, nil, headers, "PUT", url)
+	_, err = s3Uploader.Upload()
+	return postResponseData, resp, err
+}
+
 func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
 	var allResponseAssets []platformclientv2.Responseasset
 	var response *platformclientv2.APIResponse
@@ -138,18 +165,14 @@ func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseas
 func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, *platformclientv2.APIResponse, error) {
 	postResponseData, resp, err := p.responseManagementApi.PostResponsemanagementResponseassetsUploads(*respAsset)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to upload response asset: %v", err)
+		return nil, resp, fmt.Errorf("failed to upload response asset: %v", err)
 	}
 	return postResponseData, resp, nil
 }
 
 // updateRespManagementRespAssetFn is an implementation of the function to update a Genesys Cloud responsemanagement responseasset
 func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
-	putResponseData, resp, err := p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
-	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to update Responsemanagement response asset %s: %v", id, err)
-	}
-	return putResponseData, resp, nil
+	return p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
 }
 
 // getRespManagementRespAssetByIdFn is an implementation of the function to get a Genesys Cloud responsemanagement responseasset by Id

@@ -43,49 +43,32 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 }
 
 // createResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to create Genesys cloud responsemanagement responseasset
-func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	fileName := d.Get("filename").(string)
 	divisionId := d.Get("division_id").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
-	sdkResponseAsset := platformclientv2.Createresponseassetrequest{}
-
-	if fileName != "" {
-		sdkResponseAsset.Name = &fileName
-	}
-	if divisionId != "" {
-		sdkResponseAsset.DivisionId = &divisionId
-	}
-
 	log.Printf("Creating Responsemanagement response asset %s", fileName)
-	postResponseData, resp, err := proxy.createRespManagementRespAsset(ctx, &sdkResponseAsset)
+	postResponseData, resp, err := proxy.uploadRespManagementRespAsset(ctx, d.Id(), fileName, divisionId)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to upload response asset: %s | error: %s", fileName, err), resp)
 	}
 
-	headers := *postResponseData.Headers
-	url := *postResponseData.Url
-	reader, _, err := files.DownloadOrOpenFile(ctx, fileName, S3Enabled)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	s3Uploader := files.NewS3Uploader(reader, nil, nil, headers, "PUT", url)
-	_, err = s3Uploader.Upload()
-
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	d.SetId(*postResponseData.Id)
+
+	fileHash, err := files.HashFileContent(ctx, fileName, S3Enabled)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get file content hash: %s | error: %s", fileName, err), resp)
+	}
+	_ = d.Set("file_content_hash", fileHash)
 
 	log.Printf("Created Responsemanagement response asset %s %s", fileName, *postResponseData.Id)
 	return readRespManagementRespAsset(ctx, d, meta)
 }
 
 // readResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to read an responsemanagement responseasset from genesys cloud
-func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset(), constants.ConsistencyChecks(), ResourceType)
@@ -114,7 +97,7 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 }
 
 // updateResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to update an responsemanagement responseasset in Genesys Cloud
-func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 	fileName := d.Get("filename").(string)
@@ -133,24 +116,31 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	// Adding a sleep with retry logic to determine when the division ID has actually been updated.
-	maxRetries := 5
-	for i := 0; i < maxRetries; i++ {
+	const maxRetries = 6
+	updated := false
+	for range maxRetries {
 		log.Printf("Reading response asset %s", d.Id())
-		time.Sleep(20 * time.Second)
 		getResponseData, resp, err := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to read response asset: %s | error: %s", d.Id(), err), resp)
 		}
 		if *getResponseData.Division.Id == *putResponseData.Division.Id {
-			log.Printf("Updated Responsemanagement response asset %s", d.Id())
-			return readRespManagementRespAsset(ctx, d, meta)
+			updated = true
+			break
 		}
+		time.Sleep(20 * time.Second)
 	}
-	return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Responsemanagement response asset %s did not update properly | error: %s", d.Id(), err), resp)
+
+	if !updated {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Responsemanagement response asset %s did not update properly | error: %s", d.Id(), err), resp)
+	}
+
+	log.Printf("Updated Responsemanagement response asset %s", d.Id())
+	return readRespManagementRespAsset(ctx, d, meta)
 }
 
 // deleteResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to delete an responsemanagement responseasset from Genesys cloud
-func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 

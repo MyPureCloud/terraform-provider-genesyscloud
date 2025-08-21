@@ -6,6 +6,7 @@ import (
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -18,7 +19,7 @@ resource_genesycloud_responsemanagement_responseasset_schema.go holds four funct
 4.  The resource exporter configuration for the responsemanagement_responseasset exporter.
 */
 const ResourceType = "genesyscloud_responsemanagement_responseasset"
-const S3Enabled = false
+const S3Enabled = true
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -39,6 +40,9 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChanged("filename", "file_content_hash", S3Enabled)),
+		),
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`filename`: {
@@ -55,9 +59,11 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"file_content_hash": {
-				Description: "Hash value of the response asset file content. Used to detect changes.",
+				Description: "Hash value of the response asset file content. Used to detect changes. Note: If the file content hash changes, the existing response asset will be dropped and recreated with a new ID",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 		},
 	}
