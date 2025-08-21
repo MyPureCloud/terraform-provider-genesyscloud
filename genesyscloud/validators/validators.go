@@ -330,6 +330,10 @@ func ValidateCSVFormatWithConfig(filepath string, opts ValidateCSVOptions) error
 // ValidateResponseAssetName validate a response asset filename matches the criteria outlined in the description
 func ValidateResponseAssetName(name any, _ cty.Path) diag.Diagnostics {
 	if nameStr, ok := name.(string); ok {
+		if aws.IsS3Path(nameStr) {
+			return nil
+		}
+
 		matched, err := regexp.MatchString("^[^\\.]([^\\`\\\\{\\^\\}\\% \"\\>\\<\\[\\]\\#\\~|]|\\s)+[^/]$", nameStr)
 		if err != nil {
 			return diag.Errorf("Error applying regular expression against filename: %v", err)

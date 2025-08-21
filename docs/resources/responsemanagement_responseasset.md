@@ -29,7 +29,7 @@ resource "genesyscloud_responsemanagement_responseasset" "example_asset" {
 
 ### Required
 
-- `filename` (String) Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \{^}%`]">[~<#|
+- `filename` (String) Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. If the referenced file is stored on S3, it will be downloaded to temporary storage to satisfy API requirements. When referencing a local file, the following characters are not allowed: \{^}%`]">[~<#|
 
 ### Optional
 

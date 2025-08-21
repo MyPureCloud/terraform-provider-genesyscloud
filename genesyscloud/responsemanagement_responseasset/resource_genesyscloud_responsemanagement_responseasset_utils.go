@@ -54,12 +54,11 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 	return err
 }
 
-func GenerateResponseManagementResponseAssetResource(resourceLabel string, fileName string, divisionId string) string {
+func GenerateResponseManagementResponseAssetResource(resourceLabel, fileName, divisionId string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_responsemanagement_responseasset" "%s" {
     filename    = "%s"
     division_id = %s
-	file_content_hash = filesha256("%s")
 }
-`, resourceLabel, fileName, divisionId, fileName)
+`, resourceLabel, fileName, divisionId)
 }

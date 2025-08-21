@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
@@ -43,39 +44,46 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 }
 
 // createResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to create Genesys cloud responsemanagement responseasset
-func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 	fileName := d.Get("filename").(string)
 	divisionId := d.Get("division_id").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
+	if fch := d.Get("file_content_hash").(string); fch != "" {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "file_content_hash will become a read-only attribute in a future release and should not be set",
+		})
+	}
+
 	log.Printf("Creating Responsemanagement response asset %s", fileName)
-	postResponseData, resp, err := proxy.uploadRespManagementRespAsset(ctx, d.Id(), fileName, divisionId)
+	postResponseData, resp, err := proxy.uploadRespManagementRespAsset(ctx, d, fileName, divisionId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to upload response asset: %s | error: %s", fileName, err), resp)
+		return append(diags, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to upload response asset: %s | error: %s", fileName, err), resp)...)
 	}
 
 	d.SetId(*postResponseData.Id)
 
 	fileHash, err := files.HashFileContent(ctx, fileName, S3Enabled)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get file content hash: %s | error: %s", fileName, err), resp)
+		return append(diags, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get file content hash: %s | error: %s", fileName, err), resp)...)
 	}
 	_ = d.Set("file_content_hash", fileHash)
 
 	log.Printf("Created Responsemanagement response asset %s %s", fileName, *postResponseData.Id)
-	return readRespManagementRespAsset(ctx, d, meta)
+	return append(diags, readRespManagementRespAsset(ctx, d, meta)...)
 }
 
 // readResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to read an responsemanagement responseasset from genesys cloud
-func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceResponseManagementResponseAsset(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Responsemanagement response asset %s", d.Id())
 
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	diags = append(diags, util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkAsset, resp, getErr := proxy.getRespManagementRespAssetById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
@@ -84,7 +92,9 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		_ = d.Set("filename", *sdkAsset.Name)
+		if !aws.IsS3Path(d.Get("filename").(string)) {
+			_ = d.Set("filename", *sdkAsset.Name)
+		}
 
 		if sdkAsset.Division != nil && sdkAsset.Division.Id != nil {
 			_ = d.Set("division_id", *sdkAsset.Division.Id)
@@ -93,7 +103,9 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
 
 		return cc.CheckState(d)
-	})
+	})...)
+
+	return diags
 }
 
 // updateResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to update an responsemanagement responseasset in Genesys Cloud

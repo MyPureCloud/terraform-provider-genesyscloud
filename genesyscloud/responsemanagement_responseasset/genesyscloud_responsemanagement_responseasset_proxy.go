@@ -4,9 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+
+	"io"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
@@ -94,9 +101,27 @@ func (p *responsemanagementResponseassetProxy) deleteRespManagementRespAsset(ctx
 	return p.deleteRespManagementRespAssetAttr(ctx, p, id)
 }
 
-func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx context.Context, id string, fileName, divisionId string) (respBody *platformclientv2.Createresponseassetresponse, resp *platformclientv2.APIResponse, err error) {
+func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, fileName, divisionId string) (respBody *platformclientv2.Createresponseassetresponse, resp *platformclientv2.APIResponse, err error) {
+	s3Path := ""
+	localFileName := fileName
+	if aws.IsS3Path(fileName) {
+		// In the case of an S3 path, the filename in the request body should be the last part of the path
+		// We still want the value in the resource data to be the full S3 Path to avoid a diff
+		_ = d.Set("filename", fileName)
+		s3Path = fileName
+
+		// get the file name from the end of the s3 path
+		localFileName = strings.Split(fileName, "/")[len(strings.Split(fileName, "/"))-1]
+
+		localFileName = filepath.Join(os.TempDir(), localFileName)
+		// Download the file if it's not present locally
+		if err := downloadFileIfNotPresent(s3Path, localFileName); err != nil {
+			return nil, resp, fmt.Errorf("failed to download file from S3: %w", err)
+		}
+	}
+
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
-		Name: &fileName,
+		Name: &localFileName,
 	}
 	if divisionId != "" {
 		sdkResponseAsset.DivisionId = &divisionId
@@ -104,12 +129,12 @@ func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx
 
 	postResponseData, resp, err := p.createRespManagementRespAsset(ctx, &sdkResponseAsset)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to upload response asset: %s | error: %s", fileName, err)
+		return nil, resp, fmt.Errorf("failed to upload response asset: %s | error: %s", localFileName, err)
 	}
 
 	headers := *postResponseData.Headers
 	url := *postResponseData.Url
-	reader, _, err := files.DownloadOrOpenFile(ctx, fileName, S3Enabled)
+	reader, _, err := files.DownloadOrOpenFile(ctx, localFileName, S3Enabled)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -117,6 +142,43 @@ func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx
 	s3Uploader := files.NewS3Uploader(reader, nil, nil, headers, "PUT", url)
 	_, err = s3Uploader.Upload()
 	return postResponseData, resp, err
+}
+
+// downloadFileIfNotPresent will download use the DownloadOrOpenFile function to download the file and give it the path/name of filename
+func downloadFileIfNotPresent(s3Path, filename string) error {
+	// Check if the file already exists locally
+	if _, err := os.Stat(filename); err == nil {
+		// File exists - delete it and download it again
+		if err := os.Remove(filename); err != nil {
+			return fmt.Errorf("failed to remove existing file %s: %w", filename, err)
+		}
+	}
+
+	ctx := context.Background()
+	reader, file, err := files.DownloadOrOpenFile(ctx, s3Path, S3Enabled)
+	if err != nil {
+		return fmt.Errorf("failed to download file from %s: %w", s3Path, err)
+	}
+
+	// If we got a file handle, close it after we're done
+	if file != nil {
+		defer file.Close()
+	}
+
+	// Create the local file
+	localFile, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create local file %s: %w", filename, err)
+	}
+	defer localFile.Close()
+
+	// Copy the content from the reader to the local file
+	_, err = io.Copy(localFile, reader)
+	if err != nil {
+		return fmt.Errorf("failed to write content to local file %s: %w", filename, err)
+	}
+
+	return nil
 }
 
 func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
