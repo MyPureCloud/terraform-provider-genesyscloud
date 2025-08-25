@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -61,6 +62,11 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 
 	version, resp, err := proxy.createGuideVersion(ctx, versionReq, guideId)
 	if err != nil {
+		// if the error is about the latest version not being in Production Ready state, we try to update the existing version
+		if strings.Contains(err.Error(), "Latest version is not in Production Ready state") {
+			log.Printf("Latest version is not in Production Ready state, trying to update the existing version ")
+			return updateGuideVersion(ctx, d, meta)
+		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
 	}
 
@@ -125,25 +131,39 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 	// Since published versions are immutable, we must create a new version
 	skdConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGuideVersionProxy(skdConfig)
+	guideId := d.Get("guide_id").(string)
 
-	guideId, _, err := parseId(d.Id())
+	var version *VersionResponse
+	guide, resp, err := proxy.getGuideById(ctx, guideId)
 	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, "Failed to parse guide id", err)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get guide: %s", err), resp)
 	}
 
 	log.Printf("Updating Guide Version %s", d.Id())
 
-	versionReq := buildGuideVersionFromResourceData(d)
+	// Check if there's a production ready version
+	// If there is, we need to create a new version. If not, we can update the existing one.
+	if guide.LatestProductionReadyVersion != nil && guide.LatestProductionReadyVersion.Version != nil {
+		// There's a published version, create a new version
+		versionReq := buildGuideVersionFromResourceData(d)
+		version, resp, err = proxy.createGuideVersion(ctx, versionReq, guideId)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
+		}
+	} else {
+		// No published version, update the existing version
+		if guide.LatestSavedVersion == nil || guide.LatestSavedVersion.Version == nil {
+			return util.BuildDiagnosticError(ResourceType, "No latest saved version found to update", fmt.Errorf("guide has no latest saved version"))
+		}
 
-	version, resp, err := proxy.createGuideVersion(ctx, versionReq, guideId)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create guide version: %s", err), resp)
+		versionReq := buildGuideVersionForUpdate(d)
+		version, resp, err = proxy.updateGuideVersion(ctx, *guide.LatestSavedVersion.Version, guideId, versionReq)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update guide version: %s", err), resp)
+		}
 	}
 
-	version.Id = &version.Version
 	d.SetId(guideId + "/" + version.Version)
-
-	_ = d.Set("guide_id", version.Guide.Id)
 
 	publishErr := publishGuideVersion(ctx, d, meta)
 	if publishErr != nil {

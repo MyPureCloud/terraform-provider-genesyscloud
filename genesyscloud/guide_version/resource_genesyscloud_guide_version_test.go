@@ -3,6 +3,7 @@ package guide_version
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -138,10 +139,115 @@ func TestAccResourceGuideVersion(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:            guideVersionResourceFullPath,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"generate_content"},
+				ResourceName:      guideVersionResourceFullPath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
+	if os.Getenv("GENESYSCLOUD_REGION") != "tca" {
+		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
+	}
+
+	if !guide.GuideFtIsEnabled() {
+		t.Skip("Skipping test as guide feature toggle is not enabled")
+		return
+	}
+
+	t.Parallel()
+	var (
+		guideVersionResourceLabel    = "genesyscloud_guide_version"
+		guideResourceLabel           = "genesyscloud_guide"
+		guideName                    = "Test Guide" + uuid.NewString()
+		initialInstruction           = "Call {{Action.TestDataAction}}"
+		updatedInstruction           = "Call The Data Action"
+		guideVersionResourceFullPath = ResourceType + "." + guideVersionResourceLabel
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create initial guide version (this will fail to publish due to invalid data action)
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName) +
+					GenerateGuideVersionResource(
+						guideVersionResourceLabel,
+						"${genesyscloud_guide."+guideResourceLabel+".id}",
+						initialInstruction,
+						GenerateVariableBlock("status", "String", "Output", "This is the current status of the ticket.  It can be in an Open, In-progress or Closed Status."),
+						GenerateVariableBlock("ticket_number", "String", "Output", "This is the unique identifier of the ticket that the user created.  This value will be used to look up the ticket."),
+						GenerateVariableBlock("priority", "String", "Output", "This is the priority of the ticket. It will be in of four values: Critical, High, Medium or Low."),
+						GenerateVariableBlock("notes", "String", "Output", "These are the notes the support engineer has added to the ticket."),
+						GenerateVariableBlock("changed", "String", "Output", "This is the date the ticket was last updated or changed"),
+					),
+				// Expect the publish to fail due to invalid data action
+				ExpectError: regexp.MustCompile("There are invalid data actions in the version"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "instruction", initialInstruction),
+					resource.TestCheckResourceAttr("genesyscloud_guide."+guideResourceLabel, "name", guideName),
+
+					// Check variable attributes
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "status"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.name", "ticket_number"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.name", "priority"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.name", "notes"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.name", "changed"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.scope", "Output"),
+				),
+			},
+			{
+				// Step 2: Update the guide version with a valid instruction (this tests the update functionality)
+				Config: guide.GenerateGuideResource(guideResourceLabel, guideName) +
+					GenerateGuideVersionResource(
+						guideVersionResourceLabel,
+						"${genesyscloud_guide."+guideResourceLabel+".id}",
+						updatedInstruction,
+						GenerateVariableBlock("status", "String", "Output", "This is the current status of the ticket.  It can be in an Open, In-progress or Closed Status."),
+						GenerateVariableBlock("ticket_number", "String", "Output", "This is the unique identifier of the ticket that the user created.  This value will be used to look up the ticket."),
+						GenerateVariableBlock("priority", "String", "Output", "This is the priority of the ticket. It will be in of four values: Critical, High, Medium or Low."),
+						GenerateVariableBlock("notes", "String", "Output", "These are the notes the support engineer has added to the ticket."),
+						GenerateVariableBlock("changed", "String", "Output", "This is the date the ticket was last updated or changed"),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "instruction", updatedInstruction),
+					resource.TestCheckResourceAttr("genesyscloud_guide."+guideResourceLabel, "name", guideName),
+
+					// Verify the variables are still present
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "status"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.name", "ticket_number"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.name", "priority"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.name", "notes"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.name", "changed"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.scope", "Output"),
+				),
+			},
+			{
+				// Import/Read to verify the final state
+				ResourceName:      guideVersionResourceFullPath,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
