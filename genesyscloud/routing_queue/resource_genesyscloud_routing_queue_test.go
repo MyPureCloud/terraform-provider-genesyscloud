@@ -429,7 +429,7 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 						conditionalGroupRouting2WaitSeconds,                     // wait_seconds
 						GenerateConditionalGroupRoutingRuleGroup(
 							"genesyscloud_group."+group1ResourceLabel+".id", // group_id
-							"GROUP", // group_type
+							"GROUP",                                         // group_type
 						),
 					),
 					"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
@@ -1511,7 +1511,7 @@ func validateAgentOwnedRouting(resourceLabel string, agentattr, enableAgentOwned
 
 func validateConditionalGroupActivation(resourceLabel string, todoBody string) resource.TestCheckFunc {
 	return resource.ComposeAggregateTestCheckFunc(
-	// SHM todo
+		// SHM todo
 	)
 }
 
@@ -1754,10 +1754,21 @@ func TestAccResourceRoutingQueueSkillGroupsAndConditionalGroupActivation(t *test
 						GenerateConditionalGroupActivation("genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id"),
 					),
 				Check: resource.ComposeTestCheckFunc(
-					validateGroups("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "genesyscloud_group."+groupResourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.condition_expression", "C1"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.conditions.0.simple_metric.0.metric", "EstimatedWaitTime"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.conditions.0.operator", "GreaterThan"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.conditions.0.value", "30"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.condition_expression", "C1 or C2"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.0.simple_metric.0.metric", "EstimatedWaitTime"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.0.operator", "GreaterThan"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.0.value", "60"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.simple_metric.0.metric", "EstimatedWaitTime"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.operator", "LessThan"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.value", "90"),
+					resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_id", "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_type", "GROUP"),
+					//validateGroups("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "genesyscloud_group."+groupResourceLabel),
 				),
-
-				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
