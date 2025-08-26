@@ -93,29 +93,35 @@ func flattenGroupOwners(owners *[]platformclientv2.User) []interface{} {
 }
 
 func buildSdkGroupAddresses(d *schema.ResourceData) (*[]platformclientv2.Groupcontact, error) {
-	if addressSlice, ok := d.Get("addresses").([]interface{}); ok && len(addressSlice) > 0 {
+	if addressSlice, ok := d.Get("addresses").([]interface{}); ok {
 		sdkContacts := make([]platformclientv2.Groupcontact, len(addressSlice))
-		for i, configPhone := range addressSlice {
-			phoneMap := configPhone.(map[string]interface{})
-			phoneType := phoneMap["type"].(string)
-			contact := platformclientv2.Groupcontact{
-				VarType:   &phoneType,
-				MediaType: &groupPhoneType, // Only option is PHONE
-			}
+		// This "if" statement is important logic to be kept separate from the above "if" statement.
+		// If an addressSlice is empty, we need to be able to return an empty (not a nil)
+		// platformclientv2.Groupcontact slice. Otherwise, the API will ignore this field and not remove
+		// any existing items.
+		if len(addressSlice) > 0 {
+			for i, configPhone := range addressSlice {
+				phoneMap := configPhone.(map[string]interface{})
+				phoneType := phoneMap["type"].(string)
+				contact := platformclientv2.Groupcontact{
+					VarType:   &phoneType,
+					MediaType: &groupPhoneType, // Only option is PHONE
+				}
 
-			if err := validateAddressesMap(phoneMap); err != nil {
-				return nil, err
-			}
+				if err := validateAddressesMap(phoneMap); err != nil {
+					return nil, err
+				}
 
-			if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
-				contact.Address = &phoneNum
-			}
+				if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
+					contact.Address = &phoneNum
+				}
 
-			if phoneExt := phoneMap["extension"].(string); ok && phoneExt != "" {
-				contact.Extension = &phoneExt
-			}
+				if phoneExt := phoneMap["extension"].(string); ok && phoneExt != "" {
+					contact.Extension = &phoneExt
+				}
 
-			sdkContacts[i] = contact
+				sdkContacts[i] = contact
+			}
 		}
 		return &sdkContacts, nil
 	}
