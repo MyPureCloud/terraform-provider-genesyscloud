@@ -118,7 +118,6 @@ func sdkGetAllGuides(_ context.Context, p *guideVersionProxy) (*[]Guide, *platfo
 	}
 
 	if guides.Entities == nil {
-		log.Printf("No guides found in response")
 		return &allGuides, resp, nil
 	}
 
@@ -126,7 +125,7 @@ func sdkGetAllGuides(_ context.Context, p *guideVersionProxy) (*[]Guide, *platfo
 
 	if guides.PageCount != nil && *guides.PageCount > 1 {
 		for pageNum := 2; pageNum <= *guides.PageCount; pageNum++ {
-			q.Set("pageNumber", fmt.Sprintf("%d", pageNum))
+			q.Set("pageNumber", fmt.Sprintf("%v", pageNum))
 			req.URL.RawQuery = q.Encode()
 
 			body, resp, err = callAPI(client, req)
@@ -275,6 +274,7 @@ func callAPI(client *http.Client, req *http.Request) ([]byte, *platformclientv2.
 		StatusCode: resp.StatusCode,
 		Response:   resp,
 	}
+
 	if resp.StatusCode >= 400 {
 		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
 	}

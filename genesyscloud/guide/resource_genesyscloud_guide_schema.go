@@ -2,7 +2,6 @@ package guide
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -32,43 +31,6 @@ func ResourceGuide() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-			},
-			"source": {
-				Description:  "Indicates how the guide content was generated.Valid values: Manual, Prompt, Document. A prompt or url is required when the source is set to Prompt",
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Manual", "Prompt", "Document"}, true),
-			},
-			"prompt": {
-				Description: "The prompt used to generate the guide. This is only applicable when source is set to Prompt",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"url": {
-				Description: "The URL of the file to use for generating the guide. This is only applicable when source is set to Prompt",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"status": {
-				Description: "The status of the guide returned from the API. Valid values: Draft, ProductionReady",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"latest_saved_version": {
-				Description: "The latest saved version of the guide",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"latest_production_ready_version": {
-				Description: "The latest production ready version of the guide",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
 			},
 		},
 	}
