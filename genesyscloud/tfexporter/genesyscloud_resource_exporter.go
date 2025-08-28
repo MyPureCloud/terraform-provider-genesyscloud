@@ -1831,6 +1831,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			configMap[key] = sanitizeRrule(configMap[key].(string))
 		}
 
+		if exporter.RemoveFieldIfSelfReferential(currAttr, configMap) {
+			// Remove if self-referential
+			configMap[key] = nil
+			continue
+		}
+
 		switch val.(type) {
 		case map[string]interface{}:
 			// Maps are sanitized in-place
