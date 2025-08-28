@@ -19,7 +19,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 	var (
 		// Knowledge Base
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
-		knowledgeBaseName1          = uuid.NewString()
+		knowledgeBaseName1          = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1   = "test-knowledgebase-description1"
 		coreLanguage1               = "en-US"
 

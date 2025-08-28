@@ -18,7 +18,7 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 		categoryResourceLabel1      = "test-category1"
 		categoryName                = "Terraform Test Category 1-" + uuid.NewString()
 		categoryDescription         = "category description"
-		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseName1          = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1   = "test-knowledgebase-description1"
 		knowledgeBaseCoreLanguage1  = "en-US"
 
