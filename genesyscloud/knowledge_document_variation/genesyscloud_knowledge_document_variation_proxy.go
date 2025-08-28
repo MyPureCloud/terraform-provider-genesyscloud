@@ -164,6 +164,7 @@ func getLatestPublishedOrDraftVariationFn(ctx context.Context, p *variationReque
 
 // createVariationFn is an implementation function for creating a Genesys Cloud variation request
 func createVariationFn(ctx context.Context, p *variationRequestProxy, variationRequest *platformclientv2.Documentvariationrequest, knowledgeDocumentId, knowledgeBaseId string) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
+	log.Println("variationRequest", variationRequest)
 	return p.knowledgeApi.PostKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, *variationRequest)
 }
 

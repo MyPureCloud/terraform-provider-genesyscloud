@@ -2,6 +2,7 @@ package knowledge_document_variation
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -371,11 +372,22 @@ func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platfo
 		return nil
 	}
 
-	return &platformclientv2.Documentvariationrequest{
+	log.Println("variationIn", variationIn)
+
+	request := platformclientv2.Documentvariationrequest{
 		Name:     resourcedata.GetNillableValueFromMap[string](variationIn, "name", true),
 		Body:     buildVariationBody(variationIn),
 		Contexts: buildVariationContexts(variationIn),
 	}
+
+	versionId := variationIn["document_version"].([]interface{})[0].(map[string]interface{})["id"].(string)
+	if versionId != "" {
+		request.DocumentVersion = &platformclientv2.Addressableentityref{
+			Id: &versionId,
+		}
+	}
+
+	return &request
 }
 
 func buildVariationContexts(variationIn map[string]interface{}) *[]platformclientv2.Documentvariationcontext {

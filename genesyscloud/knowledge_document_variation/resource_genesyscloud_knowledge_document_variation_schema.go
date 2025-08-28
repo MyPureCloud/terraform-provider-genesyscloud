@@ -37,7 +37,6 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        addressableEntityRef,
-				Computed:    true,
 			},
 			"name": {
 				Description: "The name of the variation",
