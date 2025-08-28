@@ -172,9 +172,9 @@ func TestAccResourceResponseManagementResponseAssetWithS3(t *testing.T) {
 	/*
 		// To run this test locally, uncomment the environment variables below and run `localstack start` from another terminal
 		// See more about localstack cli here: https://docs.localstack.cloud/aws/getting-started/installation/
+		os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
+		os.Setenv(localStackEnv.LocalStackImageUriEnvVar, "localstack/localstack:latest")
 	*/
-	os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
-	os.Setenv(localStackEnv.LocalStackImageUriEnvVar, "localstack/localstack:latest")
 
 	imageURI := os.Getenv(localStackEnv.LocalStackImageUriEnvVar)
 	if imageURI == "" || !localStackEnv.LocalStackIsActive() {
