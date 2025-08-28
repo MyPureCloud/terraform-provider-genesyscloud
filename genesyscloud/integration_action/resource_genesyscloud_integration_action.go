@@ -633,7 +633,6 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
-
 	name := d.Get("name").(string)
 	category := d.Get("category").(string)
 	id := d.Id()
