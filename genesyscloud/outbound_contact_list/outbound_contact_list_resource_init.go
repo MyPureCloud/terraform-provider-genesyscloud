@@ -5,7 +5,7 @@ import (
 )
 
 const ResourceType = "genesyscloud_outbound_contact_list"
-const S3Enabled = false
+const S3Enabled = true
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundContactList())
