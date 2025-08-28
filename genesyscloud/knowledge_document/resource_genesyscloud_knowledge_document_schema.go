@@ -22,6 +22,9 @@ func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
 		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"knowledge_document.label_names": {ResolverFunc: resourceExporter.KnowledgeDocumentLabelNamesResolver},
+		},
 	}
 }
 
