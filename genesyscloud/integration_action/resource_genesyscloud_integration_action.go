@@ -638,7 +638,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	id := d.Id()
 
 	log.Printf("Updating integration action %s", name)
-	
+
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
 		action, resp, err := iap.getIntegrationActionById(ctx, id)
