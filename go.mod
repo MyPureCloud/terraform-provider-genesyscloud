@@ -18,7 +18,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v165 v165.1.0
 	github.com/nyaruka/phonenumbers v1.6.5
 	github.com/rjNemo/underscore v0.7.0
-	github.com/shirou/gopsutil/v4 v4.25.7
+	github.com/shirou/gopsutil/v4 v4.25.8
 	github.com/zclconf/go-cty v1.16.4
 	gonum.org/v1/gonum v0.16.0
 )
@@ -53,7 +53,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
+	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
