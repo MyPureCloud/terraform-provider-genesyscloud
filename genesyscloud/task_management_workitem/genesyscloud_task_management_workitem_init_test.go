@@ -1,14 +1,16 @@
 package task_management_workitem
 
 import (
+	"sync"
+
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	"sync"
+
+	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
-	"testing"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
@@ -50,7 +52,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources[user.ResourceType] = user.ResourceUser()
-	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContact()
+	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContacts()
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()

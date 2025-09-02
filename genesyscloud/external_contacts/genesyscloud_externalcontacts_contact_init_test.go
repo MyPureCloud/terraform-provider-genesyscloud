@@ -1,9 +1,10 @@
 package external_contacts
 
 import (
-	externalContactOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"sync"
 	"testing"
+
+	externalContactOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -31,7 +32,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceExternalContact()
+	providerResources[ResourceType] = ResourceExternalContacts()
 	providerResources["genesyscloud_externalcontacts_organization"] = externalContactOrganization.ResourceExternalContactsOrganization()
 }
 
@@ -40,7 +41,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceExternalContactsContact()
+	providerDataSources[ResourceType] = DataSourceExternalContactsContacts()
 }
 
 // initTestResources initializes all test resources and data sources.
