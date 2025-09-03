@@ -67,7 +67,7 @@ Export block label: "{type}_{name}"`,
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("file_content_hash", validators.ValidateFlowFileContentHashChanged("filepath", "file_content_hash", "manage_file_content_hash", S3Enabled)),
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentManagedHashChanged("filepath", "file_content_hash", "manage_file_content_hash", S3Enabled)),
 		),
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
