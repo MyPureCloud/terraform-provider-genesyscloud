@@ -118,13 +118,6 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]any)
 
-	if d.HasChange("file_content_hash") {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  fmt.Sprintf("file_content_hash will become a read-only attribute in a future version and should be removed from any %s resource configuration.", ResourceType),
-		})
-	}
-
 	reader, _, err := files.DownloadOrOpenFile(ctx, filePath, S3Enabled)
 	if err != nil {
 		setFileContentHashToNil(d)
@@ -178,11 +171,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))...)
 	}
 
-	filePathHash, err := files.HashFileContent(ctx, filePath, S3Enabled)
-	if err != nil {
-		return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the file content hash for the flow %s", flowID), err)...)
+	if !d.Get("manage_file_content_hash").(bool) {
+		filePathHash, err := files.HashFileContent(ctx, filePath, S3Enabled)
+		if err != nil {
+			return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the file content hash for the flow %s", flowID), err)...)
+		}
+		_ = d.Set("file_content_hash", filePathHash)
 	}
-	_ = d.Set("file_content_hash", filePathHash)
 
 	d.SetId(flowID)
 

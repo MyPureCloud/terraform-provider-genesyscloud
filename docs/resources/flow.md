@@ -80,6 +80,7 @@ resource "genesyscloud_flow" "outbound_call_flow" {
 - `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
 - `force_unlock` (Boolean) Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.
+- `manage_file_content_hash` (Boolean) Whether to manage file_content_hash explicitly in the resource configuration. If false, file_content_hash will be computed automatically as the hash of the yaml file content.
 - `name` (String) Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file
 - `substitutions` (Map of String) A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.
 - `type` (String) Flow Type used for export purposes. Note: The 'substitutions' block should be used to set/change 'type' and any other fields in the yaml file

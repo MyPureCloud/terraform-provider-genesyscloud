@@ -67,7 +67,7 @@ Export block label: "{type}_{name}"`,
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChanged("filepath", "file_content_hash", S3Enabled)),
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFlowFileContentHashChanged("filepath", "file_content_hash", "manage_file_content_hash", S3Enabled)),
 		),
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
@@ -94,6 +94,11 @@ Export block label: "{type}_{name}"`,
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
+			},
+			"manage_file_content_hash": {
+				Description: "Whether to manage file_content_hash explicitly in the resource configuration. If false, file_content_hash will be computed automatically as the hash of the yaml file content.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",

@@ -416,6 +416,31 @@ func ValidateFileContentHashChanged(filepathAttr, hashAttr string, supportS3 boo
 	}
 }
 
+// ValidateFlowFileContentHashChanged is a custom diff function that validates if the file content hash has changed.
+// It takes the filepath attribute, the hash attribute, and the manual attribute.
+// The manual attribute is used to determine if the file content hash should be managed manually via Terraform.
+func ValidateFlowFileContentHashChanged(filepathAttr, hashAttr, manualAttr string, supportS3 bool) customdiff.ResourceConditionFunc {
+	return func(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
+		filepath := d.Get(filepathAttr).(string)
+		// If the manual attribute is true, file_content_hash should not be computed
+		if d.Get(manualAttr).(bool) {
+			return false
+		}
+
+		newHash, err := files.HashFileContent(ctx, filepath, supportS3)
+		if err != nil {
+			log.Printf("Error calculating file content hash: %v", err)
+			return false
+		}
+
+		// Get the current hash value
+		oldHash := d.Get(hashAttr).(string)
+
+		// Return true if the hashes are different
+		return oldHash != newHash
+	}
+}
+
 // ValidateCSVColumns returns a CustomizeDiffFunction that validates if a CSV file
 // contains the required columns. It takes the names of the attributes that contain
 // the file path and the column names.
