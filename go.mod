@@ -1,6 +1,6 @@
 module github.com/mypurecloud/terraform-provider-genesyscloud
 
-go 1.24.0
+go 1.24.2
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.38.3
@@ -17,7 +17,7 @@ require (
 	github.com/mozillazg/go-unidecode v0.2.0
 	github.com/mypurecloud/platform-client-sdk-go/v165 v165.1.0
 	github.com/nyaruka/phonenumbers v1.6.5
-	github.com/rjNemo/underscore v0.7.0
+	github.com/rjNemo/underscore v0.8.0
 	github.com/shirou/gopsutil/v4 v4.25.8
 	github.com/zclconf/go-cty v1.16.4
 	gonum.org/v1/gonum v0.16.0
@@ -68,7 +68,7 @@ require (
 	go.opentelemetry.io/otel v1.37.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
