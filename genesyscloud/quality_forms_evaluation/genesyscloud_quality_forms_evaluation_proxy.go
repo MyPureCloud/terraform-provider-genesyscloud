@@ -6,9 +6,7 @@ import (
 	"log"
 	"time"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -53,7 +51,6 @@ type qualityFormsEvaluationProxy struct {
 	publishQualityFormsEvaluationAttr          publishQualityFormsEvaluationFunc
 	getQualityFormsEvaluationsBulkContextsAttr getQualityFormsEvaluationsBulkContextsFunc
 	getEvaluationFormRecentVerIdAttr           getEvaluationFormRecentVerIdFunc
-	evaluationFormsCache                       rc.CacheInterface[platformclientv2.Evaluationformresponse] //Define the cache for quality forms evaluation resource
 }
 
 /*
@@ -63,12 +60,10 @@ This includes configuring the proxy with the required data and settings so that 
 seamlessly with the Genesys Cloud platform.
 */
 func newQualityFormsEvaluationProxy(clientConfig *platformclientv2.Configuration) *qualityFormsEvaluationProxy {
-	api := platformclientv2.NewQualityApiWithConfig(clientConfig)                          // NewQualityApiWithConfig creates a Genesys Cloud API instance using the provided configuration
-	evaluationFormsCache := rc.NewResourceCache[platformclientv2.Evaluationformresponse]() // Create Cache for quality forms evaluation resource
+	api := platformclientv2.NewQualityApiWithConfig(clientConfig) // NewQualityApiWithConfig creates a Genesys Cloud API instance using the provided configuration
 	return &qualityFormsEvaluationProxy{
 		clientConfig:                               clientConfig,
 		qualityApi:                                 api,
-		evaluationFormsCache:                       evaluationFormsCache,
 		createQualityFormsEvaluationAttr:           createQualityFormsEvaluationFn,
 		getAllQualityFormsEvaluationAttr:           getAllQualityFormsEvaluationFn,
 		getQualityFormsEvaluationIdByNameAttr:      getQualityFormsEvaluationIdByNameFn,
@@ -112,9 +107,6 @@ func (p *qualityFormsEvaluationProxy) getQualityFormsEvaluationIdByName(ctx cont
 
 // getQualityFormsEvaluationById returns a single Genesys Cloud quality forms evaluation by Id
 func (p *qualityFormsEvaluationProxy) getQualityFormsEvaluationById(ctx context.Context, id string) (evaluationForm *platformclientv2.Evaluationformresponse, response *platformclientv2.APIResponse, err error) {
-	if form := rc.GetCacheItem(p.evaluationFormsCache, id); form != nil { // Get the evaluation form from the cache, if not there in the cache then call p.getQualityFormsEvaluationByIdAttr()
-		return form, nil, nil
-	}
 	return p.getQualityFormsEvaluationByIdAttr(ctx, p, id)
 }
 
@@ -205,11 +197,6 @@ func getAllQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluati
 		}
 
 		allForms = append(allForms, *forms.Entities...)
-	}
-
-	// Cache the quality forms evaluation resource into the p.evaluationFormsCache for later use
-	for _, form := range allForms {
-		rc.SetCache(p.evaluationFormsCache, *form.Id, form)
 	}
 
 	return &allForms, apiResponse, nil

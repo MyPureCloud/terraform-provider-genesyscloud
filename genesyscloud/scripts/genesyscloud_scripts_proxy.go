@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -229,7 +229,7 @@ func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (
 
 // createScriptFormData creates the form data attributes to create a script in Genesys Cloud
 func (p *scriptsProxy) createScriptFormData(filePath, scriptName, scriptId string) (map[string]io.Reader, error) {
-	fileReader, _, err := files.DownloadOrOpenFile(filePath)
+	fileReader, _, err := files.DownloadOrOpenFile(context.Background(), filePath, S3Enabled)
 	if err != nil {
 		return nil, err
 	}

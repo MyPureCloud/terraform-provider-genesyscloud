@@ -2,6 +2,7 @@ package routing_email_domain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
@@ -124,7 +125,7 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 	})
 
 	if diagErr != nil {
-		return fmt.Errorf(fmt.Sprintf("%v", diagErr))
+		return errors.New(fmt.Sprintf("%v", diagErr))
 	}
 
 	// Success. All Domains destroyed

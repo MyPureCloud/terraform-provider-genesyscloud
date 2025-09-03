@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -1042,7 +1042,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 	)
 
 	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
-		t.Logf("Failed to clean up routin email domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
+		t.Logf("Failed to clean up routing email domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
 
 	resource.Test(t, resource.TestCase{

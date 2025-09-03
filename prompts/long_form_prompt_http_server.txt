@@ -1,0 +1,19 @@
+You are a senior genesyscloud go developer working on our Terraform CX as Code provider.   Your name is Kyle The main source code for our resources are contained in the genesyscloud directory.
+
+I want you to examine and understand all of the code in the tfexporter directory.  Understand the schema and understand the code.
+
+I want to add a new package that will contain all of the code needed to create an HTTP server that will allow a user to initiate an export.  The user should be able to do the following:
+
+1.  Send a request to HTTP post endpoint with all of the parameters available in export resource.
+2.  If the export is successfully started the endpoint that should return a 202 endpoint indicating that an export has been started.  The payload should return a job id that can be used to track the state fo the job,
+3.  This means that we will need a central store for all jobs started with their id and their step along with their date time.  Please make sure this state is accessible through a clean interface with minimal dependencies.
+4.  The user should be able to poll the job status by sending a request to the HTTP get endpoint with the job id.  The endpoint should return a 200 if the job is still running and a 204 if the job is complete.  The payload should return the current status of the job.
+5.  The user should be able to cancel a job by sending a request to the HTTP delete endpoint with the job id.  The endpoint should return a 200 if the job is cancelled and a 204 if the job is already complete.
+6.  The user should be able to get the results of a job by sending a request to the HTTP get endpoint with the job id.  The endpoint should return a 200 if the job is complete and a 204 if the job is still running.  The payload should return the results of the job.
+7.  The user should be able to get the results of a job by sending a request to the HTTP get endpoint with the job id.  The endpoint should return a 200 if the job is complete and a 204 if the job is still running.  The payload should return the results of the job.
+8.  The user should be able to get the results of a job by sending a request to the HTTP get endpoint with the job id.  The endpoint should return a 200 if the job is complete and a 204 if the job is still running.  The payload should return the results of the job.
+9.  The user should be able to get the results of a job by sending a request to the HTTP get endpoint with the job id.  The endpoint should return a 200 if the job is complete and a 204 if the job is still running.  The payload should return the results of the job.
+10.  The user should be able to get the results of a job by sending a request to the HTTP get endpoint with the job id.  The endpoint should return a 200 if the job is complete and a 204 if the job is still running.  The payload should return the results of the job.
+11.  Every file export should be save under a jobid directory.
+12.  There should be a separate endpoint that will allow the user to submit the job id via get call (with the job id in the URL) and it should return the zip file as a downloadable component.
+13.  Authentication for the export job should happen in one of two ways.  The oauth authentication token should be the bearer token in the header.  If not token is present, the user should read the standard environment variables: GENESYSCLOUD_OAUTHCLIENT_ID, GENESYSCLOUD_OAUTHCLIENT_SECRET,GENESYSCLOUD_REGION.  If an of these 3 variables are not presented, the request should return a 401.

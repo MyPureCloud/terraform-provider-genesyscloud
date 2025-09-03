@@ -3,11 +3,11 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
 )
 
 /*
@@ -15,6 +15,11 @@ The genesyscloud_routing_queue_proxy.go file contains the proxy structures and m
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
 out during testing.
 */
+
+const (
+	// Environment variable for configuring routing queue operation delays
+	RoutingQueueDelayEnvVar = "ROUTING_QUEUE_DELAY_MAX"
+)
 
 var routingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
 var internalProxy *RoutingQueueProxy
@@ -183,11 +188,13 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 }
 
 func createRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	return p.routingApi.PostRoutingQueues(*createReq)
 }
 
 // getRoutingQueueByIdFn is the implementation for retrieving a routing queues in Genesys Cloud
 func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	if checkCache {
 		queue := rc.GetCacheItem(p.RoutingQueueCache, queueId)
 		if queue != nil {
@@ -217,10 +224,12 @@ func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name str
 }
 
 func updateRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueId string, updateReq *platformclientv2.Queuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	return p.routingApi.PutRoutingQueue(queueId, *updateReq)
 }
 
 func deleteRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueID string, forceDelete bool) (*platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	resp, err := p.routingApi.DeleteRoutingQueue(queueID, forceDelete)
 	if err != nil {
 		return resp, err
@@ -275,10 +284,12 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 }
 
 func createRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, queueId string, body []platformclientv2.Wrapupcodereference) ([]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	return p.routingApi.PostRoutingQueueWrapupcodes(queueId, body)
 }
 
 func deleteRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, queueId, codeId string) (*platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	resp, err := p.routingApi.DeleteRoutingQueueWrapupcode(queueId, codeId)
 	if err != nil {
 		return resp, err
@@ -288,9 +299,11 @@ func deleteRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, q
 }
 
 func addOrRemoveMembersFn(ctx context.Context, p *RoutingQueueProxy, queueId string, body []platformclientv2.Writableentity, delete bool) (*platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	return p.routingApi.PostRoutingQueueMembers(queueId, body, delete)
 }
 
 func updateRoutingQueueMemberFn(ctx context.Context, p *RoutingQueueProxy, queueId, userId string, body platformclientv2.Queuemember) (*platformclientv2.APIResponse, error) {
+	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
 	return p.routingApi.PatchRoutingQueueMember(queueId, userId, body)
 }

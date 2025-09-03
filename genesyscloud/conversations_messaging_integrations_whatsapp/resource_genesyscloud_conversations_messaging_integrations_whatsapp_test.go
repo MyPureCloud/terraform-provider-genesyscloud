@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -27,18 +27,26 @@ func TestAccResourceConversationsMessagingIntegrationsWhatsapp(t *testing.T) {
 	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	var (
 		resourceLabel                 = "test_messaging_whatsapp"
-		resourceName                  = "Terraform Messaging Whatsapp-" + uuid.NewString()
-		resourceName2                 = "Terraform Messaging Whatsapp2-" + uuid.NewString()
+		resourceName                  = "TestTerraformMessagingWhatsapp-" + uuid.NewString()
+		resourceName2                 = "TestTerraformMessagingWhatsapp2-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
-		nameSupportedContent          = "Terraform SupportedContent-" + uuid.NewString()
+		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		inboundType                   = "*/*"
 
 		resourceLabelMessagingSetting = "testMessagingSetting"
-		nameMessagingSetting          = "Terraform MessagingSetting-" + uuid.NewString()
+		nameMessagingSetting          = "TestTerraformMessagingSetting-" + uuid.NewString()
 		phoneNumber                   = "+13172222222"
 		pin                           = "0000"
 		embeddedToken                 = uuid.NewString()
 	)
+
+	if cleanupErr := CleanupMessagingIntegrationsWhatsapp("TestTerraformMessagingWhatsapp"); cleanupErr != nil {
+		t.Logf("Failed to clean up conversations messaging integrations whatsapp with name '%s': %s", resourceName, cleanupErr.Error())
+	}
+
+	if cleanupErr := CleanupMessagingIntegrationsWhatsapp("TestTerraformMessagingWhatsapp2"); cleanupErr != nil {
+		t.Logf("Failed to clean up conversations messaging integrations whatsapp with name '%s': %s", resourceName2, cleanupErr.Error())
+	}
 
 	supportedContentReference := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",

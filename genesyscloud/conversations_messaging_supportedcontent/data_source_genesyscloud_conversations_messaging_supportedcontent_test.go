@@ -20,10 +20,14 @@ func TestAccDataSourceSupportedContent(t *testing.T) {
 	var (
 		resourceLabel   = "testSupportedContent"
 		dataSourceLabel = "testSupportedContent_data"
-		name            = "Terraform Supported Content - " + uuid.NewString()
+		name            = "TestTerraformSupportedContent-" + uuid.NewString()
 		inboundType     = "*/*"
 		outboundType    = "image/*"
 	)
+
+	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent"); cleanupErr != nil {
+		t.Logf("Failed to clean up conversations messaging supported content with name '%s': %s", name, cleanupErr.Error())
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

@@ -3,10 +3,6 @@ package outbound_contact_list
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"log"
 	"math"
 	"net/http"
@@ -16,9 +12,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
@@ -269,7 +270,7 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	// Remove read only attributes from the config file
 	delete(configMap, "contacts_file_content_hash")
 	delete(configMap, "contacts_record_count")
-	hash, err := files.HashFileContent(fullCurrentPath)
+	hash, err := files.HashFileContent(ctx, fullCurrentPath, S3Enabled)
 	if err != nil {
 		log.Printf("Error calculating file content hash: %v", err)
 		return err

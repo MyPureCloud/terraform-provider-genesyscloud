@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 type SurveyFormStruct struct {
@@ -68,7 +68,7 @@ func getAllSurveyForms(ctx context.Context, clientConfig *platformclientv2.Confi
 	proxy := getQualityFormsSurveyProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	forms, resp, err := proxy.getAllQualityFormsSurvey(ctx)
+	forms, resp, err := proxy.getAllQualityFormsSurvey(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get survey forms error: %s", err), resp)
 	}

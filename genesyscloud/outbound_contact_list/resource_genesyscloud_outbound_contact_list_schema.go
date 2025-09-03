@@ -105,7 +105,7 @@ func ResourceOutboundContactList() *schema.Resource {
 		},
 		SchemaVersion: 2,
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("contacts_file_content_hash", validators.ValidateFileContentHashChanged("contacts_filepath", "contacts_file_content_hash")),
+			customdiff.ComputedIf("contacts_file_content_hash", validators.ValidateFileContentHashChanged("contacts_filepath", "contacts_file_content_hash", false)),
 			validators.ValidateCSVWithColumns("contacts_filepath", "column_names"),
 		),
 		Schema: map[string]*schema.Schema{

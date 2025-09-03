@@ -2,6 +2,7 @@ package files
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	testrunner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +50,7 @@ func TestUnitS3UploadSuccess(t *testing.T) {
 		// Return a mock JSON response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(yamlFile))
+		_, _ = w.Write([]byte(yamlFile))
 	}))
 	defer mockServer.Close()
 
@@ -122,7 +124,7 @@ func TestUnitSubstitutions(t *testing.T) {
 	s3Uploader := NewS3Uploader(fileReader, nil, substitutions, headers, "PUT", fmt.Sprintf("%s%s", "", presignedURL))
 
 	var original bytes.Buffer
-	fmt.Fprintf(&original, origYamlFile)
+	fmt.Fprint(&original, origYamlFile)
 	s3Uploader.bodyBuf = &original
 	s3Uploader.substituteValues()
 
@@ -181,7 +183,7 @@ func TestUnitScriptUploadSuccess(t *testing.T) {
 		// Return a mock JSON response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(scriptFile))
+		_, _ = w.Write([]byte(scriptFile))
 	}))
 
 	defer mockServer.Close()
@@ -206,17 +208,18 @@ func TestUnitScriptUploadSuccess(t *testing.T) {
 	}
 }
 
-func TestDownloadOrOpenFile(t *testing.T) {
+func TestUnitDownloadOrOpenFile(t *testing.T) {
+	ctx := context.Background()
 	// Test HTTP download
 	t.Run("successful HTTP download", func(t *testing.T) {
 		// Setup test server
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("test content"))
+			_, _ = w.Write([]byte("test content"))
 		}))
 		defer server.Close()
 
-		reader, file, err := DownloadOrOpenFile(server.URL)
+		reader, file, err := DownloadOrOpenFile(ctx, server.URL, false)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -240,7 +243,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 		}))
 		defer server.Close()
 
-		reader, file, err := DownloadOrOpenFile(server.URL)
+		reader, file, err := DownloadOrOpenFile(ctx, server.URL, false)
 		if err == nil {
 			t.Error("Expected error for 404 response, got nil")
 		}
@@ -264,7 +267,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 		}
 		tmpfile.Close()
 
-		reader, file, err := DownloadOrOpenFile(tmpfile.Name())
+		reader, file, err := DownloadOrOpenFile(ctx, tmpfile.Name(), false)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -285,7 +288,7 @@ func TestDownloadOrOpenFile(t *testing.T) {
 
 	t.Run("non-existent local file", func(t *testing.T) {
 		path := filepath.Join(os.TempDir(), "nonexistent-file")
-		reader, file, err := DownloadOrOpenFile(path)
+		reader, file, err := DownloadOrOpenFile(ctx, path, false)
 		if err == nil {
 			t.Error("Expected error for non-existent file, got nil")
 		}
@@ -296,9 +299,29 @@ func TestDownloadOrOpenFile(t *testing.T) {
 			t.Error("Expected nil reader and file for non-existent file")
 		}
 	})
+
+	// Test that GetS3FileReader is used when the path is an S3 URI
+	t.Run("S3 util function is used when the path is an S3 URI and supportS3 is true", func(t *testing.T) {
+		originalGetS3FileReader := utilAws.GetS3FileReader
+		defer func() {
+			utilAws.GetS3FileReader = originalGetS3FileReader
+		}()
+		utilAws.GetS3FileReader = func(ctx context.Context, path string) (io.Reader, *os.File, error) {
+			return nil, nil, fmt.Errorf("test error")
+		}
+
+		reader, file, err := DownloadOrOpenFile(ctx, "s3://test-bucket/test-key", true)
+		if err == nil {
+			t.Error("Expected error for S3 URI, got nil")
+		}
+		if reader != nil || file != nil {
+			t.Error("Expected nil reader and file for S3 URI")
+		}
+	})
 }
 
-func TestHashFileContent(t *testing.T) {
+func TestUnitHashFileContent(t *testing.T) {
+	ctx := context.Background()
 	// Create a temporary test file
 	tempContent := []byte("test content")
 	tempFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "test_file_*.txt")
@@ -314,7 +337,7 @@ func TestHashFileContent(t *testing.T) {
 
 	// Test successful case
 	t.Run("successful hash", func(t *testing.T) {
-		hash, err := HashFileContent(tempFile.Name())
+		hash, err := HashFileContent(ctx, tempFile.Name(), false)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -330,7 +353,7 @@ func TestHashFileContent(t *testing.T) {
 
 	// Test non-existent file
 	t.Run("non-existent file", func(t *testing.T) {
-		hash, err := HashFileContent("non_existent_file.txt")
+		hash, err := HashFileContent(ctx, "non_existent_file.txt", false)
 		if err == nil {
 			t.Error("Expected error for non-existent file, got nil")
 		}
@@ -340,7 +363,7 @@ func TestHashFileContent(t *testing.T) {
 	})
 }
 
-func TestGetCSVRecordCount(t *testing.T) {
+func TestUnitGetCSVRecordCount(t *testing.T) {
 	tests := []struct {
 		name          string
 		fileContent   string
@@ -403,7 +426,7 @@ func TestGetCSVRecordCount(t *testing.T) {
 	}
 }
 
-func TestGetCSVRecordCount_NonexistentFile(t *testing.T) {
+func TestUnitGetCSVRecordCount_NonexistentFile(t *testing.T) {
 	_, err := GetCSVRecordCount("nonexistent.csv")
 	if err == nil {
 		t.Error("Expected error for nonexistent file, got none")
