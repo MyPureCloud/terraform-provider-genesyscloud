@@ -21,7 +21,7 @@ func TestAccResourceBusinessRulesDecisionTable(t *testing.T) {
 		t.Skipf("Skipping test as business rules decision tables is not configured: %s", resp.Status)
 		return
 	}
-	
+
 	var (
 		// Resource labels
 		tableResourceLabel  = "test-decision-table"

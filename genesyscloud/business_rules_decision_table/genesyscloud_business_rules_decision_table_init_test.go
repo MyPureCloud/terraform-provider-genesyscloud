@@ -1,9 +1,9 @@
 package business_rules_decision_table
 
 import (
+	"log"
 	"sync"
 	"testing"
-	"log"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -25,7 +25,6 @@ var (
 	sdkConfig *platformclientv2.Configuration
 	authErr   error
 )
-
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
