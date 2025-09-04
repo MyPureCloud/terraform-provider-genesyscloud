@@ -171,7 +171,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the flowId from Architect Job (%s).", jobId), fmt.Errorf("FlowID is nil"))...)
 	}
 
-	if !d.Get("manage_file_content_hash").(bool) {
+	if d.Get("update_trigger_hash").(string) == "" {
 		filePathHash, err := files.HashFileContent(ctx, filePath, S3Enabled)
 		if err != nil {
 			return append(diags, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the file content hash for the flow %s", flowID), err)...)

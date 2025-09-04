@@ -67,7 +67,7 @@ Export block label: "{type}_{name}"`,
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentManagedHashChanged("filepath", "file_content_hash", "manage_file_content_hash", S3Enabled)),
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChangedWithTriggerHash("filepath", "file_content_hash", "update_trigger_hash", S3Enabled)),
 		),
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
@@ -92,12 +92,11 @@ Export block label: "{type}_{name}"`,
 			"file_content_hash": {
 				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
-				Optional:    true,
 				Computed:    true,
 			},
-			"manage_file_content_hash": {
-				Description: "Whether to manage file_content_hash explicitly in the resource configuration. If false, file_content_hash will be computed automatically as the hash of the yaml file content.",
-				Type:        schema.TypeBool,
+			"update_trigger_hash": {
+				Description: "A hash value used to trigger resource updates. When this value changes, the resource will be refreshed. Use this to hash external values such as environment variables, outputs from other resources, or timestamps that should initiate an update. By default, `file_content_hash` hashes the content of the file specified by the filepath field to trigger updates. This field can be used as an alternative for greater control over the update triggers.",
+				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"substitutions": {

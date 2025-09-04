@@ -416,13 +416,12 @@ func ValidateFileContentHashChanged(filepathAttr, hashAttr string, supportS3 boo
 	}
 }
 
-// ValidateFileContentManagedHashChanged is a custom diff function that validates if the file content hash has changed.
-// It takes the filepath attribute, the hash attribute, and the manual attribute.
-// The manual attribute is used to determine if the file content hash should be managed manually via Terraform.
-func ValidateFileContentManagedHashChanged(filepathAttr, hashAttr, manualAttr string, supportS3 bool) customdiff.ResourceConditionFunc {
+// ValidateFileContentHashChangedWithTriggerHash is a custom diff function that validates if the file content hash has changed.
+// It takes the filepath attribute, the hash attribute, and the trigger hash attribute.
+// If the trigger hash attribute is provided, the hash attr should not be computed
+func ValidateFileContentHashChangedWithTriggerHash(filepathAttr, hashAttr, triggerHashAttr string, supportS3 bool) customdiff.ResourceConditionFunc {
 	return func(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
-		// If the manual attribute is true, the hash attr should not be computed
-		if d.Get(manualAttr).(bool) {
+		if d.Get(triggerHashAttr).(string) != "" {
 			return false
 		}
 		return ValidateFileContentHashChanged(filepathAttr, hashAttr, supportS3)(ctx, d, meta)
