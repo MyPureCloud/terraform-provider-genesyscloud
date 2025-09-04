@@ -2,6 +2,10 @@ package business_rules_decision_table
 
 import (
 	"fmt"
+
+	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 // generateBusinessRulesDecisionTableResource generates a basic business rules decision table resource
@@ -97,4 +101,18 @@ func generateRoutingQueueResource(resourceLabel, name string) string {
 		description = "Test queue for decision table testing"
 	}
 	`, resourceLabel, name)
+}
+
+func businessRulesDecisionTableFtIsEnabled() (bool, *platformclientv2.APIResponse) {
+	log.Printf("DEBUG: Checking if business rules decision tables is enabled")
+	clientConfig := platformclientv2.GetDefaultConfiguration()
+	api := platformclientv2.NewBusinessRulesApiWithConfig(clientConfig)
+
+	_, resp, err := api.GetBusinessrulesDecisiontables("", "", nil, "")
+	if err != nil {
+		log.Printf("Error getting business rules decision tables: %v", err)
+		return false, resp
+	}
+
+	return resp.StatusCode == 200, resp
 }

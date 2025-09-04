@@ -15,6 +15,14 @@ Test Class for the business rules decision table Data Source
 */
 
 func TestAccDataSourceBusinessRulesDecisionTable(t *testing.T) {
+	t.Parallel()
+
+	enabled, resp := businessRulesDecisionTableFtIsEnabled()
+	if !enabled {
+		t.Skipf("Skipping test as business rules decision tables is not configured: %s", resp.Status)
+		return
+	}
+
 	var (
 		schemaResourceLabel = "test-schema"
 		schemaName          = "tf_schema_" + uuid.NewString()

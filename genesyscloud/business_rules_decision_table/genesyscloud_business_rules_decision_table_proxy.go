@@ -3,7 +3,7 @@ package business_rules_decision_table
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v162/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
@@ -162,7 +162,7 @@ func deleteBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDec
 }
 
 func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDecisionTableProxy) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
-	return p.businessRulesApi.GetBusinessrulesDecisiontables("", "", nil)
+	return p.businessRulesApi.GetBusinessrulesDecisiontables("", "", nil, "")
 }
 
 // getBusinessRulesDecisionTablesByNameFn is an implementation of the function to get Genesys Cloud business rules decision tables by name
