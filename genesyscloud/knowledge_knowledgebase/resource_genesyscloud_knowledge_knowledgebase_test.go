@@ -117,7 +117,9 @@ func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 				log.Printf("Deleting knowledge base %s", *knowledgeBase.Name)
 				_, _, err := knowledgeApi.DeleteKnowledgeKnowledgebase(*knowledgeBase.Id)
 				if err != nil {
-					return fmt.Errorf("failed to delete knowledge base %s: %v", *knowledgeBase.Name, err)
+					// Logging the error rather than returning it to ensure the deletion of other knowledge bases
+					log.Printf("Failed to delete knowledge base %s: %v", *knowledgeBase.Name, err)
+					continue
 				}
 				log.Printf("Deleted knowledge base %s", *knowledgeBase.Name)
 				time.Sleep(5 * time.Second)
