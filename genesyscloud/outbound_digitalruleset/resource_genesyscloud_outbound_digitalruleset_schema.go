@@ -41,14 +41,15 @@ var (
 				Type:        schema.TypeString,
 			},
 			`value`: {
-				Description: `The value to compare against the contact's data.`,
+				Description: `The value to compare against the contact's data. If 'value_type' is Numeric or Period, value is required`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`value_type`: {
-				Description: `The data type the value should be treated as.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `The data type the value should be treated as.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"String", "Numeric", "Period", "DateTime"}, false),
 			},
 		},
 	}
