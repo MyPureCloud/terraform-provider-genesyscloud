@@ -103,16 +103,24 @@ func generateRoutingQueueResource(resourceLabel, name string) string {
 	`, resourceLabel, name)
 }
 
-func businessRulesDecisionTableFtIsEnabled() (bool, *platformclientv2.APIResponse) {
+func businessRulesDecisionTableFtIsEnabled() (bool, *platformclientv2.APIResponse, *platformclientv2.APIResponse) {
 	log.Printf("DEBUG: Checking if business rules decision tables is enabled")
 	clientConfig := platformclientv2.GetDefaultConfiguration()
-	api := platformclientv2.NewBusinessRulesApiWithConfig(clientConfig)
+	businessRulesApi := platformclientv2.NewBusinessRulesApiWithConfig(clientConfig)
+	queueApi := platformclientv2.NewRoutingApiWithConfig(clientConfig)
 
-	_, resp, err := api.GetBusinessrulesDecisiontables("", "", nil, "")
-	if err != nil {
-		log.Printf("Error getting business rules decision tables: %v", err)
-		return false, resp
+	// to create a decision table queue view permission is required so lets ensure we can get queues by calling get all queues
+	_, decisionTableResp, businessRulesDecisionTableErr := businessRulesApi.GetBusinessrulesDecisiontables("", "", nil, "")
+	_, queueResp, queueErr := queueApi.GetRoutingQueues(1, 100, "", "", nil, nil, nil, "", false, nil)
+	if businessRulesDecisionTableErr != nil || queueErr != nil {
+		if businessRulesDecisionTableErr != nil {
+			log.Printf("Error getting business rules decision tables: %v", businessRulesDecisionTableErr)
+		}
+		if queueErr != nil {
+			log.Printf("Error getting routing queues: %v", queueErr)
+		}
+		return false, decisionTableResp, queueResp
 	}
 
-	return resp.StatusCode == 200, resp
+	return decisionTableResp.StatusCode == 200 && queueResp.StatusCode == 200, decisionTableResp, queueResp
 }

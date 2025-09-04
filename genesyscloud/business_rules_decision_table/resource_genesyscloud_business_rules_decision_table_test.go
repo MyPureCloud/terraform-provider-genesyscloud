@@ -16,9 +16,9 @@ import (
 func TestAccResourceBusinessRulesDecisionTable(t *testing.T) {
 	t.Parallel()
 
-	enabled, resp := businessRulesDecisionTableFtIsEnabled()
+	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
 	if !enabled {
-		t.Skipf("Skipping test as business rules decision tables is not configured: %s", resp.Status)
+		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
 		return
 	}
 
