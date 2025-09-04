@@ -42,7 +42,7 @@ var (
 			},
 			`value`: {
 				Description: `The value to compare against the contact's data.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`value_type`: {
@@ -522,6 +522,9 @@ func OutboundDigitalrulesetExporter() *resourceExporter.ResourceExporter {
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
+		},
+		AllowZeroValues: []string{
+			"rules.order",
 		},
 	}
 }
