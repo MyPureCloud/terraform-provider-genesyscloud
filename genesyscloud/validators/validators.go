@@ -416,6 +416,18 @@ func ValidateFileContentHashChanged(filepathAttr, hashAttr string, supportS3 boo
 	}
 }
 
+// ValidateFileContentHashChangedWithTriggerHash is a custom diff function that validates if the file content hash has changed.
+// It takes the filepath attribute, the hash attribute, and the trigger hash attribute.
+// If the trigger hash attribute is provided, the hash attr should not be computed
+func ValidateFileContentHashChangedWithTriggerHash(filepathAttr, hashAttr, triggerHashAttr string, supportS3 bool) customdiff.ResourceConditionFunc {
+	return func(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
+		if d.Get(triggerHashAttr).(string) != "" {
+			return false
+		}
+		return ValidateFileContentHashChanged(filepathAttr, hashAttr, supportS3)(ctx, d, meta)
+	}
+}
+
 // ValidateCSVColumns returns a CustomizeDiffFunction that validates if a CSV file
 // contains the required columns. It takes the names of the attributes that contain
 // the file path and the column names.
