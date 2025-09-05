@@ -343,8 +343,16 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 
 func (r *ResourceExporter) RemoveFieldIfSelfReferential(attribute string, config map[string]interface{}) bool {
 	if ok := lists.ItemInSlice(attribute, r.RemoveIfSelfReferential); ok {
-		id := config["id"].(string)
-		attributeValue := config[attribute].(string)
+		id := config["id"]
+		if id == nil {
+			return false
+		}
+		id = id.(string)
+		attributeValue := config[attribute]
+		if attributeValue == nil {
+			return false
+		}
+		attributeValue = attributeValue.(string)
 		return attributeValue == id
 	}
 	return false

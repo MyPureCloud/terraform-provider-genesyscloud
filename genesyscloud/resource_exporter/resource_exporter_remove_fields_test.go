@@ -149,7 +149,7 @@ func TestUnitRemoveIfMissing(t *testing.T) {
 func TestUnitRemoveIfSelfReferential(t *testing.T) {
 	resourceId := uuid.NewString()
 	differentId := uuid.NewString()
-	
+
 	tests := []struct {
 		name                    string
 		removeIfSelfReferential []string
@@ -162,9 +162,9 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 			removeIfSelfReferential: []string{"backup_queue_id"},
 			attribute:               "backup_queue_id",
 			config: map[string]interface{}{
-				"id":             resourceId,
+				"id":              resourceId,
 				"backup_queue_id": resourceId, // Self-reference
-				"name":           "test_queue",
+				"name":            "test_queue",
 			},
 			expectedRemove: true,
 		},
@@ -173,9 +173,9 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 			removeIfSelfReferential: []string{"backup_queue_id"},
 			attribute:               "backup_queue_id",
 			config: map[string]interface{}{
-				"id":             resourceId,
+				"id":              resourceId,
 				"backup_queue_id": differentId, // Different ID
-				"name":           "test_queue",
+				"name":            "test_queue",
 			},
 			expectedRemove: false,
 		},
@@ -184,9 +184,9 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 			removeIfSelfReferential: []string{"other_attribute"},
 			attribute:               "backup_queue_id",
 			config: map[string]interface{}{
-				"id":             resourceId,
+				"id":              resourceId,
 				"backup_queue_id": resourceId, // Self-reference but not configured for removal
-				"name":           "test_queue",
+				"name":            "test_queue",
 			},
 			expectedRemove: false,
 		},
@@ -206,9 +206,31 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 			removeIfSelfReferential: []string{"backup_queue_id"},
 			attribute:               "backup_queue_id",
 			config: map[string]interface{}{
-				"id":             resourceId,
+				"id":              resourceId,
 				"backup_queue_id": "", // Empty string
-				"name":           "test_queue",
+				"name":            "test_queue",
+			},
+			expectedRemove: false,
+		},
+		{
+			name:                    "Gracefully handle nil id",
+			removeIfSelfReferential: []string{"backup_queue_id"},
+			attribute:               "backup_queue_id",
+			config: map[string]interface{}{
+				"id":              nil,
+				"backup_queue_id": "", // Empty string
+				"name":            "test_queue",
+			},
+			expectedRemove: false,
+		},
+		{
+			name:                    "Gracefully handle nil attribute",
+			removeIfSelfReferential: []string{"backup_queue_id"},
+			attribute:               "backup_queue_id",
+			config: map[string]interface{}{
+				"id":              resourceId,
+				"backup_queue_id": nil,
+				"name":            "test_queue",
 			},
 			expectedRemove: false,
 		},
@@ -229,4 +251,3 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 		})
 	}
 }
-
