@@ -153,14 +153,16 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 	tests := []struct {
 		name                    string
 		removeIfSelfReferential []string
-		attribute               string
+		attributeKey            string
+		attributePath           string
 		config                  map[string]interface{}
 		expectedRemove          bool
 	}{
 		{
 			name:                    "Remove self-referential attribute",
 			removeIfSelfReferential: []string{"backup_queue_id"},
-			attribute:               "backup_queue_id",
+			attributeKey:            "backup_queue_id",
+			attributePath:           "backup_queue_id",
 			config: map[string]interface{}{
 				"id":              resourceId,
 				"backup_queue_id": resourceId, // Self-reference
@@ -171,7 +173,8 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 		{
 			name:                    "Keep non-self-referential attribute",
 			removeIfSelfReferential: []string{"backup_queue_id"},
-			attribute:               "backup_queue_id",
+			attributeKey:            "backup_queue_id",
+			attributePath:           "backup_queue_id",
 			config: map[string]interface{}{
 				"id":              resourceId,
 				"backup_queue_id": differentId, // Different ID
@@ -182,7 +185,8 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 		{
 			name:                    "No removal for non-configured attributes",
 			removeIfSelfReferential: []string{"other_attribute"},
-			attribute:               "backup_queue_id",
+			attributeKey:            "backup_queue_id",
+			attributePath:           "backup_queue_id",
 			config: map[string]interface{}{
 				"id":              resourceId,
 				"backup_queue_id": resourceId, // Self-reference but not configured for removal
@@ -193,7 +197,8 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 		{
 			name:                    "Remove another self-referential attribute",
 			removeIfSelfReferential: []string{"parent_id", "backup_queue_id"},
-			attribute:               "parent_id",
+			attributeKey:            "parent_id",
+			attributePath:           "parent_id",
 			config: map[string]interface{}{
 				"id":        resourceId,
 				"parent_id": resourceId, // Self-reference
@@ -202,9 +207,18 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 			expectedRemove: true,
 		},
 		{
+			name:                    "Remove nested self-referential attribute",
+			removeIfSelfReferential: []string{"parent_id.backup_queue_id"},
+			attributeKey:            "backup_queue_id",
+			attributePath:           "parent_id.backup_queue_id",
+			config:                  map[string]interface{}{"backup_queue_id": resourceId}, // Nested self-reference [
+			expectedRemove:          true,
+		},
+		{
 			name:                    "Keep when attribute value is empty string",
 			removeIfSelfReferential: []string{"backup_queue_id"},
-			attribute:               "backup_queue_id",
+			attributeKey:            "backup_queue_id",
+			attributePath:           "backup_queue_id",
 			config: map[string]interface{}{
 				"id":              resourceId,
 				"backup_queue_id": "", // Empty string
@@ -213,20 +227,10 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 			expectedRemove: false,
 		},
 		{
-			name:                    "Gracefully handle nil id",
-			removeIfSelfReferential: []string{"backup_queue_id"},
-			attribute:               "backup_queue_id",
-			config: map[string]interface{}{
-				"id":              nil,
-				"backup_queue_id": "", // Empty string
-				"name":            "test_queue",
-			},
-			expectedRemove: false,
-		},
-		{
 			name:                    "Gracefully handle nil attribute",
 			removeIfSelfReferential: []string{"backup_queue_id"},
-			attribute:               "backup_queue_id",
+			attributeKey:            "backup_queue_id",
+			attributePath:           "backup_queue_id",
 			config: map[string]interface{}{
 				"id":              resourceId,
 				"backup_queue_id": nil,
@@ -243,7 +247,7 @@ func TestUnitRemoveIfSelfReferential(t *testing.T) {
 			}
 
 			// Test the actual method
-			actualRemove := exporter.RemoveFieldIfSelfReferential(test.attribute, test.config)
+			actualRemove := exporter.RemoveFieldIfSelfReferential(resourceId, test.attributePath, test.attributeKey, test.config)
 
 			if actualRemove != test.expectedRemove {
 				t.Errorf("Expected RemoveFieldIfSelfReferential to return %v, but got %v", test.expectedRemove, actualRemove)

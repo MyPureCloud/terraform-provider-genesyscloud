@@ -1787,53 +1787,53 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	resourceLabel := resource.BlockLabel
 	resourceBlockType := resource.BlockType
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
-
+	resourceId := resource.State.ID
 	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
 
-	for key, val := range configMap {
-		currAttr := key
+	for attributeConfigKey, val := range configMap {
+		fullAttributePath := attributeConfigKey
 		wildcardAttr := "*"
 		if prevAttr != "" {
-			currAttr = prevAttr + "." + key
+			fullAttributePath = prevAttr + "." + attributeConfigKey
 			wildcardAttr = prevAttr + "." + "*"
 		}
 
 		// Identify configMap for the parent resource and add depends_on for the parent resource
 		if parentKey {
-			if currAttr == "id" {
+			if fullAttributePath == "id" {
 				g.addDependsOnValues(val.(string), configMap)
 			}
 		}
 
-		if currAttr == "id" {
+		if fullAttributePath == "id" {
 			// Strip off IDs from the root resource
-			delete(configMap, currAttr)
+			delete(configMap, fullAttributePath)
 			continue
 		}
 
-		if exporter.IsAttributeExcluded(currAttr) {
+		if exporter.IsAttributeExcluded(fullAttributePath) {
 			// Excluded. Remove from the config.
-			configMap[key] = nil
+			configMap[attributeConfigKey] = nil
 			continue
 		}
 
-		if exporter.IsAttributeE164(currAttr) {
-			if _, ok := configMap[key].(string); !ok {
+		if exporter.IsAttributeE164(fullAttributePath) {
+			if _, ok := configMap[attributeConfigKey].(string); !ok {
 				continue
 			}
-			configMap[key] = sanitizeE164Number(configMap[key].(string))
+			configMap[attributeConfigKey] = sanitizeE164Number(configMap[attributeConfigKey].(string))
 		}
 
-		if exporter.IsAttributeRrule(currAttr) {
-			if _, ok := configMap[key].(string); !ok {
+		if exporter.IsAttributeRrule(fullAttributePath) {
+			if _, ok := configMap[attributeConfigKey].(string); !ok {
 				continue
 			}
-			configMap[key] = sanitizeRrule(configMap[key].(string))
+			configMap[attributeConfigKey] = sanitizeRrule(configMap[attributeConfigKey].(string))
 		}
 
-		if exporter.RemoveFieldIfSelfReferential(currAttr, configMap) {
+		if exporter.RemoveFieldIfSelfReferential(resourceId, fullAttributePath, attributeConfigKey, configMap) {
 			// Remove if self-referential
-			configMap[key] = nil
+			configMap[attributeConfigKey] = nil
 			continue
 		}
 
@@ -1841,55 +1841,55 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), currAttr, exporters, exportingState, exportFormat, false)
+			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), fullAttributePath, exporters, exportingState, exportFormat, false)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
-				configMap[key] = nil
+				configMap[attributeConfigKey] = nil
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat); len(arr) > 0 {
-				configMap[key] = arr
+			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), fullAttributePath, exporters, exportingState, exportFormat); len(arr) > 0 {
+				configMap[attributeConfigKey] = arr
 			} else {
 				// Remove empty arrays
-				configMap[key] = nil
+				configMap[attributeConfigKey] = nil
 			}
 		case string:
 			// Check if string contains nested Ref Attributes (can occur if the string is escaped json)
-			if _, ok := exporter.ContainsNestedRefAttrs(currAttr); ok {
-				resolvedJsonString, err := g.resolveRefAttributesInJsonString(currAttr, val.(string), exporter, exporters, exportingState)
+			if _, ok := exporter.ContainsNestedRefAttrs(fullAttributePath); ok {
+				resolvedJsonString, err := g.resolveRefAttributesInJsonString(fullAttributePath, val.(string), exporter, exporters, exportingState)
 				if err != nil {
 					tflog.Error(g.ctx, err.Error())
 				} else {
-					keys := strings.Split(currAttr, ".")
+					keys := strings.Split(fullAttributePath, ".")
 					configMap[keys[len(keys)-1]] = resolvedJsonString
 					break
 				}
 			}
 
 			// Check if we are on a reference attribute and update as needed
-			refSettings := exporter.GetRefAttrSettings(currAttr)
+			refSettings := exporter.GetRefAttrSettings(fullAttributePath)
 			if refSettings == nil {
 				// Check for wildcard attribute indicating all attributes in the map
 				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
 			}
 
 			if refSettings != nil {
-				configMap[key] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
+				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
-				configMap[key] = escapeString(val.(string))
+				configMap[attributeConfigKey] = escapeString(val.(string))
 			}
 
 			// custom function to resolve the field to a data source depending on the value
-			g.resolveValueToDataSource(exporter, configMap, currAttr, val)
+			g.resolveValueToDataSource(exporter, configMap, fullAttributePath, val)
 		}
 
-		if attr, ok := attrInUnResolvableAttrs(key, exporter.UnResolvableAttributes); ok {
+		if attr, ok := attrInUnResolvableAttrs(attributeConfigKey, exporter.UnResolvableAttributes); ok {
 			if resourceBlockType != "data" {
-				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, key)
+				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, attributeConfigKey)
 				unresolvableAttrs = append(unresolvableAttrs, unresolvableAttributeInfo{
 					ResourceType:  resourceType,
 					ResourceLabel: resourceLabel,
-					Name:          key,
+					Name:          attributeConfigKey,
 					Schema:        attr,
 				})
 				if properties, ok := attr.Elem.(*schema.Resource); ok {
@@ -1897,9 +1897,9 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 					for k := range properties.Schema {
 						propertiesMap[k] = fmt.Sprintf("${var.%s.%s}", varReference, k)
 					}
-					configMap[key] = propertiesMap
+					configMap[attributeConfigKey] = propertiesMap
 				} else {
-					configMap[key] = fmt.Sprintf("${var.%s}", varReference)
+					configMap[attributeConfigKey] = fmt.Sprintf("${var.%s}", varReference)
 				}
 			}
 		}
@@ -1908,39 +1908,39 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		// This can cause invalid config files due to including attributes with limits that don't allow for zero values, so we remove
 		// those attributes from the config by default. Attributes can opt-out of this behavior by being added to a ResourceExporter's
 		// AllowZeroValues list.
-		if !exporter.AllowForZeroValues(currAttr) && !exporter.AllowForZeroValuesInMap(prevAttr) {
-			removeZeroValues(key, configMap[key], configMap)
+		if !exporter.AllowForZeroValues(fullAttributePath) && !exporter.AllowForZeroValuesInMap(prevAttr) {
+			removeZeroValues(attributeConfigKey, configMap[attributeConfigKey], configMap)
 		}
 
 		// Nil arrays will be turned into empty arrays if they're defined in AllowEmptyArrays.
 		// We do this after the initial sanitization of empty arrays to nil
 		// so this will cover both cases where the attribute on the state is: null or [].
-		if exporter.AllowForEmptyArrays(currAttr) {
-			if configMap[key] == nil {
-				configMap[key] = []interface{}{}
+		if exporter.AllowForEmptyArrays(fullAttributePath) {
+			if configMap[attributeConfigKey] == nil {
+				configMap[attributeConfigKey] = []interface{}{}
 			}
 		}
 
 		//If the exporter as has customer resolver for an attribute, invoke it.
-		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
-			tflog.Debug(g.ctx, fmt.Sprintf("Custom resolver invoked for attribute: %s", currAttr))
+		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[fullAttributePath]; ok {
+			tflog.Debug(g.ctx, fmt.Sprintf("Custom resolver invoked for attribute: %s", fullAttributePath))
 			if resolverFunc := refAttrCustomResolver.ResolverFunc; resolverFunc != nil {
 				if err := resolverFunc(configMap, exporters, resourceLabel); err != nil {
-					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err))
+					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", fullAttributePath, err))
 				}
 			}
 		}
 
-		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(currAttr) {
-			if vStr, ok := configMap[key].(string); ok {
-				decodedData, err := getDecodedData(vStr, currAttr)
+		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(fullAttributePath) {
+			if vStr, ok := configMap[attributeConfigKey].(string); ok {
+				decodedData, err := getDecodedData(vStr, fullAttributePath)
 				if err != nil {
 					tflog.Error(g.ctx, fmt.Sprintf("Error decoding JSON string: %v\n", err))
-					configMap[key] = vStr
+					configMap[attributeConfigKey] = vStr
 				} else {
 					uid := uuid.NewString()
 					attributesDecoded[uid] = decodedData
-					configMap[key] = uid
+					configMap[attributeConfigKey] = uid
 				}
 			}
 		}

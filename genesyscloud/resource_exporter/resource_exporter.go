@@ -341,19 +341,14 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 	return false
 }
 
-func (r *ResourceExporter) RemoveFieldIfSelfReferential(attribute string, config map[string]interface{}) bool {
-	if ok := lists.ItemInSlice(attribute, r.RemoveIfSelfReferential); ok {
-		id := config["id"]
-		if id == nil {
-			return false
-		}
-		id = id.(string)
-		attributeValue := config[attribute]
+func (r *ResourceExporter) RemoveFieldIfSelfReferential(resourceId, fullAttribute, attributeKey string, config map[string]interface{}) bool {
+	if ok := lists.ItemInSlice(fullAttribute, r.RemoveIfSelfReferential); ok {
+		attributeValue := config[attributeKey]
 		if attributeValue == nil {
 			return false
 		}
-		attributeValue = attributeValue.(string)
-		return attributeValue == id
+		attributeStr := attributeValue.(string)
+		return attributeStr == resourceId
 	}
 	return false
 }
