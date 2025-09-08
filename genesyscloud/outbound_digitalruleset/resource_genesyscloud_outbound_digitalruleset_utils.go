@@ -917,6 +917,43 @@ func flattenDigitalActions(digitalActions *[]platformclientv2.Digitalaction) []i
 	return digitalActionList
 }
 
+func validateDigitalRulesetData(d *schema.ResourceData) error {
+	rulesList := d.Get("rules").([]interface{})
+	for _, rule := range rulesList {
+		ruleMap := rule.(map[string]interface{})
+		conditionsList := ruleMap["conditions"].([]interface{})
+		for _, condition := range conditionsList {
+			conditionMap := condition.(map[string]interface{})
+			settings, ok := conditionMap["contact_column_condition_settings"]
+			if !ok {
+				continue
+			}
+
+			settingsSet := settings.(*schema.Set)
+			if err := validateContactColumnConditionSettings(settingsSet); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateContactColumnConditionSettings(settings *schema.Set) error {
+	if settings == nil || settings.Len() == 0 {
+		return nil
+	}
+
+	settingsMap := settings.List()[0].(map[string]interface{})
+	valueType := settingsMap["value_type"].(string)
+	value := settingsMap["value"].(string)
+
+	if (valueType == "Numeric" || valueType == "Period") && value == "" {
+		return fmt.Errorf("value_type %s requires value to be set", valueType)
+	}
+
+	return nil
+}
+
 // flattenDigitalRules maps a Genesys Cloud *[]platformclientv2.Digitalrule into a []interface{}
 func flattenDigitalRules(digitalRules *[]platformclientv2.Digitalrule) []interface{} {
 	if len(*digitalRules) == 0 {

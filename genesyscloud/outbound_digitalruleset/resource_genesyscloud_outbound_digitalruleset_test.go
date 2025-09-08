@@ -2,6 +2,7 @@ package outbound_digitalruleset
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -164,6 +165,31 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 				ResourceName:      "genesyscloud_outbound_digitalruleset." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config: contactListResourceGenerate +
+					GenerateOutboundDigitalRuleSetResource(
+						resourceLabel,
+						name2,
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel1+".id",
+						GenerateDigitalRules(
+							ruleName,
+							ruleOrder,
+							ruleCategory,
+							GenerateDigitalRuleSetConditions(
+								GenerateContactColumnConditionSettings(
+									contactColumnName,
+									columnOperator,
+									"",        // Empty value
+									"Numeric", // Numeric type requires value
+								),
+							),
+							GenerateDigitalRuleSetActions(
+								GenerateDoNotSendActionSettings(),
+							),
+						),
+					),
+				ExpectError: regexp.MustCompile(`value_type\s+Numeric requires value to be set`),
 			},
 		},
 		CheckDestroy: testVerifyOutboundDigitalrulesetDestroyed,
