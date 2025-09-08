@@ -1,9 +1,10 @@
 package knowledge_document_variation
 
 import (
+	"strconv"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"strconv"
 
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
@@ -34,8 +35,9 @@ var (
 			"document_version": {
 				Description: "The version of the document.",
 				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
+				Optional:    false,
+				Required:    false,
+				Computed:    true,
 				Elem:        addressableEntityRef,
 			},
 			"name": {

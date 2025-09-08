@@ -126,24 +126,17 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		published = publishedIn.(bool)
 	}
 
-	log.Println("knowledgeDocumentVariation", knowledgeDocumentVariation)
 	knowledgeDocumentVariationRequest := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
 
 	log.Printf("Creating knowledge document variation for document %s", ids.knowledgeDocumentID)
 
-	log.Println("knowledgeDocumentVariationRequest", knowledgeDocumentVariationRequest)
 	knowledgeDocumentVariationResponse, resp, err := variationProxy.CreateVariation(ctx, knowledgeDocumentVariationRequest, ids.knowledgeDocumentID, ids.knowledgeBaseID)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create variation for knowledge document (%s) error: %s", ids.knowledgeDocumentID, err), resp)
 	}
 
-	versionId := knowledgeDocumentVariationRequest.DocumentVersion.Id
-	log.Println("knowledgeDocumentVariationResponse", knowledgeDocumentVariationResponse)
-
 	if published {
-		_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeDocumentID, ids.knowledgeBaseID, &platformclientv2.Knowledgedocumentversion{
-			Id: versionId,
-		})
+		_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeDocumentID, ids.knowledgeBaseID, &platformclientv2.Knowledgedocumentversion{})
 		if versionErr != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document error: %s", versionErr.Error()), resp)
 		}
@@ -191,7 +184,6 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			return retry.NonRetryableError(err)
 		}
 
-		log.Println("knowledgeDocVariation", knowledgeDocVariation)
 		if knowledgeDocVariation.Document == nil || knowledgeDocVariation.Document.KnowledgeBase == nil {
 			return retry.NonRetryableError(fmt.Errorf("returned knowledge document variation '%s' did not include a Document object", ids.knowledgeDocumentVariationID))
 		}
