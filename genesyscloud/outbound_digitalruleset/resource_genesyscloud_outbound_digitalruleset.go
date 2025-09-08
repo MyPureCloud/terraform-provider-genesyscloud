@@ -48,7 +48,6 @@ func createOutboundDigitalruleset(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDigitalrulesetProxy(sdkConfig)
 
-	log.Println("HERE")
 	if err := validateDigitalRulesetData(d); err != nil {
 		return util.BuildDiagnosticError(ResourceType, "Configuration error", err)
 	}
