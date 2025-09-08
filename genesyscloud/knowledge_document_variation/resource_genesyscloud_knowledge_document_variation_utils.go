@@ -371,13 +371,11 @@ func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platfo
 		return nil
 	}
 
-	request := platformclientv2.Documentvariationrequest{
+	return &platformclientv2.Documentvariationrequest{
 		Name:     resourcedata.GetNillableValueFromMap[string](variationIn, "name", true),
 		Body:     buildVariationBody(variationIn),
 		Contexts: buildVariationContexts(variationIn),
 	}
-
-	return &request
 }
 
 func buildVariationContexts(variationIn map[string]interface{}) *[]platformclientv2.Documentvariationcontext {
