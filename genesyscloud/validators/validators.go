@@ -466,3 +466,15 @@ func ValidateStringInMap(valid []string, ignoreCase bool) schema.SchemaValidateD
 		fmt.Sprintf(`expected key to be one of ["%s"], got`, strings.Join(valid, `", "`)),
 	)
 }
+
+func ValidateIntMin(min int) schema.SchemaValidateDiagFunc {
+	return func(value interface{}, path cty.Path) diag.Diagnostics {
+		if valueInt, ok := value.(int); ok {
+			if valueInt < min {
+				return diag.Errorf("Value %d is less than the minimum %d", valueInt, min)
+			}
+			return nil
+		}
+		return diag.Errorf("Value %v is not an int", value)
+	}
+}
