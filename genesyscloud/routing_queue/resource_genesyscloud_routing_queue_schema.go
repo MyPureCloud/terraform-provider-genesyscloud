@@ -269,6 +269,7 @@ var (
 				Description: "The queue being evaluated for this rule.  If null, the current queue will be used.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}

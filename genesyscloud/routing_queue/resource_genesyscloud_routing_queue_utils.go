@@ -404,7 +404,7 @@ func buildCgaSimpleMetric(simpleMetric []interface{}) *platformclientv2.Conditio
 		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkSimpleMetric.Metric, simpleMetricMap, "metric")
-		if simpleMetricMap["queue_id"] != "" { // SHM todo -- why is queue_id an empty string in the pilot rule?
+		if simpleMetricMap["queue_id"] != "" {
 			var queue platformclientv2.Domainentityref
 			sdkSimpleMetric.Queue = &queue
 			resourcedata.BuildSDKStringValueIfNotNil(&sdkSimpleMetric.Queue.Id, simpleMetricMap, "queue_id")
@@ -888,6 +888,51 @@ func flattenCgaPilotRuleConditions(conditions *[]platformclientv2.Conditionalgro
 	return conditionsOut
 }
 
+func flattenCgaRuleGroups(groups *[]platformclientv2.Membergroup) []interface{} {
+	if groups == nil || len(*groups) == 0 {
+		return nil
+	}
+
+	groupsOut := make([]interface{}, 0)
+
+	for _, group := range *groups {
+		groupOut := make(map[string]interface{})
+
+		if group.Id != nil {
+			groupOut["member_group_id"] = *group.Id
+		}
+		if group.VarType != nil {
+			groupOut["member_group_type"] = *group.VarType
+		}
+		groupsOut = append(groupsOut, groupOut)
+	}
+	return groupsOut
+}
+
+func flattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) []interface{} {
+	if rules == nil || len(*rules) == 0 {
+		return nil
+	}
+
+	rulesOut := make([]interface{}, 0)
+
+	for _, rule := range *rules {
+		ruleOut := make(map[string]interface{})
+
+		if rule.ConditionExpression != nil {
+			ruleOut["condition_expression"] = *rule.ConditionExpression
+		}
+		if rule.Conditions != nil {
+			ruleOut["conditions"] = flattenCgaPilotRuleConditions(rule.Conditions)
+		}
+		if rule.Groups != nil {
+			ruleOut["groups"] = flattenCgaRuleGroups(rule.Groups)
+		}
+		rulesOut = append(rulesOut, ruleOut)
+	}
+	return rulesOut
+}
+
 func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroupactivation) []interface{} {
 	cgaMap := make(map[string]interface{})
 
@@ -895,49 +940,16 @@ func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroup
 	if sdkCga.PilotRule != nil {
 		pilotRuleMap := make(map[string]interface{})
 
-		// convert pilot rule conditions
 		pilotRuleMap["conditions"] = flattenCgaPilotRuleConditions(sdkCga.PilotRule.Conditions)
 		resourcedata.SetMapValueIfNotNil(pilotRuleMap, "condition_expression", sdkCga.PilotRule.ConditionExpression)
 
 		cgaMap["pilot_rule"] = []interface{}{pilotRuleMap}
 	}
 
-	// convert numbered rules
-	rules := make([]interface{}, len(*sdkCga.Rules))
-	for i, sdkRule := range *sdkCga.Rules {
-		ruleMap := make(map[string]interface{})
-
-		// convert numbered rule conditions
-		conditions := make([]interface{}, len(*sdkRule.Conditions))
-		for j, sdkCondition := range *sdkRule.Conditions {
-			conditionMap := make(map[string]interface{})
-
-			simpleMetricMap := make(map[string]interface{})
-			simpleMetricMap["metric"] = sdkCondition.SimpleMetric
-			simpleMetricMap["queue_id"] = sdkCondition.SimpleMetric.Queue.Id
-			conditionMap["simple_metric"] = simpleMetricMap
-
-			resourcedata.SetMapValueIfNotNil(conditionMap, "operator", sdkCondition.Operator)
-			resourcedata.SetMapValueIfNotNil(conditionMap, "value", sdkCondition.Value)
-
-			conditions[j] = conditionMap
-		}
-
-		resourcedata.SetMapValueIfNotNil(ruleMap, "condition_expression", sdkRule.ConditionExpression)
-
-		groupSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
-		for _, sdkGroup := range *sdkRule.Groups {
-			groupMap := make(map[string]interface{})
-			resourcedata.SetMapValueIfNotNil(groupMap, "member_group_id", sdkGroup.Id)
-			resourcedata.SetMapValueIfNotNil(groupMap, "member_group_type", sdkGroup.VarType)
-			groupSet.Add(groupMap)
-		}
-		ruleMap["groups"] = groupSet
-
-		rules[i] = ruleMap
+	if sdkCga.Rules != nil {
+		cgaMap["rules"] = flattenCgaRules(sdkCga.Rules)
 	}
 
-	cgaMap["rules"] = rules
 	return []interface{}{cgaMap}
 }
 
