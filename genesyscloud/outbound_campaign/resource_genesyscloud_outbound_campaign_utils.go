@@ -337,7 +337,7 @@ func GenerateReferencedResourcesForOutboundCampaignTests(
 				"wrapupcode "+uuid.NewString(),
 				"genesyscloud_auth_division."+divResourceLabel+".id",
 				"Terraform test description",
-			) + architect_flow.GenerateFlowResource(
+			) + architect_flow.GenerateFlowResourceNoFileContentHash(
 				flowResourceLabel,
 				outboundFlowFilePath,
 				"",

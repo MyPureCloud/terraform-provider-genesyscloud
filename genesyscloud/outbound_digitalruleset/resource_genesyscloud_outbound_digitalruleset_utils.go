@@ -1,6 +1,7 @@
 package outbound_digitalruleset
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -917,8 +918,8 @@ func flattenDigitalActions(digitalActions *[]platformclientv2.Digitalaction) []i
 	return digitalActionList
 }
 
-func validateDigitalRulesetData(d *schema.ResourceData) error {
-	rulesList := d.Get("rules").([]interface{})
+func validateDigitalRulesetData(ctx context.Context, diff *schema.ResourceDiff, i interface{}) error {
+	rulesList := diff.Get("rules").([]interface{})
 	for _, rule := range rulesList {
 		ruleMap := rule.(map[string]interface{})
 		conditionsList := ruleMap["conditions"].([]interface{})
@@ -948,7 +949,7 @@ func validateContactColumnConditionSettings(settings *schema.Set) error {
 	value := settingsMap["value"].(string)
 
 	if (valueType == "Numeric" || valueType == "Period") && value == "" {
-		return fmt.Errorf("value_type %s requires value to be set", valueType)
+		return fmt.Errorf("contact_column_condition_settings - value_type %s requires value to be set", valueType)
 	}
 
 	return nil

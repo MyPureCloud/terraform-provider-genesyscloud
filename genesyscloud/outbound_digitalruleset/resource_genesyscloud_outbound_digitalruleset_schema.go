@@ -3,7 +3,6 @@ package outbound_digitalruleset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -494,6 +493,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: validateDigitalRulesetData,
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the digital rule set`,
