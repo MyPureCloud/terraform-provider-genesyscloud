@@ -120,8 +120,13 @@ func ResourceOAuthClient() *schema.Resource {
 				Computed:    true,
 				Sensitive:   true,
 				Optional:    true,
-				Description: "Place holder that can be referred in integration_credential fields. Sensitive info",
-				StateFunc:   ModifyStatusIdStateValue,
+				Description: "Place holder that can be referred in integration_credential fields. Sensitive info. Only populated when expose_client_secret is true.",
+			},
+			"expose_client_secret": {
+				Description: "Set this attribute to true to expose the client_secret as a sensitive output. This stores the secret in the Terraform state",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
 			},
 			"directory_client_secret": {
 				Description: "Directory where the secret can be stored.",
@@ -132,7 +137,7 @@ func ResourceOAuthClient() *schema.Resource {
 	}
 }
 
-func ModifyStatusIdStateValue(id interface{}) string {
+func ModifyStatusIdStateValue(id any) string {
 	return ""
 }
 
