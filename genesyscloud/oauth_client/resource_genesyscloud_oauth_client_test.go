@@ -163,8 +163,8 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 					tokenSec1,
 					stateActive,
 					util.NullValue,
-					util.NullValue, 
-					"false",        // expose_client_secret
+					util.NullValue,
+					"false", // expose_client_secret
 					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -172,7 +172,7 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "description", clientDesc1),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "expose_client_secret", "false"),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "client_secret", ""),
-					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),      
+					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),
 				),
 			},
 			{
@@ -189,8 +189,8 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 					tokenSec1,
 					stateActive,
 					util.NullValue,
-					util.NullValue, 
-					"true",         // expose_client_secret
+					util.NullValue,
+					"true", // expose_client_secret
 					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -232,8 +232,8 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 					tokenSec1,
 					stateActive,
 					util.NullValue,
-					util.NullValue, 
-					"false",        // expose_client_secret
+					util.NullValue,
+					"false", // expose_client_secret
 					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
