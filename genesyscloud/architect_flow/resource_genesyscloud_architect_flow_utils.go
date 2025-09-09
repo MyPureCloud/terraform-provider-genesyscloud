@@ -26,7 +26,7 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	return false
 }
 
-func GenerateFlowResourceManualHash(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
+func GenerateFlowResourceTriggerHash(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
 	if fileContent != "" {
 		updateFile(srcFile, fileContent)
 	}
