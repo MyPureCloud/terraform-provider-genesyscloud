@@ -504,7 +504,7 @@ func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateFlowResourceNoFileContentHash(
+				Config: GenerateFlowResource(
 					resourceLabel,
 					srcFile,
 					"",
@@ -543,7 +543,7 @@ func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
 						t.Fatalf("Failed to setup S3 bucket in PreConfig: %v", err)
 					}
 				},
-				Config: GenerateFlowResourceNoFileContentHash(
+				Config: GenerateFlowResource(
 					resourceLabel,
 					srcFile,
 					"",

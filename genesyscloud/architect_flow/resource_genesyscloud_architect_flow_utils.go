@@ -26,14 +26,14 @@ func isForceUnlockEnabled(d *schema.ResourceData) bool {
 	return false
 }
 
-func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
+func GenerateFlowResourceManualHash(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
 	if fileContent != "" {
 		updateFile(srcFile, fileContent)
 	}
 
 	flowResourceStr := fmt.Sprintf(`resource "%s" "%s" {
         filepath = %s
-		file_content_hash =  filesha256(%s)
+		update_trigger_hash =  filesha256(%s)
 		force_unlock = %v
 		%s
 	}
@@ -42,7 +42,7 @@ func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnloc
 	return flowResourceStr
 }
 
-func GenerateFlowResourceNoFileContentHash(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
+func GenerateFlowResource(resourceLabel, srcFile, fileContent string, forceUnlock bool, substitutions ...string) string {
 	if fileContent != "" {
 		updateFile(srcFile, fileContent)
 	}
