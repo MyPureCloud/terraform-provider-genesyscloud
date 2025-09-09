@@ -32,7 +32,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceExternalContacts()
+	providerResources[ResourceType] = ResourceExternalContact()
 	providerResources["genesyscloud_externalcontacts_organization"] = externalContactOrganization.ResourceExternalContactsOrganization()
 }
 
@@ -41,7 +41,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceExternalContactsContacts()
+	providerDataSources[ResourceType] = DataSourceExternalContactsContact()
 }
 
 // initTestResources initializes all test resources and data sources.

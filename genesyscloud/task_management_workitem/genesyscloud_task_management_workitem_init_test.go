@@ -52,7 +52,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources[user.ResourceType] = user.ResourceUser()
-	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContacts()
+	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContact()
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
