@@ -17,11 +17,14 @@ import (
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
 
-func GetProviderFactories(providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) map[string]func() (*schema.Provider, error) {
+func GetProviderFactories(
+	providerResources map[string]*schema.Resource,
+	providerDataSources map[string]*schema.Resource,
+) map[string]func() (*schema.Provider, error) {
 	return map[string]func() (*schema.Provider, error){
 		"genesyscloud": func() (*schema.Provider, error) {
-			provider := New("0.1.0", providerResources, providerDataSources)()
-			return provider, nil
+			// For tests that still need an SDKv2 provider, build it explicitly.
+			return NewSDKv2Provider("0.1.0", providerResources, providerDataSources)(), nil
 		},
 	}
 }

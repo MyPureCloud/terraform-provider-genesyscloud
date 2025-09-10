@@ -193,7 +193,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
 		version:              meta.(*provider.ProviderMeta).Version,
 		providerRegistry:     meta.(*provider.ProviderMeta).Registry,
-		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
+		provider:             provider.NewSDKv2Provider(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,

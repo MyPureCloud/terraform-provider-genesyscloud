@@ -18,6 +18,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -46,8 +47,8 @@ func init() {
 
 }
 
-// New initializes the provider schema
-func New(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() *schema.Provider {
+// NewSDKv2Provider initializes the SDKv2 provider schema
+func NewSDKv2Provider(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() *schema.Provider {
 	return func() *schema.Provider {
 
 		/*
@@ -67,6 +68,11 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 			ConfigureContextFunc: configure(version),
 		}
 	}
+}
+
+// New creates a muxed provider factory (Protocol v6) combining SDKv2 (upgraded to v6) and Framework providers.
+func New(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() (func() tfprotov6.ProviderServer, error) {
+	return NewMuxedProvider(version, providerResources, providerDataSources)
 }
 
 type ProviderMeta struct {
@@ -252,8 +258,6 @@ func getRegionMap() map[string]string {
 		"ap-northeast-3": "apne3.pure.cloud",
 		"eu-central-2":   "euc2.pure.cloud",
 		"me-central-1":   "mec1.pure.cloud",
-		"mx-central-1":   "mxc1.pure.cloud",
-		"ap-southeast-1": "apse1.pure.cloud",
 	}
 }
 
