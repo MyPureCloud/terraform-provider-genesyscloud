@@ -181,7 +181,7 @@ func ResourceOutboundRuleset() *schema.Resource {
 				Description:  `Additional type specification for this DialerAction.`,
 				Required:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`DO_NOT_DIAL`, `MODIFY_CONTACT_ATTRIBUTE`, `SWITCH_TO_PREVIEW`, `APPEND_NUMBER_TO_DNC_LIST`, `SCHEDULE_CALLBACK`, `CONTACT_UNCALLABLE`, `NUMBER_UNCALLABLE`, `SET_CALLER_ID`, `SET_SKILLS`, `DATA_ACTION`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`DO_NOT_DIAL`, `MODIFY_CONTACT_ATTRIBUTE`, `SWITCH_TO_PREVIEW`, `APPEND_NUMBER_TO_DNC_LIST`, `APPEND_CUSTOM_ENTRY_TO_DNC_LIST`, `SCHEDULE_CALLBACK`, `CONTACT_UNCALLABLE`, `NUMBER_UNCALLABLE`, `SET_CALLER_ID`, `SET_SKILLS`, `DATA_ACTION`}, false),
 			},
 			`update_option`: {
 				Description:  `Specifies how a contact attribute should be updated. Required for MODIFY_CONTACT_ATTRIBUTE.`,
