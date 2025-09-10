@@ -33,9 +33,10 @@ func main() {
 	flag.Parse()
 
 	providerResources, providerDataSources := providerRegistrar.GetProviderResources()
+	frameworkResources, frameworkDataSources := providerRegistrar.GetFrameworkResources()
 
 	// Build a Protocol v6 factory function (SDKv2 upgraded → v6 + PF v6, muxed)
-	muxFactoryFuncFunc := provider.New(version, providerResources, providerDataSources)
+	muxFactoryFuncFunc := provider.New(version, providerResources, providerDataSources, frameworkResources, frameworkDataSources)
 	muxFactoryFunc, err := muxFactoryFuncFunc()
 	if err != nil {
 		log.Fatalf("Failed to create muxed provider factory: %v", err)

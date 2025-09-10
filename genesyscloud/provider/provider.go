@@ -18,6 +18,8 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -71,8 +73,8 @@ func NewSDKv2Provider(version string, providerResources map[string]*schema.Resou
 }
 
 // New creates a muxed provider factory (Protocol v6) combining SDKv2 (upgraded to v6) and Framework providers.
-func New(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() (func() tfprotov6.ProviderServer, error) {
-	return NewMuxedProvider(version, providerResources, providerDataSources)
+func New(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource, frameworkResources map[string]func() resource.Resource, frameworkDataSources map[string]func() datasource.DataSource) func() (func() tfprotov6.ProviderServer, error) {
+	return NewMuxedProvider(version, providerResources, providerDataSources, frameworkResources, frameworkDataSources)
 }
 
 type ProviderMeta struct {
@@ -172,6 +174,9 @@ func configure(version string) schema.ConfigureContextFunc {
 
 		setProviderMeta(meta)
 		setProviderConfig(data) // Store the provider configuration for later use
+
+		// Share provider meta with Framework provider
+		SetSharedProviderMeta(meta)
 
 		return meta, nil
 

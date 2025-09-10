@@ -5,6 +5,8 @@ import (
 
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
@@ -167,16 +169,31 @@ circular dependency issues with the package tf_exporter
 */
 
 var (
+	// SDKv2 provider resources and data sources
 	providerResources     = make(map[string]*schema.Resource)
 	providerResourceTypes = make([]string, 0)
 	providerDataSources   = make(map[string]*schema.Resource)
 	resourceExporters     = make(map[string]*resourceExporter.ResourceExporter)
+
+	// Framework provider resources and data sources
+	frameworkResources   = make(map[string]func() resource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
+
+	// Provider type tracking
+	resourceProviderTypes   = make(map[string]registrar.ProviderType)
+	dataSourceProviderTypes = make(map[string]registrar.ProviderType)
 )
 
 type RegisterInstance struct {
+	// SDKv2 provider mutexes
 	resourceMapMutex   sync.RWMutex
 	datasourceMapMutex sync.RWMutex
 	exporterMapMutex   sync.RWMutex
+
+	// Framework provider mutexes
+	frameworkResourceMapMutex   sync.RWMutex
+	frameworkDataSourceMapMutex sync.RWMutex
+	providerTypeMapMutex        sync.RWMutex
 }
 
 func GetProviderResources() (resources map[string]*schema.Resource, datasources map[string]*schema.Resource) {
@@ -209,13 +226,61 @@ func GetResourceTypeNames() []string {
 	return providerResourceTypes
 }
 
+// GetFrameworkResources returns the Framework resources and data sources
+func GetFrameworkResources() (resources map[string]func() resource.Resource, datasources map[string]func() datasource.DataSource) {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	return frameworkResources, frameworkDataSources
+}
+
+// GetResourceProviderType returns the provider type for a given resource type
+func GetResourceProviderType(resourceType string) registrar.ProviderType {
+	if providerType, exists := resourceProviderTypes[resourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
+}
+
+// GetDataSourceProviderType returns the provider type for a given data source type
+func GetDataSourceProviderType(dataSourceType string) registrar.ProviderType {
+	if providerType, exists := dataSourceProviderTypes[dataSourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
+}
+
+// GetAllResourcesByProvider returns resources separated by provider type
+func GetAllResourcesByProvider() (sdkv2Resources map[string]*schema.Resource, frameworkResourceFactories map[string]func() resource.Resource, sdkv2DataSources map[string]*schema.Resource, frameworkDataSourceFactories map[string]func() datasource.DataSource) {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	return providerResources, frameworkResources, providerDataSources, frameworkDataSources
+}
+
 func resourceMapsAreRegistered() bool {
+	// Check SDKv2 maps
 	if providerResources == nil || providerDataSources == nil || resourceExporters == nil {
 		return false
 	}
 	if len(providerResources) == 0 || len(providerDataSources) == 0 || len(resourceExporters) == 0 {
 		return false
 	}
+
+	// Initialize Framework maps if they're nil (they start empty, which is valid)
+	if frameworkResources == nil {
+		frameworkResources = make(map[string]func() resource.Resource)
+	}
+	if frameworkDataSources == nil {
+		frameworkDataSources = make(map[string]func() datasource.DataSource)
+	}
+	if resourceProviderTypes == nil {
+		resourceProviderTypes = make(map[string]registrar.ProviderType)
+	}
+	if dataSourceProviderTypes == nil {
+		dataSourceProviderTypes = make(map[string]registrar.ProviderType)
+	}
+
 	return true
 }
 
@@ -354,6 +419,7 @@ func registerResources() {
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
+	registrar.SetFrameworkResources(frameworkResources, frameworkDataSources)
 }
 
 func (r *RegisterInstance) RegisterResource(resourceType string, resource *schema.Resource) {
@@ -361,16 +427,72 @@ func (r *RegisterInstance) RegisterResource(resourceType string, resource *schem
 	defer r.resourceMapMutex.Unlock()
 	providerResources[resourceType] = resource
 	providerResourceTypes = append(providerResourceTypes, resourceType)
+
+	// Track as SDKv2 provider type
+	r.providerTypeMapMutex.Lock()
+	resourceProviderTypes[resourceType] = registrar.SDKv2Provider
+	r.providerTypeMapMutex.Unlock()
 }
 
 func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 	providerDataSources[dataSourceType] = datasource
+
+	// Track as SDKv2 provider type
+	r.providerTypeMapMutex.Lock()
+	dataSourceProviderTypes[dataSourceType] = registrar.SDKv2Provider
+	r.providerTypeMapMutex.Unlock()
 }
 
 func (r *RegisterInstance) RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
 	r.exporterMapMutex.Lock()
 	defer r.exporterMapMutex.Unlock()
 	resourceExporters[exporterName] = resourceExporter
+}
+
+// RegisterFrameworkResource registers a Framework resource
+func (r *RegisterInstance) RegisterFrameworkResource(resourceType string, resourceFactory func() resource.Resource) {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+	frameworkResources[resourceType] = resourceFactory
+
+	// Track as Framework provider type
+	r.providerTypeMapMutex.Lock()
+	resourceProviderTypes[resourceType] = registrar.FrameworkProvider
+	r.providerTypeMapMutex.Unlock()
+}
+
+// RegisterFrameworkDataSource registers a Framework data source
+func (r *RegisterInstance) RegisterFrameworkDataSource(dataSourceType string, dataSourceFactory func() datasource.DataSource) {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+	frameworkDataSources[dataSourceType] = dataSourceFactory
+
+	// Track as Framework provider type
+	r.providerTypeMapMutex.Lock()
+	dataSourceProviderTypes[dataSourceType] = registrar.FrameworkProvider
+	r.providerTypeMapMutex.Unlock()
+}
+
+// GetResourceProviderType returns the provider type for a given resource type
+func (r *RegisterInstance) GetResourceProviderType(resourceType string) registrar.ProviderType {
+	r.providerTypeMapMutex.RLock()
+	defer r.providerTypeMapMutex.RUnlock()
+
+	if providerType, exists := resourceProviderTypes[resourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
+}
+
+// GetDataSourceProviderType returns the provider type for a given data source type
+func (r *RegisterInstance) GetDataSourceProviderType(dataSourceType string) registrar.ProviderType {
+	r.providerTypeMapMutex.RLock()
+	defer r.providerTypeMapMutex.RUnlock()
+
+	if providerType, exists := dataSourceProviderTypes[dataSourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
 }
