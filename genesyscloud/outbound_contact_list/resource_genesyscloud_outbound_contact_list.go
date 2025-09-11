@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -247,7 +248,8 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	filePath := d.Get("contacts_filepath").(string)
 	if filePath == "" {
-		return nil
+		// Shouldn't happen because Terraform should detect this in the schema first
+		return diag.Errorf("File path is required")
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -282,12 +284,34 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 		return diagErr
 	}
 
-	log.Printf("Uploading %d contact records to %s contact list", csvRecordsCount, contactListName)
+	log.Printf("Uploading %d contact records to %s contact list (%s)", csvRecordsCount, contactListName, contactListId)
 
 	if contactListId != "" {
 		_, err := cp.uploadContactListBulkContacts(ctx, contactListId, filePath, contactsIdName)
 		if err != nil {
-			return diag.Errorf("Failed to upload contact list bulk contacts: %v", err)
+			return diag.Errorf("Failed to upload bulk contacts for contact list %s: %v", contactListId, err)
+		}
+
+		// Check import status
+		diags := util.WithRetries(ctx, 300*time.Second, func() *retry.RetryError {
+			status, resp, err := cp.getOutboundContactListImportStatus(ctx, contactListId)
+			tflog.Debug(ctx, fmt.Sprintf("Outbound contact list (%s) import status: %v", contactListId, status))
+			if err != nil {
+				return retry.RetryableError(fmt.Errorf("Failed to get outbound contact list (%s) import status: %v", contactListId, err))
+			}
+			if status.State == nil && status.PercentComplete != nil && *status.PercentComplete == 100 {
+				return nil
+			}
+			if status.State != nil && *status.State == "FAILED" {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to upload contacts to contact list (%s) due to %s", contactListId, *status.FailureReason), resp))
+			}
+			if status.State != nil && *status.State == "IN_PROGRESS" {
+				return retry.RetryableError(fmt.Errorf("Outbound contact list (%s) import is in progress", contactListId))
+			}
+			return retry.RetryableError(fmt.Errorf("Outbound contact list (%s) import contacts attempt has not completed yet: %v", contactListId, status))
+		})
+		if diags.HasError() {
+			return diags
 		}
 	}
 
