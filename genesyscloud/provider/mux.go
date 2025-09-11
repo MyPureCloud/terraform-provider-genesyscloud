@@ -2,11 +2,14 @@ package provider
 
 import (
 	"context"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -24,27 +27,41 @@ func NewMuxedProvider(
 	return func() (func() tfprotov6.ProviderServer, error) {
 		ctx := context.Background()
 
-		// --- SDKv2 side (native v5) → wrap to Protocol v6 via method value ---
+		// Create SDKv2 provider and upgrade to v6
 		sdkv2Provider := NewSDKv2Provider(version, providerResources, providerDataSources)()
-		// IMPORTANT: pass the method value, not ServeOpts
 		upgradedV6, err := tf5to6server.UpgradeServer(ctx, sdkv2Provider.GRPCProvider)
 		if err != nil {
+			log.Printf("[ERROR] Failed to upgrade SDKv2 provider to v6: %v", err)
 			return nil, err
 		}
 
-		// For now, we'll only use the SDKv2 provider (upgraded to v6)
-		// The Framework provider will be added later when we start migrating resources
-		// This avoids schema mismatch issues during the initial muxing setup
+		// Check if we have any Framework resources/datasources to mux
+		hasFrameworkResources := len(frameworkResources) > 0
+		hasFrameworkDataSources := len(frameworkDataSources) > 0
 
-		// When ready to enable Framework provider, uncomment the following:
-		// frameworkProvider := NewFrameworkProvider(version, frameworkResources, frameworkDataSources)()
-		// muxServer, err := tf6muxserver.NewMuxServer(ctx, upgradedV6, frameworkProvider.(*GenesysCloudFrameworkProvider))
-		// if err != nil {
-		//     return nil, err
-		// }
-		// return func() tfprotov6.ProviderServer { return muxServer }, nil
+		if !hasFrameworkResources && !hasFrameworkDataSources {
+			log.Printf("[INFO] No Framework resources/datasources found, using SDKv2 provider only")
+			return func() tfprotov6.ProviderServer { return upgradedV6 }, nil
+		}
 
-		// Return just the upgraded SDKv2 provider for now
-		return func() tfprotov6.ProviderServer { return upgradedV6 }, nil
+		// Create Framework provider factory
+		frameworkProviderFactory := NewFrameworkProvider(version, frameworkResources, frameworkDataSources)
+
+		// Create muxed server
+		log.Printf("[INFO] Creating muxed provider with %d Framework resources and %d Framework datasources",
+			len(frameworkResources), len(frameworkDataSources))
+
+		muxServer, err := tf6muxserver.NewMuxServer(ctx,
+			func() tfprotov6.ProviderServer { return upgradedV6 },
+			func() tfprotov6.ProviderServer {
+				return providerserver.NewProtocol6(frameworkProviderFactory())()
+			},
+		)
+		if err != nil {
+			log.Printf("[ERROR] Failed to create mux server: %v", err)
+			return nil, err
+		}
+
+		return func() tfprotov6.ProviderServer { return muxServer }, nil
 	}
 }
