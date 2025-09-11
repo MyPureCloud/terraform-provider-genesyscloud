@@ -62,11 +62,11 @@ func (p *GenesysCloudFrameworkProvider) Metadata(ctx context.Context, req provid
 
 func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Genesys Cloud Terraform Provider",
+		Description: "",
 		Attributes: map[string]schema.Attribute{
 			"access_token": schema.StringAttribute{
 				Optional:    true,
-				Sensitive:   true,
+				Sensitive:   false,
 				Description: "A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.",
 			},
 			"oauthclient_id": schema.StringAttribute{
@@ -75,7 +75,7 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 			},
 			"oauthclient_secret": schema.StringAttribute{
 				Optional:    true,
-				Sensitive:   true,
+				Sensitive:   false,
 				Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
 			},
 			"aws_region": schema.StringAttribute{
@@ -112,7 +112,7 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 			},
 			"log_stack_traces": schema.BoolAttribute{
 				Optional:    true,
-				Description: "If true, stack traces will be logged to a file instead of crashing the provider, whenever possible. Can be set with the GENESYSCLOUD_LOG_STACK_TRACES environment variable.",
+				Description: "If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.\nIf the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message\n\"Root object was present, but now absent.\" Can be set with the GENESYSCLOUD_LOG_STACK_TRACES environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.\nIf you encounter any stack traces, please report them so we can address the underlying issues.",
 			},
 			"log_stack_traces_file_path": schema.StringAttribute{
 				Optional:    true,
@@ -121,7 +121,7 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 		},
 		Blocks: map[string]schema.Block{
 			"gateway": schema.SetNestedBlock{
-				Description: "Gateway configuration for the provider",
+				Description: "",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"port": schema.StringAttribute{
@@ -139,7 +139,7 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 					},
 					Blocks: map[string]schema.Block{
 						"path_params": schema.SetNestedBlock{
-							Description: "Path parameters for the gateway",
+							Description: "",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"path_name": schema.StringAttribute{
@@ -154,17 +154,17 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 							},
 						},
 						"auth": schema.SetNestedBlock{
-							Description: "Authentication configuration for the gateway",
+							Description: "",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"username": schema.StringAttribute{
 										Optional:    true,
-										Description: "UserName for the Auth can be set with the `GENESYSCLOUD_GATEWAY_AUTH_USERNAME` environment variable.",
+										Description: "UserName for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_USERNAME` environment variable.",
 									},
 									"password": schema.StringAttribute{
 										Optional:    true,
-										Sensitive:   true,
-										Description: "Password for the Auth can be set with the `GENESYSCLOUD_GATEWAY_AUTH_PASSWORD` environment variable.",
+										Sensitive:   false,
+										Description: "Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.",
 									},
 								},
 							},
@@ -173,7 +173,7 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 				},
 			},
 			"proxy": schema.SetNestedBlock{
-				Description: "Proxy configuration for the provider",
+				Description: "",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"port": schema.StringAttribute{
@@ -191,7 +191,7 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 					},
 					Blocks: map[string]schema.Block{
 						"auth": schema.SetNestedBlock{
-							Description: "Authentication configuration for the proxy",
+							Description: "",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"username": schema.StringAttribute{
@@ -200,7 +200,7 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 									},
 									"password": schema.StringAttribute{
 										Optional:    true,
-										Sensitive:   true,
+										Sensitive:   false,
 										Description: "Password for the Auth can be set with the `GENESYSCLOUD_PROXY_AUTH_PASSWORD` environment variable.",
 									},
 								},

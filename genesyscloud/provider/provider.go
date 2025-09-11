@@ -33,7 +33,7 @@ func init() {
 	// and the language server.
 	// providerResources = make(map[string]*schema.Resource)
 	// providerDataSources = make(map[string]*schema.Resource)
-	schema.DescriptionKind = schema.StringMarkdown
+	schema.DescriptionKind = schema.StringPlain
 
 	// Customize the content of descriptions when output.
 	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {

@@ -40,7 +40,6 @@ func ProviderSchema() map[string]*schema.Schema {
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
 			Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
-			Sensitive:   true,
 		},
 		"aws_region": {
 			Type:         schema.TypeString,
@@ -100,10 +99,7 @@ func ProviderSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc(logStackTracesEnvVar, false),
-			Description: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.
-If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message
-"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.
-If you encounter any stack traces, please report them so we can address the underlying issues.`, logStackTracesEnvVar),
+			Description: "If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.\nIf the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message\n\"Root object was present, but now absent.\" Can be set with the GENESYSCLOUD_LOG_STACK_TRACES environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.\nIf you encounter any stack traces, please report them so we can address the underlying issues.",
 		},
 		"log_stack_traces_file_path": {
 			Type:             schema.TypeString,
