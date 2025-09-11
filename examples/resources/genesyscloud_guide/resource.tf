@@ -1,4 +1,3 @@
 resource "genesyscloud_guide" "sample_guide" {
-  name   = "Cx as Code Guide"
-  source = "Manual"
+  name = "Cx as Code Guide"
 }

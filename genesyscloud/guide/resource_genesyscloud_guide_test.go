@@ -27,8 +27,7 @@ func TestAccResourceGuideManual(t *testing.T) {
 	var (
 		resourceLabel = "guide"
 
-		name   = "Test Guide Manual" + uuid.NewString()
-		source = "Manual"
+		name = "Test Guide Manual" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -40,13 +39,9 @@ func TestAccResourceGuideManual(t *testing.T) {
 				Config: GenerateGuideResource(
 					resourceLabel,
 					name,
-					source,
-					"",
-					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "source", source),
 				),
 			},
 			{
@@ -68,9 +63,7 @@ func TestAccResourceGuidePrompt(t *testing.T) {
 	var (
 		resourceLabel = "guide"
 
-		name   = "Test Guide Manual" + uuid.NewString()
-		source = "Prompt"
-		prompt = "Create a guide that handles customer service interactions"
+		name = "Test Guide Prompt" + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -82,22 +75,16 @@ func TestAccResourceGuidePrompt(t *testing.T) {
 				Config: GenerateGuideResource(
 					resourceLabel,
 					name,
-					source,
-					prompt,
-					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "source", source),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "latest_saved_version", "1.0"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:            ResourceType + "." + resourceLabel,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"prompt"},
+				ResourceName:      ResourceType + "." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyGuideDestroyed,
