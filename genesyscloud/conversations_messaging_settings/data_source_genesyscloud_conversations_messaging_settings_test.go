@@ -2,6 +2,7 @@ package conversations_messaging_settings
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -79,10 +80,12 @@ func CleanupMessagingSettings(name string) error {
 
 		for _, setting := range *cmMessagingSetting.Entities {
 			if setting.Name != nil && strings.HasPrefix(*setting.Name, name) {
+				log.Printf("Deleting messaging settings: %v", *setting.Id)
 				_, err := cmMessagingSettingApi.DeleteConversationsMessagingSetting(*setting.Id)
 				if err != nil {
 					return fmt.Errorf("failed to delete messaging settings: %v", err)
 				}
+				log.Printf("Deleted messaging settings: %v", *setting.Id)
 				time.Sleep(5 * time.Second)
 			}
 		}
