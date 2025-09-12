@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
@@ -399,4 +400,31 @@ func buildTerraformProperties(sdkProperties []platformclientv2.Outputvalue) []in
 		properties = append(properties, property)
 	}
 	return properties
+}
+
+// buildCreateRequest builds a CreateDecisionTableRequest from Terraform resource data
+func buildCreateRequest(d *schema.ResourceData) *platformclientv2.Createdecisiontablerequest {
+	tableName := d.Get("name").(string)
+	divisionId := d.Get("division_id").(string)
+	schemaId := d.Get("schema_id").(string)
+	columns := d.Get("columns").([]interface{})
+
+	createRequest := &platformclientv2.Createdecisiontablerequest{
+		Name:       platformclientv2.String(tableName),
+		DivisionId: platformclientv2.String(divisionId),
+		SchemaId:   platformclientv2.String(schemaId),
+	}
+
+	// Add description if specified (optional field)
+	if description, ok := d.GetOk("description"); ok {
+		createRequest.Description = platformclientv2.String(description.(string))
+	}
+
+	// Build columns (required field)
+	if len(columns) > 0 {
+		columnData := columns[0].(map[string]interface{})
+		createRequest.Columns = buildSdkColumns(columnData)
+	}
+
+	return createRequest
 }

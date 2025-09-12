@@ -73,7 +73,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
         contractual {
           schema_property_key = "revenue_amount"
         }
-        comparator = "LessThanOrEqual"
+        comparator = "LessThanOrEquals"
       }
     }
 
@@ -109,7 +109,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
         contractual {
           schema_property_key = "last_interaction"
         }
-        comparator = "IsNotNull"
+        comparator = "NotEquals"
       }
     }
 

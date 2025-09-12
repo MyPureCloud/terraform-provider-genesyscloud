@@ -2,9 +2,11 @@ package business_rules_decision_table
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -21,7 +23,7 @@ type createBusinessRulesDecisionTableFunc func(ctx context.Context, p *BusinessR
 type getBusinessRulesDecisionTableFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontable, *platformclientv2.APIResponse, error)
 type updateBusinessRulesDecisionTableFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, updateRequest *platformclientv2.Updatedecisiontablerequest) (*platformclientv2.Decisiontable, *platformclientv2.APIResponse, error)
 type deleteBusinessRulesDecisionTableFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.APIResponse, error)
-type getAllBusinessRulesDecisionTablesFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error)
+type getAllBusinessRulesDecisionTablesFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error)
 type getBusinessRulesDecisionTablesByNameFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (tables *[]platformclientv2.Decisiontable, retryable bool, resp *platformclientv2.APIResponse, err error)
 type getBusinessRulesDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error)
 
@@ -91,8 +93,8 @@ func (p *BusinessRulesDecisionTableProxy) deleteBusinessRulesDecisionTable(ctx c
 	return p.deleteBusinessRulesDecisionTableAttr(ctx, p, tableId)
 }
 
-func (p *BusinessRulesDecisionTableProxy) getAllBusinessRulesDecisionTables(ctx context.Context) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
-	return p.getAllBusinessRulesDecisionTablesAttr(ctx, p)
+func (p *BusinessRulesDecisionTableProxy) getAllBusinessRulesDecisionTables(ctx context.Context, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
+	return p.getAllBusinessRulesDecisionTablesAttr(ctx, p, name)
 }
 
 // getBusinessRulesDecisionTablesByName returns Genesys Cloud business rules decision tables by name
@@ -161,15 +163,54 @@ func deleteBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDec
 	return resp, err
 }
 
-func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDecisionTableProxy) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
-	return p.businessRulesApi.GetBusinessrulesDecisiontables("", "", nil, "")
+func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
+	var allTables []platformclientv2.Decisiontable
+	pageSize := "100"
+	after := ""
+	var response *platformclientv2.APIResponse
+
+	for {
+		// API signature: GetBusinessrulesDecisiontables(after string, pageSize string, divisionIds []string, name string)
+		tables, resp, err := p.businessRulesApi.GetBusinessrulesDecisiontables(after, pageSize, nil, name)
+		if err != nil {
+			return nil, resp, fmt.Errorf("failed to get business rules decision tables: %v", err)
+		}
+		response = resp
+
+		if tables.Entities != nil {
+			allTables = append(allTables, *tables.Entities...)
+		}
+
+		// Check if there are more pages by looking at NextUri
+		// If NextUri is nil or empty, we're on the last page
+		if tables.NextUri == nil || *tables.NextUri == "" {
+			break
+		}
+
+		// Extract the 'after' parameter from NextUri for the next iteration
+		after, err = util.GetQueryParamValueFromUri(*tables.NextUri, "after")
+		if err != nil {
+			return nil, resp, fmt.Errorf("unable to parse after cursor from decision tables next uri: %v", err)
+		}
+		if after == "" {
+			break
+		}
+	}
+
+	// Create a new Decisiontablelisting with all collected tables
+	result := &platformclientv2.Decisiontablelisting{
+		Entities: &allTables,
+	}
+
+	return result, response, nil
 }
 
 // getBusinessRulesDecisionTablesByNameFn is an implementation of the function to get Genesys Cloud business rules decision tables by name
 func getBusinessRulesDecisionTablesByNameFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (matchingTables *[]platformclientv2.Decisiontable, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	finalTables := []platformclientv2.Decisiontable{}
 
-	tables, resp, err := p.getAllBusinessRulesDecisionTables(ctx)
+	// Use the updated getAll function with name parameter for server-side filtering
+	tables, resp, err := getAllBusinessRulesDecisionTablesFn(ctx, p, name)
 	if err != nil {
 		return nil, false, resp, err
 	}
@@ -178,6 +219,7 @@ func getBusinessRulesDecisionTablesByNameFn(ctx context.Context, p *BusinessRule
 		return &finalTables, true, resp, nil
 	}
 
+	// Filter for exact name matches (API does contains search, we need exact)
 	for _, table := range *tables.Entities {
 		if table.Name != nil && *table.Name == name {
 			finalTables = append(finalTables, table)

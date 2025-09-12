@@ -28,7 +28,7 @@ func getAllBusinessRulesDecisionTables(ctx context.Context, clientConfig *platfo
 	// Newly created resources often aren't returned unless there's a delay
 	time.Sleep(5 * time.Second)
 
-	tables, resp, err := proxy.getAllBusinessRulesDecisionTables(ctx)
+	tables, resp, err := proxy.getAllBusinessRulesDecisionTables(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all business rules decision tables error: %s", err), resp)
 	}
@@ -50,29 +50,9 @@ func createBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessRulesDecisionTableProxy(sdkConfig)
 
-	tableName := d.Get("name").(string)
-
 	// Build the create request
-	createRequest := &platformclientv2.Createdecisiontablerequest{
-		Name:        platformclientv2.String(tableName),
-		Description: platformclientv2.String(d.Get("description").(string)),
-	}
-
-	// Add division if specified
-	if divisionId, ok := d.GetOk("division_id"); ok {
-		createRequest.DivisionId = platformclientv2.String(divisionId.(string))
-	}
-
-	// Add schema_id if specified
-	if schemaId, ok := d.GetOk("schema_id"); ok {
-		createRequest.SchemaId = platformclientv2.String(schemaId.(string))
-	}
-
-	// Build columns if specified
-	if columns, ok := d.GetOk("columns"); ok && len(columns.([]interface{})) > 0 {
-		columnData := columns.([]interface{})[0].(map[string]interface{})
-		createRequest.Columns = buildSdkColumns(columnData)
-	}
+	createRequest := buildCreateRequest(d)
+	tableName := d.Get("name").(string)
 
 	log.Printf("Creating business rules decision table with name: %s", tableName)
 

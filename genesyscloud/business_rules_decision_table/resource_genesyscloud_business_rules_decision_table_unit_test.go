@@ -1435,7 +1435,7 @@ func TestUnitDataSourceBusinessRulesDecisionTable(t *testing.T) {
 	}
 
 	// Mock the getAllBusinessRulesDecisionTables function
-	decisionTableProxy.getAllBusinessRulesDecisionTablesAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
+	decisionTableProxy.getAllBusinessRulesDecisionTablesAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
 		table := &platformclientv2.Decisiontable{
 			Id:          &tId,
 			Name:        &tName,
