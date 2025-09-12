@@ -14,7 +14,7 @@ import (
 func TestAccDataSourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 	var (
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
-		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseName1          = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1   = "test-knowledgebase-description1"
 		knowledgeBaseCoreLanguage1  = "en-US"
 
