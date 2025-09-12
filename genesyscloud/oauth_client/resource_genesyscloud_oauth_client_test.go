@@ -126,7 +126,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 				ResourceName:            "genesyscloud_oauth_client." + clientResourceLabel1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"integration_credential_id", "integration_credential_name", "client_id", "client_secret"},
+				ImportStateVerifyIgnore: []string{"integration_credential_id", "integration_credential_name", "client_id", "client_secret", "expose_client_secret"},
 			},
 		},
 	})
