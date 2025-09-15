@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -118,7 +119,7 @@ func BuildExportFileName(flowName, flowType, flowId string) string {
 	return fmt.Sprintf("%s-%s-%s.yaml", sanitizeFlowName(flowName), flowType, flowId)
 }
 
-// sanitizeFlowName will replace all forward slashes, backslashes and white spaces with an underscore
+// sanitizeFlowName will replace all invalid characters in the filename with underscore
 func sanitizeFlowName(s string) string {
 	// Replace all invalid filename characters
 	result := strings.ReplaceAll(s, " ", "_")
@@ -131,6 +132,9 @@ func sanitizeFlowName(s string) string {
 	result = strings.ReplaceAll(result, "|", "_")
 	result = strings.ReplaceAll(result, "?", "_")
 	result = strings.ReplaceAll(result, "*", "_")
+
+	re := regexp.MustCompile("_+")
+	result = re.ReplaceAllString(result, "_")
 
 	return result
 }
