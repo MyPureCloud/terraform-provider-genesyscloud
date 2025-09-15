@@ -1,6 +1,10 @@
 package genesyscloud
 
 import (
+	"log"
+	"sync"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	archScheduleGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
@@ -13,7 +17,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
@@ -23,9 +26,6 @@ import (
 	routingWrapupCode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-	"log"
-	"sync"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -56,7 +56,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources[user.ResourceType] = user.ResourceUser()
-	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
+	// routinglanguage.ResourceType removed - migrated to Framework-only
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()

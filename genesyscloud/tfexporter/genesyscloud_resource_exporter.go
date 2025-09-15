@@ -1343,8 +1343,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 	res := schemaProvider.ResourcesMap[resType]
 	if res == nil {
-		tflog.Error(g.ctx, fmt.Sprintf("Resource type %v not defined in schema provider", resType))
-		return nil, diag.Errorf("Resource type %v not defined", resType)
+		// Check if it's a Framework resource
+		frameworkResources, _ := rRegistrar.GetFrameworkResources()
+		if _, exists := frameworkResources[resType]; !exists {
+			tflog.Error(g.ctx, fmt.Sprintf("Resource type %v not defined in schema provider or Framework resources", resType))
+			return nil, diag.Errorf("Resource type %v not defined", resType)
+		}
+		// For Framework resources, we'll skip the schema validation and proceed with export
+		tflog.Info(g.ctx, fmt.Sprintf("Resource type %s is a Framework resource, proceeding with export", resType))
 	}
 	tflog.Trace(g.ctx, fmt.Sprintf("Successfully retrieved resource schema for type %s", resType))
 
@@ -1398,24 +1404,54 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				defer resourceCancel()
 				tflog.Trace(g.ctx, fmt.Sprintf("Created resource context for ID: %s", id))
 
-				ctyType := res.CoreConfigSchema().ImpliedType()
-				tflog.Trace(g.ctx, fmt.Sprintf("Retrieved CTY type for resource ctyType: %v", ctyType))
-
-				tflog.Trace(g.ctx, fmt.Sprintf("Calling getResourceState for resource ID: %s", id))
-				instanceState, err := g.getResourceState(resourceCtx, res, id, resMeta, meta)
-
-				if err != nil {
-					tflog.Error(g.ctx, fmt.Sprintf("Error while fetching read context type %s and instance %s : %v", resType, id, err))
-					return fmt.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
+				var ctyType cty.Type
+				if res != nil {
+					ctyType = res.CoreConfigSchema().ImpliedType()
+					tflog.Trace(g.ctx, fmt.Sprintf("Retrieved CTY type for resource ctyType: %v", ctyType))
+				} else {
+					// For Framework resources, create a basic object type that can handle the attributes
+					// This is a minimal schema that allows the export system to process the resource
+					ctyType = cty.Object(map[string]cty.Type{
+						"id":   cty.String,
+						"name": cty.String,
+					})
+					tflog.Trace(g.ctx, fmt.Sprintf("Using basic object CTY type for Framework resource %s", resType))
 				}
 
-				if instanceState == nil {
-					tflog.Warn(g.ctx, fmt.Sprintf("Resource %s no longer exists. Skipping.", resMeta.BlockLabel))
-					toRemoveMutex.Lock()
-					toRemove = append(toRemove, id)
-					toRemoveMutex.Unlock()
-					tflog.Debug(g.ctx, fmt.Sprintf("Added resource ID %s to removal list", id))
-					return nil
+				var instanceState *terraform.InstanceState
+
+				if res != nil {
+					// SDKv2 resource - use getResourceState
+					tflog.Trace(g.ctx, fmt.Sprintf("Calling getResourceState for SDKv2 resource ID: %s", id))
+					var diagErr diag.Diagnostics
+					instanceState, diagErr = g.getResourceState(resourceCtx, res, id, resMeta, meta)
+
+					if diagErr.HasError() {
+						tflog.Error(g.ctx, fmt.Sprintf("Error while fetching read context type %s and instance %s : %v", resType, id, diagErr))
+						return fmt.Errorf("Failed to get state for %s instance %s: %v", resType, id, diagErr)
+					}
+
+					if instanceState == nil {
+						tflog.Warn(g.ctx, fmt.Sprintf("Resource %s no longer exists. Skipping.", resMeta.BlockLabel))
+						toRemoveMutex.Lock()
+						toRemove = append(toRemove, id)
+						toRemoveMutex.Unlock()
+						tflog.Debug(g.ctx, fmt.Sprintf("Added resource ID %s to removal list", id))
+						return nil
+					}
+				} else {
+					// Framework resource - create basic instance state
+					tflog.Trace(g.ctx, fmt.Sprintf("Creating basic instance state for Framework resource ID: %s", id))
+					instanceState = &terraform.InstanceState{
+						ID: resMeta.IdPrefix + id,
+						Attributes: map[string]string{
+							"id":   resMeta.IdPrefix + id,
+							"name": resMeta.BlockLabel, // Use the block label as the name
+						},
+					}
+
+					// For Framework resources, we provide basic attributes that match our CTY schema
+					tflog.Debug(g.ctx, fmt.Sprintf("Created basic instance state for Framework resource %s (ID: %s)", resType, id))
 				}
 				tflog.Info(g.ctx, fmt.Sprintf("Successfully retrieved instance state for resource ID: %s", id))
 
@@ -1460,18 +1496,22 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					blockType = "data"
 				}
 
-				for resAttribute, resSchema := range res.Schema {
-					// Remove any computed attributes if export computed exporter config not set
-					if resSchema.Computed == true && !exportComputed {
-						delete(instanceState.Attributes, resAttribute)
-						continue
+				if res != nil {
+					for resAttribute, resSchema := range res.Schema {
+						// Remove any computed attributes if export computed exporter config not set
+						if resSchema.Computed == true && !exportComputed {
+							delete(instanceState.Attributes, resAttribute)
+							continue
+						}
+						// Remove any computed read-only attributes from being exported regardless of exporter config
+						// because they cannot be set by a user when reapplying the configuration in a different org
+						if resSchema.Computed == true && resSchema.Optional == false {
+							delete(instanceState.Attributes, resAttribute)
+							continue
+						}
 					}
-					// Remove any computed read-only attributes from being exported regardless of exporter config
-					// because they cannot be set by a user when reapplying the configuration in a different org
-					if resSchema.Computed == true && resSchema.Optional == false {
-						delete(instanceState.Attributes, resAttribute)
-						continue
-					}
+				} else {
+					tflog.Debug(g.ctx, fmt.Sprintf("Skipping schema processing for Framework resource %s (ID: %s)", resType, id))
 				}
 				tflog.Debug(g.ctx, fmt.Sprintf("Finished processing schema attributes for resource ID: %s", id))
 
