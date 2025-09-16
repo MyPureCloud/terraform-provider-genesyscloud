@@ -1,14 +1,15 @@
 package task_management_workitem
 
 import (
-	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
-	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
-	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"sync"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
@@ -47,7 +48,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
 	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
-	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	// routingLanguage.ResourceType removed - migrated to Framework-only
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContact()

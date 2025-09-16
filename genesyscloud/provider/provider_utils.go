@@ -6,6 +6,9 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -38,6 +41,31 @@ func CombineProviderFactories(providers ...map[string]func() (*schema.Provider, 
 	}
 	return combined
 }
+
+// GetMuxedProviderFactories creates muxed provider factories that include both SDKv2 and Framework resources
+// This is the centralized function to avoid duplication across test files
+func GetMuxedProviderFactories(
+	providerResources map[string]*schema.Resource,
+	providerDataSources map[string]*schema.Resource,
+	frameworkResources map[string]func() frameworkresource.Resource,
+	frameworkDataSources map[string]func() datasource.DataSource,
+) map[string]func() (tfprotov6.ProviderServer, error) {
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"genesyscloud": func() (tfprotov6.ProviderServer, error) {
+			// Create muxed provider factory
+			muxFactoryFuncFunc := New("test", providerResources, providerDataSources, frameworkResources, frameworkDataSources)
+			muxFactoryFunc, err := muxFactoryFuncFunc()
+			if err != nil {
+				return nil, err
+			}
+			return muxFactoryFunc(), nil
+		},
+	}
+}
+
+// Note: For specific test scenarios that need particular Framework resources,
+// create helper functions in the test files that call GetMuxedProviderFactories()
+// with the specific Framework resources they need. This avoids circular import issues.
 
 // TestDefaultHomeDivision Verify default division is home division
 func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {

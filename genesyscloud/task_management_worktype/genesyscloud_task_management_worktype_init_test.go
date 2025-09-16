@@ -1,13 +1,13 @@
 package task_management_worktype
 
 import (
-	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"sync"
 	"testing"
 
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	script "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -39,7 +39,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[ResourceType] = ResourceTaskManagementWorktype()
 	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
-	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	// routingLanguage.ResourceType removed - migrated to Framework-only
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[script.ResourceType] = script.ResourceScript()

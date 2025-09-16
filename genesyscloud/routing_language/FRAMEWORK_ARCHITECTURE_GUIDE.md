@@ -1,6 +1,6 @@
 # Plugin Framework Architecture Guide
 
-This document explains how the Plugin Framework works differently from SDKv2 and why removing SDKv2 functions doesn't break functionality for the `genesyscloud_routing_language` resource.
+This document explains how the Plugin Framework works differently from SDKv2, the complete architecture for Framework-only resources, and the comprehensive fixes applied during the `genesyscloud_routing_language` migration including test infrastructure and export system integration.
 
 ## SDKv2 vs Plugin Framework Architecture
 
@@ -184,62 +184,250 @@ type routingLanguageFrameworkResourceModel struct {
 - Better error handling
 - Cleaner test architecture
 
-## Migration Fix: Test Initialization Update
+## Complete Migration Journey: From SDKv2 to Framework-Only
 
-### Problem Encountered During Migration
-When migrating `genesyscloud_routing_language` to Framework-only, the `genesyscloud/resource_genesyscloud_init_test.go` file was failing to compile due to a call to a non-existent function:
+### Phase 1: Initial Migration Issues
+When migrating `genesyscloud_routing_language` to Framework-only, multiple issues were encountered across different system components:
+
+#### **1. Test Initialization Compilation Errors**
+**Problem**: Multiple test files across packages were failing to compile due to calls to non-existent SDKv2 functions:
 
 ```go
 providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
 ```
 
-### Root Cause
-The migration process involved:
-1. Removing the SDKv2 `ResourceRoutingLanguage()` function
-2. The global test initialization file was still trying to register the SDKv2 resource
-3. This caused a compilation error: `"undefined: routinglanguage.ResourceRoutingLanguage"`
+**Files Affected**: 6 test initialization files across different packages
+- `genesyscloud/user/genesyscloud_user_init_test.go`
+- `genesyscloud/recording_media_retention_policy/genesyscloud_recording_media_retention_policy_init_test.go`
+- `genesyscloud/routing_email_route/genesyscloud_routing_email_route_init_test.go`
+- `genesyscloud/task_management_workitem/genesyscloud_task_management_workitem_init_test.go`
+- `genesyscloud/task_management_worktype/genesyscloud_task_management_worktype_init_test.go`
+- `genesyscloud/tfexporter/tf_exporter_resource_test.go`
 
-### Solution Applied
-Removed the SDKv2 resource registration from the global test file since the resource is now Framework-only:
+**Solution**: Removed all SDKv2 registrations and added explanatory comments indicating Framework-only migration.
 
-#### Before (Broken):
+#### **2. Export System Integration Issues**
+**Problem**: Export functionality was broken due to missing `getAllRoutingLanguages` function that was deleted with SDKv2 implementation.
+
+**Error**: `undefined: getAllRoutingLanguages`
+
+**Solution**: Created new `GetAllRoutingLanguages` function using the existing proxy layer:
 ```go
-providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
+func GetAllRoutingLanguages(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+    proxy := getRoutingLanguageProxy(clientConfig)
+    languages, _, err := proxy.getAllRoutingLanguages(ctx, "")
+    // ... implementation
+}
 ```
 
-#### After (Fixed):
+#### **3. Cross-Package Test Dependencies**
+**Problem**: Tests in other packages (like `routing_email_route`) that depended on `routing_language` were failing because they used SDKv2-only provider factories.
+
+**Error**: `The provider hashicorp/genesyscloud does not support resource type "genesyscloud_routing_language"`
+
+**Solution**: Updated tests to use muxed provider factories that include both SDKv2 and Framework resources:
 ```go
-// routinglanguage.ResourceType removed - migrated to Framework-only
+ProtoV6ProviderFactories: getMuxedProviderFactories()
 ```
 
-### Why This Fix Works
-- **Framework resources** are registered through the muxed provider system, not through SDKv2 test initialization
-- **Test compatibility**: The routing_language resource has its own Framework-specific test initialization in `genesyscloud/routing_language/genesyscloud_routing_language_init_test.go`
-- **No functionality loss**: Framework resources are still fully testable through their own test files
-- **Clean separation**: Global test file only handles SDKv2 resources, Framework resources handle their own testing
+### Phase 2: Test Infrastructure Architecture Issues
 
-### Files Modified During Migration
-- `genesyscloud/resource_genesyscloud_init_test.go` - Removed SDKv2 registration
-- `genesyscloud/routing_language/resource_genesyscloud_routing_language_schema.go` - Framework-only registration
-- `genesyscloud/routing_language/genesyscloud_routing_language_init_test.go` - Framework test initialization
+#### **4. TFExporter Test Infrastructure Problems**
+**Problem**: The tfexporter test infrastructure had multiple critical issues:
+- Duplicate imports causing compilation errors
+- Empty placeholder functions that didn't actually register Framework resources
+- Circular import dependencies
+- Framework resources not accessible to the export system
 
-### Migration Results
-- ✅ Compilation errors resolved
-- ✅ Test initialization works properly
-- ✅ Framework resources remain fully testable
-- ✅ No impact on other SDKv2 resources
-- ✅ Clean architectural separation maintained
+**Root Cause**: The test infrastructure was not properly implementing the Registrar interface for Framework resources.
+
+**Solution**: Complete overhaul of test infrastructure:
+```go
+// Proper Registrar interface implementation
+func (r *registerTestInstance) RegisterFrameworkResource(resourceType string, resourceFactory func() frameworkresource.Resource) {
+    currentFrameworkResources, currentFrameworkDataSources := registrar.GetFrameworkResources()
+    if currentFrameworkResources == nil {
+        currentFrameworkResources = make(map[string]func() frameworkresource.Resource)
+    }
+    currentFrameworkResources[resourceType] = resourceFactory
+    registrar.SetFrameworkResources(currentFrameworkResources, currentFrameworkDataSources)
+}
+
+// Proper resource registration using SetRegistrar pattern
+func (r *registerTestInstance) registerTestExporters() {
+    regInstance := &registerTestInstance{}
+    routinglanguage.SetRegistrar(regInstance) // This handles everything
+}
+```
+
+#### **5. Framework Resource Registration Pattern**
+**Problem**: Manual exporter registration was inconsistent with Framework-only approach.
+
+**Solution**: Implemented proper SetRegistrar pattern:
+```go
+// In routing_language/resource_genesyscloud_routing_language_schema.go
+func SetRegistrar(regInstance registrar.Registrar) {
+    // Register ALL three components together
+    regInstance.RegisterFrameworkResource(ResourceType, NewFrameworkRoutingLanguageResource)
+    regInstance.RegisterFrameworkDataSource(ResourceType, NewFrameworkRoutingLanguageDataSource)
+    regInstance.RegisterExporter(ResourceType, RoutingLanguageExporter())
+}
+```
+
+### Phase 3: Architectural Improvements
+
+#### **6. Centralized Provider Factory**
+**Problem**: Multiple test files had duplicated `getMuxedProviderFactories()` functions.
+
+**Solution**: Centralized the function in `genesyscloud/provider/provider_utils.go`:
+```go
+func GetMuxedProviderFactories(
+    providerResources map[string]*schema.Resource,
+    providerDataSources map[string]*schema.Resource,
+    frameworkResources map[string]func() frameworkresource.Resource,
+    frameworkDataSources map[string]func() datasource.DataSource,
+) map[string]func() (tfprotov6.ProviderServer, error)
+```
+
+#### **7. Error Handling Compatibility**
+**Problem**: Mixed SDKv2 and Framework utility functions causing compilation errors.
+
+**Solution**: Used Framework-compatible error handling:
+- Direct error messages in `resp.Diagnostics.AddError()`
+- `retry.RetryContext()` for Framework-compatible retry logic
+- Simple `fmt.Errorf()` for error creation
+
+### Migration Results - Complete Success
+- ✅ **Compilation errors resolved** across all packages
+- ✅ **Export functionality restored** with Framework-compatible implementation
+- ✅ **Cross-package test dependencies working** through muxed providers
+- ✅ **Test infrastructure properly supporting Framework resources**
+- ✅ **Clean architectural separation** between SDKv2 and Framework
+- ✅ **Centralized provider factory** eliminating code duplication
+- ✅ **Framework-only registration** working correctly
+
+## Key Architectural Patterns Discovered
+
+### 1. **Test Infrastructure Registrar Pattern**
+```go
+// ❌ Wrong: Empty placeholder functions
+func (r *registerTestInstance) RegisterFrameworkResource(resourceType string, resourceFactory func() frameworkresource.Resource) {
+    // This is a no-op - WRONG!
+}
+
+// ✅ Correct: Actual implementation that stores resources
+func (r *registerTestInstance) RegisterFrameworkResource(resourceType string, resourceFactory func() frameworkresource.Resource) {
+    currentFrameworkResources, currentFrameworkDataSources := registrar.GetFrameworkResources()
+    if currentFrameworkResources == nil {
+        currentFrameworkResources = make(map[string]func() frameworkresource.Resource)
+    }
+    currentFrameworkResources[resourceType] = resourceFactory
+    registrar.SetFrameworkResources(currentFrameworkResources, currentFrameworkDataSources)
+}
+```
+
+### 2. **SetRegistrar Pattern vs Manual Registration**
+```go
+// ❌ Wrong: Manual exporter registration
+func (r *registerTestInstance) registerTestExporters() {
+    RegisterExporter(routinglanguage.ResourceType, routinglanguage.RoutingLanguageExporter())
+}
+
+// ✅ Correct: Use SetRegistrar pattern
+func (r *registerTestInstance) registerTestExporters() {
+    regInstance := &registerTestInstance{}
+    routinglanguage.SetRegistrar(regInstance) // This handles resource, datasource, AND exporter
+}
+```
+
+### 3. **Dependency Architecture Pattern**
+```go
+// ❌ Wrong: Creates circular dependency
+import providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
+
+// ✅ Correct: Use resource_register to avoid cycles
+import registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+```
+
+### 4. **Framework Import Management**
+```go
+// ❌ Wrong: Duplicate imports
+import (
+    "github.com/hashicorp/terraform-plugin-framework/datasource"
+    "github.com/hashicorp/terraform-plugin-framework/resource"
+    // ... other imports ...
+    "github.com/hashicorp/terraform-plugin-framework/datasource" // DUPLICATE!
+    "github.com/hashicorp/terraform-plugin-framework/resource"   // DUPLICATE!
+)
+
+// ✅ Correct: Clean imports with aliases
+import (
+    "github.com/hashicorp/terraform-plugin-framework/datasource"
+    frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+)
+```
+
+## Architecture Decision Records
+
+### ADR-1: Framework-Only Migration Strategy
+**Decision**: Complete replacement of SDKv2 with Framework implementation
+**Rationale**: Eliminates complexity of maintaining parallel implementations
+**Impact**: Simplified architecture, single code path to maintain
+
+### ADR-2: Test Infrastructure Registrar Implementation
+**Decision**: Test infrastructure must implement full Registrar interface, not placeholder functions
+**Rationale**: Framework resources need to be accessible to tfexporter via global registrar maps
+**Impact**: Enables proper Framework resource testing and export functionality
+
+### ADR-3: SetRegistrar Pattern for Framework Resources
+**Decision**: Use SetRegistrar pattern instead of manual resource registration
+**Rationale**: Ensures consistent registration of resource, datasource, and exporter together
+**Impact**: Reduces registration errors and maintains consistency with main provider
+
+### ADR-4: Dependency Architecture for Test Infrastructure
+**Decision**: Use resource_register package, avoid provider_registrar imports in tests
+**Rationale**: Prevents circular dependencies while maintaining functionality
+**Impact**: Clean dependency graph and maintainable test infrastructure
+
+### ADR-5: Centralized Muxed Provider Factory
+**Decision**: Centralize duplicated provider factory functions
+**Rationale**: Eliminates code duplication and provides single source of truth
+**Impact**: Easier maintenance and consistent behavior across tests
 
 ## Summary
 
-Removing the SDKv2 function doesn't break anything because:
+The Framework-only migration of `genesyscloud_routing_language` demonstrates a complete architectural transformation:
 
-- ✅ **Framework resources** are registered through `SetRegistrar`, not test files
-- ✅ **Muxed provider** automatically includes Framework resources
-- ✅ **Framework tests** have their own initialization system
-- ✅ **Runtime behavior** is handled by the Framework provider
-- ✅ **No manual registration** needed in global test files
+### ✅ **Framework Architecture Benefits**
+- **Modern Plugin APIs**: Uses latest Terraform plugin Framework
+- **Type Safety**: Better type checking and validation
+- **Simplified Registration**: Automatic discovery through SetRegistrar pattern
+- **Clean Separation**: Framework and SDKv2 resources coexist without interference
+- **Better Testing**: Framework-specific test utilities and patterns
 
-The Framework approach is more modern, cleaner, and doesn't require the manual wiring that SDKv2 needed. The `genesyscloud_routing_language` resource is now fully Framework-native with better architecture, testing, and maintainability.
+### ✅ **Migration Success Factors**
+- **Complete System Integration**: Export system, test infrastructure, cross-package dependencies all working
+- **Proper Registrar Implementation**: Test infrastructure properly supports Framework resources
+- **Clean Dependency Architecture**: No circular imports, proper separation of concerns
+- **Centralized Provider Management**: Single source of truth for muxed provider factories
+- **Framework-Compatible Error Handling**: Proper error patterns for Framework resources
 
-This migration demonstrates the clean separation between SDKv2 and Framework resources, where each system manages its own registration and testing infrastructure without interfering with the other.
+### ✅ **Template for Future Migrations**
+This migration establishes proven patterns for migrating other resources:
+
+1. **Implement Framework resource/datasource** using existing proxy
+2. **Create comprehensive Framework tests** with proper provider factories
+3. **Update registration** to use SetRegistrar pattern
+4. **Remove SDKv2 files** completely after Framework implementation is working
+5. **Update test infrastructure** to properly implement Registrar interface
+6. **Fix cross-package dependencies** using muxed provider factories
+7. **Validate export functionality** works with Framework resources
+
+### ✅ **Architectural Insights**
+- **Framework resources** are registered through `SetRegistrar`, not manual test file registration
+- **Muxed provider** automatically includes Framework resources for cross-package compatibility
+- **Test infrastructure** must properly implement Registrar interface, not use placeholder functions
+- **Global resource storage** in resource_register package enables system-wide Framework resource access
+- **Dependency management** requires careful attention to avoid circular imports
+
+The `genesyscloud_routing_language` resource is now fully Framework-native with modern architecture, comprehensive testing, proper export integration, and serves as a complete template for future Framework migrations.

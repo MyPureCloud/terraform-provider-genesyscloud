@@ -27,6 +27,8 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -1046,8 +1048,17 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageResource,
+			},
+			map[string]func() datasource.DataSource{
+				routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(

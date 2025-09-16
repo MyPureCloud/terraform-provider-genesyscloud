@@ -18,6 +18,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -53,8 +55,17 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 
 	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route

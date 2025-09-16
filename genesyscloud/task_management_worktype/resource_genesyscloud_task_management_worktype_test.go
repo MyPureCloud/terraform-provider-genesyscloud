@@ -15,6 +15,8 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -92,8 +94,17 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			// Most basic config, barebones to create a worktype
 			{

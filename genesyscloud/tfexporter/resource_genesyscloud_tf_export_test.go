@@ -21,6 +21,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
@@ -29,6 +30,9 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/google/uuid"
@@ -558,8 +562,8 @@ func TestAccResourceTfExport(t *testing.T) {
 	defer os.RemoveAll(exportTestDir)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: getMuxedProviderFactoriesForTfExporter(),
 		Steps: []resource.TestStep{
 			{
 				// Run export without state file
@@ -2298,4 +2302,19 @@ resource "genesyscloud_integration_credential" "%s" {
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+// getMuxedProviderFactoriesForTfExporter returns muxed provider factories for tfexporter tests
+// This includes both SDKv2 and Framework resources to support routing_language export
+func getMuxedProviderFactoriesForTfExporter() map[string]func() (tfprotov6.ProviderServer, error) {
+	return provider.GetMuxedProviderFactories(
+		providerResources,
+		providerDataSources,
+		map[string]func() frameworkresource.Resource{
+			routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageResource,
+		},
+		map[string]func() datasource.DataSource{
+			routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageDataSource,
+		},
+	)
 }

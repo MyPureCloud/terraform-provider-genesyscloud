@@ -1,12 +1,12 @@
 package routing_email_route
 
 import (
-	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	"sync"
+
+	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 
@@ -39,7 +39,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[ResourceType] = ResourceRoutingEmailRoute()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
-	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	// routingLanguage.ResourceType removed - migrated to Framework-only
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[architectFlow.ResourceType] = architectFlow.ResourceArchitectFlow()
 	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()

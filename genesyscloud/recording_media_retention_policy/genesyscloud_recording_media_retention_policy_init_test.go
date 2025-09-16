@@ -13,7 +13,6 @@ import (
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
@@ -59,7 +58,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
 	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
-	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
+	// routingLanguage.ResourceType removed - migrated to Framework-only
 	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
