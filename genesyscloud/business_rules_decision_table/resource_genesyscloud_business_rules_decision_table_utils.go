@@ -238,8 +238,8 @@ func buildSdkUpdateColumns(columns map[string]interface{}) *platformclientv2.Upd
 	return sdkColumns
 }
 
-// buildTerraformColumns builds the Terraform columns from the SDK response
-func buildTerraformColumns(sdkColumns *platformclientv2.Decisiontablecolumns, queueLookup QueueLookupProvider, schemaLookup SchemaLookupProvider, schemaID string, ctx context.Context) map[string]interface{} {
+// flattenColumns flattens the SDK columns response to Terraform format
+func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns, queueLookup QueueLookupProvider, schemaLookup SchemaLookupProvider, schemaID string, ctx context.Context) map[string]interface{} {
 	if sdkColumns == nil {
 		return make(map[string]interface{})
 	}
@@ -257,20 +257,20 @@ func buildTerraformColumns(sdkColumns *platformclientv2.Decisiontablecolumns, qu
 	}
 
 	if sdkColumns.Inputs != nil {
-		inputs := buildTerraformInputColumns(*sdkColumns.Inputs, queueLookup, schema, ctx)
+		inputs := flattenInputColumns(*sdkColumns.Inputs, queueLookup, schema, ctx)
 		columns["inputs"] = inputs
 	}
 
 	if sdkColumns.Outputs != nil {
-		outputs := buildTerraformOutputColumns(*sdkColumns.Outputs, queueLookup, schema, ctx)
+		outputs := flattenOutputColumns(*sdkColumns.Outputs, queueLookup, schema, ctx)
 		columns["outputs"] = outputs
 	}
 
 	return columns
 }
 
-// buildTerraformInputColumns builds the Terraform input columns from the SDK response
-func buildTerraformInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn, queueLookup QueueLookupProvider, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
+// flattenInputColumns flattens the SDK input columns to Terraform format
+func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn, queueLookup QueueLookupProvider, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
 	inputs := make([]interface{}, 0)
 	for _, sdkInput := range sdkInputColumns {
 		input := make(map[string]interface{})
@@ -292,7 +292,7 @@ func buildTerraformInputColumns(sdkInputColumns []platformclientv2.Decisiontable
 		}
 
 		if sdkInput.Expression != nil {
-			expression := buildTerraformExpression(sdkInput.Expression)
+			expression := flattenExpression(sdkInput.Expression)
 			input["expression"] = []interface{}{expression}
 		}
 
@@ -301,8 +301,8 @@ func buildTerraformInputColumns(sdkInputColumns []platformclientv2.Decisiontable
 	return inputs
 }
 
-// buildTerraformOutputColumns builds the Terraform output columns from the SDK response
-func buildTerraformOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn, queueLookup QueueLookupProvider, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
+// flattenOutputColumns flattens the SDK output columns to Terraform format
+func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn, queueLookup QueueLookupProvider, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
 	outputs := make([]interface{}, 0)
 	for _, sdkOutput := range sdkOutputColumns {
 		output := make(map[string]interface{})
@@ -325,7 +325,7 @@ func buildTerraformOutputColumns(sdkOutputColumns []platformclientv2.Decisiontab
 		}
 
 		if sdkOutput.Value != nil {
-			value := buildTerraformValue(sdkOutput.Value)
+			value := flattenValue(sdkOutput.Value)
 			output["value"] = []interface{}{value}
 		}
 
@@ -334,12 +334,12 @@ func buildTerraformOutputColumns(sdkOutputColumns []platformclientv2.Decisiontab
 	return outputs
 }
 
-// buildTerraformExpression builds the Terraform expression from the SDK response
-func buildTerraformExpression(sdkExpression *platformclientv2.Decisiontableinputcolumnexpression) map[string]interface{} {
+// flattenExpression flattens the SDK expression to Terraform format
+func flattenExpression(sdkExpression *platformclientv2.Decisiontableinputcolumnexpression) map[string]interface{} {
 	expression := make(map[string]interface{})
 
 	if sdkExpression.Contractual != nil && *sdkExpression.Contractual != nil {
-		contractual := buildTerraformContractual(*sdkExpression.Contractual)
+		contractual := flattenContractual(*sdkExpression.Contractual)
 		expression["contractual"] = []interface{}{contractual}
 	}
 
@@ -350,8 +350,8 @@ func buildTerraformExpression(sdkExpression *platformclientv2.Decisiontableinput
 	return expression
 }
 
-// buildTerraformValue builds the Terraform value from the SDK response
-func buildTerraformValue(sdkValue *platformclientv2.Outputvalue) map[string]interface{} {
+// flattenValue flattens the SDK value to Terraform format
+func flattenValue(sdkValue *platformclientv2.Outputvalue) map[string]interface{} {
 	value := make(map[string]interface{})
 
 	if sdkValue.SchemaPropertyKey != nil {
@@ -359,15 +359,15 @@ func buildTerraformValue(sdkValue *platformclientv2.Outputvalue) map[string]inte
 	}
 
 	if sdkValue.Properties != nil {
-		properties := buildTerraformProperties(*sdkValue.Properties)
+		properties := flattenProperties(*sdkValue.Properties)
 		value["properties"] = properties
 	}
 
 	return value
 }
 
-// buildTerraformContractual builds the Terraform contractual from the SDK response
-func buildTerraformContractual(sdkContractual *platformclientv2.Contractual) map[string]interface{} {
+// flattenContractual flattens the SDK contractual to Terraform format
+func flattenContractual(sdkContractual *platformclientv2.Contractual) map[string]interface{} {
 	contractual := make(map[string]interface{})
 
 	if sdkContractual.SchemaPropertyKey != nil {
@@ -375,15 +375,15 @@ func buildTerraformContractual(sdkContractual *platformclientv2.Contractual) map
 	}
 
 	if sdkContractual.Contractual != nil && *sdkContractual.Contractual != nil {
-		nestedContractual := buildTerraformContractual(*sdkContractual.Contractual)
+		nestedContractual := flattenContractual(*sdkContractual.Contractual)
 		contractual["contractual"] = []interface{}{nestedContractual}
 	}
 
 	return contractual
 }
 
-// buildTerraformProperties builds the Terraform properties from the SDK response
-func buildTerraformProperties(sdkProperties []platformclientv2.Outputvalue) []interface{} {
+// flattenProperties flattens the SDK properties to Terraform format
+func flattenProperties(sdkProperties []platformclientv2.Outputvalue) []interface{} {
 	properties := make([]interface{}, 0)
 	for _, sdkProperty := range sdkProperties {
 		property := make(map[string]interface{})
@@ -393,7 +393,7 @@ func buildTerraformProperties(sdkProperties []platformclientv2.Outputvalue) []in
 		}
 
 		if sdkProperty.Properties != nil {
-			nestedProperties := buildTerraformProperties(*sdkProperty.Properties)
+			nestedProperties := flattenProperties(*sdkProperty.Properties)
 			property["properties"] = nestedProperties
 		}
 

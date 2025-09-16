@@ -43,9 +43,7 @@ func dataSourceBusinessRulesDecisionTableRead(ctx context.Context, d *schema.Res
 		// Set the basic fields
 		resourcedata.SetNillableValue(d, "name", table.Name)
 		resourcedata.SetNillableValue(d, "description", table.Description)
-		if table.Division != nil {
-			d.Set("division_id", table.Division.Id)
-		}
+		resourcedata.SetNillableReferenceDivision(d, "division_id", table.Division)
 
 		// Set columns - try to get from table first, then from latest version if needed
 		var columns interface{}
@@ -68,7 +66,7 @@ func dataSourceBusinessRulesDecisionTableRead(ctx context.Context, d *schema.Res
 		// Try to get columns from the table response first
 		if table.Columns != nil {
 			log.Printf("Debug: Found columns in table response")
-			columns = buildTerraformColumns(table.Columns, queueLookup, schemaLookup, schemaID, ctx)
+			columns = flattenColumns(table.Columns, queueLookup, schemaLookup, schemaID, ctx)
 			log.Printf("Debug: Built columns from table: %+v", columns)
 		}
 
@@ -82,7 +80,7 @@ func dataSourceBusinessRulesDecisionTableRead(ctx context.Context, d *schema.Res
 				if latestVersion.Contract != nil && latestVersion.Contract.ParentSchema != nil {
 					schemaID = *latestVersion.Contract.ParentSchema.Id
 				}
-				columns = buildTerraformColumns(latestVersion.Columns, queueLookup, schemaLookup, schemaID, ctx)
+				columns = flattenColumns(latestVersion.Columns, queueLookup, schemaLookup, schemaID, ctx)
 				log.Printf("Debug: Built columns from version: %+v", columns)
 			} else {
 				log.Printf("Debug: No columns found in latest version or error: %v", err)

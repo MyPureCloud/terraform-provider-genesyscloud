@@ -93,9 +93,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 		// Set the basic fields
 		resourcedata.SetNillableValue(d, "name", table.Name)
 		resourcedata.SetNillableValue(d, "description", table.Description)
-		if table.Division != nil {
-			d.Set("division_id", table.Division.Id)
-		}
+		resourcedata.SetNillableReferenceDivision(d, "division_id", table.Division)
 
 		// Set columns directly from the table (always available)
 		if table.Columns != nil {
@@ -121,7 +119,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 				}
 			}
 
-			columns := buildTerraformColumns(table.Columns, queueLookup, schemaLookup, schemaID, ctx)
+			columns := flattenColumns(table.Columns, queueLookup, schemaLookup, schemaID, ctx)
 			d.Set("columns", []interface{}{columns})
 		}
 
@@ -246,7 +244,10 @@ func validateColumnUpdate(ctx context.Context, proxy *BusinessRulesDecisionTable
 	}
 
 	// Check if this is version 1
-	if latestVersion.Version == nil || *latestVersion.Version != 1 {
+	if latestVersion.Version == nil {
+		return fmt.Errorf("column updates are only allowed on version 1, but version is nil")
+	}
+	if *latestVersion.Version != 1 {
 		return fmt.Errorf("column updates are only allowed on version 1, current version is %d", *latestVersion.Version)
 	}
 
@@ -256,7 +257,10 @@ func validateColumnUpdate(ctx context.Context, proxy *BusinessRulesDecisionTable
 	}
 
 	// Check if current version is in draft status
-	if latestVersion.Status == nil || *latestVersion.Status != "Draft" {
+	if latestVersion.Status == nil {
+		return fmt.Errorf("column updates are only allowed when version 1 is in 'Draft' status, but status is nil")
+	}
+	if *latestVersion.Status != "Draft" {
 		return fmt.Errorf("column updates are only allowed when version 1 is in 'Draft' status, current status is '%s'", *latestVersion.Status)
 	}
 
