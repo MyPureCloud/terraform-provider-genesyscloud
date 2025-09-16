@@ -664,7 +664,6 @@ resource "genesyscloud_routing_wrapupcode" "%s" {
 
 resource "genesyscloud_flow" "%s" {
         filepath          = "%s"
-        file_content_hash =  filesha256("%s")
         force_unlock      = false
         substitutions = {
 			flow_name          = "%s"
@@ -702,7 +701,6 @@ resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 		wrapupCodeResourceLabel,
 		wrapupCodeName,
 		flowResourceLabel,
-		flowFilePath,
 		flowFilePath,
 		flowName,
 		flowDivisionName,
