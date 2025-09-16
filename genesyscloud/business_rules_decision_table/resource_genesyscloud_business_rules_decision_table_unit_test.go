@@ -15,29 +15,6 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 )
 
-// Mock providers for testing
-type MockQueueLookupProvider struct {
-	queues map[string]*platformclientv2.Queue
-}
-
-func (m *MockQueueLookupProvider) GetQueueByID(ctx context.Context, queueID string) (*platformclientv2.Queue, error) {
-	if queue, exists := m.queues[queueID]; exists {
-		return queue, nil
-	}
-	return nil, fmt.Errorf("queue not found: %s", queueID)
-}
-
-type MockSchemaLookupProvider struct {
-	schemas map[string]*platformclientv2.Dataschema
-}
-
-func (m *MockSchemaLookupProvider) GetSchemaByID(ctx context.Context, schemaID string) (*platformclientv2.Dataschema, error) {
-	if schema, exists := m.schemas[schemaID]; exists {
-		return schema, nil
-	}
-	return nil, fmt.Errorf("schema not found: %s", schemaID)
-}
-
 func TestResourceBusinessRulesDecisionTable(t *testing.T) {
 	// Test that the resource can be created without errors
 	resource := ResourceBusinessRulesDecisionTable()
@@ -303,42 +280,6 @@ func TestUnitResourceBusinessRulesDecisionTableRead(t *testing.T) {
 	tDivisionId := uuid.NewString()
 	tSchemaId := uuid.NewString()
 
-	// Create mock providers for testing
-	_ = &MockQueueLookupProvider{
-		queues: map[string]*platformclientv2.Queue{
-			"input-queue-id": {
-				Name: platformclientv2.String("input-queue"),
-			},
-			"output-queue-id": {
-				Name: platformclientv2.String("output-queue"),
-			},
-		},
-	}
-
-	_ = &MockSchemaLookupProvider{
-		schemas: map[string]*platformclientv2.Dataschema{
-			tSchemaId: {
-				JsonSchema: &platformclientv2.Jsonschemadocument{
-					Properties: &map[string]interface{}{
-						"queue_id": map[string]interface{}{
-							"allOf": []interface{}{
-								map[string]interface{}{
-									"$ref": "#/components/schemas/businessRulesQueue",
-								},
-							},
-						},
-						"is_vip": map[string]interface{}{
-							"type": "boolean",
-						},
-						"customer_name": map[string]interface{}{
-							"type": "string",
-						},
-					},
-				},
-			},
-		},
-	}
-
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
 
 	// Setup schema mock
@@ -504,29 +445,6 @@ func TestUnitResourceBusinessRulesDecisionTableUpdate(t *testing.T) {
 	tSchemaId := uuid.NewString()
 
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
-
-	// Create mock providers for queue and schema lookups
-	_ = &MockQueueLookupProvider{
-		queues: map[string]*platformclientv2.Queue{
-			"test-queue-id": {
-				Id:   platformclientv2.String("test-queue-id"),
-				Name: platformclientv2.String("test-queue"),
-			},
-		},
-	}
-
-	_ = &MockSchemaLookupProvider{
-		schemas: map[string]*platformclientv2.Dataschema{
-			tSchemaId: {
-				Id: &tSchemaId,
-				JsonSchema: &platformclientv2.Jsonschemadocument{
-					Schema: platformclientv2.String("http://json-schema.org/draft-04/schema#"),
-				},
-			},
-		},
-	}
-
-	// Set mock providers in the proxy
 
 	// Initial simple columns using proper SDK types
 	initialColumns := &platformclientv2.Decisiontablecolumns{
@@ -697,29 +615,6 @@ func TestUnitResourceBusinessRulesDecisionTableSimpleColumnUpdate(t *testing.T) 
 	tSchemaId := uuid.NewString()
 
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
-
-	// Create mock providers for queue and schema lookups
-	_ = &MockQueueLookupProvider{
-		queues: map[string]*platformclientv2.Queue{
-			"test-queue-id": {
-				Id:   platformclientv2.String("test-queue-id"),
-				Name: platformclientv2.String("test-queue"),
-			},
-		},
-	}
-
-	_ = &MockSchemaLookupProvider{
-		schemas: map[string]*platformclientv2.Dataschema{
-			tSchemaId: {
-				Id: &tSchemaId,
-				JsonSchema: &platformclientv2.Jsonschemadocument{
-					Schema: platformclientv2.String("http://json-schema.org/draft-04/schema#"),
-				},
-			},
-		},
-	}
-
-	// Set mock providers in the proxy
 
 	// Initial simple columns using proper SDK types
 	initialColumns := &platformclientv2.Decisiontablecolumns{
@@ -909,29 +804,6 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateColumnsOnNewerVersion(t *te
 	tSchemaId := uuid.NewString()
 
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
-
-	// Create mock providers
-	_ = &MockQueueLookupProvider{
-		queues: map[string]*platformclientv2.Queue{
-			"input-queue-id": {
-				Id:   platformclientv2.String("input-queue-id"),
-				Name: platformclientv2.String("input-queue"),
-			},
-		},
-	}
-
-	_ = &MockSchemaLookupProvider{
-		schemas: map[string]*platformclientv2.Dataschema{
-			tSchemaId: {
-				Id: &tSchemaId,
-				JsonSchema: &platformclientv2.Jsonschemadocument{
-					Schema: platformclientv2.String("http://json-schema.org/draft-04/schema#"),
-				},
-			},
-		},
-	}
-
-	// Set mock providers in the proxy
 
 	// Initial columns
 	initialColumns := []interface{}{
@@ -1256,42 +1128,6 @@ func TestUnitDataSourceBusinessRulesDecisionTable(t *testing.T) {
 	tDescription := "CX as Code Unit Test Business Rules Decision Table"
 	tDivisionId := uuid.NewString()
 	tSchemaId := uuid.NewString()
-
-	// Create mock providers for testing
-	_ = &MockQueueLookupProvider{
-		queues: map[string]*platformclientv2.Queue{
-			"input-queue-id": {
-				Name: platformclientv2.String("input-queue"),
-			},
-			"output-queue-id": {
-				Name: platformclientv2.String("output-queue"),
-			},
-		},
-	}
-
-	_ = &MockSchemaLookupProvider{
-		schemas: map[string]*platformclientv2.Dataschema{
-			tSchemaId: {
-				JsonSchema: &platformclientv2.Jsonschemadocument{
-					Properties: &map[string]interface{}{
-						"queue_id": map[string]interface{}{
-							"allOf": []interface{}{
-								map[string]interface{}{
-									"$ref": "#/components/schemas/businessRulesQueue",
-								},
-							},
-						},
-						"is_vip": map[string]interface{}{
-							"type": "boolean",
-						},
-						"customer_name": map[string]interface{}{
-							"type": "string",
-						},
-					},
-				},
-			},
-		},
-	}
 
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
 
