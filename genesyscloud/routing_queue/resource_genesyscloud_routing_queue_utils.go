@@ -846,21 +846,19 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	return nil
 }
 
-func flattenCgaPilotRuleSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactivationsimplemetric) []interface{} {
+func flattenCgaSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactivationsimplemetric) []interface{} {
 	if simpleMetric == nil {
 		return nil
 	}
 
 	simpleMetricMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(simpleMetricMap, "metric", simpleMetric.Metric)
-	if simpleMetric.Queue != nil {
-		resourcedata.SetMapValueIfNotNil(simpleMetricMap, "queue_id", simpleMetric.Queue.Id)
-	}
+	resourcedata.SetMapReferenceValueIfNotNil(simpleMetricMap, "queue_id", simpleMetric.Queue)
 
 	return []interface{}{simpleMetricMap}
 }
 
-func flattenCgaPilotRuleConditions(conditions *[]platformclientv2.Conditionalgroupactivationcondition) []interface{} {
+func flattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupactivationcondition) []interface{} {
 	if conditions == nil || len(*conditions) == 0 {
 		return nil
 	}
@@ -870,9 +868,7 @@ func flattenCgaPilotRuleConditions(conditions *[]platformclientv2.Conditionalgro
 	for _, condition := range *conditions {
 		conditionOut := make(map[string]interface{})
 
-		if condition.SimpleMetric != nil {
-			conditionOut["simple_metric"] = flattenCgaPilotRuleSimpleMetric(condition.SimpleMetric)
-		}
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionOut, "simple_metric", condition.SimpleMetric, flattenCgaSimpleMetric)
 		resourcedata.SetMapValueIfNotNil(conditionOut, "operator", condition.Operator)
 		resourcedata.SetMapValueIfNotNil(conditionOut, "value", condition.Value)
 		conditionsOut = append(conditionsOut, conditionOut)
@@ -908,12 +904,8 @@ func flattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) [
 		ruleOut := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(ruleOut, "condition_expression", rule.ConditionExpression)
-		if rule.Conditions != nil {
-			ruleOut["conditions"] = flattenCgaPilotRuleConditions(rule.Conditions)
-		}
-		if rule.Groups != nil {
-			ruleOut["groups"] = flattenCgaRuleGroups(rule.Groups)
-		}
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "conditions", rule.Conditions, flattenCgaRuleConditions)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "groups", rule.Groups, flattenCgaRuleGroups)
 		rulesOut = append(rulesOut, ruleOut)
 	}
 	return rulesOut
@@ -926,12 +918,13 @@ func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroup
 	if sdkCga.PilotRule != nil {
 		pilotRuleMap := make(map[string]interface{})
 
-		pilotRuleMap["conditions"] = flattenCgaPilotRuleConditions(sdkCga.PilotRule.Conditions)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(pilotRuleMap, "conditions", sdkCga.PilotRule.Conditions, flattenCgaRuleConditions)
 		resourcedata.SetMapValueIfNotNil(pilotRuleMap, "condition_expression", sdkCga.PilotRule.ConditionExpression)
 
 		cgaMap["pilot_rule"] = []interface{}{pilotRuleMap}
 	}
 
+	// convert numbered rules
 	if sdkCga.Rules != nil {
 		cgaMap["rules"] = flattenCgaRules(sdkCga.Rules)
 	}
