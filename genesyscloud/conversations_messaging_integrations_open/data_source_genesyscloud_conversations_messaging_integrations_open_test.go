@@ -35,6 +35,10 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 		resourceIdMessagingSetting = "testConversationsMessagingSettings"
 	)
 
+	if cleanupErr := CleanupConversationsMessagingIntegrationsOpen("TestTerraformSupportedContent-" + uuid.NewString()); cleanupErr != nil {
+		t.Logf("Failed to clean up conversations messaging integrations open with name '%s': %s", name, cleanupErr.Error())
+	}
+
 	supportedContentResource1 := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",
 		resourceIdSupportedContent,

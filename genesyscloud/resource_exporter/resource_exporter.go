@@ -150,6 +150,10 @@ type ResourceExporter struct {
 	// When all specified inner attributes are missing from an object, that object is removed
 	RemoveIfMissing map[string][]string
 
+	// RemoveIfSelfReferential is a list of attributes that should be removed from the export config
+	// if the value matches the id of the resource.
+	RemoveIfSelfReferential []string
+
 	// Map of resource id->labels. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDMetaMap
 	// List of attributes to exclude from config. This is set by the export configuration.
@@ -333,6 +337,18 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 			}
 		}
 		return missingAll
+	}
+	return false
+}
+
+func (r *ResourceExporter) RemoveFieldIfSelfReferential(resourceId, fullAttribute, attributeKey string, config map[string]interface{}) bool {
+	if ok := lists.ItemInSlice(fullAttribute, r.RemoveIfSelfReferential); ok {
+		attributeValue := config[attributeKey]
+		if attributeValue == nil {
+			return false
+		}
+		attributeStr := attributeValue.(string)
+		return attributeStr == resourceId
 	}
 	return false
 }

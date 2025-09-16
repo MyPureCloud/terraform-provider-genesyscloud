@@ -59,7 +59,7 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
-	sdkPatchSegment.AssignmentExpirationDays = resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
+	sdkPatchSegment.SetField("AssignmentExpirationDays", resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days"))
 
 	return &sdkPatchSegment
 }

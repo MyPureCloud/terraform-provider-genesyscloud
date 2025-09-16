@@ -105,8 +105,11 @@ Optional:
 
 - `body` (Block List, Max: 1) The content for the variation. (see [below for nested schema](#nestedblock--knowledge_document_variation--body))
 - `contexts` (Block List) The context values associated with the variation (see [below for nested schema](#nestedblock--knowledge_document_variation--contexts))
-- `document_version` (Block List, Max: 1) The version of the document. (see [below for nested schema](#nestedblock--knowledge_document_variation--document_version))
 - `name` (String) The name of the variation
+
+Read-Only:
+
+- `document_version` (List of Object) The version of the document. (see [below for nested schema](#nestedatt--knowledge_document_variation--document_version))
 
 <a id="nestedblock--knowledge_document_variation--body"></a>
 ### Nested Schema for `knowledge_document_variation.body`
@@ -438,10 +441,10 @@ Required:
 
 
 
-<a id="nestedblock--knowledge_document_variation--document_version"></a>
+<a id="nestedatt--knowledge_document_variation--document_version"></a>
 ### Nested Schema for `knowledge_document_variation.document_version`
 
-Optional:
+Read-Only:
 
-- `id` (String) Id
+- `id` (String)
 
