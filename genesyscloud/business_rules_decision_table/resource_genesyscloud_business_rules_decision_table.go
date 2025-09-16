@@ -97,18 +97,6 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 
 		// Set columns directly from the table (always available)
 		if table.Columns != nil {
-			// Get providers from proxy (allows injection of mock providers during testing)
-			queueLookup := proxy.GetQueueLookupProvider()
-			schemaLookup := proxy.GetSchemaLookupProvider()
-
-			// If no providers are set in proxy, create default ones
-			if queueLookup == nil {
-				queueLookup = NewDefaultQueueLookupProvider(sdkConfig)
-			}
-			if schemaLookup == nil {
-				schemaLookup = NewDefaultSchemaLookupProvider(sdkConfig)
-			}
-
 			// Get schema ID for column type detection
 			var schemaID string
 			if table.Latest != nil {
@@ -119,7 +107,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 				}
 			}
 
-			columns := flattenColumns(table.Columns, queueLookup, schemaLookup, schemaID, ctx)
+			columns := flattenColumns(table.Columns, proxy, schemaID, ctx)
 			d.Set("columns", []interface{}{columns})
 		}
 

@@ -49,24 +49,12 @@ func dataSourceBusinessRulesDecisionTableRead(ctx context.Context, d *schema.Res
 		var columns interface{}
 		var schemaID string
 
-		// Get providers from proxy (allows injection of mock providers during testing)
-		queueLookup := proxy.GetQueueLookupProvider()
-		schemaLookup := proxy.GetSchemaLookupProvider()
-
-		// If no providers are set in proxy, create default ones
-		if queueLookup == nil {
-			queueLookup = NewDefaultQueueLookupProvider(sdkConfig)
-		}
-		if schemaLookup == nil {
-			schemaLookup = NewDefaultSchemaLookupProvider(sdkConfig)
-		}
-
 		log.Printf("Debug: Table Columns field is nil: %v", table.Columns == nil)
 
 		// Try to get columns from the table response first
 		if table.Columns != nil {
 			log.Printf("Debug: Found columns in table response")
-			columns = flattenColumns(table.Columns, queueLookup, schemaLookup, schemaID, ctx)
+			columns = flattenColumns(table.Columns, proxy, schemaID, ctx)
 			log.Printf("Debug: Built columns from table: %+v", columns)
 		}
 
@@ -80,7 +68,7 @@ func dataSourceBusinessRulesDecisionTableRead(ctx context.Context, d *schema.Res
 				if latestVersion.Contract != nil && latestVersion.Contract.ParentSchema != nil {
 					schemaID = *latestVersion.Contract.ParentSchema.Id
 				}
-				columns = flattenColumns(latestVersion.Columns, queueLookup, schemaLookup, schemaID, ctx)
+				columns = flattenColumns(latestVersion.Columns, proxy, schemaID, ctx)
 				log.Printf("Debug: Built columns from version: %+v", columns)
 			} else {
 				log.Printf("Debug: No columns found in latest version or error: %v", err)

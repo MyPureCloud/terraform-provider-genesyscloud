@@ -8,50 +8,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
-// Queue lookup interface for dependency injection during testing
-type QueueLookupProvider interface {
-	GetQueueByID(ctx context.Context, queueID string) (*platformclientv2.Queue, error)
-}
-
-// Schema lookup interface for determining column types
-type SchemaLookupProvider interface {
-	GetSchemaByID(ctx context.Context, schemaID string) (*platformclientv2.Dataschema, error)
-}
-
-// Default queue lookup implementation
-type DefaultQueueLookupProvider struct {
-	clientConfig *platformclientv2.Configuration
-}
-
-func NewDefaultQueueLookupProvider(clientConfig *platformclientv2.Configuration) *DefaultQueueLookupProvider {
-	return &DefaultQueueLookupProvider{
-		clientConfig: clientConfig,
-	}
-}
-
-func (p *DefaultQueueLookupProvider) GetQueueByID(ctx context.Context, queueID string) (*platformclientv2.Queue, error) {
-	routingApi := platformclientv2.NewRoutingApiWithConfig(p.clientConfig)
-	queue, _, err := routingApi.GetRoutingQueue(queueID, nil)
-	return queue, err
-}
-
-// Default schema lookup implementation
-type DefaultSchemaLookupProvider struct {
-	clientConfig *platformclientv2.Configuration
-}
-
-func NewDefaultSchemaLookupProvider(clientConfig *platformclientv2.Configuration) *DefaultSchemaLookupProvider {
-	return &DefaultSchemaLookupProvider{
-		clientConfig: clientConfig,
-	}
-}
-
-func (p *DefaultSchemaLookupProvider) GetSchemaByID(ctx context.Context, schemaID string) (*platformclientv2.Dataschema, error) {
-	businessRulesApi := platformclientv2.NewBusinessRulesApiWithConfig(p.clientConfig)
-	schema, _, err := businessRulesApi.GetBusinessrulesSchema(schemaID)
-	return schema, err
-}
-
 // buildSdkInputColumns builds the SDK input columns from the Terraform schema
 func buildSdkInputColumns(inputColumns []interface{}) *[]platformclientv2.Decisiontableinputcolumnrequest {
 	if len(inputColumns) == 0 {
@@ -239,7 +195,7 @@ func buildSdkUpdateColumns(columns map[string]interface{}) *platformclientv2.Upd
 }
 
 // flattenColumns flattens the SDK columns response to Terraform format
-func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns, queueLookup QueueLookupProvider, schemaLookup SchemaLookupProvider, schemaID string, ctx context.Context) map[string]interface{} {
+func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns, proxy *BusinessRulesDecisionTableProxy, schemaID string, ctx context.Context) map[string]interface{} {
 	if sdkColumns == nil {
 		return make(map[string]interface{})
 	}
@@ -248,21 +204,21 @@ func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns, queueLook
 
 	// Get the schema to determine column types
 	var schema *platformclientv2.Dataschema
-	if schemaLookup != nil && schemaID != "" {
+	if proxy != nil && schemaID != "" {
 		var err error
-		schema, err = schemaLookup.GetSchemaByID(ctx, schemaID)
+		schema, err = proxy.getSchemaByID(ctx, schemaID)
 		if err != nil {
 			log.Printf("Warning: Could not look up schema %s for column type detection: %v", schemaID, err)
 		}
 	}
 
 	if sdkColumns.Inputs != nil {
-		inputs := flattenInputColumns(*sdkColumns.Inputs, queueLookup, schema, ctx)
+		inputs := flattenInputColumns(*sdkColumns.Inputs, schema, ctx)
 		columns["inputs"] = inputs
 	}
 
 	if sdkColumns.Outputs != nil {
-		outputs := flattenOutputColumns(*sdkColumns.Outputs, queueLookup, schema, ctx)
+		outputs := flattenOutputColumns(*sdkColumns.Outputs, schema, ctx)
 		columns["outputs"] = outputs
 	}
 
@@ -270,7 +226,7 @@ func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns, queueLook
 }
 
 // flattenInputColumns flattens the SDK input columns to Terraform format
-func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn, queueLookup QueueLookupProvider, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
+func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
 	inputs := make([]interface{}, 0)
 	for _, sdkInput := range sdkInputColumns {
 		input := make(map[string]interface{})
@@ -302,7 +258,7 @@ func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputco
 }
 
 // flattenOutputColumns flattens the SDK output columns to Terraform format
-func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn, queueLookup QueueLookupProvider, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
+func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
 	outputs := make([]interface{}, 0)
 	for _, sdkOutput := range sdkOutputColumns {
 		output := make(map[string]interface{})

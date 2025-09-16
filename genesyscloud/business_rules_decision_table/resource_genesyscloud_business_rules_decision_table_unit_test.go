@@ -217,47 +217,10 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 		},
 	}
 
-	// Create mock providers for testing
-	mockQueueLookup := &MockQueueLookupProvider{
-		queues: map[string]*platformclientv2.Queue{
-			"input-queue-id": {
-				Name: platformclientv2.String("input-queue"),
-			},
-			"output-queue-id": {
-				Name: platformclientv2.String("output-queue"),
-			},
-		},
-	}
-
-	mockSchemaLookup := &MockSchemaLookupProvider{
-		schemas: map[string]*platformclientv2.Dataschema{
-			tSchemaId: {
-				JsonSchema: &platformclientv2.Jsonschemadocument{
-					Properties: &map[string]interface{}{
-						"queue_id": map[string]interface{}{
-							"allOf": []interface{}{
-								map[string]interface{}{
-									"$ref": "#/components/schemas/businessRulesQueue",
-								},
-							},
-						},
-						"is_vip": map[string]interface{}{
-							"type": "boolean",
-						},
-						"customer_tier": map[string]interface{}{
-							"type": "string",
-						},
-					},
-				},
-			},
-		},
-	}
-
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
 
-	// Set the mock providers in the proxy
-	decisionTableProxy.SetQueueLookupProvider(mockQueueLookup)
-	decisionTableProxy.SetSchemaLookupProvider(mockSchemaLookup)
+	// Setup schema mock
+	setupSchemaMock(decisionTableProxy, tSchemaId)
 
 	decisionTableProxy.getBusinessRulesDecisionTableAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontable, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
@@ -295,8 +258,6 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 		assert.Len(t, *createRequest.Columns.Outputs, 2, "createRequest.Columns.Outputs should have 2 outputs (queue, string)")
 
 		// Validate that the mock providers are working
-		assert.NotNil(t, p.GetQueueLookupProvider(), "Queue provider should be set")
-		assert.NotNil(t, p.GetSchemaLookupProvider(), "Schema provider should be set")
 
 		// Set up a realistic table version response
 		tableVersion.Id = &tId
@@ -343,7 +304,7 @@ func TestUnitResourceBusinessRulesDecisionTableRead(t *testing.T) {
 	tSchemaId := uuid.NewString()
 
 	// Create mock providers for testing
-	mockQueueLookup := &MockQueueLookupProvider{
+	_ = &MockQueueLookupProvider{
 		queues: map[string]*platformclientv2.Queue{
 			"input-queue-id": {
 				Name: platformclientv2.String("input-queue"),
@@ -354,7 +315,7 @@ func TestUnitResourceBusinessRulesDecisionTableRead(t *testing.T) {
 		},
 	}
 
-	mockSchemaLookup := &MockSchemaLookupProvider{
+	_ = &MockSchemaLookupProvider{
 		schemas: map[string]*platformclientv2.Dataschema{
 			tSchemaId: {
 				JsonSchema: &platformclientv2.Jsonschemadocument{
@@ -380,9 +341,8 @@ func TestUnitResourceBusinessRulesDecisionTableRead(t *testing.T) {
 
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
 
-	// Set the mock providers in the proxy
-	decisionTableProxy.SetQueueLookupProvider(mockQueueLookup)
-	decisionTableProxy.SetSchemaLookupProvider(mockSchemaLookup)
+	// Setup schema mock
+	setupSchemaMock(decisionTableProxy, tSchemaId)
 
 	decisionTableProxy.getBusinessRulesDecisionTableAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontable, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
@@ -522,36 +482,15 @@ func TestUnitResourceBusinessRulesDecisionTableRead(t *testing.T) {
 	assert.Equal(t, tDivisionId, d.Get("division_id"))
 	assert.Equal(t, tSchemaId, d.Get("schema_id"))
 
-	// Verify that the mock providers are working by checking that they were set in the proxy
-	assert.NotNil(t, decisionTableProxy.GetQueueLookupProvider(), "Queue provider should be set")
-	assert.NotNil(t, decisionTableProxy.GetSchemaLookupProvider(), "Schema provider should be set")
-
-	// Verify that the mock providers contain the expected data
-	mockQueueProvider := decisionTableProxy.GetQueueLookupProvider().(*MockQueueLookupProvider)
-	mockSchemaProvider := decisionTableProxy.GetSchemaLookupProvider().(*MockSchemaLookupProvider)
-
-	assert.Equal(t, "input-queue", *mockQueueProvider.queues["input-queue-id"].Name, "Input queue name should match")
-	assert.Equal(t, "output-queue", *mockQueueProvider.queues["output-queue-id"].Name, "Output queue name should match")
-	assert.NotNil(t, mockSchemaProvider.schemas[tSchemaId].JsonSchema, "Schema should have JSON schema")
-
 	// Assert that columns are properly processed and set in the resource data
 	assert.NotNil(t, d.Get("columns"), "Columns should be set")
 
 	// Test that the read operation successfully processed the complex column structure
 	// Instead of testing the Terraform interface{} format, test the actual SDK response
 
-	// Verify that the mock providers are working correctly
-	assert.NotNil(t, decisionTableProxy.GetQueueLookupProvider(), "Queue provider should be set")
-	assert.NotNil(t, decisionTableProxy.GetSchemaLookupProvider(), "Schema provider should be set")
-
 	// Test the SDK response directly - this is much cleaner and type-safe
 	// We can access the mock data directly since we control what it returns
 	// Note: These variables were already declared above, so we just use them
-
-	// Verify the mock data matches what we expect
-	assert.Equal(t, "input-queue", *mockQueueProvider.queues["input-queue-id"].Name, "Input queue name should match")
-	assert.Equal(t, "output-queue", *mockQueueProvider.queues["output-queue-id"].Name, "Output queue name should match")
-	assert.NotNil(t, mockSchemaProvider.schemas[tSchemaId].JsonSchema, "Schema should have JSON schema")
 
 	// Test that the read operation succeeded and columns are present
 	// The detailed column structure validation is covered in the CRUD tests
@@ -567,7 +506,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdate(t *testing.T) {
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
 
 	// Create mock providers for queue and schema lookups
-	mockQueueLookup := &MockQueueLookupProvider{
+	_ = &MockQueueLookupProvider{
 		queues: map[string]*platformclientv2.Queue{
 			"test-queue-id": {
 				Id:   platformclientv2.String("test-queue-id"),
@@ -576,7 +515,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdate(t *testing.T) {
 		},
 	}
 
-	mockSchemaLookup := &MockSchemaLookupProvider{
+	_ = &MockSchemaLookupProvider{
 		schemas: map[string]*platformclientv2.Dataschema{
 			tSchemaId: {
 				Id: &tSchemaId,
@@ -588,8 +527,6 @@ func TestUnitResourceBusinessRulesDecisionTableUpdate(t *testing.T) {
 	}
 
 	// Set mock providers in the proxy
-	decisionTableProxy.SetQueueLookupProvider(mockQueueLookup)
-	decisionTableProxy.SetSchemaLookupProvider(mockSchemaLookup)
 
 	// Initial simple columns using proper SDK types
 	initialColumns := &platformclientv2.Decisiontablecolumns{
@@ -750,9 +687,6 @@ func TestUnitResourceBusinessRulesDecisionTableUpdate(t *testing.T) {
 	columns := d2.Get("columns").([]interface{})
 	assert.Len(t, columns, 1, "Should have 1 column group after update")
 
-	// Verify that mock providers are working
-	assert.NotNil(t, decisionTableProxy.GetQueueLookupProvider(), "Queue provider should be set")
-	assert.NotNil(t, decisionTableProxy.GetSchemaLookupProvider(), "Schema provider should be set")
 }
 
 func TestUnitResourceBusinessRulesDecisionTableSimpleColumnUpdate(t *testing.T) {
@@ -765,7 +699,7 @@ func TestUnitResourceBusinessRulesDecisionTableSimpleColumnUpdate(t *testing.T) 
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
 
 	// Create mock providers for queue and schema lookups
-	mockQueueLookup := &MockQueueLookupProvider{
+	_ = &MockQueueLookupProvider{
 		queues: map[string]*platformclientv2.Queue{
 			"test-queue-id": {
 				Id:   platformclientv2.String("test-queue-id"),
@@ -774,7 +708,7 @@ func TestUnitResourceBusinessRulesDecisionTableSimpleColumnUpdate(t *testing.T) 
 		},
 	}
 
-	mockSchemaLookup := &MockSchemaLookupProvider{
+	_ = &MockSchemaLookupProvider{
 		schemas: map[string]*platformclientv2.Dataschema{
 			tSchemaId: {
 				Id: &tSchemaId,
@@ -786,8 +720,6 @@ func TestUnitResourceBusinessRulesDecisionTableSimpleColumnUpdate(t *testing.T) 
 	}
 
 	// Set mock providers in the proxy
-	decisionTableProxy.SetQueueLookupProvider(mockQueueLookup)
-	decisionTableProxy.SetSchemaLookupProvider(mockSchemaLookup)
 
 	// Initial simple columns using proper SDK types
 	initialColumns := &platformclientv2.Decisiontablecolumns{
@@ -948,10 +880,6 @@ func TestUnitResourceBusinessRulesDecisionTableSimpleColumnUpdate(t *testing.T) 
 	columns := d2.Get("columns").([]interface{})
 	assert.Len(t, columns, 1, "Should have 1 column group after update")
 
-	// Verify that mock providers are working
-	assert.NotNil(t, decisionTableProxy.GetQueueLookupProvider(), "Queue provider should be set")
-	assert.NotNil(t, decisionTableProxy.GetSchemaLookupProvider(), "Schema provider should be set")
-
 	// Test that the simple column update actually changed the values
 	columnGroup := columns[0].(map[string]interface{})
 	inputs := columnGroup["inputs"].([]interface{})
@@ -983,7 +911,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateColumnsOnNewerVersion(t *te
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
 
 	// Create mock providers
-	mockQueueLookup := &MockQueueLookupProvider{
+	_ = &MockQueueLookupProvider{
 		queues: map[string]*platformclientv2.Queue{
 			"input-queue-id": {
 				Id:   platformclientv2.String("input-queue-id"),
@@ -992,7 +920,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateColumnsOnNewerVersion(t *te
 		},
 	}
 
-	mockSchemaLookup := &MockSchemaLookupProvider{
+	_ = &MockSchemaLookupProvider{
 		schemas: map[string]*platformclientv2.Dataschema{
 			tSchemaId: {
 				Id: &tSchemaId,
@@ -1004,8 +932,6 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateColumnsOnNewerVersion(t *te
 	}
 
 	// Set mock providers in the proxy
-	decisionTableProxy.SetQueueLookupProvider(mockQueueLookup)
-	decisionTableProxy.SetSchemaLookupProvider(mockSchemaLookup)
 
 	// Initial columns
 	initialColumns := []interface{}{
@@ -1332,7 +1258,7 @@ func TestUnitDataSourceBusinessRulesDecisionTable(t *testing.T) {
 	tSchemaId := uuid.NewString()
 
 	// Create mock providers for testing
-	mockQueueLookup := &MockQueueLookupProvider{
+	_ = &MockQueueLookupProvider{
 		queues: map[string]*platformclientv2.Queue{
 			"input-queue-id": {
 				Name: platformclientv2.String("input-queue"),
@@ -1343,7 +1269,7 @@ func TestUnitDataSourceBusinessRulesDecisionTable(t *testing.T) {
 		},
 	}
 
-	mockSchemaLookup := &MockSchemaLookupProvider{
+	_ = &MockSchemaLookupProvider{
 		schemas: map[string]*platformclientv2.Dataschema{
 			tSchemaId: {
 				JsonSchema: &platformclientv2.Jsonschemadocument{
@@ -1368,10 +1294,6 @@ func TestUnitDataSourceBusinessRulesDecisionTable(t *testing.T) {
 	}
 
 	decisionTableProxy := &BusinessRulesDecisionTableProxy{}
-
-	// Set the mock providers in the proxy
-	decisionTableProxy.SetQueueLookupProvider(mockQueueLookup)
-	decisionTableProxy.SetSchemaLookupProvider(mockSchemaLookup)
 
 	// Mock the getBusinessRulesDecisionTablesByName function
 	decisionTableProxy.getBusinessRulesDecisionTablesByNameAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*[]platformclientv2.Decisiontable, bool, *platformclientv2.APIResponse, error) {
@@ -1548,20 +1470,6 @@ func TestUnitDataSourceBusinessRulesDecisionTable(t *testing.T) {
 	// Test that the data source successfully retrieved the table with columns
 	// Instead of testing the Terraform interface{} format, test the actual SDK response
 
-	// Verify that the mock providers are working correctly
-	assert.NotNil(t, decisionTableProxy.GetQueueLookupProvider(), "Queue provider should be set")
-	assert.NotNil(t, decisionTableProxy.GetSchemaLookupProvider(), "Schema provider should be set")
-
-	// Test the SDK response directly - this is much cleaner and type-safe
-	// We can access the mock data directly since we control what it returns
-	mockQueueProvider := decisionTableProxy.GetQueueLookupProvider().(*MockQueueLookupProvider)
-	mockSchemaProvider := decisionTableProxy.GetSchemaLookupProvider().(*MockSchemaLookupProvider)
-
-	// Verify the mock data matches what we expect
-	assert.Equal(t, "input-queue", *mockQueueProvider.queues["input-queue-id"].Name, "Input queue name should match")
-	assert.Equal(t, "output-queue", *mockQueueProvider.queues["output-queue-id"].Name, "Output queue name should match")
-	assert.NotNil(t, mockSchemaProvider.schemas[tSchemaId].JsonSchema, "Schema should have JSON schema")
-
 	// Test that the data source operation succeeded and columns are present
 	// The detailed column structure validation is covered in the CRUD tests
 
@@ -1673,20 +1581,12 @@ func convertSDKColumnsToTerraform(sdkColumns *platformclientv2.Decisiontablecolu
 	return []interface{}{columnGroup}
 }
 
-// TestProxyProviderInjection tests that the proxy can use injected mock providers
-func TestProxyProviderInjection(t *testing.T) {
-	// Create mock providers
-	mockQueueLookup := &MockQueueLookupProvider{
-		queues: map[string]*platformclientv2.Queue{
-			"test-queue-id": {
-				Name: platformclientv2.String("test-queue"),
-			},
-		},
-	}
-
-	mockSchemaLookup := &MockSchemaLookupProvider{
-		schemas: map[string]*platformclientv2.Dataschema{
-			"test-schema-id": {
+// setupSchemaMock sets up a basic mock for getSchemaByID in tests
+func setupSchemaMock(proxy *BusinessRulesDecisionTableProxy, schemaID string) {
+	proxy.getSchemaByIDAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, id string) (*platformclientv2.Dataschema, error) {
+		if id == schemaID {
+			return &platformclientv2.Dataschema{
+				Id: &id,
 				JsonSchema: &platformclientv2.Jsonschemadocument{
 					Properties: &map[string]interface{}{
 						"queue_id": map[string]interface{}{
@@ -1696,41 +1596,16 @@ func TestProxyProviderInjection(t *testing.T) {
 								},
 							},
 						},
+						"is_vip": map[string]interface{}{
+							"type": "boolean",
+						},
+						"customer_tier": map[string]interface{}{
+							"type": "string",
+						},
 					},
 				},
-			},
-		},
+			}, nil
+		}
+		return nil, fmt.Errorf("schema not found")
 	}
-
-	// Create proxy and inject mock providers
-	proxy := &BusinessRulesDecisionTableProxy{}
-	proxy.SetQueueLookupProvider(mockQueueLookup)
-	proxy.SetSchemaLookupProvider(mockSchemaLookup)
-
-	// Verify that the providers were injected correctly
-	retrievedQueueProvider := proxy.GetQueueLookupProvider()
-	retrievedSchemaProvider := proxy.GetSchemaLookupProvider()
-
-	assert.Equal(t, mockQueueLookup, retrievedQueueProvider, "Queue provider should be the injected mock")
-	assert.Equal(t, mockSchemaLookup, retrievedSchemaProvider, "Schema provider should be the injected mock")
-
-	// Test that the mock providers work as expected
-	ctx := context.Background()
-
-	// Test queue lookup
-	queue, err := retrievedQueueProvider.GetQueueByID(ctx, "test-queue-id")
-	assert.NoError(t, err, "Should find test queue")
-	assert.Equal(t, "test-queue", *queue.Name, "Queue name should match")
-
-	// Test schema lookup
-	schema, err := retrievedSchemaProvider.GetSchemaByID(ctx, "test-schema-id")
-	assert.NoError(t, err, "Should find test schema")
-	assert.NotNil(t, schema.JsonSchema, "Schema should have JSON schema")
-
-	// Test that non-existent IDs return errors
-	_, err = retrievedQueueProvider.GetQueueByID(ctx, "non-existent-id")
-	assert.Error(t, err, "Should return error for non-existent queue")
-
-	_, err = retrievedSchemaProvider.GetSchemaByID(ctx, "non-existent-id")
-	assert.Error(t, err, "Should return error for non-existent schema")
 }

@@ -26,6 +26,7 @@ type deleteBusinessRulesDecisionTableFunc func(ctx context.Context, p *BusinessR
 type getAllBusinessRulesDecisionTablesFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error)
 type getBusinessRulesDecisionTablesByNameFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (tables *[]platformclientv2.Decisiontable, retryable bool, resp *platformclientv2.APIResponse, err error)
 type getBusinessRulesDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error)
+type getSchemaByIDFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, schemaID string) (*platformclientv2.Dataschema, error)
 
 // BusinessRulesDecisionTableProxy contains all the methods that call genesys cloud APIs.
 type BusinessRulesDecisionTableProxy struct {
@@ -39,12 +40,9 @@ type BusinessRulesDecisionTableProxy struct {
 	getAllBusinessRulesDecisionTablesAttr    getAllBusinessRulesDecisionTablesFunc
 	getBusinessRulesDecisionTablesByNameAttr getBusinessRulesDecisionTablesByNameFunc
 	getBusinessRulesDecisionTableVersionAttr getBusinessRulesDecisionTableVersionFunc
+	getSchemaByIDAttr                        getSchemaByIDFunc
 
 	BusinessRulesDecisionTableCache rc.CacheInterface[platformclientv2.Decisiontable]
-
-	// Provider fields for testing
-	queueLookupProvider  QueueLookupProvider
-	schemaLookupProvider SchemaLookupProvider
 }
 
 // newBusinessRulesDecisionTableProxy initializes the business rules decision table proxy with all the data needed to communicate with Genesys Cloud
@@ -62,6 +60,7 @@ func newBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configura
 		getAllBusinessRulesDecisionTablesAttr:    getAllBusinessRulesDecisionTablesFn,
 		getBusinessRulesDecisionTablesByNameAttr: getBusinessRulesDecisionTablesByNameFn,
 		getBusinessRulesDecisionTableVersionAttr: getBusinessRulesDecisionTableVersionFn,
+		getSchemaByIDAttr:                        getSchemaByIDFn,
 
 		BusinessRulesDecisionTableCache: businessRulesDecisionTableCache,
 	}
@@ -107,21 +106,9 @@ func (p *BusinessRulesDecisionTableProxy) getBusinessRulesDecisionTableVersion(c
 	return p.getBusinessRulesDecisionTableVersionAttr(ctx, p, tableId, versionNumber)
 }
 
-// Provider getter and setter methods for testing
-func (p *BusinessRulesDecisionTableProxy) GetQueueLookupProvider() QueueLookupProvider {
-	return p.queueLookupProvider
-}
-
-func (p *BusinessRulesDecisionTableProxy) SetQueueLookupProvider(provider QueueLookupProvider) {
-	p.queueLookupProvider = provider
-}
-
-func (p *BusinessRulesDecisionTableProxy) GetSchemaLookupProvider() SchemaLookupProvider {
-	return p.schemaLookupProvider
-}
-
-func (p *BusinessRulesDecisionTableProxy) SetSchemaLookupProvider(provider SchemaLookupProvider) {
-	p.schemaLookupProvider = provider
+// getSchemaByID retrieves a schema by ID for column type detection
+func (p *BusinessRulesDecisionTableProxy) getSchemaByID(ctx context.Context, schemaID string) (*platformclientv2.Dataschema, error) {
+	return p.getSchemaByIDAttr(ctx, p, schemaID)
 }
 
 // Function implementations that make the actual API calls
@@ -235,4 +222,9 @@ func getBusinessRulesDecisionTablesByNameFn(ctx context.Context, p *BusinessRule
 
 func getBusinessRulesDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
 	return p.businessRulesApi.GetBusinessrulesDecisiontableVersion(tableId, versionNumber)
+}
+
+func getSchemaByIDFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, schemaID string) (*platformclientv2.Dataschema, error) {
+	schema, _, err := p.businessRulesApi.GetBusinessrulesSchema(schemaID)
+	return schema, err
 }
