@@ -283,6 +283,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_bullseye_ring" {
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
 - `canned_response_libraries` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--canned_response_libraries))
+- `conditional_group_activation` (Block List, Max: 1) The Conditional Group Activation settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_activation))
 - `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
@@ -362,6 +363,90 @@ Optional:
 
 - `library_ids` (Set of String) Set of canned response library IDs associated with the queue. Populate this field only when the mode is set to SelectedOnly.
 - `mode` (String) The association mode of canned response libraries to queue.Valid values: All, SelectedOnly, None.
+
+
+<a id="nestedblock--conditional_group_activation"></a>
+### Nested Schema for `conditional_group_activation`
+
+Required:
+
+- `rules` (Block List, Min: 1, Max: 5) The set of rules to be periodically executed on the queue (if the pilot rule evaluates as true or there is no pilot rule). (see [below for nested schema](#nestedblock--conditional_group_activation--rules))
+
+Optional:
+
+- `pilot_rule` (Block List, Max: 1) The pilot rule for this queue, which executes periodically to determine queue health. (see [below for nested schema](#nestedblock--conditional_group_activation--pilot_rule))
+
+<a id="nestedblock--conditional_group_activation--rules"></a>
+### Nested Schema for `conditional_group_activation.rules`
+
+Required:
+
+- `condition_expression` (String) A string expression that defines the relationships of conditions in this rule.
+- `conditions` (Block List, Min: 1, Max: 10) The list of conditions used in this rule. (see [below for nested schema](#nestedblock--conditional_group_activation--rules--conditions))
+- `groups` (Block List, Min: 1, Max: 5) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--conditional_group_activation--rules--groups))
+
+<a id="nestedblock--conditional_group_activation--rules--conditions"></a>
+### Nested Schema for `conditional_group_activation.rules.conditions`
+
+Required:
+
+- `operator` (String) The operator used to compare the actual value against the threshold value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo, EqualTo, NotEqualTo.
+- `simple_metric` (Block List, Min: 1, Max: 1) Instructs this condition to evaluate a simple queue-level metric. (see [below for nested schema](#nestedblock--conditional_group_activation--rules--conditions--simple_metric))
+- `value` (Number) The threshold value, beyond which a rule evaluates as true.
+
+<a id="nestedblock--conditional_group_activation--rules--conditions--simple_metric"></a>
+### Nested Schema for `conditional_group_activation.rules.conditions.simple_metric`
+
+Required:
+
+- `metric` (String) The queue metric being evaluated.  Valid values: EstimatedWaitTime, ServiceLevel, IdleAgentCount.
+
+Optional:
+
+- `queue_id` (String) The queue being evaluated for this rule.  If null, the current queue will be used.
+
+
+
+<a id="nestedblock--conditional_group_activation--rules--groups"></a>
+### Nested Schema for `conditional_group_activation.rules.groups`
+
+Required:
+
+- `member_group_id` (String) ID (GUID) for Group, SkillGroup, Team
+- `member_group_type` (String) The type of the member group. Accepted values: TEAM, GROUP, SKILLGROUP
+
+
+
+<a id="nestedblock--conditional_group_activation--pilot_rule"></a>
+### Nested Schema for `conditional_group_activation.pilot_rule`
+
+Required:
+
+- `condition_expression` (String) A string expression that defines the relationships of conditions in this rule.
+- `conditions` (Block List, Min: 1, Max: 10) The list of conditions used in this rule. (see [below for nested schema](#nestedblock--conditional_group_activation--pilot_rule--conditions))
+
+<a id="nestedblock--conditional_group_activation--pilot_rule--conditions"></a>
+### Nested Schema for `conditional_group_activation.pilot_rule.conditions`
+
+Required:
+
+- `operator` (String) The operator used to compare the actual value against the threshold value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo, EqualTo, NotEqualTo.
+- `simple_metric` (Block List, Min: 1, Max: 1) Instructs this condition to evaluate a simple queue-level metric. (see [below for nested schema](#nestedblock--conditional_group_activation--pilot_rule--conditions--simple_metric))
+- `value` (Number) The threshold value, beyond which a rule evaluates as true.
+
+<a id="nestedblock--conditional_group_activation--pilot_rule--conditions--simple_metric"></a>
+### Nested Schema for `conditional_group_activation.pilot_rule.conditions.simple_metric`
+
+Required:
+
+- `metric` (String) The queue metric being evaluated.  Valid values: EstimatedWaitTime, ServiceLevel, IdleAgentCount.
+
+Optional:
+
+- `queue_id` (String) The queue being evaluated for this rule.  If null, the current queue will be used.
+
+
+
 
 
 <a id="nestedblock--conditional_group_routing_rules"></a>
