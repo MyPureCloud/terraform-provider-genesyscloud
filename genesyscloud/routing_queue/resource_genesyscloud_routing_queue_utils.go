@@ -426,8 +426,9 @@ func buildCgaConditions(condition []interface{}) *[]platformclientv2.Conditional
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.SimpleMetric, conditionMap, "simple_metric", buildCgaSimpleMetric)
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Operator, conditionMap, "operator")
 
-		value := conditionMap["value"].(float64)
-		sdkCondition.Value = &value
+		if value, ok := conditionMap["value"].(float64); ok {
+			sdkCondition.Value = &value
+		}
 
 		sdkConditions = append(sdkConditions, sdkCondition)
 	}
@@ -476,7 +477,10 @@ func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalg
 
 	for _, ruleElement := range rules {
 		var sdkRule platformclientv2.Conditionalgroupactivationrule
-		ruleMap := ruleElement.(map[string]interface{})
+		ruleMap, ok := ruleElement.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.ConditionExpression, ruleMap, "condition_expression")
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Conditions, ruleMap, "conditions", buildCgaConditions)
@@ -498,7 +502,10 @@ func buildSdkConditionalGroupActivation(d *schema.ResourceData) *platformclientv
 
 	cgaArray := cga.([]interface{})
 	for _, cgaEntry := range cgaArray {
-		cgaMap := cgaEntry.(map[string]interface{})
+		cgaMap, ok := cgaEntry.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.PilotRule, cgaMap, "pilot_rule", buildCgaPilotRule)
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.Rules, cgaMap, "rules", buildCgaNumberedRules)
