@@ -118,13 +118,6 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 	filePath := d.Get("filepath").(string)
 	substitutions := d.Get("substitutions").(map[string]any)
 
-	if d.HasChange("file_content_hash") {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  fmt.Sprintf("file_content_hash will become a read-only attribute in a future version and should be removed from any %s resource configuration.", ResourceType),
-		})
-	}
-
 	reader, _, err := files.DownloadOrOpenFile(ctx, filePath, S3Enabled)
 	if err != nil {
 		setFileContentHashToNil(d)

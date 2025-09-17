@@ -2,6 +2,8 @@ package conversations_messaging_integrations_open
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,6 +39,10 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 		nameMessagingSetting       = "testSettings"
 		resourceIdMessagingSetting = "testConversationsMessagingSettings"
 	)
+
+	if cleanupErr := CleanupConversationsMessagingIntegrationsOpen("Terraform Integrations Messaging Open"); cleanupErr != nil {
+		t.Logf("Failed to clean up conversations messaging integrations open with name '%s': %s", name, cleanupErr.Error())
+	}
 
 	supportedContentResource1 := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",
@@ -116,5 +122,37 @@ func testVerifyConversationsMessagingIntegrationsOpenDestroyed(state *terraform.
 			return fmt.Errorf("Unexpected error: %s", err)
 		}
 	}
+	return nil
+}
+
+func CleanupConversationsMessagingIntegrationsOpen(name string) error {
+	log.Printf("Cleaning up conversations messaging integrations open with name '%s'", name)
+	conversationsApi := platformclientv2.NewConversationsApiWithConfig(sdkConfig)
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		openIntegrations, _, getErr := conversationsApi.GetConversationsMessagingIntegrationsOpen(pageSize, pageNum, "", "", "")
+		if getErr != nil {
+			return fmt.Errorf("failed to get page %v of open integrations: %v", pageNum, getErr)
+		}
+
+		if openIntegrations.Entities == nil || len(*openIntegrations.Entities) == 0 {
+			break
+		}
+
+		for _, integration := range *openIntegrations.Entities {
+			if integration.Name != nil && strings.HasPrefix(*integration.Name, name) {
+				log.Printf("Deleting open integration: %v", *integration.Id)
+				_, err := conversationsApi.DeleteConversationsMessagingIntegrationsOpenIntegrationId(*integration.Id)
+				if err != nil {
+					log.Printf("failed to delete open integration: %v", err)
+					continue
+				}
+				log.Printf("Deleted open integration: %v", *integration.Id)
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+	log.Printf("Cleaned up conversations messaging integrations open with name '%s'", name)
 	return nil
 }

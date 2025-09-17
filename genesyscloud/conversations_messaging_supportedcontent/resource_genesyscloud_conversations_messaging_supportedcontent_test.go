@@ -33,7 +33,7 @@ func TestAccResourceSupportedContent(t *testing.T) {
 		inboundType3  = "video/mpeg"
 	)
 
-	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent"); cleanupErr != nil {
+	if cleanupErr := CleanupMessagingSettingsSupportedContent("TestTerraformSupportedContent-" + uuid.NewString()); cleanupErr != nil {
 		t.Logf("Failed to clean up conversations messaging supported content with name '%s': %s", name, cleanupErr.Error())
 	}
 
@@ -120,10 +120,13 @@ func CleanupMessagingSettingsSupportedContent(name string) error {
 
 		for _, setting := range *cmMessagingSetting.Entities {
 			if setting.Name != nil && strings.HasPrefix(*setting.Name, name) {
+				log.Printf("Deleting messaging settings: %v", *setting.Id)
 				_, err := cmMessagingSettingApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(*setting.Id)
 				if err != nil {
-					return fmt.Errorf("failed to delete messaging settings: %v", err)
+					log.Printf("failed to delete messaging settings: %v", err)
+					continue
 				}
+				log.Printf("Deleted messaging settings: %v", *setting.Id)
 				time.Sleep(5 * time.Second)
 			}
 		}

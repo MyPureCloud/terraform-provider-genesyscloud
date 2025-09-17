@@ -247,8 +247,7 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	filePath := d.Get("contacts_filepath").(string)
 	if filePath == "" {
-		// Shouldn't happen because Terraform should detect this in the schema first
-		return diag.Errorf("File path is required")
+		return nil
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig

@@ -19,5 +19,4 @@ resource "genesyscloud_guide_version" "sample-guide" {
       description    = "This is a test Description"
     }
   }
-  state = "ProductionReady"
 }

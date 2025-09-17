@@ -110,13 +110,6 @@ func ResourceGuideVersion() *schema.Resource {
 				MaxItems:    1,
 				Elem:        resourcesElem,
 			},
-			"state": {
-				Description:  "The state of the guide version. Valid Values: Draft, ProductionReady, TestReady. Defaults to Draft",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "Draft",
-				ValidateFunc: validation.StringInSlice([]string{"Draft", "ProductionReady", "TestReady"}, false),
-			},
 		},
 	}
 }
@@ -125,7 +118,9 @@ func GuideVersionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGuideVersions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"guide_id": {RefType: "genesyscloud_guide"},
+			"guide_id":                             {RefType: "genesyscloud_guide"},
+			"resources.data_action.data_action_id": {RefType: "genesyscloud_integration_action"},
 		},
+		ExcludedAttributes: []string{"generate_content"},
 	}
 }

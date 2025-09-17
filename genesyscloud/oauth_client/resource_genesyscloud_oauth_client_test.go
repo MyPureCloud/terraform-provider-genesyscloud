@@ -2,11 +2,12 @@ package oauth_client
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -125,7 +126,122 @@ func TestAccResourceOAuthClient(t *testing.T) {
 				ResourceName:            "genesyscloud_oauth_client." + clientResourceLabel1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"integration_credential_id", "integration_credential_name", "client_id", "client_secret"},
+				ImportStateVerifyIgnore: []string{"integration_credential_id", "integration_credential_name", "client_id", "client_secret", "expose_client_secret"},
+			},
+		},
+	})
+}
+
+func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
+	var (
+		clientResourceLabel1 = "test-client-expose-secret"
+		clientName1          = "terraform-expose-secret-" + uuid.NewString()
+		clientDesc1          = "terraform test client with exposed secret"
+		tokenSec1            = "300"
+		grantTypeClientCreds = "CLIENT-CREDENTIALS"
+		stateActive          = strconv.Quote("active")
+
+		roleResourceLabel1 = "admin-role"
+		roleName1          = "admin"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Test with expose_client_secret = false (default)
+				Config: generateAuthRoleDataSource(
+					roleResourceLabel1,
+					strconv.Quote(roleName1),
+					"",
+				) + generateOauthClientExposeSecret(
+					clientResourceLabel1,
+					clientName1,
+					clientDesc1,
+					grantTypeClientCreds,
+					tokenSec1,
+					stateActive,
+					util.NullValue,
+					util.NullValue,
+					"false", // expose_client_secret
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "name", clientName1),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "description", clientDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "expose_client_secret", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "client_secret", ""),
+					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),
+				),
+			},
+			{
+				// Test with expose_client_secret = true
+				Config: generateAuthRoleDataSource(
+					roleResourceLabel1,
+					strconv.Quote(roleName1),
+					"",
+				) + generateOauthClientExposeSecret(
+					clientResourceLabel1,
+					clientName1+" updated",
+					clientDesc1+" updated",
+					grantTypeClientCreds,
+					tokenSec1,
+					stateActive,
+					util.NullValue,
+					util.NullValue,
+					"true", // expose_client_secret
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "name", clientName1+" updated"),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "description", clientDesc1+" updated"),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "expose_client_secret", "true"),
+					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_secret"),
+					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources["genesyscloud_oauth_client."+clientResourceLabel1]
+						if !ok {
+							return fmt.Errorf("OAuth client resource not found: %s", "genesyscloud_oauth_client."+clientResourceLabel1)
+						}
+
+						clientSecret := rs.Primary.Attributes["client_secret"]
+						if clientSecret == "" {
+							return fmt.Errorf("client_secret should not be empty when expose_client_secret is true")
+						}
+
+						if len(clientSecret) < 10 {
+							return fmt.Errorf("client_secret appears to be invalid: %s", clientSecret)
+						}
+
+						return nil
+					},
+				),
+			},
+			{
+				// Test switching back to expose_client_secret = false
+				Config: generateAuthRoleDataSource(
+					roleResourceLabel1,
+					strconv.Quote(roleName1),
+					"",
+				) + generateOauthClientExposeSecret(
+					clientResourceLabel1,
+					clientName1+" back to hidden",
+					clientDesc1+" back to hidden",
+					grantTypeClientCreds,
+					tokenSec1,
+					stateActive,
+					util.NullValue,
+					util.NullValue,
+					"false", // expose_client_secret
+					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "name", clientName1+" back to hidden"),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "expose_client_secret", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "client_secret", ""),
+					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),
+				),
 			},
 		},
 	})
@@ -158,6 +274,21 @@ func generateOauthClientWithCredential(resourceLabel, name, description, grantTy
         %s
 	}
 	`, resourceLabel, name, description, grantType, tokenSec, state, uris, scopes, credentialName, strings.Join(blocks, "\n"))
+}
+
+func generateOauthClientExposeSecret(resourceLabel, name, description, grantType, tokenSec, state, uris, scopes, exposeSecret string, blocks ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_oauth_client" "%s" {
+		name = "%s"
+		description = "%s"
+        authorized_grant_type = "%s"
+        access_token_validity_seconds = %s
+        state = %s
+        registered_redirect_uris = %s
+        scopes = %s
+        expose_client_secret = %s
+        %s
+	}
+	`, resourceLabel, name, description, grantType, tokenSec, state, uris, scopes, exposeSecret, strings.Join(blocks, "\n"))
 }
 
 func generateOauthClientRoles(roleID string, divisionId string) string {

@@ -42,7 +42,6 @@ resource "genesyscloud_guide_version" "sample-guide" {
       description    = "This is a test Description"
     }
   }
-  state = "ProductionReady"
 }
 ```
 
@@ -57,7 +56,6 @@ resource "genesyscloud_guide_version" "sample-guide" {
 ### Optional
 
 - `resources` (Block List, Max: 1) The resources associated with this version of the guide. (see [below for nested schema](#nestedblock--resources))
-- `state` (String) The state of the guide version. Valid Values: Draft, ProductionReady, TestReady. Defaults to Draft Defaults to `Draft`.
 - `variables` (Block List) The variables associated with this version of the guide. Includes input variables (provided) and output variables (captured during execution). (see [below for nested schema](#nestedblock--variables))
 
 ### Read-Only
