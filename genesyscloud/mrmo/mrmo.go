@@ -8,11 +8,9 @@ import (
 )
 
 /*
-	Defines the client configuration to be used by the MRMO service.
-	MRMO will perform the authenication itself, populate the clientConfig var, and set isActive to true.
 	When MRMO is active (i.e. MRMO is using code defined in this codebase), specialised code will be used to
 	perform the CRUD operations and to export resources. These specialised code paths are defined to serve MRMO
-	the functionality it requires without all the bells and whistles (client pool, export features, etc.)
+	the functionality it requires without all the bells and whistles (client pool, unnecessary export features, etc.)
 */
 
 var (
