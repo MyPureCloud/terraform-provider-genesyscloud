@@ -27,6 +27,8 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -74,8 +76,17 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -267,8 +278,17 @@ func TestAccResourceRoutingQueueConditionalRouting(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				PreConfig: func() {
@@ -555,8 +575,17 @@ func TestAccResourceRoutingQueueParToCGR(t *testing.T) {
 
 	// Create CGR queue with routing rules
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				Config: routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(
@@ -676,8 +705,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 
 	var homeDivisionName string
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}",
@@ -691,8 +729,17 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 	emailInQueueFlowInboundcallConfig2 := getBasicInQueueEmailFlow(inqueueEmailFlowName, homeDivisionName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -878,8 +925,17 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 		Confirm that the length of `skill_groups` and `members` both equal 1
 	*/
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				Config: routingSkill.GenerateRoutingSkillResource(
@@ -926,8 +982,17 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 		queueRingNum              = "3"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create users
@@ -1046,8 +1111,17 @@ func TestAccResourceRoutingQueueWrapupCodes(t *testing.T) {
 		description              = "Terraform wrapup code description"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create with two wrapup codes
@@ -1158,8 +1232,17 @@ func TestAccResourceRoutingQueueDirectRouting(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -1227,8 +1310,17 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -1303,8 +1395,17 @@ func TestAccResourceRoutingQueueCannedResponseLibraryIds(t *testing.T) {
 	lib3Config := responseManagementLibrary.GenerateResponseManagementLibraryResource(library3Label, library3NameAttr)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				Config: lib1Config + lib2Config + lib3Config + fmt.Sprintf(`
@@ -1725,8 +1826,17 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			map[string]func() frameworkresource.Resource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			},
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create

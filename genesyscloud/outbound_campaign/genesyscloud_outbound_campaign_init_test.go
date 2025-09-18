@@ -17,7 +17,6 @@ import (
 	outboundRuleset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_ruleset"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
@@ -54,7 +53,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceOutboundCampaign()
 	providerResources[outboundContactList.ResourceType] = outboundContactList.ResourceOutboundContactList()
-	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	// routingWrapupcode.ResourceType removed - migrated to Framework-only
 	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
 	providerResources[obResponseSet.ResourceType] = obResponseSet.ResourceOutboundCallanalysisresponseset()
 	providerResources[location.ResourceType] = location.ResourceLocation()

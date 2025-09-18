@@ -1,74 +1,74 @@
 package routing_wrapupcode
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 const ResourceType = "genesyscloud_routing_wrapupcode"
 
-// SetRegistrar registers all of the resources, datasources and exporters in the pakage
+// SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceType, ResourceRoutingWrapupCode())
-	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingWrapupCode())
-	regInstance.RegisterExporter(ResourceType, RoutingWrapupCodeExporter())
+	// Framework-only registration (SDKv2 removed)
+	regInstance.RegisterFrameworkResource(ResourceType, NewRoutingWrapupcodeFrameworkResource)
+	regInstance.RegisterFrameworkDataSource(ResourceType, NewRoutingWrapupcodeFrameworkDataSource)
+	regInstance.RegisterExporter(ResourceType, RoutingWrapupcodeExporter())
 }
 
-func RoutingWrapupCodeExporter() *resourceExporter.ResourceExporter {
+func RoutingWrapupcodeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingWrapupCodes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingWrapupcodes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
 
-func ResourceRoutingWrapupCode() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Routing Wrapup Code",
-
-		CreateContext: provider.CreateWithPooledClient(createRoutingWrapupCode),
-		ReadContext:   provider.ReadWithPooledClient(readRoutingWrapupCode),
-		UpdateContext: provider.UpdateWithPooledClient(updateRoutingWrapupCode),
-		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingWrapupCode),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Wrapup Code name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"division_id": {
-				Description: "The division to which this routing wrapupcode will belong. If not set, * will be used to indicate all divisions.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"description": {
-				Description: "The wrap-up code description.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
+// GetAllRoutingWrapupcodes retrieves all routing wrapupcodes for export using the proxy
+func GetAllRoutingWrapupcodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getRoutingWrapupcodeProxy(clientConfig)
+	wrapupcodes, _, err := proxy.getAllRoutingWrapupcode(ctx)
+	if err != nil {
+		return nil, diag.Errorf("Failed to get routing wrapupcodes for export: %v", err)
 	}
+
+	if wrapupcodes == nil {
+		return resourceExporter.ResourceIDMetaMap{}, nil
+	}
+
+	exportMap := make(resourceExporter.ResourceIDMetaMap)
+	for _, wrapupcode := range *wrapupcodes {
+		exportMap[*wrapupcode.Id] = &resourceExporter.ResourceMeta{
+			BlockLabel: *wrapupcode.Name,
+		}
+	}
+	return exportMap, nil
 }
 
-func DataSourceRoutingWrapupCode() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Wrap-up Code. Select a wrap-up code by name",
-		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingWrapupcodeRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Wrap-up code name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
+// GenerateRoutingWrapupcodeResource generates a routing wrapupcode resource for cross-package testing
+// This function is used by other packages that need to create routing wrapupcode resources in their tests
+func GenerateRoutingWrapupcodeResource(resourceLabel string, name string, divisionId string, description string) string {
+	divisionIdAttr := ""
+	if divisionId != util.NullValue {
+		divisionIdAttr = fmt.Sprintf(`
+		division_id = %s`, divisionId)
 	}
+
+	descriptionAttr := ""
+	if description != "" {
+		descriptionAttr = fmt.Sprintf(`
+		description = "%s"`, description)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_routing_wrapupcode" "%s" {
+		name = "%s"%s%s
+	}
+	`, resourceLabel, name, divisionIdAttr, descriptionAttr)
 }

@@ -23,7 +23,6 @@ import (
 	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
-	routingWrapupCode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
@@ -62,7 +61,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
 	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
-	providerResources[routingWrapupCode.ResourceType] = routingWrapupCode.ResourceRoutingWrapupCode()
+	// routingWrapupCode.ResourceType removed - migrated to Framework-only
 	providerResources[archScheduleGroup.ResourceType] = archScheduleGroup.ResourceArchitectSchedulegroups()
 	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
@@ -86,7 +85,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
 	providerDataSources[routingEmailDomain.ResourceType] = routingEmailDomain.DataSourceRoutingEmailDomain()
 	providerDataSources[routingSkillGroup.ResourceType] = routingSkillGroup.DataSourceRoutingSkillGroup()
-	providerDataSources[routingWrapupCode.ResourceType] = routingWrapupCode.DataSourceRoutingWrapupCode()
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources[DataSourceOrganizationsMeResourceType] = DataSourceOrganizationsMe()

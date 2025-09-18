@@ -1,10 +1,10 @@
 package outbound_wrapupcode_mappings
 
 import (
-	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
-	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"sync"
 	"testing"
+
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -23,7 +23,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceOutboundWrapUpCodeMappings()
-	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	// routingWrapupcode.ResourceType removed - migrated to Framework-only
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 
 }

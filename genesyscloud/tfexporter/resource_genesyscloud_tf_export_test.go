@@ -23,6 +23,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -2305,16 +2306,18 @@ resource "genesyscloud_integration_credential" "%s" {
 }
 
 // getMuxedProviderFactoriesForTfExporter returns muxed provider factories for tfexporter tests
-// This includes both SDKv2 and Framework resources to support routing_language export
+// This includes both SDKv2 and Framework resources to support routing_language and routing_wrapupcode export
 func getMuxedProviderFactoriesForTfExporter() map[string]func() (tfprotov6.ProviderServer, error) {
 	return provider.GetMuxedProviderFactories(
 		providerResources,
 		providerDataSources,
 		map[string]func() frameworkresource.Resource{
-			routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageResource,
+			routinglanguage.ResourceType:   routinglanguage.NewFrameworkRoutingLanguageResource,
+			routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
 		},
 		map[string]func() datasource.DataSource{
-			routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageDataSource,
+			routinglanguage.ResourceType:   routinglanguage.NewFrameworkRoutingLanguageDataSource,
+			routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
 		},
 	)
 }

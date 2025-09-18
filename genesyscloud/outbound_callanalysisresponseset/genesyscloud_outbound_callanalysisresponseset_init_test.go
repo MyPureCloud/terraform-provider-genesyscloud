@@ -1,13 +1,13 @@
 package outbound_callanalysisresponseset
 
 import (
+	"sync"
+	"testing"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	flow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
-	"sync"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -36,7 +36,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[ResourceType] = ResourceOutboundCallanalysisresponseset()
 	providerResources[obContactList.ResourceType] = obContactList.ResourceOutboundContactList()
 	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
-	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	// routingWrapupcode.ResourceType removed - migrated to Framework-only
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 

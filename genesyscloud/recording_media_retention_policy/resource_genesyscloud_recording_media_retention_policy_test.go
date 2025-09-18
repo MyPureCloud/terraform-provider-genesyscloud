@@ -1053,10 +1053,12 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 			providerResources,
 			providerDataSources,
 			map[string]func() frameworkresource.Resource{
-				routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageResource,
+				routinglanguage.ResourceType:   routinglanguage.NewFrameworkRoutingLanguageResource,
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
 			},
 			map[string]func() datasource.DataSource{
-				routinglanguage.ResourceType: routinglanguage.NewFrameworkRoutingLanguageDataSource,
+				routinglanguage.ResourceType:   routinglanguage.NewFrameworkRoutingLanguageDataSource,
+				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
 			},
 		),
 		Steps: []resource.TestStep{

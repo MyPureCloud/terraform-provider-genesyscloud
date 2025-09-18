@@ -183,16 +183,16 @@ func (r *registerTestInstance) RegisterFrameworkDataSource(dataSourceType string
 }
 
 func (r *registerTestInstance) GetResourceProviderType(resourceType string) registrar.ProviderType {
-	// For test purposes, assume SDKv2 unless it's routing_language
-	if resourceType == routinglanguage.ResourceType {
+	// For test purposes, assume SDKv2 unless it's a Framework resource
+	if resourceType == routinglanguage.ResourceType || resourceType == routingWrapupcode.ResourceType {
 		return registrar.FrameworkProvider
 	}
 	return registrar.SDKv2Provider
 }
 
 func (r *registerTestInstance) GetDataSourceProviderType(dataSourceType string) registrar.ProviderType {
-	// For test purposes, assume SDKv2 unless it's routing_language
-	if dataSourceType == routinglanguage.ResourceType {
+	// For test purposes, assume SDKv2 unless it's a Framework resource
+	if dataSourceType == routinglanguage.ResourceType || dataSourceType == routingWrapupcode.ResourceType {
 		return registrar.FrameworkProvider
 	}
 	return registrar.SDKv2Provider
@@ -257,7 +257,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
 	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
+	// routingWrapupcode.ResourceType removed - migrated to Framework-only
 	providerResources[edgeExtension.ResourceType] = edgeExtension.ResourceTelephonyExtensionPool()
 	providerResources[edgePhone.ResourceType] = edgePhone.ResourcePhone()
 	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
@@ -319,6 +319,9 @@ func (r *registerTestInstance) registerTestExporters() {
 
 	// Register routing_language using its SetRegistrar method (Framework resource)
 	routinglanguage.SetRegistrar(regInstance)
+
+	// Register routing_wrapupcode using its SetRegistrar method (Framework resource)
+	routingWrapupcode.SetRegistrar(regInstance)
 
 	// Continue with manual exporter registrations for SDKv2 resources
 	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
@@ -401,7 +404,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(routingSmsAddress.ResourceType, routingSmsAddress.RoutingSmsAddressExporter())
 	RegisterExporter(routingUtilization.ResourceType, routingUtilization.RoutingUtilizationExporter())
 	RegisterExporter(routingUtilizationLabel.ResourceType, routingUtilizationLabel.RoutingUtilizationLabelExporter())
-	RegisterExporter(routingWrapupcode.ResourceType, routingWrapupcode.RoutingWrapupCodeExporter())
+	// routingWrapupcode.ResourceType exporter registered via SetRegistrar method (Framework resource)
 	RegisterExporter(edgeGroup.ResourceType, edgeGroup.EdgeGroupExporter())
 	RegisterExporter(edgeExtension.ResourceType, edgeExtension.TelephonyExtensionPoolExporter())
 	RegisterExporter(edgePhone.ResourceType, edgePhone.PhoneExporter())
@@ -442,7 +445,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources[tbs.ResourceType] = tbs.DataSourceTrunkBaseSettings()
-	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
 	providerDataSources[outboundRoute.ResourceType] = outboundRoute.DataSourceSiteOutboundRoute()
 	providerDataSources[guide.ResourceType] = guide.DataSourceGuide()
 }
