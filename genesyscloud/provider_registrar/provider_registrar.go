@@ -1,6 +1,7 @@
 package provider_registrar
 
 import (
+	"fmt"
 	"sync"
 
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
@@ -200,6 +201,19 @@ func GetResourceExporterByResourceType(resourceType string) *resourceExporter.Re
 		registerResources()
 	}
 	return resourceExporters[resourceType]
+}
+
+// GetResourceSchemaByResourceType returns the resource schema for a given resource type
+// Needed by MRMO - do not remove if it appears to be unused
+func GetResourceSchemaByResourceType(resourceType string) (map[string]*schema.Schema, error) {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	resourceSchema, ok := providerResources[resourceType]
+	if !ok {
+		return nil, fmt.Errorf("No resource found with type %s", resourceType)
+	}
+	return resourceSchema.Schema, nil
 }
 
 func GetResourceTypeNames() []string {

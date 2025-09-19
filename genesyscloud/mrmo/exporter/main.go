@@ -35,13 +35,17 @@ func Export(ctx context.Context, resourceType, resourceId string, creds Credenti
 	log.Println("Initialising provider resource maps")
 	_, _ = providerRegistrar.GetProviderResources()
 
-	log.Println("Creating genesyscloud_tf_export resource config")
+	log.Printf("Creating %s resource config", tfexporter.ResourceType)
 	exportResourceConfig := createExportResourceData(tfexporter.ResourceTfExport().Schema, tfexporter.ResourceType)
 
 	log.Println("Creating the genesyscloud resource exporter")
 	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources)
-	if newExporterDiags.HasError() {
-		return nil, diag.Errorf("error creating genesyscloud resource exporter: %v", newExporterDiags)
+	if newExporterDiags != nil {
+		diags = append(diags, newExporterDiags...)
+	}
+	if diags.HasError() {
+		log.Printf("Caught error after defining genesys cloud resource exporter: %v", diags)
+		return nil, diags
 	}
 
 	log.Println("Getting the resource exporter by resource type")
@@ -49,11 +53,10 @@ func Export(ctx context.Context, resourceType, resourceId string, creds Credenti
 
 	log.Printf("Exporting %s resource. ID: '%s'", resourceType, resourceId)
 	config, exportDiags := gcResourceExporter.ExportForMrMo(resourceType, exporter, resourceId)
-	if exportDiags.HasError() {
-		return nil, diag.Errorf("error exporting resource: %v", exportDiags)
+	if exportDiags != nil {
+		diags = append(diags, exportDiags...)
 	}
-
-	return config, nil
+	return config, diags
 }
 
 func getProviderConfig(creds Credentials) (_ *provider.ProviderMeta, err error) {
