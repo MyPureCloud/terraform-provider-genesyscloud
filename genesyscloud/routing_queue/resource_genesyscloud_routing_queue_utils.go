@@ -245,8 +245,8 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.LiveVoiceFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "live_voice_flow_id")
 	callbackSettings.AnsweringMachineReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "answering_machine_reaction_type", false)
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
-	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", true)
-	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", true)
+	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", false)
+	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", false)
 
 	return &callbackSettings
 }
