@@ -56,7 +56,7 @@ func getAllUserPrompts(ctx context.Context, clientConfig *platformclientv2.Confi
 	return resources, nil
 }
 
-func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
 
@@ -91,7 +91,7 @@ func createUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	return readUserPrompt(ctx, d, meta)
 }
 
-func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectUserPrompt(), constants.ConsistencyChecks(), ResourceType)
@@ -116,7 +116,7 @@ func readUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{
 	})
 }
 
-func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectUserPromptProxy(sdkConfig)
 
@@ -143,7 +143,7 @@ func updateUserPrompt(ctx context.Context, d *schema.ResourceData, meta interfac
 	return readUserPrompt(ctx, d, meta)
 }
 
-func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteUserPrompt(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig

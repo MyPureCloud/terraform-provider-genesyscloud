@@ -417,6 +417,7 @@ func TestAccResourceArchitectFlowSubstitutionsWithMultipleTouch(t *testing.T) {
 func TestAccResourceArchitectFlowWithLocalStack(t *testing.T) {
 	/*
 		// To run this test locally, set the following environment variables and run `localstack start` from another terminal
+		// See more about localstack cli here: https://docs.localstack.cloud/aws/getting-started/installation/
 		os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
 		os.Setenv(localStackEnv.LocalStackImageUriEnvVar, "localstack/localstack:latest")
 	*/
