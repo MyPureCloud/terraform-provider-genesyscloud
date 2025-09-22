@@ -100,6 +100,67 @@ The migration revealed a significant code duplication issue where **6 packages h
 - **Establishing standardized approach** for Framework resource inclusion
 - **Creating reusable template** for future migrations
 
+### Requirement 11: Framework Resource Integration Pattern Optimization
+
+**User Story:** As a developer maintaining test code, I want a clean, maintainable pattern for integrating Framework resources in test cases, so that adding new Framework dependencies doesn't create code duplication or maintenance burden.
+
+#### Acceptance Criteria ✅ **COMPLETED**
+
+1. ✅ **WHEN implementing Framework resource integration** THEN the system SHALL use init test variables instead of verbose inline maps
+2. ✅ **WHEN setting up test infrastructure** THEN the system SHALL create `frameworkResources` and `frameworkDataSources` variables in init test files
+3. ✅ **WHEN registering Framework resources** THEN the system SHALL implement `registerFrameworkTestResources()` and `registerFrameworkTestDataSources()` functions with proper mutex handling
+4. ✅ **WHEN updating test cases** THEN the system SHALL replace verbose inline maps with clean variable references: `frameworkResources, frameworkDataSources`
+5. ✅ **WHEN cleaning up after migration** THEN the system SHALL remove unused Framework imports from test files to prevent compilation warnings
+6. ✅ **WHEN establishing patterns** THEN the system SHALL document the "Option 3" pattern as the standard approach for future Framework migrations
+7. ✅ **WHEN applying the pattern** THEN the system SHALL successfully implement it across multiple resource packages to validate its effectiveness
+8. ✅ **WHEN maintaining consistency** THEN the system SHALL ensure all packages follow the same pattern for Framework resource integration
+
+#### **Pattern Evolution: Three Approaches**
+
+**❌ Option 1: Custom Functions (Anti-Pattern)**
+- Creates code duplication across packages
+- Maintenance burden when adding new Framework resources
+- Inconsistent implementations
+
+**⚠️ Option 2: Verbose Inline Maps (Functional but Suboptimal)**
+```go
+ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+    providerResources, providerDataSources,
+    map[string]func() frameworkresource.Resource{
+        routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+    },
+    map[string]func() datasource.DataSource{
+        routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+    },
+),
+```
+
+**✅ Option 3: Init Test Variables (Recommended)**
+```go
+ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+    providerResources,
+    providerDataSources,
+    frameworkResources,
+    frameworkDataSources,
+),
+```
+
+#### **Successfully Applied To:**
+- ✅ **outbound_wrapupcode_mappings** - 2 files updated
+- ✅ **recording_media_retention_policy** - 2 files updated  
+- ✅ **routing_email_route** - 2 files updated
+- ✅ **routing_queue** - 3 files updated (including data source tests)
+- ✅ **task_management_workitem** - 2 files updated
+- ✅ **task_management_worktype** - 2 files updated
+
+#### **Benefits Achieved:**
+1. **Maintainability**: Adding Framework resources only requires updating init test file
+2. **Consistency**: All packages follow identical pattern
+3. **Reduced Duplication**: No repeated inline maps across test files
+4. **Cleaner Code**: Test files focus on test logic, not provider setup
+5. **Import Cleanup**: Removes unused Framework imports
+6. **Future-Proof**: Easy template for future Framework migrations
+
 ### Requirement 6: Backward Compatibility and Migration Safety
 
 **User Story:** As a Terraform user, I want the Framework migration to be completely transparent, so that my existing Terraform configurations continue to work without any changes.
@@ -238,3 +299,84 @@ This migration serves as a **proven, battle-tested template** for future Framewo
 - **Zero-downtime migration** methodology
 
 The routing_wrapupcode migration has **exceeded expectations** by not only completing the Framework migration successfully but also **improving the overall codebase architecture** and establishing **reusable patterns** for future development.
+
+## 🎯 **Quick Start Guide for Engineers**
+
+### For New Framework Resource Migrations
+
+**Follow this proven 3-step pattern:**
+
+#### Step 1: Identify Dependencies
+```bash
+# Find packages that will use your Framework resource
+grep -r "genesyscloud_your_resource" genesyscloud/*/
+```
+
+#### Step 2: Apply "Option 3" Pattern
+For each dependent package, update the init test file:
+
+```go
+// Add Framework variables
+var frameworkResources map[string]func() resource.Resource
+var frameworkDataSources map[string]func() datasource.DataSource
+
+// Add registration functions
+func (r *registerTestInstance) registerFrameworkTestResources() {
+    r.frameworkResourceMapMutex.Lock()
+    defer r.frameworkResourceMapMutex.Unlock()
+    
+    frameworkResources[yourResource.ResourceType] = yourResource.NewFrameworkResource
+}
+
+// Update initialization
+func initTestResources() {
+    // ... existing code
+    frameworkResources = make(map[string]func() resource.Resource)
+    frameworkDataSources = make(map[string]func() datasource.DataSource)
+    
+    regInstance.registerFrameworkTestResources()
+    regInstance.registerFrameworkTestDataSources()
+}
+```
+
+#### Step 3: Update Test Files
+Replace verbose maps with clean variables:
+
+```go
+// BEFORE (verbose)
+ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+    providerResources, providerDataSources,
+    map[string]func() frameworkresource.Resource{
+        yourResource.ResourceType: yourResource.NewFrameworkResource,
+    },
+    map[string]func() datasource.DataSource{
+        yourResource.ResourceType: yourResource.NewFrameworkDataSource,
+    },
+),
+
+// AFTER (clean)
+ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+    providerResources,
+    providerDataSources,
+    frameworkResources,
+    frameworkDataSources,
+),
+```
+
+### For Existing Package Optimization
+
+If you see verbose inline maps in test files, apply the "Option 3" pattern to clean them up.
+
+### Verification Commands
+```bash
+# Verify compilation
+go build ./genesyscloud/[package]
+
+# Check for unused imports
+go vet ./genesyscloud/[package]
+
+# Run tests
+go test ./genesyscloud/[package] -v
+```
+
+This pattern has been **successfully applied to 7+ packages** and is the **established standard** for Framework resource integration.

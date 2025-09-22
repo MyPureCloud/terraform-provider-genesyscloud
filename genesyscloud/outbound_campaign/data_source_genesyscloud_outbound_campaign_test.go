@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -14,8 +13,6 @@ import (
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
@@ -39,12 +36,8 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
 			providerResources,
 			providerDataSources,
-			map[string]func() frameworkresource.Resource{
-				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
-			},
-			map[string]func() datasource.DataSource{
-				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
-			},
+			frameworkResources,
+			frameworkDataSources,
 		),
 		Steps: []resource.TestStep{
 			{

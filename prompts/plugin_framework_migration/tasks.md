@@ -185,7 +185,32 @@ The migration follows a Framework-only replacement strategy, completely removing
   - ✅ **Maintained backward compatibility** for all existing test configurations
   - _Requirements: 5.4, 5.5, 5.6, 5.7, 5.8_
 
-- [ ] 12. Validate export functionality with Framework resources
+- [x] 12. Optimize Framework resource registration pattern (Pattern Evolution)
+
+
+
+
+  - ✅ **Identified verbose inline map pattern** as maintenance burden across multiple resources
+  - ✅ **Developed improved "Option 3" pattern** using init test variables for cleaner, more maintainable code
+  - ✅ **Applied pattern to 6 additional resources** beyond routing_wrapupcode:
+    - **outbound_wrapupcode_mappings**: Updated init test + resource test (2 files)
+    - **recording_media_retention_policy**: Updated init test + resource test (2 files)
+    - **routing_email_route**: Updated init test + resource test (2 files)
+    - **routing_queue**: Updated init test + resource test + data source test (3 files)
+    - **task_management_workitem**: Updated init test + resource test (2 files)
+    - **task_management_worktype**: Updated init test + resource test (2 files)
+  - ✅ **Established standardized init test pattern**:
+    - Added `frameworkResources` and `frameworkDataSources` variables to init test files
+    - Implemented `registerFrameworkTestResources()` and `registerFrameworkTestDataSources()` functions
+    - Updated `initTestResources()` to initialize Framework resource maps
+    - Added proper mutex handling for thread safety
+  - ✅ **Replaced verbose inline maps** with clean variable references in all test files
+  - ✅ **Cleaned up unused imports** after pattern migration (Framework imports no longer needed in test files)
+  - ✅ **Verified compilation and functionality** of all updated resources
+  - ✅ **Documented pattern as new standard** for future Framework migrations
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
+
+- [ ] 13. Validate export functionality with Framework resources
   - Execute single comprehensive export test: `go test ./genesyscloud/tfexporter/ -run "TestAccTfExportRoutingWrapupcode" -v -timeout 15m`
   - Create and validate export configuration with routing_wrapupcode filter
   - Verify Framework resources appear correctly in export output
@@ -193,7 +218,7 @@ The migration follows a Framework-only replacement strategy, completely removing
   - Test division_id references to genesyscloud_auth_division are maintained
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 
-- [ ] 13. Perform comprehensive regression testing
+- [ ] 14. Perform comprehensive regression testing
   - Execute focused regression test suite (single comprehensive run):
     - `go test ./genesyscloud/routing_wrapupcode/ -v -timeout 30m` (complete validation)
     - `go test ./genesyscloud/provider/ -run "TestProvider" -v -timeout 10m` (provider registration)
@@ -203,13 +228,198 @@ The migration follows a Framework-only replacement strategy, completely removing
   - Confirm no regressions in dependent package functionality
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
 
-- [ ] 14. Document migration completion and lessons learned
+- [ ] 15. Document migration completion and lessons learned
   - Document any deviations from the original design and reasons
   - Record any routing_wrapupcode-specific patterns discovered during implementation
   - Update migration template with any new insights specific to resources with update support
   - Verify all requirements have been met and functionality preserved
   - Create summary of migration success and any recommendations for future Framework migrations
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
+
+## Framework Resource Integration Patterns
+
+### Pattern Evolution: From Verbose to Clean
+
+During the routing_wrapupcode migration and subsequent optimizations, we discovered and refined the best practices for integrating Framework resources in cross-package tests. **All future Framework migrations should follow the "Option 3" pattern** described below.
+
+#### ❌ **Anti-Pattern: Verbose Inline Maps (Don't Use)**
+```go
+// DON'T DO THIS - Creates maintenance burden and code duplication
+resource.Test(t, resource.TestCase{
+    PreCheck: func() { util.TestAccPreCheck(t) },
+    ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+        providerResources,
+        providerDataSources,
+        map[string]func() frameworkresource.Resource{
+            routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+            routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageResource,
+        },
+        map[string]func() datasource.DataSource{
+            routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+            routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageDataSource,
+        },
+    ),
+    // ... test steps
+})
+```
+
+#### ✅ **Recommended Pattern: Init Test Variables (Use This)**
+```go
+// DO THIS - Clean, maintainable, and consistent
+resource.Test(t, resource.TestCase{
+    PreCheck: func() { util.TestAccPreCheck(t) },
+    ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+        providerResources,
+        providerDataSources,
+        frameworkResources,
+        frameworkDataSources,
+    ),
+    // ... test steps
+})
+```
+
+### Implementation Guide for Engineers
+
+#### Step 1: Update Init Test File
+**File**: `genesyscloud/[package]/genesyscloud_[package]_init_test.go`
+
+**Add Framework Variables:**
+```go
+// Add these variables after existing SDKv2 variables
+// frameworkResources holds a map of all registered Framework resources
+var frameworkResources map[string]func() resource.Resource
+
+// frameworkDataSources holds a map of all registered Framework data sources
+var frameworkDataSources map[string]func() datasource.DataSource
+```
+
+**Add Framework Imports:**
+```go
+import (
+    // ... existing imports
+    "github.com/hashicorp/terraform-plugin-framework/datasource"
+    "github.com/hashicorp/terraform-plugin-framework/resource"
+    routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+    // Add other Framework resources as needed
+)
+```
+
+**Update registerTestInstance struct:**
+```go
+type registerTestInstance struct {
+    resourceMapMutex            sync.RWMutex
+    datasourceMapMutex          sync.RWMutex
+    frameworkResourceMapMutex   sync.RWMutex    // Add this
+    frameworkDataSourceMapMutex sync.RWMutex    // Add this
+}
+```
+
+**Add Framework Registration Functions:**
+```go
+// registerFrameworkTestResources registers all Framework resources used in the tests
+func (r *registerTestInstance) registerFrameworkTestResources() {
+    r.frameworkResourceMapMutex.Lock()
+    defer r.frameworkResourceMapMutex.Unlock()
+
+    // Register Framework resources that this package's tests depend on
+    frameworkResources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkResource
+    // Add other Framework resources as needed
+}
+
+// registerFrameworkTestDataSources registers all Framework data sources used in the tests
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+    r.frameworkDataSourceMapMutex.Lock()
+    defer r.frameworkDataSourceMapMutex.Unlock()
+
+    // Register Framework data sources that this package's tests depend on
+    frameworkDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource
+    // Add other Framework data sources as needed
+}
+```
+
+**Update initTestResources Function:**
+```go
+func initTestResources() {
+    // ... existing SDKv2 initialization
+    frameworkResources = make(map[string]func() resource.Resource)
+    frameworkDataSources = make(map[string]func() datasource.DataSource)
+
+    regInstance := &registerTestInstance{}
+
+    regInstance.registerTestResources()
+    regInstance.registerTestDataSources()
+    regInstance.registerFrameworkTestResources()      // Add this
+    regInstance.registerFrameworkTestDataSources()    // Add this
+}
+```
+
+#### Step 2: Update Test Files
+**Files**: `*_test.go` files in the package
+
+**Replace Verbose Pattern:**
+```go
+// BEFORE (verbose)
+ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+    providerResources,
+    providerDataSources,
+    map[string]func() frameworkresource.Resource{
+        routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+    },
+    map[string]func() datasource.DataSource{
+        routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+    },
+),
+
+// AFTER (clean)
+ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+    providerResources,
+    providerDataSources,
+    frameworkResources,
+    frameworkDataSources,
+),
+```
+
+**Remove Unused Imports:**
+After updating all test cases, remove these imports from test files if they're no longer used:
+```go
+// Remove these if no longer needed
+"github.com/hashicorp/terraform-plugin-framework/datasource"
+frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+```
+
+#### Step 3: Verification
+**Compile and Test:**
+```bash
+# Verify compilation
+go build ./genesyscloud/[package]
+
+# Verify no unused imports
+go vet ./genesyscloud/[package]
+
+# Run tests to ensure functionality
+go test ./genesyscloud/[package] -v
+```
+
+### Benefits of This Pattern
+
+1. **Maintainability**: Adding new Framework resources only requires updating the init test file
+2. **Consistency**: All packages follow the same pattern
+3. **Reduced Duplication**: No repeated inline maps across test files
+4. **Cleaner Code**: Test files focus on test logic, not provider setup
+5. **Easier Debugging**: Centralized Framework resource registration
+6. **Future-Proof**: Easy to extend as more resources migrate to Framework
+
+### When to Use This Pattern
+
+**Use this pattern when:**
+- Your package tests depend on Framework resources from other packages
+- You have multiple test files that need the same Framework resources
+- You want to follow established best practices
+
+**Don't use this pattern when:**
+- Your package only uses SDKv2 resources (use `provider.GetProviderFactories()`)
+- Your package is itself a Framework-only resource (use Framework-specific test setup)
 
 ## Critical Success Factors
 
@@ -305,3 +515,109 @@ import (
 - ✅ Foundation created for future resource migrations
 
 This migration serves as a **proven template** for migrating other resources to the Plugin Framework while maintaining cross-package compatibility and eliminating technical debt.
+
+## 🚀 **Engineer Quick Reference**
+
+### **For Framework Resource Migrations**
+
+**Use this checklist for any new Framework resource migration:**
+
+#### ✅ **Phase 1: Core Migration**
+- [ ] Implement Framework resource with CRUD operations
+- [ ] Implement Framework data source with lookup functionality  
+- [ ] Create comprehensive test suite
+- [ ] Update registration to Framework-only with SetRegistrar pattern
+- [ ] Remove SDKv2 implementation files
+
+#### ✅ **Phase 2: Cross-Package Integration (Critical)**
+- [ ] Identify all packages that reference your resource in tests
+- [ ] Apply "Option 3" pattern to each dependent package:
+  - [ ] Add `frameworkResources` and `frameworkDataSources` variables to init test
+  - [ ] Implement `registerFrameworkTestResources()` and `registerFrameworkTestDataSources()` functions
+  - [ ] Update `initTestResources()` to initialize Framework maps
+  - [ ] Replace verbose inline maps in test files with clean variable references
+  - [ ] Remove unused Framework imports from test files
+- [ ] Verify compilation and functionality of all updated packages
+
+#### ✅ **Phase 3: Validation**
+- [ ] Run comprehensive tests on migrated resource
+- [ ] Test cross-package compatibility
+- [ ] Validate export functionality
+- [ ] Perform regression testing
+
+### **Pattern Templates**
+
+#### **Init Test File Template**
+```go
+// Add these variables
+var frameworkResources map[string]func() resource.Resource
+var frameworkDataSources map[string]func() datasource.DataSource
+
+// Update struct
+type registerTestInstance struct {
+    resourceMapMutex            sync.RWMutex
+    datasourceMapMutex          sync.RWMutex
+    frameworkResourceMapMutex   sync.RWMutex    // Add
+    frameworkDataSourceMapMutex sync.RWMutex    // Add
+}
+
+// Add registration functions
+func (r *registerTestInstance) registerFrameworkTestResources() {
+    r.frameworkResourceMapMutex.Lock()
+    defer r.frameworkResourceMapMutex.Unlock()
+    
+    frameworkResources[yourResource.ResourceType] = yourResource.NewFrameworkResource
+}
+
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+    r.frameworkDataSourceMapMutex.Lock()
+    defer r.frameworkDataSourceMapMutex.Unlock()
+    
+    frameworkDataSources[yourResource.ResourceType] = yourResource.NewFrameworkDataSource
+}
+
+// Update initialization
+func initTestResources() {
+    // ... existing initialization
+    frameworkResources = make(map[string]func() resource.Resource)
+    frameworkDataSources = make(map[string]func() datasource.DataSource)
+    
+    regInstance := &registerTestInstance{}
+    regInstance.registerTestResources()
+    regInstance.registerTestDataSources()
+    regInstance.registerFrameworkTestResources()      // Add
+    regInstance.registerFrameworkTestDataSources()    // Add
+}
+```
+
+#### **Test File Template**
+```go
+resource.Test(t, resource.TestCase{
+    PreCheck: func() { util.TestAccPreCheck(t) },
+    ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+        providerResources,
+        providerDataSources,
+        frameworkResources,        // Clean variable reference
+        frameworkDataSources,      // Clean variable reference
+    ),
+    Steps: []resource.TestStep{
+        // ... your test steps
+    },
+})
+```
+
+### **Success Metrics**
+- ✅ All existing functionality preserved
+- ✅ All cross-package dependencies working  
+- ✅ Clean, maintainable code patterns
+- ✅ No compilation errors or warnings
+- ✅ Comprehensive test coverage maintained
+
+### **Common Pitfalls to Avoid**
+- ❌ Don't use verbose inline maps (creates maintenance burden)
+- ❌ Don't forget to update cross-package dependencies
+- ❌ Don't leave unused imports (causes compilation warnings)
+- ❌ Don't skip testing cross-package functionality
+- ❌ Don't create custom provider factory functions (code duplication)
+
+**This pattern has been successfully applied to 7+ resources and is the established standard for Framework migrations.**

@@ -55,13 +55,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources[user.ResourceType] = user.ResourceUser()
-	// routinglanguage.ResourceType removed - migrated to Framework-only
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
 	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
-	// routingWrapupCode.ResourceType removed - migrated to Framework-only
 	providerResources[archScheduleGroup.ResourceType] = archScheduleGroup.ResourceArchitectSchedulegroups()
 	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()

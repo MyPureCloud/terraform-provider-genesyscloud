@@ -15,8 +15,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -54,12 +52,8 @@ func TestAccResourceOutboundCallAnalysisResponseSet(t *testing.T) {
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
 			providerResources,
 			providerDataSources,
-			map[string]func() frameworkresource.Resource{
-				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
-			},
-			map[string]func() datasource.DataSource{
-				routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
-			},
+			frameworkResources,
+			frameworkDataSources,
 		),
 		Steps: []resource.TestStep{
 			{

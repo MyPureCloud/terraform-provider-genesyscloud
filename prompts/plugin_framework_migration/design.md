@@ -240,6 +240,115 @@ The migration revealed a **critical code duplication issue** that was successful
 4. ✅ **Preserved Helper Functions**: Maintained `GenerateRoutingWrapupcodeResource()` function for cross-package usage
 5. ✅ **Updated Test Infrastructure**: All packages now use consistent Framework resource inclusion pattern
 
+### Framework Resource Integration Pattern Evolution ✅ **ENHANCED**
+
+#### **Pattern Optimization: From Verbose to Clean**
+After establishing the initial Framework integration pattern, we discovered an opportunity to further improve maintainability and reduce code duplication within individual packages.
+
+**Phase 1: Initial Pattern (Functional but Verbose)**
+```go
+// This pattern worked but created maintenance burden
+resource.Test(t, resource.TestCase{
+    PreCheck: func() { util.TestAccPreCheck(t) },
+    ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+        providerResources,
+        providerDataSources,
+        map[string]func() frameworkresource.Resource{
+            routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+            routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageResource,
+        },
+        map[string]func() datasource.DataSource{
+            routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+            routingLanguage.ResourceType: routingLanguage.NewFrameworkRoutingLanguageDataSource,
+        },
+    ),
+    // ... test steps
+})
+```
+
+**Phase 2: Optimized Pattern (Clean and Maintainable)**
+```go
+// This pattern is clean, maintainable, and follows DRY principles
+resource.Test(t, resource.TestCase{
+    PreCheck: func() { util.TestAccPreCheck(t) },
+    ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+        providerResources,
+        providerDataSources,
+        frameworkResources,
+        frameworkDataSources,
+    ),
+    // ... test steps
+})
+```
+
+#### **Implementation Guide for Engineers**
+
+**Step 1: Init Test File Setup**
+In `genesyscloud/[package]/genesyscloud_[package]_init_test.go`:
+
+```go
+// Add Framework variables
+var frameworkResources map[string]func() resource.Resource
+var frameworkDataSources map[string]func() datasource.DataSource
+
+// Update struct
+type registerTestInstance struct {
+    resourceMapMutex            sync.RWMutex
+    datasourceMapMutex          sync.RWMutex
+    frameworkResourceMapMutex   sync.RWMutex    // Add
+    frameworkDataSourceMapMutex sync.RWMutex    // Add
+}
+
+// Add registration functions
+func (r *registerTestInstance) registerFrameworkTestResources() {
+    r.frameworkResourceMapMutex.Lock()
+    defer r.frameworkResourceMapMutex.Unlock()
+    
+    frameworkResources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkResource
+    // Add other Framework resources as needed
+}
+
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+    r.frameworkDataSourceMapMutex.Lock()
+    defer r.frameworkDataSourceMapMutex.Unlock()
+    
+    frameworkDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource
+    // Add other Framework data sources as needed
+}
+
+// Update initialization
+func initTestResources() {
+    // ... existing initialization
+    frameworkResources = make(map[string]func() resource.Resource)
+    frameworkDataSources = make(map[string]func() datasource.DataSource)
+    
+    regInstance := &registerTestInstance{}
+    regInstance.registerTestResources()
+    regInstance.registerTestDataSources()
+    regInstance.registerFrameworkTestResources()      // Add
+    regInstance.registerFrameworkTestDataSources()    // Add
+}
+```
+
+**Step 2: Test File Updates**
+Replace all verbose inline maps with clean variable references and remove unused imports.
+
+#### **Benefits of Optimized Pattern**
+1. **Maintainability**: Adding Framework resources only requires updating init test file
+2. **Consistency**: All test files in package use same pattern
+3. **Reduced Duplication**: No repeated inline maps
+4. **Cleaner Code**: Test files focus on test logic
+5. **Easier Debugging**: Centralized Framework resource registration
+6. **Import Cleanup**: Removes unused Framework imports from test files
+
+#### **Successfully Applied To:**
+✅ **outbound_wrapupcode_mappings** - 2 files updated
+✅ **recording_media_retention_policy** - 2 files updated  
+✅ **routing_email_route** - 2 files updated
+✅ **routing_queue** - 3 files updated
+✅ **task_management_workitem** - 2 files updated
+✅ **task_management_worktype** - 2 files updated
+
 ## Data Models
 
 ### Resource Data Model

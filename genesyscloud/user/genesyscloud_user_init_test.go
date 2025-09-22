@@ -42,7 +42,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
-	// routinglanguage.ResourceType removed - migrated to Framework-only
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
 	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
 
@@ -57,7 +56,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
 	providerDataSources[location.ResourceType] = location.DataSourceLocation()
 	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
-	// routinglanguage.ResourceType removed - migrated to Framework-only
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 }
 

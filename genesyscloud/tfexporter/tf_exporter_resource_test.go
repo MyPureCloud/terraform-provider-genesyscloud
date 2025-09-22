@@ -249,7 +249,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[respManagementRespAsset.ResourceType] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources[routingEmailRoute.ResourceType] = routingEmailRoute.ResourceRoutingEmailRoute()
-	// routinglanguage.ResourceType removed - migrated to Framework-only
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[routingQueueConditionalGroupRouting.ResourceType] = routingQueueConditionalGroupRouting.ResourceRoutingQueueConditionalGroupRouting()
 	providerResources[routingQueueOutboundEmailAddress.ResourceType] = routingQueueOutboundEmailAddress.ResourceRoutingQueueOutboundEmailAddress()
@@ -257,7 +256,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
 	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-	// routingWrapupcode.ResourceType removed - migrated to Framework-only
 	providerResources[edgeExtension.ResourceType] = edgeExtension.ResourceTelephonyExtensionPool()
 	providerResources[edgePhone.ResourceType] = edgePhone.ResourcePhone()
 	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
