@@ -1,3 +1,17 @@
+// Package provider implements the Genesys Cloud Terraform Framework provider.
+//
+// This file contains the Plugin Framework provider implementation that works alongside
+// the SDKv2 provider through muxing. The Framework provider handles resources that have
+// been migrated from SDKv2 to the modern Plugin Framework architecture.
+//
+// Key Features:
+//   - Native Protocol v6 support
+//   - Type-safe configuration handling
+//   - Shared provider metadata with SDKv2 provider
+//   - Schema alignment for muxing compatibility
+//
+// The provider schema is intentionally aligned with the SDKv2 provider to ensure
+// muxing compatibility. Any schema changes must be synchronized between both providers.
 package provider
 
 import (
@@ -26,7 +40,9 @@ type GenesysCloudFrameworkProvider struct {
 	frameworkDataSources map[string]func() datasource.DataSource
 }
 
-// GenesysCloudFrameworkProviderModel describes the provider data model.
+// GenesysCloudFrameworkProviderModel describes the provider data model for the Framework provider.
+// This model must be kept in sync with the SDKv2 provider schema to ensure muxing compatibility.
+// All field names, types, and attributes must match exactly between providers.
 type GenesysCloudFrameworkProviderModel struct {
 	AccessToken            types.String `tfsdk:"access_token"`
 	OAuthClientID          types.String `tfsdk:"oauthclient_id"`
@@ -45,6 +61,20 @@ type GenesysCloudFrameworkProviderModel struct {
 	Proxy                  types.Set    `tfsdk:"proxy"`
 }
 
+// NewFrameworkProvider creates a factory function for the Framework provider.
+// This provider handles resources and data sources that have been migrated from SDKv2
+// to the Plugin Framework architecture.
+//
+// Parameters:
+//   - version: Provider version string
+//   - frameworkResources: Map of Framework resource names to factory functions
+//   - frameworkDataSources: Map of Framework data source names to factory functions
+//
+// Returns:
+//   - A factory function that creates a new Framework provider instance
+//
+// The provider is designed to work in a muxed environment alongside the SDKv2 provider,
+// allowing for gradual migration of resources while maintaining backward compatibility.
 func NewFrameworkProvider(version string, frameworkResources map[string]func() resource.Resource, frameworkDataSources map[string]func() datasource.DataSource) func() provider.Provider {
 	return func() provider.Provider {
 		return &GenesysCloudFrameworkProvider{
@@ -60,9 +90,18 @@ func (p *GenesysCloudFrameworkProvider) Metadata(ctx context.Context, req provid
 	resp.Version = p.version
 }
 
+// Schema defines the provider schema for the Framework provider.
+// This schema is intentionally kept identical to the SDKv2 provider schema to ensure
+// muxing compatibility. Any changes here must be synchronized with the SDKv2 provider.
+//
+// Key alignment requirements:
+//   - All attribute names, types, and properties must match exactly
+//   - Sensitive field settings must be identical
+//   - Environment variable references must be consistent
+//   - Block descriptions must match (currently empty for both providers)
 func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "",
+		Description: "", // Intentionally empty to match SDKv2 provider
 		Attributes: map[string]schema.Attribute{
 			"access_token": schema.StringAttribute{
 				Optional:    true,
@@ -213,6 +252,17 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 	}
 }
 
+// Configure configures the Framework provider with the given configuration.
+// This method handles authentication, API client setup, and provider metadata creation.
+// It attempts to share configuration with the SDKv2 provider when possible to avoid
+// duplicate authentication and API client creation in muxed environments.
+//
+// Configuration priority:
+//  1. Explicit configuration values
+//  2. Environment variables
+//  3. Shared metadata from SDKv2 provider (if available)
+//
+// The configured provider metadata is made available to Framework resources and data sources.
 func (p *GenesysCloudFrameworkProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var data GenesysCloudFrameworkProviderModel
 
