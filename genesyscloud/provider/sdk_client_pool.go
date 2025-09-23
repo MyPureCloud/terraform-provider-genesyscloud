@@ -729,14 +729,6 @@ func (p *SDKClientPool) AdjustPoolForTimeout(version string) {
 		currentMaxClients, newMaxClients)
 }
 
-// Helper function to find minimum of two values
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
 type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
 type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)

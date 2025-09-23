@@ -42,8 +42,30 @@ func CombineProviderFactories(providers ...map[string]func() (*schema.Provider, 
 	return combined
 }
 
-// GetMuxedProviderFactories creates muxed provider factories that include both SDKv2 and Framework resources
-// This is the centralized function to avoid duplication across test files
+// GetMuxedProviderFactories creates muxed provider factories that include both SDKv2 and Framework resources.
+// This is the centralized function to avoid duplication across test files.
+//
+// Parameters:
+//   - providerResources: Map of SDKv2 resource names to resource implementations
+//   - providerDataSources: Map of SDKv2 data source names to data source implementations
+//   - frameworkResources: Map of Framework resource names to resource factory functions
+//   - frameworkDataSources: Map of Framework data source names to data source factory functions
+//
+// Returns:
+//   - A map of provider names to factory functions that create tfprotov6.ProviderServer instances
+//
+// Usage:
+//
+//	This function is primarily used in acceptance tests to create provider instances
+//	that support both SDKv2 and Framework resources in a single muxed provider.
+//
+// Example:
+//
+//	factories := GetMuxedProviderFactories(sdkResources, sdkDataSources, fwResources, fwDataSources)
+//	resource.Test(t, resource.TestCase{
+//	    ProtoV6ProviderFactories: factories,
+//	    // ... test configuration
+//	})
 func GetMuxedProviderFactories(
 	providerResources map[string]*schema.Resource,
 	providerDataSources map[string]*schema.Resource,
@@ -72,7 +94,7 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		homeDivID, err := getHomeDivisionID()
 		if err != nil {
-			return fmt.Errorf("Failed to query home division: %v", err)
+			return fmt.Errorf("failed to query home division: %w", err)
 		}
 
 		r := state.RootModule().Resources[resource]

@@ -1,3 +1,12 @@
+// Package provider implements the Genesys Cloud Terraform provider with support for both
+// SDKv2 and Framework provider architectures through muxing.
+//
+// This file contains the muxing logic that combines:
+//   - Legacy SDKv2 resources and data sources (upgraded to Protocol v6)
+//   - Modern Framework resources and data sources (native Protocol v6)
+//
+// The muxing allows for gradual migration from SDKv2 to Framework while maintaining
+// backward compatibility and enabling new Framework features.
 package provider
 
 import (
@@ -17,6 +26,20 @@ import (
 // It combines:
 //   - SDKv2 provider (native v5)  → upgraded to v6 via tf5to6server
 //   - Framework provider (native v6)
+//
+// Parameters:
+//   - version: Provider version string
+//   - providerResources: Map of SDKv2 resource names to resource implementations
+//   - providerDataSources: Map of SDKv2 data source names to data source implementations
+//   - frameworkResources: Map of Framework resource names to resource factory functions
+//   - frameworkDataSources: Map of Framework data source names to data source factory functions
+//
+// Returns:
+//   - A factory function that creates a muxed tfprotov6.ProviderServer
+//   - An error if the muxing fails
+//
+// The function automatically detects if Framework resources/data sources are present.
+// If none are found, it returns an SDKv2-only provider for optimal performance.
 func NewMuxedProvider(
 	version string,
 	providerResources map[string]*schema.Resource,

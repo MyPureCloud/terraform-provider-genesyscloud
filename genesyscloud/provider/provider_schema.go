@@ -1,3 +1,9 @@
+// Package provider contains the schema definitions and validation functions
+// for the Genesys Cloud Terraform provider configuration.
+//
+// This file defines the provider-level configuration schema that users specify
+// in their Terraform configuration files, including authentication settings,
+// debugging options, and connection parameters.
 package provider
 
 import (
@@ -66,7 +72,7 @@ func ProviderSchema() map[string]*schema.Schema {
 			Optional:     true,
 			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "sdk_debug.log"),
 			Description:  "Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log",
-			ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+			ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
 		},
 		AttrSdkClientPoolDebug: {
 			Type:        schema.TypeBool,
@@ -226,14 +232,28 @@ func ProviderSchema() map[string]*schema.Schema {
 	}
 }
 
-func validateDuration(i interface{}, k string) ([]string, []error) {
+// validateDuration validates that a string value represents a valid Go duration.
+// This function is used as a ValidateFunc in Terraform schema definitions.
+//
+// Parameters:
+//   - i: The value to validate (expected to be a string)
+//   - k: The key/field name being validated (for error messages)
+//
+// Returns:
+//   - []string: Warnings (always nil for this validator)
+//   - []error: Validation errors, if any
+//
+// Valid duration formats include:
+//   - "300ms", "1.5h", "2h45m", "10s", "1m30s", etc.
+//   - Any format accepted by time.ParseDuration()
+func validateDuration(i any, k string) ([]string, []error) {
 	v, ok := i.(string)
 	if !ok {
 		return nil, []error{fmt.Errorf("expected type of %s to be string", k)}
 	}
 	_, err := time.ParseDuration(v)
 	if err != nil {
-		return nil, []error{fmt.Errorf("expected %s to be a valid duration string: %v", k, err)}
+		return nil, []error{fmt.Errorf("expected %s to be a valid duration string: %w", k, err)}
 	}
 	return nil, nil
 }

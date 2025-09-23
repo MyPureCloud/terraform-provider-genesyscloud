@@ -187,18 +187,20 @@ func configure(version string) schema.ConfigureContextFunc {
 // It handles special cases for developer versions (0.1.0) and platform-specific registries.
 //
 // Parameters:
-//
-//	platform: *platform.Platform - The platform configuration (must not be nil)
-//	version: string - The version string in semver format (e.g., "1.2.3")
+//   - platform: *platform.Platform - The platform configuration (must not be nil)
+//   - version: string - The version string in semver format (e.g., "1.2.3")
 //
 // Returns:
-//
-//	string: The determined registry URL
-//	error: Any error encountered during processing
+//   - string: The determined registry URL
 //
 // Special cases:
 //   - Version "0.1.0" (development version) always returns "genesys.com"
 //   - If platform.GetProviderRegistry() returns empty, falls back to "registry.terraform.io"
+//
+// Registry Selection Logic:
+//  1. For development builds (version "0.1.0"), use "genesys.com"
+//  2. For production builds, use platform-specific registry if available
+//  3. Fall back to "registry.terraform.io" as default
 func getRegistry(platform *platform.Platform, version string) string {
 
 	defaultRegistry := "registry.terraform.io"
@@ -336,9 +338,9 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 			err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 			if err != nil {
 				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-					return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))
+					return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %w", err))
 				}
-				return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials. %v", err))
+				return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials: %w", err))
 			}
 
 			return nil
@@ -463,6 +465,21 @@ func setupGateway(data *schema.ResourceData, config *platformclientv2.Configurat
 	}
 }
 
+// AuthorizeSdk creates and authorizes a new SDK configuration using environment variables.
+// This function is primarily used for standalone SDK operations outside of the provider context.
+//
+// Environment Variables Used:
+//   - GENESYSCLOUD_OAUTHCLIENT_ID: OAuth client ID for authentication
+//   - GENESYSCLOUD_OAUTHCLIENT_SECRET: OAuth client secret for authentication
+//   - GENESYSCLOUD_REGION: AWS region for the Genesys Cloud organization
+//   - TF_UNIT: If set, skips authorization (for unit testing)
+//
+// Returns:
+//   - *platformclientv2.Configuration: Configured and authorized SDK client
+//   - error: Any error encountered during authorization
+//
+// The function includes retry logic for rate-limited authorization requests
+// and automatically sets the appropriate API base path based on the region.
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
@@ -479,15 +496,15 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 		err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
 		if err != nil {
 			if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-				return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))
+				return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %w", err))
 			}
-			return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials. %v", err))
+			return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials: %w", err))
 		}
 
 		return nil
 	})
 	if diagErr != nil {
-		return sdkConfig, fmt.Errorf("%v", diagErr)
+		return sdkConfig, fmt.Errorf("SDK authorization failed: %v", diagErr)
 	}
 
 	return sdkConfig, nil

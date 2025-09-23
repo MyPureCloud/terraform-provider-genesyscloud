@@ -19,7 +19,7 @@ func getHomeDivisionID() (string, diag.Diagnostics) {
 		authAPI := platformclientv2.NewAuthorizationApi()
 		homeDiv, _, err := authAPI.GetAuthorizationDivisionsHome()
 		if err != nil {
-			homeDivErr = diag.Errorf("Failed to query home division: %s", err)
+			homeDivErr = diag.Errorf("failed to query home division: %s", err)
 			return
 		}
 		homeDivID = *homeDiv.Id
