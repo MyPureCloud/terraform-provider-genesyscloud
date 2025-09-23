@@ -94,7 +94,7 @@ func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		homeDivID, err := getHomeDivisionID()
 		if err != nil {
-			return fmt.Errorf("failed to query home division: %w", err)
+			return fmt.Errorf("failed to query home division: %v", err)
 		}
 
 		r := state.RootModule().Resources[resource]
