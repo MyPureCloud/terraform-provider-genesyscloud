@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -400,6 +401,7 @@ func buildCgaSimpleMetric(simpleMetric []interface{}) *platformclientv2.Conditio
 	for _, simpleMetricElement := range simpleMetric {
 		simpleMetricMap, ok := simpleMetricElement.(map[string]interface{})
 		if !ok {
+			log.Print("Incoming CGA condition does not contain a simple_metric object.")
 			continue
 		}
 
@@ -426,8 +428,14 @@ func buildCgaConditions(condition []interface{}) *[]platformclientv2.Conditional
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.SimpleMetric, conditionMap, "simple_metric", buildCgaSimpleMetric)
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Operator, conditionMap, "operator")
 
-		if value, ok := conditionMap["value"].(float64); ok {
-			sdkCondition.Value = &value
+		if value, ok := conditionMap["value"]; ok {
+			switch v := value.(type) {
+			case float64:
+				sdkCondition.Value = &v
+			case int:
+				floatVal := float64(v)
+				sdkCondition.Value = &floatVal
+			}
 		}
 
 		sdkConditions = append(sdkConditions, sdkCondition)
