@@ -122,3 +122,83 @@ resource "genesyscloud_routing_queue" "example_queue_with_bullseye_ring" {
 
   wrapup_codes = [genesyscloud_routing_wrapupcode.win.id]
 }
+
+resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_activation" {
+  name                     = "Example Queue with CGA"
+  division_id              = data.genesyscloud_auth_division_home.home.id
+  description              = "This is an example description"
+  acw_wrapup_prompt        = "MANDATORY_TIMEOUT"
+  acw_timeout_ms           = 300000
+  skill_evaluation_method  = "ALL"
+  queue_flow_id            = genesyscloud_flow.inqueue_flow.id
+  whisper_prompt_id        = genesyscloud_architect_user_prompt.welcome_greeting.id
+  auto_answer_only         = false
+  enable_transcription     = false
+  enable_audio_monitoring  = false
+  enable_manual_assignment = true
+  calling_party_name       = "Example Inc."
+
+  media_settings_call {
+    alerting_timeout_sec      = 30
+    service_level_percentage  = 0.8
+    service_level_duration_ms = 20000
+  }
+  member_groups {
+    member_group_id   = [genesyscloud_group.example_group.id]
+    member_group_type = "SKILLGROUP"
+  }
+  member_groups {
+    member_group_id   = [genesyscloud_group.example_group2.id]
+    member_group_type = "GROUP"
+  }
+  conditional_group_activation {
+    pilot_rule {
+      condition_expression = "C1"
+      conditions {
+        simple_metric {
+          metric = "EstimatedWaitTime"
+        }
+        operator = "GreaterThan"
+        value    = 30
+      }
+    }
+    rules {
+      condition_expression = "C1 or C2"
+      conditions {
+        simple_metric {
+          queue_id = [genesyscloud_routing_queue.example_queue.id]
+          metric   = "IdleAgentCount"
+        }
+        operator = "GreaterThan"
+        value    = 10
+      }
+      conditions {
+        simple_metric {
+          queue_id = [genesyscloud_routing_queue.example_queue.id]
+          metric   = "EstimatedWaitTime"
+        }
+        operator = "LessThanOrEqualTo"
+        value    = 60
+      }
+      groups {
+        member_group_id   = [genesyscloud_group.example_group.id]
+        member_group_type = "SKILLGROUP"
+      }
+    }
+    rules {
+      condition_expression = "C1"
+      conditions {
+        simple_metric {
+          queue_id = [genesyscloud_routing_queue.example_queue2.id]
+          metric   = "IdleAgentCount"
+        }
+        operator = "GreaterThanOrEqualTo"
+        value    = 10
+      }
+      groups {
+        member_group_id   = [genesyscloud_group.example_group2.id]
+        member_group_type = "GROUP"
+      }
+    }
+  }
+}
