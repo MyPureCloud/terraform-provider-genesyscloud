@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -83,9 +84,12 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 
 	log.Printf("Created Outbound Contact List %s %s", name, *outboundContactList.Id)
 
-	diagErr := uploadOutboundContactListBulkContacts(ctx, d, meta)
-	if diagErr != nil {
-		return diagErr
+	contactListFilepath := d.Get("contacts_filepath")
+	if contactListFilepath != nil && contactListFilepath.(string) != "" {
+		diagErr := uploadOutboundContactListBulkContacts(ctx, d, meta)
+		if diagErr != nil {
+			return diagErr
+		}
 	}
 
 	return readOutboundContactList(ctx, d, meta)
@@ -138,9 +142,12 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		return diagErr
 	}
 
-	diagErr = uploadOutboundContactListBulkContacts(ctx, d, meta)
-	if diagErr != nil {
-		return diagErr
+	contactListFilepath := d.Get("contacts_filepath")
+	if contactListFilepath != nil && contactListFilepath.(string) != "" {
+		diagErr := uploadOutboundContactListBulkContacts(ctx, d, meta)
+		if diagErr != nil {
+			return diagErr
+		}
 	}
 
 	log.Printf("Updated Outbound Contact List %s", name)
@@ -247,7 +254,8 @@ func deleteOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	filePath := d.Get("contacts_filepath").(string)
 	if filePath == "" {
-		return nil
+		// Shouldn't happen because Terraform should detect this in the schema first
+		return diag.Errorf("File path is required")
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -268,26 +276,76 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 
 	csvRecordsCount, err := files.GetCSVRecordCount(filePath)
 	if err != nil {
-		return diag.Errorf("Failed to get CSV record count: %v", err)
+		return diag.Errorf("Failed to get CSV file record count: %v", err)
 	}
-
-	log.Printf("Clearing existing contacts on contact list %s in preparation for updating the latest contacts", contactListName)
-	resp, err := cp.clearContactListContacts(ctx, d.Id())
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear contacts on contact list %s error: %s", contactListName, err), resp)
-	}
-
-	_, diagErr := validateContactsRecordCount(ctx, cp, d.Id(), 0)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	log.Printf("Uploading %d contact records to %s contact list", csvRecordsCount, contactListName)
 
 	if contactListId != "" {
-		_, err := cp.uploadContactListBulkContacts(ctx, contactListId, filePath, contactsIdName)
+		contactListContactsCount, _, err := cp.getOutboundContactlistContactRecordLength(ctx, contactListId)
 		if err != nil {
-			return diag.Errorf("Failed to upload contact list bulk contacts: %v", err)
+			return diag.Errorf("Failed to get contact list's initial contacts count: %v", err)
+		}
+		if contactListContactsCount > 0 {
+			log.Printf("Clearing existing contacts on contact list %s in preparation for updating the latest contacts", contactListName)
+			resp, err := cp.clearContactListContacts(ctx, d.Id())
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear contacts on contact list %s error: %s", contactListName, err), resp)
+			}
+
+			_, diagErr := validateContactsRecordCount(ctx, cp, d.Id(), 0)
+			if diagErr != nil {
+				return diagErr
+			}
+		}
+
+		if csvRecordsCount > 0 {
+
+			log.Printf("Uploading %d contact records to %s contact list (%s)", csvRecordsCount, contactListName, contactListId)
+
+			respBytes, err := cp.uploadContactListBulkContacts(ctx, contactListId, filePath, contactsIdName)
+			log.Printf("Upload response: %s", string(respBytes))
+			if err != nil {
+				return diag.Errorf("Failed to upload bulk contacts for contact list %s: %v", contactListId, err)
+			}
+
+			// Check import status
+			diags := util.WithRetries(ctx, 300*time.Second, func() *retry.RetryError {
+				// Check Import Status for any status update
+				status, resp, err := cp.getOutboundContactListImportStatus(ctx, contactListId)
+				tflog.Debug(ctx, fmt.Sprintf("Outbound contact list (%s) import status: %v", contactListId, status))
+				if err != nil {
+					return retry.RetryableError(fmt.Errorf("Failed to get outbound contact list (%s) import status: %v", contactListId, err))
+				}
+
+				// If percent is 100, means a successful import has occurred
+				if status.State == nil && status.PercentComplete != nil && *status.PercentComplete == 100 {
+					return nil
+				}
+				if status.State != nil && *status.State == "FAILED" {
+					if status.FailureReason != nil {
+						return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to upload contacts to contact list (%s) due to %s", contactListId, *status.FailureReason), resp))
+					} else {
+						return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to upload contacts to contact list (%s) with no failure reason given.", contactListId), resp))
+					}
+				}
+				if status.State != nil && *status.State == "IN_PROGRESS" {
+					return retry.RetryableError(fmt.Errorf("Outbound contact list (%s) import is in progress", contactListId))
+				}
+
+				// Sometimes the Import Status doesn't get updated because the contacts are immediately uploaded (small number of contacts) so check the count
+				contactListContactsCount, _, err := cp.getOutboundContactlistContactRecordLength(ctx, contactListId)
+				if err != nil {
+					return retry.RetryableError(fmt.Errorf("Failed to get contact list's contacts count after import: %v", err))
+				}
+				if contactListContactsCount == csvRecordsCount {
+					return nil
+				}
+
+				// Otherwise lets retry and continue checking the import status
+				return retry.RetryableError(fmt.Errorf("Outbound contact list (%s) import contacts attempt has not completed yet: %v", contactListId, status))
+			})
+			if diags.HasError() {
+				return diags
+			}
 		}
 	}
 

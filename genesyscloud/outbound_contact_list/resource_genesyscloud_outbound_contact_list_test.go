@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -505,6 +506,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					time.Sleep(1 * time.Second)
 				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
@@ -539,6 +541,9 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 			},
 			// Test when the contacts file path changes
 			{
+				PreConfig: func() {
+					time.Sleep(1 * time.Second)
+				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
 					name,
@@ -578,6 +583,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					time.Sleep(1 * time.Second)
 				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
@@ -612,6 +618,9 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 			},
 			// Test that contacts can be re-uploaded
 			{
+				PreConfig: func() {
+					time.Sleep(1 * time.Second)
+				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
 					name,
@@ -651,6 +660,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					time.Sleep(1 * time.Second)
 				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
@@ -686,6 +696,9 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 			},
 			// Ensure we can re-upload the file after it was removed
 			{
+				PreConfig: func() {
+					time.Sleep(1 * time.Second)
+				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
 					name,
