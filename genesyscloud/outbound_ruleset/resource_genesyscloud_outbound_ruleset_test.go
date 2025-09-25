@@ -270,35 +270,41 @@ resource "genesyscloud_outbound_ruleset" "%s" {
   name            = "%s"
   contact_list_id = genesyscloud_outbound_contact_list.%s.id
   rules {
-    name     = "CONTACT_UNCALLABLE rule"
+    name     = "APPEND_CUSTOM_ENTRY_TO_DNC_LIST rule"
     order    = 1
-    category = "DIALER_PRECALL"
+    category = "DIALER_WRAPUP"
     conditions {
-      type                       = "phoneNumberCondition"
-      value                      = "0123456789"
-    }
-    conditions {
-      type                       = "phoneNumberCondition"
-      value                      = "1234567890"
+      type     = "callAnalysisCondition"
+      inverted = false
+      value    = "disposition.classification.callable.person"
+      operator = "EQUALS"
     }
     actions {
       type             = "Action"
-      action_type_name = "CONTACT_UNCALLABLE"
+      action_type_name = "APPEND_CUSTOM_ENTRY_TO_DNC_LIST"
+      properties = {
+        dncListId = "test-dnc-list-id"
+        customValue = "test-custom-value"
+        neverExpire = "true"
+      }
     }
   }
 }`, ruleSetResourceLabel, ruleSetName1, contactListResourceLabel1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "name", ruleSetName1),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "contact_list_id", "genesyscloud_outbound_contact_list."+contactListResourceLabel1, "id"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.name", "CONTACT_UNCALLABLE rule"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.name", "APPEND_CUSTOM_ENTRY_TO_DNC_LIST rule"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.order", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.category", "DIALER_PRECALL"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.type", "phoneNumberCondition"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.value", "0123456789"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.1.type", "phoneNumberCondition"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.1.value", "1234567890"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.category", "DIALER_WRAPUP"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.type", "callAnalysisCondition"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.inverted", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.value", "disposition.classification.callable.person"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.operator", "EQUALS"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.actions.0.type", "Action"),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.actions.0.action_type_name", "CONTACT_UNCALLABLE"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.actions.0.action_type_name", "APPEND_CUSTOM_ENTRY_TO_DNC_LIST"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.actions.0.properties.dncListId", "test-dnc-list-id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.actions.0.properties.customValue", "test-custom-value"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.actions.0.properties.neverExpire", "true"),
 				),
 			},
 			{
