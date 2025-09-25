@@ -405,7 +405,22 @@ func ValidateLanguageCode(lang interface{}, _ cty.Path) diag.Diagnostics {
 // Note: supportS3 lets us know if the resource is prepared to handle S3 paths (e.g. architect_flow). Once all resources support S3 paths, we can remove this parameter.
 func ValidateFileContentHashChanged(filepathAttr, hashAttr string, supportS3 bool) customdiff.ResourceConditionFunc {
 	return func(ctx context.Context, d *schema.ResourceDiff, meta any) bool {
-		filepath := d.Get(filepathAttr).(string)
+		filepathInterface := d.Get(filepathAttr)
+		if filepathInterface == nil {
+			log.Printf("Error: filepath attribute is nil")
+			return false
+		}
+
+		filepath, ok := filepathInterface.(string)
+		if !ok {
+			log.Printf("Error: filepath attribute is not a string")
+			return false
+		}
+
+		if filepath == "" {
+			log.Printf("filepath is empty")
+			return false
+		}
 
 		newHash, err := files.HashFileContent(ctx, filepath, supportS3)
 		if err != nil {
