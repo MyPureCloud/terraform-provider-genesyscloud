@@ -582,7 +582,7 @@ func TestUnitSanitizeFlowName(t *testing.T) {
 		{
 			name:     "Multiple spaces",
 			input:    "hello   world",
-			expected: "hello___world",
+			expected: "hello_world",
 		},
 		{
 			name:     "Forward slashes",
@@ -597,17 +597,17 @@ func TestUnitSanitizeFlowName(t *testing.T) {
 		{
 			name:     "Mixed slashes and spaces",
 			input:    "path/to\\file   name",
-			expected: "path_to_file___name",
+			expected: "path_to_file_name",
 		},
 		{
 			name:     "Leading and trailing spaces",
 			input:    " hello world  ",
-			expected: "_hello_world__",
+			expected: "_hello_world_",
 		},
 		{
 			name:     "Complex mixed case",
 			input:    "  path/to\\file   name  with/\\spaces",
-			expected: "__path_to_file___name__with__spaces",
+			expected: "_path_to_file_name_with_spaces",
 		},
 	}
 
