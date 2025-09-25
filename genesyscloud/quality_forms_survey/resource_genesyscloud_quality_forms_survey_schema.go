@@ -200,10 +200,10 @@ func ResourceQualityFormsSurvey() *schema.Resource {
 				Default:     false,
 			},
 			"language": {
-				Description:  "Language for survey viewer localization. Currently localized languages: da, de, en-US, es, fi, fr, it, ja, ko, nl, no, pl, pt-BR, sv, th, tr, zh-CH, zh-TW",
+				Description:  "Language for survey viewer localization. Currently localized languages: da, de, en-US, es, fi, fr, it, ja, ko, nl, no, pl, pt-BR, sv, th, tr, zh-CH, zh-TW. Languages in beta: pt-PT, he, hi. Languages in alpha: ar, uk",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"da", "de", "en-US", "es", "fi", "fr", "it", "ja", "ko", "nl", "no", "pl", "pt-BR", "sv", "th", "tr", "zh-CH", "zh-TW"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"da", "de", "en-US", "es", "fi", "fr", "it", "ja", "ko", "nl", "no", "pl", "pt-BR", "sv", "th", "tr", "zh-CH", "zh-TW", "pt-PT", "ar", "he", "hi", "uk"}, false),
 			},
 			"header": {
 				Description: "Markdown text for the top of the form.",
