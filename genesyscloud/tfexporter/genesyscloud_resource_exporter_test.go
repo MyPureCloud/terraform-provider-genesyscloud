@@ -359,12 +359,12 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 		CyclicDependsList: nil,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
-		return resources, dependencyStruct, nil
+	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error) {
+		return resources, dependencyStruct, nil, nil
 	}
 
-	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		return resources, dependencyStruct, nil
+	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		return resources, dependencyStruct, nil, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{
