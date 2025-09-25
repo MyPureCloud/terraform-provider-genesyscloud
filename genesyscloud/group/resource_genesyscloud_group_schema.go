@@ -54,7 +54,7 @@ func GroupExporter() *resourceExporter.ResourceExporter {
 		CustomValidateExports: map[string][]string{
 			"E164": {"addresses.number"},
 		},
-		AllowEmptyArrays: []string{"addresses", "owner_ids"},
+		AllowEmptyArrays: []string{"owner_ids"},
 	}
 }
 
