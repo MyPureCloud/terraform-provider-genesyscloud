@@ -26,7 +26,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_flow" "inbound_call_flow" {
-  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml" // Also supports S3 paths e.g. s3://my-bucket/flows/example.yaml
+  filepath = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml" // Also supports S3 paths e.g. s3://my-bucket/flows/example.yaml
   // Example flow configuration using substitutions:
   /*
   inboundCall:
