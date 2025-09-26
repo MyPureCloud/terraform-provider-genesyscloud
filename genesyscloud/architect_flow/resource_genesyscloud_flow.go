@@ -75,7 +75,7 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagno
 		resourcedata.SetNillableValue(d, "name", flow.Name)
 		resourcedata.SetNillableValue(d, "type", flow.VarType)
 
-		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
+		log.Printf("Read flow %s, %s", d.Id(), *flow.Name)
 		return nil
 	})
 }
@@ -91,18 +91,16 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 
 	var flowName string
 
-	flowNameInterface := d.Get("name")
-	if flowNameInterface == nil {
-		log.Printf("Error: 'name' attribute is nil")
-	}
-
-	flowName, ok := flowNameInterface.(string)
-	if !ok {
-		log.Printf("Error: 'name' attribute is not a string, got type: %T", flowNameInterface)
-	}
-
-	if flowName == "" {
-		log.Printf("Error: flow name is empty")
+	if nameInterface := d.Get("name"); nameInterface != nil {
+		if name, ok := nameInterface.(string); ok && name != "" {
+			flowName = name
+		} else if !ok {
+			log.Printf("Warning: 'name' attribute is not a string, got type: %T, using empty name", nameInterface)
+			flowName = ""
+		}
+	} else {
+		log.Printf("Info: 'name' attribute is nil, using empty name")
+		flowName = ""
 	}
 
 	log.Printf("Updating flow  %s, %s", flowName, d.Id())
@@ -152,7 +150,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, diag.FromErr(uploadErr)...)
 	}
 
-	log.Printf("Uploadedflow  %s, %s, %s", flowName, d.Id(), jobId)
+	log.Printf("Uploaded flow %s, %s, %s", flowName, d.Id(), jobId)
 
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
@@ -176,7 +174,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		}
 
 		if *flowJob.Status == "Success" {
-			log.Printf("Success for flow %s, %s, %s", flowName, d.Id(), jobId)
+			log.Printf("Success for flow %s, %s", flowName, jobId)
 			flowID = *flowJob.Flow.Id
 			return nil
 		}
@@ -203,7 +201,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 
 	d.SetId(flowID)
 
-	log.Printf("Updated flow %s. ", d.Id())
+	log.Printf("Updated flow %s, %s", flowName, d.Id())
 	return append(diags, readFlow(ctx, d, meta)...)
 }
 
