@@ -1,11 +1,14 @@
 package outbound_contact_list
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -18,6 +21,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack"
+	localStackEnv "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack/environment"
 )
 
 func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
@@ -204,9 +210,9 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
 						strconv.Quote("TEXT"), // columnDataType
-						"1",                   // min
-						"11",                  // max
-						"10",                  // maxLength
+						"2",                   // min
+						"12",                  // max
+						"11",                  // maxLength
 					),
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Home"), // columnName
@@ -238,9 +244,9 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.column_data_type", "TEXT"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.min", "1"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.max", "11"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.max_length", "10"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.min", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.max", "12"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.max_length", "11"),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.1.column_data_type", "TEXT"),
@@ -407,12 +413,21 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
 
 	// Write the test contacts to the temp file
 	if err := os.WriteFile(tmpFile.Name(), []byte(testContactsContentWithTwoRecords), 0644); err != nil {
 		t.Fatal(err)
 	}
+
+	defer func() {
+		if err := tmpFile.Close(); err != nil {
+			t.Logf("[WARN] Failed to close temp file: %v", err)
+		}
+
+		if err := os.Remove(tmpFile.Name()); err != nil {
+			t.Logf("[WARN] Failed to remove temp file: %v", err)
+		}
+	}()
 
 	// Create a second temporary file for the contacts
 	tmpFile2, err := os.CreateTemp(testrunner.GetTestDataPath(), "contacts*.csv")
@@ -491,6 +506,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					time.Sleep(1 * time.Second)
 				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
@@ -525,6 +541,9 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 			},
 			// Test when the contacts file path changes
 			{
+				PreConfig: func() {
+					time.Sleep(1 * time.Second)
+				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
 					name,
@@ -564,6 +583,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					time.Sleep(1 * time.Second)
 				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
@@ -598,6 +618,9 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 			},
 			// Test that contacts can be re-uploaded
 			{
+				PreConfig: func() {
+					time.Sleep(1 * time.Second)
+				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
 					name,
@@ -637,6 +660,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					time.Sleep(1 * time.Second)
 				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
@@ -672,6 +696,9 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 			},
 			// Ensure we can re-upload the file after it was removed
 			{
+				PreConfig: func() {
+					time.Sleep(1 * time.Second)
+				},
 				Config: GenerateOutboundContactList(
 					resourceLabel,
 					name,
@@ -790,5 +817,235 @@ func TestAccResourceOutboundContactListWithInvalidContacts(t *testing.T) {
 				ExpectError: regexp.MustCompile(`failed to validate contacts file: CSV file is missing required columns`), // Adjust the error message based on your actual implementation
 			},
 		},
+	})
+}
+
+// TestAccResourceOutboundContactListWithS3 tests the outbound contact list resource using LocalStack for S3 operations.
+// This test validates that the terraform-provider-genesyscloud can successfully create outbound contact lists
+// with contacts and test S3 integration through file content hashing using LocalStack as a local AWS service emulator.
+//
+// Prerequisites:
+//   - LocalStack must be running (either locally or in CI)
+//   - Environment variables must be set:
+//   - USE_LOCAL_STACK=true
+//   - LOCAL_STACK_IMAGE_URI=<localstack-image-uri>
+//
+// Test Flow:
+//
+//  1. Creates a temporary CSV file with test contact data
+//
+//  2. Sets up LocalStack S3 bucket and uploads the CSV file
+//
+//  3. Creates an outbound contact list using terraform with local file path
+//
+//  4. Updates the CSV file content and re-uploads to S3
+//
+//  5. Verifies the contact list is updated correctly with new contact count
+//
+//  6. Tests S3 integration through file content hashing mechanism
+//
+//  7. Cleans up S3 bucket and temporary files
+//
+// This test is designed to run in CI environments where LocalStack is available
+// and properly configured with the required environment variables.
+func TestAccResourceOutboundContactListWithS3(t *testing.T) {
+	/*
+		// To run this test locally, set the following environment variables and run `localstack start` from another terminal
+		// See more about localstack cli here: https://docs.localstack.cloud/aws/getting-started/installation/
+		os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
+		os.Setenv(localStackEnv.LocalStackImageUriEnvVar, "localstack/localstack:latest")
+	*/
+
+	imageURI := os.Getenv(localStackEnv.LocalStackImageUriEnvVar)
+	if imageURI == "" || !localStackEnv.LocalStackIsActive() {
+		t.Skipf("Missing env variables (%s or %s), indicating that localstack is not running", localStackEnv.LocalStackImageUriEnvVar, localStackEnv.UseLocalStackEnvVar)
+	}
+
+	ctx := context.Background()
+	localStackManager, err := localstack.NewLocalStackManager(ctx)
+	if err != nil {
+		t.Fatalf("Failed to initialise LocalStackManager: %s", err.Error())
+	}
+
+	var (
+		resourceLabel = "contact-list-s3"
+		name          = "Test S3 Contact List " + uuid.NewString()
+		columnNames   = []string{
+			strconv.Quote("id"),
+			strconv.Quote("firstName"),
+			strconv.Quote("lastName"),
+			strconv.Quote("phone"),
+			strconv.Quote("email"),
+		}
+		bucketName = "testbucket-" + strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))
+		objectKey  = "contacts.csv"
+
+		fullResourcePath = ResourceType + "." + resourceLabel
+
+		testContactsContentWithTwoRecords = `id,firstName,lastName,phone,email
+100,John,Doe,+13175555555,john.doe@example.com
+101,Jane,Smith,+13175555556,jane.smith@example.com`
+
+		testContactsContentWithThreeRecords = testContactsContentWithTwoRecords + `
+102,Bob,Johnson,+13175555557,bob.johnson@example.com`
+	)
+
+	// Create a temporary file for the contacts
+	tmpFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "contacts*.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Write the test contacts to the temp file
+	if err := os.WriteFile(tmpFile.Name(), []byte(testContactsContentWithTwoRecords), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := tmpFile.Close(); err != nil {
+			t.Logf("[WARN] Failed to close temp file: %v", err)
+		}
+
+		if err := os.Remove(tmpFile.Name()); err != nil {
+			t.Logf("[WARN] Failed to remove temp file: %v", err)
+		}
+	}()
+
+	// Setup S3 bucket and upload test file
+	t.Log("Setting up S3 bucket and uploading test file...")
+	err = localStackManager.SetupS3Bucket(bucketName, tmpFile.Name(), objectKey)
+	if err != nil {
+		t.Fatalf("Failed to setup S3 bucket: %v", err)
+	}
+
+	// Cleanup S3 bucket after test
+	defer func() {
+		if err := localStackManager.CleanupS3Bucket(bucketName); err != nil {
+			t.Logf("[WARN] Failed to cleanup S3 bucket: %v", err)
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateOutboundContactList(
+					resourceLabel,
+					name,
+					util.NullValue, // division_id
+					util.NullValue, // preview_mode_column_name
+					[]string{},     // preview_mode_accepted_values
+					columnNames,
+					util.FalseValue, // automatic_time_zone_mapping
+					util.NullValue,  // zipcode_column_names
+					util.NullValue,  // attempt_limit_id
+					GeneratePhoneColumnsBlock(
+						"phone",
+						"phone",
+						util.NullValue,
+					),
+					GenerateEmailColumnsBlock(
+						"email",
+						"email",
+						util.NullValue,
+					),
+					GenerateContactsFile(
+						tmpFile.Name(), // contacts_filepath (local file)
+						"id",           // contacts_id_name
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, "name", name),
+					resource.TestCheckResourceAttr(fullResourcePath, "column_names.#", "5"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "id"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "firstName"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "lastName"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "phone"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "email"),
+					resource.TestCheckResourceAttr(fullResourcePath, "phone_columns.0.column_name", "phone"),
+					resource.TestCheckResourceAttr(fullResourcePath, "phone_columns.0.type", "phone"),
+					resource.TestCheckResourceAttr(fullResourcePath, "email_columns.0.column_name", "email"),
+					resource.TestCheckResourceAttr(fullResourcePath, "email_columns.0.type", "email"),
+					resource.TestCheckResourceAttr(fullResourcePath, "contacts_record_count", "2"),
+				),
+			},
+			{
+				PreConfig: func() {
+					// Update CSV content to add more contacts
+					t.Log("Updating CSV content to add more contacts")
+
+					// Seek to beginning and truncate to overwrite the file
+					if _, err := tmpFile.Seek(0, 0); err != nil {
+						t.Fatalf("Failed to seek to beginning of file: %v", err)
+					}
+					if err := tmpFile.Truncate(0); err != nil {
+						t.Fatalf("Failed to truncate file: %v", err)
+					}
+					_, err := tmpFile.WriteString(testContactsContentWithThreeRecords)
+					if err != nil {
+						t.Fatalf("Failed to write updated contacts content: %v", err)
+					}
+
+					// Re-upload updated file to S3
+					t.Log("Re-uploading updated contacts file to S3")
+					err = localStackManager.SetupS3Bucket(bucketName, tmpFile.Name(), objectKey)
+					if err != nil {
+						t.Fatalf("Failed to re-upload file to S3 in PreConfig: %v", err)
+					}
+				},
+				Config: GenerateOutboundContactList(
+					resourceLabel,
+					name,
+					util.NullValue,
+					util.NullValue,
+					[]string{},
+					columnNames,
+					util.FalseValue,
+					util.NullValue,
+					util.NullValue,
+					GeneratePhoneColumnsBlock(
+						"phone",
+						"phone",
+						util.NullValue,
+					),
+					GenerateEmailColumnsBlock(
+						"email",
+						"email",
+						util.NullValue,
+					),
+					GenerateContactsFile(
+						tmpFile.Name(), // contacts_filepath (local file)
+						"id",           // contacts_id_name
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, "name", name),
+					resource.TestCheckResourceAttr(fullResourcePath, "column_names.#", "5"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "id"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "firstName"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "lastName"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "phone"),
+					util.ValidateStringInArray(fullResourcePath, "column_names", "email"),
+					resource.TestCheckResourceAttr(fullResourcePath, "phone_columns.0.column_name", "phone"),
+					resource.TestCheckResourceAttr(fullResourcePath, "phone_columns.0.type", "phone"),
+					resource.TestCheckResourceAttr(fullResourcePath, "email_columns.0.column_name", "email"),
+					resource.TestCheckResourceAttr(fullResourcePath, "email_columns.0.type", "email"),
+					resource.TestCheckResourceAttr(fullResourcePath, "contacts_record_count", "3"),
+				),
+			},
+			{
+				// Import test to verify state consistency
+				ResourceName:      fullResourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"contacts_file_content_hash",
+					"contacts_filepath",
+					"contacts_id_name",
+				},
+			},
+		},
+		CheckDestroy: testVerifyContactListDestroyed,
 	})
 }

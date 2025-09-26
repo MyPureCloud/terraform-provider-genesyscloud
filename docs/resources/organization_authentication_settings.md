@@ -58,12 +58,12 @@ Optional:
 
 - `expiration_days` (Number) Length of time (in days) before a password must be changed
 - `minimum_age_seconds` (Number) Minimum age of the password (in seconds) before it can be changed
-- `minimum_digits` (Number) The minimum number of numerals (0-9) that must be included in passwords
-- `minimum_length` (Number) The minimum character length for passwords
-- `minimum_letters` (Number) The minimum number of characters required for passwords
-- `minimum_lower` (Number) The minimum number of lower case letters that must be included in passwords
-- `minimum_specials` (Number) The minimum number of special characters that must be included in passwords
-- `minimum_upper` (Number) The minimum number of upper case letters that must be included in passwords
+- `minimum_digits` (Number) The minimum number of numerals (0-9) that must be included in passwords Defaults to `1`.
+- `minimum_length` (Number) The minimum character length for passwords Defaults to `8`.
+- `minimum_letters` (Number) The minimum number of characters required for passwords Defaults to `0`.
+- `minimum_lower` (Number) The minimum number of lower case letters that must be included in passwords Defaults to `1`.
+- `minimum_specials` (Number) The minimum number of special characters that must be included in passwords Defaults to `1`.
+- `minimum_upper` (Number) The minimum number of upper case letters that must be included in passwords Defaults to `1`.
 
 
 <a id="nestedblock--timeout_settings"></a>

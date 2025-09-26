@@ -28,7 +28,7 @@ func TestAccDataSourceIntegrationFacebook(t *testing.T) {
 		appId              = ""
 		appSecret          = ""
 
-		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
+		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
 		inboundType                   = "*/*"
 

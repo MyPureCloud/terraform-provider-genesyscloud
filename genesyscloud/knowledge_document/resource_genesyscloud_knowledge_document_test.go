@@ -25,7 +25,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 		labelResourceLabel1               = "test-label1"
 		labelName                         = "Terraform Knowledge Label " + uuid.NewString()
 		labelColor                        = "#0F0F0F"
-		knowledgeBaseName1                = "Terraform Knowledge Base " + uuid.NewString()
+		knowledgeBaseName1                = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1         = "test-knowledgebase-description1"
 		coreLanguage1                     = "en-US"
 		knowledgeDocumentResourceLabel1   = "test-knowledge-document1"
