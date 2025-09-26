@@ -2,41 +2,41 @@ package exporter
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"os"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
-type Credentials struct {
-	ClientId     string
-	ClientSecret string
-	Region       string
-}
+// Export takes the resource type and resource ID of and exports that resource.
+//
+// It returns the exported data that would be written to the .tf.json file during export, the schema.ResourceData object representing the resource
+// (this can be passed to the C/U/D context functions), and a diagnostics object which can contain errors or warnings.
+func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *ExportOutput, diags diag.Diagnostics) {
+	if err := validateExportInput(input); err != nil {
+		return nil, diag.FromErr(err)
+	}
 
-func Export(ctx context.Context, resourceType, resourceId string, creds Credentials) (_ util.JsonMap, diags diag.Diagnostics) {
-	providerMeta, err := getProviderConfig(creds)
+	generateDefaults(&input)
+
+	clientConfig, err := createClientConfig(creds)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
 
 	log.Println("Activating MRMO")
-	mrmo.Activate(providerMeta.ClientConfig)
+	mrmo.Activate(clientConfig)
+
+	providerMeta := &provider.ProviderMeta{ClientConfig: clientConfig}
 
 	log.Println("Initialising provider resource maps")
 	_, _ = providerRegistrar.GetProviderResources()
 
 	log.Printf("Creating %s resource config", tfexporter.ResourceType)
-	exportResourceConfig := createExportResourceData(tfexporter.ResourceTfExport().Schema, tfexporter.ResourceType)
+	exportResourceConfig := createExportResourceData(tfexporter.ResourceTfExport().Schema, input)
 
 	log.Println("Creating the genesyscloud resource exporter")
 	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources)
@@ -49,45 +49,22 @@ func Export(ctx context.Context, resourceType, resourceId string, creds Credenti
 	}
 
 	log.Println("Getting the resource exporter by resource type")
-	exporter := providerRegistrar.GetResourceExporterByResourceType(resourceType)
+	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
 
-	log.Printf("Exporting %s resource. ID: '%s'", resourceType, resourceId)
-	config, exportDiags := gcResourceExporter.ExportForMrMo(resourceType, exporter, resourceId)
+	log.Printf("Exporting %s resource to '%s'. ID: '%s'", input.ResourceType, input.Directory, input.EntityId)
+	exportResponse, exportDiags := gcResourceExporter.ExportForMrMo(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
 	if exportDiags != nil {
 		diags = append(diags, exportDiags...)
 	}
-	return config, diags
-}
 
-func getProviderConfig(creds Credentials) (_ *provider.ProviderMeta, err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("getProviderConfig: %w", err)
-		}
-	}()
-
-	config := platformclientv2.GetDefaultConfiguration()
-	config.BasePath = provider.GetRegionBasePath(creds.Region)
-
-	err = config.AuthorizeClientCredentials(creds.ClientId, creds.ClientSecret)
-	if err != nil {
-		return nil, err
+	if diags.HasError() {
+		log.Printf("Error returned from ExportForMrMo: %v", err)
+		return nil, diags
 	}
 
-	return &provider.ProviderMeta{
-		ClientConfig: config,
-	}, nil
-}
-
-// createExportResourceData generates the export resource config that the genesyscloud tf exporter will use
-func createExportResourceData(s map[string]*schema.Schema, resType string) *schema.ResourceData {
-	config := map[string]any{
-		"directory":                os.TempDir(),
-		"include_state_file":       true,
-		"export_format":            "json",
-		"include_filter_resources": []any{resType},
-	}
-
-	var t testing.T
-	return schema.TestResourceDataRaw(&t, s, config)
+	return &ExportOutput{
+		ExportData:           exportResponse.Config,
+		ExportDataPath:       input.Directory,
+		ExportedResourceData: exportResponse.ResourceData,
+	}, diags
 }
