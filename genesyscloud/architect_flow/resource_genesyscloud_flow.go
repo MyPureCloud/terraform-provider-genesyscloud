@@ -60,6 +60,8 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagno
 
 	proxy := newArchitectFlowProxy(sdkConfig)
 
+	log.Printf("Reading flow  %s", d.Id())
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
@@ -87,7 +89,23 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 
-	log.Printf("Updating flow")
+	var flowName string
+
+	flowNameInterface := d.Get("name")
+	if flowNameInterface == nil {
+		log.Printf("Error: 'name' attribute is nil")
+	}
+
+	flowName, ok := flowNameInterface.(string)
+	if !ok {
+		log.Printf("Error: 'name' attribute is not a string, got type: %T", flowNameInterface)
+	}
+
+	if flowName == "" {
+		log.Printf("Error: flow name is empty")
+	}
+
+	log.Printf("Updating flow  %s, %s", flowName, d.Id())
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
@@ -124,6 +142,8 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, diag.FromErr(err)...)
 	}
 
+	log.Printf("Uploading flow  %s, %s, %s", flowName, d.Id(), jobId)
+
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
 
 	_, uploadErr := s3Uploader.UploadWithRetries(ctx, filePath, 20*time.Second)
@@ -132,27 +152,31 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, diag.FromErr(uploadErr)...)
 	}
 
+	log.Printf("Uploadedflow  %s, %s, %s", flowName, d.Id(), jobId)
+
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
 	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := p.GetFlowsDeployJob(ctx, jobId)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving job status. JobID: %s, error: %s ", jobId, err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving job status. JobID: %s, flowName: %s, error: %s", jobId, flowName, err), response))
 		}
 
 		if *flowJob.Status == "Failure" {
+			log.Printf("Failed to Get flow %s, %s, %s", flowName, d.Id(), jobId)
 			if flowJob.Messages == nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, no tracing messages available", jobId), response))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s,  no tracing messages available", jobId, flowName), response))
 			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
 				messages = append(messages, *m.Text)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s, tracing messages: %v ", jobId, flowName, strings.Join(messages, "\n\n")), response))
 		}
 
 		if *flowJob.Status == "Success" {
+			log.Printf("Success for flow %s, %s, %s", flowName, d.Id(), jobId)
 			flowID = *flowJob.Flow.Id
 			return nil
 		}
