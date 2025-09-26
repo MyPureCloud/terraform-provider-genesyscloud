@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 // dataSourceBusinessRulesDecisionTableRead reads a Genesys Cloud business rules decision table by name
@@ -40,76 +39,11 @@ func dataSourceBusinessRulesDecisionTableRead(ctx context.Context, d *schema.Res
 		table := (*tables)[0]
 		d.SetId(*table.Id)
 
-		// Set the basic fields
-		resourcedata.SetNillableValue(d, "name", table.Name)
-		resourcedata.SetNillableValue(d, "description", table.Description)
-		resourcedata.SetNillableReferenceDivision(d, "division_id", table.Division)
-
-		// Set columns - try to get from table first, then from latest version if needed
-		var columns interface{}
-		var schemaID string
-
-		log.Printf("Debug: Table Columns field is nil: %v", table.Columns == nil)
-
-		// Try to get columns from the table response first
-		if table.Columns != nil {
-			log.Printf("Debug: Found columns in table response")
-			columns = flattenColumns(table.Columns, proxy, schemaID, ctx)
-			log.Printf("Debug: Built columns from table: %+v", columns)
-		}
-
-		// If columns weren't found in table response, try to get them from the latest version
-		if columns == nil && table.Latest != nil {
-			log.Printf("Debug: Trying to get columns from latest version")
-			latestVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, *table.Id, int(*table.Latest.Version))
-			if err == nil && latestVersion.Columns != nil {
-				log.Printf("Debug: Found columns in latest version")
-				// Get schema ID for column type detection
-				if latestVersion.Contract != nil && latestVersion.Contract.ParentSchema != nil {
-					schemaID = *latestVersion.Contract.ParentSchema.Id
-				}
-				columns = flattenColumns(latestVersion.Columns, proxy, schemaID, ctx)
-				log.Printf("Debug: Built columns from version: %+v", columns)
-			} else {
-				log.Printf("Debug: No columns found in latest version or error: %v", err)
-			}
-		}
-
-		// Set columns if we found them and they have actual content
-		if columns != nil {
-			// Check if the columns map has actual content (not just empty inputs/outputs)
-			if columnsMap, ok := columns.(map[string]interface{}); ok {
-				hasInputs := columnsMap["inputs"] != nil && len(columnsMap["inputs"].([]interface{})) > 0
-				hasOutputs := columnsMap["outputs"] != nil && len(columnsMap["outputs"].([]interface{})) > 0
-
-				if hasInputs || hasOutputs {
-					log.Printf("Debug: Setting columns in data source: %+v", columns)
-					d.Set("columns", []interface{}{columns})
-				} else {
-					log.Printf("Debug: Columns map is empty, not setting columns")
-				}
-			} else {
-				log.Printf("Debug: Columns is not a map, not setting columns")
-			}
-		} else {
-			log.Printf("Debug: No columns found to set")
-		}
-
-		// Get schema_id from the latest version's contract
-		if table.Latest != nil {
-			// Fetch the actual latest version to get the contract (for schema_id)
-			latestVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, *table.Id, int(*table.Latest.Version))
-			if err == nil && latestVersion.Contract != nil && latestVersion.Contract.ParentSchema != nil {
-				d.Set("schema_id", latestVersion.Contract.ParentSchema.Id)
-			}
-		}
-
-		// Set version information
-		if table.Latest != nil && table.Latest.Version != nil {
-			d.Set("latest_version", *table.Latest.Version)
-		}
+		// Set the published version if available (search API includes this when withPublishedVersion=true)
 		if table.Published != nil && table.Published.Version != nil {
-			d.Set("published_version", *table.Published.Version)
+			if err := d.Set("version", *table.Published.Version); err != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error setting version for decision table %s | error: %v", name, resp), resp))
+			}
 		}
 
 		log.Printf("Successfully read Business Rules Decision Table by name: %s", name)

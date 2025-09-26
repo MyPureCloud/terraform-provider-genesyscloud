@@ -1,6 +1,7 @@
 package business_rules_decision_table
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -231,7 +232,7 @@ func columnsSchemaFunc() *schema.Resource {
 // ResourceBusinessRulesDecisionTable registers the genesyscloud_business_rules_decision_table resource with Terraform
 func ResourceBusinessRulesDecisionTable() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns can only be modified in version 1 draft status.`,
+		Description: `Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.`,
 
 		CreateContext: provider.CreateWithPooledClient(createBusinessRulesDecisionTable),
 		ReadContext:   provider.ReadWithPooledClient(readBusinessRulesDecisionTable),
@@ -248,6 +249,7 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringLenBetween(1, 100),
 			},
+
 			"description": {
 				Description: "The decision table description",
 				Type:        schema.TypeString,
@@ -258,37 +260,49 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+
 			"schema_id": {
 				Description: "The ID of the rules schema used by the decision table",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+
 			"columns": {
-				Description: "Columns for the decision table (creates version 1 automatically). Can only be modified on version 1 draft status.",
+				Description: "Columns for the decision table. Cannot be modified after creation - requires resource recreation.",
 				Required:    true,
+				ForceNew:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        columnsSchemaFunc(),
 			},
 
-			// Version information (essential for row operations)
-			"latest_version": {
-				Description: "The latest version number. Rows can be added to any draft version.",
+			"rows": {
+				Description: "Decision table rows containing input conditions and output actions. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table.",
+				Type:        schema.TypeList,
+				Required:    true,
+				MinItems:    1,
+				Elem:        rowSchemaFunc(),
+			},
+
+			"version": {
+				Description: "Current version number of the decision table.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
-			"published_version": {
-				Description: "The published version number, if any. Published versions cannot be modified.",
-				Type:        schema.TypeInt,
+
+			"status": {
+				Description: "Current status of the decision table (Draft, Published, etc.).",
+				Type:        schema.TypeString,
 				Computed:    true,
 			},
 		},
+		CustomizeDiff: validateRowsAgainstColumns,
 	}
 }
 
-// QueueDefaultsToResolver is a custom resolver that intelligently converts queue UUIDs to references
-// only when the column is actually a queue-related column (e.g., transfer_queue)
-func QueueDefaultsToResolver(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceType string) error {
+// QueueIdResolver is a custom resolver that intelligently converts queue UUIDs to references
+// for both column defaults and row values when they contain actual queue IDs
+func QueueIdResolver(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceType string) error {
 	// Check if this is a queue-related column by looking at the schema_property_key
 	// We need to examine the parent column structure to determine this
 
@@ -317,6 +331,166 @@ func QueueDefaultsToResolver(configMap map[string]interface{}, exporters map[str
 	return nil
 }
 
+// Schema for literal values (used in both inputs and outputs)
+// IMPORTANT: Only ONE of the following fields should be set per literal value
+func literalValueSchemaFunc() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"value": {
+				Description: `The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
+
+Examples:
+- String: "VIP", "Hello World"
+- Integer: "42", "0", "-10"
+- Number: "3.14", "0.0", "-1.5"
+- Boolean: "true", "false"
+- Date: "2023-01-01"
+- DateTime: "2023-01-01T12:00:00.000Z"
+- Special: "Wildcard", "Null", "Empty", "CurrentTime"`,
+				Type:     schema.TypeString,
+				Required: true,
+				ValidateFunc: func(i interface{}, k string) (warnings []string, errors []error) {
+					value := i.(string)
+					if value == "" {
+						errors = append(errors, fmt.Errorf("value cannot be empty"))
+						return warnings, errors
+					}
+					return warnings, errors
+				},
+			},
+			"type": {
+				Description:  "The type of the literal value.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "date", "datetime", "boolean", "special"}, false),
+			},
+		},
+	}
+}
+
+// Schema for decision table rows
+func rowSchemaFunc() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"row_id": {
+				Description: "Unique identifier for this row within the decision table. Auto-generated by the system.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"row_index": {
+				Description: "The position of this row in the decision table (1-based). Auto-generated by the system.",
+				Type:        schema.TypeInt,
+				Computed:    true,
+			},
+			"inputs": {
+				Description: "Input values (conditions) for this decision row. Each input specifies which column it belongs to using schema_property_key and optionally comparator.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"column_id": {
+							Description: "The unique identifier of the input column. Auto-generated by the system.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"schema_property_key": {
+							Description: "The schema property key that identifies which input column this value belongs to.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"comparator": {
+							Description: "The comparator for this input column. Required when multiple columns have the same schema_property_key with different comparators. Optional when only one column exists for the schema_property_key.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"literal": {
+							Description: "The literal value for this input parameter",
+							Type:        schema.TypeList,
+							Required:    true,
+							MaxItems:    1,
+							Elem:        literalValueSchemaFunc(),
+						},
+					},
+				},
+			},
+			"outputs": {
+				Description: "Output values (actions) for this decision row. Each output specifies which column it belongs to using schema_property_key and optionally comparator.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"column_id": {
+							Description: "The unique identifier of the output column. Auto-generated by the system.",
+							Type:        schema.TypeString,
+							Computed:    true,
+						},
+						"schema_property_key": {
+							Description: "The schema property key that identifies which output column this value belongs to.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"comparator": {
+							Description: "The comparator for this output column. Required when multiple columns have the same schema_property_key with different comparators. Optional when only one column exists for the schema_property_key.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"literal": {
+							Description: "The literal value for this output parameter. Only ONE field should be set per literal value",
+							Type:        schema.TypeList,
+							Required:    true,
+							MaxItems:    1,
+							Elem:        literalValueSchemaFunc(),
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// validateRowsAgainstColumns validates that row schema property keys exist in column definitions
+func validateRowsAgainstColumns(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Get columns configuration
+	columnsInterface := diff.Get("columns")
+	if columnsInterface == nil {
+		return nil // No columns to validate against
+	}
+
+	columnsList, ok := columnsInterface.([]interface{})
+	if !ok || len(columnsList) == 0 {
+		return nil // No columns to validate against
+	}
+
+	columnsMap, ok := columnsList[0].(map[string]interface{})
+	if !ok {
+		return nil // Invalid columns structure
+	}
+
+	// Convert Terraform columns to SDK format for validation
+	sdkColumns, err := convertTerraformColumnsToSDK(columnsMap)
+	if err != nil {
+		return fmt.Errorf("failed to convert columns for validation: %s", err)
+	}
+
+	// Get rows configuration
+	rowsInterface := diff.Get("rows")
+	if rowsInterface == nil {
+		return nil // No rows to validate
+	}
+
+	rowsList, ok := rowsInterface.([]interface{})
+	if !ok {
+		return nil // Invalid rows structure
+	}
+
+	// Validate rows against columns
+	if err := validateSchemaPropertyKeys(sdkColumns, rowsList); err != nil {
+		return fmt.Errorf("row validation failed: %s", err)
+	}
+
+	return nil
+}
+
 // BusinessRulesDecisionTableExporter returns the resourceExporter object used to hold the genesyscloud_business_rules_decision_table exporter's config
 func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
@@ -329,11 +503,13 @@ func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 		// include "genesyscloud_routing_queue" in the export filter resources.
 		// The RefAttrs above will automatically convert division_id and schema_id UUIDs
 		// to proper resource references during export.
-		// Note: Queue UUIDs in defaults_to.value are not automatically converted to references
-		// to avoid false conversions of non-queue values (e.g., priority, skill levels).
+		// Note: Queue UUIDs in column defaults and row values are intelligently converted to references
+		// only when they are actual queue IDs, avoiding false conversions of non-queue values (e.g., priority, skill levels).
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"columns.outputs.defaults_to.value": {ResolverFunc: QueueDefaultsToResolver},
-			"columns.inputs.defaults_to.value":  {ResolverFunc: QueueDefaultsToResolver},
+			"columns.outputs.defaults_to.value": {ResolverFunc: QueueIdResolver},
+			"columns.inputs.defaults_to.value":  {ResolverFunc: QueueIdResolver},
+			"rows.*.inputs.*.literal.value":     {ResolverFunc: QueueIdResolver},
+			"rows.*.outputs.*.literal.value":    {ResolverFunc: QueueIdResolver},
 		},
 	}
 }
@@ -343,43 +519,14 @@ func DataSourceBusinessRulesDecisionTable() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud business rules decision table data source. Select a business rules decision table by its name.`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceBusinessRulesDecisionTableRead),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: `business rules decision table name`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"description": {
-				Description: "The decision table description",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"division_id": {
-				Description: "The ID of the division the decision table belongs to",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"schema_id": {
-				Description: "The ID of the rules schema used by the decision table",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"columns": {
-				Description: "Columns for the decision table",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem:        columnsSchemaFunc(),
-			},
-			"latest_version": {
-				Description: "The latest version number. Rows can be added to any draft version.",
-				Type:        schema.TypeInt,
-				Computed:    true,
-			},
-			"published_version": {
-				Description: "The published version number, if any. Published versions cannot be modified.",
+			"version": {
+				Description: `The published version of the decision table.`,
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},

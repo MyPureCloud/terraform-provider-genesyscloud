@@ -2,21 +2,28 @@
 page_title: "genesyscloud_business_rules_decision_table Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns can only be modified in version 1 draft status.
+  Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.
 ---
 # genesyscloud_business_rules_decision_table (Resource)
 
-Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns can only be modified in version 1 draft status.
+Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables)
-* [GET /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables)
 * [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId-)
 * [PATCH /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-businessrules-decisiontables--tableId-)
 * [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId-)
-* [GET /api/v2/businessrules/decisiontables/{tableId}/version/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables-search)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions)
+* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
+* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
 
 ## Example Usage
 
@@ -25,31 +32,24 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
   name        = "Example Decision Table"
   description = "Example Decision Table created by terraform"
   division_id = data.genesyscloud_auth_division_home.home.id
-  schema_id   = data.genesyscloud_business_rules_schema.comprehensive_schema.id
+  schema_id   = genesyscloud_business_rules_schema.example_business_rules_schema.id
 
   columns {
-
     inputs {
-      defaults_to {
-        special = "Wildcard"
-      }
       expression {
         contractual {
-          schema_property_key = "customer_name"
+          schema_property_key = "custom_attribute_string"
         }
         comparator = "Equals"
       }
     }
 
     inputs {
-      defaults_to {
-        special = "Wildcard"
-      }
       expression {
         contractual {
-          schema_property_key = "customer_type"
+          schema_property_key = "custom_attribute_enum"
         }
-        comparator = "NotEquals"
+        comparator = "Equals"
       }
     }
 
@@ -59,7 +59,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       expression {
         contractual {
-          schema_property_key = "priority_score"
+          schema_property_key = "custom_attribute_integer"
         }
         comparator = "GreaterThan"
       }
@@ -71,7 +71,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       expression {
         contractual {
-          schema_property_key = "revenue_amount"
+          schema_property_key = "custom_attribute_number"
         }
         comparator = "LessThanOrEquals"
       }
@@ -83,7 +83,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       expression {
         contractual {
-          schema_property_key = "is_premium_member"
+          schema_property_key = "custom_attribute_boolean"
         }
         comparator = "Equals"
       }
@@ -95,9 +95,21 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       expression {
         contractual {
-          schema_property_key = "customer_since"
+          schema_property_key = "custom_attribute_date"
         }
-        comparator = "GreaterThan"
+        comparator = "GreaterThanOrEquals"
+      }
+    }
+
+    inputs {
+      defaults_to {
+        special = "CurrentTime"
+      }
+      expression {
+        contractual {
+          schema_property_key = "custom_attribute_date"
+        }
+        comparator = "LessThanOrEquals"
       }
     }
 
@@ -107,7 +119,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       expression {
         contractual {
-          schema_property_key = "last_interaction"
+          schema_property_key = "custom_attribute_datetime"
         }
         comparator = "NotEquals"
       }
@@ -119,7 +131,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       expression {
         contractual {
-          schema_property_key = "current_queue"
+          schema_property_key = "custom_attribute_queue"
           contractual {
             schema_property_key = "queue"
             contractual {
@@ -131,13 +143,12 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
     }
 
-
     outputs {
       defaults_to {
         value = data.genesyscloud_routing_queue.vip_queue.id
       }
       value {
-        schema_property_key = "transfer_queue"
+        schema_property_key = "custom_attribute_queue"
         properties {
           schema_property_key = "queue"
           properties {
@@ -152,16 +163,102 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
         value = "Premium Support"
       }
       value {
-        schema_property_key = "assigned_skill"
+        schema_property_key = "custom_attribute_string"
       }
     }
 
     outputs {
-      defaults_to {
-        special = "Null"
-      }
       value {
-        schema_property_key = "escalation_level"
+        schema_property_key = "custom_attribute_enum"
+      }
+    }
+  }
+
+  rows {
+    inputs {
+      schema_property_key = "custom_attribute_string"
+      literal {
+        value = "John Doe"
+        type  = "string"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_enum"
+      literal {
+        value = "option_1"
+        type  = "string"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_integer"
+      literal {
+        value = "85"
+        type  = "integer"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_number"
+      literal {
+        value = "15000.0"
+        type  = "number"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_boolean"
+      literal {
+        value = "true"
+        type  = "boolean"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_date"
+      comparator          = "GreaterThanOrEquals"
+      literal {
+        value = "2023-01-01"
+        type  = "date"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_date"
+      comparator          = "LessThanOrEquals"
+      literal {
+        value = "2023-12-31"
+        type  = "date"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_datetime"
+      literal {
+        value = "2023-12-01T10:30:00.000Z"
+        type  = "datetime"
+      }
+    }
+    inputs {
+      schema_property_key = "custom_attribute_queue"
+      literal {
+        value = data.genesyscloud_routing_queue.standard_queue.id
+        type  = "string"
+      }
+    }
+    outputs {
+      schema_property_key = "custom_attribute_queue"
+      literal {
+        value = data.genesyscloud_routing_queue.vip_queue.id
+        type  = "string"
+      }
+    }
+    outputs {
+      schema_property_key = "custom_attribute_string"
+      literal {
+        value = "Premium Support"
+        type  = "string"
+      }
+    }
+    outputs {
+      schema_property_key = "custom_attribute_enum"
+      literal {
+        value = "option_2"
+        type  = "string"
       }
     }
   }
@@ -173,9 +270,10 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
 ### Required
 
-- `columns` (Block List, Min: 1, Max: 1) Columns for the decision table (creates version 1 automatically). Can only be modified on version 1 draft status. (see [below for nested schema](#nestedblock--columns))
+- `columns` (Block List, Min: 1, Max: 1) Columns for the decision table. Cannot be modified after creation - requires resource recreation. (see [below for nested schema](#nestedblock--columns))
 - `division_id` (String) The ID of the division the decision table belongs to
 - `name` (String) The name of the decision table
+- `rows` (Block List, Min: 1) Decision table rows containing input conditions and output actions. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table. (see [below for nested schema](#nestedblock--rows))
 - `schema_id` (String) The ID of the rules schema used by the decision table
 
 ### Optional
@@ -185,8 +283,8 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `latest_version` (Number) The latest version number. Rows can be added to any draft version.
-- `published_version` (Number) The published version number, if any. Published versions cannot be modified.
+- `status` (String) Current status of the decision table (Draft, Published, etc.).
+- `version` (Number) Current version number of the decision table.
 
 <a id="nestedblock--columns"></a>
 ### Nested Schema for `columns`
@@ -328,4 +426,88 @@ Optional:
 
 - `special` (String) Special enum value: Wildcard, Null, Empty, CurrentTime.
 - `value` (String) Single string value. For queue columns, can be a UUID.
+
+
+
+
+<a id="nestedblock--rows"></a>
+### Nested Schema for `rows`
+
+Optional:
+
+- `inputs` (Block List) Input values (conditions) for this decision row. Each input specifies which column it belongs to using schema_property_key and optionally comparator. (see [below for nested schema](#nestedblock--rows--inputs))
+- `outputs` (Block List) Output values (actions) for this decision row. Each output specifies which column it belongs to using schema_property_key and optionally comparator. (see [below for nested schema](#nestedblock--rows--outputs))
+
+Read-Only:
+
+- `row_id` (String) Unique identifier for this row within the decision table. Auto-generated by the system.
+- `row_index` (Number) The position of this row in the decision table (1-based). Auto-generated by the system.
+
+<a id="nestedblock--rows--inputs"></a>
+### Nested Schema for `rows.inputs`
+
+Required:
+
+- `literal` (Block List, Min: 1, Max: 1) The literal value for this input parameter (see [below for nested schema](#nestedblock--rows--inputs--literal))
+- `schema_property_key` (String) The schema property key that identifies which input column this value belongs to.
+
+Optional:
+
+- `comparator` (String) The comparator for this input column. Required when multiple columns have the same schema_property_key with different comparators. Optional when only one column exists for the schema_property_key.
+
+Read-Only:
+
+- `column_id` (String) The unique identifier of the input column. Auto-generated by the system.
+
+<a id="nestedblock--rows--inputs--literal"></a>
+### Nested Schema for `rows.inputs.literal`
+
+Required:
+
+- `type` (String) The type of the literal value.
+- `value` (String) The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
+
+Examples:
+- String: "VIP", "Hello World"
+- Integer: "42", "0", "-10"
+- Number: "3.14", "0.0", "-1.5"
+- Boolean: "true", "false"
+- Date: "2023-01-01"
+- DateTime: "2023-01-01T12:00:00.000Z"
+- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+
+
+
+<a id="nestedblock--rows--outputs"></a>
+### Nested Schema for `rows.outputs`
+
+Required:
+
+- `literal` (Block List, Min: 1, Max: 1) The literal value for this output parameter. Only ONE field should be set per literal value (see [below for nested schema](#nestedblock--rows--outputs--literal))
+- `schema_property_key` (String) The schema property key that identifies which output column this value belongs to.
+
+Optional:
+
+- `comparator` (String) The comparator for this output column. Required when multiple columns have the same schema_property_key with different comparators. Optional when only one column exists for the schema_property_key.
+
+Read-Only:
+
+- `column_id` (String) The unique identifier of the output column. Auto-generated by the system.
+
+<a id="nestedblock--rows--outputs--literal"></a>
+### Nested Schema for `rows.outputs.literal`
+
+Required:
+
+- `type` (String) The type of the literal value.
+- `value` (String) The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
+
+Examples:
+- String: "VIP", "Hello World"
+- Integer: "42", "0", "-10"
+- Number: "3.14", "0.0", "-1.5"
+- Boolean: "true", "false"
+- Date: "2023-01-01"
+- DateTime: "2023-01-01T12:00:00.000Z"
+- Special: "Wildcard", "Null", "Empty", "CurrentTime"
 

@@ -1,11 +1,15 @@
 package business_rules_decision_table
 
 import (
-	"context"
+	"fmt"
 	"log"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 // buildSdkInputColumns builds the SDK input columns from the Terraform schema
@@ -179,46 +183,53 @@ func buildSdkColumns(columns map[string]interface{}) *platformclientv2.Createdec
 	return sdkColumns
 }
 
-// buildSdkUpdateColumns builds the SDK update columns from the Terraform schema
-func buildSdkUpdateColumns(columns map[string]interface{}) *platformclientv2.Updatedecisiontablecolumnsrequest {
-	sdkColumns := &platformclientv2.Updatedecisiontablecolumnsrequest{}
+// buildUpdateRequest builds the SDK update request from the Terraform schema
+func buildUpdateRequest(d *schema.ResourceData) *platformclientv2.Updatedecisiontablerequest {
+	updateRequest := &platformclientv2.Updatedecisiontablerequest{}
 
-	if inputs, ok := columns["inputs"].([]interface{}); ok {
-		sdkColumns.Inputs = buildSdkInputColumns(inputs)
+	if d.HasChange("name") {
+		updateRequest.Name = platformclientv2.String(d.Get("name").(string))
 	}
 
-	if outputs, ok := columns["outputs"].([]interface{}); ok {
-		sdkColumns.Outputs = buildSdkOutputColumns(outputs)
+	if d.HasChange("description") {
+		updateRequest.Description = platformclientv2.String(d.Get("description").(string))
 	}
 
-	return sdkColumns
+	return updateRequest
+}
+
+// convertSDKRowToUpdateRequest converts an SDK row to update request format
+func convertSDKRowToUpdateRequest(sdkRow platformclientv2.Createdecisiontablerowrequest) *platformclientv2.Putdecisiontablerowrequest {
+	updateRequest := &platformclientv2.Putdecisiontablerowrequest{}
+
+	// Copy inputs if they exist
+	if sdkRow.Inputs != nil {
+		updateRequest.Inputs = sdkRow.Inputs
+	}
+
+	// Copy outputs if they exist
+	if sdkRow.Outputs != nil {
+		updateRequest.Outputs = sdkRow.Outputs
+	}
+
+	return updateRequest
 }
 
 // flattenColumns flattens the SDK columns response to Terraform format
-func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns, proxy *BusinessRulesDecisionTableProxy, schemaID string, ctx context.Context) map[string]interface{} {
+func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns) map[string]interface{} {
 	if sdkColumns == nil {
 		return make(map[string]interface{})
 	}
 
 	columns := make(map[string]interface{})
 
-	// Get the schema to determine column types
-	var schema *platformclientv2.Dataschema
-	if proxy != nil && schemaID != "" {
-		var err error
-		schema, err = proxy.getSchemaByID(ctx, schemaID)
-		if err != nil {
-			log.Printf("Warning: Could not look up schema %s for column type detection: %v", schemaID, err)
-		}
-	}
-
 	if sdkColumns.Inputs != nil {
-		inputs := flattenInputColumns(*sdkColumns.Inputs, schema, ctx)
+		inputs := flattenInputColumns(*sdkColumns.Inputs)
 		columns["inputs"] = inputs
 	}
 
 	if sdkColumns.Outputs != nil {
-		outputs := flattenOutputColumns(*sdkColumns.Outputs, schema, ctx)
+		outputs := flattenOutputColumns(*sdkColumns.Outputs)
 		columns["outputs"] = outputs
 	}
 
@@ -226,7 +237,7 @@ func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns, proxy *Bu
 }
 
 // flattenInputColumns flattens the SDK input columns to Terraform format
-func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
+func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn) []interface{} {
 	inputs := make([]interface{}, 0)
 	for _, sdkInput := range sdkInputColumns {
 		input := make(map[string]interface{})
@@ -258,7 +269,7 @@ func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputco
 }
 
 // flattenOutputColumns flattens the SDK output columns to Terraform format
-func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn, schema *platformclientv2.Dataschema, ctx context.Context) []interface{} {
+func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn) []interface{} {
 	outputs := make([]interface{}, 0)
 	for _, sdkOutput := range sdkOutputColumns {
 		output := make(map[string]interface{})
@@ -383,4 +394,856 @@ func buildCreateRequest(d *schema.ResourceData) *platformclientv2.Createdecision
 	}
 
 	return createRequest
+}
+
+// buildColumnMapping creates a mapping from schema_property_key to column_id
+func buildColumnMapping(sdkColumns *platformclientv2.Decisiontablecolumns) (map[string]string, map[string]string, error) {
+	inputMapping := make(map[string]string)
+	outputMapping := make(map[string]string)
+
+	if sdkColumns == nil {
+		return inputMapping, outputMapping, nil
+	}
+
+	// Map input columns
+	if sdkColumns.Inputs != nil {
+		for _, input := range *sdkColumns.Inputs {
+			if input.Id == nil || input.Expression == nil {
+				continue
+			}
+
+			// Extract schema_property_key and comparator from expression
+			schemaPropertyKey, comparator, err := extractSchemaPropertyKeyAndComparator(input.Expression)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to extract schema property key from input column %s: %s", *input.Id, err)
+			}
+
+			// Create composite key: "schema_property_key:comparator" or just "schema_property_key" if no comparator
+			var key string
+			if comparator != "" {
+				key = fmt.Sprintf("%s:%s", schemaPropertyKey, comparator)
+			} else {
+				key = schemaPropertyKey
+			}
+
+			inputMapping[key] = *input.Id
+		}
+	}
+
+	// Map output columns
+	if sdkColumns.Outputs != nil {
+		for _, output := range *sdkColumns.Outputs {
+			if output.Id == nil || output.Value == nil {
+				continue
+			}
+
+			// Extract schema_property_key and comparator from value
+			schemaPropertyKey, comparator, err := extractSchemaPropertyKeyAndComparatorFromOutput(output.Value)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to extract schema property key from output column %s: %s", *output.Id, err)
+			}
+
+			// Create composite key: "schema_property_key:comparator" or just "schema_property_key" if no comparator
+			var key string
+			if comparator != "" {
+				key = fmt.Sprintf("%s:%s", schemaPropertyKey, comparator)
+			} else {
+				key = schemaPropertyKey
+			}
+
+			outputMapping[key] = *output.Id
+		}
+	}
+
+	return inputMapping, outputMapping, nil
+}
+
+// extractColumnOrder extracts the order of input and output columns from SDK columns
+func extractColumnOrder(sdkColumns *platformclientv2.Decisiontablecolumns) ([]string, []string) {
+	var inputOrder []string
+	var outputOrder []string
+
+	if sdkColumns == nil {
+		return inputOrder, outputOrder
+	}
+
+	// Extract input column order
+	if sdkColumns.Inputs != nil {
+		for _, input := range *sdkColumns.Inputs {
+			if input.Id == nil || input.Expression == nil {
+				continue
+			}
+
+			// Extract schema_property_key and comparator from expression
+			schemaPropertyKey, comparator, err := extractSchemaPropertyKeyAndComparator(input.Expression)
+			if err != nil {
+				continue
+			}
+
+			// Create composite key: "schema_property_key:comparator" or just "schema_property_key" if no comparator
+			var key string
+			if comparator != "" {
+				key = fmt.Sprintf("%s:%s", schemaPropertyKey, comparator)
+			} else {
+				key = schemaPropertyKey
+			}
+
+			inputOrder = append(inputOrder, key)
+		}
+	}
+
+	// Extract output column order
+	if sdkColumns.Outputs != nil {
+		for _, output := range *sdkColumns.Outputs {
+			if output.Id == nil || output.Value == nil {
+				continue
+			}
+
+			// Extract schema_property_key and comparator from value
+			schemaPropertyKey, comparator, err := extractSchemaPropertyKeyAndComparatorFromOutput(output.Value)
+			if err != nil {
+				continue
+			}
+
+			// Create composite key: "schema_property_key:comparator" or just "schema_property_key" if no comparator
+			var key string
+			if comparator != "" {
+				key = fmt.Sprintf("%s:%s", schemaPropertyKey, comparator)
+			} else {
+				key = schemaPropertyKey
+			}
+
+			outputOrder = append(outputOrder, key)
+		}
+	}
+
+	return inputOrder, outputOrder
+}
+
+// extractSchemaPropertyKeyAndComparator extracts schema_property_key and comparator from input expression
+func extractSchemaPropertyKeyAndComparator(expression *platformclientv2.Decisiontableinputcolumnexpression) (string, string, error) {
+	if expression == nil {
+		return "", "", fmt.Errorf("expression is nil")
+	}
+
+	// Get schema_property_key from contractual expression
+	var schemaPropertyKey string
+	if expression.Contractual != nil && *expression.Contractual != nil && (*expression.Contractual).SchemaPropertyKey != nil {
+		schemaPropertyKey = *(*expression.Contractual).SchemaPropertyKey
+	} else {
+		return "", "", fmt.Errorf("no schema_property_key found in expression")
+	}
+
+	// Get comparator
+	var comparator string
+	if expression.Comparator != nil {
+		comparator = *expression.Comparator
+	}
+
+	return schemaPropertyKey, comparator, nil
+}
+
+// extractSchemaPropertyKeyAndComparatorFromOutput extracts schema_property_key and comparator from output value
+func extractSchemaPropertyKeyAndComparatorFromOutput(value *platformclientv2.Outputvalue) (string, string, error) {
+	if value == nil {
+		return "", "", fmt.Errorf("value is nil")
+	}
+
+	// Get schema_property_key from value
+	var schemaPropertyKey string
+	if value.SchemaPropertyKey != nil {
+		schemaPropertyKey = *value.SchemaPropertyKey
+	} else {
+		return "", "", fmt.Errorf("no schema_property_key found in value")
+	}
+
+	// Outputs don't have comparators, so return empty string
+	return schemaPropertyKey, "", nil
+}
+
+// convertTerraformRowToSDKWithMapping converts a Terraform row to SDK format using schema property key mapping
+func convertTerraformRowToSDKWithMapping(rowMap map[string]interface{}, inputMapping map[string]string, outputMapping map[string]string) (platformclientv2.Createdecisiontablerowrequest, error) {
+	sdkRow := platformclientv2.Createdecisiontablerowrequest{}
+
+	// Convert inputs using schema property key mapping
+	if inputs, ok := rowMap["inputs"].([]interface{}); ok {
+		sdkInputs := make(map[string]platformclientv2.Decisiontablerowparametervalue)
+		for _, inputItem := range inputs {
+			if inputMap, ok := inputItem.(map[string]interface{}); ok {
+				// Get schema_property_key and comparator
+				schemaPropertyKey, ok1 := inputMap["schema_property_key"].(string)
+				comparator, ok2 := inputMap["comparator"].(string)
+
+				if !ok1 || schemaPropertyKey == "" {
+					return platformclientv2.Createdecisiontablerowrequest{}, fmt.Errorf("schema_property_key is required for input")
+				}
+
+				// Create lookup key
+				var lookupKey string
+				if ok2 && comparator != "" {
+					lookupKey = fmt.Sprintf("%s:%s", schemaPropertyKey, comparator)
+				} else {
+					lookupKey = schemaPropertyKey
+				}
+
+				// Find column ID
+				columnId, exists := inputMapping[lookupKey]
+				if !exists && (!ok2 || comparator == "") {
+					// If no exact match and no comparator was provided, try to find any column with this schema_property_key
+					for key, id := range inputMapping {
+						if strings.HasPrefix(key, schemaPropertyKey+":") {
+							columnId = id
+							exists = true
+							break
+						}
+					}
+				}
+
+				if !exists {
+					if ok2 && comparator != "" {
+						return platformclientv2.Createdecisiontablerowrequest{}, fmt.Errorf("no column found for schema_property_key '%s' with comparator '%s'", schemaPropertyKey, comparator)
+					} else {
+						return platformclientv2.Createdecisiontablerowrequest{}, fmt.Errorf("no column found for schema_property_key '%s'", schemaPropertyKey)
+					}
+				}
+
+				// Convert literal
+				if literal := extractLiteralFromList(inputMap["literal"]); literal != nil {
+					sdkLiteral, err := convertLiteralToSDK(literal)
+					if err != nil {
+						return platformclientv2.Createdecisiontablerowrequest{}, err
+					}
+					sdkInputs[columnId] = platformclientv2.Decisiontablerowparametervalue{
+						Literal: sdkLiteral,
+					}
+				}
+			}
+		}
+		sdkRow.Inputs = &sdkInputs
+	}
+
+	// Convert outputs using schema property key mapping
+	if outputs, ok := rowMap["outputs"].([]interface{}); ok {
+		sdkOutputs := make(map[string]platformclientv2.Decisiontablerowparametervalue)
+		for _, outputItem := range outputs {
+			if outputMap, ok := outputItem.(map[string]interface{}); ok {
+				// Get schema_property_key and comparator
+				schemaPropertyKey, ok1 := outputMap["schema_property_key"].(string)
+				comparator, ok2 := outputMap["comparator"].(string)
+
+				if !ok1 || schemaPropertyKey == "" {
+					return platformclientv2.Createdecisiontablerowrequest{}, fmt.Errorf("schema_property_key is required for output")
+				}
+
+				// Create lookup key
+				var lookupKey string
+				if ok2 && comparator != "" {
+					lookupKey = fmt.Sprintf("%s:%s", schemaPropertyKey, comparator)
+				} else {
+					lookupKey = schemaPropertyKey
+				}
+
+				// Find column ID
+				columnId, exists := outputMapping[lookupKey]
+				if !exists && (!ok2 || comparator == "") {
+					// If no exact match and no comparator was provided, try to find any column with this schema_property_key
+					for key, id := range outputMapping {
+						if strings.HasPrefix(key, schemaPropertyKey+":") {
+							columnId = id
+							exists = true
+							break
+						}
+					}
+				}
+
+				if !exists {
+					if ok2 && comparator != "" {
+						return platformclientv2.Createdecisiontablerowrequest{}, fmt.Errorf("no column found for schema_property_key '%s' with comparator '%s'", schemaPropertyKey, comparator)
+					} else {
+						return platformclientv2.Createdecisiontablerowrequest{}, fmt.Errorf("no column found for schema_property_key '%s'", schemaPropertyKey)
+					}
+				}
+
+				// Convert literal
+				if literal := extractLiteralFromList(outputMap["literal"]); literal != nil {
+					sdkLiteral, err := convertLiteralToSDK(literal)
+					if err != nil {
+						return platformclientv2.Createdecisiontablerowrequest{}, err
+					}
+					sdkOutputs[columnId] = platformclientv2.Decisiontablerowparametervalue{
+						Literal: sdkLiteral,
+					}
+				}
+			}
+		}
+		sdkRow.Outputs = &sdkOutputs
+	}
+
+	return sdkRow, nil
+}
+
+// convertSDKRowToTerraformWithMapping converts an SDK row to Terraform format using schema property key mapping
+// and sorts inputs/outputs by schema_property_key for consistent ordering
+func convertSDKRowToTerraformWithMapping(sdkRow platformclientv2.Decisiontablerow, inputMapping map[string]string, outputMapping map[string]string, inputColumnOrder []string, outputColumnOrder []string) map[string]interface{} {
+	terraformRow := map[string]interface{}{
+		"row_id":    sdkRow.Id,
+		"row_index": sdkRow.RowIndex,
+	}
+
+	// Convert inputs using schema property key mapping
+	if sdkRow.Inputs != nil {
+		var inputs []interface{}
+
+		// Create a map of columnId -> input data for easy lookup
+		inputData := make(map[string]map[string]interface{})
+		for columnId, paramValue := range *sdkRow.Inputs {
+			schemaPropertyKey, comparator := findSchemaPropertyKeyForColumnId(columnId, inputMapping)
+			if schemaPropertyKey != "" {
+				input := map[string]interface{}{
+					"column_id":           columnId,
+					"schema_property_key": schemaPropertyKey,
+				}
+				if comparator != "" {
+					input["comparator"] = comparator
+				}
+
+				// Only add literal if it exists in the API response
+				if paramValue.Literal != nil {
+					literalValue := convertLiteralToTerraform(paramValue.Literal)
+					input["literal"] = []interface{}{literalValue}
+				}
+
+				inputData[columnId] = input
+			}
+		}
+
+		// Sort inputs by column order to ensure consistent ordering
+		var sortedInputs []map[string]interface{}
+
+		// Create a map of schema key -> input data for easy lookup
+		schemaKeyToInput := make(map[string]map[string]interface{})
+		for _, input := range inputData {
+			schemaKey := input["schema_property_key"].(string)
+			comparator := ""
+			if comp, ok := input["comparator"].(string); ok {
+				comparator = comp
+			}
+
+			// Create composite key
+			var key string
+			if comparator != "" {
+				key = fmt.Sprintf("%s:%s", schemaKey, comparator)
+			} else {
+				key = schemaKey
+			}
+
+			schemaKeyToInput[key] = input
+		}
+
+		// Order inputs according to the column order
+		for _, schemaKey := range inputColumnOrder {
+			if input, exists := schemaKeyToInput[schemaKey]; exists {
+				sortedInputs = append(sortedInputs, input)
+			}
+		}
+
+		// Convert to interface{} slice
+		for _, input := range sortedInputs {
+			inputs = append(inputs, input)
+		}
+
+		terraformRow["inputs"] = inputs
+	}
+
+	// Convert outputs using schema property key mapping
+	if sdkRow.Outputs != nil {
+		var outputs []interface{}
+
+		// Create a map of columnId -> output data for easy lookup
+		outputData := make(map[string]map[string]interface{})
+		for columnId, paramValue := range *sdkRow.Outputs {
+			schemaPropertyKey, comparator := findSchemaPropertyKeyForColumnId(columnId, outputMapping)
+			if schemaPropertyKey != "" {
+				output := map[string]interface{}{
+					"column_id":           columnId,
+					"schema_property_key": schemaPropertyKey,
+				}
+				if comparator != "" {
+					output["comparator"] = comparator
+				}
+
+				// Only add literal if it exists in the API response
+				if paramValue.Literal != nil {
+					literalValue := convertLiteralToTerraform(paramValue.Literal)
+					output["literal"] = []interface{}{literalValue}
+				}
+
+				outputData[columnId] = output
+			}
+		}
+
+		// Sort outputs by column order to ensure consistent ordering
+		var sortedOutputs []map[string]interface{}
+
+		// Create a map of schema key -> output data for easy lookup
+		schemaKeyToOutput := make(map[string]map[string]interface{})
+		for _, output := range outputData {
+			schemaKey := output["schema_property_key"].(string)
+			comparator := ""
+			if comp, ok := output["comparator"].(string); ok {
+				comparator = comp
+			}
+
+			// Create composite key
+			var key string
+			if comparator != "" {
+				key = fmt.Sprintf("%s:%s", schemaKey, comparator)
+			} else {
+				key = schemaKey
+			}
+
+			schemaKeyToOutput[key] = output
+		}
+
+		// Order outputs according to the column order
+		for _, schemaKey := range outputColumnOrder {
+			if output, exists := schemaKeyToOutput[schemaKey]; exists {
+				sortedOutputs = append(sortedOutputs, output)
+			}
+		}
+
+		// Convert to interface{} slice
+		for _, output := range sortedOutputs {
+			outputs = append(outputs, output)
+		}
+
+		terraformRow["outputs"] = outputs
+	}
+
+	return terraformRow
+}
+
+// findSchemaPropertyKeyForColumnId finds the schema property key and comparator for a given column ID
+func findSchemaPropertyKeyForColumnId(columnId string, mapping map[string]string) (string, string) {
+	for key, id := range mapping {
+		if id == columnId {
+			// Parse the key to extract schema_property_key and comparator
+			if parts := strings.Split(key, ":"); len(parts) == 2 {
+				return parts[0], parts[1] // schema_property_key, comparator
+			} else {
+				return key, "" // schema_property_key only, no comparator
+			}
+		}
+	}
+	return "", ""
+}
+
+// extractLiteralFromList extracts the literal map from a Terraform list (MaxItems: 1)
+func extractLiteralFromList(literalList interface{}) map[string]interface{} {
+	if literalList == nil {
+		return nil
+	}
+
+	if list, ok := literalList.([]interface{}); ok && len(list) > 0 {
+		if literal, ok := list[0].(map[string]interface{}); ok {
+			return literal
+		}
+	}
+
+	return nil
+}
+
+// convertLiteralToSDK converts a Terraform literal to SDK format
+func convertLiteralToSDK(literal map[string]interface{}) (*platformclientv2.Literal, error) {
+	log.Printf("DEBUG: Input literal map: %+v", literal)
+	sdkLiteral := &platformclientv2.Literal{}
+
+	value, ok := literal["value"].(string)
+	if !ok || value == "" {
+		return nil, fmt.Errorf("no value found in literal")
+	}
+
+	valueType, ok := literal["type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("no type found in literal")
+	}
+
+	log.Printf("DEBUG: Converting literal - value: %s, type: %s", value, valueType)
+
+	switch valueType {
+	case "string":
+		sdkLiteral.SetField("VarString", &value)
+		log.Printf("DEBUG: Set VarString to: %s", value)
+	case "integer":
+		if intVal, err := strconv.Atoi(value); err == nil {
+			sdkLiteral.SetField("Integer", &intVal)
+			log.Printf("DEBUG: Set Integer to: %d", intVal)
+		} else {
+			return nil, fmt.Errorf("value '%s' is not a valid integer", value)
+		}
+	case "number":
+		if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+			sdkLiteral.SetField("Number", &floatVal)
+			log.Printf("DEBUG: Set Number to: %f", floatVal)
+		} else {
+			return nil, fmt.Errorf("value '%s' is not a valid number", value)
+		}
+	case "boolean":
+		if boolVal, err := strconv.ParseBool(value); err == nil {
+			sdkLiteral.SetField("Boolean", &boolVal)
+			log.Printf("DEBUG: Set Boolean to: %t", boolVal)
+		} else {
+			return nil, fmt.Errorf("value '%s' is not a valid boolean", value)
+		}
+	case "date":
+		if parsedDate, err := time.Parse(resourcedata.DateParseFormat, value); err == nil {
+			sdkLiteral.SetField("Date", &parsedDate)
+			log.Printf("DEBUG: Set Date to: %s", parsedDate.Format(resourcedata.DateParseFormat))
+		} else {
+			return nil, fmt.Errorf("value '%s' is not a valid date", value)
+		}
+	case "datetime":
+		if parsedDateTime, err := time.Parse("2006-01-02T15:04:05.000Z", value); err == nil {
+			sdkLiteral.SetField("Datetime", &parsedDateTime)
+			log.Printf("DEBUG: Set Datetime to: %s", parsedDateTime.Format("2006-01-02T15:04:05.000Z"))
+		} else {
+			return nil, fmt.Errorf("value '%s' is not a valid datetime", value)
+		}
+	case "special":
+		sdkLiteral.SetField("Special", &value)
+		log.Printf("DEBUG: Set Special to: %s", value)
+	default:
+		return nil, fmt.Errorf("unknown literal type: %s", valueType)
+	}
+
+	log.Printf("DEBUG: SetFieldNames after conversion: %+v", sdkLiteral.SetFieldNames)
+	return sdkLiteral, nil
+}
+
+// convertLiteralToTerraform converts an SDK literal to Terraform format
+func convertLiteralToTerraform(sdkLiteral *platformclientv2.Literal) map[string]interface{} {
+	literal := make(map[string]interface{})
+
+	if sdkLiteral.VarString != nil {
+		literal["value"] = *sdkLiteral.VarString
+		literal["type"] = "string"
+	} else if sdkLiteral.Integer != nil {
+		literal["value"] = strconv.Itoa(*sdkLiteral.Integer)
+		literal["type"] = "integer"
+	} else if sdkLiteral.Number != nil {
+		// Format number to preserve the original string representation
+		// Use 'f' format with 1 decimal place to ensure consistency with "999.0" format
+		literal["value"] = strconv.FormatFloat(*sdkLiteral.Number, 'f', 1, 64)
+		literal["type"] = "number"
+	} else if sdkLiteral.Date != nil {
+		literal["value"] = sdkLiteral.Date.Format(resourcedata.DateParseFormat)
+		literal["type"] = "date"
+	} else if sdkLiteral.Datetime != nil {
+		literal["value"] = sdkLiteral.Datetime.Format("2006-01-02T15:04:05.000Z")
+		literal["type"] = "datetime"
+	} else if sdkLiteral.Boolean != nil {
+		literal["value"] = strconv.FormatBool(*sdkLiteral.Boolean)
+		literal["type"] = "boolean"
+	} else if sdkLiteral.Special != nil {
+		literal["value"] = *sdkLiteral.Special
+		literal["type"] = "special"
+	}
+
+	return literal
+}
+
+// validateSchemaPropertyKeys validates that all schema property keys in rows exist in the column definitions
+func validateSchemaPropertyKeys(columns *platformclientv2.Decisiontablecolumns, rows []interface{}) error {
+	if columns == nil {
+		return fmt.Errorf("columns are required for validation")
+	}
+
+	// Build maps of available schema property keys and their comparators
+	inputKeys, outputKeys, err := buildSchemaKeyMaps(columns)
+	if err != nil {
+		return fmt.Errorf("failed to build schema key maps: %s", err)
+	}
+
+	// Validate each row
+	for i, row := range rows {
+		rowMap, ok := row.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("row %d is not a valid map", i+1)
+		}
+
+		// Validate inputs
+		if inputs, ok := rowMap["inputs"].([]interface{}); ok {
+			for j, input := range inputs {
+				inputMap, ok := input.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("row %d input %d is not a valid map", i+1, j+1)
+				}
+
+				if err := validateInputSchemaKey(inputMap, inputKeys, i+1, j+1); err != nil {
+					return err
+				}
+			}
+		}
+
+		// Validate outputs
+		if outputs, ok := rowMap["outputs"].([]interface{}); ok {
+			for j, output := range outputs {
+				outputMap, ok := output.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("row %d output %d is not a valid map", i+1, j+1)
+				}
+
+				if err := validateOutputSchemaKey(outputMap, outputKeys, i+1, j+1); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// buildSchemaKeyMaps builds maps of available schema property keys and their comparators
+func buildSchemaKeyMaps(columns *platformclientv2.Decisiontablecolumns) (map[string][]string, map[string][]string, error) {
+	inputKeys := make(map[string][]string)
+	outputKeys := make(map[string][]string)
+
+	// Build input column map
+	if columns.Inputs != nil {
+		for _, input := range *columns.Inputs {
+			if input.Expression == nil || input.Expression.Contractual == nil {
+				continue
+			}
+
+			schemaPropertyKey := *(*input.Expression.Contractual).SchemaPropertyKey
+			comparator := ""
+			if input.Expression.Comparator != nil {
+				comparator = *input.Expression.Comparator
+			}
+
+			if inputKeys[schemaPropertyKey] == nil {
+				inputKeys[schemaPropertyKey] = []string{}
+			}
+			inputKeys[schemaPropertyKey] = append(inputKeys[schemaPropertyKey], comparator)
+		}
+	}
+
+	// Build output column map
+	if columns.Outputs != nil {
+		for _, output := range *columns.Outputs {
+			if output.Value == nil {
+				continue
+			}
+
+			schemaPropertyKey := *output.Value.SchemaPropertyKey
+			// Outputs don't have comparators, so we use empty string
+			comparator := ""
+
+			if outputKeys[schemaPropertyKey] == nil {
+				outputKeys[schemaPropertyKey] = []string{}
+			}
+			outputKeys[schemaPropertyKey] = append(outputKeys[schemaPropertyKey], comparator)
+		}
+	}
+
+	return inputKeys, outputKeys, nil
+}
+
+// validateInputSchemaKey validates a single input schema property key
+func validateInputSchemaKey(inputMap map[string]interface{}, inputKeys map[string][]string, rowNum, inputNum int) error {
+	schemaPropertyKey, ok := inputMap["schema_property_key"].(string)
+	if !ok || schemaPropertyKey == "" {
+		return fmt.Errorf("row %d input %d: schema_property_key is required", rowNum, inputNum)
+	}
+
+	comparator, _ := inputMap["comparator"].(string)
+
+	// Check if schema property key exists
+	availableComparators, exists := inputKeys[schemaPropertyKey]
+	if !exists {
+		availableKeys := make([]string, 0, len(inputKeys))
+		for key := range inputKeys {
+			availableKeys = append(availableKeys, key)
+		}
+		return fmt.Errorf("row %d input %d: schema_property_key '%s' not found in input columns. Available keys: %v",
+			rowNum, inputNum, schemaPropertyKey, availableKeys)
+	}
+
+	// Check if comparator is valid for this schema property key
+	if len(availableComparators) > 1 {
+		// Multiple comparators available, user must specify one
+		if comparator == "" {
+			return fmt.Errorf("row %d input %d: comparator is required for schema_property_key '%s' (available: %v)",
+				rowNum, inputNum, schemaPropertyKey, availableComparators)
+		}
+
+		// Check if the specified comparator is valid
+		validComparator := false
+		for _, validComp := range availableComparators {
+			if validComp == comparator {
+				validComparator = true
+				break
+			}
+		}
+
+		if !validComparator {
+			return fmt.Errorf("row %d input %d: invalid comparator '%s' for schema_property_key '%s' (available: %v)",
+				rowNum, inputNum, comparator, schemaPropertyKey, availableComparators)
+		}
+	} else if len(availableComparators) == 1 && availableComparators[0] != "" {
+		// Only one comparator available, validate it matches
+		if comparator != "" && comparator != availableComparators[0] {
+			return fmt.Errorf("row %d input %d: invalid comparator '%s' for schema_property_key '%s' (expected: '%s')",
+				rowNum, inputNum, comparator, schemaPropertyKey, availableComparators[0])
+		}
+	}
+
+	return nil
+}
+
+// validateOutputSchemaKey validates a single output schema property key
+func validateOutputSchemaKey(outputMap map[string]interface{}, outputKeys map[string][]string, rowNum, outputNum int) error {
+	schemaPropertyKey, ok := outputMap["schema_property_key"].(string)
+	if !ok || schemaPropertyKey == "" {
+		return fmt.Errorf("row %d output %d: schema_property_key is required", rowNum, outputNum)
+	}
+
+	// Check if schema property key exists
+	_, exists := outputKeys[schemaPropertyKey]
+	if !exists {
+		availableKeys := make([]string, 0, len(outputKeys))
+		for key := range outputKeys {
+			availableKeys = append(availableKeys, key)
+		}
+		return fmt.Errorf("row %d output %d: schema_property_key '%s' not found in output columns. Available keys: %v",
+			rowNum, outputNum, schemaPropertyKey, availableKeys)
+	}
+
+	// Outputs don't have comparators, so we don't validate them
+	return nil
+}
+
+// convertTerraformColumnsToSDK converts Terraform column configuration to SDK format for validation
+func convertTerraformColumnsToSDK(columnsMap map[string]interface{}) (*platformclientv2.Decisiontablecolumns, error) {
+	sdkColumns := &platformclientv2.Decisiontablecolumns{}
+
+	// Convert input columns
+	if inputs, ok := columnsMap["inputs"].([]interface{}); ok {
+		sdkInputs := make([]platformclientv2.Decisiontableinputcolumn, 0, len(inputs))
+		for i, input := range inputs {
+			inputMap, ok := input.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("input column %d is not a valid map", i+1)
+			}
+
+			sdkInput := platformclientv2.Decisiontableinputcolumn{
+				Id: platformclientv2.String(fmt.Sprintf("input-column-%d", i+1)),
+			}
+
+			// Convert expression
+			if expression, ok := inputMap["expression"].([]interface{}); ok && len(expression) > 0 {
+				if exprMap, ok := expression[0].(map[string]interface{}); ok {
+					sdkExpr := &platformclientv2.Decisiontableinputcolumnexpression{}
+
+					// Convert contractual
+					if contractual, ok := exprMap["contractual"].([]interface{}); ok && len(contractual) > 0 {
+						if contractualMap, ok := contractual[0].(map[string]interface{}); ok {
+							if schemaPropertyKey, ok := contractualMap["schema_property_key"].(string); ok {
+								contractualObj := &platformclientv2.Contractual{
+									SchemaPropertyKey: &schemaPropertyKey,
+								}
+								sdkExpr.Contractual = &contractualObj
+							}
+						}
+					}
+
+					// Convert comparator
+					if comparator, ok := exprMap["comparator"].(string); ok {
+						sdkExpr.Comparator = &comparator
+					}
+
+					sdkInput.Expression = sdkExpr
+				}
+			}
+
+			sdkInputs = append(sdkInputs, sdkInput)
+		}
+		sdkColumns.Inputs = &sdkInputs
+	}
+
+	// Convert output columns
+	if outputs, ok := columnsMap["outputs"].([]interface{}); ok {
+		sdkOutputs := make([]platformclientv2.Decisiontableoutputcolumn, 0, len(outputs))
+		for i, output := range outputs {
+			outputMap, ok := output.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("output column %d is not a valid map", i+1)
+			}
+
+			sdkOutput := platformclientv2.Decisiontableoutputcolumn{
+				Id: platformclientv2.String(fmt.Sprintf("output-column-%d", i+1)),
+			}
+
+			// Convert value
+			if value, ok := outputMap["value"].([]interface{}); ok && len(value) > 0 {
+				if valueMap, ok := value[0].(map[string]interface{}); ok {
+					sdkValue := &platformclientv2.Outputvalue{}
+
+					if schemaPropertyKey, ok := valueMap["schema_property_key"].(string); ok {
+						sdkValue.SchemaPropertyKey = &schemaPropertyKey
+					}
+
+					// Handle nested properties if present
+					if properties, ok := valueMap["properties"].([]interface{}); ok {
+						sdkProperties, err := convertTerraformPropertiesToSDK(properties)
+						if err != nil {
+							return nil, fmt.Errorf("failed to convert properties for output column %d: %s", i+1, err)
+						}
+						sdkValue.Properties = sdkProperties
+					}
+
+					sdkOutput.Value = sdkValue
+				}
+			}
+
+			sdkOutputs = append(sdkOutputs, sdkOutput)
+		}
+		sdkColumns.Outputs = &sdkOutputs
+	}
+
+	return sdkColumns, nil
+}
+
+// convertTerraformPropertiesToSDK converts Terraform properties to SDK format recursively
+func convertTerraformPropertiesToSDK(properties []interface{}) (*[]platformclientv2.Outputvalue, error) {
+	if len(properties) == 0 {
+		return nil, nil
+	}
+
+	sdkProperties := make([]platformclientv2.Outputvalue, 0, len(properties))
+	for i, prop := range properties {
+		propMap, ok := prop.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("property %d is not a valid map", i+1)
+		}
+
+		sdkProp := platformclientv2.Outputvalue{}
+
+		if schemaPropertyKey, ok := propMap["schema_property_key"].(string); ok {
+			sdkProp.SchemaPropertyKey = &schemaPropertyKey
+		}
+
+		// Handle nested properties recursively
+		if nestedProps, ok := propMap["properties"].([]interface{}); ok && len(nestedProps) > 0 {
+			nestedSdkProps, err := convertTerraformPropertiesToSDK(nestedProps)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert nested properties: %s", err)
+			}
+			sdkProp.Properties = nestedSdkProps
+		}
+
+		sdkProperties = append(sdkProperties, sdkProp)
+	}
+
+	return &sdkProperties, nil
 }

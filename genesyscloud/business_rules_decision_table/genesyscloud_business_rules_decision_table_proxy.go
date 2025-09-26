@@ -26,7 +26,13 @@ type deleteBusinessRulesDecisionTableFunc func(ctx context.Context, p *BusinessR
 type getAllBusinessRulesDecisionTablesFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error)
 type getBusinessRulesDecisionTablesByNameFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (tables *[]platformclientv2.Decisiontable, retryable bool, resp *platformclientv2.APIResponse, err error)
 type getBusinessRulesDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error)
-type getSchemaByIDFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, schemaID string) (*platformclientv2.Dataschema, error)
+type createDecisionTableRowFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error)
+type publishDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error)
+type getDecisionTableRowsFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, pageNumber string, pageSize string) (*platformclientv2.Decisiontablerowlisting, *platformclientv2.APIResponse, error)
+type createDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error)
+type updateDecisionTableRowFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string, row *platformclientv2.Putdecisiontablerowrequest) (*platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error)
+type deleteDecisionTableRowFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string) (*platformclientv2.APIResponse, error)
+type deleteDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error)
 
 // BusinessRulesDecisionTableProxy contains all the methods that call genesys cloud APIs.
 type BusinessRulesDecisionTableProxy struct {
@@ -40,7 +46,13 @@ type BusinessRulesDecisionTableProxy struct {
 	getAllBusinessRulesDecisionTablesAttr    getAllBusinessRulesDecisionTablesFunc
 	getBusinessRulesDecisionTablesByNameAttr getBusinessRulesDecisionTablesByNameFunc
 	getBusinessRulesDecisionTableVersionAttr getBusinessRulesDecisionTableVersionFunc
-	getSchemaByIDAttr                        getSchemaByIDFunc
+	createDecisionTableRowAttr               createDecisionTableRowFunc
+	publishDecisionTableVersionAttr          publishDecisionTableVersionFunc
+	getDecisionTableRowsAttr                 getDecisionTableRowsFunc
+	createDecisionTableVersionAttr           createDecisionTableVersionFunc
+	updateDecisionTableRowAttr               updateDecisionTableRowFunc
+	deleteDecisionTableRowAttr               deleteDecisionTableRowFunc
+	deleteDecisionTableVersionAttr           deleteDecisionTableVersionFunc
 
 	BusinessRulesDecisionTableCache rc.CacheInterface[platformclientv2.Decisiontable]
 }
@@ -60,7 +72,13 @@ func newBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configura
 		getAllBusinessRulesDecisionTablesAttr:    getAllBusinessRulesDecisionTablesFn,
 		getBusinessRulesDecisionTablesByNameAttr: getBusinessRulesDecisionTablesByNameFn,
 		getBusinessRulesDecisionTableVersionAttr: getBusinessRulesDecisionTableVersionFn,
-		getSchemaByIDAttr:                        getSchemaByIDFn,
+		createDecisionTableRowAttr:               createDecisionTableRowFn,
+		publishDecisionTableVersionAttr:          publishDecisionTableVersionFn,
+		getDecisionTableRowsAttr:                 getDecisionTableRowsFn,
+		createDecisionTableVersionAttr:           createDecisionTableVersionFn,
+		updateDecisionTableRowAttr:               updateDecisionTableRowFn,
+		deleteDecisionTableRowAttr:               deleteDecisionTableRowFn,
+		deleteDecisionTableVersionAttr:           deleteDecisionTableVersionFn,
 
 		BusinessRulesDecisionTableCache: businessRulesDecisionTableCache,
 	}
@@ -106,9 +124,39 @@ func (p *BusinessRulesDecisionTableProxy) getBusinessRulesDecisionTableVersion(c
 	return p.getBusinessRulesDecisionTableVersionAttr(ctx, p, tableId, versionNumber)
 }
 
-// getSchemaByID retrieves a schema by ID for column type detection
-func (p *BusinessRulesDecisionTableProxy) getSchemaByID(ctx context.Context, schemaID string) (*platformclientv2.Dataschema, error) {
-	return p.getSchemaByIDAttr(ctx, p, schemaID)
+// createDecisionTableRow adds a single row to a decision table version
+func (p *BusinessRulesDecisionTableProxy) createDecisionTableRow(ctx context.Context, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	return p.createDecisionTableRowAttr(ctx, p, tableId, version, row)
+}
+
+// publishDecisionTableVersion publishes a decision table version
+func (p *BusinessRulesDecisionTableProxy) publishDecisionTableVersion(ctx context.Context, tableId string, version int) (*platformclientv2.APIResponse, error) {
+	return p.publishDecisionTableVersionAttr(ctx, p, tableId, version)
+}
+
+// getDecisionTableRows retrieves rows from a decision table version with pagination
+func (p *BusinessRulesDecisionTableProxy) getDecisionTableRows(ctx context.Context, tableId string, version int, pageNumber string, pageSize string) (*platformclientv2.Decisiontablerowlisting, *platformclientv2.APIResponse, error) {
+	return p.getDecisionTableRowsAttr(ctx, p, tableId, version, pageNumber, pageSize)
+}
+
+// createDecisionTableVersion creates a new version of a decision table
+func (p *BusinessRulesDecisionTableProxy) createDecisionTableVersion(ctx context.Context, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+	return p.createDecisionTableVersionAttr(ctx, p, tableId)
+}
+
+// updateDecisionTableRow updates an existing row in a decision table version
+func (p *BusinessRulesDecisionTableProxy) updateDecisionTableRow(ctx context.Context, tableId string, version int, rowId string, row *platformclientv2.Putdecisiontablerowrequest) (*platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error) {
+	return p.updateDecisionTableRowAttr(ctx, p, tableId, version, rowId, row)
+}
+
+// deleteDecisionTableRow deletes a row from a decision table version
+func (p *BusinessRulesDecisionTableProxy) deleteDecisionTableRow(ctx context.Context, tableId string, version int, rowId string) (*platformclientv2.APIResponse, error) {
+	return p.deleteDecisionTableRowAttr(ctx, p, tableId, version, rowId)
+}
+
+// deleteDecisionTableVersion deletes a decision table version
+func (p *BusinessRulesDecisionTableProxy) deleteDecisionTableVersion(ctx context.Context, tableId string, version int) (*platformclientv2.APIResponse, error) {
+	return p.deleteDecisionTableVersionAttr(ctx, p, tableId, version)
 }
 
 // Function implementations that make the actual API calls
@@ -157,8 +205,8 @@ func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDe
 	var response *platformclientv2.APIResponse
 
 	for {
-		// API signature: GetBusinessrulesDecisiontables(after string, pageSize string, divisionIds []string, name string)
-		tables, resp, err := p.businessRulesApi.GetBusinessrulesDecisiontables(after, pageSize, nil, name)
+		// API signature: GetBusinessrulesDecisiontablesSearch(after string, pageSize string, schemaId string, name string, withPublishedVersion bool, expand []string, ids []string)
+		tables, resp, err := p.businessRulesApi.GetBusinessrulesDecisiontablesSearch(after, pageSize, "", name, true, nil, nil)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get business rules decision tables: %v", err)
 		}
@@ -224,7 +272,34 @@ func getBusinessRulesDecisionTableVersionFn(ctx context.Context, p *BusinessRule
 	return p.businessRulesApi.GetBusinessrulesDecisiontableVersion(tableId, versionNumber)
 }
 
-func getSchemaByIDFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, schemaID string) (*platformclientv2.Dataschema, error) {
-	schema, _, err := p.businessRulesApi.GetBusinessrulesSchema(schemaID)
-	return schema, err
+func createDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	_, resp, err := p.businessRulesApi.PostBusinessrulesDecisiontableVersionRows(tableId, version, *row)
+	return resp, err
+}
+
+func publishDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {
+	_, resp, err := p.businessRulesApi.PutBusinessrulesDecisiontableVersionPublish(tableId, version)
+	return resp, err
+}
+
+func getDecisionTableRowsFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, pageNumber string, pageSize string) (*platformclientv2.Decisiontablerowlisting, *platformclientv2.APIResponse, error) {
+	return p.businessRulesApi.GetBusinessrulesDecisiontableVersionRows(tableId, version, pageNumber, pageSize)
+}
+
+func createDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+	return p.businessRulesApi.PostBusinessrulesDecisiontableVersions(tableId)
+}
+
+func updateDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string, row *platformclientv2.Putdecisiontablerowrequest) (*platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error) {
+	return p.businessRulesApi.PutBusinessrulesDecisiontableVersionRow(tableId, version, rowId, *row)
+}
+
+func deleteDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string) (*platformclientv2.APIResponse, error) {
+	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontableVersionRow(tableId, version, rowId)
+	return resp, err
+}
+
+func deleteDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {
+	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontableVersion(tableId, version)
+	return resp, err
 }
