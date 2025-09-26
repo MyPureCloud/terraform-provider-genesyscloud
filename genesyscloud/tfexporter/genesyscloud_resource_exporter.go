@@ -21,6 +21,7 @@ import (
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -101,6 +102,9 @@ type GenesysCloudResourceExporter struct {
 	filterList          *[]string
 	filterType          ExporterFilterType
 	flowResourcesList   []string
+
+	// resourceExportedForMrMo stores the schema.ResourceData object of the resource that was exported to Mr Mo
+	resourceExportedForMrMo *schema.ResourceData
 
 	meta                  interface{}
 	provider              *schema.Provider
@@ -1714,6 +1718,10 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 		// Resource no longer exists
 		tflog.Trace(g.ctx, fmt.Sprintf("Empty State for resource %s, state: %v", resID, state))
 		return nil, nil
+	}
+
+	if mrmo.IsActive() {
+		g.resourceExportedForMrMo = resource.Data(state)
 	}
 
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))

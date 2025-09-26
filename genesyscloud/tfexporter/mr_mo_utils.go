@@ -6,13 +6,19 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *resourceExporter.ResourceExporter, resourceId string) (_ util.JsonMap, diags diag.Diagnostics) {
+type MrMoExportResponse struct {
+	Config       util.JsonMap
+	ResourceData *schema.ResourceData
+}
+
+func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportResponse, diags diag.Diagnostics) {
 	exporters := make(map[string]*resourceExporter.ResourceExporter)
 	exporters[resType] = exporter
 	g.exporters = &exporters
@@ -53,8 +59,19 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *r
 		return nil, diags
 	}
 
-	return util.JsonMap{
-		"resource": g.resourceTypesMaps,
+	if generateOutputFiles {
+		// Step #7 Write the terraform state file along with either the HCL or JSON
+		diags = append(diags, g.generateOutputFiles()...)
+		if diags.HasError() {
+			return nil, diags
+		}
+	}
+
+	return &MrMoExportResponse{
+		Config: util.JsonMap{
+			"resource": g.resourceTypesMaps,
+		},
+		ResourceData: g.resourceExportedForMrMo,
 	}, diags
 }
 
