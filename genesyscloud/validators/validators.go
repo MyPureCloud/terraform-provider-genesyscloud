@@ -47,6 +47,9 @@ func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 func ValidatePoolPhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
+	if feature_toggles.BcpModeEnabledExists() {
+		return nil
+	}
 	if numberStr, ok := number.(string); ok {
 		utilE164 := util.NewUtilE164Service()
 		formattedNum, err := utilE164.FormatE164Number(numberStr)
