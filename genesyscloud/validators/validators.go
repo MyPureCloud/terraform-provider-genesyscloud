@@ -46,6 +46,21 @@ func ValidatePhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
 	return diag.Errorf("Phone number %v is not a string", number)
 }
 
+func ValidatePoolPhoneNumber(number interface{}, _ cty.Path) diag.Diagnostics {
+	if numberStr, ok := number.(string); ok {
+		utilE164 := util.NewUtilE164Service()
+		formattedNum, err := utilE164.FormatE164Number(numberStr)
+		if err != nil {
+			return err
+		}
+		if formattedNum != numberStr {
+			return diag.Errorf("Invalid format for E.164 number. Passed %s and expected: %s", numberStr, formattedNum)
+		}
+		return nil
+	}
+	return diag.Errorf("Phone number %v is not a string", number)
+}
+
 // ValidateRrule validates rrule attribute
 func ValidateRrule(rrule interface{}, _ cty.Path) diag.Diagnostics {
 	if input, ok := rrule.(string); ok {

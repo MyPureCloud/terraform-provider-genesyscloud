@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -520,5 +521,156 @@ func TestUnitFormatsAsCalculatedE164NumberError(t *testing.T) {
 		if val != testCase.expectedValue {
 			t.Errorf("expected value to be %s for number: %s, value: %s", testCase.expectedValue, testCase.number, val)
 		}
+	}
+}
+
+func TestUnitFormatE164Number(t *testing.T) {
+	type testCase struct {
+		number        string
+		expectedValue string
+		expectError   bool
+		errorMessage  string
+	}
+
+	countryCodeUS := func() string {
+		return "US"
+	}
+	var utilE164 = *NewUtilE164Service()
+	utilE164.GetDefaultCountryCodeFunc = countryCodeUS
+
+	testCases := &[]testCase{
+		// Valid E.164 numbers
+		{
+			number:        "+19193331234",
+			expectedValue: "+19193331234",
+			expectError:   false,
+		},
+		{
+			number:        "+442071231234",
+			expectedValue: "+442071231234",
+			expectError:   false,
+		},
+		{
+			number:        "+498912345678",
+			expectedValue: "+498912345678",
+			expectError:   false,
+		},
+		{
+			number:        "+912212345678",
+			expectedValue: "+912212345678",
+			expectError:   false,
+		},
+		{
+			number:        "+61312345678",
+			expectedValue: "+61312345678",
+			expectError:   false,
+		},
+		{
+			number:        "+81312345678",
+			expectedValue: "+81312345678",
+			expectError:   false,
+		},
+		{
+			number:        "+5511987654321",
+			expectedValue: "+5511987654321",
+			expectError:   false,
+		},
+		{
+			number:        "+3456783456987",
+			expectedValue: "+3456783456987",
+			expectError:   false,
+		},
+		{
+			number:        "+1 (919) 333-1234",
+			expectedValue: "+19193331234",
+			expectError:   false,
+		},
+		{
+			number:        "+44 20 7123 1234",
+			expectedValue: "+442071231234",
+			expectError:   false,
+		},
+		{
+			number:        "+49 (89) 1234-5678",
+			expectedValue: "+498912345678",
+			expectError:   false,
+		},
+		{
+			number:        "+91 (22) 1234-5678",
+			expectedValue: "+912212345678",
+			expectError:   false,
+		},
+		{
+			number:        "+61 3 1234 5678",
+			expectedValue: "+61312345678",
+			expectError:   false,
+		},
+		{
+			number:        "+81 3 1234 5678",
+			expectedValue: "+81312345678",
+			expectError:   false,
+		},
+		// Invalid numbers
+		{
+			number:       "19193331234",
+			expectError:  true,
+			errorMessage: "Phone number must start with a '+'",
+		},
+		{
+			number:       "",
+			expectError:  true,
+			errorMessage: "Phone number must start with a '+'",
+		},
+		{
+			number:       "+1abc1234567",
+			expectError:  true,
+			errorMessage: "Failed to format phone number",
+		},
+		{
+			number:       "1919+3331234",
+			expectError:  true,
+			errorMessage: "Phone number must start with a '+'",
+		},
+		{
+			number:       "+00",
+			expectError:  true,
+			errorMessage: "Failed to format phone number",
+		},
+		{
+			number:       "+1",
+			expectError:  true,
+			errorMessage: "Failed to format phone number",
+		},
+		{
+			number:       "+59",
+			expectError:  true,
+			errorMessage: "Failed to format phone number",
+		},
+		{
+			number:       "+34000000000000000001", // too long
+			expectError:  true,
+			errorMessage: "Failed to format phone number",
+		},
+	}
+
+	for _, testCase := range *testCases {
+		t.Run(testCase.number, func(t *testing.T) {
+			formattedNum, err := utilE164.FormatE164Number(testCase.number)
+
+			if testCase.expectError {
+				if err == nil {
+					t.Errorf("expected error for %s, got nil", testCase.number)
+				} else if testCase.errorMessage != "" && !strings.Contains(err[0].Summary, testCase.errorMessage) {
+					t.Errorf("expected error message containing '%s', got: %s", testCase.errorMessage, err[0].Summary)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("expected no error for %s, got: %v", testCase.number, err)
+				}
+				if formattedNum != testCase.expectedValue {
+					t.Errorf("number: %s, expected value: %s, actual value: %s", testCase.number, testCase.expectedValue, formattedNum)
+				}
+			}
+		})
 	}
 }
