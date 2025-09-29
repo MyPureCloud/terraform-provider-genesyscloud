@@ -49,14 +49,26 @@ type Datatable struct {
 func getAllArchitectDatatables(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
+	if clientConfig == nil {
+		return resources, diag.Errorf("clientConfig cannot be nil")
+	}
+
 	archProxy := getArchitectDatatableProxy(clientConfig)
+	if archProxy == nil {
+		return resources, diag.Errorf("Failed to create architect datatable proxy")
+	}
+
 	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
 	if err != nil {
 		return resources, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Error encountered while calling getAllArchitectDatattables error: %s", err), resp)
 	}
 
-	for _, table := range *tables {
-		resources[*table.Id] = &resourceExporter.ResourceMeta{BlockLabel: *table.Name}
+	if tables != nil {
+		for _, table := range *tables {
+			if table.Id != nil && table.Name != nil {
+				resources[*table.Id] = &resourceExporter.ResourceMeta{BlockLabel: *table.Name}
+			}
+		}
 	}
 
 	return resources, nil
@@ -67,8 +79,19 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	providerMeta, ok := meta.(*provider.ProviderMeta)
+	if !ok {
+		return diag.Errorf("meta parameter is not of type *provider.ProviderMeta")
+	}
+	if providerMeta.ClientConfig == nil {
+		return diag.Errorf("ClientConfig cannot be nil")
+	}
+
+	sdkConfig := providerMeta.ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
+	if archProxy == nil {
+		return diag.Errorf("Failed to create architect datatable proxy")
+	}
 
 	log.Printf("Creating architect_datatable %s", name)
 
@@ -102,8 +125,19 @@ func createArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	providerMeta, ok := meta.(*provider.ProviderMeta)
+	if !ok {
+		return diag.Errorf("meta parameter is not of type *provider.ProviderMeta")
+	}
+	if providerMeta.ClientConfig == nil {
+		return diag.Errorf("ClientConfig cannot be nil")
+	}
+
+	sdkConfig := providerMeta.ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
+	if archProxy == nil {
+		return diag.Errorf("Failed to create architect datatable proxy")
+	}
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectDatatable(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading architect_datatable %s", d.Id())
@@ -117,8 +151,13 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read architect_datatable %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		_ = d.Set("name", *datatable.Name)
-		_ = d.Set("division_id", *datatable.Division.Id)
+		if datatable.Name != nil {
+			_ = d.Set("name", *datatable.Name)
+		}
+
+		if datatable.Division != nil && datatable.Division.Id != nil {
+			_ = d.Set("division_id", *datatable.Division.Id)
+		}
 
 		if datatable.Description != nil {
 			_ = d.Set("description", *datatable.Description)
@@ -132,7 +171,11 @@ func readArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta in
 			_ = d.Set("properties", nil)
 		}
 
-		log.Printf("Read architect_datatable %s %s", d.Id(), *datatable.Name)
+		datatableName := "unknown"
+		if datatable.Name != nil {
+			datatableName = *datatable.Name
+		}
+		log.Printf("Read architect_datatable %s %s", d.Id(), datatableName)
 
 		return cc.CheckState(d)
 	})
@@ -144,8 +187,19 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 	divisionID := d.Get("division_id").(string)
 	description := d.Get("description").(string)
 
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	providerMeta, ok := meta.(*provider.ProviderMeta)
+	if !ok {
+		return diag.Errorf("meta parameter is not of type *provider.ProviderMeta")
+	}
+	if providerMeta.ClientConfig == nil {
+		return diag.Errorf("ClientConfig cannot be nil")
+	}
+
+	sdkConfig := providerMeta.ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
+	if archProxy == nil {
+		return diag.Errorf("Failed to create architect datatable proxy")
+	}
 
 	log.Printf("Updating architect_datatable %s", name)
 
@@ -180,8 +234,19 @@ func updateArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta 
 func deleteArchitectDatatable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	providerMeta, ok := meta.(*provider.ProviderMeta)
+	if !ok {
+		return diag.Errorf("meta parameter is not of type *provider.ProviderMeta")
+	}
+	if providerMeta.ClientConfig == nil {
+		return diag.Errorf("ClientConfig cannot be nil")
+	}
+
+	sdkConfig := providerMeta.ClientConfig
 	archProxy := getArchitectDatatableProxy(sdkConfig)
+	if archProxy == nil {
+		return diag.Errorf("Failed to create architect datatable proxy")
+	}
 
 	log.Printf("Deleting architect_datatable %s", name)
 	resp, err := archProxy.deleteArchitectDatatable(ctx, d.Id())

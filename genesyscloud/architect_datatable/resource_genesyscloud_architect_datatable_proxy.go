@@ -40,6 +40,10 @@ func newArchitectDatatableProxy(clientConfig *platformclientv2.Configuration) *a
 }
 
 func getArchitectDatatableProxy(clientConfig *platformclientv2.Configuration) *architectDatatableProxy {
+	if clientConfig == nil {
+		return nil
+	}
+
 	if internalProxy == nil {
 		internalProxy = newArchitectDatatableProxy(clientConfig)
 	}
