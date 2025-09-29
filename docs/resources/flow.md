@@ -56,8 +56,8 @@ resource "genesyscloud_flow" "inbound_call_flow" {
   }
 }
 resource "genesyscloud_flow" "outbound_call_flow" {
-  filepath          = "${local.working_dir.flow}/outboundcall_flow_example.yaml"
-  file_content_hash = filesha256("${local.working_dir.flow}/outboundcall_flow_example.yaml")
+  filepath = "${local.working_dir.flow}/outboundcall_flow_example.yaml"
+
   substitutions = {
     flow_name          = "An example outbound flow"
     home_division_name = data.genesyscloud_auth_division_home.home.name
@@ -76,6 +76,7 @@ resource "genesyscloud_flow" "outbound_call_flow" {
 
 ### Optional
 
+- `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
 - `force_unlock` (Boolean) Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.
 - `name` (String) Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file
@@ -85,6 +86,5 @@ resource "genesyscloud_flow" "outbound_call_flow" {
 
 ### Read-Only
 
-- `file_content_hash` (String) Hash value of the YAML file content. Used to detect changes.
 - `id` (String) The ID of this resource.
 

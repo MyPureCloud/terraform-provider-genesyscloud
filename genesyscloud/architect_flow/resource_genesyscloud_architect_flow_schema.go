@@ -93,6 +93,7 @@ Export block label: "{type}_{name}"`,
 				Description: "Hash value of the YAML file content. Used to detect changes.",
 				Type:        schema.TypeString,
 				Computed:    true,
+				Optional:    true,
 			},
 			"update_trigger_hash": {
 				Description: "A hash value used to trigger resource updates. When this value changes, the resource will be refreshed. Use this to hash external values such as environment variables, outputs from other resources, or timestamps that should initiate an update. By default, `file_content_hash` hashes the content of the file specified by the filepath field to trigger updates. This field can be used as an alternative for greater control over the update triggers.",
