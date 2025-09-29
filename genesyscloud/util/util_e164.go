@@ -46,7 +46,7 @@ func (m *UtilE164Service) IsValidE164Number(number string) (bool, diag.Diagnosti
 
 // Formats string as a valid E.164 international standard telephone format, parsing the number with
 // a default region that matches the default country code set on the GC organization.
-// Use this when the data comes from the user, but the number itself doesn't need to valid (e.g. for pool range)
+// Use this when the data comes from the user, but the number is allowed to exceed country specific length limits
 func (m *UtilE164Service) FormatE164Number(number string) (string, diag.Diagnostics) {
 	defaultRegion := m.GetDefaultCountryCodeFunc()
 	if defaultRegion == "" {
