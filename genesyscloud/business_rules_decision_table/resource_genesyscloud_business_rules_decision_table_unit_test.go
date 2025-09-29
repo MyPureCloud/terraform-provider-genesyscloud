@@ -2547,189 +2547,384 @@ func TestUnitResourceBusinessRulesDecisionTableAPIErrors(t *testing.T) {
 	})
 }
 
-func TestUnitResourceBusinessRulesDecisionTableValidation(t *testing.T) {
+// TestUnitConvertLiteralToSDKEmptyValues tests the convertLiteralToSDK function with empty values
+func TestUnitConvertLiteralToSDKEmptyValues(t *testing.T) {
+	// Test case 1: Both value and type are empty - should return nil (use default)
+	literal := map[string]interface{}{
+		"value": "",
+		"type":  "",
+	}
 
-	// Test data with valid columns
-	validColumns := &platformclientv2.Decisiontablecolumns{
-		Inputs: &[]platformclientv2.Decisiontableinputcolumn{
-			{
-				Id: platformclientv2.String("input-column-id-1"),
-				Expression: &platformclientv2.Decisiontableinputcolumnexpression{
-					Contractual: func() **platformclientv2.Contractual {
-						contractual := &platformclientv2.Contractual{
-							SchemaPropertyKey: platformclientv2.String("customer_type"),
-						}
-						return &contractual
-					}(),
-					Comparator: platformclientv2.String("Equals"),
+	result, err := convertLiteralToSDK(literal)
+	if err != nil {
+		t.Errorf("Expected no error for empty values, got: %v", err)
+	}
+	if result != nil {
+		t.Errorf("Expected nil result for empty values (use default), got: %v", result)
+	}
+
+	// Test case 2: Empty value but valid type - should return error
+	literal = map[string]interface{}{
+		"value": "",
+		"type":  "string",
+	}
+
+	result, err = convertLiteralToSDK(literal)
+	if err == nil {
+		t.Error("Expected error for empty value with valid type, got nil")
+	}
+	if result != nil {
+		t.Errorf("Expected nil result for invalid literal, got: %v", result)
+	}
+
+	// Test case 3: Valid value but empty type - should return error
+	literal = map[string]interface{}{
+		"value": "test",
+		"type":  "",
+	}
+
+	result, err = convertLiteralToSDK(literal)
+	if err == nil {
+		t.Error("Expected error for valid value with empty type, got nil")
+	}
+	if result != nil {
+		t.Errorf("Expected nil result for invalid literal, got: %v", result)
+	}
+
+	// Test case 4: Valid value and type - should return valid literal
+	literal = map[string]interface{}{
+		"value": "test",
+		"type":  "string",
+	}
+
+	result, err = convertLiteralToSDK(literal)
+	if err != nil {
+		t.Errorf("Expected no error for valid literal, got: %v", err)
+	}
+	if result == nil {
+		t.Error("Expected valid result for valid literal, got nil")
+	}
+	if result.VarString == nil || *result.VarString != "test" {
+		t.Errorf("Expected VarString to be 'test', got: %v", result.VarString)
+	}
+}
+
+// TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals tests row conversion with empty literals
+func TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals(t *testing.T) {
+
+	// Test row with mix of regular and empty literals
+	rowMap := map[string]interface{}{
+		"inputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"value": "VIP",
+						"type":  "string",
+					},
+				},
+			},
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{}, // Empty literal block
 				},
 			},
 		},
-		Outputs: &[]platformclientv2.Decisiontableoutputcolumn{
-			{
-				Id: platformclientv2.String("output-column-id-1"),
-				Value: &platformclientv2.Outputvalue{
-					SchemaPropertyKey: platformclientv2.String("transfer_queue"),
+		"outputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"value": "Premium Queue",
+						"type":  "string",
+					},
+				},
+			},
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{}, // Empty literal block
 				},
 			},
 		},
 	}
 
-	t.Run("Valid schema property keys should pass validation", func(t *testing.T) {
-		validRows := []interface{}{
+	// Test with positional mapping
+	inputColumnIds := []string{"input-col-1", "input-col-2"}
+	outputColumnIds := []string{"output-col-1", "output-col-2"}
+	result, err := convertTerraformRowToSDKPositional(rowMap, inputColumnIds, outputColumnIds)
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+
+	// Check that only inputs with literals are included
+	if result.Inputs == nil {
+		t.Error("Expected inputs to be present")
+	} else {
+		// Should have only 1 input (the one with literal)
+		if len(*result.Inputs) != 1 {
+			t.Errorf("Expected 1 input (only with literal), got %d", len(*result.Inputs))
+		}
+		if _, exists := (*result.Inputs)["input-col-1"]; !exists {
+			t.Error("Expected input-col-1 to be present")
+		}
+		if _, exists := (*result.Inputs)["input-col-2"]; exists {
+			t.Error("Expected input-col-2 to NOT be present (uses default)")
+		}
+		// Check that input-col-1 has a literal
+		if (*result.Inputs)["input-col-1"].Literal == nil {
+			t.Error("Expected input-col-1 to have a literal")
+		}
+	}
+
+	if result.Outputs == nil {
+		t.Error("Expected outputs to be present")
+	} else {
+		// Should have only 1 output (the one with literal)
+		if len(*result.Outputs) != 1 {
+			t.Errorf("Expected 1 output (only with literal), got %d", len(*result.Outputs))
+		}
+		if _, exists := (*result.Outputs)["output-col-1"]; !exists {
+			t.Error("Expected output-col-1 to be present")
+		}
+		if _, exists := (*result.Outputs)["output-col-2"]; exists {
+			t.Error("Expected output-col-2 to NOT be present (uses default)")
+		}
+		// Check that output-col-1 has a literal
+		if (*result.Outputs)["output-col-1"].Literal == nil {
+			t.Error("Expected output-col-1 to have a literal")
+		}
+	}
+}
+
+// TestUnitConvertSDKRowToTerraformPositionalEmptyLiterals tests row conversion with empty literals for export
+func TestUnitConvertSDKRowToTerraformPositionalEmptyLiterals(t *testing.T) {
+	inputColumnIds := []string{"input-col-1", "input-col-2"}
+	outputColumnIds := []string{"output-col-1", "output-col-2"}
+
+	// Test SDK row with mix of explicit and missing literals (missing = use defaults)
+	sdkRow := platformclientv2.Decisiontablerow{
+		Id:       stringPtr("row-1"),
+		RowIndex: intPtr(0),
+		Inputs: &map[string]platformclientv2.Decisiontablerowparametervalue{
+			// Only input-col-1 has a literal, input-col-2 uses default
+			"input-col-1": {
+				Literal: &platformclientv2.Literal{
+					VarString: stringPtr("VIP"),
+				},
+			},
+		},
+		Outputs: &map[string]platformclientv2.Decisiontablerowparametervalue{
+			// Only output-col-1 has a literal, output-col-2 uses default
+			"output-col-1": {
+				Literal: &platformclientv2.Literal{
+					VarString: stringPtr("Premium Queue"),
+				},
+			},
+		},
+	}
+
+	result := convertSDKRowToTerraformSimple(sdkRow, inputColumnIds, outputColumnIds)
+
+	// Check that all columns are included in the result
+	if result["inputs"] == nil {
+		t.Error("Expected inputs to be present")
+	} else {
+		inputs := result["inputs"].([]interface{})
+		if len(inputs) != 2 {
+			t.Errorf("Expected 2 inputs, got %d", len(inputs))
+		}
+
+		// Check first input (has literal)
+		input1 := inputs[0].(map[string]interface{})
+		if input1["column_id"] != "input-col-1" {
+			t.Errorf("Expected column_id to be 'input-col-1', got %s", input1["column_id"])
+		}
+		if input1["literal"] == nil {
+			t.Error("Expected literal to be present for input-col-1")
+		} else {
+			literal1 := input1["literal"].([]interface{})[0].(map[string]interface{})
+			if literal1["value"] != "VIP" || literal1["type"] != "string" {
+				t.Errorf("Expected literal value='VIP', type='string', got value='%s', type='%s'", literal1["value"], literal1["type"])
+			}
+		}
+
+		// Check second input (uses default - should have empty string values)
+		input2 := inputs[1].(map[string]interface{})
+		if input2["column_id"] != "input-col-2" {
+			t.Errorf("Expected column_id to be 'input-col-2', got %s", input2["column_id"])
+		}
+		if input2["literal"] == nil {
+			t.Error("Expected literal to be present for input-col-2 (empty for default)")
+		} else {
+			literal2 := input2["literal"].([]interface{})[0].(map[string]interface{})
+			// Empty literal should have empty string values
+			if literal2["value"] != "" || literal2["type"] != "" {
+				t.Errorf("Expected empty string values for default, got: value=%s, type=%s", literal2["value"], literal2["type"])
+			}
+		}
+	}
+
+	if result["outputs"] == nil {
+		t.Error("Expected outputs to be present")
+	} else {
+		outputs := result["outputs"].([]interface{})
+		if len(outputs) != 2 {
+			t.Errorf("Expected 2 outputs, got %d", len(outputs))
+		}
+
+		// Check first output (has literal)
+		output1 := outputs[0].(map[string]interface{})
+		if output1["column_id"] != "output-col-1" {
+			t.Errorf("Expected column_id to be 'output-col-1', got %s", output1["column_id"])
+		}
+		if output1["literal"] == nil {
+			t.Error("Expected literal to be present for output-col-1")
+		} else {
+			literal1 := output1["literal"].([]interface{})[0].(map[string]interface{})
+			if literal1["value"] != "Premium Queue" || literal1["type"] != "string" {
+				t.Errorf("Expected literal value='Premium Queue', type='string', got value='%s', type='%s'", literal1["value"], literal1["type"])
+			}
+		}
+
+		// Check second output (uses default - should have empty string values)
+		output2 := outputs[1].(map[string]interface{})
+		if output2["column_id"] != "output-col-2" {
+			t.Errorf("Expected column_id to be 'output-col-2', got %s", output2["column_id"])
+		}
+		if output2["literal"] == nil {
+			t.Error("Expected literal to be present for output-col-2 (empty for default)")
+		} else {
+			literal2 := output2["literal"].([]interface{})[0].(map[string]interface{})
+			// Empty literal should have empty string values
+			if literal2["value"] != "" || literal2["type"] != "" {
+				t.Errorf("Expected empty string values for default, got: value=%s, type=%s", literal2["value"], literal2["type"])
+			}
+		}
+	}
+}
+
+// TestUnitConvertTerraformRowToSDKPositionalAllDefaults tests validation that at least one input and output must have explicit values
+func TestUnitConvertTerraformRowToSDKPositionalAllDefaults(t *testing.T) {
+	// Test row with all inputs using defaults (should fail)
+	rowMapAllDefaults := map[string]interface{}{
+		"inputs": []interface{}{
 			map[string]interface{}{
-				"inputs": []interface{}{
-					map[string]interface{}{
-						"schema_property_key": "customer_type",
-						"comparator":          "Equals",
-						"literal": []interface{}{
-							map[string]interface{}{
-								"value": "VIP",
-								"type":  "string",
-							},
-						},
-					},
-				},
-				"outputs": []interface{}{
-					map[string]interface{}{
-						"schema_property_key": "transfer_queue",
-						"literal": []interface{}{
-							map[string]interface{}{
-								"value": "queue-123",
-								"type":  "string",
-							},
-						},
-					},
+				"literal": []interface{}{
+					map[string]interface{}{}, // Empty literal block
 				},
 			},
-		}
-
-		err := validateSchemaPropertyKeys(validColumns, validRows)
-		assert.NoError(t, err, "Valid schema property keys should pass validation")
-	})
-
-	t.Run("Invalid input schema property key should fail validation", func(t *testing.T) {
-		invalidRows := []interface{}{
 			map[string]interface{}{
-				"inputs": []interface{}{
+				"literal": []interface{}{
 					map[string]interface{}{
-						"schema_property_key": "INVALID_KEY",
-						"comparator":          "Equals",
-						"literal": []interface{}{
-							map[string]interface{}{
-								"value": "VIP",
-								"type":  "string",
-							},
-						},
+						"value": "",
+						"type":  "",
 					},
 				},
 			},
-		}
-
-		err := validateSchemaPropertyKeys(validColumns, invalidRows)
-		assert.Error(t, err, "Invalid schema property key should fail validation")
-		assert.Contains(t, err.Error(), "schema_property_key 'INVALID_KEY' not found in input columns")
-		assert.Contains(t, err.Error(), "Available keys: [customer_type]")
-	})
-
-	t.Run("Invalid output schema property key should fail validation", func(t *testing.T) {
-		invalidRows := []interface{}{
+		},
+		"outputs": []interface{}{
 			map[string]interface{}{
-				"outputs": []interface{}{
-					map[string]interface{}{
-						"schema_property_key": "INVALID_OUTPUT",
-						"literal": []interface{}{
-							map[string]interface{}{
-								"value": "queue-123",
-								"type":  "string",
-							},
-						},
-					},
+				"literal": []interface{}{
+					map[string]interface{}{}, // Empty literal block
 				},
 			},
-		}
+		},
+	}
 
-		err := validateSchemaPropertyKeys(validColumns, invalidRows)
-		assert.Error(t, err, "Invalid output schema property key should fail validation")
-		assert.Contains(t, err.Error(), "schema_property_key 'INVALID_OUTPUT' not found in output columns")
-		assert.Contains(t, err.Error(), "Available keys: [transfer_queue]")
-	})
+	inputColumnIds := []string{"input-col-1", "input-col-2"}
+	outputColumnIds := []string{"output-col-1"}
 
-	t.Run("Missing comparator for ambiguous schema property key should fail validation", func(t *testing.T) {
-		// Create columns with multiple comparators for the same schema property key
-		ambiguousColumns := &platformclientv2.Decisiontablecolumns{
-			Inputs: &[]platformclientv2.Decisiontableinputcolumn{
-				{
-					Id: platformclientv2.String("input-column-id-1"),
-					Expression: &platformclientv2.Decisiontableinputcolumnexpression{
-						Contractual: func() **platformclientv2.Contractual {
-							contractual := &platformclientv2.Contractual{
-								SchemaPropertyKey: platformclientv2.String("customer_type"),
-							}
-							return &contractual
-						}(),
-						Comparator: platformclientv2.String("Equals"),
-					},
-				},
-				{
-					Id: platformclientv2.String("input-column-id-2"),
-					Expression: &platformclientv2.Decisiontableinputcolumnexpression{
-						Contractual: func() **platformclientv2.Contractual {
-							contractual := &platformclientv2.Contractual{
-								SchemaPropertyKey: platformclientv2.String("customer_type"),
-							}
-							return &contractual
-						}(),
-						Comparator: platformclientv2.String("NotEquals"),
-					},
-				},
-			},
-		}
+	_, err := convertTerraformRowToSDKPositional(rowMapAllDefaults, inputColumnIds, outputColumnIds)
+	if err == nil {
+		t.Error("Expected error for all inputs using defaults, but got none")
+	}
+	if !strings.Contains(err.Error(), "at least one input must have an explicit value") {
+		t.Errorf("Expected error about explicit input values, got: %v", err)
+	}
 
-		ambiguousRows := []interface{}{
+	// Test row with all outputs using defaults (should fail)
+	rowMapAllOutputDefaults := map[string]interface{}{
+		"inputs": []interface{}{
 			map[string]interface{}{
-				"inputs": []interface{}{
+				"literal": []interface{}{
 					map[string]interface{}{
-						"schema_property_key": "customer_type",
-						// No comparator specified - should fail
-						"literal": []interface{}{
-							map[string]interface{}{
-								"value": "VIP",
-								"type":  "string",
-							},
-						},
+						"value": "VIP",
+						"type":  "string",
 					},
 				},
 			},
-		}
-
-		err := validateSchemaPropertyKeys(ambiguousColumns, ambiguousRows)
-		assert.Error(t, err, "Missing comparator for ambiguous schema property key should fail validation")
-		assert.Contains(t, err.Error(), "comparator is required for schema_property_key 'customer_type'")
-		assert.Contains(t, err.Error(), "available: [Equals NotEquals]")
-	})
-
-	t.Run("Invalid comparator should fail validation", func(t *testing.T) {
-		invalidComparatorRows := []interface{}{
+		},
+		"outputs": []interface{}{
 			map[string]interface{}{
-				"inputs": []interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{}, // Empty literal block
+				},
+			},
+			map[string]interface{}{
+				"literal": []interface{}{
 					map[string]interface{}{
-						"schema_property_key": "customer_type",
-						"comparator":          "INVALID_COMPARATOR",
-						"literal": []interface{}{
-							map[string]interface{}{
-								"value": "VIP",
-								"type":  "string",
-							},
-						},
+						"value": "",
+						"type":  "",
 					},
 				},
 			},
-		}
+		},
+	}
 
-		err := validateSchemaPropertyKeys(validColumns, invalidComparatorRows)
-		assert.Error(t, err, "Invalid comparator should fail validation")
-		assert.Contains(t, err.Error(), "invalid comparator 'INVALID_COMPARATOR' for schema_property_key 'customer_type'")
-		assert.Contains(t, err.Error(), "expected: 'Equals'")
-	})
+	_, err = convertTerraformRowToSDKPositional(rowMapAllOutputDefaults, inputColumnIds, outputColumnIds)
+	if err == nil {
+		t.Error("Expected error for all outputs using defaults, but got none")
+	}
+	if !strings.Contains(err.Error(), "at least one output must have an explicit value") {
+		t.Errorf("Expected error about explicit output values, got: %v", err)
+	}
+
+	// Test row with at least one explicit input and output (should succeed)
+	rowMapValid := map[string]interface{}{
+		"inputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"value": "VIP",
+						"type":  "string",
+					},
+				},
+			},
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{}, // Empty literal block (default)
+				},
+			},
+		},
+		"outputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"value": "VIP Queue",
+						"type":  "string",
+					},
+				},
+			},
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"value": "",
+						"type":  "",
+					},
+				},
+			},
+		},
+	}
+
+	_, err = convertTerraformRowToSDKPositional(rowMapValid, inputColumnIds, outputColumnIds)
+	if err != nil {
+		t.Errorf("Expected no error for valid row with explicit values, got: %v", err)
+	}
+}
+
+// Helper functions for unit tests
+func stringPtr(s string) *string {
+	return &s
+}
+
+func intPtr(i int) *int {
+	return &i
 }

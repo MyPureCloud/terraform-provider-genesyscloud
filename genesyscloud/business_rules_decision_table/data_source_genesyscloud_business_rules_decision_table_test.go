@@ -59,7 +59,7 @@ func TestAccDataSourceBusinessRulesDecisionTable(t *testing.T) {
 						"data.genesyscloud_auth_division_home.home.id",
 						"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
 						generateColumns(queueResourceLabel),
-						generateBasicRows(queueResourceLabel),
+						generateRows(queueResourceLabel),
 					) +
 					generateBusinessRulesDecisionTableDataSource(
 						tableDataSourceLabel,

@@ -107,6 +107,17 @@ func generateColumns(queueResourceLabel string) string {
 				comparator = "Equals"
 			}
 		}
+		inputs {
+			defaults_to {
+				special = "Wildcard"
+			}
+			expression {
+				contractual {
+					schema_property_key = "optional_string_empty_type_value"
+				}
+				comparator = "Equals"
+			}
+		}
 		outputs {
 			defaults_to {
 				value = genesyscloud_routing_queue.%s.id
@@ -127,6 +138,14 @@ func generateColumns(queueResourceLabel string) string {
 			}
 			value {
 				schema_property_key = "skill"
+			}
+		}
+		outputs {
+			defaults_to {
+				special = "Null"
+			}
+			value {
+				schema_property_key = "optional_string_empty_block"
 			}
 		}
 	}`, queueResourceLabel)
@@ -164,114 +183,71 @@ func businessRulesDecisionTableFtIsEnabled() (bool, *platformclientv2.APIRespons
 	return decisionTableResp.StatusCode == 200 && queueResp.StatusCode == 200, decisionTableResp, queueResp
 }
 
-// generateBasicRows generates basic rows for the original test (simpler than the comprehensive test)
-func generateBasicRows(queueResourceLabel string) string {
-	return `rows {
-		inputs {
-			schema_property_key = "customer_type"
-			comparator = "Equals"
-			literal {
-				value = "VIP"
-				type  = "string"
-			}
-		}
-		inputs {
-			schema_property_key = "priority_level"
-			comparator = "GreaterThan"
-			literal {
-				value = "5"
-				type  = "integer"
-			}
-		}
-		outputs {
-			schema_property_key = "transfer_queue"
-			literal {
-				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
-				type  = "string"
-			}
-		}
-		outputs {
-			schema_property_key = "skill"
-			literal {
-				value = "VIP Support"
-				type  = "string"
-			}
-		}
-	}`
-}
-
 // generateRows generates rows using all literal types
 func generateRows(queueResourceLabel string) string {
 	return `rows {
 		inputs {
-			schema_property_key = "customer_type"
-			comparator = "Equals"
 			literal {
 				value = "VIP"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "customer_name"
-			comparator = "Equals"
 			literal {
 				value = "John Doe"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "priority_level"
-			comparator = "GreaterThan"
 			literal {
 				value = "5"
 				type  = "integer"
 			}
 		}
 		inputs {
-			schema_property_key = "score"
-			comparator = "GreaterThan"
 			literal {
 				value = "85.5"
 				type  = "number"
 			}
 		}
 		inputs {
-			schema_property_key = "created_date"
-			comparator = "Equals"
 			literal {
 				value = "2023-01-15"
 				type  = "date"
 			}
 		}
 		inputs {
-			schema_property_key = "last_updated"
-			comparator = "Equals"
 			literal {
 				value = "2023-01-15T10:30:00.000Z"
 				type  = "datetime"
 			}
 		}
 		inputs {
-			schema_property_key = "is_active"
-			comparator = "Equals"
 			literal {
 				value = "true"
 				type  = "boolean"
 			}
 		}
+		inputs {
+			literal {
+				value = ""
+				type  = ""
+			}
+		}
 		outputs {
-			schema_property_key = "transfer_queue"
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
 				type  = "string"
 			}
 		}
 		outputs {
-			schema_property_key = "skill"
 			literal {
 				value = "Premium Support"
 				type  = "string"
 			}
+		}
+		outputs {
+			literal {}
 		}
 	}`
 }
@@ -280,73 +256,69 @@ func generateRows(queueResourceLabel string) string {
 func generateRowsWithSpecials(queueResourceLabel string) string {
 	return `rows {
 		inputs {
-			schema_property_key = "customer_type"
-			comparator = "Equals"
 			literal {
 				value = "Standard"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "customer_name"
-			comparator = "Equals"
 			literal {
 				value = "Jane Smith"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "priority_level"
-			comparator = "GreaterThan"
 			literal {
 				value = "Wildcard"
 				type  = "special"
 			}
 		}
 		inputs {
-			schema_property_key = "score"
-			comparator = "GreaterThan"
 			literal {
 				value = "Wildcard"
 				type  = "special"
 			}
 		}
 		inputs {
-			schema_property_key = "created_date"
-			comparator = "Equals"
 			literal {
 				value = "CurrentTime"
 				type  = "special"
 			}
 		}
 		inputs {
-			schema_property_key = "last_updated"
-			comparator = "Equals"
 			literal {
 				value = "CurrentTime"
 				type  = "special"
 			}
 		}
 		inputs {
-			schema_property_key = "is_active"
-			comparator = "Equals"
+			literal {
+				value = "Null"
+				type  = "special"
+			}
+		}
+		inputs {
 			literal {
 				value = "Null"
 				type  = "special"
 			}
 		}
 		outputs {
-			schema_property_key = "transfer_queue"
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
 				type  = "string"
 			}
 		}
 		outputs {
-			schema_property_key = "skill"
 			literal {
 				value = "Standard Support"
 				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "Null"
+				type  = "special"
 			}
 		}
 	}`
@@ -356,144 +328,136 @@ func generateRowsWithSpecials(queueResourceLabel string) string {
 func generateUpdatedRows(queueResourceLabel string) string {
 	return `rows {
 		inputs {
-			schema_property_key = "customer_type"
-			comparator = "Equals"
 			literal {
 				value = "Premium"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "customer_name"
-			comparator = "Equals"
 			literal {
 				value = "Alice Johnson"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "priority_level"
-			comparator = "GreaterThan"
 			literal {
 				value = "8"
 				type  = "integer"
 			}
 		}
 		inputs {
-			schema_property_key = "score"
-			comparator = "GreaterThan"
 			literal {
 				value = "92.3"
 				type  = "number"
 			}
 		}
 		inputs {
-			schema_property_key = "created_date"
-			comparator = "Equals"
 			literal {
 				value = "2023-02-20"
 				type  = "date"
 			}
 		}
 		inputs {
-			schema_property_key = "last_updated"
-			comparator = "Equals"
 			literal {
 				value = "2023-02-20T14:45:30.000Z"
 				type  = "datetime"
 			}
 		}
 		inputs {
-			schema_property_key = "is_active"
-			comparator = "Equals"
 			literal {
 				value = "false"
 				type  = "boolean"
 			}
 		}
+		inputs {
+			literal {
+				value = "this was defaulted to empty value and type first row"
+				type  = "string"
+			}
+		}
 		outputs {
-			schema_property_key = "transfer_queue"
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
 				type  = "string"
 			}
 		}
 		outputs {
-			schema_property_key = "skill"
 			literal {
 				value = "Updated Support"
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "this was defaulted to empty block first row"
 				type  = "string"
 			}
 		}
 	}
 	rows {
 		inputs {
-			schema_property_key = "customer_type"
-			comparator = "Equals"
 			literal {
 				value = "VIP"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "customer_name"
-			comparator = "Equals"
 			literal {
 				value = "Bob Wilson"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "priority_level"
-			comparator = "GreaterThan"
 			literal {
 				value = "3"
 				type  = "integer"
 			}
 		}
 		inputs {
-			schema_property_key = "score"
-			comparator = "GreaterThan"
 			literal {
 				value = "67.8"
 				type  = "number"
 			}
 		}
 		inputs {
-			schema_property_key = "created_date"
-			comparator = "Equals"
 			literal {
 				value = "2023-03-10"
 				type  = "date"
 			}
 		}
 		inputs {
-			schema_property_key = "last_updated"
-			comparator = "Equals"
 			literal {
 				value = "2023-03-10T09:15:45.000Z"
 				type  = "datetime"
 			}
 		}
 		inputs {
-			schema_property_key = "is_active"
-			comparator = "Equals"
 			literal {
 				value = "true"
 				type  = "boolean"
 			}
 		}
+		inputs {
+			literal {
+				value = "this was defaulted to empty value and type second row"
+				type  = "string"
+			}
+		}
 		outputs {
-			schema_property_key = "transfer_queue"
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
 				type  = "string"
 			}
 		}
 		outputs {
-			schema_property_key = "skill"
 			literal {
 				value = "Standard Support"
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "this was defaulted to empty block second row"
 				type  = "string"
 			}
 		}
@@ -504,23 +468,18 @@ func generateUpdatedRows(queueResourceLabel string) string {
 func generateRowsWithInvalidLiteral(queueResourceLabel, literalType, invalidValue string) string {
 	return `rows {
 		inputs {
-			schema_property_key = "customer_type"
-			comparator = "Equals"
 			literal {
 				value = "VIP"
 				type  = "string"
 			}
 		}
 		inputs {
-			schema_property_key = "priority_level"
-			comparator = "GreaterThan"
 			literal {
 				value = "` + invalidValue + `"
 				type  = "` + literalType + `"
 			}
 		}
 		outputs {
-			schema_property_key = "transfer_queue"
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
 				type  = "string"
@@ -529,80 +488,136 @@ func generateRowsWithInvalidLiteral(queueResourceLabel, literalType, invalidValu
 	}`
 }
 
-// generateColumnsWithDefaults generates columns with defaults for testing default behavior
-func generateColumnsWithDefaults(queueResourceLabel string) string {
-	return fmt.Sprintf(`columns {
-		inputs {
-			defaults_to {
-				special = "Wildcard"
-			}
-			expression {
-				contractual {
-					schema_property_key = "customer_type"
+func generateBusinessRulesSchemaResource(resourceLabel, name, description string) string {
+	return fmt.Sprintf(`resource "genesyscloud_business_rules_schema" "%s" {
+		enabled = true
+		name = "%s"
+		description = "%s"
+		properties = jsonencode({
+			"customer_type" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/enum"
+					}
+				],
+				"title" : "customer_type",
+				"description" : "Customer type for routing decisions",
+				"enum" : ["VIP", "Standard", "Premium"],
+				"_enumProperties" : {
+					"VIP" : {
+						"title" : "VIP Customer"
+					},
+					"Standard" : {
+						"title" : "Standard Customer"
+					},
+					"Premium" : {
+						"title" : "Premium Customer"
+					}
 				}
-				comparator = "Equals"
+			},
+			"customer_name" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/string"
+					}
+				],
+				"title" : "customer_name",
+				"description" : "Customer name",
+				"minLength" : 1,
+				"maxLength" : 100
+			},
+			"priority_level" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/integer"
+					}
+				],
+				"title" : "priority_level",
+				"description" : "Priority level (1-10)",
+				"minimum" : 1,
+				"maximum" : 10
+			},
+			"score" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/number"
+					}
+				],
+				"title" : "score",
+				"description" : "Customer score",
+				"minimum" : 0.0,
+				"maximum" : 100.0
+			},
+			"created_date" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/date"
+					}
+				],
+				"title" : "created_date",
+				"description" : "Customer creation date"
+			},
+			"last_updated" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/datetime"
+					}
+				],
+				"title" : "last_updated",
+				"description" : "Last update timestamp"
+			},
+			"is_active" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/boolean"
+					}
+				],
+				"title" : "is_active",
+				"description" : "Whether customer is active"
+			},
+			"transfer_queue" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/businessRulesQueue"
+					}
+				],
+				"title" : "transfer_queue",
+				"description" : "Transfer queue for routing"
+			},
+			"skill" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/string"
+					}
+				],
+				"title" : "skill",
+				"description" : "Skill for routing",
+				"minLength" : 1,
+				"maxLength" : 100
+			},
+			"optional_string_empty_block" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/string"
+					}
+				],
+				"title" : "optional_string_empty_block",
+				"description" : "Used to test optional empty literal block in rows",
+				"minLength" : 1,
+				"maxLength" : 100
+			},
+			"optional_string_empty_type_value" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/string"
+					}
+				],
+				"title" : "optional_string_empty_type_value",
+				"description" : "Used to test literal block in rows with empty type and value",
+				"minLength" : 1,
+				"maxLength" : 100
 			}
-		}
-		inputs {
-			defaults_to {
-				special = "Wildcard"
-			}
-			expression {
-				contractual {
-					schema_property_key = "priority_level"
-				}
-				comparator = "GreaterThan"
-			}
-		}
-		inputs {
-			defaults_to {
-				special = "Wildcard"
-			}
-			expression {
-				contractual {
-					schema_property_key = "score"
-				}
-				comparator = "GreaterThan"
-			}
-		}
-		outputs {
-			defaults_to {
-				value = "Premium Support"
-			}
-			value {
-				schema_property_key = "skill"
-			}
-		}
-	}`)
-}
-
-// generateRowsWithDefaults generates rows that only specify some inputs/outputs, letting others use defaults
-func generateRowsWithDefaults(queueResourceLabel string) string {
-	return `rows {
-		inputs {
-			schema_property_key = "customer_type"
-			comparator = "Equals"
-			literal {
-				value = "VIP"
-				type  = "string"
-			}
-		}
-		inputs {
-			schema_property_key = "priority_level"
-			comparator = "GreaterThan"
-			literal {
-				value = "5"
-				type  = "integer"
-			}
-		}
-		// Note: score input is omitted - will use default (Wildcard)
-		outputs {
-			schema_property_key = "skill"
-			literal {
-				value = "Premium Support"
-				type  = "string"
-			}
-		}
-		// Note: skill output is omitted - will use default (Premium Support)
-	}`
+		})
+	}
+	`, resourceLabel, name, description)
 }
