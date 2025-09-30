@@ -615,7 +615,7 @@ func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputCol
 		"row_index": sdkRow.RowIndex,
 	}
 
-	// Convert inputs using positional mapping
+	// Convert inputs using column order mapping
 	if sdkRow.Inputs != nil {
 		var inputs []interface{}
 
@@ -651,7 +651,7 @@ func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputCol
 		terraformRow["inputs"] = inputs
 	}
 
-	// Convert outputs using positional mapping
+	// Convert outputs using column order mapping
 	if sdkRow.Outputs != nil {
 		var outputs []interface{}
 
@@ -694,7 +694,7 @@ func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputCol
 func convertTerraformRowToSDK(rowMap map[string]interface{}, inputColumnIds []string, outputColumnIds []string) (platformclientv2.Createdecisiontablerowrequest, error) {
 	sdkRow := platformclientv2.Createdecisiontablerowrequest{}
 
-	// Convert inputs using positional mapping
+	// Convert inputs using column order mapping
 	if inputs, ok := rowMap["inputs"].([]interface{}); ok {
 		sdkInputs := make(map[string]platformclientv2.Decisiontablerowparametervalue)
 		hasExplicitInput := false
@@ -732,7 +732,7 @@ func convertTerraformRowToSDK(rowMap map[string]interface{}, inputColumnIds []st
 		}
 	}
 
-	// Convert outputs using positional mapping
+	// Convert outputs using column order mapping
 	if outputs, ok := rowMap["outputs"].([]interface{}); ok {
 		sdkOutputs := make(map[string]platformclientv2.Decisiontablerowparametervalue)
 		hasExplicitOutput := false

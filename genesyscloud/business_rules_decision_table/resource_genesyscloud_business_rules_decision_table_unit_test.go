@@ -2707,7 +2707,7 @@ func TestUnitConvertTerraformRowToSDKEmptyLiterals(t *testing.T) {
 		},
 	}
 
-	// Test with positional mapping
+	// Test with column order mapping
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1", "output-col-2"}
 	result, err := convertTerraformRowToSDK(rowMap, inputColumnIds, outputColumnIds)

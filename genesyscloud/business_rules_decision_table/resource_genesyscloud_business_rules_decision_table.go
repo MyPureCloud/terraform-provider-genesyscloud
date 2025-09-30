@@ -217,14 +217,14 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 		return fmt.Errorf("failed to get table version for column mapping: %s", err)
 	}
 
-	// Get column IDs in order for positional mapping
+	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
-	// Convert and add each row individually using positional mapping
+	// Convert and add each row individually using column order mapping
 	for i, row := range terraformRows {
 		rowMap := row.(map[string]interface{})
 
-		// Convert Terraform row to SDK format using positional mapping
+		// Convert Terraform row to SDK format using column order mapping
 		sdkRow, err := convertTerraformRowToSDK(rowMap, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
@@ -282,10 +282,10 @@ func getDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTable
 		pageNum++
 	}
 
-	// Get column IDs in order for positional mapping
+	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
-	// Convert SDK rows to Terraform format using positional mapping
+	// Convert SDK rows to Terraform format using column order mapping
 	terraformRows := make([]interface{}, len(allRows))
 	for i, row := range allRows {
 		// For now, use a simple conversion that includes all columns
@@ -569,7 +569,7 @@ func compareRows(oldRows []interface{}, newRows []interface{}) RowChange {
 
 // rowsEqual compares two row maps to see if they're equal
 func rowsEqual(row1, row2 map[string]interface{}) bool {
-	// Compare inputs - these are arrays in positional mapping
+	// Compare inputs - these are arrays in column order mapping
 	inputs1, ok1 := row1["inputs"].([]interface{})
 	inputs2, ok2 := row2["inputs"].([]interface{})
 	if !ok1 || !ok2 || !arraysEqual(inputs1, inputs2) {
@@ -577,7 +577,7 @@ func rowsEqual(row1, row2 map[string]interface{}) bool {
 		return false
 	}
 
-	// Compare outputs - these are arrays in positional mapping
+	// Compare outputs - these are arrays in column order mapping
 	outputs1, ok1 := row1["outputs"].([]interface{})
 	outputs2, ok2 := row2["outputs"].([]interface{})
 	if !ok1 || !ok2 || !arraysEqual(outputs1, outputs2) {
@@ -649,7 +649,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		return fmt.Errorf("failed to get table version for column mapping: %s", err)
 	}
 
-	// Get column IDs in order for positional mapping
+	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
 	// Track successfully added rows for potential rollback
@@ -670,7 +670,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		rowId := row["row_id"].(string)
 		log.Printf("Updating row %s", rowId)
 
-		// Convert to SDK format using positional mapping (same as creation)
+		// Convert to SDK format using column order mapping (same as creation)
 		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row for update: %s", err)
@@ -702,7 +702,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		}
 	}
 
-	// Add new rows using positional mapping
+	// Add new rows using column order mapping
 	for i, row := range changes.adds {
 		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
 		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
