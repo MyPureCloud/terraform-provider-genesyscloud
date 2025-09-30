@@ -430,6 +430,15 @@ func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 			"division_id": {RefType: "genesyscloud_auth_division"},
 			"schema_id":   {RefType: "genesyscloud_business_rules_schema"},
 		},
+		ExcludedAttributes: []string{
+			"version",
+			"columns.inputs.id",
+			"columns.outputs.id",
+			"rows.inputs.column_id",
+			"rows.outputs.column_id",
+			"rows.row_id",
+			"rows.row_index",
+		},
 		// Note: To export routing queue resources that are referenced in decision tables,
 		// include "genesyscloud_routing_queue" in the export filter resources.
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
