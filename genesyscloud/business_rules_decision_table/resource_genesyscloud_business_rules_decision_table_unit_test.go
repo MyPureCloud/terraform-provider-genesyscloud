@@ -55,7 +55,7 @@ func TestResourceBusinessRulesDecisionTable(t *testing.T) {
 	}
 
 	// Test computed fields
-	computedFields := []string{"version", "status"}
+	computedFields := []string{"version"}
 	for _, fieldName := range computedFields {
 		field := resource.Schema[fieldName]
 		if field == nil {
@@ -89,7 +89,6 @@ func TestResourceBusinessRulesDecisionTable(t *testing.T) {
 		"columns":     schema.TypeList,
 		"rows":        schema.TypeList,
 		"version":     schema.TypeInt,
-		"status":      schema.TypeString,
 	}
 
 	for fieldName, expectedType := range expectedTypes {
@@ -2609,6 +2608,68 @@ func TestUnitConvertLiteralToSDKEmptyValues(t *testing.T) {
 	}
 }
 
+// TestUnitConvertLiteralToSDKNumberPrecision tests number formatting with high precision
+func TestUnitConvertLiteralToSDKNumberPrecision(t *testing.T) {
+	// Test case 1: High precision number - should preserve up to 10 decimal places
+	literal := map[string]interface{}{
+		"value": "3.141592653589793",
+		"type":  "number",
+	}
+
+	result, err := convertLiteralToSDK(literal)
+	if err != nil {
+		t.Errorf("Expected no error for high precision number, got: %v", err)
+	}
+	if result == nil {
+		t.Error("Expected valid result for high precision number, got nil")
+	}
+
+	// Verify the result has the correct type and value
+	if result.Number == nil {
+		t.Error("Expected Number field to be set for number type")
+	}
+	if *result.Number != 3.141592653589793 {
+		t.Errorf("Expected Number to be 3.141592653589793, got: %v", *result.Number)
+	}
+
+	// Test case 2: Test the reverse conversion (SDK to Terraform) to verify formatting
+	sdkLiteral := &platformclientv2.Literal{
+		Number: float64Ptr(3.141592653589793),
+	}
+
+	terraformLiteral := convertLiteralToTerraform(sdkLiteral)
+	if terraformLiteral["value"] != "3.141592653589793" {
+		t.Errorf("Expected formatted value to be '3.141592653589793' (no zero-padding), got: %v", terraformLiteral["value"])
+	}
+	if terraformLiteral["type"] != "number" {
+		t.Errorf("Expected type to be 'number', got: %v", terraformLiteral["type"])
+	}
+
+	// Test case 3: Test with a number that has exactly 10 decimal places
+	literal = map[string]interface{}{
+		"value": "1.2345678901",
+		"type":  "number",
+	}
+
+	result, err = convertLiteralToSDK(literal)
+	if err != nil {
+		t.Errorf("Expected no error for 10 decimal place number, got: %v", err)
+	}
+	if result == nil {
+		t.Error("Expected valid result for 10 decimal place number, got nil")
+	}
+
+	// Test the reverse conversion
+	sdkLiteral = &platformclientv2.Literal{
+		Number: float64Ptr(1.2345678901),
+	}
+
+	terraformLiteral = convertLiteralToTerraform(sdkLiteral)
+	if terraformLiteral["value"] != "1.2345678901" {
+		t.Errorf("Expected formatted value to be '1.2345678901', got: %v", terraformLiteral["value"])
+	}
+}
+
 // TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals tests row conversion with empty literals
 func TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals(t *testing.T) {
 
@@ -2927,4 +2988,8 @@ func stringPtr(s string) *string {
 
 func intPtr(i int) *int {
 	return &i
+}
+
+func float64Ptr(f float64) *float64 {
+	return &f
 }

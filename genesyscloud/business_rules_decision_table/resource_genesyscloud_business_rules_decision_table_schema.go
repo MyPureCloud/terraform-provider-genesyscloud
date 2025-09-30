@@ -2,6 +2,7 @@ package business_rules_decision_table
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,16 +33,18 @@ func generateContractualSchema(depth int) map[string]*schema.Schema {
 	if depth <= 0 {
 		return map[string]*schema.Schema{
 			"schema_property_key": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The contract schema property key that describes the input value of this column.",
 			},
 		}
 	}
 
 	return map[string]*schema.Schema{
 		"schema_property_key": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			Description: "The contract schema property key that describes the input value of this column.",
 		},
 		"contractual": {
 			Type:     schema.TypeList,
@@ -50,6 +53,7 @@ func generateContractualSchema(depth int) map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: generateContractualSchema(depth - 1),
 			},
+			Description: "The nested contractual definition that is defined by a contract schema, if any.",
 		},
 	}
 }
@@ -66,16 +70,18 @@ func generatePropertiesSchema(depth int) map[string]*schema.Schema {
 	if depth <= 0 {
 		return map[string]*schema.Schema{
 			"schema_property_key": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The contract schema property key that describes the nested property value.",
 			},
 		}
 	}
 
 	return map[string]*schema.Schema{
 		"schema_property_key": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			Description: "The contract schema property key that describes the nested property value.",
 		},
 		"properties": {
 			Type:     schema.TypeList,
@@ -83,6 +89,7 @@ func generatePropertiesSchema(depth int) map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: generatePropertiesSchema(depth - 1),
 			},
+			Description: "The nested properties that are defined by a contract schema, if any.",
 		},
 	}
 }
@@ -92,10 +99,11 @@ func expressionSchemaFunc() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"contractual": {
-				Type:     schema.TypeList,
-				Required: true,
-				MaxItems: 1,
-				Elem:     &schema.Resource{Schema: contractualSchemaFunc().Schema},
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
+				Elem:        &schema.Resource{Schema: contractualSchemaFunc().Schema},
+				Description: "A value that is defined by a contract schema and used to form the left side of a logical condition.",
 			},
 			"comparator": {
 				Type:     schema.TypeString,
@@ -104,6 +112,7 @@ func expressionSchemaFunc() *schema.Resource {
 					"Equals", "NotEquals", "GreaterThan", "GreaterThanOrEquals", "LessThan", "LessThanOrEquals",
 					"StartsWith", "NotStartsWith", "EndsWith", "NotEndsWith", "Contains", "NotContains",
 				}, false),
+				Description: "A comparator used to join the left and right sides of a logical condition. Valid values: Equals, NotEquals, GreaterThan, GreaterThanOrEquals, LessThan, LessThanOrEquals, StartsWith, NotStartsWith, EndsWith, NotEndsWith, Contains, NotContains.",
 			},
 		},
 	}
@@ -114,13 +123,15 @@ func valueSchemaFunc() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"schema_property_key": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The contract schema property key that describes the output value of this column",
 			},
 			"properties": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem:     &schema.Resource{Schema: propertiesSchemaFunc().Schema},
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Resource{Schema: propertiesSchemaFunc().Schema},
+				Description: "The nested properties that are defined by a contract schema, if any.",
 			},
 		},
 	}
@@ -133,13 +144,13 @@ func defaultsToSchemaFunc() *schema.Resource {
 			"value": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Single string value. For queue columns, can be a UUID.",
+				Description: "A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.",
 			},
 
 			"special": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "Special enum value: Wildcard, Null, Empty, CurrentTime.",
+				Description:  "A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.",
 				ValidateFunc: validation.StringInSlice([]string{"Wildcard", "Null", "Empty", "CurrentTime"}, false),
 			},
 		},
@@ -153,7 +164,7 @@ func inputColumnSchemaFunc() *schema.Resource {
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The ID of the input column",
+				Description: "The ID of the column",
 			},
 			"defaults_to": {
 				Type:        schema.TypeList,
@@ -163,10 +174,11 @@ func inputColumnSchemaFunc() *schema.Resource {
 				Description: "Default value configuration. Only one of 'value' or 'special' should be set.",
 			},
 			"expression": {
-				Type:     schema.TypeList,
-				Required: true,
-				MaxItems: 1,
-				Elem:     &schema.Resource{Schema: expressionSchemaFunc().Schema},
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
+				Elem:        &schema.Resource{Schema: expressionSchemaFunc().Schema},
+				Description: "The input column condition expression, comprising the left side and comparator of a logical condition in the form of left|comparator|right, where each row of the decision table will provide the right side to form a complete condition.",
 			},
 		},
 	}
@@ -179,7 +191,7 @@ func outputColumnSchemaFunc() *schema.Resource {
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The ID of the output column",
+				Description: "The ID of the column",
 			},
 			"defaults_to": {
 				Type:        schema.TypeList,
@@ -189,10 +201,11 @@ func outputColumnSchemaFunc() *schema.Resource {
 				Description: "Default value configuration. Only one of 'value' or 'special' should be set.",
 			},
 			"value": {
-				Type:     schema.TypeList,
-				Required: true,
-				MaxItems: 1,
-				Elem:     &schema.Resource{Schema: valueSchemaFunc().Schema},
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
+				Elem:        &schema.Resource{Schema: valueSchemaFunc().Schema},
+				Description: "The output data of this column that will be provided by each row.",
 			},
 		},
 	}
@@ -203,14 +216,14 @@ func columnsSchemaFunc() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"inputs": {
-				Description: "Input columns for the decision table",
+				Description: "The input columns for the decision table",
 				Required:    true,
 				Type:        schema.TypeList,
 				MinItems:    1,
 				Elem:        &schema.Resource{Schema: inputColumnSchemaFunc().Schema},
 			},
 			"outputs": {
-				Description: "Output columns for the decision table",
+				Description: "The output columns for the decision table",
 				Required:    true,
 				Type:        schema.TypeList,
 				MinItems:    1,
@@ -235,31 +248,32 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description:  "The name of the decision table",
+				Description:  "The decision table name.",
 				Required:     true,
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringLenBetween(1, 100),
 			},
 
 			"description": {
-				Description: "The decision table description",
+				Description: "The decision table description.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+
 			"division_id": {
-				Description: "The ID of the division the decision table belongs to",
+				Description: "The ID of the division the decision table belongs to.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"schema_id": {
-				Description: "The ID of the rules schema used by the decision table",
+				Description: "The ID of the rules schema used by the decision table.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 
 			"columns": {
-				Description: "Columns for the decision table. Cannot be modified after creation - requires resource recreation.",
+				Description: "Columns for the decision table. Cannot be modified after creation - requires resource recreation.\n\nNote: The order of input and output columns defines the positional mapping for row values. Row inputs/outputs must be provided in the same order as their corresponding columns.",
 				Required:    true,
 				ForceNew:    true,
 				Type:        schema.TypeList,
@@ -268,7 +282,7 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 			},
 
 			"rows": {
-				Description: "Decision table rows containing input conditions and output actions. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table.",
+				Description: "Decision table rows containing input conditions and output results. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table.\n\nIMPORTANT: Row inputs and outputs must follow the same positional order as defined in the columns. The first input/output corresponds to the first column, second to second column, etc.",
 				Type:        schema.TypeList,
 				Required:    true,
 				MinItems:    1,
@@ -276,18 +290,11 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 			},
 
 			"version": {
-				Description: "Current version number of the decision table.",
+				Description: "Current version number of this published decision table.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
-
-			"status": {
-				Description: "Current status of the decision table (Draft, Published, etc.).",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
 		},
-		// CustomizeDiff: validateLiteralTypes, // Disabled - let API handle validation
 	}
 }
 
@@ -327,6 +334,22 @@ func QueueIdResolver(configMap map[string]interface{}, exporters map[string]*res
 func literalValueSchemaFunc() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"type": {
+				Description: `The type of the literal value. Set to empty string "" to use column default.
+
+								Supported types:
+								- string: A string value
+								- integer: A positive or negative whole number, including zero
+								- number: A positive or negative decimal number, including zero
+								- date: A date value, must be in the format of yyyy-MM-dd, e.g. 2024-09-23. Dates are represented as an ISO-8601 string
+								- datetime: A date time value, must be in the format of yyyy-MM-dd'T'HH:mm:ss.SSSZ, e.g. 2024-10-02T01:01:01.111Z. Date time is represented as an ISO-8601 string
+								- special: A special value enum, such as Wildcard, Null, etc. Valid values: Wildcard, Null, Empty, CurrentTime
+								- boolean: A boolean value
+								- "": An empty string "" to use column default`,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "date", "datetime", "boolean", "special", ""}, false),
+			},
 			"value": {
 				Description: `The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
 								Set to empty string "" to use column default.
@@ -334,21 +357,36 @@ func literalValueSchemaFunc() *schema.Resource {
 								Examples:
 								- String: "VIP", "Hello World"
 								- Integer: "42", "0", "-10"
-								- Number: "3.14", "0.0", "-1.5"
+								- Number: "3.14", "0.0", "-1.5" (formatting differences like "1.0" vs "1" are automatically handled)
 								- Boolean: "true", "false"
 								- Date: "2023-01-01"
 								- DateTime: "2023-01-01T12:00:00.000Z"
 								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
 								- Default: Empty string "" uses column default`,
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Default:          "",
+				DiffSuppressFunc: suppressNumberFormattingDiff,
 			},
-			"type": {
-				Description:  "The type of the literal value. Omit to use column default.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "date", "datetime", "boolean", "special", ""}, false),
+		},
+	}
+}
+
+// Schema for row parameters (used in both inputs and outputs)
+func rowParameterSchemaFunc() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"column_id": {
+				Description: "The unique identifier of the column. Auto-generated by the system.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"literal": {
+				Description: "The literal value for this parameter. Use an empty block {} or empty values (value = \"\", type = \"\") to use column default.",
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
+				Elem:        literalValueSchemaFunc(),
 			},
 		},
 	}
@@ -364,51 +402,21 @@ func rowSchemaFunc() *schema.Resource {
 				Computed:    true,
 			},
 			"row_index": {
-				Description: "The position of this row in the decision table (1-based). Auto-generated by the system.",
+				Description: "The absolute index of this row in the decision table, starting at 1. Auto-generated by the system.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 			"inputs": {
-				Description: "Input values (conditions) for this decision row. Values are matched to columns by position (index). Missing values will use column defaults.",
+				Description: "Input values (conditions) for this decision row. Values are matched to input columns by position (index) - first input corresponds to first input column, second to second, etc. Missing values will use column defaults provided by the decision table columns defaults_to field.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"column_id": {
-							Description: "The unique identifier of the input column. Auto-generated by the system.",
-							Type:        schema.TypeString,
-							Computed:    true,
-						},
-						"literal": {
-							Description: "The literal value for this input parameter. Use an empty block {} or empty values (value = \"\", type = \"\") to use column default.",
-							Type:        schema.TypeList,
-							Required:    true,
-							MaxItems:    1,
-							Elem:        literalValueSchemaFunc(),
-						},
-					},
-				},
+				Elem:        rowParameterSchemaFunc(),
 			},
 			"outputs": {
-				Description: "Output values (actions) for this decision row. Values are matched to columns by position (index). Missing values will use column defaults.",
+				Description: "Output values (results) for this decision row. Values are matched to output columns by position (index) - first output corresponds to first output column, second to second, etc. Missing values will use column defaults provided by the decision table columns defaults_to field.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"column_id": {
-							Description: "The unique identifier of the output column. Auto-generated by the system.",
-							Type:        schema.TypeString,
-							Computed:    true,
-						},
-						"literal": {
-							Description: "The literal value for this output parameter. Use an empty block {} or empty values (value = \"\", type = \"\") to use column default.",
-							Type:        schema.TypeList,
-							Required:    true,
-							MaxItems:    1,
-							Elem:        literalValueSchemaFunc(),
-						},
-					},
-				},
+				Elem:        rowParameterSchemaFunc(),
 			},
 		},
 	}
@@ -440,15 +448,47 @@ func DataSourceBusinessRulesDecisionTable() *schema.Resource {
 		ReadContext: provider.ReadWithPooledClient(dataSourceBusinessRulesDecisionTableRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: `business rules decision table name`,
+				Description: "The decision table name.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 			"version": {
-				Description: `The published version of the decision table.`,
+				Description: "The published version of the decision table.",
 				Type:        schema.TypeInt,
 				Computed:    true,
 			},
 		},
 	}
+}
+
+// suppressNumberFormattingDiff suppresses diffs when the only difference is number formatting
+// (e.g., "1.0" vs "1", "1.00" vs "1", etc.) for number type literals.
+// This allows users to write "1.0" in their Terraform config while the API returns "1",
+// without causing unnecessary plan diffs.
+func suppressNumberFormattingDiff(k, old, new string, d *schema.ResourceData) bool {
+	// Get the type field from the same resource path
+	typeKey := strings.Replace(k, ".value", ".type", 1)
+	literalType := d.Get(typeKey).(string)
+
+	// Only suppress diffs for number type literals
+	if literalType != "number" {
+		return false
+	}
+
+	// If either value is empty, don't suppress (let normal diff handling work)
+	if old == "" || new == "" {
+		return false
+	}
+
+	// Parse both values as floats
+	oldFloat, oldErr := strconv.ParseFloat(old, 64)
+	newFloat, newErr := strconv.ParseFloat(new, 64)
+
+	// If either parsing fails, don't suppress (let normal diff handling work)
+	if oldErr != nil || newErr != nil {
+		return false
+	}
+
+	// Suppress diff if the numeric values are equal
+	return oldFloat == newFloat
 }

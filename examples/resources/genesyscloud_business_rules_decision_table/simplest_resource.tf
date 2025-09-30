@@ -7,6 +7,9 @@ resource "genesyscloud_business_rules_decision_table" "simplest_decision_table" 
 
   columns {
     inputs {
+      defaults_to {
+        value = "option_2"
+      }
       expression {
         contractual {
           schema_property_key = "custom_attribute_enum"
@@ -16,6 +19,9 @@ resource "genesyscloud_business_rules_decision_table" "simplest_decision_table" 
     }
 
     outputs {
+      defaults_to {
+        value = "anything"
+      }
       value {
         schema_property_key = "custom_attribute_string"
       }
@@ -24,14 +30,12 @@ resource "genesyscloud_business_rules_decision_table" "simplest_decision_table" 
 
   rows {
     inputs {
-      schema_property_key = "custom_attribute_enum"
       literal {
         value = "option_1"
         type  = "string"
       }
     }
     outputs {
-      schema_property_key = "custom_attribute_string"
       literal {
         value = "high"
         type  = "string"

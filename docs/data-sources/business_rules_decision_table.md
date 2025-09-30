@@ -23,7 +23,7 @@ data "genesyscloud_business_rules_decision_table" "example_business_rules_decisi
 
 ### Required
 
-- `name` (String) business rules decision table name
+- `name` (String) The decision table name.
 
 ### Read-Only
 

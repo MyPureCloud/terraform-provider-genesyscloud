@@ -7,6 +7,9 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
   columns {
     inputs {
       expression {
+        defaults_to {
+          value = "anything"
+        }
         contractual {
           schema_property_key = "custom_attribute_string"
         }
@@ -15,6 +18,9 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
     }
 
     inputs {
+      defaults_to {
+        special = "Wildcard"
+      }
       expression {
         contractual {
           schema_property_key = "custom_attribute_enum"
@@ -85,13 +91,37 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
     inputs {
       defaults_to {
-        special = "Null"
+        special = "CurrentTime"
       }
       expression {
         contractual {
           schema_property_key = "custom_attribute_datetime"
         }
         comparator = "NotEquals"
+      }
+    }
+
+    inputs {
+      defaults_to {
+        special = "Wildcard"
+      }
+      expression {
+        contractual {
+          schema_property_key = "custom_attribute_for_empty_literal_block"
+        }
+        comparator = "Equals"
+      }
+    }
+
+    inputs {
+      defaults_to {
+        special = "Wildcard"
+      }
+      expression {
+        contractual {
+          schema_property_key = "custom_attribute_for_empty_literal_value_type"
+        }
+        comparator = "Equals"
       }
     }
 
@@ -138,6 +168,9 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
     }
 
     outputs {
+      defaults_to {
+        special = "Null"
+      }
       value {
         schema_property_key = "custom_attribute_enum"
       }
@@ -146,86 +179,83 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
   rows {
     inputs {
-      schema_property_key = "custom_attribute_string"
       literal {
         value = "John Doe"
         type  = "string"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_enum"
       literal {
         value = "option_1"
         type  = "string"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_integer"
       literal {
         value = "85"
         type  = "integer"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_number"
       literal {
         value = "15000.0"
         type  = "number"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_boolean"
       literal {
         value = "true"
         type  = "boolean"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_date"
-      comparator          = "GreaterThanOrEquals"
       literal {
         value = "2023-01-01"
         type  = "date"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_date"
-      comparator          = "LessThanOrEquals"
       literal {
         value = "2023-12-31"
         type  = "date"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_datetime"
       literal {
         value = "2023-12-01T10:30:00.000Z"
         type  = "datetime"
       }
     }
+
     inputs {
-      schema_property_key = "custom_attribute_queue"
+      literal {} // Empty literal block with no value or type specified to use column default and must be provided
+    }
+
+    inputs {
+      literal { // Literal block with empty value and type to use column default and must be provided
+        value = ""
+        type  = ""
+      }
+    }
+    inputs {
       literal {
         value = data.genesyscloud_routing_queue.standard_queue.id
         type  = "string"
       }
     }
     outputs {
-      schema_property_key = "custom_attribute_queue"
       literal {
         value = data.genesyscloud_routing_queue.vip_queue.id
         type  = "string"
       }
     }
     outputs {
-      schema_property_key = "custom_attribute_string"
       literal {
         value = "Premium Support"
         type  = "string"
       }
     }
     outputs {
-      schema_property_key = "custom_attribute_enum"
       literal {
         value = "option_2"
         type  = "string"

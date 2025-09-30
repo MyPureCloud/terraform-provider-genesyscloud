@@ -37,6 +37,9 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
   columns {
     inputs {
       expression {
+        defaults_to {
+          value = "anything"
+        }
         contractual {
           schema_property_key = "custom_attribute_string"
         }
@@ -45,6 +48,9 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
     }
 
     inputs {
+      defaults_to {
+        special = "Wildcard"
+      }
       expression {
         contractual {
           schema_property_key = "custom_attribute_enum"
@@ -115,13 +121,37 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
     inputs {
       defaults_to {
-        special = "Null"
+        special = "CurrentTime"
       }
       expression {
         contractual {
           schema_property_key = "custom_attribute_datetime"
         }
         comparator = "NotEquals"
+      }
+    }
+
+    inputs {
+      defaults_to {
+        special = "Wildcard"
+      }
+      expression {
+        contractual {
+          schema_property_key = "custom_attribute_for_empty_literal_block"
+        }
+        comparator = "Equals"
+      }
+    }
+
+    inputs {
+      defaults_to {
+        special = "Wildcard"
+      }
+      expression {
+        contractual {
+          schema_property_key = "custom_attribute_for_empty_literal_value_type"
+        }
+        comparator = "Equals"
       }
     }
 
@@ -168,6 +198,9 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
     }
 
     outputs {
+      defaults_to {
+        special = "Null"
+      }
       value {
         schema_property_key = "custom_attribute_enum"
       }
@@ -176,86 +209,83 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
   rows {
     inputs {
-      schema_property_key = "custom_attribute_string"
       literal {
         value = "John Doe"
         type  = "string"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_enum"
       literal {
         value = "option_1"
         type  = "string"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_integer"
       literal {
         value = "85"
         type  = "integer"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_number"
       literal {
         value = "15000.0"
         type  = "number"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_boolean"
       literal {
         value = "true"
         type  = "boolean"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_date"
-      comparator          = "GreaterThanOrEquals"
       literal {
         value = "2023-01-01"
         type  = "date"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_date"
-      comparator          = "LessThanOrEquals"
       literal {
         value = "2023-12-31"
         type  = "date"
       }
     }
     inputs {
-      schema_property_key = "custom_attribute_datetime"
       literal {
         value = "2023-12-01T10:30:00.000Z"
         type  = "datetime"
       }
     }
+
     inputs {
-      schema_property_key = "custom_attribute_queue"
+      literal {} // Empty literal block with no value or type specified to use column default and must be provided
+    }
+
+    inputs {
+      literal { // Literal block with empty value and type to use column default and must be provided
+        value = ""
+        type  = ""
+      }
+    }
+    inputs {
       literal {
         value = data.genesyscloud_routing_queue.standard_queue.id
         type  = "string"
       }
     }
     outputs {
-      schema_property_key = "custom_attribute_queue"
       literal {
         value = data.genesyscloud_routing_queue.vip_queue.id
         type  = "string"
       }
     }
     outputs {
-      schema_property_key = "custom_attribute_string"
       literal {
         value = "Premium Support"
         type  = "string"
       }
     }
     outputs {
-      schema_property_key = "custom_attribute_enum"
       literal {
         value = "option_2"
         type  = "string"
@@ -270,93 +300,93 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
 ### Required
 
-- `columns` (Block List, Min: 1, Max: 1) Columns for the decision table. Cannot be modified after creation - requires resource recreation. (see [below for nested schema](#nestedblock--columns))
-- `division_id` (String) The ID of the division the decision table belongs to
-- `name` (String) The name of the decision table
-- `rows` (Block List, Min: 1) Decision table rows containing input conditions and output actions. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table. (see [below for nested schema](#nestedblock--rows))
-- `schema_id` (String) The ID of the rules schema used by the decision table
+- `columns` (Block List, Min: 1, Max: 1) Columns for the decision table. Cannot be modified after creation - requires resource recreation.
+
+Note: The order of input and output columns defines the positional mapping for row values. Row inputs/outputs must be provided in the same order as their corresponding columns. (see [below for nested schema](#nestedblock--columns))
+- `division_id` (String) The ID of the division the decision table belongs to.
+- `name` (String) The decision table name.
+- `rows` (Block List, Min: 1) Decision table rows containing input conditions and output results. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table.
+
+IMPORTANT: Row inputs and outputs must follow the same positional order as defined in the columns. The first input/output corresponds to the first column, second to second column, etc. (see [below for nested schema](#nestedblock--rows))
+- `schema_id` (String) The ID of the rules schema used by the decision table.
 
 ### Optional
 
-- `description` (String) The decision table description
+- `description` (String) The decision table description.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `status` (String) Current status of the decision table (Draft, Published, etc.).
-- `version` (Number) Current version number of the decision table.
+- `version` (Number) Current version number of this published decision table.
 
 <a id="nestedblock--columns"></a>
 ### Nested Schema for `columns`
 
 Required:
 
-- `inputs` (Block List, Min: 1) Input columns for the decision table (see [below for nested schema](#nestedblock--columns--inputs))
-- `outputs` (Block List, Min: 1) Output columns for the decision table (see [below for nested schema](#nestedblock--columns--outputs))
+- `inputs` (Block List, Min: 1) The input columns for the decision table (see [below for nested schema](#nestedblock--columns--inputs))
+- `outputs` (Block List, Min: 1) The output columns for the decision table (see [below for nested schema](#nestedblock--columns--outputs))
 
 <a id="nestedblock--columns--inputs"></a>
 ### Nested Schema for `columns.inputs`
 
 Required:
 
-- `expression` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--columns--inputs--expression))
-
-Optional:
-
-- `defaults_to` (Block List, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--inputs--defaults_to))
+- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--inputs--defaults_to))
+- `expression` (Block List, Min: 1, Max: 1) The input column condition expression, comprising the left side and comparator of a logical condition in the form of left|comparator|right, where each row of the decision table will provide the right side to form a complete condition. (see [below for nested schema](#nestedblock--columns--inputs--expression))
 
 Read-Only:
 
-- `id` (String) The ID of the input column
-
-<a id="nestedblock--columns--inputs--expression"></a>
-### Nested Schema for `columns.inputs.expression`
-
-Required:
-
-- `comparator` (String)
-- `contractual` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--columns--inputs--expression--contractual))
-
-<a id="nestedblock--columns--inputs--expression--contractual"></a>
-### Nested Schema for `columns.inputs.expression.contractual`
-
-Required:
-
-- `schema_property_key` (String)
-
-Optional:
-
-- `contractual` (Block List, Max: 1) (see [below for nested schema](#nestedblock--columns--inputs--expression--contractual--contractual))
-
-<a id="nestedblock--columns--inputs--expression--contractual--contractual"></a>
-### Nested Schema for `columns.inputs.expression.contractual.contractual`
-
-Required:
-
-- `schema_property_key` (String)
-
-Optional:
-
-- `contractual` (Block List, Max: 1) (see [below for nested schema](#nestedblock--columns--inputs--expression--contractual--contractual--contractual))
-
-<a id="nestedblock--columns--inputs--expression--contractual--contractual--contractual"></a>
-### Nested Schema for `columns.inputs.expression.contractual.contractual.contractual`
-
-Required:
-
-- `schema_property_key` (String)
-
-
-
-
+- `id` (String) The ID of the column
 
 <a id="nestedblock--columns--inputs--defaults_to"></a>
 ### Nested Schema for `columns.inputs.defaults_to`
 
 Optional:
 
-- `special` (String) Special enum value: Wildcard, Null, Empty, CurrentTime.
-- `value` (String) Single string value. For queue columns, can be a UUID.
+- `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
+- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
+
+
+<a id="nestedblock--columns--inputs--expression"></a>
+### Nested Schema for `columns.inputs.expression`
+
+Required:
+
+- `comparator` (String) A comparator used to join the left and right sides of a logical condition. Valid values: Equals, NotEquals, GreaterThan, GreaterThanOrEquals, LessThan, LessThanOrEquals, StartsWith, NotStartsWith, EndsWith, NotEndsWith, Contains, NotContains.
+- `contractual` (Block List, Min: 1, Max: 1) A value that is defined by a contract schema and used to form the left side of a logical condition. (see [below for nested schema](#nestedblock--columns--inputs--expression--contractual))
+
+<a id="nestedblock--columns--inputs--expression--contractual"></a>
+### Nested Schema for `columns.inputs.expression.contractual`
+
+Required:
+
+- `schema_property_key` (String) The contract schema property key that describes the input value of this column.
+
+Optional:
+
+- `contractual` (Block List, Max: 1) The nested contractual definition that is defined by a contract schema, if any. (see [below for nested schema](#nestedblock--columns--inputs--expression--contractual--contractual))
+
+<a id="nestedblock--columns--inputs--expression--contractual--contractual"></a>
+### Nested Schema for `columns.inputs.expression.contractual.contractual`
+
+Required:
+
+- `schema_property_key` (String) The contract schema property key that describes the input value of this column.
+
+Optional:
+
+- `contractual` (Block List, Max: 1) The nested contractual definition that is defined by a contract schema, if any. (see [below for nested schema](#nestedblock--columns--inputs--expression--contractual--contractual--contractual))
+
+<a id="nestedblock--columns--inputs--expression--contractual--contractual--contractual"></a>
+### Nested Schema for `columns.inputs.expression.contractual.contractual.contractual`
+
+Required:
+
+- `schema_property_key` (String) The contract schema property key that describes the input value of this column.
+
+
+
 
 
 
@@ -365,67 +395,64 @@ Optional:
 
 Required:
 
-- `value` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--columns--outputs--value))
-
-Optional:
-
-- `defaults_to` (Block List, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--outputs--defaults_to))
+- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--outputs--defaults_to))
+- `value` (Block List, Min: 1, Max: 1) The output data of this column that will be provided by each row. (see [below for nested schema](#nestedblock--columns--outputs--value))
 
 Read-Only:
 
-- `id` (String) The ID of the output column
-
-<a id="nestedblock--columns--outputs--value"></a>
-### Nested Schema for `columns.outputs.value`
-
-Required:
-
-- `schema_property_key` (String)
-
-Optional:
-
-- `properties` (Block List) (see [below for nested schema](#nestedblock--columns--outputs--value--properties))
-
-<a id="nestedblock--columns--outputs--value--properties"></a>
-### Nested Schema for `columns.outputs.value.properties`
-
-Required:
-
-- `schema_property_key` (String)
-
-Optional:
-
-- `properties` (Block List) (see [below for nested schema](#nestedblock--columns--outputs--value--properties--properties))
-
-<a id="nestedblock--columns--outputs--value--properties--properties"></a>
-### Nested Schema for `columns.outputs.value.properties.properties`
-
-Required:
-
-- `schema_property_key` (String)
-
-Optional:
-
-- `properties` (Block List) (see [below for nested schema](#nestedblock--columns--outputs--value--properties--properties--properties))
-
-<a id="nestedblock--columns--outputs--value--properties--properties--properties"></a>
-### Nested Schema for `columns.outputs.value.properties.properties.properties`
-
-Required:
-
-- `schema_property_key` (String)
-
-
-
-
+- `id` (String) The ID of the column
 
 <a id="nestedblock--columns--outputs--defaults_to"></a>
 ### Nested Schema for `columns.outputs.defaults_to`
 
 Optional:
 
-- `special` (String) Special enum value: Wildcard, Null, Empty, CurrentTime.
-- `value` (String) Single string value. For queue columns, can be a UUID.
+- `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
+- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
+
+
+<a id="nestedblock--columns--outputs--value"></a>
+### Nested Schema for `columns.outputs.value`
+
+Required:
+
+- `schema_property_key` (String) The contract schema property key that describes the output value of this column
+
+Optional:
+
+- `properties` (Block List) The nested properties that are defined by a contract schema, if any. (see [below for nested schema](#nestedblock--columns--outputs--value--properties))
+
+<a id="nestedblock--columns--outputs--value--properties"></a>
+### Nested Schema for `columns.outputs.value.properties`
+
+Required:
+
+- `schema_property_key` (String) The contract schema property key that describes the nested property value.
+
+Optional:
+
+- `properties` (Block List) The nested properties that are defined by a contract schema, if any. (see [below for nested schema](#nestedblock--columns--outputs--value--properties--properties))
+
+<a id="nestedblock--columns--outputs--value--properties--properties"></a>
+### Nested Schema for `columns.outputs.value.properties.properties`
+
+Required:
+
+- `schema_property_key` (String) The contract schema property key that describes the nested property value.
+
+Optional:
+
+- `properties` (Block List) The nested properties that are defined by a contract schema, if any. (see [below for nested schema](#nestedblock--columns--outputs--value--properties--properties--properties))
+
+<a id="nestedblock--columns--outputs--value--properties--properties--properties"></a>
+### Nested Schema for `columns.outputs.value.properties.properties.properties`
+
+Required:
+
+- `schema_property_key` (String) The contract schema property key that describes the nested property value.
+
+
+
 
 
 
@@ -435,46 +462,53 @@ Optional:
 
 Optional:
 
-- `inputs` (Block List) Input values (conditions) for this decision row. Each input specifies which column it belongs to using schema_property_key and optionally comparator. (see [below for nested schema](#nestedblock--rows--inputs))
-- `outputs` (Block List) Output values (actions) for this decision row. Each output specifies which column it belongs to using schema_property_key and optionally comparator. (see [below for nested schema](#nestedblock--rows--outputs))
+- `inputs` (Block List) Input values (conditions) for this decision row. Values are matched to input columns by position (index) - first input corresponds to first input column, second to second, etc. Missing values will use column defaults provided by the decision table columns defaults_to field. (see [below for nested schema](#nestedblock--rows--inputs))
+- `outputs` (Block List) Output values (results) for this decision row. Values are matched to output columns by position (index) - first output corresponds to first output column, second to second, etc. Missing values will use column defaults provided by the decision table columns defaults_to field. (see [below for nested schema](#nestedblock--rows--outputs))
 
 Read-Only:
 
 - `row_id` (String) Unique identifier for this row within the decision table. Auto-generated by the system.
-- `row_index` (Number) The position of this row in the decision table (1-based). Auto-generated by the system.
+- `row_index` (Number) The absolute index of this row in the decision table, starting at 1. Auto-generated by the system.
 
 <a id="nestedblock--rows--inputs"></a>
 ### Nested Schema for `rows.inputs`
 
 Required:
 
-- `literal` (Block List, Min: 1, Max: 1) The literal value for this input parameter (see [below for nested schema](#nestedblock--rows--inputs--literal))
-- `schema_property_key` (String) The schema property key that identifies which input column this value belongs to.
-
-Optional:
-
-- `comparator` (String) The comparator for this input column. Required when multiple columns have the same schema_property_key with different comparators. Optional when only one column exists for the schema_property_key.
+- `literal` (Block List, Min: 1, Max: 1) The literal value for this parameter. Use an empty block {} or empty values (value = "", type = "") to use column default. (see [below for nested schema](#nestedblock--rows--inputs--literal))
 
 Read-Only:
 
-- `column_id` (String) The unique identifier of the input column. Auto-generated by the system.
+- `column_id` (String) The unique identifier of the column. Auto-generated by the system.
 
 <a id="nestedblock--rows--inputs--literal"></a>
 ### Nested Schema for `rows.inputs.literal`
 
-Required:
+Optional:
 
-- `type` (String) The type of the literal value.
+- `type` (String) The type of the literal value. Set to empty string "" to use column default.
+
+								Supported types:
+								- string: A string value
+								- integer: A positive or negative whole number, including zero
+								- number: A positive or negative decimal number, including zero
+								- date: A date value, must be in the format of yyyy-MM-dd, e.g. 2024-09-23. Dates are represented as an ISO-8601 string
+								- datetime: A date time value, must be in the format of yyyy-MM-dd'T'HH:mm:ss.SSSZ, e.g. 2024-10-02T01:01:01.111Z. Date time is represented as an ISO-8601 string
+								- special: A special value enum, such as Wildcard, Null, etc. Valid values: Wildcard, Null, Empty, CurrentTime
+								- boolean: A boolean value
+								- "": An empty string "" to use column default
 - `value` (String) The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
+								Set to empty string "" to use column default.
 
-Examples:
-- String: "VIP", "Hello World"
-- Integer: "42", "0", "-10"
-- Number: "3.14", "0.0", "-1.5"
-- Boolean: "true", "false"
-- Date: "2023-01-01"
-- DateTime: "2023-01-01T12:00:00.000Z"
-- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+								Examples:
+								- String: "VIP", "Hello World"
+								- Integer: "42", "0", "-10"
+								- Number: "3.14", "0.0", "-1.5" (formatting differences like "1.0" vs "1" are automatically handled)
+								- Boolean: "true", "false"
+								- Date: "2023-01-01"
+								- DateTime: "2023-01-01T12:00:00.000Z"
+								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+								- Default: Empty string "" uses column default Defaults to ``.
 
 
 
@@ -483,31 +517,38 @@ Examples:
 
 Required:
 
-- `literal` (Block List, Min: 1, Max: 1) The literal value for this output parameter. Only ONE field should be set per literal value (see [below for nested schema](#nestedblock--rows--outputs--literal))
-- `schema_property_key` (String) The schema property key that identifies which output column this value belongs to.
-
-Optional:
-
-- `comparator` (String) The comparator for this output column. Required when multiple columns have the same schema_property_key with different comparators. Optional when only one column exists for the schema_property_key.
+- `literal` (Block List, Min: 1, Max: 1) The literal value for this parameter. Use an empty block {} or empty values (value = "", type = "") to use column default. (see [below for nested schema](#nestedblock--rows--outputs--literal))
 
 Read-Only:
 
-- `column_id` (String) The unique identifier of the output column. Auto-generated by the system.
+- `column_id` (String) The unique identifier of the column. Auto-generated by the system.
 
 <a id="nestedblock--rows--outputs--literal"></a>
 ### Nested Schema for `rows.outputs.literal`
 
-Required:
+Optional:
 
-- `type` (String) The type of the literal value.
+- `type` (String) The type of the literal value. Set to empty string "" to use column default.
+
+								Supported types:
+								- string: A string value
+								- integer: A positive or negative whole number, including zero
+								- number: A positive or negative decimal number, including zero
+								- date: A date value, must be in the format of yyyy-MM-dd, e.g. 2024-09-23. Dates are represented as an ISO-8601 string
+								- datetime: A date time value, must be in the format of yyyy-MM-dd'T'HH:mm:ss.SSSZ, e.g. 2024-10-02T01:01:01.111Z. Date time is represented as an ISO-8601 string
+								- special: A special value enum, such as Wildcard, Null, etc. Valid values: Wildcard, Null, Empty, CurrentTime
+								- boolean: A boolean value
+								- "": An empty string "" to use column default
 - `value` (String) The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
+								Set to empty string "" to use column default.
 
-Examples:
-- String: "VIP", "Hello World"
-- Integer: "42", "0", "-10"
-- Number: "3.14", "0.0", "-1.5"
-- Boolean: "true", "false"
-- Date: "2023-01-01"
-- DateTime: "2023-01-01T12:00:00.000Z"
-- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+								Examples:
+								- String: "VIP", "Hello World"
+								- Integer: "42", "0", "-10"
+								- Number: "3.14", "0.0", "-1.5" (formatting differences like "1.0" vs "1" are automatically handled)
+								- Boolean: "true", "false"
+								- Date: "2023-01-01"
+								- DateTime: "2023-01-01T12:00:00.000Z"
+								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+								- Default: Empty string "" uses column default Defaults to ``.
 

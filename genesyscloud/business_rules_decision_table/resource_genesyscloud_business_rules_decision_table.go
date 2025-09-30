@@ -163,7 +163,6 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValue(d, "name", table.Name)
 		resourcedata.SetNillableValue(d, "description", table.Description)
 		resourcedata.SetNillableReferenceDivision(d, "division_id", tableVersion.Division)
-		resourcedata.SetNillableValue(d, "status", tableVersion.Status)
 		resourcedata.SetNillableValue(d, "version", &versionToRead)
 
 		// Set schema_id from the version's contract

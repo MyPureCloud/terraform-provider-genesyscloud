@@ -11,38 +11,221 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
+// buildDefaultsTo builds SDK defaults_to from Terraform schema
+func buildDefaultsTo(defaultsToList []interface{}) *platformclientv2.Decisiontablecolumndefaultrowvalue {
+	if len(defaultsToList) == 0 {
+		return nil
+	}
+
+	defaultsToMap := defaultsToList[0].(map[string]interface{})
+	special, specialOk := defaultsToMap["special"].(string)
+	value, valueOk := defaultsToMap["value"].(string)
+
+	if specialOk && special != "" {
+		return &platformclientv2.Decisiontablecolumndefaultrowvalue{
+			Special: &special,
+		}
+	}
+
+	if valueOk && value != "" {
+		return &platformclientv2.Decisiontablecolumndefaultrowvalue{
+			Value: &value,
+		}
+	}
+
+	// Handle type conversion for output columns
+	if defaultsToMap["value"] != nil {
+		if valueStr, ok := defaultsToMap["value"].(string); ok {
+			return &platformclientv2.Decisiontablecolumndefaultrowvalue{
+				Value: &valueStr,
+			}
+		}
+	}
+
+	return nil
+}
+
+// flattenDefaultsTo flattens SDK defaults_to to Terraform format
+func flattenDefaultsTo(sdkDefaultsTo *platformclientv2.Decisiontablecolumndefaultrowvalue) []interface{} {
+	if sdkDefaultsTo == nil {
+		return nil
+	}
+
+	defaultsTo := make(map[string]interface{})
+	if sdkDefaultsTo.Special != nil {
+		defaultsTo["special"] = *sdkDefaultsTo.Special
+	} else if sdkDefaultsTo.Value != nil {
+		defaultsTo["value"] = *sdkDefaultsTo.Value
+	}
+
+	return []interface{}{defaultsTo}
+}
+
+// validateLiteralInput validates that literal input has required fields
+func validateLiteralInput(literal map[string]interface{}) (string, string, error) {
+	value, valueOk := literal["value"].(string)
+	valueType, typeOk := literal["type"].(string)
+
+	// If both value and type are missing or empty, omit this literal (use column default)
+	if (!valueOk || value == "") && (!typeOk || valueType == "") {
+		log.Printf("DEBUG: Both value and type are missing or empty, omitting literal (using column default)")
+		return "", "", nil
+	}
+
+	// If both value and type are empty strings, omit this literal (use column default)
+	if value == "" && valueType == "" {
+		log.Printf("DEBUG: Both value and type are empty strings, omitting literal (using column default)")
+		return "", "", nil
+	}
+
+	// If only one is provided, that's an error
+	if (!valueOk || value == "") && (typeOk && valueType != "") {
+		return "", "", fmt.Errorf("value is required when type is specified")
+	}
+	if (valueOk && value != "") && (!typeOk || valueType == "") {
+		return "", "", fmt.Errorf("type is required when value is specified")
+	}
+
+	// If value is not empty but type is empty, that's an error
+	if value != "" && valueType == "" {
+		return "", "", fmt.Errorf("type cannot be empty when value is specified")
+	}
+
+	return value, valueType, nil
+}
+
+// convertLiteralValue converts a string value to the appropriate type and returns the correct pointer
+func convertLiteralValue(value, valueType string) (interface{}, string, error) {
+	switch valueType {
+	case "string":
+		return &value, "VarString", nil
+	case "integer":
+		if intVal, err := strconv.Atoi(value); err == nil {
+			return &intVal, "Integer", nil
+		} else {
+			return nil, "", fmt.Errorf("value '%s' is not a valid %s", value, "integer")
+		}
+	case "number":
+		if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+			return &floatVal, "Number", nil
+		} else {
+			return nil, "", fmt.Errorf("value '%s' is not a valid %s", value, "number")
+		}
+	case "boolean":
+		if boolVal, err := strconv.ParseBool(value); err == nil {
+			return &boolVal, "Boolean", nil
+		} else {
+			return nil, "", fmt.Errorf("value '%s' is not a valid %s", value, "boolean")
+		}
+	case "date":
+		if parsedDate, err := time.Parse(resourcedata.DateParseFormat, value); err == nil {
+			return &parsedDate, "Date", nil
+		} else {
+			return nil, "", fmt.Errorf("value '%s' is not a valid %s", value, "date")
+		}
+	case "datetime":
+		if parsedDateTime, err := time.Parse("2006-01-02T15:04:05.000Z", value); err == nil {
+			return &parsedDateTime, "Datetime", nil
+		} else {
+			return nil, "", fmt.Errorf("value '%s' is not a valid %s", value, "datetime")
+		}
+	case "special":
+		return &value, "Special", nil
+	default:
+		return nil, "", fmt.Errorf("unknown literal type: %s", valueType)
+	}
+}
+
+// validationError creates a standardized validation error message
+func validationError(rowNum, itemNum int, itemType, message string) error {
+	return fmt.Errorf("row %d %s %d: %s", rowNum, itemType, itemNum, message)
+}
+
+// validationErrorWithDetails creates a validation error with additional details
+func validationErrorWithDetails(rowNum, itemNum int, itemType, message string, details ...interface{}) error {
+	baseMsg := fmt.Sprintf("row %d %s %d: %s", rowNum, itemType, itemNum, message)
+	if len(details) > 0 {
+		baseMsg += fmt.Sprintf(" %v", details)
+	}
+	return fmt.Errorf("%s", baseMsg)
+}
+
+// processRowsWithValidation processes a list of rows with validation
+func processRowsWithValidation(rows []interface{}, processRow func(int, map[string]interface{}) error) error {
+	for i, row := range rows {
+		rowMap, ok := row.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("row %d is not a valid map", i+1)
+		}
+		if err := processRow(i, rowMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// processItemsWithValidation processes a list of items with validation
+func processItemsWithValidation(items []interface{}, rowNum int, itemType string, processItem func(int, map[string]interface{}) error) error {
+	for j, item := range items {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			return validationError(rowNum, j+1, itemType, "is not a valid map")
+		}
+		if err := processItem(j, itemMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// processItemsWithError processes a list of items with error return
+func processItemsWithError(items []interface{}, itemType string, processItem func(int, map[string]interface{}) error) error {
+	for i, item := range items {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("%s %d is not a valid map", itemType, i+1)
+		}
+		if err := processItem(i, itemMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// processItemsPositionally processes items with positional mapping
+func processItemsPositionally(items []interface{}, maxCount int, processItem func(int, map[string]interface{}) error) error {
+	for i, item := range items {
+		if i >= maxCount {
+			break
+		}
+		if itemMap, ok := item.(map[string]interface{}); ok {
+			if err := processItem(i, itemMap); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // buildSdkInputColumns builds the SDK input columns from the Terraform schema
 func buildSdkInputColumns(inputColumns []interface{}) *[]platformclientv2.Decisiontableinputcolumnrequest {
 	if len(inputColumns) == 0 {
 		return nil
 	}
 
-	sdkInputColumns := make([]platformclientv2.Decisiontableinputcolumnrequest, 0)
+	sdkInputColumns := make([]platformclientv2.Decisiontableinputcolumnrequest, 0, len(inputColumns))
 	for _, inputColumn := range inputColumns {
 		inputColumnMap := inputColumn.(map[string]interface{})
 		sdkInputColumn := platformclientv2.Decisiontableinputcolumnrequest{}
 
-		if defaultsToList, ok := inputColumnMap["defaults_to"].([]interface{}); ok && len(defaultsToList) > 0 {
-			defaultsToMap := defaultsToList[0].(map[string]interface{})
-
-			// Check for special values first
-			special, specialOk := defaultsToMap["special"].(string)
-			value, valueOk := defaultsToMap["value"].(string)
-
-			if specialOk && special != "" {
-				sdkInputColumn.DefaultsTo = &platformclientv2.Decisiontablecolumndefaultrowvalue{
-					Special: &special,
-				}
-			} else if valueOk && value != "" {
-				// Only set Value, leave Special as nil
-				sdkInputColumn.DefaultsTo = &platformclientv2.Decisiontablecolumndefaultrowvalue{
-					Value: &value,
-				}
-			}
+		if defaultsToList, ok := inputColumnMap["defaults_to"].([]interface{}); ok {
+			sdkInputColumn.DefaultsTo = buildDefaultsTo(defaultsToList)
 		}
 
-		if expressions, ok := inputColumnMap["expression"].([]interface{}); ok {
-			sdkInputColumn.Expression = buildSdkExpression(expressions[0].(map[string]interface{}))
+		if expressionList, ok := inputColumnMap["expression"].([]interface{}); ok && len(expressionList) > 0 {
+			if expression, ok := expressionList[0].(map[string]interface{}); ok {
+				sdkInputColumn.Expression = buildSdkExpression(expression)
+			}
 		}
 
 		sdkInputColumns = append(sdkInputColumns, sdkInputColumn)
@@ -57,36 +240,19 @@ func buildSdkOutputColumns(outputColumns []interface{}) *[]platformclientv2.Deci
 		return nil
 	}
 
-	sdkOutputColumns := make([]platformclientv2.Decisiontableoutputcolumnrequest, 0)
+	sdkOutputColumns := make([]platformclientv2.Decisiontableoutputcolumnrequest, 0, len(outputColumns))
 	for _, outputColumn := range outputColumns {
 		outputColumnMap := outputColumn.(map[string]interface{})
 		sdkOutputColumn := platformclientv2.Decisiontableoutputcolumnrequest{}
 
-		if defaultsToList, ok := outputColumnMap["defaults_to"].([]interface{}); ok && len(defaultsToList) > 0 {
-			defaultsToMap := defaultsToList[0].(map[string]interface{})
-
-			if special, ok := defaultsToMap["special"].(string); ok && special != "" {
-				sdkOutputColumn.DefaultsTo = &platformclientv2.Decisiontablecolumndefaultrowvalue{
-					Special: &special,
-				}
-			} else if value, ok := defaultsToMap["value"].(string); ok {
-				sdkOutputColumn.DefaultsTo = &platformclientv2.Decisiontablecolumndefaultrowvalue{
-					Value: &value,
-				}
-			} else {
-				// Try to convert to string if it's a different type
-				if defaultsToMap["value"] != nil {
-					if valueStr, ok := defaultsToMap["value"].(string); ok {
-						sdkOutputColumn.DefaultsTo = &platformclientv2.Decisiontablecolumndefaultrowvalue{
-							Value: &valueStr,
-						}
-					}
-				}
-			}
+		if defaultsToList, ok := outputColumnMap["defaults_to"].([]interface{}); ok {
+			sdkOutputColumn.DefaultsTo = buildDefaultsTo(defaultsToList)
 		}
 
-		if values, ok := outputColumnMap["value"].([]interface{}); ok {
-			sdkOutputColumn.Value = buildSdkValue(values[0].(map[string]interface{}))
+		if valueList, ok := outputColumnMap["value"].([]interface{}); ok && len(valueList) > 0 {
+			if value, ok := valueList[0].(map[string]interface{}); ok {
+				sdkOutputColumn.Value = buildSdkValue(value)
+			}
 		}
 
 		sdkOutputColumns = append(sdkOutputColumns, sdkOutputColumn)
@@ -99,8 +265,10 @@ func buildSdkOutputColumns(outputColumns []interface{}) *[]platformclientv2.Deci
 func buildSdkExpression(expression map[string]interface{}) *platformclientv2.Decisiontableinputcolumnexpression {
 	sdkExpression := platformclientv2.Decisiontableinputcolumnexpression{}
 
-	if contractual, ok := expression["contractual"].([]interface{}); ok && len(contractual) > 0 {
-		sdkExpression.Contractual = buildSdkContractual(contractual[0].(map[string]interface{}))
+	if contractualList, ok := expression["contractual"].([]interface{}); ok && len(contractualList) > 0 {
+		if contractual, ok := contractualList[0].(map[string]interface{}); ok {
+			sdkExpression.Contractual = buildSdkContractual(contractual)
+		}
 	}
 
 	if comparator, ok := expression["comparator"].(string); ok {
@@ -114,11 +282,11 @@ func buildSdkExpression(expression map[string]interface{}) *platformclientv2.Dec
 func buildSdkValue(value map[string]interface{}) *platformclientv2.Outputvalue {
 	sdkValue := platformclientv2.Outputvalue{}
 
-	if schemaPropertyKey, ok := value["schema_property_key"].(string); ok {
-		sdkValue.SchemaPropertyKey = &schemaPropertyKey
+	if val, ok := value["schema_property_key"].(string); ok && val != "" {
+		sdkValue.SchemaPropertyKey = &val
 	}
 
-	if properties, ok := value["properties"].([]interface{}); ok && len(properties) > 0 {
+	if properties, ok := value["properties"].([]interface{}); ok {
 		sdkValue.Properties = buildSdkProperties(properties)
 	}
 
@@ -129,13 +297,14 @@ func buildSdkValue(value map[string]interface{}) *platformclientv2.Outputvalue {
 func buildSdkContractual(contractual map[string]interface{}) **platformclientv2.Contractual {
 	sdkContractual := platformclientv2.Contractual{}
 
-	if schemaPropertyKey, ok := contractual["schema_property_key"].(string); ok {
-		sdkContractual.SchemaPropertyKey = &schemaPropertyKey
+	if val, ok := contractual["schema_property_key"].(string); ok && val != "" {
+		sdkContractual.SchemaPropertyKey = &val
 	}
 
-	if nestedContractual, ok := contractual["contractual"].([]interface{}); ok && len(nestedContractual) > 0 {
-		nested := buildSdkContractual(nestedContractual[0].(map[string]interface{}))
-		sdkContractual.Contractual = nested
+	if nestedContractualList, ok := contractual["contractual"].([]interface{}); ok && len(nestedContractualList) > 0 {
+		if nestedContractual, ok := nestedContractualList[0].(map[string]interface{}); ok {
+			sdkContractual.Contractual = buildSdkContractual(nestedContractual)
+		}
 	}
 
 	result := &sdkContractual
@@ -153,8 +322,8 @@ func buildSdkProperties(properties []interface{}) *[]platformclientv2.Outputvalu
 		propertyMap := property.(map[string]interface{})
 		sdkProperty := platformclientv2.Outputvalue{}
 
-		if schemaPropertyKey, ok := propertyMap["schema_property_key"].(string); ok {
-			sdkProperty.SchemaPropertyKey = &schemaPropertyKey
+		if val, ok := propertyMap["schema_property_key"].(string); ok && val != "" {
+			sdkProperty.SchemaPropertyKey = &val
 		}
 
 		if nestedProperties, ok := propertyMap["properties"].([]interface{}); ok {
@@ -246,15 +415,8 @@ func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputco
 		}
 
 		// Handle both Special and Value fields for defaults_to
-		if sdkInput.DefaultsTo != nil {
-			defaultsTo := make(map[string]interface{})
-			if sdkInput.DefaultsTo.Special != nil {
-				defaultsTo["special"] = *sdkInput.DefaultsTo.Special
-			} else if sdkInput.DefaultsTo.Value != nil {
-				// Preserve the original queue ID without conversion to maintain state consistency
-				defaultsTo["value"] = *sdkInput.DefaultsTo.Value
-			}
-			input["defaults_to"] = []interface{}{defaultsTo}
+		if defaultsTo := flattenDefaultsTo(sdkInput.DefaultsTo); defaultsTo != nil {
+			input["defaults_to"] = defaultsTo
 		}
 
 		if sdkInput.Expression != nil {
@@ -278,16 +440,8 @@ func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutpu
 		}
 
 		// Handle both Special and Value fields for defaults_to
-		if sdkOutput.DefaultsTo != nil {
-			defaultsTo := make(map[string]interface{})
-			if sdkOutput.DefaultsTo.Special != nil {
-				defaultsTo["special"] = *sdkOutput.DefaultsTo.Special
-			} else if sdkOutput.DefaultsTo.Value != nil {
-				// For data source reading, preserve the original value without conversion
-				// This ensures consistency with what was set during resource creation
-				defaultsTo["value"] = *sdkOutput.DefaultsTo.Value
-			}
-			output["defaults_to"] = []interface{}{defaultsTo}
+		if defaultsTo := flattenDefaultsTo(sdkOutput.DefaultsTo); defaultsTo != nil {
+			output["defaults_to"] = defaultsTo
 		}
 
 		if sdkOutput.Value != nil {
@@ -450,83 +604,29 @@ func convertLiteralToSDK(literal map[string]interface{}) (*platformclientv2.Lite
 		return nil, nil
 	}
 
-	sdkLiteral := &platformclientv2.Literal{}
-
-	value, valueOk := literal["value"].(string)
-	valueType, typeOk := literal["type"].(string)
-
-	// If both value and type are missing or empty, omit this literal (use column default)
-	if (!valueOk || value == "") && (!typeOk || valueType == "") {
-		log.Printf("DEBUG: Both value and type are missing or empty, omitting literal (using column default)")
-		return nil, nil
+	// Validate input and extract values
+	value, valueType, err := validateLiteralInput(literal)
+	if err != nil {
+		return nil, err
 	}
 
-	// If both value and type are empty strings, omit this literal (use column default)
+	// If both value and type are empty, omit this literal (use column default)
 	if value == "" && valueType == "" {
-		log.Printf("DEBUG: Both value and type are empty strings, omitting literal (using column default)")
 		return nil, nil
-	}
-
-	// If only one is provided, that's an error
-	if (!valueOk || value == "") && (typeOk && valueType != "") {
-		return nil, fmt.Errorf("value is required when type is specified")
-	}
-	if (valueOk && value != "") && (!typeOk || valueType == "") {
-		return nil, fmt.Errorf("type is required when value is specified")
-	}
-
-	// If value is not empty but type is empty, that's an error
-	if value != "" && valueType == "" {
-		return nil, fmt.Errorf("type cannot be empty when value is specified")
 	}
 
 	log.Printf("DEBUG: Converting literal - value: %s, type: %s", value, valueType)
 
-	switch valueType {
-	case "string":
-		sdkLiteral.SetField("VarString", &value)
-		log.Printf("DEBUG: Set VarString to: %s", value)
-	case "integer":
-		if intVal, err := strconv.Atoi(value); err == nil {
-			sdkLiteral.SetField("Integer", &intVal)
-			log.Printf("DEBUG: Set Integer to: %d", intVal)
-		} else {
-			return nil, fmt.Errorf("value '%s' is not a valid integer", value)
-		}
-	case "number":
-		if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
-			sdkLiteral.SetField("Number", &floatVal)
-			log.Printf("DEBUG: Set Number to: %f", floatVal)
-		} else {
-			return nil, fmt.Errorf("value '%s' is not a valid number", value)
-		}
-	case "boolean":
-		if boolVal, err := strconv.ParseBool(value); err == nil {
-			sdkLiteral.SetField("Boolean", &boolVal)
-			log.Printf("DEBUG: Set Boolean to: %t", boolVal)
-		} else {
-			return nil, fmt.Errorf("value '%s' is not a valid boolean", value)
-		}
-	case "date":
-		if parsedDate, err := time.Parse(resourcedata.DateParseFormat, value); err == nil {
-			sdkLiteral.SetField("Date", &parsedDate)
-			log.Printf("DEBUG: Set Date to: %s", parsedDate.Format(resourcedata.DateParseFormat))
-		} else {
-			return nil, fmt.Errorf("value '%s' is not a valid date", value)
-		}
-	case "datetime":
-		if parsedDateTime, err := time.Parse("2006-01-02T15:04:05.000Z", value); err == nil {
-			sdkLiteral.SetField("Datetime", &parsedDateTime)
-			log.Printf("DEBUG: Set Datetime to: %s", parsedDateTime.Format("2006-01-02T15:04:05.000Z"))
-		} else {
-			return nil, fmt.Errorf("value '%s' is not a valid datetime", value)
-		}
-	case "special":
-		sdkLiteral.SetField("Special", &value)
-		log.Printf("DEBUG: Set Special to: %s", value)
-	default:
-		return nil, fmt.Errorf("unknown literal type: %s", valueType)
+	// Convert the value using the appropriate converter
+	convertedValue, fieldName, err := convertLiteralValue(value, valueType)
+	if err != nil {
+		return nil, err
 	}
+
+	// Create SDK literal and set the field
+	sdkLiteral := &platformclientv2.Literal{}
+	sdkLiteral.SetField(fieldName, convertedValue)
+	log.Printf("DEBUG: Set %s to: %v", fieldName, convertedValue)
 
 	log.Printf("DEBUG: SetFieldNames after conversion: %+v", sdkLiteral.SetFieldNames)
 	return sdkLiteral, nil
@@ -544,8 +644,8 @@ func convertLiteralToTerraform(sdkLiteral *platformclientv2.Literal) map[string]
 		literal["type"] = "integer"
 	} else if sdkLiteral.Number != nil {
 		// Format number to preserve the original string representation
-		// Use 'f' format with 1 decimal place to ensure consistency with "999.0" format
-		literal["value"] = strconv.FormatFloat(*sdkLiteral.Number, 'f', 1, 64)
+		// Use 'g' format to avoid zero-padding while preserving precision
+		literal["value"] = strconv.FormatFloat(*sdkLiteral.Number, 'g', -1, 64)
 		literal["type"] = "number"
 	} else if sdkLiteral.Date != nil {
 		literal["value"] = sdkLiteral.Date.Format(resourcedata.DateParseFormat)
@@ -660,42 +760,27 @@ func validateSchemaPropertyKeys(columns *platformclientv2.Decisiontablecolumns, 
 	}
 
 	// Validate each row
-	for i, row := range rows {
-		rowMap, ok := row.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("row %d is not a valid map", i+1)
-		}
-
+	return processRowsWithValidation(rows, func(i int, rowMap map[string]interface{}) error {
 		// Validate inputs
 		if inputs, ok := rowMap["inputs"].([]interface{}); ok {
-			for j, input := range inputs {
-				inputMap, ok := input.(map[string]interface{})
-				if !ok {
-					return fmt.Errorf("row %d input %d is not a valid map", i+1, j+1)
-				}
-
-				if err := validateInputSchemaKey(inputMap, inputKeys, i+1, j+1); err != nil {
-					return err
-				}
+			if err := processItemsWithValidation(inputs, i+1, "input", func(j int, inputMap map[string]interface{}) error {
+				return validateInputSchemaKey(inputMap, inputKeys, i+1, j+1)
+			}); err != nil {
+				return err
 			}
 		}
 
 		// Validate outputs
 		if outputs, ok := rowMap["outputs"].([]interface{}); ok {
-			for j, output := range outputs {
-				outputMap, ok := output.(map[string]interface{})
-				if !ok {
-					return fmt.Errorf("row %d output %d is not a valid map", i+1, j+1)
-				}
-
-				if err := validateOutputSchemaKey(outputMap, outputKeys, i+1, j+1); err != nil {
-					return err
-				}
+			if err := processItemsWithValidation(outputs, i+1, "output", func(j int, outputMap map[string]interface{}) error {
+				return validateOutputSchemaKey(outputMap, outputKeys, i+1, j+1)
+			}); err != nil {
+				return err
 			}
 		}
-	}
 
-	return nil
+		return nil
+	})
 }
 
 // buildSchemaKeyMaps builds maps of available schema property keys and their comparators
@@ -748,7 +833,7 @@ func buildSchemaKeyMaps(columns *platformclientv2.Decisiontablecolumns) (map[str
 func validateInputSchemaKey(inputMap map[string]interface{}, inputKeys map[string][]string, rowNum, inputNum int) error {
 	schemaPropertyKey, ok := inputMap["schema_property_key"].(string)
 	if !ok || schemaPropertyKey == "" {
-		return fmt.Errorf("row %d input %d: schema_property_key is required", rowNum, inputNum)
+		return validationError(rowNum, inputNum, "input", "schema_property_key is required")
 	}
 
 	comparator, _ := inputMap["comparator"].(string)
@@ -760,16 +845,16 @@ func validateInputSchemaKey(inputMap map[string]interface{}, inputKeys map[strin
 		for key := range inputKeys {
 			availableKeys = append(availableKeys, key)
 		}
-		return fmt.Errorf("row %d input %d: schema_property_key '%s' not found in input columns. Available keys: %v",
-			rowNum, inputNum, schemaPropertyKey, availableKeys)
+		return validationErrorWithDetails(rowNum, inputNum, "input",
+			fmt.Sprintf("schema_property_key '%s' not found in input columns. Available keys: %v", schemaPropertyKey, availableKeys))
 	}
 
 	// Check if comparator is valid for this schema property key
 	if len(availableComparators) > 1 {
 		// Multiple comparators available, user must specify one
 		if comparator == "" {
-			return fmt.Errorf("row %d input %d: comparator is required for schema_property_key '%s' (available: %v)",
-				rowNum, inputNum, schemaPropertyKey, availableComparators)
+			return validationErrorWithDetails(rowNum, inputNum, "input",
+				fmt.Sprintf("comparator is required for schema_property_key '%s' (available: %v)", schemaPropertyKey, availableComparators))
 		}
 
 		// Check if the specified comparator is valid
@@ -782,14 +867,14 @@ func validateInputSchemaKey(inputMap map[string]interface{}, inputKeys map[strin
 		}
 
 		if !validComparator {
-			return fmt.Errorf("row %d input %d: invalid comparator '%s' for schema_property_key '%s' (available: %v)",
-				rowNum, inputNum, comparator, schemaPropertyKey, availableComparators)
+			return validationErrorWithDetails(rowNum, inputNum, "input",
+				fmt.Sprintf("invalid comparator '%s' for schema_property_key '%s' (available: %v)", comparator, schemaPropertyKey, availableComparators))
 		}
 	} else if len(availableComparators) == 1 && availableComparators[0] != "" {
 		// Only one comparator available, validate it matches
 		if comparator != "" && comparator != availableComparators[0] {
-			return fmt.Errorf("row %d input %d: invalid comparator '%s' for schema_property_key '%s' (expected: '%s')",
-				rowNum, inputNum, comparator, schemaPropertyKey, availableComparators[0])
+			return validationErrorWithDetails(rowNum, inputNum, "input",
+				fmt.Sprintf("invalid comparator '%s' for schema_property_key '%s' (expected: '%s')", comparator, schemaPropertyKey, availableComparators[0]))
 		}
 	}
 
@@ -800,7 +885,7 @@ func validateInputSchemaKey(inputMap map[string]interface{}, inputKeys map[strin
 func validateOutputSchemaKey(outputMap map[string]interface{}, outputKeys map[string][]string, rowNum, outputNum int) error {
 	schemaPropertyKey, ok := outputMap["schema_property_key"].(string)
 	if !ok || schemaPropertyKey == "" {
-		return fmt.Errorf("row %d output %d: schema_property_key is required", rowNum, outputNum)
+		return validationError(rowNum, outputNum, "output", "schema_property_key is required")
 	}
 
 	// Check if schema property key exists
@@ -810,8 +895,8 @@ func validateOutputSchemaKey(outputMap map[string]interface{}, outputKeys map[st
 		for key := range outputKeys {
 			availableKeys = append(availableKeys, key)
 		}
-		return fmt.Errorf("row %d output %d: schema_property_key '%s' not found in output columns. Available keys: %v",
-			rowNum, outputNum, schemaPropertyKey, availableKeys)
+		return validationErrorWithDetails(rowNum, outputNum, "output",
+			fmt.Sprintf("schema_property_key '%s' not found in output columns. Available keys: %v", schemaPropertyKey, availableKeys))
 	}
 
 	// Outputs don't have comparators, so we don't validate them
@@ -825,27 +910,22 @@ func convertTerraformColumnsToSDK(columnsMap map[string]interface{}) (*platformc
 	// Convert input columns
 	if inputs, ok := columnsMap["inputs"].([]interface{}); ok {
 		sdkInputs := make([]platformclientv2.Decisiontableinputcolumn, 0, len(inputs))
-		for i, input := range inputs {
-			inputMap, ok := input.(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("input column %d is not a valid map", i+1)
-			}
-
+		if err := processItemsWithError(inputs, "input column", func(i int, inputMap map[string]interface{}) error {
 			sdkInput := platformclientv2.Decisiontableinputcolumn{
 				Id: platformclientv2.String(fmt.Sprintf("input-column-%d", i+1)),
 			}
 
 			// Convert expression
-			if expression, ok := inputMap["expression"].([]interface{}); ok && len(expression) > 0 {
-				if exprMap, ok := expression[0].(map[string]interface{}); ok {
+			if expressionList, ok := inputMap["expression"].([]interface{}); ok && len(expressionList) > 0 {
+				if exprMap, ok := expressionList[0].(map[string]interface{}); ok {
 					sdkExpr := &platformclientv2.Decisiontableinputcolumnexpression{}
 
 					// Convert contractual
-					if contractual, ok := exprMap["contractual"].([]interface{}); ok && len(contractual) > 0 {
-						if contractualMap, ok := contractual[0].(map[string]interface{}); ok {
-							if schemaPropertyKey, ok := contractualMap["schema_property_key"].(string); ok {
+					if contractualList, ok := exprMap["contractual"].([]interface{}); ok && len(contractualList) > 0 {
+						if contractualMap, ok := contractualList[0].(map[string]interface{}); ok {
+							if val, ok := contractualMap["schema_property_key"].(string); ok && val != "" {
 								contractualObj := &platformclientv2.Contractual{
-									SchemaPropertyKey: &schemaPropertyKey,
+									SchemaPropertyKey: &val,
 								}
 								sdkExpr.Contractual = &contractualObj
 							}
@@ -862,6 +942,9 @@ func convertTerraformColumnsToSDK(columnsMap map[string]interface{}) (*platformc
 			}
 
 			sdkInputs = append(sdkInputs, sdkInput)
+			return nil
+		}); err != nil {
+			return nil, err
 		}
 		sdkColumns.Inputs = &sdkInputs
 	}
@@ -869,30 +952,25 @@ func convertTerraformColumnsToSDK(columnsMap map[string]interface{}) (*platformc
 	// Convert output columns
 	if outputs, ok := columnsMap["outputs"].([]interface{}); ok {
 		sdkOutputs := make([]platformclientv2.Decisiontableoutputcolumn, 0, len(outputs))
-		for i, output := range outputs {
-			outputMap, ok := output.(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("output column %d is not a valid map", i+1)
-			}
-
+		if err := processItemsWithError(outputs, "output column", func(i int, outputMap map[string]interface{}) error {
 			sdkOutput := platformclientv2.Decisiontableoutputcolumn{
 				Id: platformclientv2.String(fmt.Sprintf("output-column-%d", i+1)),
 			}
 
 			// Convert value
-			if value, ok := outputMap["value"].([]interface{}); ok && len(value) > 0 {
-				if valueMap, ok := value[0].(map[string]interface{}); ok {
+			if valueList, ok := outputMap["value"].([]interface{}); ok && len(valueList) > 0 {
+				if valueMap, ok := valueList[0].(map[string]interface{}); ok {
 					sdkValue := &platformclientv2.Outputvalue{}
 
-					if schemaPropertyKey, ok := valueMap["schema_property_key"].(string); ok {
-						sdkValue.SchemaPropertyKey = &schemaPropertyKey
+					if val, ok := valueMap["schema_property_key"].(string); ok && val != "" {
+						sdkValue.SchemaPropertyKey = &val
 					}
 
 					// Handle nested properties if present
 					if properties, ok := valueMap["properties"].([]interface{}); ok {
 						sdkProperties, err := convertTerraformPropertiesToSDK(properties)
 						if err != nil {
-							return nil, fmt.Errorf("failed to convert properties for output column %d: %s", i+1, err)
+							return fmt.Errorf("failed to convert properties for output column %d: %s", i+1, err)
 						}
 						sdkValue.Properties = sdkProperties
 					}
@@ -902,6 +980,9 @@ func convertTerraformColumnsToSDK(columnsMap map[string]interface{}) (*platformc
 			}
 
 			sdkOutputs = append(sdkOutputs, sdkOutput)
+			return nil
+		}); err != nil {
+			return nil, err
 		}
 		sdkColumns.Outputs = &sdkOutputs
 	}
@@ -916,28 +997,26 @@ func convertTerraformPropertiesToSDK(properties []interface{}) (*[]platformclien
 	}
 
 	sdkProperties := make([]platformclientv2.Outputvalue, 0, len(properties))
-	for i, prop := range properties {
-		propMap, ok := prop.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("property %d is not a valid map", i+1)
-		}
-
+	if err := processItemsWithError(properties, "property", func(i int, propMap map[string]interface{}) error {
 		sdkProp := platformclientv2.Outputvalue{}
 
-		if schemaPropertyKey, ok := propMap["schema_property_key"].(string); ok {
-			sdkProp.SchemaPropertyKey = &schemaPropertyKey
+		if val, ok := propMap["schema_property_key"].(string); ok && val != "" {
+			sdkProp.SchemaPropertyKey = &val
 		}
 
 		// Handle nested properties recursively
-		if nestedProps, ok := propMap["properties"].([]interface{}); ok && len(nestedProps) > 0 {
+		if nestedProps, ok := propMap["properties"].([]interface{}); ok {
 			nestedSdkProps, err := convertTerraformPropertiesToSDK(nestedProps)
 			if err != nil {
-				return nil, fmt.Errorf("failed to convert nested properties: %s", err)
+				return fmt.Errorf("failed to convert nested properties: %s", err)
 			}
 			sdkProp.Properties = nestedSdkProps
 		}
 
 		sdkProperties = append(sdkProperties, sdkProp)
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return &sdkProperties, nil
@@ -952,30 +1031,27 @@ func convertTerraformRowToSDKPositional(rowMap map[string]interface{}, inputColu
 		sdkInputs := make(map[string]platformclientv2.Decisiontablerowparametervalue)
 		hasExplicitInput := false
 
-		for i, inputItem := range inputs {
-			if i >= len(inputColumnIds) {
-				break // Don't process more inputs than we have columns
-			}
+		if err := processItemsPositionally(inputs, len(inputColumnIds), func(i int, inputMap map[string]interface{}) error {
+			columnId := inputColumnIds[i]
 
-			if inputMap, ok := inputItem.(map[string]interface{}); ok {
-				columnId := inputColumnIds[i]
-
-				// Extract literal if present
-				if literal := extractLiteralFromList(inputMap["literal"]); literal != nil {
-					sdkLiteral, err := convertLiteralToSDK(literal)
-					if err != nil {
-						return platformclientv2.Createdecisiontablerowrequest{}, err
+			// Extract literal if present
+			if literal := extractLiteralFromList(inputMap["literal"]); literal != nil {
+				sdkLiteral, err := convertLiteralToSDK(literal)
+				if err != nil {
+					return err
+				}
+				// Only include the input if we have a literal value
+				if sdkLiteral != nil {
+					paramValue := platformclientv2.Decisiontablerowparametervalue{
+						Literal: sdkLiteral,
 					}
-					// Only include the input if we have a literal value
-					if sdkLiteral != nil {
-						paramValue := platformclientv2.Decisiontablerowparametervalue{
-							Literal: sdkLiteral,
-						}
-						sdkInputs[columnId] = paramValue
-						hasExplicitInput = true
-					}
+					sdkInputs[columnId] = paramValue
+					hasExplicitInput = true
 				}
 			}
+			return nil
+		}); err != nil {
+			return platformclientv2.Createdecisiontablerowrequest{}, err
 		}
 
 		// Validate that at least one input has an explicit value
@@ -993,30 +1069,27 @@ func convertTerraformRowToSDKPositional(rowMap map[string]interface{}, inputColu
 		sdkOutputs := make(map[string]platformclientv2.Decisiontablerowparametervalue)
 		hasExplicitOutput := false
 
-		for i, outputItem := range outputs {
-			if i >= len(outputColumnIds) {
-				break // Don't process more outputs than we have columns
-			}
+		if err := processItemsPositionally(outputs, len(outputColumnIds), func(i int, outputMap map[string]interface{}) error {
+			columnId := outputColumnIds[i]
 
-			if outputMap, ok := outputItem.(map[string]interface{}); ok {
-				columnId := outputColumnIds[i]
-
-				// Extract literal if present
-				if literal := extractLiteralFromList(outputMap["literal"]); literal != nil {
-					sdkLiteral, err := convertLiteralToSDK(literal)
-					if err != nil {
-						return platformclientv2.Createdecisiontablerowrequest{}, err
+			// Extract literal if present
+			if literal := extractLiteralFromList(outputMap["literal"]); literal != nil {
+				sdkLiteral, err := convertLiteralToSDK(literal)
+				if err != nil {
+					return err
+				}
+				// Only include the output if we have a literal value
+				if sdkLiteral != nil {
+					paramValue := platformclientv2.Decisiontablerowparametervalue{
+						Literal: sdkLiteral,
 					}
-					// Only include the output if we have a literal value
-					if sdkLiteral != nil {
-						paramValue := platformclientv2.Decisiontablerowparametervalue{
-							Literal: sdkLiteral,
-						}
-						sdkOutputs[columnId] = paramValue
-						hasExplicitOutput = true
-					}
+					sdkOutputs[columnId] = paramValue
+					hasExplicitOutput = true
 				}
 			}
+			return nil
+		}); err != nil {
+			return platformclientv2.Createdecisiontablerowrequest{}, err
 		}
 
 		// Validate that at least one output has an explicit value
