@@ -2670,8 +2670,8 @@ func TestUnitConvertLiteralToSDKNumberPrecision(t *testing.T) {
 	}
 }
 
-// TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals tests row conversion with empty literals
-func TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals(t *testing.T) {
+// TestUnitConvertTerraformRowToSDKEmptyLiterals tests row conversion with empty literals
+func TestUnitConvertTerraformRowToSDKEmptyLiterals(t *testing.T) {
 
 	// Test row with mix of regular and empty literals
 	rowMap := map[string]interface{}{
@@ -2710,7 +2710,7 @@ func TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals(t *testing.T) {
 	// Test with positional mapping
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1", "output-col-2"}
-	result, err := convertTerraformRowToSDKPositional(rowMap, inputColumnIds, outputColumnIds)
+	result, err := convertTerraformRowToSDK(rowMap, inputColumnIds, outputColumnIds)
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -2755,8 +2755,8 @@ func TestUnitConvertTerraformRowToSDKPositionalEmptyLiterals(t *testing.T) {
 	}
 }
 
-// TestUnitConvertSDKRowToTerraformPositionalEmptyLiterals tests row conversion with empty literals for export
-func TestUnitConvertSDKRowToTerraformPositionalEmptyLiterals(t *testing.T) {
+// TestUnitConvertSDKRowToTerraformEmptyLiterals tests row conversion with empty literals for export
+func TestUnitConvertSDKRowToTerraformEmptyLiterals(t *testing.T) {
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1", "output-col-2"}
 
@@ -2782,7 +2782,7 @@ func TestUnitConvertSDKRowToTerraformPositionalEmptyLiterals(t *testing.T) {
 		},
 	}
 
-	result := convertSDKRowToTerraformSimple(sdkRow, inputColumnIds, outputColumnIds)
+	result := convertSDKRowToTerraform(sdkRow, inputColumnIds, outputColumnIds)
 
 	// Check that all columns are included in the result
 	if result["inputs"] == nil {
@@ -2862,8 +2862,8 @@ func TestUnitConvertSDKRowToTerraformPositionalEmptyLiterals(t *testing.T) {
 	}
 }
 
-// TestUnitConvertTerraformRowToSDKPositionalAllDefaults tests validation that at least one input and output must have explicit values
-func TestUnitConvertTerraformRowToSDKPositionalAllDefaults(t *testing.T) {
+// TestUnitConvertTerraformRowToSDKAllDefaults tests validation that at least one input and output must have explicit values
+func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 	// Test row with all inputs using defaults (should fail)
 	rowMapAllDefaults := map[string]interface{}{
 		"inputs": []interface{}{
@@ -2893,7 +2893,7 @@ func TestUnitConvertTerraformRowToSDKPositionalAllDefaults(t *testing.T) {
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1"}
 
-	_, err := convertTerraformRowToSDKPositional(rowMapAllDefaults, inputColumnIds, outputColumnIds)
+	_, err := convertTerraformRowToSDK(rowMapAllDefaults, inputColumnIds, outputColumnIds)
 	if err == nil {
 		t.Error("Expected error for all inputs using defaults, but got none")
 	}
@@ -2930,7 +2930,7 @@ func TestUnitConvertTerraformRowToSDKPositionalAllDefaults(t *testing.T) {
 		},
 	}
 
-	_, err = convertTerraformRowToSDKPositional(rowMapAllOutputDefaults, inputColumnIds, outputColumnIds)
+	_, err = convertTerraformRowToSDK(rowMapAllOutputDefaults, inputColumnIds, outputColumnIds)
 	if err == nil {
 		t.Error("Expected error for all outputs using defaults, but got none")
 	}
@@ -2975,7 +2975,7 @@ func TestUnitConvertTerraformRowToSDKPositionalAllDefaults(t *testing.T) {
 		},
 	}
 
-	_, err = convertTerraformRowToSDKPositional(rowMapValid, inputColumnIds, outputColumnIds)
+	_, err = convertTerraformRowToSDK(rowMapValid, inputColumnIds, outputColumnIds)
 	if err != nil {
 		t.Errorf("Expected no error for valid row with explicit values, got: %v", err)
 	}

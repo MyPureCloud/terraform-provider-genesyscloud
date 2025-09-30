@@ -225,7 +225,7 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 		rowMap := row.(map[string]interface{})
 
 		// Convert Terraform row to SDK format using positional mapping
-		sdkRow, err := convertTerraformRowToSDKPositional(rowMap, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertTerraformRowToSDK(rowMap, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
 		}
@@ -289,7 +289,7 @@ func getDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTable
 	terraformRows := make([]interface{}, len(allRows))
 	for i, row := range allRows {
 		// For now, use a simple conversion that includes all columns
-		terraformRows[i] = convertSDKRowToTerraformSimple(row, inputColumnIds, outputColumnIds)
+		terraformRows[i] = convertSDKRowToTerraform(row, inputColumnIds, outputColumnIds)
 	}
 
 	return terraformRows, nil
@@ -671,7 +671,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		log.Printf("Updating row %s", rowId)
 
 		// Convert to SDK format using positional mapping (same as creation)
-		sdkRow, err := convertTerraformRowToSDKPositional(row, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row for update: %s", err)
 		}
@@ -705,7 +705,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 	// Add new rows using positional mapping
 	for i, row := range changes.adds {
 		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
-		sdkRow, err := convertTerraformRowToSDKPositional(row, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
 		}
