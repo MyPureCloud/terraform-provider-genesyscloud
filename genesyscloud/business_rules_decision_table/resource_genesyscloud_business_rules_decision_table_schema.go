@@ -83,7 +83,6 @@ func generatePropertiesSchema(depth int) map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			Description: "The contract schema property key that describes the nested property value.",
-
 		},
 		"properties": {
 			Type:     schema.TypeList,
@@ -422,6 +421,7 @@ func rowSchemaFunc() *schema.Resource {
 		},
 	}
 }
+
 // BusinessRulesDecisionTableExporter returns the resourceExporter object used to hold the genesyscloud_business_rules_decision_table exporter's config
 func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
