@@ -17,11 +17,6 @@ Test Class for the business rules decision table Data Source
 func TestAccDataSourceBusinessRulesDecisionTable(t *testing.T) {
 	t.Parallel()
 
-	// os.Setenv("GENESYSCLOUD_SDK_DEBUG", "true")
-	// os.Setenv("GENESYSCLOUD_SDK_DEBUG_FORMAT", "Text")
-	// os.Setenv("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "./test_debug.log")
-	// os.Setenv("GENESYSCLOUD_SDK_CLIENT_POOL_DEBUG", "true")
-
 	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
 	if !enabled {
 		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)

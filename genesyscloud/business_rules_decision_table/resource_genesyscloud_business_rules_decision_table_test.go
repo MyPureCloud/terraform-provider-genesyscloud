@@ -2,7 +2,6 @@ package business_rules_decision_table
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"testing"
 
@@ -17,10 +16,6 @@ import (
 
 func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 	t.Parallel()
-	os.Setenv("GENESYSCLOUD_SDK_DEBUG", "true")
-	os.Setenv("GENESYSCLOUD_SDK_DEBUG_FORMAT", "Text")
-	os.Setenv("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "./test_debug.log")
-	os.Setenv("GENESYSCLOUD_SDK_CLIENT_POOL_DEBUG", "true")
 
 	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
 	if !enabled {
