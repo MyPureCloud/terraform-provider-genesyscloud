@@ -1,7 +1,9 @@
 package architect_user_prompt
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -10,6 +12,8 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack"
+	localStackEnv "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws/localstack/environment"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/fileserver"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -265,6 +269,109 @@ func TestAccResourceArchitectUserPromptWavFileURL(t *testing.T) {
 	})
 
 	fileserver.ShutDown(srv, httpServerExitDone)
+}
+
+// TestAccResourceArchitectUserPromptWavFilS3URI tests the architect user prompt resource using LocalStack for S3 operations.
+// This test validates that the terraform-provider-genesyscloud can successfully deploy prompts from S3 buckets
+// using LocalStack as a local AWS service emulator.
+//
+// Prerequisites:
+//   - LocalStack must be running (either locally or in CI)
+//   - Environment variables must be set:
+//   - USE_LOCAL_STACK=true
+//   - LOCAL_STACK_IMAGE_URI=<localstack-image-uri>
+//
+// Test Flow:
+//
+//  1. Sets up LocalStack S3 bucket and uploads the test prompt file
+//
+//  2. Deploys the prompt using terraform with S3 source
+//
+//  3. Verifies the prompt was deployed correctly
+//
+//  4. Cleans up S3 bucket and temporary files
+//
+// This test is designed to run in CI environments where LocalStack is available
+// and properly configured with the required environment variables.
+func TestAccResourceArchitectUserPromptWavFilS3URI(t *testing.T) {
+	/*
+		// To run this test locally, set the following environment variables and run `localstack start` from another terminal
+		// See more on localstack CLI here - https://docs.localstack.cloud/aws/getting-started/installation/
+		os.Setenv(localStackEnv.UseLocalStackEnvVar, "true")
+		os.Setenv(localStackEnv.LocalStackImageUriEnvVar, "localstack/localstack:latest")
+	*/
+
+	imageURI := os.Getenv(localStackEnv.LocalStackImageUriEnvVar)
+	if imageURI == "" || !localStackEnv.LocalStackIsActive() {
+		t.Skipf("Missing env variables (%s or %s), indicating that localstack is not running", localStackEnv.LocalStackImageUriEnvVar, localStackEnv.UseLocalStackEnvVar)
+	}
+
+	ctx := context.Background()
+	localStackManager, err := localstack.NewLocalStackManager(ctx)
+	if err != nil {
+		t.Fatalf("Failed to initialise LocalStackManager: %s", err.Error())
+	}
+
+	bucketName := "testbucket-" + strings.ToLower(strings.ReplaceAll(uuid.NewString(), "-", ""))
+	objectKey := "test-prompt-01.wav"
+	s3URI := fmt.Sprintf("s3://%s/%s", bucketName, objectKey)
+
+	userPromptResourceLabel := "test-user_prompt_wav_file_s3"
+	userPromptResourceFullPath := ResourceType + "." + userPromptResourceLabel
+	userPromptName := "TestUserPromptWavS3_1" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptDescription := "Test prompt with wav audio file from S3"
+	userPromptResourceLang := "en-us"
+	userPromptResourceText := "This is a test greeting!"
+
+	err = localStackManager.SetupS3Bucket(bucketName, testrunner.GetTestDataPath("resource", ResourceType, "test-prompt-01.wav"), objectKey)
+	if err != nil {
+		t.Fatalf("Failed to setup S3 bucket: %s", err.Error())
+	}
+
+	defer func() {
+		err = localStackManager.CleanupS3Bucket(bucketName)
+		if err != nil {
+			t.Logf("Failed to cleanup S3 bucket: %s", err.Error())
+		}
+	}()
+
+	userPromptAsset := UserPromptResourceStruct{
+		Language:        userPromptResourceLang,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText),
+		Filename:        strconv.Quote(s3URI),
+		FileContentHash: util.NullValue,
+	}
+
+	userPromptResources := []*UserPromptResourceStruct{&userPromptAsset}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create user prompt with an audio file
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					userPromptResources,
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(userPromptResourceFullPath, "name", userPromptName),
+					resource.TestCheckResourceAttr(userPromptResourceFullPath, "description", userPromptDescription),
+					resource.TestCheckResourceAttr(userPromptResourceFullPath, "resources.0.filename", s3URI),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      userPromptResourceFullPath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUserPromptsDestroyed,
+	})
 }
 
 func testVerifyUserPromptsDestroyed(state *terraform.State) error {

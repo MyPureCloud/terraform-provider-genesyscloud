@@ -3,6 +3,7 @@ package business_rules_decision_table
 import (
 	"fmt"
 	"strconv"
+
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -82,6 +83,7 @@ func generatePropertiesSchema(depth int) map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			Description: "The contract schema property key that describes the nested property value.",
+
 		},
 		"properties": {
 			Type:     schema.TypeList,
@@ -280,7 +282,6 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 				MaxItems:    1,
 				Elem:        columnsSchemaFunc(),
 			},
-
 			"rows": {
 				Description: "Decision table rows containing input conditions and output results. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table.\n\nIMPORTANT: Row inputs and outputs must follow the same positional order as defined in the columns. The first input/output corresponds to the first column, second to second column, etc.",
 				Type:        schema.TypeList,
@@ -421,7 +422,6 @@ func rowSchemaFunc() *schema.Resource {
 		},
 	}
 }
-
 // BusinessRulesDecisionTableExporter returns the resourceExporter object used to hold the genesyscloud_business_rules_decision_table exporter's config
 func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{

@@ -11,6 +11,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	testrunner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -535,6 +536,67 @@ func TestValidateCSVWithColumns(t *testing.T) {
 				if diff != nil {
 					t.Errorf("Expected no diff for '%s' check but got one", tt.name)
 				}
+			}
+		})
+	}
+}
+
+func TestValidateIntMin(t *testing.T) {
+	tests := []struct {
+		name          string
+		minValue      int
+		testValue     interface{}
+		expectedError bool
+		errorMessage  string
+	}{
+		{
+			name:          "valid_value_above_minimum",
+			minValue:      5,
+			testValue:     10,
+			expectedError: false,
+		},
+		{
+			name:          "valid_value_equal_to_minimum",
+			minValue:      5,
+			testValue:     5,
+			expectedError: false,
+		},
+		{
+			name:          "invalid_value_below_minimum",
+			minValue:      5,
+			testValue:     3,
+			expectedError: true,
+			errorMessage:  "Value 3 is less than the minimum 5",
+		},
+		{
+			name:          "invalid_non_integer_value",
+			minValue:      5,
+			testValue:     "not_an_int",
+			expectedError: true,
+			errorMessage:  "Value not_an_int is not an int",
+		},
+		{
+			name:          "zero_minimum_with_negative_value",
+			minValue:      0,
+			testValue:     -1,
+			expectedError: true,
+			errorMessage:  "Value -1 is less than the minimum 0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			validator := ValidateIntMin(tt.minValue)
+			diags := validator(tt.testValue, cty.Path{})
+
+			if tt.expectedError {
+				if len(diags) == 0 {
+					t.Error("expected error but got none")
+				} else if tt.errorMessage != "" && !strings.Contains(diags[0].Summary, tt.errorMessage) {
+					t.Errorf("expected error message containing '%s', got: %s", tt.errorMessage, diags[0].Summary)
+				}
+			} else if len(diags) > 0 {
+				t.Errorf("unexpected error: %s", diags[0].Summary)
 			}
 		})
 	}

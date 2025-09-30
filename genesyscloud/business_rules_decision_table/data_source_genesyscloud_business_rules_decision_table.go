@@ -38,7 +38,6 @@ func dataSourceBusinessRulesDecisionTableRead(ctx context.Context, d *schema.Res
 
 		table := (*tables)[0]
 		d.SetId(*table.Id)
-
 		// Set the published version if available (search API includes this when withPublishedVersion=true)
 		if table.Published != nil && table.Published.Version != nil {
 			if err := d.Set("version", *table.Published.Version); err != nil {

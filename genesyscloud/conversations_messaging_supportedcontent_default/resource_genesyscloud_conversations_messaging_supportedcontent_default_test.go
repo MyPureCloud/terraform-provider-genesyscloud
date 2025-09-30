@@ -25,7 +25,7 @@ func TestAccResourceConversationsMessagingSupportedcontentDefault(t *testing.T) 
 	var (
 		defaultResourceLabel = "testSupportedDefaultContent"
 
-		name          = "Terraform Supported Content - " + uuid.NewString()
+		name          = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceLabel = "testSupportedContent"
 		inboundType   = "*/*"
 		outboundType  = "*/*"

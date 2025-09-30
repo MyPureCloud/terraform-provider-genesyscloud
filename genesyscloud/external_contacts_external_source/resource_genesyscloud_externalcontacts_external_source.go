@@ -35,7 +35,17 @@ func getAllAuthExternalContactsExternalSources(ctx context.Context, clientConfig
 			continue
 		}
 		log.Printf("Dealing with external source id : %s", *externalSource.Id)
-		resources[*externalSource.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalSource.Id}
+
+		// Use source name as blockLabel for portability across orgs
+		// Fall back to GUID if no name exists
+		blockLabel := ""
+		if externalSource.Name != nil && *externalSource.Name != "" {
+			blockLabel = *externalSource.Name
+		} else {
+			blockLabel = *externalSource.Id
+		}
+
+		resources[*externalSource.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 	return resources, nil
 }

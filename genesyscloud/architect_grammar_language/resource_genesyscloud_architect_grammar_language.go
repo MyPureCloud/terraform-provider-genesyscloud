@@ -43,11 +43,15 @@ func getAllAuthArchitectGrammarLanguage(ctx context.Context, clientConfig *platf
 }
 
 // createArchitectGrammarLanguage is used by the architect_grammar_language resource to create a Genesys cloud architect grammar language
-func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
 	architectGrammarLanguage := getArchitectGrammarLanguageFromResourceData(d)
+
+	if diags := validateFileContentHash(d); diags != nil {
+		return diags
+	}
 
 	log.Printf("Creating Architect Grammar Language %s for grammar %s", *architectGrammarLanguage.Language, *architectGrammarLanguage.GrammarId)
 	language, resp, err := proxy.createArchitectGrammarLanguage(ctx, &architectGrammarLanguage)
@@ -62,7 +66,7 @@ func createArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 }
 
 // readArchitectGrammarLanguage is used by the architect_grammar_language resource to read an architect grammar language from genesys cloud.
-func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceArchitectGrammarLanguage(), constants.ConsistencyChecks(), ResourceType)
@@ -95,11 +99,15 @@ func readArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, m
 }
 
 // updateArchitectGrammarLanguage is used by the architect_grammar_language resource to update an architect grammar language in Genesys Cloud
-func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 
 	architectGrammarLanguage := getArchitectGrammarLanguageFromResourceData(d)
+
+	if diags := validateFileContentHash(d); diags != nil {
+		return diags
+	}
 
 	log.Printf("Updating Architect Grammar Language %s", d.Id())
 	grammarId, languageCode := splitGrammarLanguageId(d.Id())
@@ -113,7 +121,7 @@ func updateArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData,
 }
 
 // deleteArchitectGrammarLanguage is used by the architect_grammar_language resource to delete an architect grammar language from Genesys cloud.
-func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteArchitectGrammarLanguage(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getArchitectGrammarLanguageProxy(sdkConfig)
 

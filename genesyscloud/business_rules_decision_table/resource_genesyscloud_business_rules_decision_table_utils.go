@@ -208,7 +208,6 @@ func buildSdkOutputColumns(outputColumns []interface{}) *[]platformclientv2.Deci
 // buildSdkExpression builds the SDK expression from the Terraform schema
 func buildSdkExpression(expression map[string]interface{}) *platformclientv2.Decisiontableinputcolumnexpression {
 	sdkExpression := platformclientv2.Decisiontableinputcolumnexpression{}
-
 	if contractualList, ok := expression["contractual"].([]interface{}); ok && len(contractualList) > 0 {
 		if contractual, ok := contractualList[0].(map[string]interface{}); ok {
 			sdkExpression.Contractual = buildSdkContractual(contractual)

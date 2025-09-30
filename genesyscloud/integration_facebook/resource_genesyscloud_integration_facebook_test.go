@@ -34,7 +34,7 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 		appSecret          = ""
 		name2              = "Terraform Facebook2-" + uuid.NewString()
 
-		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
+		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
 		inboundType                   = "*/*"
 

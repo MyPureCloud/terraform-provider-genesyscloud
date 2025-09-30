@@ -2,6 +2,7 @@ package telephony_providers_edges_trunkbasesettings
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -123,7 +124,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 			"HQ",
 			[]string{},
 			location.GenerateLocationEmergencyNum(
-				"+13100000003",
+				fmt.Sprintf("+131%v", 10000+rand.Intn(99999-10000)),
 				util.NullValue,
 			),
 			location.GenerateLocationAddress(
@@ -205,7 +206,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 					"HQ",
 					[]string{},
 					location.GenerateLocationEmergencyNum(
-						"+13100000003",
+						fmt.Sprintf("+131%v", 10000+rand.Intn(99999-10000)),
 						util.NullValue,
 					),
 					location.GenerateLocationAddress(

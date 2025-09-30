@@ -21,6 +21,7 @@ import (
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -101,6 +102,9 @@ type GenesysCloudResourceExporter struct {
 	filterList          *[]string
 	filterType          ExporterFilterType
 	flowResourcesList   []string
+
+	// resourceExportedForMrMo stores the schema.ResourceData object of the resource that was exported to Mr Mo
+	resourceExportedForMrMo *schema.ResourceData
 
 	meta                  interface{}
 	provider              *schema.Provider
@@ -862,16 +866,16 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	totalResources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
 
-	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
 			resources := make(resourceExporter.ResourceIDMetaMap)
-			resources, dependsMap, err := proxy.GetDependentConsumers(ctx, resourceKeys)
+			resources, dependsMap, totalFlowResources, err := proxy.GetDependentConsumers(ctx, resourceKeys, g.flowResourcesList)
 
 			if err != nil {
-				return nil, nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
+				return nil, nil, totalFlowResources, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
 			}
-			return resources, dependsMap, nil
+			return resources, dependsMap, totalFlowResources, nil
 		}
 	}
 
@@ -883,9 +887,11 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
-		resources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 
-		g.flowResourcesList = append(g.flowResourcesList, resourceKeys.State.ID)
+		g.flowResourcesList = flowResources
+
+		//g.flowResourcesList = append(g.flowResourcesList, resourceKeys.State.ID)
 
 		if err != nil {
 			return nil, nil, err
@@ -1712,6 +1718,10 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 		// Resource no longer exists
 		tflog.Trace(g.ctx, fmt.Sprintf("Empty State for resource %s, state: %v", resID, state))
 		return nil, nil
+	}
+
+	if mrmo.IsActive() {
+		g.resourceExportedForMrMo = resource.Data(state)
 	}
 
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))

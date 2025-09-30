@@ -180,6 +180,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 				Expression: &platformclientv2.Decisiontableinputcolumnexpression{
 					Contractual: func() **platformclientv2.Contractual {
 						contractual := &platformclientv2.Contractual{
+
 							SchemaPropertyKey: platformclientv2.String("customer_type"),
 						}
 						return &contractual
@@ -246,10 +247,9 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 		assert.NotNil(t, createRequest.Columns, "createRequest.Columns should not be nil")
 		assert.NotNil(t, createRequest.Columns.Inputs, "createRequest.Columns.Inputs should not be nil")
 		assert.NotNil(t, createRequest.Columns.Outputs, "createRequest.Columns.Outputs should not be nil")
+
 		assert.Len(t, *createRequest.Columns.Inputs, 1, "createRequest.Columns.Inputs should have 1 input (customer_type)")
 		assert.Len(t, *createRequest.Columns.Outputs, 1, "createRequest.Columns.Outputs should have 1 output (transfer_queue)")
-
-		// Validate that the mock providers are working
 
 		// Set up a realistic table version response
 		tableVersion.Id = &tId

@@ -32,7 +32,7 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 		outboundNotificationWebhookUrl1                 = "https://mock-server.prv-use1.test-pure.cloud/messaging-service/webhook"
 		outboundNotificationWebhookSignatureSecretToken = uuid.NewString()
 
-		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
+		nameSupportedContent       = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceIdSupportedContent = "testSupportedContent"
 		inboundType                = "*/*"
 
