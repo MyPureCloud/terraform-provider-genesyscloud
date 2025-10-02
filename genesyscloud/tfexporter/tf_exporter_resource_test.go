@@ -16,7 +16,6 @@ import (
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
-	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
@@ -249,7 +248,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[guide.ResourceType] = guide.ResourceGuide()
 	providerResources[guideVersion.ResourceType] = guideVersion.ResourceGuideVersion()
 	providerResources[businessRulesSchema.ResourceType] = businessRulesSchema.ResourceBusinessRulesSchema()
-	providerResources[businessRulesDecisionTable.ResourceType] = businessRulesDecisionTable.ResourceBusinessRulesDecisionTable()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -366,7 +364,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(guide.ResourceType, guide.GuideExporter())
 	RegisterExporter(guideVersion.ResourceType, guideVersion.GuideVersionExporter())
 	RegisterExporter(businessRulesSchema.ResourceType, businessRulesSchema.BusinessRulesSchemaExporter())
-	RegisterExporter(businessRulesDecisionTable.ResourceType, businessRulesDecisionTable.BusinessRulesDecisionTableExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
