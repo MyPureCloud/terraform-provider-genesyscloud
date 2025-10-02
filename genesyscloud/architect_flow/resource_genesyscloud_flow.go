@@ -161,7 +161,6 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving job status. JobID: %s, flowName: %s, error: %s", jobId, flowName, err), response))
 		}
 
-
 		if flowJob.Status != nil {
 			log.Printf("Job status for flow %s, jobId %s: %s", flowName, jobId, *flowJob.Status)
 		} else {
@@ -184,7 +183,6 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s, tracing messages: %v ", jobId, flowName, strings.Join(messages, "\n\n")), response))
 		}
-
 
 		if flowJob.Status != nil && *flowJob.Status == "Success" {
 			log.Printf("Success for flow %s, %s", flowName, jobId)
