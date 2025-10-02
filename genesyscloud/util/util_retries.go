@@ -22,13 +22,13 @@ import (
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
-	err := retry.RetryContext(ctx, timeout, method)
-	if err != nil && IsTimeoutError(err) {
+	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
+	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		return WithRetries(ctx, timeout, method)
 	}
-	return diag.FromErr(err)
+	return err
 }
 
 func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
