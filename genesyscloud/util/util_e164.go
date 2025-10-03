@@ -59,9 +59,12 @@ func (m *UtilE164Service) FormatE164Number(number string) (string, diag.Diagnost
 
 	phoneNumber, err := phonenumbers.Parse(number, defaultRegion)
 	if err != nil {
-		return "", diag.Errorf("Failed to format phone number %s: %s", number, err)
+		return "", diag.Errorf("Failed to parse phone number %s: %s", number, err)
 	}
 	formattedNum := phonenumbers.Format(phoneNumber, phonenumbers.E164)
+	if formattedNum == "+00" {
+		return "", diag.Errorf("Failed to format phone number %s", number)
+	}
 	return formattedNum, nil
 }
 

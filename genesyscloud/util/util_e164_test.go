@@ -624,7 +624,7 @@ func TestUnitFormatE164Number(t *testing.T) {
 		{
 			number:       "+1abc1234567",
 			expectError:  true,
-			errorMessage: "Failed to format phone number",
+			errorMessage: "Failed to parse phone number",
 		},
 		{
 			number:       "1919+3331234",
@@ -632,24 +632,29 @@ func TestUnitFormatE164Number(t *testing.T) {
 			errorMessage: "Phone number must start with a '+'",
 		},
 		{
-			number:       "+00",
+			number:       "+00", //too short
 			expectError:  true,
-			errorMessage: "Failed to format phone number",
+			errorMessage: "Failed to parse phone number",
 		},
 		{
 			number:       "+1",
 			expectError:  true,
-			errorMessage: "Failed to format phone number",
+			errorMessage: "Failed to parse phone number",
 		},
 		{
 			number:       "+59",
 			expectError:  true,
-			errorMessage: "Failed to format phone number",
+			errorMessage: "Failed to parse phone number",
 		},
 		{
 			number:       "+34000000000000000001", // too long
 			expectError:  true,
-			errorMessage: "Failed to format phone number",
+			errorMessage: "Failed to parse phone number",
+		},
+		{
+			number:       "+999123456", // invalid country code
+			expectError:  true,
+			errorMessage: "Failed to parse phone number",
 		},
 	}
 
@@ -668,7 +673,7 @@ func TestUnitFormatE164Number(t *testing.T) {
 					t.Errorf("expected no error for %s, got: %v", testCase.number, err)
 				}
 				if formattedNum != testCase.expectedValue {
-					t.Errorf("number: %s, expected value: %s, actual value: %s", testCase.number, testCase.expectedValue, formattedNum)
+					t.Errorf("number: %s, expected value: %s, got: %s", testCase.number, testCase.expectedValue, formattedNum)
 				}
 			}
 		})
