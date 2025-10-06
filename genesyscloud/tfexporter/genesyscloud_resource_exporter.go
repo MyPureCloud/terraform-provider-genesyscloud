@@ -656,7 +656,16 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 		}
 
 		if resource.Type == architectFlow.ResourceType && !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
-			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
+			// Get the current flow exporter to preserve its SanitizedResourceMap
+			currentFlowExporter := (*g.exporters)[architectFlow.ResourceType]
+			newFlowExporter := resourceExporter.GetNewFlowResourceExporter()
+
+			// Copy the SanitizedResourceMap from the current exporter to the new one to resolve flow references
+			if currentFlowExporter != nil && currentFlowExporter.SanitizedResourceMap != nil {
+				newFlowExporter.SetSanitizedResourceMap(currentFlowExporter.GetSanitizedResourceMap())
+			}
+
+			(*g.exporters)[architectFlow.ResourceType] = newFlowExporter
 		}
 
 		// 4. Convert the instance state to a map
