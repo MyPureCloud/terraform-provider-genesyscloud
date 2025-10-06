@@ -3,12 +3,11 @@ package user
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 	"net/http"
 	"strconv"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
 /*
@@ -35,6 +34,7 @@ type getUserByNameFunc func(ctx context.Context, p *userProxy, searchUser platfo
 type getVoicemailUserpoliciesByIdFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error)
 type updatePasswordFunc func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error)
 type getTelephonyExtensionPoolByExtensionFunc func(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
+type getTelephonyExtensionPoolByIdFunc func(ctx context.Context, p *userProxy, id string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error)
 
 /*
 The userProxy struct holds all the methods responsible for making calls to
@@ -60,6 +60,7 @@ type userProxy struct {
 	getVoicemailUserpolicicesByIdAttr        getVoicemailUserpoliciesByIdFunc
 	updatePasswordAttr                       updatePasswordFunc
 	getTelephonyExtensionPoolByExtensionAttr getTelephonyExtensionPoolByExtensionFunc
+	getTelephonyExtensionPoolByIdAttr        getTelephonyExtensionPoolByIdFunc
 	userCache                                rc.CacheInterface[platformclientv2.User] //Define the cache for user resource
 	extensionPoolCache                       rc.CacheInterface[platformclientv2.Extensionpool]
 }
@@ -97,6 +98,7 @@ func newUserProxy(clientConfig *platformclientv2.Configuration) *userProxy {
 		getVoicemailUserpolicicesByIdAttr:        getVoicemailUserpoliciesByUserIdFn,
 		updatePasswordAttr:                       updatePasswordFn,
 		getTelephonyExtensionPoolByExtensionAttr: getTelephonyExtensionPoolByExtensionFn,
+		getTelephonyExtensionPoolByIdAttr:        getTelephonyExtensionPoolByIdFn,
 	}
 }
 
@@ -172,8 +174,14 @@ func (p *userProxy) updatePassword(ctx context.Context, userId string, newPasswo
 	return p.updatePasswordAttr(ctx, p, userId, newPassword)
 }
 
+// getTelephonyExtensionPoolByExtension
 func (p *userProxy) getTelephonyExtensionPoolByExtension(ctx context.Context, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
 	return p.getTelephonyExtensionPoolByExtensionAttr(ctx, p, extNum)
+}
+
+// getTelephonyExtensionPoolById
+func (p *userProxy) getTelephonyExtensionPoolById(ctx context.Context, id string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	return p.getTelephonyExtensionPoolByIdAttr(ctx, p, id)
 }
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
@@ -343,4 +351,8 @@ func getTelephonyExtensionPoolByExtensionFn(_ context.Context, p *userProxy, ext
 	}
 
 	return nil, nil, fmt.Errorf("unable to find corresponding extension pool")
+}
+
+func getTelephonyExtensionPoolByIdFn(_ context.Context, p *userProxy, id string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	return p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpool(id)
 }

@@ -64,6 +64,8 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return addrErr
 	}
 
+	waitForExtensionPoolActivation(ctx, d, proxy)
+
 	// Check for a deleted user before creating
 	id, _ := getDeletedUserId(email, proxy)
 	if id != nil {
@@ -207,6 +209,8 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if err != nil {
 		return err
 	}
+
+	waitForExtensionPoolActivation(ctx, d, proxy)
 
 	email := d.Get("email").(string)
 
