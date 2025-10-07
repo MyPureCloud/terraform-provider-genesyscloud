@@ -620,7 +620,6 @@ func convertLiteralToTerraform(sdkLiteral *platformclientv2.Literal) map[string]
 		literal["type"] = "special"
 	} else {
 		// If no fields are set, return empty values to indicate use of column default
-		// This prevents downstream errors from empty map
 		literal["value"] = ""
 		literal["type"] = ""
 	}
