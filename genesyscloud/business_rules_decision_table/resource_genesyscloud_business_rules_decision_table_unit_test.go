@@ -1937,7 +1937,9 @@ func TestUnitResourceBusinessRulesDecisionTableCreateFailureRollback(t *testing.
 		},
 	}
 
-	resourceDataMap := buildTestDecisionTableResourceMapCRUD(tId, tName, tDescription, tDivisionId, tSchemaId, []interface{}{})
+	// Convert SDK columns to Terraform format for testing
+	tColumnsTF := convertSDKColumnsToTerraform(tColumns)
+	resourceDataMap := buildTestDecisionTableResourceMapCRUD(tId, tName, tDescription, tDivisionId, tSchemaId, tColumnsTF)
 	resourceDataMap["rows"] = rows
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 
@@ -2101,7 +2103,9 @@ func TestUnitResourceBusinessRulesDecisionTableCreatePublishFailureRollback(t *t
 		},
 	}
 
-	resourceDataMap := buildTestDecisionTableResourceMapCRUD(tId, tName, tDescription, tDivisionId, tSchemaId, []interface{}{})
+	// Convert SDK columns to Terraform format for testing
+	tColumnsTF := convertSDKColumnsToTerraform(tColumns)
+	resourceDataMap := buildTestDecisionTableResourceMapCRUD(tId, tName, tDescription, tDivisionId, tSchemaId, tColumnsTF)
 	resourceDataMap["rows"] = rows
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 

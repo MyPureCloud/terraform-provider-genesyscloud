@@ -470,11 +470,25 @@ func flattenProperties(sdkProperties []platformclientv2.Outputvalue) []interface
 }
 
 // buildCreateRequest builds a CreateDecisionTableRequest from Terraform resource data
-func buildCreateRequest(d *schema.ResourceData) *platformclientv2.Createdecisiontablerequest {
+func buildCreateRequest(d *schema.ResourceData) (*platformclientv2.Createdecisiontablerequest, error) {
 	tableName := d.Get("name").(string)
 	divisionId := d.Get("division_id").(string)
 	schemaId := d.Get("schema_id").(string)
 	columns := d.Get("columns").([]interface{})
+
+	// Validate required fields
+	if tableName == "" {
+		return nil, fmt.Errorf("name is required")
+	}
+	if divisionId == "" {
+		return nil, fmt.Errorf("division_id is required")
+	}
+	if schemaId == "" {
+		return nil, fmt.Errorf("schema_id is required")
+	}
+	if len(columns) == 0 {
+		return nil, fmt.Errorf("columns are required")
+	}
 
 	createRequest := &platformclientv2.Createdecisiontablerequest{
 		Name:       platformclientv2.String(tableName),
@@ -488,12 +502,10 @@ func buildCreateRequest(d *schema.ResourceData) *platformclientv2.Createdecision
 	}
 
 	// Build columns (required field)
-	if len(columns) > 0 {
-		columnData := columns[0].(map[string]interface{})
-		createRequest.Columns = buildSdkColumns(columnData)
-	}
+	columnData := columns[0].(map[string]interface{})
+	createRequest.Columns = buildSdkColumns(columnData)
 
-	return createRequest
+	return createRequest, nil
 }
 
 // extractColumnOrder extracts the order of input and output columns from SDK columns

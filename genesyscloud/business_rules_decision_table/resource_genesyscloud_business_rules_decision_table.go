@@ -51,30 +51,17 @@ func createBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessRulesDecisionTableProxy(sdkConfig)
 
-	// Validate required fields
-	tableName := d.Get("name").(string)
-	if tableName == "" {
-		return util.BuildAPIDiagnosticError(ResourceType, "name is required", nil)
-	}
-
-	schemaId := d.Get("schema_id").(string)
-	if schemaId == "" {
-		return util.BuildAPIDiagnosticError(ResourceType, "schema_id is required", nil)
-	}
-
-	description := d.Get("description").(string)
-	if description != "" {
-		log.Printf("Creating business rules decision table with name: %s, description: %s", tableName, description)
-	} else {
-		log.Printf("Creating business rules decision table with name: %s", tableName)
-	}
-
 	// Create the decision table
-	createRequest := buildCreateRequest(d)
-	if createRequest.Description != nil {
-		log.Printf("DEBUG: Create request description: %s", *createRequest.Description)
+	createRequest, err := buildCreateRequest(d)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, err.Error(), nil)
+	}
+
+	// Log creation with appropriate description handling
+	if createRequest.Description != nil && *createRequest.Description != "" {
+		log.Printf("Creating business rules decision table with name: %s, description: %s", *createRequest.Name, *createRequest.Description)
 	} else {
-		log.Printf("DEBUG: Create request description: nil")
+		log.Printf("Creating business rules decision table with name: %s", *createRequest.Name)
 	}
 	tableVersionResponse, resp, err := proxy.createBusinessRulesDecisionTable(ctx, createRequest)
 	if err != nil {
