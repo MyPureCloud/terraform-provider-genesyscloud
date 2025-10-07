@@ -1,6 +1,7 @@
 package business_rules_decision_table
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -10,6 +11,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
+
+// DateTimeParseFormat is the format used for parsing datetime values
+const DateTimeParseFormat = "2006-01-02T15:04:05.000Z"
 
 // buildDefaultsTo builds SDK defaults_to from Terraform schema
 func buildDefaultsTo(defaultsToList []interface{}) *platformclientv2.Decisiontablecolumndefaultrowvalue {
@@ -124,7 +128,7 @@ func convertLiteralValue(value, valueType string) (interface{}, string, error) {
 			return nil, "", fmt.Errorf("value '%s' is not a valid date", value)
 		}
 	case "datetime":
-		if parsedDateTime, err := time.Parse("2006-01-02T15:04:05.000Z", value); err == nil {
+		if parsedDateTime, err := time.Parse(DateTimeParseFormat, value); err == nil {
 			return &parsedDateTime, "Datetime", nil
 		} else {
 			return nil, "", fmt.Errorf("value '%s' is not a valid datetime", value)
@@ -594,7 +598,7 @@ func convertLiteralToTerraform(sdkLiteral *platformclientv2.Literal) map[string]
 		literal["value"] = sdkLiteral.Date.Format(resourcedata.DateParseFormat)
 		literal["type"] = "date"
 	} else if sdkLiteral.Datetime != nil {
-		literal["value"] = sdkLiteral.Datetime.Format("2006-01-02T15:04:05.000Z")
+		literal["value"] = sdkLiteral.Datetime.Format(DateTimeParseFormat)
 		literal["type"] = "datetime"
 	} else if sdkLiteral.Boolean != nil {
 		literal["value"] = strconv.FormatBool(*sdkLiteral.Boolean)
@@ -602,6 +606,11 @@ func convertLiteralToTerraform(sdkLiteral *platformclientv2.Literal) map[string]
 	} else if sdkLiteral.Special != nil {
 		literal["value"] = *sdkLiteral.Special
 		literal["type"] = "special"
+	} else {
+		// If no fields are set, return empty values to indicate use of column default
+		// This prevents downstream errors from empty map
+		literal["value"] = ""
+		literal["type"] = ""
 	}
 
 	return literal
@@ -771,4 +780,221 @@ func convertTerraformRowToSDK(rowMap map[string]interface{}, inputColumnIds []st
 	}
 
 	return sdkRow, nil
+}
+
+// RowChange represents changes to be made to rows
+type RowChange struct {
+	adds    []map[string]interface{} // New rows to add
+	updates []map[string]interface{} // Existing rows to update
+	deletes []string                 // Row IDs to delete
+}
+
+// compareRows compares old and new rows to determine what changes need to be made
+func compareRows(oldRows []interface{}, newRows []interface{}) RowChange {
+	changes := RowChange{
+		adds:    []map[string]interface{}{},
+		updates: []map[string]interface{}{},
+		deletes: []string{},
+	}
+
+	// Create maps for easier lookup
+	oldRowsMap := make(map[string]map[string]interface{})
+	for i, row := range oldRows {
+		rowMap := row.(map[string]interface{})
+		if rowId, ok := rowMap["row_id"].(string); ok && rowId != "" {
+			log.Printf("DEBUG: Old row %d: ID=%s, data=%+v", i, rowId, rowMap)
+			oldRowsMap[rowId] = rowMap
+		}
+	}
+
+	newRowsMap := make(map[string]map[string]interface{})
+	for i, row := range newRows {
+		rowMap := row.(map[string]interface{})
+		if rowId, ok := rowMap["row_id"].(string); ok && rowId != "" {
+			log.Printf("DEBUG: New row %d: ID=%s, data=%+v", i, rowId, rowMap)
+			newRowsMap[rowId] = rowMap
+		} else {
+			// New row without ID (will be added)
+			log.Printf("DEBUG: New row %d: No ID, will be added: %+v", i, rowMap)
+			changes.adds = append(changes.adds, rowMap)
+		}
+	}
+
+	// Find updates and deletes
+	for rowId, oldRow := range oldRowsMap {
+		if newRow, exists := newRowsMap[rowId]; exists {
+			// Row exists in both - check if it changed
+			if !rowsEqual(oldRow, newRow) {
+				log.Printf("DEBUG: Row %s detected as changed", rowId)
+				log.Printf("DEBUG: Old row: %+v", oldRow)
+				log.Printf("DEBUG: New row: %+v", newRow)
+				changes.updates = append(changes.updates, newRow)
+			} else {
+				log.Printf("DEBUG: Row %s unchanged, skipping update", rowId)
+			}
+		} else {
+			// Row was deleted
+			changes.deletes = append(changes.deletes, rowId)
+		}
+	}
+
+	return changes
+}
+
+// rowsEqual compares two row maps to see if they're equal
+func rowsEqual(row1, row2 map[string]interface{}) bool {
+	// Compare inputs - these are arrays in column order mapping
+	inputs1, ok1 := row1["inputs"].([]interface{})
+	inputs2, ok2 := row2["inputs"].([]interface{})
+	if !ok1 || !ok2 || !arraysEqual(inputs1, inputs2) {
+		log.Printf("DEBUG: Inputs differ - row1: %+v, row2: %+v", inputs1, inputs2)
+		return false
+	}
+
+	// Compare outputs - these are arrays in column order mapping
+	outputs1, ok1 := row1["outputs"].([]interface{})
+	outputs2, ok2 := row2["outputs"].([]interface{})
+	if !ok1 || !ok2 || !arraysEqual(outputs1, outputs2) {
+		log.Printf("DEBUG: Outputs differ - row1: %+v, row2: %+v", outputs1, outputs2)
+		return false
+	}
+
+	return true
+}
+
+// arraysEqual compares two arrays for equality
+func arraysEqual(arr1, arr2 []interface{}) bool {
+	if len(arr1) != len(arr2) {
+		return false
+	}
+
+	for i, value1 := range arr1 {
+		value2 := arr2[i]
+		if !valuesEqual(value1, value2) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// mapsEqual compares two maps for equality
+func mapsEqual(map1, map2 map[string]interface{}) bool {
+	if len(map1) != len(map2) {
+		return false
+	}
+
+	for key, value1 := range map1 {
+		value2, exists := map2[key]
+		if !exists || !valuesEqual(value1, value2) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// valuesEqual compares two values for equality
+func valuesEqual(val1, val2 interface{}) bool {
+	// Handle different types
+	switch v1 := val1.(type) {
+	case map[string]interface{}:
+		v2, ok := val2.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		return mapsEqual(v1, v2)
+	case []interface{}:
+		v2, ok := val2.([]interface{})
+		if !ok {
+			return false
+		}
+		return arraysEqual(v1, v2)
+	default:
+		return val1 == val2
+	}
+}
+
+// applyRowChanges applies the detected changes to the draft version
+func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange) error {
+	// Get the table version to extract column mapping
+	tableVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, version)
+	if err != nil {
+		return fmt.Errorf("failed to get table version for column mapping: %s", err)
+	}
+
+	// Get column IDs in order for column order mapping
+	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
+
+	// Track successfully added rows for potential rollback
+	var addedRows []string
+
+	// Delete rows first
+	for _, rowId := range changes.deletes {
+		log.Printf("Deleting row %s", rowId)
+		_, err := proxy.deleteDecisionTableRow(ctx, tableId, version, rowId)
+		if err != nil {
+			return fmt.Errorf("failed to delete row %s: %s", rowId, err)
+		}
+		log.Printf("Successfully deleted row %s", rowId)
+	}
+
+	// Update existing rows
+	for _, row := range changes.updates {
+		rowId := row["row_id"].(string)
+		log.Printf("Updating row %s", rowId)
+
+		// Convert to SDK format using column order mapping (same as creation)
+		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
+		if err != nil {
+			return fmt.Errorf("failed to convert row for update: %s", err)
+		}
+
+		// Convert SDK row to update request format
+		updateRequest := convertSDKRowToUpdateRequest(sdkRow)
+
+		// Update the row
+		updatedRow, _, err := proxy.updateDecisionTableRow(ctx, tableId, version, rowId, updateRequest)
+		if err != nil {
+			return fmt.Errorf("failed to update row %s: %s", rowId, err)
+		}
+
+		// Log the returned row data for debugging
+		if updatedRow != nil {
+			rowIdStr := "unknown"
+			rowIndexStr := "unknown"
+			if updatedRow.Id != nil {
+				rowIdStr = *updatedRow.Id
+			}
+			if updatedRow.RowIndex != nil {
+				rowIndexStr = fmt.Sprintf("%d", *updatedRow.RowIndex)
+			}
+			log.Printf("Successfully updated row %s: returned row_id=%s, row_index=%s",
+				rowId, rowIdStr, rowIndexStr)
+		} else {
+			log.Printf("Successfully updated row %s (no row data returned)", rowId)
+		}
+	}
+
+	// Add new rows using column order mapping
+	for i, row := range changes.adds {
+		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
+		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
+		if err != nil {
+			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
+		}
+		_, err = proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
+		if err != nil {
+			// If adding a row fails, we can't easily rollback individual rows
+			// The version cleanup will handle the overall rollback
+			return fmt.Errorf("failed to add new row %d/%d: %s", i+1, len(changes.adds), err)
+		}
+
+		// Track successfully added rows (if we had row IDs, we'd store them here)
+		addedRows = append(addedRows, fmt.Sprintf("row_%d", i+1))
+		log.Printf("Successfully added row %d/%d", i+1, len(changes.adds))
+	}
+
+	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(addedRows))
+	return nil
 }

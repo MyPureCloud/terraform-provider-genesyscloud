@@ -63,7 +63,11 @@ func createBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceDat
 	}
 
 	description := d.Get("description").(string)
-	log.Printf("Creating business rules decision table with name: %s, description: %s", tableName, description)
+	if description != "" {
+		log.Printf("Creating business rules decision table with name: %s, description: %s", tableName, description)
+	} else {
+		log.Printf("Creating business rules decision table with name: %s", tableName)
+	}
 
 	// Create the decision table
 	createRequest := buildCreateRequest(d)
@@ -174,6 +178,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 		if tableVersion.Columns == nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("decision table version %d for table %s has no columns", versionToRead, tableId), nil))
 		}
+		log.Printf("Flattening columns for decision table %s version %d", tableId, versionToRead)
 		columns := flattenColumns(tableVersion.Columns)
 		d.Set("columns", []interface{}{columns})
 
@@ -198,10 +203,12 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 		}
 
 		// Set rows from the version - error if failed to get rows
+		log.Printf("Getting rows for decision table %s version %d", tableId, versionToRead)
 		rows, err := getDecisionTableRows(ctx, proxy, tableVersion)
 		if err != nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get rows for version %d: %s", versionToRead, err), nil))
 		}
+		log.Printf("Successfully retrieved %d rows for decision table %s version %d", len(rows), tableId, versionToRead)
 		d.Set("rows", rows)
 
 		log.Printf("Read business rules decision table %s version %d", tableId, versionToRead)
@@ -477,250 +484,46 @@ func cleanupVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProxy,
 	return nil
 }
 
-// RowChange represents changes to be made to rows
-type RowChange struct {
-	adds    []map[string]interface{} // New rows to add
-	updates []map[string]interface{} // Existing rows to update
-	deletes []string                 // Row IDs to delete
-}
-
 // waitForVersionDraftStatus polls until a version reaches draft status
 func waitForVersionDraftStatus(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int) error {
 	const maxRetries = 30 // 15 minutes with 30-second intervals
 	const retryInterval = 30 * time.Second
 
+	log.Printf("Starting to poll for version %d to reach draft status (max %d retries, %v intervals)", version, maxRetries, retryInterval)
+
 	for i := 0; i < maxRetries; i++ {
+		log.Printf("Polling attempt %d/%d for version %d status", i+1, maxRetries, version)
+
 		versionData, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, version)
 		if err != nil {
+			log.Printf("Failed to get version %d status on attempt %d: %s", version, i+1, err)
 			return fmt.Errorf("failed to get version status: %s", err)
 		}
 
 		if versionData.Status != nil {
 			status := *versionData.Status
-			log.Printf("Version %d status: %s", version, status)
+			log.Printf("Version %d status on attempt %d: %s", version, i+1, status)
 
 			if status == "Draft" {
+				log.Printf("Version %d successfully reached draft status after %d attempts", version, i+1)
 				return nil
 			}
 
 			if status == "Failed" || status == "Error" {
+				log.Printf("Version %d failed with status: %s after %d attempts", version, status, i+1)
 				return fmt.Errorf("version %d failed with status: %s", version, status)
 			}
+		} else {
+			log.Printf("Version %d status is nil on attempt %d", version, i+1)
 		}
 
 		// Wait before next check
-		time.Sleep(retryInterval)
+		if i < maxRetries-1 { // Don't sleep on the last iteration
+			log.Printf("Waiting %v before next poll attempt for version %d", retryInterval, version)
+			time.Sleep(retryInterval)
+		}
 	}
 
+	log.Printf("Timeout reached after %d attempts waiting for version %d to reach draft status", maxRetries, version)
 	return fmt.Errorf("timeout waiting for version %d to reach draft status", version)
-}
-
-// compareRows compares old and new rows to determine what changes need to be made
-func compareRows(oldRows []interface{}, newRows []interface{}) RowChange {
-	changes := RowChange{
-		adds:    []map[string]interface{}{},
-		updates: []map[string]interface{}{},
-		deletes: []string{},
-	}
-
-	// Create maps for easier lookup
-	oldRowsMap := make(map[string]map[string]interface{})
-	for i, row := range oldRows {
-		rowMap := row.(map[string]interface{})
-		if rowId, ok := rowMap["row_id"].(string); ok && rowId != "" {
-			log.Printf("DEBUG: Old row %d: ID=%s, data=%+v", i, rowId, rowMap)
-			oldRowsMap[rowId] = rowMap
-		}
-	}
-
-	newRowsMap := make(map[string]map[string]interface{})
-	for i, row := range newRows {
-		rowMap := row.(map[string]interface{})
-		if rowId, ok := rowMap["row_id"].(string); ok && rowId != "" {
-			log.Printf("DEBUG: New row %d: ID=%s, data=%+v", i, rowId, rowMap)
-			newRowsMap[rowId] = rowMap
-		} else {
-			// New row without ID (will be added)
-			log.Printf("DEBUG: New row %d: No ID, will be added: %+v", i, rowMap)
-			changes.adds = append(changes.adds, rowMap)
-		}
-	}
-
-	// Find updates and deletes
-	for rowId, oldRow := range oldRowsMap {
-		if newRow, exists := newRowsMap[rowId]; exists {
-			// Row exists in both - check if it changed
-			if !rowsEqual(oldRow, newRow) {
-				log.Printf("DEBUG: Row %s detected as changed", rowId)
-				log.Printf("DEBUG: Old row: %+v", oldRow)
-				log.Printf("DEBUG: New row: %+v", newRow)
-				changes.updates = append(changes.updates, newRow)
-			} else {
-				log.Printf("DEBUG: Row %s unchanged, skipping update", rowId)
-			}
-		} else {
-			// Row was deleted
-			changes.deletes = append(changes.deletes, rowId)
-		}
-	}
-
-	return changes
-}
-
-// rowsEqual compares two row maps to see if they're equal
-func rowsEqual(row1, row2 map[string]interface{}) bool {
-	// Compare inputs - these are arrays in column order mapping
-	inputs1, ok1 := row1["inputs"].([]interface{})
-	inputs2, ok2 := row2["inputs"].([]interface{})
-	if !ok1 || !ok2 || !arraysEqual(inputs1, inputs2) {
-		log.Printf("DEBUG: Inputs differ - row1: %+v, row2: %+v", inputs1, inputs2)
-		return false
-	}
-
-	// Compare outputs - these are arrays in column order mapping
-	outputs1, ok1 := row1["outputs"].([]interface{})
-	outputs2, ok2 := row2["outputs"].([]interface{})
-	if !ok1 || !ok2 || !arraysEqual(outputs1, outputs2) {
-		log.Printf("DEBUG: Outputs differ - row1: %+v, row2: %+v", outputs1, outputs2)
-		return false
-	}
-
-	return true
-}
-
-// arraysEqual compares two arrays for equality
-func arraysEqual(arr1, arr2 []interface{}) bool {
-	if len(arr1) != len(arr2) {
-		return false
-	}
-
-	for i, value1 := range arr1 {
-		value2 := arr2[i]
-		if !valuesEqual(value1, value2) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// mapsEqual compares two maps for equality
-func mapsEqual(map1, map2 map[string]interface{}) bool {
-	if len(map1) != len(map2) {
-		return false
-	}
-
-	for key, value1 := range map1 {
-		value2, exists := map2[key]
-		if !exists || !valuesEqual(value1, value2) {
-			return false
-		}
-	}
-
-	return true
-}
-
-// valuesEqual compares two values for equality
-func valuesEqual(val1, val2 interface{}) bool {
-	// Handle different types
-	switch v1 := val1.(type) {
-	case map[string]interface{}:
-		v2, ok := val2.(map[string]interface{})
-		if !ok {
-			return false
-		}
-		return mapsEqual(v1, v2)
-	case []interface{}:
-		v2, ok := val2.([]interface{})
-		if !ok {
-			return false
-		}
-		return arraysEqual(v1, v2)
-	default:
-		return val1 == val2
-	}
-}
-
-// applyRowChanges applies the detected changes to the draft version
-func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange) error {
-	// Get the table version to extract column mapping
-	tableVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, version)
-	if err != nil {
-		return fmt.Errorf("failed to get table version for column mapping: %s", err)
-	}
-
-	// Get column IDs in order for column order mapping
-	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
-
-	// Track successfully added rows for potential rollback
-	var addedRows []string
-
-	// Delete rows first
-	for _, rowId := range changes.deletes {
-		log.Printf("Deleting row %s", rowId)
-		_, err := proxy.deleteDecisionTableRow(ctx, tableId, version, rowId)
-		if err != nil {
-			return fmt.Errorf("failed to delete row %s: %s", rowId, err)
-		}
-		log.Printf("Successfully deleted row %s", rowId)
-	}
-
-	// Update existing rows
-	for _, row := range changes.updates {
-		rowId := row["row_id"].(string)
-		log.Printf("Updating row %s", rowId)
-
-		// Convert to SDK format using column order mapping (same as creation)
-		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
-		if err != nil {
-			return fmt.Errorf("failed to convert row for update: %s", err)
-		}
-
-		// Convert SDK row to update request format
-		updateRequest := convertSDKRowToUpdateRequest(sdkRow)
-
-		// Update the row
-		updatedRow, _, err := proxy.updateDecisionTableRow(ctx, tableId, version, rowId, updateRequest)
-		if err != nil {
-			return fmt.Errorf("failed to update row %s: %s", rowId, err)
-		}
-
-		// Log the returned row data for debugging
-		if updatedRow != nil {
-			rowIdStr := "unknown"
-			rowIndexStr := "unknown"
-			if updatedRow.Id != nil {
-				rowIdStr = *updatedRow.Id
-			}
-			if updatedRow.RowIndex != nil {
-				rowIndexStr = fmt.Sprintf("%d", *updatedRow.RowIndex)
-			}
-			log.Printf("Successfully updated row %s: returned row_id=%s, row_index=%s",
-				rowId, rowIdStr, rowIndexStr)
-		} else {
-			log.Printf("Successfully updated row %s (no row data returned)", rowId)
-		}
-	}
-
-	// Add new rows using column order mapping
-	for i, row := range changes.adds {
-		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
-		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
-		if err != nil {
-			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
-		}
-		_, err = proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
-		if err != nil {
-			// If adding a row fails, we can't easily rollback individual rows
-			// The version cleanup will handle the overall rollback
-			return fmt.Errorf("failed to add new row %d/%d: %s", i+1, len(changes.adds), err)
-		}
-
-		// Track successfully added rows (if we had row IDs, we'd store them here)
-		addedRows = append(addedRows, fmt.Sprintf("row_%d", i+1))
-		log.Printf("Successfully added row %d/%d", i+1, len(changes.adds))
-	}
-
-	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(addedRows))
-	return nil
 }
