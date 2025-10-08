@@ -299,6 +299,18 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 		return diagErr
 	}
 
+	if !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+		currentFlowExporter := (*g.exporters)[architectFlow.ResourceType]
+
+		if currentFlowExporter != nil && len(currentFlowExporter.SanitizedResourceMap) > 0 {
+			newFlowExporter := resourceExporter.GetNewFlowResourceExporter()
+
+			newFlowExporter.SetSanitizedResourceMap(currentFlowExporter.GetSanitizedResourceMap())
+			(*g.exporters)[architectFlow.ResourceType] = newFlowExporter
+			tflog.Info(g.ctx, fmt.Sprintf("Replaced flow exporter with new exporter preserving %d flow resources in SanitizedResourceMap", len(currentFlowExporter.SanitizedResourceMap)))
+		}
+	}
+
 	// Step #3 Retrieve the individual genesys cloud object instances
 	diagErr = append(diagErr, g.retrieveGenesysCloudObjectInstances()...)
 	if diagErr.HasError() {
@@ -636,20 +648,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	defer cancel()
 
 	for _, resource := range resources {
-
-		// Use appropriate Flow exporter function
-		if resource.Type == architectFlow.ResourceType && !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
-			// Get the current flow exporter to preserve its SanitizedResourceMap
-			currentFlowExporter := (*g.exporters)[architectFlow.ResourceType]
-			newFlowExporter := resourceExporter.GetNewFlowResourceExporter()
-
-			// Copy the SanitizedResourceMap from the current exporter to the new one to resolve flow references
-			if currentFlowExporter != nil && currentFlowExporter.SanitizedResourceMap != nil {
-				newFlowExporter.SetSanitizedResourceMap(currentFlowExporter.GetSanitizedResourceMap())
-			}
-
-			(*g.exporters)[architectFlow.ResourceType] = newFlowExporter
-		}
 
 		wg.Add(1)
 		go func(resource resourceExporter.ResourceInfo) {
