@@ -156,14 +156,17 @@ func processItemsPositionally(items []interface{}, maxCount int, processItem fun
 }
 
 // buildSdkInputColumns builds the SDK input columns from the Terraform schema
-func buildSdkInputColumns(inputColumns []interface{}) *[]platformclientv2.Decisiontableinputcolumnrequest {
+func buildSdkInputColumns(inputColumns []interface{}) (*[]platformclientv2.Decisiontableinputcolumnrequest, error) {
 	if len(inputColumns) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	sdkInputColumns := make([]platformclientv2.Decisiontableinputcolumnrequest, 0, len(inputColumns))
 	for _, inputColumn := range inputColumns {
-		inputColumnMap := inputColumn.(map[string]interface{})
+		inputColumnMap, ok := inputColumn.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("inputColumn is not a map[string]interface{}")
+		}
 		sdkInputColumn := platformclientv2.Decisiontableinputcolumnrequest{}
 
 		if defaultsToList, ok := inputColumnMap["defaults_to"].([]interface{}); ok {
@@ -179,18 +182,21 @@ func buildSdkInputColumns(inputColumns []interface{}) *[]platformclientv2.Decisi
 		sdkInputColumns = append(sdkInputColumns, sdkInputColumn)
 	}
 
-	return &sdkInputColumns
+	return &sdkInputColumns, nil
 }
 
 // buildSdkOutputColumns builds the SDK output columns from the Terraform schema
-func buildSdkOutputColumns(outputColumns []interface{}) *[]platformclientv2.Decisiontableoutputcolumnrequest {
+func buildSdkOutputColumns(outputColumns []interface{}) (*[]platformclientv2.Decisiontableoutputcolumnrequest, error) {
 	if len(outputColumns) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	sdkOutputColumns := make([]platformclientv2.Decisiontableoutputcolumnrequest, 0, len(outputColumns))
 	for _, outputColumn := range outputColumns {
-		outputColumnMap := outputColumn.(map[string]interface{})
+		outputColumnMap, ok := outputColumn.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("outputColumn is not a map[string]interface{}")
+		}
 		sdkOutputColumn := platformclientv2.Decisiontableoutputcolumnrequest{}
 
 		if defaultsToList, ok := outputColumnMap["defaults_to"].([]interface{}); ok {
@@ -206,7 +212,7 @@ func buildSdkOutputColumns(outputColumns []interface{}) *[]platformclientv2.Deci
 		sdkOutputColumns = append(sdkOutputColumns, sdkOutputColumn)
 	}
 
-	return &sdkOutputColumns
+	return &sdkOutputColumns, nil
 }
 
 // buildSdkExpression builds the SDK expression from the Terraform schema
@@ -284,18 +290,26 @@ func buildSdkProperties(properties []interface{}) *[]platformclientv2.Outputvalu
 }
 
 // buildSdkColumns builds the SDK columns from the Terraform schema
-func buildSdkColumns(columns map[string]interface{}) *platformclientv2.Createdecisiontablecolumnsrequest {
+func buildSdkColumns(columns map[string]interface{}) (*platformclientv2.Createdecisiontablecolumnsrequest, error) {
 	sdkColumns := &platformclientv2.Createdecisiontablecolumnsrequest{}
 
 	if inputs, ok := columns["inputs"].([]interface{}); ok {
-		sdkColumns.Inputs = buildSdkInputColumns(inputs)
+		inputColumns, err := buildSdkInputColumns(inputs)
+		if err != nil {
+			return nil, err
+		}
+		sdkColumns.Inputs = inputColumns
 	}
 
 	if outputs, ok := columns["outputs"].([]interface{}); ok {
-		sdkColumns.Outputs = buildSdkOutputColumns(outputs)
+		outputColumns, err := buildSdkOutputColumns(outputs)
+		if err != nil {
+			return nil, err
+		}
+		sdkColumns.Outputs = outputColumns
 	}
 
-	return sdkColumns
+	return sdkColumns, nil
 }
 
 // buildUpdateRequest builds the SDK update request from the Terraform schema
@@ -353,7 +367,7 @@ func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns) map[strin
 
 // flattenInputColumns flattens the SDK input columns to Terraform format
 func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn) []interface{} {
-	inputs := make([]interface{}, 0)
+	inputs := make([]interface{}, 0, len(sdkInputColumns))
 	for _, sdkInput := range sdkInputColumns {
 		input := make(map[string]interface{})
 
@@ -378,7 +392,7 @@ func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputco
 
 // flattenOutputColumns flattens the SDK output columns to Terraform format
 func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn) []interface{} {
-	outputs := make([]interface{}, 0)
+	outputs := make([]interface{}, 0, len(sdkOutputColumns))
 	for _, sdkOutput := range sdkOutputColumns {
 		output := make(map[string]interface{})
 
@@ -503,7 +517,11 @@ func buildCreateRequest(d *schema.ResourceData) (*platformclientv2.Createdecisio
 
 	// Build columns (required field)
 	columnData := columns[0].(map[string]interface{})
-	createRequest.Columns = buildSdkColumns(columnData)
+	sdkColumns, err := buildSdkColumns(columnData)
+	if err != nil {
+		return nil, err
+	}
+	createRequest.Columns = sdkColumns
 
 	return createRequest, nil
 }
@@ -710,8 +728,8 @@ func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputCol
 	return terraformRow
 }
 
-// convertTerraformRowToSDK converts a Terraform row to SDK format
-func convertTerraformRowToSDK(rowMap map[string]interface{}, inputColumnIds []string, outputColumnIds []string) (platformclientv2.Createdecisiontablerowrequest, error) {
+// converts row from Terraform to SDK format
+func convertDecisionTableRowFromTerraformToSDK(rowMap map[string]interface{}, inputColumnIds []string, outputColumnIds []string) (platformclientv2.Createdecisiontablerowrequest, error) {
 	sdkRow := platformclientv2.Createdecisiontablerowrequest{}
 
 	// Convert inputs using column order mapping
@@ -956,7 +974,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		log.Printf("Updating row %s", rowId)
 
 		// Convert to SDK format using column order mapping (same as creation)
-		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertDecisionTableRowFromTerraformToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row for update: %s", err)
 		}
@@ -990,7 +1008,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 	// Add new rows using column order mapping
 	for i, row := range changes.adds {
 		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
-		sdkRow, err := convertTerraformRowToSDK(row, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertDecisionTableRowFromTerraformToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
 		}

@@ -364,7 +364,7 @@ func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T)
 						generateColumns(queueResourceLabel),
 						generateRowsWithInvalidLiteral(queueResourceLabel, "integer", "abc"),
 					),
-				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1: value 'abc' is not a valid integer"),
+				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1.*value 'abc' is not a valid integer"),
 			},
 			{
 				// Test invalid number value
@@ -380,7 +380,7 @@ func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T)
 						generateColumns(queueResourceLabel),
 						generateRowsWithInvalidLiteral(queueResourceLabel, "number", "not-a-number"),
 					),
-				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1: value 'not-a-number' is not a valid number"),
+				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1.*value 'not-a-number' is not a valid number"),
 			},
 			{
 				// Test invalid boolean value
@@ -396,7 +396,7 @@ func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T)
 						generateColumns(queueResourceLabel),
 						generateRowsWithInvalidLiteral(queueResourceLabel, "boolean", "maybe"),
 					),
-				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1: value 'maybe' is not a valid boolean"),
+				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1.*value 'maybe' is not a valid boolean"),
 			},
 			{
 				// Test invalid date value
@@ -412,7 +412,7 @@ func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T)
 						generateColumns(queueResourceLabel),
 						generateRowsWithInvalidLiteral(queueResourceLabel, "date", "not-a-date"),
 					),
-				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1: value 'not-a-date' is not a valid date"),
+				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1.*value 'not-a-date' is not a valid date"),
 			},
 			{
 				// Test invalid datetime value
@@ -428,7 +428,7 @@ func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T)
 						generateColumns(queueResourceLabel),
 						generateRowsWithInvalidLiteral(queueResourceLabel, "datetime", "not-a-datetime"),
 					),
-				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1: value 'not-a-datetime' is not a valid datetime"),
+				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1.*value 'not-a-datetime' is not a valid datetime"),
 			},
 		},
 	})

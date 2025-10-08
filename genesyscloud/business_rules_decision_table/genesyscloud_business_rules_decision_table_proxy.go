@@ -232,6 +232,13 @@ func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDe
 		}
 	}
 
+	// Cache all decision tables for later use in data source lookups and export
+	for _, table := range allTables {
+		if table.Id != nil {
+			rc.SetCache(p.BusinessRulesDecisionTableCache, *table.Id, table)
+		}
+	}
+
 	// Create a new Decisiontablelisting with all collected tables
 	result := &platformclientv2.Decisiontablelisting{
 		Entities: &allTables,

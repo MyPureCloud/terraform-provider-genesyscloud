@@ -2714,7 +2714,7 @@ func TestUnitConvertTerraformRowToSDKEmptyLiterals(t *testing.T) {
 	// Test with column order mapping
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1", "output-col-2"}
-	result, err := convertTerraformRowToSDK(rowMap, inputColumnIds, outputColumnIds)
+	result, err := convertDecisionTableRowFromTerraformToSDK(rowMap, inputColumnIds, outputColumnIds)
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -2897,7 +2897,7 @@ func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1"}
 
-	_, err := convertTerraformRowToSDK(rowMapAllDefaults, inputColumnIds, outputColumnIds)
+	_, err := convertDecisionTableRowFromTerraformToSDK(rowMapAllDefaults, inputColumnIds, outputColumnIds)
 	if err == nil {
 		t.Error("Expected error for all inputs using defaults, but got none")
 	}
@@ -2934,7 +2934,7 @@ func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 		},
 	}
 
-	_, err = convertTerraformRowToSDK(rowMapAllOutputDefaults, inputColumnIds, outputColumnIds)
+	_, err = convertDecisionTableRowFromTerraformToSDK(rowMapAllOutputDefaults, inputColumnIds, outputColumnIds)
 	if err == nil {
 		t.Error("Expected error for all outputs using defaults, but got none")
 	}
@@ -2979,7 +2979,7 @@ func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 		},
 	}
 
-	_, err = convertTerraformRowToSDK(rowMapValid, inputColumnIds, outputColumnIds)
+	_, err = convertDecisionTableRowFromTerraformToSDK(rowMapValid, inputColumnIds, outputColumnIds)
 	if err != nil {
 		t.Errorf("Expected no error for valid row with explicit values, got: %v", err)
 	}

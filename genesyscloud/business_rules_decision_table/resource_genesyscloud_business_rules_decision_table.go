@@ -85,7 +85,10 @@ func createBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Successfully created business rules decision table with ID: %s", tableId)
 
 	// Add rows (required)
-	rows := d.Get("rows").([]interface{})
+	rows, ok := d.Get("rows").([]interface{})
+	if !ok {
+		return util.BuildAPIDiagnosticError(ResourceType, "rows is not a []interface{}", nil)
+	}
 	if len(rows) == 0 {
 		return util.BuildAPIDiagnosticError(ResourceType, "At least one row is required", nil)
 	}
@@ -218,10 +221,10 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 	for i, row := range terraformRows {
 		rowMap := row.(map[string]interface{})
 
-		// Convert Terraform row to SDK format using column order mapping
-		sdkRow, err := convertTerraformRowToSDK(rowMap, inputColumnIds, outputColumnIds)
+		// Convert row from Terraform to SDK format using column order mapping
+		sdkRow, err := convertDecisionTableRowFromTerraformToSDK(rowMap, inputColumnIds, outputColumnIds)
 		if err != nil {
-			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
+			return fmt.Errorf("failed to convert row %d (table %s, version %d): %s", i+1, tableId, version, err)
 		}
 
 		// Add the row to the version
@@ -318,8 +321,14 @@ func updateBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceDat
 
 		// Get old and new row data
 		oldRows, newRows := d.GetChange("rows")
-		oldRowsList := oldRows.([]interface{})
-		newRowsList := newRows.([]interface{})
+		oldRowsList, ok := oldRows.([]interface{})
+		if !ok {
+			return util.BuildAPIDiagnosticError(ResourceType, "oldRows is not a []interface{}", nil)
+		}
+		newRowsList, ok := newRows.([]interface{})
+		if !ok {
+			return util.BuildAPIDiagnosticError(ResourceType, "newRows is not a []interface{}", nil)
+		}
 
 		// Create new version and update rows
 		err := updateDecisionTableRows(ctx, proxy, tableId, oldRowsList, newRowsList)
