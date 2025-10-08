@@ -25,9 +25,6 @@ func getAllBusinessRulesDecisionTables(ctx context.Context, clientConfig *platfo
 
 	log.Printf("Retrieving all Business Rules Decision Tables")
 
-	// Newly created resources often aren't returned unless there's a delay
-	time.Sleep(5 * time.Second)
-
 	tables, resp, err := proxy.getAllBusinessRulesDecisionTables(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all business rules decision tables error: %s", err), resp)
@@ -127,10 +124,9 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 		table, resp, err := proxy.getBusinessRulesDecisionTable(ctx, tableId)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("Business rules decision table %s not found", tableId)
-				d.SetId("")
-				return nil
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("business rules decision table %s not found", tableId), resp))
 			}
+
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get decision table %s: %s", tableId, err), resp))
 		}
 
@@ -146,9 +142,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 		tableVersion, resp, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, versionToRead)
 		if err != nil {
 			if util.IsStatus404(resp) {
-				log.Printf("Business rules decision table %s version %d not found", tableId, versionToRead)
-				d.SetId("")
-				return nil
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("business rules decision table %s version %d not found", tableId, versionToRead), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read decision table version %d for table %s | error: %s", versionToRead, tableId, err), resp))
 		}
