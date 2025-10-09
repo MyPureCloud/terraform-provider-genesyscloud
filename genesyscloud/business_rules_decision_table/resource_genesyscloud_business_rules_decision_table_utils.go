@@ -15,8 +15,8 @@ import (
 // DateTimeParseFormat is the format used for parsing datetime values
 const DateTimeParseFormat = "2006-01-02T15:04:05.000Z"
 
-// buildDefaultsTo builds SDK defaults_to from Terraform schema
-func buildDefaultsTo(defaultsToList []interface{}) *platformclientv2.Decisiontablecolumndefaultrowvalue {
+// buildDefaultsTo builds SDK defaults_to from provider schema
+func buildDefaultsToFromProvider(defaultsToList []interface{}) *platformclientv2.Decisiontablecolumndefaultrowvalue {
 	if len(defaultsToList) == 0 {
 		return nil
 	}
@@ -170,7 +170,7 @@ func buildSdkInputColumns(inputColumns []interface{}) (*[]platformclientv2.Decis
 		sdkInputColumn := platformclientv2.Decisiontableinputcolumnrequest{}
 
 		if defaultsToList, ok := inputColumnMap["defaults_to"].([]interface{}); ok {
-			sdkInputColumn.DefaultsTo = buildDefaultsTo(defaultsToList)
+			sdkInputColumn.DefaultsTo = buildDefaultsToFromProvider(defaultsToList)
 		}
 
 		if expressionList, ok := inputColumnMap["expression"].([]interface{}); ok && len(expressionList) > 0 {
@@ -200,7 +200,7 @@ func buildSdkOutputColumns(outputColumns []interface{}) (*[]platformclientv2.Dec
 		sdkOutputColumn := platformclientv2.Decisiontableoutputcolumnrequest{}
 
 		if defaultsToList, ok := outputColumnMap["defaults_to"].([]interface{}); ok {
-			sdkOutputColumn.DefaultsTo = buildDefaultsTo(defaultsToList)
+			sdkOutputColumn.DefaultsTo = buildDefaultsToFromProvider(defaultsToList)
 		}
 
 		if valueList, ok := outputColumnMap["value"].([]interface{}); ok && len(valueList) > 0 {
@@ -648,7 +648,7 @@ func convertSDKLiteralToProvider(sdkLiteral *platformclientv2.Literal) map[strin
 // convertSDKRowToProvider converts an SDK row to provider format
 // This function ensures all columns are included, with empty literals for missing values
 func convertSDKRowToProvider(sdkRow platformclientv2.Decisiontablerow, inputColumnIds []string, outputColumnIds []string) map[string]interface{} {
-	terraformRow := map[string]interface{}{
+	providerRow := map[string]interface{}{
 		"row_id":    sdkRow.Id,
 		"row_index": sdkRow.RowIndex,
 	}
@@ -686,7 +686,7 @@ func convertSDKRowToProvider(sdkRow platformclientv2.Decisiontablerow, inputColu
 			inputs = append(inputs, input)
 		}
 
-		terraformRow["inputs"] = inputs
+		providerRow["inputs"] = inputs
 	}
 
 	// Convert outputs using column order mapping
@@ -722,10 +722,10 @@ func convertSDKRowToProvider(sdkRow platformclientv2.Decisiontablerow, inputColu
 			outputs = append(outputs, output)
 		}
 
-		terraformRow["outputs"] = outputs
+		providerRow["outputs"] = outputs
 	}
 
-	return terraformRow
+	return providerRow
 }
 
 // converts row from provider to SDK format
