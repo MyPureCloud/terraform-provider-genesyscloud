@@ -216,7 +216,7 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 		rowMap := row.(map[string]interface{})
 
 		// Convert row from Terraform to SDK format using column order mapping
-		sdkRow, err := convertDecisionTableRowFromTerraformToSDK(rowMap, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertDecisionTableRowFromProviderToSDK(rowMap, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d (table %s, version %d): %s", i+1, tableId, version, err)
 		}
@@ -280,7 +280,7 @@ func getDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTable
 	terraformRows := make([]interface{}, len(allRows))
 	for i, row := range allRows {
 		// For now, use a simple conversion that includes all columns
-		terraformRows[i] = convertSDKRowToTerraform(row, inputColumnIds, outputColumnIds)
+		terraformRows[i] = convertSDKRowToProvider(row, inputColumnIds, outputColumnIds)
 	}
 
 	return terraformRows, nil

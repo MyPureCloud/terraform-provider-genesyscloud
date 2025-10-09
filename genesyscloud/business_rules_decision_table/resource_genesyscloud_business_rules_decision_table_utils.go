@@ -49,7 +49,7 @@ func buildDefaultsTo(defaultsToList []interface{}) *platformclientv2.Decisiontab
 	return nil
 }
 
-// flattenDefaultsTo flattens SDK defaults_to to Terraform format
+// flattenDefaultsTo flattens SDK defaults_to to provider format
 func flattenDefaultsTo(sdkDefaultsTo *platformclientv2.Decisiontablecolumndefaultrowvalue) []interface{} {
 	if sdkDefaultsTo == nil {
 		return nil
@@ -155,7 +155,7 @@ func processItemsPositionally(items []interface{}, maxCount int, processItem fun
 	return nil
 }
 
-// buildSdkInputColumns builds the SDK input columns from the Terraform schema
+// buildSdkInputColumns builds the SDK input columns from the provider schema
 func buildSdkInputColumns(inputColumns []interface{}) (*[]platformclientv2.Decisiontableinputcolumnrequest, error) {
 	if len(inputColumns) == 0 {
 		return nil, nil
@@ -185,7 +185,7 @@ func buildSdkInputColumns(inputColumns []interface{}) (*[]platformclientv2.Decis
 	return &sdkInputColumns, nil
 }
 
-// buildSdkOutputColumns builds the SDK output columns from the Terraform schema
+// buildSdkOutputColumns builds the SDK output columns from the provider schema
 func buildSdkOutputColumns(outputColumns []interface{}) (*[]platformclientv2.Decisiontableoutputcolumnrequest, error) {
 	if len(outputColumns) == 0 {
 		return nil, nil
@@ -215,7 +215,7 @@ func buildSdkOutputColumns(outputColumns []interface{}) (*[]platformclientv2.Dec
 	return &sdkOutputColumns, nil
 }
 
-// buildSdkExpression builds the SDK expression from the Terraform schema
+// buildSdkExpression builds the SDK expression from the provider schema
 func buildSdkExpression(expression map[string]interface{}) *platformclientv2.Decisiontableinputcolumnexpression {
 	sdkExpression := platformclientv2.Decisiontableinputcolumnexpression{}
 	if contractualList, ok := expression["contractual"].([]interface{}); ok && len(contractualList) > 0 {
@@ -231,7 +231,7 @@ func buildSdkExpression(expression map[string]interface{}) *platformclientv2.Dec
 	return &sdkExpression
 }
 
-// buildSdkValue builds the SDK value from the Terraform schema
+// buildSdkValue builds the SDK value from the provider schema
 func buildSdkValue(value map[string]interface{}) *platformclientv2.Outputvalue {
 	sdkValue := platformclientv2.Outputvalue{}
 
@@ -246,7 +246,7 @@ func buildSdkValue(value map[string]interface{}) *platformclientv2.Outputvalue {
 	return &sdkValue
 }
 
-// buildSdkContractual builds the SDK contractual from the Terraform schema
+// buildSdkContractual builds the SDK contractual from the provider schema
 func buildSdkContractual(contractual map[string]interface{}) **platformclientv2.Contractual {
 	sdkContractual := platformclientv2.Contractual{}
 
@@ -264,7 +264,7 @@ func buildSdkContractual(contractual map[string]interface{}) **platformclientv2.
 	return &result
 }
 
-// buildSdkProperties builds the SDK properties from the Terraform schema
+// buildSdkProperties builds the SDK properties from the provider schema
 func buildSdkProperties(properties []interface{}) *[]platformclientv2.Outputvalue {
 	if len(properties) == 0 {
 		return nil
@@ -289,7 +289,7 @@ func buildSdkProperties(properties []interface{}) *[]platformclientv2.Outputvalu
 	return &sdkProperties
 }
 
-// buildSdkColumns builds the SDK columns from the Terraform schema
+// buildSdkColumns builds the SDK columns from the provider schema
 func buildSdkColumns(columns map[string]interface{}) (*platformclientv2.Createdecisiontablecolumnsrequest, error) {
 	sdkColumns := &platformclientv2.Createdecisiontablecolumnsrequest{}
 
@@ -312,7 +312,7 @@ func buildSdkColumns(columns map[string]interface{}) (*platformclientv2.Createde
 	return sdkColumns, nil
 }
 
-// buildUpdateRequest builds the SDK update request from the Terraform schema
+// buildUpdateRequest builds the SDK update request from the provider schema
 func buildUpdateRequest(d *schema.ResourceData) *platformclientv2.Updatedecisiontablerequest {
 	updateRequest := &platformclientv2.Updatedecisiontablerequest{}
 
@@ -344,7 +344,7 @@ func convertSDKRowToUpdateRequest(sdkRow platformclientv2.Createdecisiontablerow
 	return updateRequest
 }
 
-// flattenColumns flattens the SDK columns response to Terraform format
+// flattenColumns flattens the SDK columns response to provider format
 func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns) map[string]interface{} {
 	if sdkColumns == nil {
 		return make(map[string]interface{})
@@ -365,7 +365,7 @@ func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns) map[strin
 	return columns
 }
 
-// flattenInputColumns flattens the SDK input columns to Terraform format
+// flattenInputColumns flattens the SDK input columns to provider format
 func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputcolumn) []interface{} {
 	inputs := make([]interface{}, 0, len(sdkInputColumns))
 	for _, sdkInput := range sdkInputColumns {
@@ -390,7 +390,7 @@ func flattenInputColumns(sdkInputColumns []platformclientv2.Decisiontableinputco
 	return inputs
 }
 
-// flattenOutputColumns flattens the SDK output columns to Terraform format
+// flattenOutputColumns flattens the SDK output columns to provider format
 func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutputcolumn) []interface{} {
 	outputs := make([]interface{}, 0, len(sdkOutputColumns))
 	for _, sdkOutput := range sdkOutputColumns {
@@ -415,7 +415,7 @@ func flattenOutputColumns(sdkOutputColumns []platformclientv2.Decisiontableoutpu
 	return outputs
 }
 
-// flattenExpression flattens the SDK expression to Terraform format
+// flattenExpression flattens the SDK expression to provider format
 func flattenExpression(sdkExpression *platformclientv2.Decisiontableinputcolumnexpression) map[string]interface{} {
 	expression := make(map[string]interface{})
 
@@ -431,7 +431,7 @@ func flattenExpression(sdkExpression *platformclientv2.Decisiontableinputcolumne
 	return expression
 }
 
-// flattenValue flattens the SDK value to Terraform format
+// flattenValue flattens the SDK value to provider format
 func flattenValue(sdkValue *platformclientv2.Outputvalue) map[string]interface{} {
 	value := make(map[string]interface{})
 
@@ -447,7 +447,7 @@ func flattenValue(sdkValue *platformclientv2.Outputvalue) map[string]interface{}
 	return value
 }
 
-// flattenContractual flattens the SDK contractual to Terraform format
+// flattenContractual flattens the SDK contractual to provider format
 func flattenContractual(sdkContractual *platformclientv2.Contractual) map[string]interface{} {
 	contractual := make(map[string]interface{})
 
@@ -463,7 +463,7 @@ func flattenContractual(sdkContractual *platformclientv2.Contractual) map[string
 	return contractual
 }
 
-// flattenProperties flattens the SDK properties to Terraform format
+// flattenProperties flattens the SDK properties to provider format
 func flattenProperties(sdkProperties []platformclientv2.Outputvalue) []interface{} {
 	properties := make([]interface{}, 0)
 	for _, sdkProperty := range sdkProperties {
@@ -483,7 +483,7 @@ func flattenProperties(sdkProperties []platformclientv2.Outputvalue) []interface
 	return properties
 }
 
-// buildCreateRequest builds a CreateDecisionTableRequest from Terraform resource data
+// buildCreateRequest builds a CreateDecisionTableRequest from provider resource data
 func buildCreateRequest(d *schema.ResourceData) (*platformclientv2.Createdecisiontablerequest, error) {
 	tableName := d.Get("name").(string)
 	divisionId := d.Get("division_id").(string)
@@ -556,7 +556,7 @@ func extractColumnOrder(sdkColumns *platformclientv2.Decisiontablecolumns) ([]st
 	return inputOrder, outputOrder
 }
 
-// extractLiteralFromList extracts the literal map from a Terraform list (MaxItems: 1)
+// extractLiteralFromList extracts the literal map from a provider list (MaxItems: 1)
 func extractLiteralFromList(literalList interface{}) map[string]interface{} {
 	if literalList == nil {
 		return nil
@@ -571,7 +571,7 @@ func extractLiteralFromList(literalList interface{}) map[string]interface{} {
 	return nil
 }
 
-// convertLiteralToSDK converts a Terraform literal to SDK format
+// convertLiteralToSDK converts a provider literal to SDK format
 func convertLiteralToSDK(literal map[string]interface{}) (*platformclientv2.Literal, error) {
 	log.Printf("DEBUG: Input literal map: %+v", literal)
 
@@ -609,8 +609,8 @@ func convertLiteralToSDK(literal map[string]interface{}) (*platformclientv2.Lite
 	return sdkLiteral, nil
 }
 
-// convertLiteralToTerraform converts an SDK literal to Terraform format
-func convertLiteralToTerraform(sdkLiteral *platformclientv2.Literal) map[string]interface{} {
+// converts an SDK literal to provider format
+func convertSDKLiteralToProvider(sdkLiteral *platformclientv2.Literal) map[string]interface{} {
 	literal := make(map[string]interface{})
 
 	if sdkLiteral.VarString != nil {
@@ -645,9 +645,9 @@ func convertLiteralToTerraform(sdkLiteral *platformclientv2.Literal) map[string]
 	return literal
 }
 
-// convertSDKRowToTerraform converts an SDK row to Terraform format
+// convertSDKRowToProvider converts an SDK row to provider format
 // This function ensures all columns are included, with empty literals for missing values
-func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputColumnIds []string, outputColumnIds []string) map[string]interface{} {
+func convertSDKRowToProvider(sdkRow platformclientv2.Decisiontablerow, inputColumnIds []string, outputColumnIds []string) map[string]interface{} {
 	terraformRow := map[string]interface{}{
 		"row_id":    sdkRow.Id,
 		"row_index": sdkRow.RowIndex,
@@ -671,7 +671,7 @@ func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputCol
 
 			if paramValue, exists := inputData[columnId]; exists && paramValue.Literal != nil {
 				// Column has a literal value - convert it
-				literalValue := convertLiteralToTerraform(paramValue.Literal)
+				literalValue := convertSDKLiteralToProvider(paramValue.Literal)
 				input["literal"] = []interface{}{literalValue}
 			} else {
 				// Column uses default value - export as empty string values
@@ -707,7 +707,7 @@ func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputCol
 
 			if paramValue, exists := outputData[columnId]; exists && paramValue.Literal != nil {
 				// Column has a literal value - convert it
-				literalValue := convertLiteralToTerraform(paramValue.Literal)
+				literalValue := convertSDKLiteralToProvider(paramValue.Literal)
 				output["literal"] = []interface{}{literalValue}
 			} else {
 				// Column uses default value - export as empty string values
@@ -728,8 +728,8 @@ func convertSDKRowToTerraform(sdkRow platformclientv2.Decisiontablerow, inputCol
 	return terraformRow
 }
 
-// converts row from Terraform to SDK format
-func convertDecisionTableRowFromTerraformToSDK(rowMap map[string]interface{}, inputColumnIds []string, outputColumnIds []string) (platformclientv2.Createdecisiontablerowrequest, error) {
+// converts row from provider to SDK format
+func convertDecisionTableRowFromProviderToSDK(rowMap map[string]interface{}, inputColumnIds []string, outputColumnIds []string) (platformclientv2.Createdecisiontablerowrequest, error) {
 	sdkRow := platformclientv2.Createdecisiontablerowrequest{}
 
 	// Convert inputs using column order mapping
@@ -974,7 +974,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		log.Printf("Updating row %s", rowId)
 
 		// Convert to SDK format using column order mapping (same as creation)
-		sdkRow, err := convertDecisionTableRowFromTerraformToSDK(row, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row for update: %s", err)
 		}
@@ -1008,7 +1008,7 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 	// Add new rows using column order mapping
 	for i, row := range changes.adds {
 		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
-		sdkRow, err := convertDecisionTableRowFromTerraformToSDK(row, inputColumnIds, outputColumnIds)
+		sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
 		}

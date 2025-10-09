@@ -364,8 +364,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 	// Grab our defined schema
 	resourceSchema := ResourceBusinessRulesDecisionTable().Schema
 
-	// Convert SDK columns to Terraform format for testing
-	tColumnsTF := convertSDKColumnsToTerraform(tColumns)
+	tColumnsTF := convertSDKColumnsToProvider(tColumns)
 
 	// Setup test rows - inputs and outputs should be maps with literal objects
 	testRows := []interface{}{
@@ -1937,8 +1936,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreateFailureRollback(t *testing.
 		},
 	}
 
-	// Convert SDK columns to Terraform format for testing
-	tColumnsTF := convertSDKColumnsToTerraform(tColumns)
+	tColumnsTF := convertSDKColumnsToProvider(tColumns)
 	resourceDataMap := buildTestDecisionTableResourceMapCRUD(tId, tName, tDescription, tDivisionId, tSchemaId, tColumnsTF)
 	resourceDataMap["rows"] = rows
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
@@ -2103,8 +2101,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreatePublishFailureRollback(t *t
 		},
 	}
 
-	// Convert SDK columns to Terraform format for testing
-	tColumnsTF := convertSDKColumnsToTerraform(tColumns)
+	tColumnsTF := convertSDKColumnsToProvider(tColumns)
 	resourceDataMap := buildTestDecisionTableResourceMapCRUD(tId, tName, tDescription, tDivisionId, tSchemaId, tColumnsTF)
 	resourceDataMap["rows"] = rows
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
@@ -2295,8 +2292,8 @@ func buildTestDecisionTableResourceMapCRUD(id, name, description, divisionId, sc
 	return resourceMap
 }
 
-// Helper function to convert SDK columns to Terraform format for testing
-func convertSDKColumnsToTerraform(sdkColumns *platformclientv2.Decisiontablecolumns) []interface{} {
+// Helper function to convert SDK columns to provider format for testing
+func convertSDKColumnsToProvider(sdkColumns *platformclientv2.Decisiontablecolumns) []interface{} {
 	if sdkColumns == nil {
 		return nil
 	}
@@ -2641,7 +2638,7 @@ func TestUnitConvertLiteralToSDKNumberPrecision(t *testing.T) {
 		Number: float64Ptr(3.141592653589793),
 	}
 
-	terraformLiteral := convertLiteralToTerraform(sdkLiteral)
+	terraformLiteral := convertSDKLiteralToProvider(sdkLiteral)
 	if terraformLiteral["value"] != "3.141592653589793" {
 		t.Errorf("Expected formatted value to be '3.141592653589793' (no zero-padding), got: %v", terraformLiteral["value"])
 	}
@@ -2668,7 +2665,7 @@ func TestUnitConvertLiteralToSDKNumberPrecision(t *testing.T) {
 		Number: float64Ptr(1.2345678901),
 	}
 
-	terraformLiteral = convertLiteralToTerraform(sdkLiteral)
+	terraformLiteral = convertSDKLiteralToProvider(sdkLiteral)
 	if terraformLiteral["value"] != "1.2345678901" {
 		t.Errorf("Expected formatted value to be '1.2345678901', got: %v", terraformLiteral["value"])
 	}
@@ -2714,7 +2711,7 @@ func TestUnitConvertTerraformRowToSDKEmptyLiterals(t *testing.T) {
 	// Test with column order mapping
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1", "output-col-2"}
-	result, err := convertDecisionTableRowFromTerraformToSDK(rowMap, inputColumnIds, outputColumnIds)
+	result, err := convertDecisionTableRowFromProviderToSDK(rowMap, inputColumnIds, outputColumnIds)
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -2786,7 +2783,7 @@ func TestUnitConvertSDKRowToTerraformEmptyLiterals(t *testing.T) {
 		},
 	}
 
-	result := convertSDKRowToTerraform(sdkRow, inputColumnIds, outputColumnIds)
+	result := convertSDKRowToProvider(sdkRow, inputColumnIds, outputColumnIds)
 
 	// Check that all columns are included in the result
 	if result["inputs"] == nil {
@@ -2897,7 +2894,7 @@ func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 	inputColumnIds := []string{"input-col-1", "input-col-2"}
 	outputColumnIds := []string{"output-col-1"}
 
-	_, err := convertDecisionTableRowFromTerraformToSDK(rowMapAllDefaults, inputColumnIds, outputColumnIds)
+	_, err := convertDecisionTableRowFromProviderToSDK(rowMapAllDefaults, inputColumnIds, outputColumnIds)
 	if err == nil {
 		t.Error("Expected error for all inputs using defaults, but got none")
 	}
@@ -2934,7 +2931,7 @@ func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 		},
 	}
 
-	_, err = convertDecisionTableRowFromTerraformToSDK(rowMapAllOutputDefaults, inputColumnIds, outputColumnIds)
+	_, err = convertDecisionTableRowFromProviderToSDK(rowMapAllOutputDefaults, inputColumnIds, outputColumnIds)
 	if err == nil {
 		t.Error("Expected error for all outputs using defaults, but got none")
 	}
@@ -2979,7 +2976,7 @@ func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 		},
 	}
 
-	_, err = convertDecisionTableRowFromTerraformToSDK(rowMapValid, inputColumnIds, outputColumnIds)
+	_, err = convertDecisionTableRowFromProviderToSDK(rowMapValid, inputColumnIds, outputColumnIds)
 	if err != nil {
 		t.Errorf("Expected no error for valid row with explicit values, got: %v", err)
 	}
