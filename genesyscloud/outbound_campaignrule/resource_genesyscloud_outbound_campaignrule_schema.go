@@ -4,6 +4,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -18,6 +19,37 @@ resource_genesycloud_outbound_campaignrule_schema.go holds four functions within
 4.  The resource exporter configuration for the outbound_campaignrule exporter.
 */
 const ResourceType = "genesyscloud_outbound_campaignrule"
+
+func getAllowedActions() []string {
+	return []string{
+		"turnOnCampaign",
+		"turnOffCampaign",
+		"turnOnSequence",
+		"turnOffSequence",
+		"setCampaignPriority",
+		"recycleCampaign",
+		"setCampaignDialingMode",
+		"setCampaignAbandonRate",
+		"setCampaignNumberOfLines",
+		"setCampaignWeight",
+		"setCampaignMaxCallsPerAgent",
+		"changeCampaignQueue",
+	}
+}
+
+func getAllowedConditions() []string {
+	return []string{
+		"campaignProgress",
+		"campaignAgents",
+		"campaignRecordsAttempted",
+		"campaignContactsMessaged",
+		"campaignBusinessSuccess",
+		"campaignBusinessNeutral",
+		"campaignBusinessFailure",
+		"campaignValidAttempts",
+		"campaignRightPartyContacts",
+	}
+}
 
 var (
 	outboundCampaignRuleEntities = &schema.Resource{
@@ -91,6 +123,63 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"agentless", "preview", "power", "predictive", "progressive", "external"}, true),
 			},
+			`abandon_rate`: {
+				Description:  `Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action`,
+				Optional:     true,
+				Type:         schema.TypeFloat,
+				ValidateFunc: validation.FloatAtLeast(0.1),
+			},
+			`outbound_line_count`: {
+				Description:  `Number of Outbound lines. Required for 'setCampaignNumberOfLines' action`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(0),
+			},
+			`relative_weight`: {
+				Description:  `Relative weight. Required for 'setCampaignWeight' action`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntBetween(0, 100),
+			},
+			`max_calls_per_agent`: {
+				Description:  `Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action`,
+				Optional:     true,
+				Type:         schema.TypeFloat,
+				ValidateFunc: validation.FloatAtLeast(1.0),
+			},
+			`queue_id`: {
+				Description: `The ID of the Queue. Required for 'changeCampaignQueue' action`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`messages_per_minute`: {
+				Description:  `The number of messages per minute to set a messaging campaign to.`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(0),
+			},
+			`sms_messages_per_minute`: {
+				Description:  `The number of messages per minute to set a SMS messaging campaign to.`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(0),
+			},
+			`email_messages_per_minute`: {
+				Description:  `The number of messages per minute to set an Email messaging campaign to.`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntAtLeast(0),
+			},
+			`sms_content_template`: {
+				Description: `The content template to set a SMS campaign to.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`email_content_template`: {
+				Description: `The content template to set an Email campaign to.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 
@@ -109,10 +198,10 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Elem:        campaignRuleParameters,
 			},
 			`condition_type`: {
-				Description:  `The type of condition to evaluate (campaignProgress | campaignAgents).`,
+				Description:  `The type of condition to evaluate (` + strings.Join(getAllowedConditions(), ` | `) + `)`,
 				Required:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"campaignProgress", "campaignAgents"}, true),
+				ValidateFunc: validation.StringInSlice(getAllowedConditions(), true),
 			},
 		},
 	}
@@ -132,11 +221,10 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Elem:        campaignRuleParameters,
 			},
 			`action_type`: {
-				Description: `The action to take on the campaignRuleActionEntities
-(turnOnCampaign | turnOffCampaign | turnOnSequence | turnOffSequence | setCampaignPriority | recycleCampaign | setCampaignDialingMode).`,
+				Description:  `The action to take on the campaignRuleActionEntities (` + strings.Join(getAllowedActions(), ` | `) + `)`,
 				Required:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"turnOnCampaign", "turnOffCampaign", "turnOnSequence", "turnOffSequence", "setCampaignPriority", "recycleCampaign", "setCampaignDialingMode"}, true),
+				ValidateFunc: validation.StringInSlice(getAllowedActions(), true),
 			},
 			`campaign_rule_action_entities`: {
 				Description: `The list of entities that this action will apply to.`,
@@ -222,6 +310,24 @@ func OutboundCampaignruleExporter() *resourceExporter.ResourceExporter {
 			},
 			`campaign_rule_entities.sequence_ids`: {
 				RefType: "genesyscloud_outbound_sequence",
+			},
+			`campaign_rule_actions.parameters.queue_id`: {
+				RefType: "genesyscloud_routing_queue",
+			},
+			`campaign_rule_conditions.parameters.queue_id`: {
+				RefType: "genesyscloud_routing_queue",
+			},
+			`campaign_rule_actions.parameters.sms_content_template`: {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+			`campaign_rule_conditions.parameters.sms_content_template`: {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+			`campaign_rule_actions.parameters.email_content_template`: {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+			`campaign_rule_conditions.parameters.email_content_template`: {
+				RefType: "genesyscloud_responsemanagement_response",
 			},
 		},
 	}
