@@ -99,14 +99,16 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 	if newCampaignStatus == "" {
 		return nil
 	}
+	log.Printf("Attempting to update campaign status from '%s' ---> '%s'", *campaign.CampaignStatus, newCampaignStatus)
 	// Campaign status can only go from ON -> OFF or OFF, COMPLETE, INVALID, ETC -> ON
 	if (*campaign.CampaignStatus == "on" && newCampaignStatus == "off") || newCampaignStatus == "on" {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
-		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
+		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign, true)
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound Campaign %s error: %s", *campaign.Name, err), resp)
 		}
+		log.Printf("updated campaign status with resp code: %s", resp.Status)
 	}
 	return nil
 }

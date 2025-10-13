@@ -3,12 +3,6 @@ package outbound_campaign
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
-
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
@@ -19,6 +13,11 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
@@ -706,6 +705,35 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
 				),
 			},
+			// re-run the campaign
+			{
+				Config: referencedResources + fmt.Sprintf(`
+				resource "%s" "%s" {
+					name                          = "%s"
+					dialing_mode                  = "agentless"
+					caller_name                   = "Test Name"
+					caller_address                = "+353371111111"
+					outbound_line_count           = 2
+					campaign_status               = "on"
+					contact_list_id               = genesyscloud_outbound_contact_list.%s.id
+					site_id                       = genesyscloud_telephony_providers_edges_site.%s.id
+					call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.%s.id
+					phone_columns {
+						column_name = "Cell"
+					}
+				}
+				`, ResourceType, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					util.VerifyAttributeInArrayOfPotentialValues(resourcePath, "campaign_status", []string{"on"}),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
+						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
+				),
+			},
 			{
 				// Import/Read
 				ResourceName:            resourcePath,
@@ -807,6 +835,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 						return nil
 					},
 				),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				// Import/Read
