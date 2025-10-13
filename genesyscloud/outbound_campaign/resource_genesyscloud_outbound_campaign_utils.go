@@ -108,7 +108,6 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound Campaign %s error: %s", *campaign.Name, err), resp)
 		}
-		log.Printf("updated campaign status with resp code: %s", resp.Status)
 	}
 	return nil
 }
