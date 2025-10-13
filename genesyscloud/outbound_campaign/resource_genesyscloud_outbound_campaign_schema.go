@@ -93,10 +93,6 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{`on`, `off`}, false),
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					if old == "complete" && new == "on" {
-						oldValue, newValue := d.GetChange("campaign_status")
-						return oldValue.(string) == newValue.(string)
-					}
 					return (old == `complete` && new == `off`) || (old == `invalid` && new == `off`) || (old == `stopping` && new == `off`)
 				},
 			},
