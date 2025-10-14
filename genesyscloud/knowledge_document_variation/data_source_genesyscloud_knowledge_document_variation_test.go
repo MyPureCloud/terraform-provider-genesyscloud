@@ -97,6 +97,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 					name,
 					knowledgeBaseResourceLabel1,
 					knowledgeDocumentResourceLabel1,
+					ResourceType+"."+variationResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					// As the ID is a concatenation of multiple IDs, this function will be used to test the ids
@@ -147,11 +148,12 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentVariationDataSource(resourceLabel, variationName, knowledgeBaseID, knowledgeDocumentID string) string {
+func generateKnowledgeDocumentVariationDataSource(resourceLabel, variationName, knowledgeBaseID, knowledgeDocumentID, dependsOn string) string {
 	return fmt.Sprintf(`data "genesyscloud_knowledge_document_variation" "%s" {
 		knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
 		knowledge_document_id = genesyscloud_knowledge_document.%s.id
 		name = "%s"
+		depends_on=[%s]
 	}
-	`, resourceLabel, knowledgeBaseID, knowledgeDocumentID, variationName)
+	`, resourceLabel, knowledgeBaseID, knowledgeDocumentID, variationName, dependsOn)
 }
