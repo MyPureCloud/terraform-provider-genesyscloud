@@ -3,6 +3,7 @@ package outbound_campaignrule
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -99,6 +100,49 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkCampaignRuleParameters.Value, paramsMap, "value")
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkCampaignRuleParameters.Priority, paramsMap, "priority")
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkCampaignRuleParameters.DialingMode, paramsMap, "dialing_mode")
+
+	if abandonRate, ok := paramsMap["abandon_rate"].(float32); ok {
+		sdkCampaignRuleParameters.AbandonRate = platformclientv2.Float32(abandonRate)
+	}
+	if lineCount, ok := paramsMap["outbound_line_count"].(string); ok {
+		num, err := strconv.Atoi(lineCount)
+		if err == nil {
+			sdkCampaignRuleParameters.OutboundLineCount = platformclientv2.Int(num)
+		}
+	}
+	if weight, ok := paramsMap["relative_weight"].(string); ok && weight != "" {
+		num, err := strconv.Atoi(weight)
+		if err == nil {
+			sdkCampaignRuleParameters.RelativeWeight = platformclientv2.Int(num)
+		}
+	}
+	if maxCpa, ok := paramsMap["max_calls_per_agent"].(float32); ok {
+		sdkCampaignRuleParameters.MaxCallsPerAgent = platformclientv2.Float32(maxCpa)
+	}
+	if queueId, ok := paramsMap["queue_id"].(string); ok && queueId != "" {
+		sdkCampaignRuleParameters.Queue = &platformclientv2.Domainentityref{Id: &queueId}
+	}
+	if messagesPerMinute, ok := paramsMap["messages_per_minute"].(int); ok {
+		if messagesPerMinute != 0 {
+			sdkCampaignRuleParameters.MessagesPerMinute = platformclientv2.Int(messagesPerMinute)
+		}
+	}
+	if smsMessagesPerMinute, ok := paramsMap["sms_messages_per_minute"].(int); ok {
+		if smsMessagesPerMinute != 0 {
+			sdkCampaignRuleParameters.MessagesPerMinute = platformclientv2.Int(smsMessagesPerMinute)
+		}
+	}
+	if emailMessagesPerMinute, ok := paramsMap["email_messages_per_minute"].(int); ok {
+		if emailMessagesPerMinute != 0 {
+			sdkCampaignRuleParameters.MessagesPerMinute = platformclientv2.Int(emailMessagesPerMinute)
+		}
+	}
+	if emailTemplateId, ok := paramsMap["email_content_template"].(string); ok && emailTemplateId != "" {
+		sdkCampaignRuleParameters.EmailContentTemplate = &platformclientv2.Domainentityref{Id: &emailTemplateId}
+	}
+	if smsTemplateId, ok := paramsMap["sms_content_template"].(string); ok && smsTemplateId != "" {
+		sdkCampaignRuleParameters.SmsContentTemplate = &platformclientv2.Domainentityref{Id: &smsTemplateId}
+	}
 
 	return &sdkCampaignRuleParameters
 }
@@ -242,6 +286,21 @@ func flattenRuleParameters(params *platformclientv2.Campaignruleparameters) []in
 	resourcedata.SetMapValueIfNotNil(paramsMap, "value", params.Value)
 	resourcedata.SetMapValueIfNotNil(paramsMap, "priority", params.Priority)
 	resourcedata.SetMapValueIfNotNil(paramsMap, "dialing_mode", params.DialingMode)
+	resourcedata.SetMapValueIfNotNil(paramsMap, "abandon_rate", params.AbandonRate)
+	resourcedata.SetMapValueIfNotNil(paramsMap, "outbound_line_count", params.OutboundLineCount)
+	if params.OutboundLineCount != nil {
+		paramsMap["outbound_line_count"] = strconv.Itoa(*params.OutboundLineCount)
+	}
+	if params.RelativeWeight != nil {
+		paramsMap["relative_weight"] = strconv.Itoa(*params.RelativeWeight)
+	}
+	resourcedata.SetMapValueIfNotNil(paramsMap, "max_calls_per_agent", params.MaxCallsPerAgent)
+	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "queue_id", params.Queue)
+	resourcedata.SetMapValueIfNotNil(paramsMap, "messages_per_minute", params.MessagesPerMinute)
+	resourcedata.SetMapValueIfNotNil(paramsMap, "sms_messages_per_minute", params.SmsMessagesPerMinute)
+	resourcedata.SetMapValueIfNotNil(paramsMap, "email_messages_per_minute", params.EmailMessagesPerMinute)
+	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "sms_content_template", params.SmsContentTemplate)
+	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "email_content_template", params.EmailContentTemplate)
 
 	return []interface{}{paramsMap}
 }
