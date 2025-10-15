@@ -1,9 +1,11 @@
 package outbound_campaignrule
 
 import (
+	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -33,7 +35,9 @@ func getAllowedActions() []string {
 		"setCampaignNumberOfLines",
 		"setCampaignWeight",
 		"setCampaignMaxCallsPerAgent",
+		"setCampaignMessagesPerMinute",
 		"changeCampaignQueue",
+		"changeCampaignTemplate",
 	}
 }
 
@@ -127,24 +131,39 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Description:  `Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action`,
 				Optional:     true,
 				Type:         schema.TypeFloat,
-				Default:      nil,
 				ValidateFunc: validation.FloatAtLeast(0.1),
 			},
 			`outbound_line_count`: {
 				Description: `Number of Outbound lines. Required for 'setCampaignNumberOfLines' action`,
 				Optional:    true,
 				Type:        schema.TypeString,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					v := val.(string)
+					if v != "" {
+						if num, err := strconv.Atoi(v); err != nil || num < 0 {
+							errs = append(errs, fmt.Errorf("%q must be a non-negative integer", key))
+						}
+					}
+					return
+				},
 			},
 			`relative_weight`: {
 				Description: `Relative weight. Required for 'setCampaignWeight' action`,
 				Optional:    true,
 				Type:        schema.TypeString,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					if v := val.(string); v != "" {
+						if num, err := strconv.Atoi(v); err != nil || num < 0 || num > 100 {
+							errs = append(errs, fmt.Errorf("%q must be an integer between 0 and 100 inclusive", key))
+						}
+					}
+					return
+				},
 			},
 			`max_calls_per_agent`: {
 				Description:  `Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action`,
 				Optional:     true,
 				Type:         schema.TypeFloat,
-				Default:      nil,
 				ValidateFunc: validation.FloatAtLeast(1.0),
 			},
 			`queue_id`: {

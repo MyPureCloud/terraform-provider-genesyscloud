@@ -101,8 +101,10 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkCampaignRuleParameters.Priority, paramsMap, "priority")
 	resourcedata.BuildSDKStringValueIfNotNil(&sdkCampaignRuleParameters.DialingMode, paramsMap, "dialing_mode")
 
-	if abandonRate, ok := paramsMap["abandon_rate"].(float32); ok {
-		sdkCampaignRuleParameters.AbandonRate = platformclientv2.Float32(abandonRate)
+	if abandonRate, ok := paramsMap["abandon_rate"].(float64); ok {
+		if abandonRate != 0 {
+			sdkCampaignRuleParameters.AbandonRate = platformclientv2.Float32(float32(abandonRate))
+		}
 	}
 	if lineCount, ok := paramsMap["outbound_line_count"].(string); ok {
 		num, err := strconv.Atoi(lineCount)
@@ -116,8 +118,10 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 			sdkCampaignRuleParameters.RelativeWeight = platformclientv2.Int(num)
 		}
 	}
-	if maxCpa, ok := paramsMap["max_calls_per_agent"].(float32); ok {
-		sdkCampaignRuleParameters.MaxCallsPerAgent = platformclientv2.Float32(maxCpa)
+	if maxCpa, ok := paramsMap["max_calls_per_agent"].(float64); ok {
+		if maxCpa != 0 {
+			sdkCampaignRuleParameters.MaxCallsPerAgent = platformclientv2.Float32(float32(maxCpa))
+		}
 	}
 	if queueId, ok := paramsMap["queue_id"].(string); ok && queueId != "" {
 		sdkCampaignRuleParameters.Queue = &platformclientv2.Domainentityref{Id: &queueId}
