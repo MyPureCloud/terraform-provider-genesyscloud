@@ -3,9 +3,10 @@ package tfexporter
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 	"os"
 	"path/filepath"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -176,6 +177,12 @@ func ResourceTfExport() *schema.Resource {
 				Default:     true,
 				Optional:    true,
 				ForceNew:    true,
+			},
+			"max_concurrent_threads": {
+				Description: "Maximum number of concurrent threads to use during export process. This is distinct from the provider's token pool size configuration",
+				Default:     10,
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 		},
 	}
