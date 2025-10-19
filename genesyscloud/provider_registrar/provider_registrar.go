@@ -20,6 +20,7 @@ import (
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
@@ -196,7 +197,7 @@ func GetResourceExporters() (exporters map[string]*resourceExporter.ResourceExpo
 // GetResourceExporterByResourceType returns the resource exporter for a given resource type
 // Needed by MRMO - do not remove if it appears to be unused
 func GetResourceExporterByResourceType(resourceType string) *resourceExporter.ResourceExporter {
-	if providerResources == nil {
+	if !resourceMapsAreRegistered() {
 		registerResources()
 	}
 	return resourceExporters[resourceType]
@@ -351,6 +352,7 @@ func registerResources() {
 	qualityFormsEvaluation.SetRegistrar(regInstance)                       //Registering quality forms evaluation
 	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
 	businessRulesSchema.SetRegistrar(regInstance)                          //Registering business rules schema
+	businessRulesDecisionTable.SetRegistrar(regInstance)                   //Registering business rules decision table
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

@@ -98,50 +98,13 @@ func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {
 func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 	log.Printf("Cleaning up Knowledge Bases with name '%s'", knowledgeBaseName)
 	knowledgeApi := platformclientv2.NewKnowledgeApi()
-	architectApi := platformclientv2.NewArchitectApi()
 
 	var after string
 	const pageSize = "100"
 
-	log.Printf("Building dependency tracking")
-	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
-	if architectError != nil {
-		log.Printf("Failed to build dependency tracking: %v with resp: %v", architectError, resp)
-	}
-
-	if resp.StatusCode != 202 {
-		log.Printf("Dependency tracking rebuild started")
-	}
-
-	for {
-		time.Sleep(10 * time.Second)
-
-		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
-		if buildErr != nil {
-			log.Printf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
-			break
-		}
-
-		if status != nil && status.Status != nil {
-			switch *status.Status {
-			case "OPERATIONAL":
-				log.Printf("Dependency tracking Complete")
-				break
-			case "BUILDINITIALIZING", "BUILDINPROGRESS":
-				log.Printf("Dependency tracking status: %s, waiting...", *status.Status)
-				continue
-			case "BUILDINCOMPLETE", "NOTBUILT":
-				log.Printf("Dependency Rebuild Failedg")
-				break
-			default:
-				log.Printf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
-				break
-			}
-			break
-		} else {
-			log.Printf("No status returned from dependency tracking build, proceeding anyway")
-			break
-		}
+	rebuildError := rebuildDatabase()
+	if rebuildError != nil {
+		log.Printf("Failed to rebuild database: %v", rebuildError)
 	}
 
 	for {

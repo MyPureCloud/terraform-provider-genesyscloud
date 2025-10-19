@@ -1,6 +1,9 @@
 package conversations_messaging_supportedcontent_default
 
 import (
+	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"log"
 	"sync"
 	"testing"
 
@@ -13,6 +16,11 @@ import (
    The genesyscloud_conversations_messaging_supportedcontent_default_init_test.go file is used to initialize the data sources and resources
    used in testing the conversations_messaging_supportedcontent_default resource.
 */
+
+var (
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
@@ -32,6 +40,11 @@ func (r *registerTestInstance) registerTestResources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = provider.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk for package conversations_messaging_supportedcontent_default: %v", authErr)
+	}
+
 	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}

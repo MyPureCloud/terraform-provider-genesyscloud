@@ -21,6 +21,7 @@ import (
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -101,6 +102,9 @@ type GenesysCloudResourceExporter struct {
 	filterList          *[]string
 	filterType          ExporterFilterType
 	flowResourcesList   []string
+
+	// resourceExportedForMrMo stores the schema.ResourceData object of the resource that was exported to Mr Mo
+	resourceExportedForMrMo *schema.ResourceData
 
 	meta                  interface{}
 	provider              *schema.Provider
@@ -292,6 +296,18 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	diagErr = append(diagErr, g.retrieveSanitizedResourceMaps()...)
 	if diagErr.HasError() {
 		return diagErr
+	}
+
+	if !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+		currentFlowExporter := (*g.exporters)[architectFlow.ResourceType]
+
+		if currentFlowExporter != nil && len(currentFlowExporter.SanitizedResourceMap) > 0 {
+			newFlowExporter := resourceExporter.GetNewFlowResourceExporter()
+
+			newFlowExporter.SetSanitizedResourceMap(currentFlowExporter.GetSanitizedResourceMap())
+			(*g.exporters)[architectFlow.ResourceType] = newFlowExporter
+			tflog.Info(g.ctx, fmt.Sprintf("Replaced flow exporter with new exporter preserving %d flow resources in SanitizedResourceMap", len(currentFlowExporter.SanitizedResourceMap)))
+		}
 	}
 
 	// Step #3 Retrieve the individual genesys cloud object instances
@@ -649,10 +665,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			// The _BRCM prefix is meant to be an identifier so we can tell that the hash was generated here and not in the sanitizer.
 			resource.BlockLabel = resource.BlockLabel + "_BRCM" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			g.updateSanitizeMap(*g.exporters, resource)
-		}
-
-		if resource.Type == architectFlow.ResourceType && !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
-			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
 		}
 
 		// 4. Convert the instance state to a map
@@ -1714,6 +1726,10 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 		// Resource no longer exists
 		tflog.Trace(g.ctx, fmt.Sprintf("Empty State for resource %s, state: %v", resID, state))
 		return nil, nil
+	}
+
+	if mrmo.IsActive() {
+		g.resourceExportedForMrMo = resource.Data(state)
 	}
 
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))
