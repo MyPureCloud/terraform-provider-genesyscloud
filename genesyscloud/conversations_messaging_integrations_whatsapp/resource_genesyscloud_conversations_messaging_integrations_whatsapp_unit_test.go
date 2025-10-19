@@ -334,6 +334,38 @@ func TestUnitIntegrationWhatsappActivate(t *testing.T) {
 	assert.Equal(t, whatsappIntegrationId, d.Id())
 }
 
+func TestUnitDataSourceWhatsappRead(t *testing.T) {
+	targetId := uuid.NewString()
+	targetName := "MyTargetId"
+	whatsappProxy := &conversationsMessagingIntegrationsWhatsappProxy{}
+	whatsappProxy.getConversationsMessagingIntegrationsWhatsappIdByNameAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+		assert.Equal(t, targetName, name)
+		return targetId, false, nil, nil
+	}
+	whatsappProxy.getAllConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy) (conversationsMessagingIntegrationsWhatsapp *[]platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+		return &[]platformclientv2.Whatsappintegration{
+			{
+				Id:   &targetId,
+				Name: &targetName,
+			},
+		}, nil, nil
+	}
+	internalProxy = whatsappProxy
+	defer func() { internalProxy = nil }()
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	resourceSchema := DataSourceConversationsMessagingIntegrationsWhatsapp().Schema
+
+	resourceDataMap := map[string]interface{}{
+		"name": targetName,
+	}
+
+	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+	dataSourceConversationsMessagingIntegrationsWhatsappRead(ctx, d, gcloud)
+	assert.Equal(t, targetId, d.Id())
+}
+
 func buildConversationsMessagingIntegrationsWhatsappResourceMap(wId string, name string, supportedContentId string, messagingSettingId string, embeddedSignupAccessToken string) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
 		"id":                           wId,

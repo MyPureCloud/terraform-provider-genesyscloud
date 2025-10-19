@@ -27,7 +27,7 @@ The resource_genesyscloud_flow_outcome.go contains all of the methods that perfo
 
 // getAllAuthFlowOutcome retrieves all of the flow outcome via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newFlowOutcomeProxy(clientConfig)
+	proxy := getFlowOutcomeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	flowOutcomes, resp, err := proxy.getAllFlowOutcome(ctx)
