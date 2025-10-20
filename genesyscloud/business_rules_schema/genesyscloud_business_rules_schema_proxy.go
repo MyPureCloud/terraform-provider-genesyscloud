@@ -10,7 +10,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v170/platformclientv2"
 )
 
 /*
@@ -23,11 +23,11 @@ out during testing.
 var internalProxy *businessRulesSchemaProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error)
-type getAllBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy) (*[]platformclientv2.Dataschema, *platformclientv2.APIResponse, error)
-type getBusinessRulesSchemasByNameFunc func(ctx context.Context, p *businessRulesSchemaProxy, name string) (schemas *[]platformclientv2.Dataschema, retryable bool, resp *platformclientv2.APIResponse, err error)
-type getBusinessRulesSchemaByIdFunc func(ctx context.Context, p *businessRulesSchemaProxy, id string) (schema *platformclientv2.Dataschema, response *platformclientv2.APIResponse, err error)
-type updateBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy, id string, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error)
+type createBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Businessrulesschemacreaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error)
+type getAllBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy) (*[]platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error)
+type getBusinessRulesSchemasByNameFunc func(ctx context.Context, p *businessRulesSchemaProxy, name string) (schemas *[]platformclientv2.Businessrulesdataschema, retryable bool, resp *platformclientv2.APIResponse, err error)
+type getBusinessRulesSchemaByIdFunc func(ctx context.Context, p *businessRulesSchemaProxy, id string) (schema *platformclientv2.Businessrulesdataschema, response *platformclientv2.APIResponse, err error)
+type updateBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy, id string, schema *platformclientv2.Businessrulesschemaupdaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error)
 type deleteBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy, id string) (response *platformclientv2.APIResponse, err error)
 type getBusinessRulesSchemaDeletedStatusFunc func(ctx context.Context, p *businessRulesSchemaProxy, schemaId string) (isDeleted bool, resp *platformclientv2.APIResponse, err error)
 
@@ -42,13 +42,13 @@ type businessRulesSchemaProxy struct {
 	updateBusinessRulesSchemaAttr           updateBusinessRulesSchemaFunc
 	deleteBusinessRulesSchemaAttr           deleteBusinessRulesSchemaFunc
 	getBusinessRulesSchemaDeletedStatusAttr getBusinessRulesSchemaDeletedStatusFunc
-	businessRulesSchemaCache                rc.CacheInterface[platformclientv2.Dataschema]
+	businessRulesSchemaCache                rc.CacheInterface[platformclientv2.Businessrulesdataschema]
 }
 
 // newBusinessRulesSchemaProxy initializes the business rules schema proxy with all of the data needed to communicate with Genesys Cloud
 func newBusinessRulesSchemaProxy(clientConfig *platformclientv2.Configuration) *businessRulesSchemaProxy {
 	api := platformclientv2.NewBusinessRulesApiWithConfig(clientConfig)
-	businessRulesSchemaCache := rc.NewResourceCache[platformclientv2.Dataschema]()
+	businessRulesSchemaCache := rc.NewResourceCache[platformclientv2.Businessrulesdataschema]()
 
 	return &businessRulesSchemaProxy{
 		clientConfig:                            clientConfig,
@@ -74,27 +74,27 @@ func getBusinessRulesSchemaProxy(clientConfig *platformclientv2.Configuration) *
 }
 
 // createBusinessRulesSchema creates a Genesys Cloud business rules schema
-func (p *businessRulesSchemaProxy) createBusinessRulesSchema(ctx context.Context, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+func (p *businessRulesSchemaProxy) createBusinessRulesSchema(ctx context.Context, schema *platformclientv2.Businessrulesschemacreaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	return p.createBusinessRulesSchemaAttr(ctx, p, schema)
 }
 
 // getAllBusinessRulesSchema retrieves all Genesys Cloud business rules schemas
-func (p *businessRulesSchemaProxy) getAllBusinessRulesSchema(ctx context.Context) (*[]platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+func (p *businessRulesSchemaProxy) getAllBusinessRulesSchema(ctx context.Context) (*[]platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	return p.getAllBusinessRulesSchemaAttr(ctx, p)
 }
 
 // getBusinessRulesSchemasByName returns a single Genesys Cloud business rules schema by a name
-func (p *businessRulesSchemaProxy) getBusinessRulesSchemasByName(ctx context.Context, name string) (schemas *[]platformclientv2.Dataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
+func (p *businessRulesSchemaProxy) getBusinessRulesSchemasByName(ctx context.Context, name string) (schemas *[]platformclientv2.Businessrulesdataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	return p.getBusinessRulesSchemasByNameAttr(ctx, p, name)
 }
 
 // getBusinessRulesSchemaById returns a single Genesys Cloud business rules schema by Id
-func (p *businessRulesSchemaProxy) getBusinessRulesSchemaById(ctx context.Context, id string) (schema *platformclientv2.Dataschema, resp *platformclientv2.APIResponse, err error) {
+func (p *businessRulesSchemaProxy) getBusinessRulesSchemaById(ctx context.Context, id string) (schema *platformclientv2.Businessrulesdataschema, resp *platformclientv2.APIResponse, err error) {
 	return p.getBusinessRulesSchemaByIdAttr(ctx, p, id)
 }
 
 // updateBusinessRulesSchema updates a Genesys Cloud business rules schema
-func (p *businessRulesSchemaProxy) updateBusinessRulesSchema(ctx context.Context, id string, schemaUpdate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+func (p *businessRulesSchemaProxy) updateBusinessRulesSchema(ctx context.Context, id string, schemaUpdate *platformclientv2.Businessrulesschemaupdaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	return p.updateBusinessRulesSchemaAttr(ctx, p, id, schemaUpdate)
 }
 
@@ -109,10 +109,10 @@ func (p *businessRulesSchemaProxy) getBusinessRulesSchemaDeletedStatus(ctx conte
 }
 
 // createBusinessRulesSchemaFn is an implementation function for creating a Genesys Cloud business rules schema
-func createBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
-	log.Printf("Creating business rules schema: %s", *schema.Name)
+func createBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Businessrulesschemacreaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
+	log.Printf("Creating business rules schema: %s", *schema.JsonSchema.Title)
 	createdSchema, resp, err := p.businessRulesApi.PostBusinessrulesSchemas(*schema)
-	log.Printf("Completed call to create business rules schema %s with status code %d, correlation id %s", *schema.Name, resp.StatusCode, resp.CorrelationID)
+	log.Printf("Completed call to create business rules schema %s with status code %d, correlation id %s", *schema.JsonSchema.Title, resp.StatusCode, resp.CorrelationID)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create business rules schema: %s", err)
 	}
@@ -120,24 +120,26 @@ func createBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProx
 }
 
 // getAllBusinessRulesSchemaFn is the implementation for retrieving all business rules schemas in Genesys Cloud
-func getAllBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy) (*[]platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+func getAllBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy) (*[]platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	// NOTE: At the time of implementation (Preview API) retrieving schemas does not have any sort of pagination.
 	// It seemingly will return all schemas in one call. This might have to be updated as there may be some
 	// undocumented limit or if there would be changes to the API call before release.
+
+	// update: Devtooling-1423, although the entitylisting is returned the GET call doesn't accept the after query parameter yet
 
 	schemas, resp, err := p.businessRulesApi.GetBusinessrulesSchemas()
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get all business rules schemas: %v", err)
 	}
-	if schemas.Entities == nil || *schemas.Total == 0 {
-		return &([]platformclientv2.Dataschema{}), resp, nil
+	if schemas.Entities == nil || len(*schemas.Entities) == 0 {
+		return &([]platformclientv2.Businessrulesdataschema{}), resp, nil
 	}
 	return schemas.Entities, resp, nil
 }
 
 // getBusinessRulesSchemasByNameFn is an implementation of the function to get a Genesys Cloud business rules schemas by name
-func getBusinessRulesSchemasByNameFn(ctx context.Context, p *businessRulesSchemaProxy, name string) (matchingSchemas *[]platformclientv2.Dataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	finalSchemas := []platformclientv2.Dataschema{}
+func getBusinessRulesSchemasByNameFn(ctx context.Context, p *businessRulesSchemaProxy, name string) (matchingSchemas *[]platformclientv2.Businessrulesdataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	finalSchemas := []platformclientv2.Businessrulesdataschema{}
 
 	schemas, resp, err := p.getAllBusinessRulesSchema(ctx)
 	if err != nil {
@@ -157,7 +159,7 @@ func getBusinessRulesSchemasByNameFn(ctx context.Context, p *businessRulesSchema
 }
 
 // getBusinessRulesSchemaByIdFn is an implementation of the function to get a Genesys Cloud business rules schema by Id
-func getBusinessRulesSchemaByIdFn(ctx context.Context, p *businessRulesSchemaProxy, id string) (schema *platformclientv2.Dataschema, resp *platformclientv2.APIResponse, err error) {
+func getBusinessRulesSchemaByIdFn(ctx context.Context, p *businessRulesSchemaProxy, id string) (schema *platformclientv2.Businessrulesdataschema, resp *platformclientv2.APIResponse, err error) {
 	businessRulesSchema := rc.GetCacheItem(p.businessRulesSchemaCache, id)
 	if businessRulesSchema != nil {
 		return businessRulesSchema, nil, nil
@@ -166,7 +168,7 @@ func getBusinessRulesSchemaByIdFn(ctx context.Context, p *businessRulesSchemaPro
 }
 
 // updateBusinessRulesSchemaFn is an implementation of the function to update a Genesys Cloud business rules schema
-func updateBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, id string, schemaUpdate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+func updateBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, id string, schemaUpdate *platformclientv2.Businessrulesschemaupdaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	schema, resp, err := p.businessRulesApi.PutBusinessrulesSchema(id, *schemaUpdate)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update business rules schema: %s", err)
