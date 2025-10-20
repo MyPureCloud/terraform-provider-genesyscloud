@@ -925,10 +925,10 @@ func buildCallMediaPolicyConditions(callMediaPolicyConditions []interface{}) *pl
 		idStrings = append(idStrings, fmt.Sprintf("%v", id))
 	}
 
-	forUsers := make([]platformclientv2.User, 0)
+	forUsers := make([]platformclientv2.Policyuser, 0)
 	for _, id := range idStrings {
 		userId := id
-		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
+		forUsers = append(forUsers, platformclientv2.Policyuser{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -1052,10 +1052,10 @@ func buildChatMediaPolicyConditions(chatMediaPolicyConditions []interface{}) *pl
 		idStrings = append(idStrings, fmt.Sprintf("%v", id))
 	}
 
-	forUsers := make([]platformclientv2.User, 0)
+	forUsers := make([]platformclientv2.Policyuser, 0)
 	for _, id := range idStrings {
 		userId := id
-		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
+		forUsers = append(forUsers, platformclientv2.Policyuser{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -1178,10 +1178,10 @@ func buildEmailMediaPolicyConditions(emailMediaPolicyConditions []interface{}) *
 		idStrings = append(idStrings, fmt.Sprintf("%v", id))
 	}
 
-	forUsers := make([]platformclientv2.User, 0)
+	forUsers := make([]platformclientv2.Policyuser, 0)
 	for _, id := range idStrings {
 		userId := id
-		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
+		forUsers = append(forUsers, platformclientv2.Policyuser{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -1312,10 +1312,10 @@ func buildMessageMediaPolicyConditions(messageMediaPolicyConditions []interface{
 		idStrings = append(idStrings, fmt.Sprintf("%v", id))
 	}
 
-	forUsers := make([]platformclientv2.User, 0)
+	forUsers := make([]platformclientv2.Policyuser, 0)
 	for _, id := range idStrings {
 		userId := id
-		forUsers = append(forUsers, platformclientv2.User{Id: &userId})
+		forUsers = append(forUsers, platformclientv2.Policyuser{Id: &userId})
 	}
 
 	wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})
@@ -1676,10 +1676,10 @@ func buildConditions(d *schema.ResourceData) *platformclientv2.Policyconditions 
 			idStrings = append(idStrings, fmt.Sprintf("%v", id))
 		}
 
-		forUsers := make([]platformclientv2.User, 0)
+		forUsers := make([]platformclientv2.Policyuser, 0)
 		for _, id := range idStrings {
 			userId := id
-			forUsers = append(forUsers, platformclientv2.User{Id: &userId})
+			forUsers = append(forUsers, platformclientv2.Policyuser{Id: &userId})
 		}
 
 		wrapupCodeIds := conditionsMap["wrapup_code_ids"].([]interface{})

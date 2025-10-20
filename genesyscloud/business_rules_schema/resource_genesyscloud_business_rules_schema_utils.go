@@ -28,13 +28,38 @@ type customField struct {
 	additionalProps map[string]interface{}
 }
 
-// BuildSdkBusinessRulesSchema takes the resource data and builds the SDK platformclientv2.Dataschema
-func BuildSdkBusinessRulesSchema(d *schema.ResourceData, version *int) (*platformclientv2.Dataschema, error) {
-	// body for the creation/update of the schema
-	dataSchema := &platformclientv2.Dataschema{
+// BuildSdkBusinessRulesSchema takes the resource data and builds the SDK platformclientv2.Businessrulesschemacreaterequest
+func BuildSdkCreateBusinessRulesSchema(d *schema.ResourceData, version *int) (*platformclientv2.Businessrulesschemacreaterequest, error) {
+	// body for the creation of the schema
+	dataSchema := &platformclientv2.Businessrulesschemacreaterequest{
 		Name:    platformclientv2.String(d.Get("name").(string)),
 		Version: version,
-		JsonSchema: &platformclientv2.Jsonschemadocument{
+		JsonSchema: &platformclientv2.Jsonschemawithdefinitions{
+			Schema:      platformclientv2.String("http://json-schema.org/draft-04/schema#"),
+			Title:       platformclientv2.String(d.Get("name").(string)),
+			Description: platformclientv2.String(d.Get("description").(string)),
+		},
+		Enabled: platformclientv2.Bool(d.Get("enabled").(bool)),
+	}
+
+	// Custom attributes for the schema
+	if propertiesStr, ok := d.Get("properties").(string); ok && propertiesStr != "" {
+		var properties map[string]interface{}
+		if err := json.Unmarshal([]byte(propertiesStr), &properties); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal properties JSON: %w", err)
+		}
+		dataSchema.JsonSchema.Properties = &properties
+	}
+
+	return dataSchema, nil
+}
+
+// BuildSdkBusinessRulesSchema takes the resource data and builds the SDK platformclientv2.Businessrulesschemaupdaterequest
+func BuildSdkUpdateBusinessRulesSchema(d *schema.ResourceData, version *int) (*platformclientv2.Businessrulesschemaupdaterequest, error) {
+	// body for the update of the schema
+	dataSchema := &platformclientv2.Businessrulesschemaupdaterequest{
+		Version: version,
+		JsonSchema: &platformclientv2.Jsonschemawithdefinitions{
 			Schema:      platformclientv2.String("http://json-schema.org/draft-04/schema#"),
 			Title:       platformclientv2.String(d.Get("name").(string)),
 			Description: platformclientv2.String(d.Get("description").(string)),

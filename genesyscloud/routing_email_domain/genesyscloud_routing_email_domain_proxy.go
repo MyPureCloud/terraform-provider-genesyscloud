@@ -12,7 +12,7 @@ import (
 var internalProxy *routingEmailDomainProxy
 
 type getAllRoutingEmailDomainsFunc func(ctx context.Context, p *routingEmailDomainProxy) (*[]platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error)
-type createRoutingEmailDomainFunc func(ctx context.Context, p *routingEmailDomainProxy, inboundDomain *platformclientv2.Inbounddomain) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error)
+type createRoutingEmailDomainFunc func(ctx context.Context, p *routingEmailDomainProxy, inboundDomain *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error)
 type getRoutingEmailDomainByIdFunc func(ctx context.Context, p *routingEmailDomainProxy, id string) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error)
 type getRoutingEmailDomainIdByNameFunc func(ctx context.Context, p *routingEmailDomainProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type updateRoutingEmailDomainFunc func(ctx context.Context, p *routingEmailDomainProxy, id string, inboundDomain *platformclientv2.Inbounddomainpatchrequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error)
@@ -62,7 +62,7 @@ func (p *routingEmailDomainProxy) getAllRoutingEmailDomains(ctx context.Context)
 }
 
 // createRoutingEmailDomain creates a Genesys Cloud routing email domain
-func (p *routingEmailDomainProxy) createRoutingEmailDomain(ctx context.Context, routingEmailDomain *platformclientv2.Inbounddomain) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+func (p *routingEmailDomainProxy) createRoutingEmailDomain(ctx context.Context, routingEmailDomain *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
 	return p.createRoutingEmailDomainAttr(ctx, p, routingEmailDomain)
 }
 
@@ -93,7 +93,7 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 		response   *platformclientv2.APIResponse
 	)
 
-	domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, 1, false, "")
+	domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, 1, false, "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get routing email domains error: %s", err)
 	}
@@ -104,7 +104,7 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 	allDomains = append(allDomains, *domains.Entities...)
 
 	for pageNum := 2; pageNum <= *domains.PageCount; pageNum++ {
-		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, "")
+		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get routing email domains error: %s", err)
 		}
@@ -122,7 +122,7 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 	return &allDomains, response, nil
 }
 
-func createRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy, routingEmailDomain *platformclientv2.Inbounddomain) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+func createRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy, routingEmailDomain *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
 	return p.routingApi.PostRoutingEmailDomains(*routingEmailDomain)
 }
 
@@ -130,7 +130,7 @@ func getRoutingEmailDomainByIdFn(ctx context.Context, p *routingEmailDomainProxy
 	if domain := rc.GetCacheItem(p.routingEmailDomainCache, id); domain != nil {
 		return domain, nil, nil
 	}
-	return p.routingApi.GetRoutingEmailDomain(id)
+	return p.routingApi.GetRoutingEmailDomain(id, "")
 }
 
 func getRoutingEmailDomainIdByNameFn(ctx context.Context, p *routingEmailDomainProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {

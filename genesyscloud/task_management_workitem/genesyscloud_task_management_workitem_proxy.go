@@ -235,7 +235,7 @@ func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorki
 		return workitem, nil, nil
 	}
 
-	return p.taskManagementApi.GetTaskmanagementWorkitem(id, "")
+	return p.taskManagementApi.GetTaskmanagementWorkitem(id, nil)
 }
 
 // updateTaskManagementWorkitemFn is an implementation of the function to update a Genesys Cloud task management workitem

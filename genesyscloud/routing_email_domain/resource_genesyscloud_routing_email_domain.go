@@ -45,15 +45,9 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 
 	domainID := d.Get("domain_id").(string)
 	subdomain := d.Get("subdomain").(bool)
-	mxRecordStatus := "VALID"
-	if !subdomain {
-		mxRecordStatus = "NOT_AVAILABLE"
-	}
-
-	sdkDomain := platformclientv2.Inbounddomain{
-		Id:             &domainID,
-		SubDomain:      &subdomain,
-		MxRecordStatus: &mxRecordStatus,
+	sdkDomain := platformclientv2.Inbounddomaincreaterequest{
+		Id:        &domainID,
+		SubDomain: &subdomain,
 	}
 
 	log.Printf("Creating routing email domain %s", domainID)

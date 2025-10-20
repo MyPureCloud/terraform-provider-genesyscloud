@@ -123,7 +123,7 @@ func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 
 	var allDomains = make([]platformclientv2.Inbounddomain, 0)
 	for pageNum := 1; ; pageNum++ {
-		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, domainId)
+		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, domainId, "")
 		apiResponse = resp
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get routing email domains: %s", err.Error())

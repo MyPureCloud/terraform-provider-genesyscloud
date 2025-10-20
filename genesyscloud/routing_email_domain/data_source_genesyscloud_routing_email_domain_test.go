@@ -2,18 +2,14 @@ package routing_email_domain
 
 import (
 	"fmt"
-	"log"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"strings"
+	"testing"
 
 	"github.com/google/uuid"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v170/platformclientv2"
 )
 
 func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
@@ -23,7 +19,9 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 		emailDataResourceLabel   = "email_domain_data"
 	)
 
-	CleanupRoutingEmailDomains()
+	if cleanupErr := CleanupRoutingEmailDomains("terraformdomain"); cleanupErr != nil {
+		t.Logf("Failed to clean up routing email domains: %v", cleanupErr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -56,33 +54,4 @@ func generateRoutingEmailDomainDataSource(
         depends_on=[%s]
 	}
 	`, resourceLabel, name, dependsOnResource)
-}
-
-func CleanupRoutingEmailDomains() {
-	sdkConfig, _ := provider.AuthorizeSdk()
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
-		if getErr != nil {
-			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
-			return
-		}
-
-		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-			break
-		}
-
-		for _, routingEmailDomain := range *routingEmailDomains.Entities {
-			if routingEmailDomain.Name != nil && strings.HasPrefix(*routingEmailDomain.Name, "terraformdomain") {
-				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
-				if err != nil {
-					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
-					return
-				}
-				time.Sleep(5 * time.Second)
-			}
-		}
-	}
 }

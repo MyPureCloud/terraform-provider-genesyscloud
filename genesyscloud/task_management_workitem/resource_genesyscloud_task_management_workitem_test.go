@@ -658,7 +658,7 @@ func testVerifyTaskManagementWorkitemDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		worktype, resp, err := taskMgmtApi.GetTaskmanagementWorkitem(rs.Primary.ID, "")
+		worktype, resp, err := taskMgmtApi.GetTaskmanagementWorkitem(rs.Primary.ID, nil)
 		if worktype != nil {
 			return fmt.Errorf("task management workitem (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {

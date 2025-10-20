@@ -49,7 +49,7 @@ func createBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessRulesSchemaProxy(sdkConfig)
 
-	dataSchema, err := BuildSdkBusinessRulesSchema(d, nil)
+	dataSchema, err := BuildSdkCreateBusinessRulesSchema(d, nil)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "create: failed to build business rules schema", err)
 	}
@@ -65,7 +65,6 @@ func createBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 	// If enabled is set to 'false' do an update call to the schema
 	if enabled, ok := d.Get("enabled").(bool); ok && !enabled {
 		log.Printf("Updating business rules schema: %s, to set 'enabled' to 'false'", *schema.Name)
-		dataSchema.Version = platformclientv2.Int(1)
 		_, resp, err := proxy.updateBusinessRulesSchema(ctx, *schema.Id, dataSchema)
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update business rules schema %s error: %s", d.Id(), err), resp)
@@ -130,7 +129,7 @@ func updateBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get business rules schema By id %s error: %s", d.Id(), err), resp)
 	}
 
-	dataSchema, err := BuildSdkBusinessRulesSchema(d, curSchema.Version)
+	dataSchema, err := BuildSdkUpdateBusinessRulesSchema(d, curSchema.Version)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "update: failed to build business rules schema", err)
 	}
