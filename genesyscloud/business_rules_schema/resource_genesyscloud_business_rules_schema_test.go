@@ -118,6 +118,22 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 			},
 		}
 
+		// "stringList" field
+		attr9 = customField{
+			title:       "custom_string_list_attribute",
+			description: "custom_string_list_attribute description",
+			varType:     STRING_LIST,
+			additionalProps: map[string]interface{}{
+				"minItems":    1,
+				"maxItems":    10,
+				"uniqueItems": true,
+				"items": map[string]interface{}{
+					"minLength": 3,
+					"maxLength": 15,
+				},
+			},
+		}
+
 		customProperties = util.GenerateJsonEncodedProperties(
 			generateJsonSchemaProperty(attr1.title, attr1.description, attr1.varType, ""),
 			generateJsonSchemaProperty(attr2.title, attr2.description, attr2.varType, ""),
@@ -127,6 +143,7 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 			generateJsonSchemaProperty(attr6.title, attr6.description, attr6.varType, generateAdditionalProperties(attr6.additionalProps)),
 			generateJsonSchemaProperty(attr7.title, attr7.description, attr7.varType, ""),
 			generateJsonSchemaProperty(attr8.title, attr8.description, attr8.varType, generateAdditionalProperties(attr8.additionalProps)),
+			generateJsonSchemaProperty(attr9.title, attr9.description, attr9.varType, generateAdditionalProperties(attr9.additionalProps)),
 		)
 	)
 
@@ -168,6 +185,7 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr6.title+"_"+attr6.varType, attr6),
 					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr7.title+"_"+attr7.varType, attr7),
 					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr8.title+"_"+attr8.varType, attr8),
+					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr9.title+"_"+attr9.varType, attr9),
 				),
 			},
 			// Update the description of the schema
@@ -191,6 +209,7 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr6.title+"_"+attr6.varType, attr6),
 					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr7.title+"_"+attr7.varType, attr7),
 					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr8.title+"_"+attr8.varType, attr8),
+					validateBusinessRulesSchemaField(ResourceType+"."+schemaResourceLabel, attr9.title+"_"+attr9.varType, attr9),
 				),
 			},
 		},
