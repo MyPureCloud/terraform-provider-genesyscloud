@@ -134,17 +134,18 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
-			// Barebones schema. No custom fields
+			// Barebones schema. No custom fields. Enabled = false
 			{
 				Config: GenerateBusinessRulesSchemaResourceBasic(
 					schemaResourceLabel,
 					schemaName,
 					schemaDescription,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "name", schemaName),
 					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "description", schemaDescription),
-					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "enabled", util.FalseValue),
 				),
 			},
 			// Update with fields

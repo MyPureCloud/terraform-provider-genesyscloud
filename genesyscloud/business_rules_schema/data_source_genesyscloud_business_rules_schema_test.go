@@ -35,7 +35,7 @@ func TestAccDataSourceBusinessRulesSchema(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateBusinessRulesSchemaResourceBasic(schemaResourceLabel, schemaName, schemaDescription) +
+				Config: GenerateBusinessRulesSchemaResourceBasic(schemaResourceLabel, schemaName, schemaDescription, util.TrueValue) +
 					generateBusinessRulesSchemaDataSource(schemaDataSourceLabel, schemaName, ResourceType+"."+schemaResourceLabel),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+schemaDataSourceLabel, "id", ResourceType+"."+schemaResourceLabel, "id"),

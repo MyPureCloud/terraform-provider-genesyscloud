@@ -32,14 +32,11 @@ type customField struct {
 func BuildSdkCreateBusinessRulesSchema(d *schema.ResourceData, version *int) (*platformclientv2.Businessrulesschemacreaterequest, error) {
 	// body for the creation of the schema
 	dataSchema := &platformclientv2.Businessrulesschemacreaterequest{
-		Name:    platformclientv2.String(d.Get("name").(string)),
-		Version: version,
 		JsonSchema: &platformclientv2.Jsonschemawithdefinitions{
 			Schema:      platformclientv2.String("http://json-schema.org/draft-04/schema#"),
 			Title:       platformclientv2.String(d.Get("name").(string)),
 			Description: platformclientv2.String(d.Get("description").(string)),
 		},
-		Enabled: platformclientv2.Bool(d.Get("enabled").(bool)),
 	}
 
 	// Custom attributes for the schema
@@ -81,12 +78,13 @@ func BuildSdkUpdateBusinessRulesSchema(d *schema.ResourceData, version *int) (*p
 
 // GenerateBusinessRulesSchemaResourceBasic is a public util method to generate the simplest
 // schema terraform resource for testing
-func GenerateBusinessRulesSchemaResourceBasic(resourceLabel, name, description string) string {
+func GenerateBusinessRulesSchemaResourceBasic(resourceLabel, name, description, enabled string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		description = "%s"
+		enabled = "%s"
 	}
-	`, ResourceType, resourceLabel, name, description)
+	`, ResourceType, resourceLabel, name, description, enabled)
 }
 
 func GenerateBusinessRulesSchemaResource(resourceLabel, name, description, properties, enabledStr string) string {
