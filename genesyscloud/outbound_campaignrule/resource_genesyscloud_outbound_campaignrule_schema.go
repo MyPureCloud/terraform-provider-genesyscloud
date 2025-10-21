@@ -344,11 +344,23 @@ func OutboundCampaignruleExporter() *resourceExporter.ResourceExporter {
 			`campaign_rule_actions.campaign_rule_action_entities.sequence_ids`: {
 				RefType: "genesyscloud_outbound_sequence",
 			},
+			`campaign_rule_actions.campaign_rule_action_entities.sms_campaign_ids`: {
+				RefType: "genesyscloud_outbound_messagingcampaign",
+			},
+			`campaign_rule_actions.campaign_rule_action_entities.email_campaign_ids`: {
+				RefType: "genesyscloud_outbound_messagingcampaign",
+			},
 			`campaign_rule_entities.campaign_ids`: {
 				RefType: "genesyscloud_outbound_campaign",
 			},
 			`campaign_rule_entities.sequence_ids`: {
 				RefType: "genesyscloud_outbound_sequence",
+			},
+			`campaign_rule_entities.sms_campaign_ids`: {
+				RefType: "genesyscloud_outbound_messagingcampaign",
+			},
+			`campaign_rule_entities.email_campaign_ids`: {
+				RefType: "genesyscloud_outbound_messagingcampaign",
 			},
 			`campaign_rule_actions.parameters.queue_id`: {
 				RefType: "genesyscloud_routing_queue",
