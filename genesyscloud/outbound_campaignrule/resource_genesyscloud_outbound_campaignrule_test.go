@@ -122,7 +122,12 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.FalseValue, // enabled
 						util.FalseValue, // matchAnyConditions
-						generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
+						generateCampaignRuleEntity(
+							campaignRuleEntityCampaignIds,
+							campaignRuleEntitySequenceIds,
+							[]string{},
+							[]string{},
+						),
 						generateCampaignRuleConditions(
 							"",
 							campaignRuleCondition1Type,
@@ -131,6 +136,16 @@ data "genesyscloud_auth_division_home" "home" {}
 								paramRulesValue,
 								paramRulesDialingMode,
 								paramRulesPriority,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 						generateCampaignRuleActions(
@@ -138,12 +153,24 @@ data "genesyscloud_auth_division_home" "home" {}
 							campaignRuleActionType,
 							campaignRuleActionCampaignIds,
 							campaignRuleActionSequenceIds,
+							[]string{},
+							[]string{},
 							campaignRuleActionUseTriggeringEntity,
 							generateCampaignRuleParameters(
 								paramRulesOperator,
 								paramRulesValue,
 								paramRulesDialingMode,
 								paramRulesPriority,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 					),
@@ -189,6 +216,8 @@ data "genesyscloud_auth_division_home" "home" {}
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
+							[]string{},
+							[]string{},
 						),
 						generateCampaignRuleConditions(
 							"",
@@ -198,6 +227,16 @@ data "genesyscloud_auth_division_home" "home" {}
 								paramRulesValueUpdated,
 								paramRulesDialingModeUpdated,
 								paramRulesPriorityUpdated,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 						generateCampaignRuleActions(
@@ -205,12 +244,24 @@ data "genesyscloud_auth_division_home" "home" {}
 							campaignRuleActionType,
 							campaignRuleActionCampaignIds,
 							campaignRuleActionSequenceIds,
+							[]string{},
+							[]string{},
 							campaignRuleActionUseTriggeringEntity,
 							generateCampaignRuleParameters(
 								paramRulesOperatorUpdated,
 								paramRulesValueUpdated,
 								paramRulesDialingModeUpdated,
 								paramRulesPriorityUpdated,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 					),
@@ -245,6 +296,8 @@ data "genesyscloud_auth_division_home" "home" {}
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
+							[]string{},
+							[]string{},
 						),
 						generateCampaignRuleConditions(
 							"",
@@ -254,6 +307,16 @@ data "genesyscloud_auth_division_home" "home" {}
 								paramRulesValueUpdated,
 								paramRulesDialingModeUpdated,
 								paramRulesPriorityUpdated,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 						generateCampaignRuleActions(
@@ -261,6 +324,8 @@ data "genesyscloud_auth_division_home" "home" {}
 							campaignRuleActionType,
 							campaignRuleActionCampaignIds,
 							campaignRuleActionSequenceIds,
+							[]string{},
+							[]string{},
 							campaignRuleActionUseTriggeringEntity,
 							"",
 						),
@@ -383,7 +448,12 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.TrueValue,  // enabled
 						util.FalseValue, // matchAnyConditions
-						generateCampaignRuleEntity(campaignRuleEntityCampaignIds, campaignRuleEntitySequenceIds),
+						generateCampaignRuleEntity(
+							campaignRuleEntityCampaignIds,
+							campaignRuleEntitySequenceIds,
+							[]string{},
+							[]string{},
+						),
 						generateCampaignRuleConditions(
 							"",
 							campaignRuleCondition1Type,
@@ -392,6 +462,16 @@ data "genesyscloud_auth_division_home" "home" {}
 								paramRulesValue,
 								paramRulesDialingMode,
 								paramRulesPriority,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 						generateCampaignRuleActions(
@@ -399,12 +479,24 @@ data "genesyscloud_auth_division_home" "home" {}
 							campaignRuleActionType,
 							campaignRuleActionCampaignIds,
 							campaignRuleActionSequenceIds,
+							[]string{},
+							[]string{},
 							campaignRuleActionUseTriggeringEntity,
 							generateCampaignRuleParameters(
 								paramRulesOperator,
 								paramRulesValue,
 								paramRulesDialingMode,
 								paramRulesPriority,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 					),
@@ -450,6 +542,8 @@ data "genesyscloud_auth_division_home" "home" {}
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
+							[]string{},
+							[]string{},
 						),
 						generateCampaignRuleConditions(
 							"",
@@ -459,6 +553,16 @@ data "genesyscloud_auth_division_home" "home" {}
 								paramRulesValueUpdated,
 								paramRulesDialingModeUpdated,
 								paramRulesPriorityUpdated,
+								0,
+								"",
+								"",
+								0,
+								"",
+								0,
+								0,
+								0,
+								"",
+								"",
 							),
 						),
 						generateCampaignRuleActions(
@@ -466,6 +570,8 @@ data "genesyscloud_auth_division_home" "home" {}
 							campaignRuleActionType,
 							campaignRuleActionCampaignIds,
 							campaignRuleActionSequenceIds,
+							[]string{},
+							[]string{},
 							campaignRuleActionUseTriggeringEntity,
 							"",
 						),
@@ -495,19 +601,24 @@ resource "genesyscloud_outbound_campaignrule" "%s" {
 }`, resourceLabel, name, enabled, matchAnyConditions, strings.Join(nestedBlocks, "\n"))
 }
 
-func generateCampaignRuleEntity(campaignIds []string, sequenceIds []string) string {
+func generateCampaignRuleEntity(campaignIds []string, sequenceIds []string, smsCampaignIds []string, emailCampaignIds []string) string {
 	return fmt.Sprintf(`
 	campaign_rule_entities {
 		campaign_ids = [%s]
 		sequence_ids = [%s]
+		sms_campaign_ids = [%s]
+		email_campaign_ids = [%s]
 	}
-`, strings.Join(campaignIds, ", "), strings.Join(sequenceIds, ", "))
+`, strings.Join(campaignIds, ", "), strings.Join(sequenceIds, ", "), strings.Join(smsCampaignIds, ", "),
+		strings.Join(emailCampaignIds, ", "))
 }
 
 func generateCampaignRuleActions(id string,
 	actionType string,
 	campaignIds []string,
 	sequenceIds []string,
+	smsCampaignIds []string,
+	emailCampaignIds []string,
 	useTriggeringEntity string,
 	paramsBlock string,
 ) string {
@@ -521,11 +632,14 @@ func generateCampaignRuleActions(id string,
 		campaign_rule_action_entities {
 			campaign_ids          = [%s]
 			sequence_ids          = [%s]
+			sms_campaign_ids          = [%s]
+			email_campaign_ids          = [%s]
 			%s
 		}
 		%s
 	}
-`, id, actionType, strings.Join(campaignIds, ", "), strings.Join(sequenceIds, ", "), useTriggeringEntity, paramsBlock)
+`, id, actionType, strings.Join(campaignIds, ", "), strings.Join(sequenceIds, ", "), strings.Join(smsCampaignIds, ", "),
+		strings.Join(emailCampaignIds, ", "), useTriggeringEntity, paramsBlock)
 }
 
 func generateCampaignRuleConditions(id string, conditionType string, parametersBlock string) string {
@@ -541,21 +655,78 @@ func generateCampaignRuleConditions(id string, conditionType string, parametersB
 `, id, conditionType, parametersBlock)
 }
 
-func generateCampaignRuleParameters(operator string, value string, dialingMode string, priority string) string {
+func generateCampaignRuleParameters(operator string,
+	value string,
+	dialingMode string,
+	priority string,
+	abandonRate float32,
+	outboundLineCount string,
+	relativeWeight string,
+	maxCallsPerAgent float32,
+	queueId string,
+	messagesPerMinute int,
+	smsMessagesPerMinute int,
+	emailMessagesPerMinute int,
+	smsContentTemplate string,
+	emailContentTemplate string,
+) string {
+	var abandonRateStr, maxCallsPerAgentStr, messagesPerMinuteStr, smsMessagesPerMinuteStr, emailMessagesPerMinuteStr string
 	if dialingMode != "" {
 		dialingMode = fmt.Sprintf(`dialing_mode = "%s"`, dialingMode)
 	}
 	if priority != "" {
 		priority = fmt.Sprintf(`priority = "%s"`, priority)
 	}
+	if abandonRate != 0 {
+		abandonRateStr = fmt.Sprintf(`abandon_rate = %f`, abandonRate)
+	}
+	if outboundLineCount != "" {
+		outboundLineCount = fmt.Sprintf(`oubound_line_count = "%s"`, outboundLineCount)
+	}
+	if relativeWeight != "" {
+		relativeWeight = fmt.Sprintf(`relative_weight = "%s"`, relativeWeight)
+	}
+	if maxCallsPerAgent != 0 {
+		maxCallsPerAgentStr = fmt.Sprintf(`max_calls_per_agent = %f`, maxCallsPerAgent)
+	}
+	if queueId != "" {
+		queueId = fmt.Sprintf(`queue_id = "%s"`, queueId)
+	}
+	if messagesPerMinute != 0 {
+		messagesPerMinuteStr = fmt.Sprintf(`messages_per_minute = %d`, messagesPerMinute)
+	}
+	if smsMessagesPerMinute != 0 {
+		smsMessagesPerMinuteStr = fmt.Sprintf(`sms_messages_per_minute = %d`, smsMessagesPerMinute)
+	}
+	if emailMessagesPerMinute != 0 {
+		emailMessagesPerMinuteStr = fmt.Sprintf(`email_messages_per_minute = %d`, emailMessagesPerMinute)
+	}
+	if smsContentTemplate != "" {
+		smsContentTemplate = fmt.Sprintf(`sms_content_template = "%s"`, smsContentTemplate)
+	}
+	if emailContentTemplate != "" {
+		emailContentTemplate = fmt.Sprintf(`email_content_template = "%s"`, emailContentTemplate)
+	}
+
 	return fmt.Sprintf(`
 		parameters {
 			operator     = "%s"
 			value        = "%s"
 			%s
 			%s
+			%s
+			%s
+			%s
+			%s
+			%s
+			%s
+			%s
+			%s
+			%s
+			%s
 		}
-`, operator, value, dialingMode, priority)
+`, operator, value, dialingMode, priority, abandonRateStr, outboundLineCount, relativeWeight, maxCallsPerAgentStr, queueId,
+		messagesPerMinuteStr, smsMessagesPerMinuteStr, emailMessagesPerMinuteStr, smsContentTemplate, emailContentTemplate)
 }
 
 func testVerifyCampaignRuleDestroyed(state *terraform.State) error {

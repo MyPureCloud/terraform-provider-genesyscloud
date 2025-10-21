@@ -58,8 +58,10 @@ func getAllowedConditions() []string {
 var (
 	outboundCampaignRuleEntities = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			`campaign_ids`: outboundCampaignRuleEntityCampaignRuleId,
-			`sequence_ids`: outboundCampaignRuleEntitySequenceRuleId,
+			`campaign_ids`:       outboundCampaignRuleEntityCampaignRuleId,
+			`sequence_ids`:       outboundCampaignRuleEntitySequenceRuleId,
+			`sms_campaign_ids`:   outboundCampaignRuleEntitySmsCampaignRuleId,
+			`email_campaign_ids`: outboundCampaignRuleEntityEmailCampaignRuleId,
 		},
 	}
 
@@ -79,10 +81,28 @@ var (
 		Elem:        &schema.Schema{Type: schema.TypeString},
 	}
 
+	outboundCampaignRuleEntitySmsCampaignRuleId = &schema.Schema{
+		Description: `The list of SMS campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an SMS campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.`,
+		Optional:    true,
+		ForceNew:    true,
+		Type:        schema.TypeList,
+		Elem:        &schema.Schema{Type: schema.TypeString},
+	}
+
+	outboundCampaignRuleEntityEmailCampaignRuleId = &schema.Schema{
+		Description: `The list of Email campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an Email campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.`,
+		Optional:    true,
+		ForceNew:    true,
+		Type:        schema.TypeList,
+		Elem:        &schema.Schema{Type: schema.TypeString},
+	}
+
 	outboundCampaignRuleActionEntities = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			`campaign_ids`: outboundCampaignRuleEntityCampaignRuleId,
-			`sequence_ids`: outboundCampaignRuleEntitySequenceRuleId,
+			`campaign_ids`:       outboundCampaignRuleEntityCampaignRuleId,
+			`sequence_ids`:       outboundCampaignRuleEntitySequenceRuleId,
+			`sms_campaign_ids`:   outboundCampaignRuleEntitySmsCampaignRuleId,
+			`email_campaign_ids`: outboundCampaignRuleEntityEmailCampaignRuleId,
 			`use_triggering_entity`: {
 				Description: `If true, the CampaignRuleAction will apply to the same entity that triggered the CampaignRuleCondition.`,
 				Optional:    true,

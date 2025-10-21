@@ -41,11 +41,17 @@ func buildCampaignRuleEntities(entities *schema.Set) *platformclientv2.Campaignr
 	}
 
 	campaignRuleEntitiesMap := campaignRuleEntitiesList[0].(map[string]interface{})
-	if campaigns := campaignRuleEntitiesMap["campaign_ids"].([]interface{}); campaigns != nil {
+	if campaigns, ok := campaignRuleEntitiesMap["campaign_ids"].([]interface{}); ok && campaigns != nil {
 		campaignRuleEntities.Campaigns = util.BuildSdkDomainEntityRefArrFromArr(campaigns)
 	}
-	if sequences := campaignRuleEntitiesMap["sequence_ids"].([]interface{}); sequences != nil {
+	if sequences, ok := campaignRuleEntitiesMap["sequence_ids"].([]interface{}); ok && sequences != nil {
 		campaignRuleEntities.Sequences = util.BuildSdkDomainEntityRefArrFromArr(sequences)
+	}
+	if smsCampaigns, ok := campaignRuleEntitiesMap["sms_campaign_ids"].([]interface{}); ok && smsCampaigns != nil {
+		campaignRuleEntities.SmsCampaigns = util.BuildSdkDomainEntityRefArrFromArr(smsCampaigns)
+	}
+	if emailCampaigns, ok := campaignRuleEntitiesMap["email_campaign_ids"].([]interface{}); ok && emailCampaigns != nil {
+		campaignRuleEntities.EmailCampaigns = util.BuildSdkDomainEntityRefArrFromArr(emailCampaigns)
 	}
 	return &campaignRuleEntities
 }
@@ -165,12 +171,20 @@ func buildCampaignRuleActionEntities(set *schema.Set) *platformclientv2.Campaign
 
 	sdkCampaignRuleActionEntities.UseTriggeringEntity = platformclientv2.Bool(entitiesMap["use_triggering_entity"].(bool))
 
-	if campaignIds := entitiesMap["campaign_ids"].([]interface{}); campaignIds != nil {
+	if campaignIds, ok := entitiesMap["campaign_ids"].([]interface{}); ok && campaignIds != nil {
 		sdkCampaignRuleActionEntities.Campaigns = util.BuildSdkDomainEntityRefArrFromArr(campaignIds)
 	}
 
-	if sequenceIds := entitiesMap["sequence_ids"].([]interface{}); sequenceIds != nil {
+	if sequenceIds, ok := entitiesMap["sequence_ids"].([]interface{}); ok && sequenceIds != nil {
 		sdkCampaignRuleActionEntities.Sequences = util.BuildSdkDomainEntityRefArrFromArr(sequenceIds)
+	}
+
+	if smsCampaignIds, ok := entitiesMap["sms_campaign_ids"].([]interface{}); ok && smsCampaignIds != nil {
+		sdkCampaignRuleActionEntities.SmsCampaigns = util.BuildSdkDomainEntityRefArrFromArr(smsCampaignIds)
+	}
+
+	if emailCampaignIds, ok := entitiesMap["email_campaign_ids"].([]interface{}); ok && emailCampaignIds != nil {
+		sdkCampaignRuleActionEntities.EmailCampaigns = util.BuildSdkDomainEntityRefArrFromArr(emailCampaignIds)
 	}
 
 	return &sdkCampaignRuleActionEntities
@@ -182,8 +196,10 @@ func flattenCampaignRuleEntities(campaignRuleEntities *platformclientv2.Campaign
 		campaignRuleEntitiesMap = make(map[string]interface{})
 
 		// had to change from []string to []interface{}
-		campaigns []interface{}
-		sequences []interface{}
+		campaigns      []interface{}
+		sequences      []interface{}
+		smsCampaigns   []interface{}
+		emailCampaigns []interface{}
 	)
 
 	if campaignRuleEntities == nil {
@@ -202,8 +218,22 @@ func flattenCampaignRuleEntities(campaignRuleEntities *platformclientv2.Campaign
 		}
 	}
 
+	if campaignRuleEntities.SmsCampaigns != nil {
+		for _, v := range *campaignRuleEntities.SmsCampaigns {
+			smsCampaigns = append(smsCampaigns, *v.Id)
+		}
+	}
+
+	if campaignRuleEntities.EmailCampaigns != nil {
+		for _, v := range *campaignRuleEntities.EmailCampaigns {
+			emailCampaigns = append(emailCampaigns, *v.Id)
+		}
+	}
+
 	campaignRuleEntitiesMap["campaign_ids"] = campaigns
 	campaignRuleEntitiesMap["sequence_ids"] = sequences
+	campaignRuleEntitiesMap["sms_campaign_ids"] = smsCampaigns
+	campaignRuleEntitiesMap["email_campaign_ids"] = emailCampaigns
 
 	campaignRuleEntitiesSet.Add(campaignRuleEntitiesMap)
 	return campaignRuleEntitiesSet
@@ -253,10 +283,12 @@ func flattenCampaignRuleAction[T any](campaignRuleActions *[]platformclientv2.Ca
 
 func flattenCampaignRuleActionEntities(sdkActionEntity *platformclientv2.Campaignruleactionentities) *schema.Set {
 	var (
-		campaigns   []interface{}
-		sequences   []interface{}
-		entitiesSet = schema.NewSet(schema.HashResource(outboundCampaignRuleActionEntities), []interface{}{})
-		entitiesMap = make(map[string]interface{})
+		campaigns      []interface{}
+		sequences      []interface{}
+		smsCampaigns   []interface{}
+		emailCampaigns []interface{}
+		entitiesSet    = schema.NewSet(schema.HashResource(outboundCampaignRuleActionEntities), []interface{}{})
+		entitiesMap    = make(map[string]interface{})
 	)
 
 	if sdkActionEntity == nil {
@@ -275,8 +307,22 @@ func flattenCampaignRuleActionEntities(sdkActionEntity *platformclientv2.Campaig
 		}
 	}
 
+	if sdkActionEntity.SmsCampaigns != nil {
+		for _, campaign := range *sdkActionEntity.SmsCampaigns {
+			smsCampaigns = append(smsCampaigns, *campaign.Id)
+		}
+	}
+
+	if sdkActionEntity.SmsCampaigns != nil {
+		for _, campaign := range *sdkActionEntity.EmailCampaigns {
+			emailCampaigns = append(emailCampaigns, *campaign.Id)
+		}
+	}
+
 	entitiesMap["campaign_ids"] = campaigns
 	entitiesMap["sequence_ids"] = sequences
+	entitiesMap["sms_campaign_ids"] = smsCampaigns
+	entitiesMap["email_campaign_ids"] = emailCampaigns
 	entitiesMap["use_triggering_entity"] = *sdkActionEntity.UseTriggeringEntity
 
 	entitiesSet.Add(entitiesMap)
