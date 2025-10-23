@@ -15,3 +15,4 @@
 - [GET /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-voicemail-userpolicies--userId-)
 - [PATCH /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-voicemail-userpolicies--userId-)
 - [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-extensionpools)
+- [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
