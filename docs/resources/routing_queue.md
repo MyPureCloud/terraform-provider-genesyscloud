@@ -604,8 +604,10 @@ Optional:
 - `live_voice_flow_id` (String) The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.
 - `live_voice_reaction_type` (String) The action to take if a live voice is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
 - `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
+- `max_retry_count` (Number) Maximum number of retries that should be attempted to try and connect a customer first callback to a customer when the initial callback attempt did not connect.
 - `mode` (String) The mode callbacks will use on this queue.
 - `pacing_modifier` (Number) Controls the maximum number of outbound calls at one time when mode is CustomerFirst.
+- `retry_delay_seconds` (Number) Delay in seconds between each retry of a customer first callback.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_callback--sub_type_settings))
