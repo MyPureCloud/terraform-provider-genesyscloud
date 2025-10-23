@@ -2,15 +2,16 @@ package user_roles
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
-	"strconv"
-	"strings"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
@@ -37,8 +38,13 @@ func TestAccResourceUserRolesMembership(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			frameworkResources,
+			frameworkDataSources,
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create user with 1 role in default division

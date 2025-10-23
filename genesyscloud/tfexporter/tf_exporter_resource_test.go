@@ -244,7 +244,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
 	providerResources[obSettings.ResourceType] = obSettings.ResourceOutboundSettings()
-	providerResources[user.ResourceType] = user.ResourceUser()
+	// providerResources[user.ResourceType] = user.ResourceUser() // Removed - now Framework-only
 	providerResources[respmanagementLibrary.ResourceType] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources[respManagementRespAsset.ResourceType] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()

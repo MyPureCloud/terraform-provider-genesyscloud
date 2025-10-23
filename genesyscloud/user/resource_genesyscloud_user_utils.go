@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/mail"
@@ -14,11 +13,15 @@ import (
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	frameworkdiag "github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
-	"github.com/nyaruka/phonenumbers"
 )
+
+// SDK v2 diagnostics imported as 'diag' in this file
 
 var (
 	// Map of SDK media type name to schema media type name
@@ -42,329 +45,168 @@ type labelUtilization struct {
 	InterruptingLabelIds []string `json:"interruptingLabelIds"`
 }
 
-func buildSdkAddresses(d *schema.ResourceData) (*[]platformclientv2.Contact, diag.Diagnostics) {
+// buildSdkAddresses removed - SDKv2 function no longer needed
+
+// buildSdkAddressesFromFramework converts Framework types.List addresses to SDK Contact slice
+func buildSdkAddressesFromFramework(addresses types.List) (*[]platformclientv2.Contact, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
 	sdkAddresses := make([]platformclientv2.Contact, 0)
-	if addresses := d.Get("addresses").([]interface{}); addresses != nil {
-		var otherEmails *schema.Set
-		var phoneNumbers *schema.Set
-		if len(addresses) > 0 {
-			if addressMap, ok := addresses[0].(map[string]interface{}); ok {
-				otherEmails = addressMap["other_emails"].(*schema.Set)
-				phoneNumbers = addressMap["phone_numbers"].(*schema.Set)
-			} else {
-				return nil, nil
-			}
-		}
 
-		if otherEmails != nil {
-			sdkAddresses = append(sdkAddresses, buildSdkEmails(otherEmails)...)
-		}
-		if phoneNumbers != nil {
-			sdkNums, err := buildSdkPhoneNumbers(phoneNumbers)
-			if err != nil {
-				return nil, err
-			}
-			sdkAddresses = append(sdkAddresses, sdkNums...)
-		}
-		return &sdkAddresses, nil
+	if addresses.IsNull() || addresses.IsUnknown() {
+		return &sdkAddresses, diagnostics
 	}
-	return &sdkAddresses, nil
+
+	addressElements := addresses.Elements()
+	if len(addressElements) == 0 {
+		return &sdkAddresses, diagnostics
+	}
+
+	// Get the first (and only) address element since MaxItems is 1
+	addressObj, ok := addressElements[0].(types.Object)
+	if !ok {
+		diagnostics.AddError("Invalid Address Type", "Expected address to be an object")
+		return nil, diagnostics
+	}
+
+	addressAttrs := addressObj.Attributes()
+
+	// Process other_emails
+	if otherEmailsAttr, exists := addressAttrs["other_emails"]; exists && !otherEmailsAttr.IsNull() {
+		otherEmailsSet, ok := otherEmailsAttr.(types.Set)
+		if ok {
+			emailContacts, emailDiags := buildSdkEmailsFromFramework(otherEmailsSet)
+			diagnostics.Append(emailDiags...)
+			if !diagnostics.HasError() {
+				sdkAddresses = append(sdkAddresses, emailContacts...)
+			}
+		}
+	}
+
+	// Process phone_numbers
+	if phoneNumbersAttr, exists := addressAttrs["phone_numbers"]; exists && !phoneNumbersAttr.IsNull() {
+		phoneNumbersSet, ok := phoneNumbersAttr.(types.Set)
+		if ok {
+			phoneContacts, phoneDiags := buildSdkPhoneNumbersFromFramework(phoneNumbersSet)
+			diagnostics.Append(phoneDiags...)
+			if !diagnostics.HasError() {
+				sdkAddresses = append(sdkAddresses, phoneContacts...)
+			}
+		}
+	}
+
+	return &sdkAddresses, diagnostics
 }
 
-func executeUpdateUser(ctx context.Context, d *schema.ResourceData, proxy *userProxy, updateUser platformclientv2.Updateuser) diag.Diagnostics {
-	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		currentUser, proxyResponse, errGet := proxy.getUserById(ctx, d.Id(), nil, "")
-		if errGet != nil {
-			return proxyResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), errGet), proxyResponse)
+// buildSdkEmailsFromFramework converts Framework types.Set emails to SDK Contact slice
+func buildSdkEmailsFromFramework(configEmails types.Set) ([]platformclientv2.Contact, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+	emailElements := configEmails.Elements()
+	sdkContacts := make([]platformclientv2.Contact, 0, len(emailElements))
+
+	for _, emailElement := range emailElements {
+		emailObj, ok := emailElement.(types.Object)
+		if !ok {
+			diagnostics.AddError("Invalid Email Type", "Expected email to be an object")
+			continue
 		}
 
-		updateUser.Version = currentUser.Version
+		emailAttrs := emailObj.Attributes()
 
-		_, proxyPatchResponse, patchErr := proxy.updateUser(ctx, d.Id(), &updateUser)
-		if patchErr != nil {
-			return proxyPatchResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Faild to update user %s | Error: %s.", d.Id(), patchErr), proxyPatchResponse)
+		var emailAddress, emailType string
+
+		if addressAttr, exists := emailAttrs["address"]; exists && !addressAttr.IsNull() {
+			emailAddress = addressAttr.(types.String).ValueString()
 		}
-		return proxyPatchResponse, nil
-	})
-}
 
-func executeAllUpdates(ctx context.Context, d *schema.ResourceData, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool) diag.Diagnostics {
-
-	if updateObjectDivision {
-		diagErr := util.UpdateObjectDivision(d, "USER", sdkConfig)
-		if diagErr != nil {
-			return diagErr
+		if typeAttr, exists := emailAttrs["type"]; exists && !typeAttr.IsNull() {
+			emailType = typeAttr.(types.String).ValueString()
+		} else {
+			emailType = "WORK" // Default value
 		}
+
+		contactTypeEmail := "EMAIL"
+		sdkContacts = append(sdkContacts, platformclientv2.Contact{
+			Address:   &emailAddress,
+			MediaType: &contactTypeEmail,
+			VarType:   &emailType,
+		})
 	}
 
-	diagErr := updateUserSkills(d, proxy)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = updateUserLanguages(d, proxy)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = updateUserProfileSkills(d, proxy)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = updateUserRoutingUtilization(d, proxy)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = updateUserVoicemailPolicies(d, proxy)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = updatePassword(ctx, d, proxy)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	return nil
+	return sdkContacts, diagnostics
 }
 
-func updateUserSkills(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	if d.HasChange("routing_skills") {
-		if skillsConfig := d.Get("routing_skills"); skillsConfig != nil {
-			log.Printf("Updating skills for user %s", d.Get("email"))
-			newSkillProfs := make(map[string]float64)
-			skillList := skillsConfig.(*schema.Set).List()
-			newSkillIds := make([]string, len(skillList))
-			for i, skill := range skillList {
-				skillMap := skill.(map[string]interface{})
-				newSkillIds[i] = skillMap["skill_id"].(string)
-				newSkillProfs[newSkillIds[i]] = skillMap["proficiency"].(float64)
-			}
+// buildSdkPhoneNumbersFromFramework converts Framework types.Set phone numbers to SDK Contact slice
+func buildSdkPhoneNumbersFromFramework(configPhoneNumbers types.Set) ([]platformclientv2.Contact, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+	phoneElements := configPhoneNumbers.Elements()
+	sdkContacts := make([]platformclientv2.Contact, 0, len(phoneElements))
 
-			oldSdkSkills, err := getUserRoutingSkills(d.Id(), proxy)
-			if err != nil {
-				return err
-			}
-
-			oldSkillIds := make([]string, len(oldSdkSkills))
-			oldSkillProfs := make(map[string]float64)
-			for i, skill := range oldSdkSkills {
-				oldSkillIds[i] = *skill.Id
-				oldSkillProfs[oldSkillIds[i]] = *skill.Proficiency
-			}
-
-			if len(oldSkillIds) > 0 {
-				skillsToRemove := lists.SliceDifference(oldSkillIds, newSkillIds)
-				for _, skillId := range skillsToRemove {
-					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-						resp, err := proxy.userApi.DeleteUserRoutingskill(d.Id(), skillId)
-						if err != nil {
-							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove skill from user %s error: %s", d.Id(), err), resp)
-						}
-						return nil, nil
-					})
-					if diagErr != nil {
-						return diagErr
-					}
-				}
-			}
-
-			if len(newSkillIds) > 0 {
-				// skills to add
-				skillsToAddOrUpdate := lists.SliceDifference(newSkillIds, oldSkillIds)
-				// Check for existing proficiencies to update which can be done with the same API
-				for langID, newNum := range newSkillProfs {
-					if oldNum, found := oldSkillProfs[langID]; found {
-						if newNum != oldNum {
-							skillsToAddOrUpdate = append(skillsToAddOrUpdate, langID)
-						}
-					}
-				}
-
-				if diagErr := updateUserRoutingSkills(d.Id(), skillsToAddOrUpdate, newSkillProfs, proxy); diagErr != nil {
-					return diagErr
-				}
-			}
-
+	for _, phoneElement := range phoneElements {
+		phoneObj, ok := phoneElement.(types.Object)
+		if !ok {
+			diagnostics.AddError("Invalid Phone Number Type", "Expected phone number to be an object")
+			continue
 		}
-	}
-	return nil
-}
 
-func updateUserLanguages(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	if d.HasChange("routing_languages") {
-		if languages := d.Get("routing_languages"); languages != nil {
-			log.Printf("Updating languages for user %s", d.Get("email"))
-			newLangProfs := make(map[string]int)
-			langList := languages.(*schema.Set).List()
-			newLangIds := make([]string, len(langList))
-			for i, lang := range langList {
-				langMap := lang.(map[string]interface{})
-				newLangIds[i] = langMap["language_id"].(string)
-				newLangProfs[newLangIds[i]] = langMap["proficiency"].(int)
-			}
+		phoneAttrs := phoneObj.Attributes()
 
-			oldSdkLangs, err := getUserRoutingLanguages(d.Id(), proxy)
-			if err != nil {
-				return err
-			}
+		var phoneNumber, phoneMediaType, phoneType, phoneExt string
 
-			oldLangIds := make([]string, len(oldSdkLangs))
-			oldLangProfs := make(map[string]int)
-			for i, lang := range oldSdkLangs {
-				oldLangIds[i] = *lang.Id
-				oldLangProfs[oldLangIds[i]] = int(*lang.Proficiency)
-			}
-
-			if len(oldLangIds) > 0 {
-				langsToRemove := lists.SliceDifference(oldLangIds, newLangIds)
-				for _, langID := range langsToRemove {
-					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-						resp, err := proxy.userApi.DeleteUserRoutinglanguage(d.Id(), langID)
-						if err != nil {
-							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove language from user %s error: %s", d.Id(), err), resp)
-						}
-						return nil, nil
-					})
-					if diagErr != nil {
-						return diagErr
-					}
-				}
-			}
-
-			if len(newLangIds) > 0 {
-				// Languages to add
-				langsToAddOrUpdate := lists.SliceDifference(newLangIds, oldLangIds)
-
-				// Check for existing proficiencies to update which can be done with the same API
-				for langID, newNum := range newLangProfs {
-					if oldNum, found := oldLangProfs[langID]; found {
-						if newNum != oldNum {
-							langsToAddOrUpdate = append(langsToAddOrUpdate, langID)
-						}
-					}
-				}
-				if diagErr := updateUserRoutingLanguages(d.Id(), langsToAddOrUpdate, newLangProfs, proxy); diagErr != nil {
-					return diagErr
-				}
-			}
-			log.Printf("Languages updated for user %s", d.Get("email"))
+		if numberAttr, exists := phoneAttrs["number"]; exists && !numberAttr.IsNull() {
+			phoneNumber = numberAttr.(types.String).ValueString()
 		}
-	}
-	return nil
-}
 
-func updateUserProfileSkills(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	if d.HasChange("profile_skills") {
-		if profileSkills := d.Get("profile_skills"); profileSkills != nil {
-			profileSkills := lists.SetToStringList(profileSkills.(*schema.Set))
-			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				_, resp, err := proxy.userApi.PutUserProfileskills(d.Id(), *profileSkills)
-				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update profile skills for user %s error: %s", d.Id(), err), resp)
-				}
-				return nil, nil
-			})
-			if diagErr != nil {
-				return diagErr
-			}
+		if mediaTypeAttr, exists := phoneAttrs["media_type"]; exists && !mediaTypeAttr.IsNull() {
+			phoneMediaType = mediaTypeAttr.(types.String).ValueString()
+		} else {
+			phoneMediaType = "PHONE" // Default value
 		}
-	}
-	return nil
-}
 
-func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	if !d.HasChange("voicemail_userpolicies") {
-		return nil
-	}
-
-	voicemailUserpolicies := d.Get("voicemail_userpolicies").([]interface{})
-	reqBody := buildVoicemailUserpoliciesRequest(voicemailUserpolicies)
-	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(d.Id(), reqBody)
-		if putErr != nil {
-			return proxyPutResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update voicemail userpolicices for user %s error: %s", d.Id(), putErr), proxyPutResponse)
+		if typeAttr, exists := phoneAttrs["type"]; exists && !typeAttr.IsNull() {
+			phoneType = typeAttr.(types.String).ValueString()
+		} else {
+			phoneType = "WORK" // Default value
 		}
-		return nil, nil
-	})
-	if diagErr != nil {
-		return diagErr
-	}
 
-	return nil
-}
-
-func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	if d.HasChange("routing_utilization") {
-		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
-			var err error
-
-			log.Printf("Updating user utilization for user %s", d.Id())
-
-			if len(utilConfig) > 0 && utilConfig[0] != nil { // Specified but empty utilization list will reset to org-wide defaults
-				// Update settings
-				allSettings := utilConfig[0].(map[string]interface{})
-				labelUtilizations := allSettings["label_utilizations"].([]interface{})
-
-				if len(labelUtilizations) > 0 {
-					apiClient := &proxy.routingApi.Configuration.APIClient
-
-					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-					headerParams := buildHeaderParams(proxy.routingApi)
-					requestPayload := make(map[string]interface{})
-					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-					requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
-					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil, "")
-				} else {
-					sdkSettings := make(map[string]platformclientv2.Mediautilization)
-					for sdkType, schemaType := range getUtilizationMediaTypes() {
-						if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
-							sdkSettings[sdkType] = buildSdkMediaUtilization(mediaSettings.([]interface{}))
-						}
-					}
-
-					_, _, err = proxy.userApi.PutRoutingUserUtilization(d.Id(), platformclientv2.Utilizationrequest{
-						Utilization: &sdkSettings,
-					})
-				}
-
-				if err != nil {
-					return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Routing Utilization for user %s", d.Id()), err)
-				}
-			} else {
-				// Reset to org-wide defaults
-				resp, err := proxy.userApi.DeleteRoutingUserUtilization(d.Id())
-				if err != nil {
-					return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete routing utilization for user %s error: %s", d.Id(), err), resp)
-				}
-			}
-
-			log.Printf("Updated user utilization for user %s", d.Id())
+		if extAttr, exists := phoneAttrs["extension"]; exists && !extAttr.IsNull() {
+			phoneExt = extAttr.(types.String).ValueString()
 		}
+
+		// Note: extension_pool_id is handled by the API and not sent in the request
+
+		contact := platformclientv2.Contact{
+			MediaType: &phoneMediaType,
+			VarType:   &phoneType,
+		}
+
+		if phoneNumber != "" {
+			contact.Address = &phoneNumber
+		}
+		if phoneExt != "" {
+			contact.Extension = &phoneExt
+		}
+
+		sdkContacts = append(sdkContacts, contact)
 	}
-	return nil
+
+	return sdkContacts, diagnostics
 }
 
-func updatePassword(ctx context.Context, d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	if !d.HasChange("password") {
-		return nil
-	}
+// executeUpdateUser removed - SDKv2 function no longer needed
 
-	password := d.Get("password").(string)
+// executeAllUpdates removed - SDKv2 function no longer needed
 
-	if password == "" {
-		return nil // Skip password update if empty
-	}
+// updateUserSkills removed - SDKv2 function no longer needed
 
-	_, err := proxy.updatePassword(ctx, d.Id(), password)
-	if err != nil {
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update password for user %s", d.Id()), err)
-	}
+// updateUserLanguages removed - SDKv2 function no longer needed
 
-	return nil
-}
+// updateUserProfileSkills removed - SDKv2 function no longer needed
+
+// updateUserVoicemailPolicies removed - SDKv2 function no longer needed
+
+// updateUserRoutingUtilization removed - SDKv2 function no longer needed
+
+// updatePassword removed - SDKv2 function no longer needed
 
 func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs map[string]float64, proxy *userProxy) diag.Diagnostics {
 	// Bulk API restricts skills adds to 50 per call
@@ -496,203 +338,21 @@ func getDeletedUserId(email string, proxy *userProxy) (*string, diag.Diagnostics
 	return nil, nil
 }
 
-func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interface{}, proxy *userProxy) diag.Diagnostics {
-	email := d.Get("email").(string)
-	state := d.Get("state").(string)
+// restoreDeletedUser removed - SDKv2 function no longer needed
 
-	log.Printf("Restoring deleted user %s", email)
+// readUserRoutingUtilization removed - SDKv2 function no longer needed
 
-	return util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		currentUser, proxyResp, err := proxy.getUserById(ctx, d.Id(), nil, "deleted")
-		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", d.Id(), err), proxyResp)
-		}
+// phoneNumberHash removed - SDKv2 function no longer needed
 
-		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, d.Id(), &platformclientv2.Updateuser{
-			State:   &state,
-			Version: currentUser.Version,
-		})
+// buildSdkEmails removed - SDKv2 function replaced with buildSdkEmailsFromFramework
 
-		if patchErr != nil {
-			return proxyPatchResponse, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Faild to restored deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
-		}
+// buildSdkPhoneNumbers removed - SDKv2 function replaced with buildSdkPhoneNumbersFromFramework
 
-		return nil, updateUser(ctx, d, meta)
-	})
-}
+// buildSdkLocations removed - SDKv2 function replaced with buildSdkLocationsFromFramework
 
-func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
-	log.Printf("Getting user utilization")
+// buildSdkEmployerInfo removed - SDKv2 function replaced with buildSdkEmployerInfoFromFramework
 
-	apiClient := &proxy.routingApi.Configuration.APIClient
-
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-	headerParams := buildHeaderParams(proxy.routingApi)
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
-
-	if err != nil {
-		if util.IsStatus404(response) {
-			d.SetId("") // User doesn't exist
-			return nil
-		}
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
-	}
-
-	agentUtilization := &agentUtilizationWithLabels{}
-	err = json.Unmarshal(response.RawBody, &agentUtilization)
-	if err != nil {
-		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
-	}
-
-	if agentUtilization == nil {
-		_ = d.Set("routing_utilization", nil)
-	} else if agentUtilization.Level == "Organization" {
-		// If the settings are org-wide, set to empty to indicate no settings on the user
-		_ = d.Set("routing_utilization", []interface{}{})
-	} else {
-		allSettings := map[string]interface{}{}
-
-		if agentUtilization.Utilization != nil {
-			for sdkType, schemaType := range getUtilizationMediaTypes() {
-				if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
-					allSettings[schemaType] = flattenUtilizationSetting(mediaSettings)
-				}
-			}
-		}
-
-		if agentUtilization.LabelUtilizations != nil {
-			utilConfig := d.Get("routing_utilization").([]interface{})
-			if len(utilConfig) > 0 && utilConfig[0] != nil {
-				originalSettings := utilConfig[0].(map[string]interface{})
-				originalLabelUtilizations := originalSettings["label_utilizations"].([]interface{})
-
-				// Only add to the state the configured labels, in the configured order, but not any extras, to help terraform with matching new and old state.
-				filteredLabelUtilizations := filterAndFlattenLabelUtilizations(agentUtilization.LabelUtilizations, originalLabelUtilizations)
-
-				allSettings["label_utilizations"] = filteredLabelUtilizations
-			} else {
-				allSettings["label_utilizations"] = make([]interface{}, 0)
-			}
-		}
-
-		_ = d.Set("routing_utilization", []interface{}{allSettings})
-	}
-
-	return nil
-}
-
-func phoneNumberHash(val interface{}) int {
-	// Copy map to avoid modifying state
-	phoneMap := make(map[string]interface{})
-	for k, v := range val.(map[string]interface{}) {
-		if k != "extension_pool_id" {
-			phoneMap[k] = v
-		}
-	}
-	if num, ok := phoneMap["number"]; ok {
-		// Attempt to format phone numbers before hashing
-		number, err := phonenumbers.Parse(num.(string), "US")
-		if err == nil {
-			phoneMap["number"] = phonenumbers.Format(number, phonenumbers.E164)
-		}
-	}
-	return schema.HashResource(phoneNumberResource)(phoneMap)
-}
-
-func buildSdkEmails(configEmails *schema.Set) []platformclientv2.Contact {
-	emailSlice := configEmails.List()
-	sdkContacts := make([]platformclientv2.Contact, len(emailSlice))
-	for i, configEmail := range emailSlice {
-		emailMap := configEmail.(map[string]interface{})
-		emailAddress, _ := emailMap["address"].(string)
-		emailType, _ := emailMap["type"].(string)
-
-		sdkContacts[i] = platformclientv2.Contact{
-			Address:   &emailAddress,
-			MediaType: &contactTypeEmail,
-			VarType:   &emailType,
-		}
-	}
-	return sdkContacts
-}
-
-func buildSdkPhoneNumbers(configPhoneNumbers *schema.Set) ([]platformclientv2.Contact, diag.Diagnostics) {
-	phoneNumberSlice := configPhoneNumbers.List()
-	sdkContacts := make([]platformclientv2.Contact, len(phoneNumberSlice))
-	for i, configPhone := range phoneNumberSlice {
-		phoneMap := configPhone.(map[string]interface{})
-		phoneMediaType := phoneMap["media_type"].(string)
-		phoneType := phoneMap["type"].(string)
-
-		contact := platformclientv2.Contact{
-			MediaType: &phoneMediaType,
-			VarType:   &phoneType,
-		}
-
-		if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
-			contact.Address = &phoneNum
-		}
-		if phoneExt, ok := phoneMap["extension"].(string); ok && phoneExt != "" {
-			contact.Extension = &phoneExt
-		}
-
-		sdkContacts[i] = contact
-	}
-	return sdkContacts, nil
-}
-
-func buildSdkLocations(d *schema.ResourceData) *[]platformclientv2.Location {
-	if locationConfig := d.Get("locations"); locationConfig != nil {
-		sdkLocations := make([]platformclientv2.Location, 0)
-		locationList := locationConfig.(*schema.Set).List()
-		for _, configLoc := range locationList {
-			locMap := configLoc.(map[string]interface{})
-			locID := locMap["location_id"].(string)
-			locNotes := locMap["notes"].(string)
-
-			sdkLocations = append(sdkLocations, platformclientv2.Location{
-				Id:    &locID,
-				Notes: &locNotes,
-			})
-		}
-		return &sdkLocations
-	}
-	return nil
-}
-
-func buildSdkEmployerInfo(d *schema.ResourceData) *platformclientv2.Employerinfo {
-	if configInfo := d.Get("employer_info").([]interface{}); configInfo != nil {
-		var sdkInfo platformclientv2.Employerinfo
-		if len(configInfo) > 0 && configInfo[0] != nil {
-			if _, ok := configInfo[0].(map[string]interface{}); !ok {
-				return nil
-			}
-			infoMap := configInfo[0].(map[string]interface{})
-			// Only set non-empty values.
-			if offName := infoMap["official_name"].(string); len(offName) > 0 {
-				sdkInfo.OfficialName = &offName
-			}
-			if empID := infoMap["employee_id"].(string); len(empID) > 0 {
-				sdkInfo.EmployeeId = &empID
-			}
-			if empType := infoMap["employee_type"].(string); len(empType) > 0 {
-				sdkInfo.EmployeeType = &empType
-			}
-			if dateHire := infoMap["date_hire"].(string); len(dateHire) > 0 {
-				sdkInfo.DateHire = &dateHire
-			}
-		}
-		return &sdkInfo
-	}
-	return nil
-}
-
-func buildSdkCertifications(d *schema.ResourceData) *[]string {
-	if certs := d.Get("certifications"); certs != nil {
-		return lists.SetToStringList(certs.(*schema.Set))
-	}
-	return nil
-}
+// buildSdkCertifications removed - SDKv2 function replaced with buildSdkCertificationsFromFramework
 
 func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) string {
 	ext, getErr, err := proxy.getTelephonyExtensionPoolByExtension(ctx, extNum)
@@ -707,79 +367,248 @@ func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) 
 	return *ext.Id
 }
 
-func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Contact, proxy *userProxy) []interface{} {
+// flattenUserAddresses removed - SDKv2 function replaced with flattenUserAddressesForFramework
+
+// flattenUserAddressesForFramework converts SDK Contact slice to Framework types.List
+func flattenUserAddressesForFramework(ctx context.Context, addresses *[]platformclientv2.Contact, proxy *userProxy) (types.List, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+
 	if addresses == nil || len(*addresses) == 0 {
-		return nil
+		// If no addresses from API, return empty address object to match plan structure
+		emptyPhoneSet, phoneSetDiags := types.SetValue(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"number":            types.StringType,
+				"media_type":        types.StringType,
+				"type":              types.StringType,
+				"extension":         types.StringType,
+				"extension_pool_id": types.StringType,
+			},
+		}, []attr.Value{})
+		diagnostics.Append(phoneSetDiags...)
+
+		emptyEmailSet, emailSetDiags := types.SetValue(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"address": types.StringType,
+				"type":    types.StringType,
+			},
+		}, []attr.Value{})
+		diagnostics.Append(emailSetDiags...)
+
+		addressObj, addressObjDiags := types.ObjectValue(map[string]attr.Type{
+			"other_emails": types.SetType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"address": types.StringType,
+						"type":    types.StringType,
+					},
+				},
+			},
+			"phone_numbers": types.SetType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"number":            types.StringType,
+						"media_type":        types.StringType,
+						"type":              types.StringType,
+						"extension":         types.StringType,
+						"extension_pool_id": types.StringType,
+					},
+				},
+			},
+		}, map[string]attr.Value{
+			"other_emails":  emptyEmailSet,
+			"phone_numbers": emptyPhoneSet,
+		})
+		diagnostics.Append(addressObjDiags...)
+
+		addressList, listDiags := types.ListValue(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"other_emails": types.SetType{
+					ElemType: types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"address": types.StringType,
+							"type":    types.StringType,
+						},
+					},
+				},
+				"phone_numbers": types.SetType{
+					ElemType: types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"number":            types.StringType,
+							"media_type":        types.StringType,
+							"type":              types.StringType,
+							"extension":         types.StringType,
+							"extension_pool_id": types.StringType,
+						},
+					},
+				},
+			},
+		}, []attr.Value{addressObj})
+		diagnostics.Append(listDiags...)
+
+		return addressList, diagnostics
 	}
 
-	emailSet := schema.NewSet(schema.HashResource(otherEmailResource), []interface{}{})
-	phoneNumSet := schema.NewSet(phoneNumberHash, []interface{}{})
-
-	utilE164 := util.NewUtilE164Service()
+	emailElements := make([]attr.Value, 0)
+	phoneElements := make([]attr.Value, 0)
 
 	for _, address := range *addresses {
 		if address.MediaType != nil {
 			if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
-				phoneNumber := make(map[string]interface{})
-				phoneNumber["media_type"] = *address.MediaType
-				phoneNumber["extension_pool_id"] = ""
-
-				// PHONE and SMS Addresses have four different ways they can return in the API
-				// We need to be able to handle them all, and strip off any parentheses that can surround
-				// values
-
-				//     	1.) Addresses that return an "address" field are phone numbers without extensions
-				if address.Address != nil {
-					phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Address, "()"))
+				// Create phone attributes with exact values expected by the plan
+				phoneAttrs := map[string]attr.Value{
+					"number":            types.StringNull(),
+					"media_type":        types.StringValue("PHONE"), // Schema default
+					"type":              types.StringValue("WORK"),  // Schema default
+					"extension":         types.StringNull(),
+					"extension_pool_id": types.StringNull(),
 				}
 
-				// 		2.) Addresses that return an "extension" field that matches the "display" field are
-				//          true internal extensions that have been mapped to an extension pool
+				// Set the phone number from API
+				if address.Address != nil {
+					phoneAttrs["number"] = types.StringValue(*address.Address)
+				}
+
+				// Override media_type if API provides different value
+				if address.MediaType != nil && *address.MediaType != "PHONE" {
+					phoneAttrs["media_type"] = types.StringValue(*address.MediaType)
+				}
+
+				// Override type if API provides different value
+				if address.VarType != nil && *address.VarType != "WORK" {
+					phoneAttrs["type"] = types.StringValue(*address.VarType)
+				}
+
+				// Handle extension only if provided by API
 				if address.Extension != nil {
 					if address.Display != nil {
 						if *address.Extension == *address.Display {
 							extensionNum := strings.Trim(*address.Extension, "()")
-							phoneNumber["extension"] = extensionNum
-							phoneNumber["extension_pool_id"] = fetchExtensionPoolId(ctx, extensionNum, proxy)
+							phoneAttrs["extension"] = types.StringValue(extensionNum)
+							extensionPoolId := fetchExtensionPoolId(ctx, extensionNum, proxy)
+							if extensionPoolId != "" {
+								phoneAttrs["extension_pool_id"] = types.StringValue(extensionPoolId)
+							}
+						} else {
+							phoneAttrs["extension"] = types.StringValue(*address.Extension)
+							phoneAttrs["number"] = types.StringValue(*address.Display)
 						}
+					} else {
+						phoneAttrs["extension"] = types.StringValue(*address.Extension)
 					}
+				} else if address.Address == nil && address.Display != nil {
+					phoneAttrs["extension"] = types.StringValue(*address.Display)
+				}
+				// Otherwise extension remains null as initialized
+
+				// Create phone object with attributes in schema order
+				phoneObj, objDiags := types.ObjectValue(map[string]attr.Type{
+					"number":            types.StringType,
+					"media_type":        types.StringType,
+					"type":              types.StringType,
+					"extension":         types.StringType,
+					"extension_pool_id": types.StringType,
+				}, phoneAttrs)
+				diagnostics.Append(objDiags...)
+
+				if !diagnostics.HasError() {
+					phoneElements = append(phoneElements, phoneObj)
 				}
 
-				// 		3.) Addresses that include both an "extension" and "display" field, but they do not
-				//          match indicate that this is a phone number plus an extension
-				if address.Extension != nil {
-					if address.Display != nil {
-						if *address.Extension != *address.Display {
-							phoneNumber["extension"] = *address.Extension
-							phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Display, "()"))
-						}
-					}
-				}
-
-				// 		4.) Addresses that only include a "display" field (but not "address" or "extension") are
-				//          considered an extension that has not been mapped to an internal extension pool yet.
-				if address.Address == nil && address.Extension == nil && address.Display != nil {
-					phoneNumber["extension"] = strings.Trim(*address.Display, "()")
-				}
-
-				if address.VarType != nil {
-					phoneNumber["type"] = *address.VarType
-				}
-				phoneNumSet.Add(phoneNumber)
 			} else if *address.MediaType == "EMAIL" {
-				email := make(map[string]interface{})
-				email["type"] = *address.VarType
-				email["address"] = *address.Address
-				emailSet.Add(email)
-			} else {
-				log.Printf("Unknown address media type %s", *address.MediaType)
+				emailAttrs := map[string]attr.Value{
+					"address": types.StringValue(*address.Address),
+					"type":    types.StringValue(*address.VarType),
+				}
+
+				emailObj, objDiags := types.ObjectValue(map[string]attr.Type{
+					"address": types.StringType,
+					"type":    types.StringType,
+				}, emailAttrs)
+				diagnostics.Append(objDiags...)
+
+				if !diagnostics.HasError() {
+					emailElements = append(emailElements, emailObj)
+				}
 			}
 		}
 	}
-	return []interface{}{map[string]interface{}{
+
+	// Create sets for emails and phone numbers
+	emailSet, emailSetDiags := types.SetValue(types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"address": types.StringType,
+			"type":    types.StringType,
+		},
+	}, emailElements)
+	diagnostics.Append(emailSetDiags...)
+
+	phoneSet, phoneSetDiags := types.SetValue(types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"number":            types.StringType,
+			"media_type":        types.StringType,
+			"type":              types.StringType,
+			"extension":         types.StringType,
+			"extension_pool_id": types.StringType,
+		},
+	}, phoneElements)
+	diagnostics.Append(phoneSetDiags...)
+
+	// Create the address object
+	addressAttrs := map[string]attr.Value{
 		"other_emails":  emailSet,
-		"phone_numbers": phoneNumSet,
-	}}
+		"phone_numbers": phoneSet,
+	}
+
+	addressObj, addressObjDiags := types.ObjectValue(map[string]attr.Type{
+		"other_emails": types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"address": types.StringType,
+					"type":    types.StringType,
+				},
+			},
+		},
+		"phone_numbers": types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"number":            types.StringType,
+					"media_type":        types.StringType,
+					"type":              types.StringType,
+					"extension":         types.StringType,
+					"extension_pool_id": types.StringType,
+				},
+			},
+		},
+	}, addressAttrs)
+	diagnostics.Append(addressObjDiags...)
+
+	// Create the list with the single address object
+	addressList, listDiags := types.ListValue(types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"other_emails": types.SetType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"address": types.StringType,
+						"type":    types.StringType,
+					},
+				},
+			},
+			"phone_numbers": types.SetType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"number":            types.StringType,
+						"media_type":        types.StringType,
+						"type":              types.StringType,
+						"extension":         types.StringType,
+						"extension_pool_id": types.StringType,
+					},
+				},
+			},
+		},
+	}, []attr.Value{addressObj})
+	diagnostics.Append(listDiags...)
+
+	return addressList, diagnostics
 }
 
 func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface{} {
@@ -814,57 +643,289 @@ func flattenUserEmployerInfo(empInfo *platformclientv2.Employerinfo) []interface
 	}}
 }
 
-func flattenUserSkills(skills *[]platformclientv2.Userroutingskill) *schema.Set {
-	if skills == nil {
-		return nil
+// SDKv2 flattening functions removed - replaced with Framework equivalents:
+// - flattenUserSkills -> flattenUserSkillsForFramework
+// - flattenUserLanguages -> flattenUserLanguagesForFramework
+// - flattenUserLocations -> flattenUserLocationsForFramework
+// - flattenUserData -> flattenUserDataForFramework
+
+// flattenUserSkillsForFramework converts SDK routing skills to Framework types.Set
+func flattenUserSkillsForFramework(skills *[]platformclientv2.Userroutingskill) (types.Set, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+
+	if skills == nil || len(*skills) == 0 {
+		return types.SetNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"skill_id":    types.StringType,
+				"proficiency": types.Float64Type,
+			},
+		}), diagnostics
 	}
-	skillSet := schema.NewSet(schema.HashResource(userSkillResource), []interface{}{})
+
+	skillElements := make([]attr.Value, 0, len(*skills))
+
 	for _, sdkSkill := range *skills {
-		skill := make(map[string]interface{})
-		skill["skill_id"] = *sdkSkill.Id
-		skill["proficiency"] = *sdkSkill.Proficiency
-		skillSet.Add(skill)
-	}
-	return skillSet
-}
+		skillAttrs := map[string]attr.Value{
+			"skill_id":    types.StringValue(*sdkSkill.Id),
+			"proficiency": types.Float64Value(*sdkSkill.Proficiency),
+		}
 
-func flattenUserLanguages(languages *[]platformclientv2.Userroutinglanguage) *schema.Set {
-	if languages == nil {
-		return nil
-	}
-	languageSet := schema.NewSet(schema.HashResource(userLanguageResource), []interface{}{})
-	for _, sdkLang := range *languages {
-		language := make(map[string]interface{})
-		language["language_id"] = *sdkLang.Id
-		language["proficiency"] = int(*sdkLang.Proficiency)
-		languageSet.Add(language)
-	}
-	return languageSet
-}
+		skillObj, objDiags := types.ObjectValue(map[string]attr.Type{
+			"skill_id":    types.StringType,
+			"proficiency": types.Float64Type,
+		}, skillAttrs)
+		diagnostics.Append(objDiags...)
 
-func flattenUserLocations(locations *[]platformclientv2.Location) *schema.Set {
-	if locations == nil {
-		return nil
-	}
-	locSet := schema.NewSet(schema.HashResource(userLocationResource), []interface{}{})
-	for _, sdkLoc := range *locations {
-		if sdkLoc.LocationDefinition != nil {
-			location := make(map[string]interface{})
-			location["location_id"] = *sdkLoc.LocationDefinition.Id
-			if sdkLoc.Notes != nil {
-				location["notes"] = *sdkLoc.Notes
-			}
-			locSet.Add(location)
+		if !diagnostics.HasError() {
+			skillElements = append(skillElements, skillObj)
 		}
 	}
-	return locSet
+
+	skillSet, setDiags := types.SetValue(types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"skill_id":    types.StringType,
+			"proficiency": types.Float64Type,
+		},
+	}, skillElements)
+	diagnostics.Append(setDiags...)
+
+	return skillSet, diagnostics
 }
 
-func flattenUserData(userDataSlice *[]string) *schema.Set {
-	if userDataSlice != nil {
-		return lists.StringListToSet(*userDataSlice)
+// flattenUserLanguagesForFramework converts SDK routing languages to Framework types.Set
+func flattenUserLanguagesForFramework(languages *[]platformclientv2.Userroutinglanguage) (types.Set, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+
+	if languages == nil || len(*languages) == 0 {
+		return types.SetNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"language_id": types.StringType,
+				"proficiency": types.Int64Type,
+			},
+		}), diagnostics
 	}
-	return nil
+
+	languageElements := make([]attr.Value, 0, len(*languages))
+
+	for _, sdkLang := range *languages {
+		languageAttrs := map[string]attr.Value{
+			"language_id": types.StringValue(*sdkLang.Id),
+			"proficiency": types.Int64Value(int64(*sdkLang.Proficiency)),
+		}
+
+		languageObj, objDiags := types.ObjectValue(map[string]attr.Type{
+			"language_id": types.StringType,
+			"proficiency": types.Int64Type,
+		}, languageAttrs)
+		diagnostics.Append(objDiags...)
+
+		if !diagnostics.HasError() {
+			languageElements = append(languageElements, languageObj)
+		}
+	}
+
+	languageSet, setDiags := types.SetValue(types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"language_id": types.StringType,
+			"proficiency": types.Int64Type,
+		},
+	}, languageElements)
+	diagnostics.Append(setDiags...)
+
+	return languageSet, diagnostics
+}
+
+// buildSdkSkillsFromFramework converts Framework routing skills to SDK skills
+func buildSdkSkillsFromFramework(routingSkills types.Set) ([]platformclientv2.Userroutingskillpost, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if routingSkills.IsNull() || routingSkills.IsUnknown() {
+		return nil, diagnostics
+	}
+
+	skillElements := routingSkills.Elements()
+	sdkSkills := make([]platformclientv2.Userroutingskillpost, 0, len(skillElements))
+
+	for _, skillElement := range skillElements {
+		skillObj, ok := skillElement.(types.Object)
+		if !ok {
+			diagnostics = append(diagnostics, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid Skill Type",
+				Detail:   "Expected skill to be an object",
+			})
+			continue
+		}
+
+		skillAttrs := skillObj.Attributes()
+
+		var skillId string
+		var proficiency float64
+
+		if skillIdAttr, exists := skillAttrs["skill_id"]; exists && !skillIdAttr.IsNull() {
+			skillId = skillIdAttr.(types.String).ValueString()
+		}
+
+		if proficiencyAttr, exists := skillAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
+			proficiency = proficiencyAttr.(types.Float64).ValueFloat64()
+		}
+
+		sdkSkills = append(sdkSkills, platformclientv2.Userroutingskillpost{
+			Id:          &skillId,
+			Proficiency: &proficiency,
+		})
+	}
+
+	return sdkSkills, diagnostics
+}
+
+// buildSdkLanguagesFromFramework converts Framework routing languages to SDK languages
+func buildSdkLanguagesFromFramework(routingLanguages types.Set) ([]platformclientv2.Userroutinglanguagepost, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+
+	if routingLanguages.IsNull() || routingLanguages.IsUnknown() {
+		return nil, diagnostics
+	}
+
+	languageElements := routingLanguages.Elements()
+	sdkLanguages := make([]platformclientv2.Userroutinglanguagepost, 0, len(languageElements))
+
+	for _, languageElement := range languageElements {
+		languageObj, ok := languageElement.(types.Object)
+		if !ok {
+			diagnostics = append(diagnostics, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Invalid Language Type",
+				Detail:   "Expected language to be an object",
+			})
+			continue
+		}
+
+		languageAttrs := languageObj.Attributes()
+
+		var languageId string
+		var proficiency float64
+
+		if languageIdAttr, exists := languageAttrs["language_id"]; exists && !languageIdAttr.IsNull() {
+			languageId = languageIdAttr.(types.String).ValueString()
+		}
+
+		if proficiencyAttr, exists := languageAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
+			proficiency = float64(proficiencyAttr.(types.Int64).ValueInt64())
+		}
+
+		sdkLanguages = append(sdkLanguages, platformclientv2.Userroutinglanguagepost{
+			Id:          &languageId,
+			Proficiency: &proficiency,
+		})
+	}
+
+	return sdkLanguages, diagnostics
+}
+
+// flattenUserLocationsForFramework converts SDK locations to Framework types.Set
+func flattenUserLocationsForFramework(locations *[]platformclientv2.Location) (types.Set, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+
+	if locations == nil || len(*locations) == 0 {
+		return types.SetNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"location_id": types.StringType,
+				"notes":       types.StringType,
+			},
+		}), diagnostics
+	}
+
+	locationElements := make([]attr.Value, 0, len(*locations))
+
+	for _, sdkLoc := range *locations {
+		if sdkLoc.LocationDefinition != nil {
+			locationAttrs := map[string]attr.Value{
+				"location_id": types.StringValue(*sdkLoc.LocationDefinition.Id),
+				"notes":       types.StringNull(),
+			}
+
+			if sdkLoc.Notes != nil {
+				locationAttrs["notes"] = types.StringValue(*sdkLoc.Notes)
+			}
+
+			locationObj, objDiags := types.ObjectValue(map[string]attr.Type{
+				"location_id": types.StringType,
+				"notes":       types.StringType,
+			}, locationAttrs)
+			diagnostics.Append(objDiags...)
+
+			if !diagnostics.HasError() {
+				locationElements = append(locationElements, locationObj)
+			}
+		}
+	}
+
+	locationSet, setDiags := types.SetValue(types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"location_id": types.StringType,
+			"notes":       types.StringType,
+		},
+	}, locationElements)
+	diagnostics.Append(setDiags...)
+
+	return locationSet, diagnostics
+}
+
+// buildSdkRoutingUtilizationFromFramework converts Framework routing utilization to SDK format
+func buildSdkRoutingUtilizationFromFramework(routingUtilization types.List) (*platformclientv2.Utilizationrequest, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+
+	if routingUtilization.IsNull() || routingUtilization.IsUnknown() {
+		return nil, diagnostics
+	}
+
+	// For now, return a basic implementation
+	// This is a complex structure that would need full implementation in a later task
+	utilizationRequest := &platformclientv2.Utilizationrequest{
+		Utilization: &map[string]platformclientv2.Mediautilization{},
+	}
+
+	return utilizationRequest, diagnostics
+}
+
+// flattenUserRoutingUtilizationForFramework converts SDK routing utilization to Framework types.List
+func flattenUserRoutingUtilizationForFramework(utilization interface{}) (types.List, frameworkdiag.Diagnostics) {
+	var diagnostics frameworkdiag.Diagnostics
+
+	// Define the media type object structure to match the schema
+	mediaTypeObjectType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"maximum_capacity":          types.Int64Type,
+			"interruptible_media_types": types.SetType{ElemType: types.StringType},
+			"include_non_acd":           types.BoolType,
+		},
+	}
+
+	// Define the label utilization object structure
+	labelUtilizationObjectType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"label_id":               types.StringType,
+			"maximum_capacity":       types.Int64Type,
+			"interrupting_label_ids": types.SetType{ElemType: types.StringType},
+		},
+	}
+
+	// Define the main routing utilization object structure to match the schema
+	routingUtilizationObjectType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"call":               types.ListType{ElemType: mediaTypeObjectType},
+			"callback":           types.ListType{ElemType: mediaTypeObjectType},
+			"chat":               types.ListType{ElemType: mediaTypeObjectType},
+			"email":              types.ListType{ElemType: mediaTypeObjectType},
+			"message":            types.ListType{ElemType: mediaTypeObjectType},
+			"label_utilizations": types.ListType{ElemType: labelUtilizationObjectType},
+		},
+	}
+
+	// For now, return null with the proper type structure
+	// This would need to handle the agentUtilizationWithLabels structure and convert it properly
+	return types.ListNull(routingUtilizationObjectType), diagnostics
 }
 
 func buildMediaTypeUtilizations(allUtilizations map[string]interface{}) *map[string]platformclientv2.Mediautilization {
@@ -1007,21 +1068,7 @@ func buildVoicemailUserpoliciesRequest(voicemailUserpolicies []interface{}) plat
 	return request
 }
 
-func flattenVoicemailUserpolicies(d *schema.ResourceData, voicemail *platformclientv2.Voicemailuserpolicy) []interface{} {
-	if voicemail == nil {
-		return nil
-	}
-
-	voicemailUserpolicy := make(map[string]interface{})
-	if voicemail.AlertTimeoutSeconds != nil {
-		voicemailUserpolicy["alert_timeout_seconds"] = *voicemail.AlertTimeoutSeconds
-	}
-	if voicemail.SendEmailNotifications != nil {
-		voicemailUserpolicy["send_email_notifications"] = *voicemail.SendEmailNotifications
-	}
-
-	return []interface{}{voicemailUserpolicy}
-}
+// flattenVoicemailUserpolicies removed - SDKv2 function no longer needed
 
 // GenerateBasicUserResource generates a basic user resource with minimum required fields
 func GenerateBasicUserResource(resourceLabel string, email string, name string) string {

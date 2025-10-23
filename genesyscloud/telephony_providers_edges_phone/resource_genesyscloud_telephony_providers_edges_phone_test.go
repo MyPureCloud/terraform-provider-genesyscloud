@@ -141,7 +141,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				PreConfig: func() {
@@ -290,7 +290,7 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 
@@ -391,7 +391,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: didPool.GenerateDidPoolResource(&didPool.DidPoolStruct{
@@ -534,7 +534,7 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				PreConfig: func() {

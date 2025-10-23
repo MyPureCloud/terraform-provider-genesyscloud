@@ -15,6 +15,7 @@ import (
 
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -32,13 +33,21 @@ var (
 	// providerResources holds a map of all registered sites
 	providerResources map[string]*schema.Resource
 
+	// frameworkResources holds a map of all registered Framework resources
+	frameworkResources map[string]func() frameworkresource.Resource
+
+	// frameworkDataSources holds a map of all registered Framework data sources
+	frameworkDataSources map[string]func() datasource.DataSource
+
 	sdkConfig *platformclientv2.Configuration
 	authErr   error
 )
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex            sync.RWMutex
+	datasourceMapMutex          sync.RWMutex
+	frameworkResourceMapMutex   sync.RWMutex
+	frameworkDataSourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -47,7 +56,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourcePhone()
-	providerResources[user.ResourceType] = user.ResourceUser()
+	// providerResources[user.ResourceType] = user.ResourceUser() // Removed - now Framework-only
 	providerResources[phoneBaseSettings.ResourceType] = phoneBaseSettings.ResourcePhoneBaseSettings()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
@@ -63,6 +72,22 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[gcloud.DataSourceOrganizationsMeResourceType] = gcloud.DataSourceOrganizationsMe()
 }
 
+// registerFrameworkTestResources registers all Framework resources used in the tests
+func (r *registerTestInstance) registerFrameworkTestResources() {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+
+	frameworkResources[user.ResourceType] = user.NewUserFrameworkResource
+}
+
+// registerFrameworkTestDataSources registers all Framework data sources used in the tests
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+
+	frameworkDataSources[user.ResourceType] = user.NewUserFrameworkDataSource
+}
+
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	sdkConfig, authErr = provider.AuthorizeSdk()
@@ -71,11 +96,15 @@ func initTestResources() {
 	}
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
+	frameworkResources = make(map[string]func() frameworkresource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
+	regInstance.registerFrameworkTestResources()
+	regInstance.registerFrameworkTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

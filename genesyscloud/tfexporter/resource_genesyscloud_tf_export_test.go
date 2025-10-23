@@ -2306,7 +2306,7 @@ resource "genesyscloud_integration_credential" "%s" {
 }
 
 // getMuxedProviderFactoriesForTfExporter returns muxed provider factories for tfexporter tests
-// This includes both SDKv2 and Framework resources to support routing_language and routing_wrapupcode export
+// This includes both SDKv2 and Framework resources to support Framework-migrated resources
 func getMuxedProviderFactoriesForTfExporter() map[string]func() (tfprotov6.ProviderServer, error) {
 	return provider.GetMuxedProviderFactories(
 		providerResources,
@@ -2314,10 +2314,12 @@ func getMuxedProviderFactoriesForTfExporter() map[string]func() (tfprotov6.Provi
 		map[string]func() frameworkresource.Resource{
 			routinglanguage.ResourceType:   routinglanguage.NewFrameworkRoutingLanguageResource,
 			routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkResource,
+			user.ResourceType:              user.NewUserFrameworkResource,
 		},
 		map[string]func() datasource.DataSource{
 			routinglanguage.ResourceType:   routinglanguage.NewFrameworkRoutingLanguageDataSource,
 			routingWrapupcode.ResourceType: routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource,
+			user.ResourceType:              user.NewUserFrameworkDataSource,
 		},
 	)
 }

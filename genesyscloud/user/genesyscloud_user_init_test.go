@@ -2,72 +2,65 @@ package user
 
 import (
 	"sync"
-
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-
 	"testing"
 
-	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
-	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
-	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
-	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
-	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 /*
-The genesyscloud_user_init_test.go file is used to initialize the data sources and resources used in testing the user resource
+The genesyscloud_user_init_test.go file is used to initialize the data sources and resources
+used in testing the user resource.
 */
 
-// providerDataSources holds a map of all registered datasources
-var providerDataSources map[string]*schema.Resource
+// frameworkResources holds a map of all registered Framework resources
+var frameworkResources map[string]func() resource.Resource
 
-// providerResources holds a map of all registered resources
-var providerResources map[string]*schema.Resource
+// frameworkDataSources holds a map of all registered Framework data sources
+var frameworkDataSources map[string]func() datasource.DataSource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	frameworkResourceMapMutex   sync.RWMutex
+	frameworkDataSourceMapMutex sync.RWMutex
 }
 
-// registerTestResources registers all resources used in the tests
+// registerTestResources registers all resources used in the tests (Framework-only)
 func (r *registerTestInstance) registerTestResources() {
-	r.resourceMapMutex.Lock()
-	defer r.resourceMapMutex.Unlock()
-
-	providerResources[ResourceType] = ResourceUser()
-	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
-	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
-	providerResources[location.ResourceType] = location.ResourceLocation()
-	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
-	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
-
+	// SDKv2 resources removed - Framework-only migration
 }
 
-// registerTestDataSources registers all data sources used in the tests.
+// registerTestDataSources registers all data sources used in the tests (Framework-only)
 func (r *registerTestInstance) registerTestDataSources() {
-	r.datasourceMapMutex.Lock()
-	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[ResourceType] = DataSourceUser()
-	providerDataSources[authRole.ResourceType] = authRole.DataSourceAuthRole()
-	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
-	providerDataSources[location.ResourceType] = location.DataSourceLocation()
-	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
-	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
+	// SDKv2 data sources removed - Framework-only migration
 }
 
-// initTestResources initializes all test resources.
+// registerFrameworkTestResources registers all Framework resources used in the tests
+func (r *registerTestInstance) registerFrameworkTestResources() {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+
+	frameworkResources[ResourceType] = NewUserFrameworkResource
+}
+
+// registerFrameworkTestDataSources registers all Framework data sources used in the tests
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+
+	frameworkDataSources[ResourceType] = NewUserFrameworkDataSource
+}
+
+// initTestResources initializes all test resources and data sources (Framework-only).
 func initTestResources() {
-	providerResources = make(map[string]*schema.Resource)
-	providerDataSources = make(map[string]*schema.Resource)
+	// Framework-only initialization
+	frameworkResources = make(map[string]func() resource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}
 
-	regInstance.registerTestResources()
-	regInstance.registerTestDataSources()
+	// Framework resources only
+	regInstance.registerFrameworkTestResources()
+	regInstance.registerFrameworkTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
