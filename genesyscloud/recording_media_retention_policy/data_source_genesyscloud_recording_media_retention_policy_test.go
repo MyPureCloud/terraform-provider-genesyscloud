@@ -145,7 +145,7 @@ func TestAccDataSourceRecordingMediaRetentionPolicy(t *testing.T) {
 		description         = "Terraform test description"
 	)
 
-	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
+	if cleanupErr := routingEmailDomain.CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
 		t.Logf("Failed to cleanup domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
 

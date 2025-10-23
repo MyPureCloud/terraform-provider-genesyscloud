@@ -3,7 +3,7 @@ package process_automation_trigger
 import (
 	"encoding/json"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v170/platformclientv2"
 )
 
 type ProcessAutomationTrigger struct {
