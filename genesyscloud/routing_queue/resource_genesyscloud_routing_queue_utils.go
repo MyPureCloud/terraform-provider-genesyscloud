@@ -1045,15 +1045,15 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 }
 
 func validateBullseyeRingsRemoval(ctx context.Context, d *schema.ResourceData, proxy *RoutingQueueProxy) diag.Diagnostics {
-	currentQueue, _, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
+	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil || currentQueue == nil {
-		return diag.Errorf("Failed to get queue %s: %s", d.Id(), err)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing queue %s", d.Id()), resp)
 	}
 
 	if currentQueue.Bullseye != nil && currentQueue.Bullseye.Rings != nil {
 		for _, ring := range *currentQueue.Bullseye.Rings {
 			if ring.MemberGroups != nil && len(*ring.MemberGroups) > 0 {
-				return diag.Errorf("Cannot remove bullseye rings that contain members. Please remove all members from the rings before converting to standard routing.")
+				return diag.Errorf("Cannot remove bullseye rings that contain members. All members must be removed from the bullseye rings before converting to standard routing.")
 			}
 		}
 	}
