@@ -57,8 +57,11 @@ resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
 
 ### Required
 
-- `callable_times` (Block Set, Min: 1) The list of CallableTimes for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times))
 - `name` (String) The name of the CallableTimeSet.
+
+### Optional
+
+- `callable_times` (Block Set) The list of CallableTimes for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times))
 
 ### Read-Only
 

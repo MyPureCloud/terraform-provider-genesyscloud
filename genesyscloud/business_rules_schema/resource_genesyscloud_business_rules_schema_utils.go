@@ -19,6 +19,7 @@ const (
 	NUMBER               = "number"
 	BUSINESS_RULES_QUEUE = "businessRulesQueue"
 	STRING               = "string"
+	STRING_LIST          = "stringList"
 )
 
 type customField struct {

@@ -45,13 +45,13 @@ func ResourceTelephonyDidPool() *schema.Resource {
 				Description:      "Starting phone number of the DID Pool range. Phone number must be in a E.164 number format. Changing the start_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validators.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePoolPhoneNumber,
 			},
 			"end_phone_number": {
 				Description:      "Ending phone number of the DID Pool range.  Phone number must be in an E.164 number format. Changing the end_phone_number attribute will cause the did_pool object to be dropped and recreated with a new ID.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validators.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePoolPhoneNumber,
 			},
 			"description": {
 				Description: "DID Pool description.",
@@ -84,13 +84,13 @@ func DataSourceDidPool() *schema.Resource {
 				Description:      "Starting phone number of the DID Pool range. Must be in an E.164 number format.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validators.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePoolPhoneNumber,
 			},
 			"end_phone_number": {
 				Description:      "Ending phone number of the DID Pool range.",
 				Type:             schema.TypeString,
 				Required:         true,
-				ValidateDiagFunc: validators.ValidatePhoneNumber,
+				ValidateDiagFunc: validators.ValidatePoolPhoneNumber,
 			},
 		},
 	}

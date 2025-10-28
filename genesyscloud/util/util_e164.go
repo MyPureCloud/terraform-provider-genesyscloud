@@ -19,6 +19,8 @@ func NewUtilE164Service() *UtilE164Service {
 	return &UtilE164Service{GetDefaultCountryCodeFunc: provider.GetOrgDefaultCountryCode}
 }
 
+var STARTING_PLUS_CHARS_REGEX = regexp.MustCompile("^[+\uFF0B]")
+
 // Validates a string as a valid E.164 international standard telephone format, with any viable country code accepted
 // Use this when data is coming from the user so we can appropriately error.
 func (m *UtilE164Service) IsValidE164Number(number string) (bool, diag.Diagnostics) {
@@ -27,8 +29,6 @@ func (m *UtilE164Service) IsValidE164Number(number string) (bool, diag.Diagnosti
 	if defaultRegion == "" {
 		defaultRegion = "ZZ" // Unknown region
 	}
-
-	STARTING_PLUS_CHARS_REGEX := regexp.MustCompile("^[+\uFF0B]")
 
 	matchValidStartingNumber := STARTING_PLUS_CHARS_REGEX.MatchString(number)
 	if !matchValidStartingNumber {
@@ -42,6 +42,30 @@ func (m *UtilE164Service) IsValidE164Number(number string) (bool, diag.Diagnosti
 	}
 
 	return phonenumbers.IsPossibleNumber(phoneNumber), nil
+}
+
+// Formats string as a valid E.164 international standard telephone format, parsing the number with
+// a default region that matches the default country code set on the GC organization.
+// Use this when the data comes from the user, but the number is allowed to exceed country specific length limits
+func (m *UtilE164Service) FormatE164Number(number string) (string, diag.Diagnostics) {
+	defaultRegion := m.GetDefaultCountryCodeFunc()
+	if defaultRegion == "" {
+		defaultRegion = "ZZ"
+	}
+	matchValidStartingNumber := STARTING_PLUS_CHARS_REGEX.MatchString(number)
+	if !matchValidStartingNumber {
+		return "", diag.Errorf("Phone number must start with a '+'")
+	}
+
+	phoneNumber, err := phonenumbers.Parse(number, defaultRegion)
+	if err != nil {
+		return "", diag.Errorf("Failed to parse phone number %s: %s", number, err)
+	}
+	formattedNum := phonenumbers.Format(phoneNumber, phonenumbers.E164)
+	if formattedNum == "+00" {
+		return "", diag.Errorf("Failed to format phone number %s", number)
+	}
+	return formattedNum, nil
 }
 
 // Formats string as a valid E.164 international standard telephone format, parsing the number with
