@@ -353,6 +353,15 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
 	}
 
+	if d.HasChange("bullseye_rings") {
+		oldRings, newRings := d.GetChange("bullseye_rings")
+		if len(oldRings.([]any)) > 0 && len(newRings.([]any)) == 0 {
+			if err := validateBullseyeRingsRemoval(ctx, d, proxy); err != nil {
+				return err
+			}
+		}
+	}
+
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
 	if diagErr.HasError() {
 		return diagErr
