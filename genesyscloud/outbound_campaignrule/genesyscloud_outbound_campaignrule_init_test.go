@@ -9,6 +9,7 @@ import (
 	outboundCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	outboundContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 	outboundSequence "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"sync"
@@ -48,6 +49,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
 	providerResources[outboundSequence.ResourceType] = outboundSequence.ResourceOutboundSequence()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

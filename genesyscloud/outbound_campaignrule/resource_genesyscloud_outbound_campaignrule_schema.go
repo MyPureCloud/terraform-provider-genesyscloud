@@ -31,13 +31,15 @@ func getAllowedActions() []string {
 		"setCampaignPriority",
 		"recycleCampaign",
 		"setCampaignDialingMode",
+		// New actions
 		"setCampaignAbandonRate",
 		"setCampaignNumberOfLines",
 		"setCampaignWeight",
 		"setCampaignMaxCallsPerAgent",
-		"setCampaignMessagesPerMinute",
 		"changeCampaignQueue",
+		// Digital campaigns
 		"changeCampaignTemplate",
+		"setCampaignMessagesPerMinute",
 	}
 }
 
@@ -148,10 +150,10 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"agentless", "preview", "power", "predictive", "progressive", "external"}, true),
 			},
 			`abandon_rate`: {
-				Description:  `Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action`,
-				Optional:     true,
-				Type:         schema.TypeFloat,
-				ValidateFunc: validation.FloatAtLeast(0.1),
+				Description: `Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action`,
+				Optional:    true,
+				Type:        schema.TypeString,
+				//ValidateFunc: validation.FloatAtLeast(0.1),
 			},
 			`outbound_line_count`: {
 				Description: `Number of Outbound lines. Required for 'setCampaignNumberOfLines' action`,
@@ -181,10 +183,10 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				},
 			},
 			`max_calls_per_agent`: {
-				Description:  `Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action`,
-				Optional:     true,
-				Type:         schema.TypeFloat,
-				ValidateFunc: validation.FloatAtLeast(1.0),
+				Description: `Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action`,
+				Optional:    true,
+				Type:        schema.TypeString,
+				//ValidateFunc: validation.FloatAtLeast(1.0),
 			},
 			`queue_id`: {
 				Description: `The ID of the Queue. Required for 'changeCampaignQueue' action`,
@@ -192,22 +194,43 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`messages_per_minute`: {
-				Description:  `The number of messages per minute to set a messaging campaign to.`,
-				Optional:     true,
-				Type:         schema.TypeInt,
-				ValidateFunc: validation.IntAtLeast(1),
+				Description: `The number of messages per minute to set a messaging campaign to.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					if v := val.(string); v != "" {
+						if num, err := strconv.Atoi(v); err != nil || num < 1 {
+							errs = append(errs, fmt.Errorf("%q must be an integer between 0 and 100 inclusive", key))
+						}
+					}
+					return
+				},
 			},
 			`sms_messages_per_minute`: {
-				Description:  `The number of messages per minute to set a SMS messaging campaign to.`,
-				Optional:     true,
-				Type:         schema.TypeInt,
-				ValidateFunc: validation.IntAtLeast(1),
+				Description: `The number of messages per minute to set a SMS messaging campaign to.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					if v := val.(string); v != "" {
+						if num, err := strconv.Atoi(v); err != nil || num < 1 {
+							errs = append(errs, fmt.Errorf("%q must be an integer between 0 and 100 inclusive", key))
+						}
+					}
+					return
+				},
 			},
 			`email_messages_per_minute`: {
-				Description:  `The number of messages per minute to set an Email messaging campaign to.`,
-				Optional:     true,
-				Type:         schema.TypeInt,
-				ValidateFunc: validation.IntAtLeast(1),
+				Description: `The number of messages per minute to set an Email messaging campaign to.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					if v := val.(string); v != "" {
+						if num, err := strconv.Atoi(v); err != nil || num < 1 {
+							errs = append(errs, fmt.Errorf("%q must be an integer between 0 and 100 inclusive", key))
+						}
+					}
+					return
+				},
 			},
 			`sms_content_template`: {
 				Description: `The content template to set a SMS campaign to.`,
