@@ -43,16 +43,6 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 	return resources, nil
 }
 
-/*
-
-resource "genesyscloud_responsemanagement_responseasset" "foo" {
-  filename = "foo-123232.txt"
-  division_id = "bar"
-  file_content_hash = "1234"
-  name = "foo.txt"
-}
-*/
-
 // createResponsemanagementResponseasset is used by the responsemanagement_responseasset resource to create Genesys cloud responsemanagement responseasset
 func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 	fileName := d.Get("filename").(string)
