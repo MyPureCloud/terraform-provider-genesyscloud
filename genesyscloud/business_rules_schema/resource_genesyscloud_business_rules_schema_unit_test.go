@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,9 +43,9 @@ func TestUnitResourceBusinessRulesSchemaCreate(t *testing.T) {
 
 	schemaProxy := &businessRulesSchemaProxy{}
 
-	schemaProxy.getBusinessRulesSchemaByIdAttr = func(ctx context.Context, p *businessRulesSchemaProxy, id string) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+	schemaProxy.getBusinessRulesSchemaByIdAttr = func(ctx context.Context, p *businessRulesSchemaProxy, id string) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
-		schema := &platformclientv2.Dataschema{
+		schema := &platformclientv2.Businessrulesdataschema{
 			Name:       &tName,
 			Enabled:    &tEnabled,
 			JsonSchema: &tJsonSchema,
@@ -56,8 +56,8 @@ func TestUnitResourceBusinessRulesSchemaCreate(t *testing.T) {
 		return schema, apiResponse, nil
 	}
 
-	schemaProxy.createBusinessRulesSchemaAttr = func(ctx context.Context, p *businessRulesSchemaProxy, schemaCreate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
-		schema := platformclientv2.Dataschema{}
+	schemaProxy.createBusinessRulesSchemaAttr = func(ctx context.Context, p *businessRulesSchemaProxy, schemaCreate *platformclientv2.Businessrulesdataschema) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
+		schema := platformclientv2.Businessrulesdataschema{}
 
 		assert.Equal(t, tName, *schemaCreate.Name, "schema.Name check failed in create createBusinessRulesSchemaAttr")
 		assert.Equal(t, tDescription, *schemaCreate.JsonSchema.Description, "schema.JsonSchema.Description check failed in create createBusinessRulesSchemaAttr")
@@ -121,9 +121,9 @@ func TestUnitResourceBusinessRulesSchemaRead(t *testing.T) {
 
 	schemaProxy := &businessRulesSchemaProxy{}
 
-	schemaProxy.getBusinessRulesSchemaByIdAttr = func(ctx context.Context, p *businessRulesSchemaProxy, id string) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+	schemaProxy.getBusinessRulesSchemaByIdAttr = func(ctx context.Context, p *businessRulesSchemaProxy, id string) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
-		schema := &platformclientv2.Dataschema{
+		schema := &platformclientv2.Businessrulesdataschema{
 			Name:       &tName,
 			Enabled:    &tEnabled,
 			JsonSchema: &tJsonSchema,
@@ -250,9 +250,9 @@ func TestUnitResourceBusinessRulesSchemaUpdate(t *testing.T) {
 
 	schemaProxy := &businessRulesSchemaProxy{}
 
-	schemaProxy.getBusinessRulesSchemaByIdAttr = func(ctx context.Context, p *businessRulesSchemaProxy, id string) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+	schemaProxy.getBusinessRulesSchemaByIdAttr = func(ctx context.Context, p *businessRulesSchemaProxy, id string) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
-		schema := &platformclientv2.Dataschema{
+		schema := &platformclientv2.Businessrulesdataschema{
 			Name:       &tName,
 			Enabled:    &tEnabled,
 			JsonSchema: &tJsonSchema,
@@ -263,8 +263,8 @@ func TestUnitResourceBusinessRulesSchemaUpdate(t *testing.T) {
 		return schema, apiResponse, nil
 	}
 
-	schemaProxy.updateBusinessRulesSchemaAttr = func(ctx context.Context, p *businessRulesSchemaProxy, schemaId string, schemaCreate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
-		schema := platformclientv2.Dataschema{}
+	schemaProxy.updateBusinessRulesSchemaAttr = func(ctx context.Context, p *businessRulesSchemaProxy, schemaId string, schemaCreate *platformclientv2.Businessrulesdataschema) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
+		schema := platformclientv2.Businessrulesdataschema{}
 
 		assert.Equal(t, tName, *schemaCreate.Name, "schema.Name check failed in create createBusinessRulesSchemaAttr")
 		assert.Equal(t, tDescription, *schemaCreate.JsonSchema.Description, "schema.JsonSchema.Description check failed in create createBusinessRulesSchemaAttr")

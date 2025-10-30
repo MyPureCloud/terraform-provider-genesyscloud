@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -55,7 +55,7 @@ func createBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	log.Printf("Creating business rules schema")
-	schema, resp, err := proxy.createBusinessRulesSchema(ctx, dataSchema)
+	schema, resp, err := proxy.createBusinessRulesSchema(ctx, (*platformclientv2.Businessrulesdataschema)(dataSchema))
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create business rules schema %s error: %s", *dataSchema.Name, err), resp)
 	}
@@ -66,7 +66,7 @@ func createBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 	if enabled, ok := d.Get("enabled").(bool); ok && !enabled {
 		log.Printf("Updating business rules schema: %s, to set 'enabled' to 'false'", *schema.Name)
 		dataSchema.Version = platformclientv2.Int(1)
-		_, resp, err := proxy.updateBusinessRulesSchema(ctx, *schema.Id, dataSchema)
+		_, resp, err := proxy.updateBusinessRulesSchema(ctx, *schema.Id, (*platformclientv2.Businessrulesdataschema)(dataSchema))
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update business rules schema %s error: %s", d.Id(), err), resp)
 		}
@@ -136,7 +136,7 @@ func updateBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	log.Printf("Updating business rules schema")
-	updatedSchema, resp, err := proxy.updateBusinessRulesSchema(ctx, d.Id(), dataSchema)
+	updatedSchema, resp, err := proxy.updateBusinessRulesSchema(ctx, d.Id(), (*platformclientv2.Businessrulesdataschema)(dataSchema))
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update business rules schema %s error: %s", d.Id(), err), resp)
 	}

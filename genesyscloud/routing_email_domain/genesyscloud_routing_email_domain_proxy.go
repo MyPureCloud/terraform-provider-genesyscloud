@@ -3,10 +3,11 @@ package routing_email_domain
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 var internalProxy *routingEmailDomainProxy
@@ -93,7 +94,7 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 		response   *platformclientv2.APIResponse
 	)
 
-	domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, 1, false, "")
+	domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, 1, false, "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get routing email domains error: %s", err)
 	}
@@ -104,7 +105,7 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 	allDomains = append(allDomains, *domains.Entities...)
 
 	for pageNum := 2; pageNum <= *domains.PageCount; pageNum++ {
-		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, "")
+		domains, resp, err := p.routingApi.GetRoutingEmailDomains(pageSize, pageNum, false, "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get routing email domains error: %s", err)
 		}
@@ -123,14 +124,20 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 }
 
 func createRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy, routingEmailDomain *platformclientv2.Inbounddomain) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
-	return p.routingApi.PostRoutingEmailDomains(*routingEmailDomain)
+	request := platformclientv2.Inbounddomaincreaterequest{
+		Id:               routingEmailDomain.Id,
+		SubDomain:        routingEmailDomain.SubDomain,
+		MailFromSettings: routingEmailDomain.MailFromSettings,
+		CustomSMTPServer: routingEmailDomain.CustomSMTPServer,
+	}
+	return p.routingApi.PostRoutingEmailDomains(request)
 }
 
 func getRoutingEmailDomainByIdFn(ctx context.Context, p *routingEmailDomainProxy, id string) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
 	if domain := rc.GetCacheItem(p.routingEmailDomainCache, id); domain != nil {
 		return domain, nil, nil
 	}
-	return p.routingApi.GetRoutingEmailDomain(id)
+	return p.routingApi.GetRoutingEmailDomain(id, "")
 }
 
 func getRoutingEmailDomainIdByNameFn(ctx context.Context, p *routingEmailDomainProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
