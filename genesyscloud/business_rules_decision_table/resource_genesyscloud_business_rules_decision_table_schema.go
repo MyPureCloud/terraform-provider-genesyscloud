@@ -112,8 +112,13 @@ func expressionSchemaFunc() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{
 					"Equals", "NotEquals", "GreaterThan", "GreaterThanOrEquals", "LessThan", "LessThanOrEquals",
 					"StartsWith", "NotStartsWith", "EndsWith", "NotEndsWith", "Contains", "NotContains",
+					"ContainsAny", "NotContainsAny", "ContainsAll", "NotContainsAll", "ContainsExactly", "NotContainsExactly",
+					"ContainsSequence", "NotContainsSequence", "IsSubset", "NotIsSubset", "IsSubsequence", "NotIsSubsequence",
 				}, false),
-				Description: "A comparator used to join the left and right sides of a logical condition. Valid values: Equals, NotEquals, GreaterThan, GreaterThanOrEquals, LessThan, LessThanOrEquals, StartsWith, NotStartsWith, EndsWith, NotEndsWith, Contains, NotContains.",
+				Description: "A comparator used to join the left and right sides of a logical condition. Valid values: Equals, " +
+					"NotEquals, GreaterThan, GreaterThanOrEquals, LessThan, LessThanOrEquals, StartsWith, NotStartsWith, EndsWith, " +
+					"NotEndsWith, Contains, NotContains, ContainsAny, NotContainsAny, ContainsAll, NotContainsAll, ContainsExactly, NotContainsExactly, " +
+					"ContainsSequence, NotContainsSequence, IsSubset, NotIsSubset, IsSubsequence, NotIsSubsequence.",
 			},
 		},
 	}
@@ -146,6 +151,15 @@ func defaultsToSchemaFunc() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.",
+			},
+
+			"values": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "A default list of string values for this column. Used for stringList data types.",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 
 			"special": {
@@ -345,10 +359,11 @@ func literalValueSchemaFunc() *schema.Resource {
 								- datetime: A date time value, must be in the format of yyyy-MM-dd'T'HH:mm:ss.SSSZ, e.g. 2024-10-02T01:01:01.111Z. Date time is represented as an ISO-8601 string
 								- special: A special value enum, such as Wildcard, Null, etc. Valid values: Wildcard, Null, Empty, CurrentTime
 								- boolean: A boolean value
+								- stringList: A list of string values, provided as comma-separated string
 								- "": An empty string "" to use column default`,
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "date", "datetime", "boolean", "special", ""}, false),
+				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "date", "datetime", "boolean", "special", "stringList", ""}, false),
 			},
 			"value": {
 				Description: `The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
@@ -362,6 +377,7 @@ func literalValueSchemaFunc() *schema.Resource {
 								- Date: "2023-01-01"
 								- DateTime: "2023-01-01T12:00:00.000Z"
 								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+								- StringList: "item1,item2,item3" (comma-separated string)
 								- Default: Empty string "" uses column default`,
 				Type:             schema.TypeString,
 				Optional:         true,
