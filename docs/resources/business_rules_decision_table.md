@@ -174,6 +174,18 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
     }
 
+    inputs {
+      defaults_to {
+        values = ["general", "support"]
+      }
+      expression {
+        contractual {
+          schema_property_key = "custom_attribute_string_list"
+        }
+        comparator = "ContainsAny"
+      }
+    }
+
     outputs {
       defaults_to {
         value = data.genesyscloud_routing_queue.vip_queue.id
@@ -204,6 +216,15 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       value {
         schema_property_key = "custom_attribute_enum"
+      }
+    }
+
+    outputs {
+      defaults_to {
+        values = ["basic_support", "general_help"]
+      }
+      value {
+        schema_property_key = "custom_attribute_output_list"
       }
     }
   }
@@ -274,6 +295,12 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
         type  = "string"
       }
     }
+    inputs {
+      literal {
+        value = "vip,premium"
+        type  = "stringList"
+      }
+    }
     outputs {
       literal {
         value = data.genesyscloud_routing_queue.vip_queue.id
@@ -290,6 +317,12 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       literal {
         value = "option_2"
         type  = "string"
+      }
+    }
+    outputs {
+      literal {
+        value = "premium_support,escalation,technical_expert" # Comma-separated string for stringList
+        type  = "stringList"
       }
     }
   }
@@ -347,6 +380,7 @@ Optional:
 
 - `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
 - `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
+- `values` (List of String) A default list of string values for this column. Used for stringList data types.
 
 
 <a id="nestedblock--columns--inputs--expression"></a>
@@ -354,7 +388,7 @@ Optional:
 
 Required:
 
-- `comparator` (String) A comparator used to join the left and right sides of a logical condition. Valid values: Equals, NotEquals, GreaterThan, GreaterThanOrEquals, LessThan, LessThanOrEquals, StartsWith, NotStartsWith, EndsWith, NotEndsWith, Contains, NotContains.
+- `comparator` (String) A comparator used to join the left and right sides of a logical condition. Valid values: Equals, NotEquals, GreaterThan, GreaterThanOrEquals, LessThan, LessThanOrEquals, StartsWith, NotStartsWith, EndsWith, NotEndsWith, Contains, NotContains, ContainsAny, NotContainsAny, ContainsAll, NotContainsAll, ContainsExactly, NotContainsExactly, ContainsSequence, NotContainsSequence, IsSubset, NotIsSubset, IsSubsequence, NotIsSubsequence.
 - `contractual` (Block List, Min: 1, Max: 1) A value that is defined by a contract schema and used to form the left side of a logical condition. (see [below for nested schema](#nestedblock--columns--inputs--expression--contractual))
 
 <a id="nestedblock--columns--inputs--expression--contractual"></a>
@@ -410,6 +444,7 @@ Optional:
 
 - `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
 - `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
+- `values` (List of String) A default list of string values for this column. Used for stringList data types.
 
 
 <a id="nestedblock--columns--outputs--value"></a>
@@ -497,6 +532,7 @@ Optional:
 								- datetime: A date time value, must be in the format of yyyy-MM-dd'T'HH:mm:ss.SSSZ, e.g. 2024-10-02T01:01:01.111Z. Date time is represented as an ISO-8601 string
 								- special: A special value enum, such as Wildcard, Null, etc. Valid values: Wildcard, Null, Empty, CurrentTime
 								- boolean: A boolean value
+								- stringList: A list of string values, provided as comma-separated string
 								- "": An empty string "" to use column default
 - `value` (String) The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
 								Set to empty string "" to use column default.
@@ -509,6 +545,7 @@ Optional:
 								- Date: "2023-01-01"
 								- DateTime: "2023-01-01T12:00:00.000Z"
 								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+								- StringList: "item1,item2,item3" (comma-separated string)
 								- Default: Empty string "" uses column default Defaults to ``.
 
 
@@ -539,6 +576,7 @@ Optional:
 								- datetime: A date time value, must be in the format of yyyy-MM-dd'T'HH:mm:ss.SSSZ, e.g. 2024-10-02T01:01:01.111Z. Date time is represented as an ISO-8601 string
 								- special: A special value enum, such as Wildcard, Null, etc. Valid values: Wildcard, Null, Empty, CurrentTime
 								- boolean: A boolean value
+								- stringList: A list of string values, provided as comma-separated string
 								- "": An empty string "" to use column default
 - `value` (String) The literal value. IMPORTANT: All values must be wrapped in quotes, even numbers and booleans.
 								Set to empty string "" to use column default.
@@ -551,5 +589,6 @@ Optional:
 								- Date: "2023-01-01"
 								- DateTime: "2023-01-01T12:00:00.000Z"
 								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
+								- StringList: "item1,item2,item3" (comma-separated string)
 								- Default: Empty string "" uses column default Defaults to ``.
 
