@@ -16,7 +16,7 @@ import (
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -151,17 +151,18 @@ func TestAccResourceBusinessRulesSchema(t *testing.T) {
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
-			// Barebones schema. No custom fields
+			// Barebones schema. No custom fields. Enabled = false
 			{
 				Config: GenerateBusinessRulesSchemaResourceBasic(
 					schemaResourceLabel,
 					schemaName,
 					schemaDescription,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "name", schemaName),
 					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "description", schemaDescription),
-					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+schemaResourceLabel, "enabled", util.FalseValue),
 				),
 			},
 			// Update with fields

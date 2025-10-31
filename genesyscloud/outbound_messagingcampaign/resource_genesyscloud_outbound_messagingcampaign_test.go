@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -834,7 +834,7 @@ func CheckOutboundDomainExists(id string) error {
 	routingApi := platformclientv2.NewRoutingApiWithConfig(config)
 
 	log.Printf("Checking if outbound domain (%s) exists", id)
-	outboundDomain, resp, err := routingApi.GetRoutingEmailOutboundDomain(id)
+	outboundDomain, resp, err := routingApi.GetRoutingEmailOutboundDomain(id, "")
 	if err != nil && resp.StatusCode != http.StatusNotFound {
 		return fmt.Errorf("error getting outbound domain (%s): %v", id, err)
 	}
@@ -847,7 +847,7 @@ func CheckOutboundDomainExists(id string) error {
 	if resp.StatusCode == 404 {
 		// outbound domain for test does not exist so create it
 		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
-		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomainrequest{
+		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomaincreaterequest{
 			Id: &id,
 		})
 		if postErr != nil {

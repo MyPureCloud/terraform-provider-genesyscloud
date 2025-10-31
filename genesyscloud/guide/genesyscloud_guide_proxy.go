@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
