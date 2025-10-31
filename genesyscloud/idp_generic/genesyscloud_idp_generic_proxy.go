@@ -3,7 +3,7 @@ package idp_generic
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v170/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
