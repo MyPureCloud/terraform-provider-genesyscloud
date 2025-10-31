@@ -45,6 +45,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				Config: GenerateResponseManagementResponseAssetResource(resourceLabel, fullPath1, util.NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath1),
+					resource.TestCheckResourceAttr(resourceFullPath, "name", fullPath1),
 					provider.TestDefaultHomeDivision(resourceFullPath),
 				),
 			},
@@ -53,6 +54,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel, divisionName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
+					resource.TestCheckResourceAttr(resourceFullPath, "name", fullPath2),
 					resource.TestCheckResourceAttrPair(resourceFullPath, "division_id",
 						authDivision.ResourceType+"."+divisionResourceLabel, "id"),
 				),
@@ -63,6 +65,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 					"\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n",
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
+					resource.TestCheckResourceAttr(resourceFullPath, "name", fullPath2),
 					provider.TestDefaultHomeDivision(resourceFullPath),
 				),
 			},
@@ -72,6 +75,70 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
+					"filename",
+					"file_content_hash",
+				},
+			},
+		},
+		CheckDestroy: testVerifyResponseAssetDestroyed,
+	})
+}
+
+func TestAccResourceResponseManagementResponseAssetWithNameField(t *testing.T) {
+	var (
+		resourceLabel         = "responseasset"
+		resourceFullPath      = ResourceType + "." + resourceLabel
+		testFilesDir          = "test_responseasset_data"
+		fileName1             = "yeti-img.png"
+		fileName2             = "genesys-img.png"
+		fullPath1             = filepath.Join(testFilesDir, fileName1)
+		fullPath2             = filepath.Join(testFilesDir, fileName2)
+		divisionResourceLabel = "test_div"
+		divisionName          = "test tf divison " + uuid.NewString()
+	)
+
+	cleanupResponseAssets("genesys")
+	cleanupResponseAssets("yeti")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateResponseManagementResponseAssetResourceWithNameField(resourceLabel, fileName1, fullPath1, util.NullValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath1),
+					resource.TestCheckResourceAttr(resourceFullPath, "name", fileName1),
+					provider.TestDefaultHomeDivision(resourceFullPath),
+				),
+			},
+			{
+				Config: GenerateResponseManagementResponseAssetResourceWithNameField(resourceLabel, fileName2, fullPath2, "genesyscloud_auth_division."+divisionResourceLabel+".id") +
+					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel, divisionName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
+					resource.TestCheckResourceAttr(resourceFullPath, "name", fileName2),
+					resource.TestCheckResourceAttrPair(resourceFullPath, "division_id",
+						authDivision.ResourceType+"."+divisionResourceLabel, "id"),
+				),
+			},
+			// Update
+			{
+				Config: GenerateResponseManagementResponseAssetResourceWithNameField(resourceLabel, fileName2, fullPath2, "data.genesyscloud_auth_division_home.home.id") +
+					"\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n",
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
+					resource.TestCheckResourceAttr(resourceFullPath, "name", fileName2),
+					provider.TestDefaultHomeDivision(resourceFullPath),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      resourceFullPath,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"filename",
 					"file_content_hash",
 				},
 			},

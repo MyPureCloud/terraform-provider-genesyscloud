@@ -39,6 +39,12 @@ func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, s
 	if _, err := files.DownloadExportFile(fullPath, fileName, *data.ContentLocation); err != nil {
 		return err
 	}
+
+	if *data.Name != "" {
+		configMap["name"] = *data.Name
+		resource.State.Attributes["name"] = *data.Name
+	}
+
 	configMap["filename"] = normalizedFilename
 	resource.State.Attributes["filename"] = normalizedFilename
 
@@ -61,4 +67,14 @@ resource "genesyscloud_responsemanagement_responseasset" "%s" {
     division_id = %s
 }
 `, resourceLabel, fileName, divisionId)
+}
+
+func GenerateResponseManagementResponseAssetResourceWithNameField(resourceLabel, name, fileName, divisionId string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_responsemanagement_responseasset" "%s" {
+    name        = "%s"
+    filename    = "%s"
+    division_id = %s
+}
+`, resourceLabel, name, fileName, divisionId)
 }
