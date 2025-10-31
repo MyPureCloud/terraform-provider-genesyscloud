@@ -96,6 +96,11 @@ var (
 				Optional:    true,
 				Elem:        contentOfferStylingConfigurationResource,
 			},
+			"image_alt_text": {
+				Description: "Image description text for accessibility compliance and assistive technology support.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 

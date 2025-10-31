@@ -10,6 +10,7 @@ resource "genesyscloud_journey_action_template" "terraform_test_-TEST-CASE-" {
     title        = "Dragon!"
     headline     = "Save 100%"
     body         = "Book now and add discount code 123456 at checkout to save 100%"
+    image_alt_text = "Image Description"
     call_to_action {
       text   = "Dragon!"
       url    = "https://www.genesys.com"

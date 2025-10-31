@@ -26,12 +26,13 @@ resource "genesyscloud_journey_action_template" "example_journey_action_template
   media_type  = "contentOffer"
   state       = "Active"
   content_offer {
-    image_url    = "https://api-cdn.inindca.com/uploads/v1/publicassets/images/d460a77c-9870-404f-9711-4be1cc247b66/d7c29719-095b-45d3-9ceb-f1368bcfcf3f.dragon.png"
-    display_mode = "Modal"
-    layout_mode  = "RightText"
-    title        = "Dragon!"
-    headline     = "Save 100%"
-    body         = "Book now and add discount code 123456 at checkout to save 100%"
+    image_url      = "https://api-cdn.inindca.com/uploads/v1/publicassets/images/d460a77c-9870-404f-9711-4be1cc247b66/d7c29719-095b-45d3-9ceb-f1368bcfcf3f.dragon.png"
+    display_mode   = "Modal"
+    layout_mode    = "RightText"
+    title          = "Dragon!"
+    headline       = "Save 100%"
+    body           = "Book now and add discount code 123456 at checkout to save 100%"
+    image_alt_text = "Image Description"
     call_to_action {
       text   = "Dragon!"
       url    = "https://www.genesys.com"
@@ -117,6 +118,7 @@ Optional:
 - `image_url` (String) URL for image displayed on the content offer.
 - `style` (Block Set) Properties customizing the styling of the content offer. (see [below for nested schema](#nestedblock--content_offer--style))
 - `title` (String) Title in the header of the content offer.
+- `image_alt_text` (String) Image description text for accessibility compliance and assistive technology support.
 
 <a id="nestedblock--content_offer--call_to_action"></a>
 ### Nested Schema for `content_offer.call_to_action`
