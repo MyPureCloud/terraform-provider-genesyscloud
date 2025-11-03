@@ -353,12 +353,6 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
 	}
 
-	if d.HasChange("bullseye_rings") {
-		if diagErr := validateBullseyeRingsRemoval(ctx, d, proxy); diagErr.HasError() {
-			return diagErr
-		}
-	}
-
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
 	if diagErr.HasError() {
 		return diagErr
@@ -372,6 +366,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if lastAgentRoutingMode != "" {
 		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
+	}
+
+	if d.HasChange("bullseye_rings") && updateQueue.Bullseye == nil {
+		if diagErr := clearBullseyeRingMemberGroups(ctx, d, &updateQueue, proxy); diagErr.HasError() {
+			return diagErr
+		}
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)

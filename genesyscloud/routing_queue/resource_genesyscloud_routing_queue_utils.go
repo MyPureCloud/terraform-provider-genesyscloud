@@ -1044,38 +1044,46 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	return nil, nil
 }
 
-func validateBullseyeRingsRemoval(ctx context.Context, d *schema.ResourceData, proxy *RoutingQueueProxy) diag.Diagnostics {
-	newRings := d.Get("bullseye_rings").([]any)
-	if len(newRings) > 0 {
-		return nil
+func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
+	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get queue %s error: %s", d.Id(), err), resp)
 	}
 
-	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
-	if err != nil || currentQueue == nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing queue %s", d.Id()), resp)
-	}
 	if currentQueue.Bullseye == nil || currentQueue.Bullseye.Rings == nil {
 		return nil
 	}
 
-	rings := *currentQueue.Bullseye.Rings
-	if len(rings) < 2 {
+	hasMemberGroups := false
+	for _, ring := range *currentQueue.Bullseye.Rings {
+		if ring.MemberGroups != nil && len(*ring.MemberGroups) > 0 {
+			hasMemberGroups = true
+			break
+		}
+	}
+
+	if !hasMemberGroups {
+		log.Printf("No member_groups found in bullseye rings for queue %s", d.Id())
 		return nil
 	}
+	log.Printf("Clearing member_groups from bullseye rings in queue %s", d.Id())
 
-	for i := 0; i < len(rings)-1; i++ {
-		ring := rings[i]
-		if ring.MemberGroups == nil {
-			continue
-		}
-
-		for _, mg := range *ring.MemberGroups {
-			if mg.MemberCount != nil && *mg.MemberCount > 0 {
-				return diag.Errorf("Configuration error: Cannot remove bullseye rings while members exist in the rings. Please remove members before changing routing.")
-			}
-		}
+	clearedRings := make([]platformclientv2.Ring, len(*currentQueue.Bullseye.Rings))
+	for i, ring := range *currentQueue.Bullseye.Rings {
+		clearedRings[i] = ring
+		clearedRings[i].MemberGroups = nil
 	}
 
+	updateQueue.Bullseye = &platformclientv2.Bullseye{
+		Rings: &clearedRings,
+	}
+
+	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), updateQueue)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
+	}
+
+	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
 	return nil
 }
 
