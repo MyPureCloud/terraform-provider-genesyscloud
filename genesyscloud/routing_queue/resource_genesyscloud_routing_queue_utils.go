@@ -1049,7 +1049,6 @@ func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, 
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get queue %s error: %s", d.Id(), err), resp)
 	}
-
 	if currentQueue.Bullseye == nil || currentQueue.Bullseye.Rings == nil {
 		return nil
 	}
@@ -1083,6 +1082,7 @@ func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, 
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
 	}
 
+	updateQueue.Bullseye = nil
 	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
 	return nil
 }
