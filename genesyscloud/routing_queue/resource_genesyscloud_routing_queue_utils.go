@@ -1063,14 +1063,16 @@ func validateBullseyeRingsRemoval(ctx context.Context, d *schema.ResourceData, p
 		return nil
 	}
 
-	outermostRing := rings[len(rings)-2]
-	if outermostRing.MemberGroups == nil {
-		return nil
-	}
+	for i := 0; i < len(rings)-1; i++ {
+		ring := rings[i]
+		if ring.MemberGroups == nil {
+			continue
+		}
 
-	for _, mg := range *outermostRing.MemberGroups {
-		if mg.MemberCount != nil && *mg.MemberCount > 0 {
-			return diag.Errorf("Configuration error: Cannot remove bullseye rings while members exist in the outermost ring (Ring %d). Please remove members from the outermost ring before changing routing.", len(rings)-1)
+		for _, mg := range *ring.MemberGroups {
+			if mg.MemberCount != nil && *mg.MemberCount > 0 {
+				return diag.Errorf("Configuration error: Cannot remove bullseye rings while members exist in the rings. Please remove members before changing routing.")
+			}
 		}
 	}
 
