@@ -3,8 +3,9 @@ package apple_integration
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -37,24 +38,10 @@ type appleIntegrationProxy struct {
 }
 
 // newAppleIntegrationProxy initializes the apple integration proxy with all of the data needed to communicate with Genesys Cloud
-func newAppleIntegrationProxy(v165Config interface{}) *appleIntegrationProxy {
-	// Convert v165 config to v171 config
-	v171Config := &platformclientv2.Configuration{}
-	if v165ConfigTyped, ok := v165Config.(*platformclientv2.Configuration); ok {
-		// Copy fields from v165 to v171 config
-		v171Config.BasePath = v165ConfigTyped.BasePath
-		v171Config.Host = v165ConfigTyped.Host
-		v171Config.Scheme = v165ConfigTyped.Scheme
-		v171Config.DefaultHeader = v165ConfigTyped.DefaultHeader
-		v171Config.UserAgent = v165ConfigTyped.UserAgent
-	} else {
-		// If it's already v171 config, use it directly
-		v171Config = v165Config.(*platformclientv2.Configuration)
-	}
-	
-	api := platformclientv2.NewConversationsApiWithConfig(v171Config)
+func newAppleIntegrationProxy(clientConfig *platformclientv2.Configuration) *appleIntegrationProxy {
+	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
 	return &appleIntegrationProxy{
-		clientConfig:                    v171Config,
+		clientConfig:                    clientConfig,
 		conversationsApi:                api,
 		createAppleIntegrationAttr:      createAppleIntegrationFn,
 		getAllAppleIntegrationAttr:      getAllAppleIntegrationFn,
@@ -67,7 +54,7 @@ func newAppleIntegrationProxy(v165Config interface{}) *appleIntegrationProxy {
 
 // getAppleIntegrationProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getAppleIntegrationProxy(clientConfig interface{}) *appleIntegrationProxy {
+func getAppleIntegrationProxy(clientConfig *platformclientv2.Configuration) *appleIntegrationProxy {
 	if internalProxy == nil {
 		internalProxy = newAppleIntegrationProxy(clientConfig)
 	}

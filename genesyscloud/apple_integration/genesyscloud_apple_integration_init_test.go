@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	v171 "github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -55,17 +54,8 @@ func initTestResources() {
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
 
-	// Convert v165 config to v171 config for apple_integration
-	v171Config := &v171.Configuration{
-		BasePath:      sdkConfig.BasePath,
-		Host:          sdkConfig.Host,
-		Scheme:        sdkConfig.Scheme,
-		DefaultHeader: sdkConfig.DefaultHeader,
-		UserAgent:     sdkConfig.UserAgent,
-	}
-
 	// Set the internal proxy for testing
-	internalProxy = newAppleIntegrationProxy(v171Config)
+	internalProxy = newAppleIntegrationProxy(sdkConfig)
 }
 
 // TestMain runs the test suite for the apple_integration package

@@ -3,13 +3,13 @@ package apple_integration
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	v165 "github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
-	v171 "github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
-	"log"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -24,28 +24,9 @@ import (
 The resource_genesyscloud_apple_integration.go contains all of the methods that perform the core logic for a resource.
 */
 
-// convertV165ToV171Config converts v165 configuration to v171 configuration
-func convertV165ToV171Config(v165Config *v165.Configuration) *v171.Configuration {
-	return &v171.Configuration{
-		BasePath:      v165Config.BasePath,
-		Host:          v165Config.Host,
-		Scheme:        v165Config.Scheme,
-		DefaultHeader: v165Config.DefaultHeader,
-		UserAgent:     v165Config.UserAgent,
-	}
-}
-
 // getAllAuthAppleIntegration retrieves all of the apple integration via Terraform in the Genesys Cloud and is used for the exporter
-func getAllAuthAppleIntegrations(ctx context.Context, clientConfig *v165.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	// Convert v165 config to v171 config
-	v171Config := &v171.Configuration{
-		BasePath:      clientConfig.BasePath,
-		Host:          clientConfig.Host,
-		Scheme:        clientConfig.Scheme,
-		DefaultHeader: clientConfig.DefaultHeader,
-		UserAgent:     clientConfig.UserAgent,
-	}
-	proxy := getAppleIntegrationProxy(v171Config)
+func getAllAuthAppleIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getAppleIntegrationProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	appleIntegrations, _, err := proxy.getAllAppleIntegration(ctx)
@@ -63,7 +44,7 @@ func getAllAuthAppleIntegrations(ctx context.Context, clientConfig *v165.Configu
 // createAppleIntegration is used by the apple_integration resource to create Genesys cloud apple integration
 func createAppleIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getAppleIntegrationProxy(convertV165ToV171Config(sdkConfig))
+	proxy := getAppleIntegrationProxy(sdkConfig)
 
 	appleIntegration := getAppleIntegrationFromResourceData(d)
 
@@ -82,7 +63,7 @@ func createAppleIntegration(ctx context.Context, d *schema.ResourceData, meta in
 // readAppleIntegration is used by the apple_integration resource to read an apple integration from genesys cloud
 func readAppleIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getAppleIntegrationProxy(convertV165ToV171Config(sdkConfig))
+	proxy := getAppleIntegrationProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAppleIntegration(), 5, resourceName)
 
 	log.Printf("Reading apple integration %s", d.Id())
@@ -119,7 +100,7 @@ func readAppleIntegration(ctx context.Context, d *schema.ResourceData, meta inte
 // updateAppleIntegration is used by the apple_integration resource to update an apple integration in Genesys Cloud
 func updateAppleIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getAppleIntegrationProxy(convertV165ToV171Config(sdkConfig))
+	proxy := getAppleIntegrationProxy(sdkConfig)
 
 	appleIntegration := getAppleIntegrationFromResourceData(d)
 
@@ -137,7 +118,7 @@ func updateAppleIntegration(ctx context.Context, d *schema.ResourceData, meta in
 // deleteAppleIntegration is used by the apple_integration resource to delete an apple integration from Genesys cloud
 func deleteAppleIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getAppleIntegrationProxy(convertV165ToV171Config(sdkConfig))
+	proxy := getAppleIntegrationProxy(sdkConfig)
 
 	_, err := proxy.deleteAppleIntegration(ctx, d.Id())
 	if err != nil {
