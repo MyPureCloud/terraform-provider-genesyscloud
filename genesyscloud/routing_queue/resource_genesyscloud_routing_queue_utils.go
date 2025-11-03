@@ -1045,15 +1045,26 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 }
 
 func validateBullseyeRingsRemoval(ctx context.Context, d *schema.ResourceData, proxy *RoutingQueueProxy) diag.Diagnostics {
+	newRings := d.Get("bullseye_rings").([]any)
+	if len(newRings) > 0 {
+		return nil
+	}
+
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil || currentQueue == nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing queue %s", d.Id()), resp)
 	}
+	if currentQueue.Bullseye == nil || currentQueue.Bullseye.Rings == nil {
+		return nil
+	}
 
-	if currentQueue.Bullseye != nil && currentQueue.Bullseye.Rings != nil {
-		for _, ring := range *currentQueue.Bullseye.Rings {
-			if ring.MemberGroups != nil && len(*ring.MemberGroups) > 0 {
-				return diag.Errorf("Cannot remove bullseye rings that contain members. All members must be removed from the bullseye rings before converting to standard routing.")
+	rings := *currentQueue.Bullseye.Rings
+	if len(rings) > 0 {
+		outermostRing := rings[len(rings)-2]
+
+		for _, mg := range *outermostRing.MemberGroups {
+			if mg.MemberCount != nil && *mg.MemberCount > 0 {
+				return diag.Errorf("Configuration error: Cannot remove bullseye rings while members exist in the outermost ring (Ring %d). Please remove members from the outermost ring before changing routing.", len(rings)-1)
 			}
 		}
 	}

@@ -354,11 +354,8 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	if d.HasChange("bullseye_rings") {
-		oldRings, newRings := d.GetChange("bullseye_rings")
-		if len(oldRings.([]any)) > 0 && len(newRings.([]any)) == 0 {
-			if err := validateBullseyeRingsRemoval(ctx, d, proxy); err != nil {
-				return err
-			}
+		if diagErr := validateBullseyeRingsRemoval(ctx, d, proxy); diagErr.HasError() {
+			return diagErr
 		}
 	}
 
