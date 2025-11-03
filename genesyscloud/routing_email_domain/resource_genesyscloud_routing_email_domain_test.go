@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
@@ -27,7 +27,9 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 		domainId            = "terraformdomain" + strings.Replace(uuid.NewString(), "-", "", -1)
 	)
 
-	CleanupRoutingEmailDomains()
+	if cleanupErr := CleanupRoutingEmailDomains("terraformdomain"); cleanupErr != nil {
+		t.Logf("Failed to clean up routing email domains: %v", cleanupErr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -64,7 +66,9 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 		mailFromDomain1     = "test." + domainId
 	)
 
-	CleanupRoutingEmailDomains()
+	if cleanupErr := CleanupRoutingEmailDomains("terraformdomain"); cleanupErr != nil {
+		t.Logf("Failed to clean up routing email domains: %v", cleanupErr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -111,7 +115,7 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 			if rs.Type != "genesyscloud_routing_email_domain" {
 				continue
 			}
-			_, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID)
+			_, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID, "")
 			if err != nil {
 				if util.IsStatus404(resp) {
 					continue

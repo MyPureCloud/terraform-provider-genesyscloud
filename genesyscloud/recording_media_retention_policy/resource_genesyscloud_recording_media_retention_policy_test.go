@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -1041,7 +1041,7 @@ func TestAccResourceMediaRetentionPolicyBasic(t *testing.T) {
 		description         = "Terraform test description"
 	)
 
-	if cleanupErr := CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
+	if cleanupErr := routingEmailDomain.CleanupRoutingEmailDomains(domainPrefix); cleanupErr != nil {
 		t.Logf("Failed to clean up routing email domains with prefix '%s': %s", domainPrefix, cleanupErr.Error())
 	}
 
@@ -2635,32 +2635,6 @@ func generateTeamIds(teamIds []Teams) string {
 		}
 	}
 	return teamIdsString
-}
-
-func CleanupRoutingEmailDomains(prefix string) error {
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
-		if getErr != nil {
-			return fmt.Errorf("failed to get page %v of routing email domains: %v", pageNum, getErr)
-		}
-
-		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-			break
-		}
-
-		for _, domain := range *routingEmailDomains.Entities {
-			if domain.Name != nil && strings.HasPrefix(*domain.Name, prefix) {
-				if _, deleteErr := routingAPI.DeleteRoutingEmailDomain(*domain.Id); deleteErr != nil {
-					return fmt.Errorf("failed to delete routing email domain %s: %s", *domain.Id, deleteErr)
-				}
-				time.Sleep(5 * time.Second)
-			}
-		}
-	}
-	return nil
 }
 
 func GenerateResourceRoles(skillID string, divisionIds ...string) string {

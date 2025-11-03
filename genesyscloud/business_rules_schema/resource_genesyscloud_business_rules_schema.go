@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -49,7 +49,7 @@ func createBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessRulesSchemaProxy(sdkConfig)
 
-	dataSchema, err := BuildSdkBusinessRulesSchema(d, nil)
+	dataSchema, err := BuildSdkCreateBusinessRulesSchema(d, nil)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "create: failed to build business rules schema", err)
 	}
@@ -57,20 +57,16 @@ func createBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 	log.Printf("Creating business rules schema")
 	schema, resp, err := proxy.createBusinessRulesSchema(ctx, dataSchema)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create business rules schema %s error: %s", *dataSchema.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create business rules schema. error: %s", err), resp)
 	}
 
 	d.SetId(*schema.Id)
 
 	// If enabled is set to 'false' do an update call to the schema
 	if enabled, ok := d.Get("enabled").(bool); ok && !enabled {
+		log.Printf("Created business rules schema %s: %s", *schema.Name, *schema.Id)
 		log.Printf("Updating business rules schema: %s, to set 'enabled' to 'false'", *schema.Name)
-		dataSchema.Version = platformclientv2.Int(1)
-		_, resp, err := proxy.updateBusinessRulesSchema(ctx, *schema.Id, dataSchema)
-		if err != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update business rules schema %s error: %s", d.Id(), err), resp)
-		}
-		log.Printf("Updated newly created business rules schema: %s. 'enabled' set to to 'false'", *schema.Name)
+		return updateBusinessRulesSchema(ctx, d, meta)
 	}
 
 	log.Printf("Created business rules schema %s: %s", *schema.Name, *schema.Id)
@@ -130,7 +126,7 @@ func updateBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get business rules schema By id %s error: %s", d.Id(), err), resp)
 	}
 
-	dataSchema, err := BuildSdkBusinessRulesSchema(d, curSchema.Version)
+	dataSchema, err := BuildSdkUpdateBusinessRulesSchema(d, curSchema.Version)
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "update: failed to build business rules schema", err)
 	}

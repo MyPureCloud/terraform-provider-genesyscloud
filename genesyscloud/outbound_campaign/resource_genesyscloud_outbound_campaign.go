@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -130,6 +130,15 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*campaign.DncLists))
 		}
 		resourcedata.SetNillableReference(d, "callable_time_set_id", campaign.CallableTimeSet)
+
+		// Add logging for call_analysis_response_set_id before setting it
+		if campaign.CallAnalysisResponseSet != nil && campaign.CallAnalysisResponseSet.Id != nil {
+			log.Printf("Campaign '%s' (ID: %s): Retrieved call_analysis_response_set_id from API: %s",
+				*campaign.Name, d.Id(), *campaign.CallAnalysisResponseSet.Id)
+		} else {
+			log.Printf("Campaign '%s' (ID: %s): call_analysis_response_set_id is nil/empty from API response",
+				*campaign.Name, d.Id())
+		}
 		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.CallAnalysisResponseSet)
 		resourcedata.SetNillableValue(d, "caller_name", campaign.CallerName)
 		resourcedata.SetNillableValue(d, "caller_address", campaign.CallerAddress)
