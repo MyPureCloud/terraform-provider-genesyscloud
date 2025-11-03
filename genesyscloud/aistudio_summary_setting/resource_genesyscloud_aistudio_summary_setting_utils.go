@@ -16,12 +16,12 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 // getAistudioSummarySettingFromResourceData maps data from schema ResourceData object to a platformclientv2.Summarysetting
 func getAistudioSummarySettingFromResourceData(d *schema.ResourceData) platformclientv2.Summarysetting {
 	return platformclientv2.Summarysetting{
-		Name:        platformclientv2.String(d.Get("name").(string)),
-		Language:    platformclientv2.String(d.Get("language").(string)),
-		SummaryType: platformclientv2.String(d.Get("summary_type").(string)),
-		Format:      platformclientv2.String(d.Get("format").(string)),
-		// TODO: MaskPII:           buildSummarySettingPII(d.Get("mask_p_i_i").([]interface{})),
-		// TODO: ParticipantLabels: buildSummarySettingParticipantLabels(d.Get("participant_labels").([]interface{})),
+		Name:               platformclientv2.String(d.Get("name").(string)),
+		Language:           platformclientv2.String(d.Get("language").(string)),
+		SummaryType:        platformclientv2.String(d.Get("summary_type").(string)),
+		Format:             platformclientv2.String(d.Get("format").(string)),
+		MaskPII:            buildSummarySettingPIIs(d.Get("mask_p_i_i").([]interface{})),
+		ParticipantLabels:  buildSummarySettingParticipantLabelss(d.Get("participant_labels").([]interface{})),
 		PredefinedInsights: lists.BuildSdkStringListFromInterfaceArray(d, "predefined_insights"),
 		CustomEntities:     buildSummarySettingCustomEntitys(d.Get("custom_entities").([]interface{})),
 		SettingType:        platformclientv2.String(d.Get("setting_type").(string)),
@@ -30,7 +30,7 @@ func getAistudioSummarySettingFromResourceData(d *schema.ResourceData) platformc
 }
 
 // buildSummarySettingPIIs maps an []interface{} into a Genesys Cloud *[]platformclientv2.Summarysettingpii
-func buildSummarySettingPIIs(summarySettingPIIs []interface{}) *[]platformclientv2.Summarysettingpii {
+func buildSummarySettingPIIs(summarySettingPIIs []interface{}) *platformclientv2.Summarysettingpii {
 	summarySettingPIIsSlice := make([]platformclientv2.Summarysettingpii, 0)
 	for _, summarySettingPII := range summarySettingPIIs {
 		var sdkSummarySettingPII platformclientv2.Summarysettingpii
@@ -44,11 +44,11 @@ func buildSummarySettingPIIs(summarySettingPIIs []interface{}) *[]platformclient
 		summarySettingPIIsSlice = append(summarySettingPIIsSlice, sdkSummarySettingPII)
 	}
 
-	return &summarySettingPIIsSlice
+	return &summarySettingPIIsSlice[0]
 }
 
 // buildSummarySettingParticipantLabelss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Summarysettingparticipantlabels
-func buildSummarySettingParticipantLabelss(summarySettingParticipantLabelss []interface{}) *[]platformclientv2.Summarysettingparticipantlabels {
+func buildSummarySettingParticipantLabelss(summarySettingParticipantLabelss []interface{}) *platformclientv2.Summarysettingparticipantlabels {
 	summarySettingParticipantLabelssSlice := make([]platformclientv2.Summarysettingparticipantlabels, 0)
 	for _, summarySettingParticipantLabels := range summarySettingParticipantLabelss {
 		var sdkSummarySettingParticipantLabels platformclientv2.Summarysettingparticipantlabels
@@ -63,7 +63,7 @@ func buildSummarySettingParticipantLabelss(summarySettingParticipantLabelss []in
 		summarySettingParticipantLabelssSlice = append(summarySettingParticipantLabelssSlice, sdkSummarySettingParticipantLabels)
 	}
 
-	return &summarySettingParticipantLabelssSlice
+	return &summarySettingParticipantLabelssSlice[0]
 }
 
 // buildSummarySettingCustomEntitys maps an []interface{} into a Genesys Cloud *[]platformclientv2.Summarysettingcustomentity
