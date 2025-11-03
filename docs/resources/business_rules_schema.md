@@ -115,6 +115,22 @@ resource "genesyscloud_business_rules_schema" "example_business_rules_schema" {
       "description" : "Custom attribute for string",
       "minLength" : 1,
       "maxLength" : 100
+    },
+    "custom_attribute_string_list" : {
+      "allOf" : [
+        {
+          "$ref" : "#/definitions/stringList"
+        }
+      ],
+      "title" : "custom_attribute_string_list",
+      "description" : "Custom attribute for string list",
+      "minItems" : 1,
+      "maxItems" : 10,
+      "uniqueItems" : true,
+      "items" : {
+        "minLength" : 3,
+        "maxLength" : 15
+      }
     }
   })
 }

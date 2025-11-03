@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -29,7 +29,7 @@ type createOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignPro
 type getAllOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy) (*[]platformclientv2.Campaign, *platformclientv2.APIResponse, error)
 type getOutboundCampaignIdByNameFunc func(ctx context.Context, p *outboundCampaignProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getOutboundCampaignByIdFunc func(ctx context.Context, p *outboundCampaignProxy, id string) (campaign *platformclientv2.Campaign, response *platformclientv2.APIResponse, err error)
-type updateOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, id string, campaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error)
+type updateOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, id string, campaign *platformclientv2.Campaign, onlyStatus bool) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error)
 type deleteOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, id string) (response *platformclientv2.APIResponse, err error)
 
 // outboundCampaignProxy contains all of the methods that call genesys cloud APIs.
@@ -95,8 +95,8 @@ func (p *outboundCampaignProxy) getOutboundCampaignById(ctx context.Context, id 
 }
 
 // updateOutboundCampaign updates a Genesys Cloud outbound campaign
-func (p *outboundCampaignProxy) updateOutboundCampaign(ctx context.Context, id string, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
-	return p.updateOutboundCampaignAttr(ctx, p, id, outboundCampaign)
+func (p *outboundCampaignProxy) updateOutboundCampaign(ctx context.Context, id string, outboundCampaign *platformclientv2.Campaign, onlyStatus bool) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
+	return p.updateOutboundCampaignAttr(ctx, p, id, outboundCampaign, onlyStatus)
 }
 
 // deleteOutboundCampaign deletes a Genesys Cloud outbound campaign by Id
@@ -119,15 +119,15 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 	}
 	log.Printf("Updated campaign '%s'", *outboundCampaign.Name)
 
-	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		log.Printf("Reading Outbound Campaign %s to ensure campaign_status is 'off'", campaignId)
 		outboundCampaign, resp, getErr := p.getOutboundCampaignById(ctx, campaignId)
 		if getErr != nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Campaign %s | error: %s", campaignId, getErr), resp))
 		}
-		log.Printf("Read Outbound Campaign %s", campaignId)
-		if *outboundCampaign.CampaignStatus == "on" {
-			time.Sleep(5 * time.Second)
+		log.Printf("Read Outbound Campaign %s, status is: %s", campaignId, *outboundCampaign.CampaignStatus)
+		if *outboundCampaign.CampaignStatus == "on" || *outboundCampaign.CampaignStatus == "stopping" {
+			time.Sleep(10 * time.Second)
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("campaign %s campaign_status is still %s", campaignId, *outboundCampaign.CampaignStatus), resp))
 		}
 		// Success
@@ -209,12 +209,15 @@ func getOutboundCampaignByIdFn(_ context.Context, p *outboundCampaignProxy, id s
 }
 
 // updateOutboundCampaignFn is an implementation of the function to update a Genesys Cloud outbound campaign
-func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
+func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string, outboundCampaign *platformclientv2.Campaign, onlyStatus bool) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
 	campaign, resp, err := getOutboundCampaignByIdFn(ctx, p, id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to campaign by id %s: %s", id, err)
 	}
 
+	if !onlyStatus {
+		outboundCampaign.CampaignStatus = campaign.CampaignStatus
+	}
 	outboundCampaign.Version = campaign.Version
 	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, false)
 	if err != nil {

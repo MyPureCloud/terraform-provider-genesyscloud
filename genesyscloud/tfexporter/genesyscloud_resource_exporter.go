@@ -40,7 +40,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -296,6 +296,18 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	diagErr = append(diagErr, g.retrieveSanitizedResourceMaps()...)
 	if diagErr.HasError() {
 		return diagErr
+	}
+
+	if !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+		currentFlowExporter := (*g.exporters)[architectFlow.ResourceType]
+
+		if currentFlowExporter != nil && len(currentFlowExporter.SanitizedResourceMap) > 0 {
+			newFlowExporter := resourceExporter.GetNewFlowResourceExporter()
+
+			newFlowExporter.SetSanitizedResourceMap(currentFlowExporter.GetSanitizedResourceMap())
+			(*g.exporters)[architectFlow.ResourceType] = newFlowExporter
+			tflog.Info(g.ctx, fmt.Sprintf("Replaced flow exporter with new exporter preserving %d flow resources in SanitizedResourceMap", len(currentFlowExporter.SanitizedResourceMap)))
+		}
 	}
 
 	// Step #3 Retrieve the individual genesys cloud object instances
@@ -653,10 +665,6 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			// The _BRCM prefix is meant to be an identifier so we can tell that the hash was generated here and not in the sanitizer.
 			resource.BlockLabel = resource.BlockLabel + "_BRCM" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
 			g.updateSanitizeMap(*g.exporters, resource)
-		}
-
-		if resource.Type == architectFlow.ResourceType && !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
-			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
 		}
 
 		// 4. Convert the instance state to a map

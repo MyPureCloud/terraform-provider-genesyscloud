@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -130,6 +130,15 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*campaign.DncLists))
 		}
 		resourcedata.SetNillableReference(d, "callable_time_set_id", campaign.CallableTimeSet)
+
+		// Add logging for call_analysis_response_set_id before setting it
+		if campaign.CallAnalysisResponseSet != nil && campaign.CallAnalysisResponseSet.Id != nil {
+			log.Printf("Campaign '%s' (ID: %s): Retrieved call_analysis_response_set_id from API: %s",
+				*campaign.Name, d.Id(), *campaign.CallAnalysisResponseSet.Id)
+		} else {
+			log.Printf("Campaign '%s' (ID: %s): call_analysis_response_set_id is nil/empty from API response",
+				*campaign.Name, d.Id())
+		}
 		resourcedata.SetNillableReference(d, "call_analysis_response_set_id", campaign.CallAnalysisResponseSet)
 		resourcedata.SetNillableValue(d, "caller_name", campaign.CallerName)
 		resourcedata.SetNillableValue(d, "caller_address", campaign.CallerAddress)
@@ -154,6 +163,13 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			_ = d.Set("skill_columns", *campaign.SkillColumns)
 		}
 		resourcedata.SetNillableValue(d, "auto_answer", campaign.CallbackAutoAnswer)
+
+		if _, newVal := d.GetChange("campaign_status"); newVal == "on" && *campaign.CampaignStatus == "complete" {
+			// skips the consistency check so that the campaign can be re-enabled after completion
+			log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
+			return nil
+		}
+
 		log.Printf("Read Outbound Campaign %s %s", d.Id(), *campaign.Name)
 		return cc.CheckState(d)
 	})
@@ -168,7 +184,7 @@ func updateOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	campaign := getOutboundCampaignFromResourceData(d)
 
 	log.Printf("Updating Outbound Campaign %s", *campaign.Name)
-	campaignSdk, resp, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign)
+	campaignSdk, resp, err := proxy.updateOutboundCampaign(ctx, d.Id(), &campaign, false)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update campaign %s error: %s", *campaign.Name, err), resp)
 	}
@@ -188,26 +204,26 @@ func deleteOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta in
 	clientConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignProxy(clientConfig)
 
-	campaignStatus := d.Get("campaign_status").(string)
+	currentCampaign, resp, err := proxy.getOutboundCampaignById(ctx, d.Id())
+	if err != nil {
+		if util.IsStatus404(resp) {
+			return nil
+		}
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Outbound Campaign %s before deletion error: %s", d.Id(), err), resp)
+	}
 
 	// Campaigns have to be turned off before they can be deleted
-	if campaignStatus == "on" {
-		currentCampaign, resp, err := proxy.getOutboundCampaignById(ctx, d.Id())
-		if err != nil {
-			log.Printf("failed to read campaign %s: %v %v", d.Id(), err, resp)
+	if *currentCampaign.CampaignStatus == "on" {
+		log.Printf("Turning off Outbound Campaign before deletion")
+		if diagErr := proxy.turnOffCampaign(ctx, d.Id()); diagErr != nil {
+			return diagErr
 		}
-		if *currentCampaign.CampaignStatus == "complete" {
-			log.Printf("Deleting campaign %s in 'complete' state", *currentCampaign.Id)
-		} else {
-			log.Printf("Turning off Outbound Campaign before deletion")
-			if diagErr := proxy.turnOffCampaign(ctx, d.Id()); diagErr != nil {
-				return diagErr
-			}
-		}
+	} else if *currentCampaign.CampaignStatus == "complete" {
+		log.Printf("Deleting campaign %s in 'complete' state", *currentCampaign.Id)
 	}
 
 	log.Printf("Deleting Outbound Campaign %s", d.Id())
-	resp, err := proxy.deleteOutboundCampaign(ctx, d.Id())
+	resp, err = proxy.deleteOutboundCampaign(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete campaign %s error: %s", d.Id(), err), resp)
 	}
