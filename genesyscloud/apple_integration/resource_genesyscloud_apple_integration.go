@@ -84,7 +84,9 @@ func readAppleIntegration(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "business_name", appleIntegration.BusinessName)
 		resourcedata.SetNillableValue(d, "logo_url", appleIntegration.LogoUrl)
 		resourcedata.SetNillableValue(d, "status", appleIntegration.Status)
-		// RecipientId field not available in v171 SDK
+		if appleIntegration.Recipient != nil {
+			d.Set("recipient_id", *appleIntegration.Recipient.Id)
+		}
 		resourcedata.SetNillableValue(d, "create_status", appleIntegration.CreateStatus)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "create_error", appleIntegration.CreateError, flattenErrorBody)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "apple_i_message_app", appleIntegration.AppleIMessageApp, flattenAppleIMessageApp)

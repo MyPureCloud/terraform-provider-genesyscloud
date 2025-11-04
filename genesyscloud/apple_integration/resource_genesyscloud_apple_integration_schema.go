@@ -68,6 +68,16 @@ func ResourceAppleIntegration() *schema.Resource {
 
 	supportedContentReferenceResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			`id`: {
+				Description: `The SupportedContent profile ID`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`self_uri`: {
+				Description: `The SupportedContent profile URI`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			`name`: {
 				Description: `The SupportedContent profile name`,
 				Optional:    true,
@@ -165,6 +175,16 @@ func ResourceAppleIntegration() *schema.Resource {
 
 	messagingSettingReferenceResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			`id`: {
+				Description: `The messaging Setting profile ID`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`self_uri`: {
+				Description: `The messaging Setting profile URI`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			`name`: {
 				Description: `The messaging Setting profile name`,
 				Optional:    true,
@@ -193,7 +213,23 @@ func ResourceAppleIntegration() *schema.Resource {
 	}
 
 	errorBodyResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{},
+		Schema: map[string]*schema.Schema{
+			`message`: {
+				Description: `Error message`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`code`: {
+				Description: `Error code`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`status`: {
+				Description: `Error status`,
+				Optional:    true,
+				Type:        schema.TypeInt,
+			},
+		},
 	}
 
 	appleIMessageAppResource := &schema.Resource{
@@ -343,6 +379,7 @@ func ResourceAppleIntegration() *schema.Resource {
 			`supported_content`: {
 				Description: `Defines the SupportedContent profile configured for an integration`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        supportedContentReferenceResource,
@@ -372,6 +409,7 @@ func ResourceAppleIntegration() *schema.Resource {
 			`status`: {
 				Description: `The status of the Apple Integration`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`recipient_id`: {
@@ -382,11 +420,13 @@ func ResourceAppleIntegration() *schema.Resource {
 			`create_status`: {
 				Description: `Status of asynchronous create operation`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`create_error`: {
 				Description: `Error information returned, if createStatus is set to Error`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        errorBodyResource,
