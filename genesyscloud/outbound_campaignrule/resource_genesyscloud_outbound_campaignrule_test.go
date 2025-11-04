@@ -1102,7 +1102,7 @@ func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
 		contactListNameEmail                   = "Terraform test contact list " + uuid.NewString()
 		campaignLabelEmail                     = "email_campaign"
 		campaignNameEmail                      = "TF email campaign " + uuid.NewString()
-		domainId                               = "emailcampaign.inindca.com"
+		domainId                               = "terraformemailconfig.com"
 		emailContentTemplate1Label             = "email_content_template_1"
 		emailContentTemplate1Name              = "TF email template " + uuid.NewString()
 		responseManagementResponseTypeEmail    = "CampaignEmailTemplate"
@@ -1204,10 +1204,6 @@ func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
 
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
 		smsConfigSenderSMSPhoneNumber = "+18159823725"
-	}
-
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "dca" {
-		smsConfigSenderSMSPhoneNumber = "+12567156917"
 	}
 
 	config, err := provider.AuthorizeSdk()
