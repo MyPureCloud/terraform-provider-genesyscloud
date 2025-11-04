@@ -415,6 +415,7 @@ func ResourceAppleIntegration() *schema.Resource {
 			`recipient_id`: {
 				Description: `The recipient associated to the Apple messaging Integration. This recipient is used to associate a flow to an integration`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`create_status`: {

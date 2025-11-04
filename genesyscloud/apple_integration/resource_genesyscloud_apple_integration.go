@@ -107,11 +107,13 @@ func updateAppleIntegration(ctx context.Context, d *schema.ResourceData, meta in
 	appleIntegration := getAppleIntegrationFromResourceData(d)
 
 	log.Printf("Updating apple integration %s", *appleIntegration.Name)
-	updatedAppleIntegration, _, err := proxy.updateAppleIntegration(ctx, d.Id(), &appleIntegration)
-	if err != nil {
-		return diag.Errorf("Failed to update apple integration %s: %s", d.Id(), err)
+	updatedAppleIntegration, _, updateErr := proxy.updateAppleIntegration(ctx, d.Id(), &appleIntegration)
+	if updateErr != nil {
+		return diag.Errorf("Failed to update apple integration %s: %s", d.Id(), updateErr)
 	}
-	appleIntegration = *updatedAppleIntegration
+	if updatedAppleIntegration != nil {
+		appleIntegration = *updatedAppleIntegration
+	}
 
 	log.Printf("Updated apple integration %s", *appleIntegration.Id)
 	return readAppleIntegration(ctx, d, meta)

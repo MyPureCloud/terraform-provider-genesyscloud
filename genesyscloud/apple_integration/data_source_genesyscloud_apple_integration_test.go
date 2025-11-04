@@ -2,6 +2,7 @@ package apple_integration
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -10,13 +11,17 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
+// TestAccDataSourceAppleIntegration tests the apple integration data source.
+// Uses APPLE_MESSAGES_BUSINESS_ID environment variable for real business ID, otherwise uses fake ID.
+// - Fake ID: Creates integration with incomplete status (expected for testing)
+// - Real ID: Creates fully functional integration for comprehensive testing
 func TestAccDataSourceAppleIntegration(t *testing.T) {
 	var (
-		resourceLabel    = "test-apple-integration"
-		dataSourceLabel  = "test-apple-integration-data"
-		randomString     = uuid.NewString()
-		integrationName  = "Test Apple Integration " + randomString
-		businessId       = "test-business-" + randomString
+		resourceLabel   = "test-apple-integration"
+		dataSourceLabel = "test-apple-integration-data"
+		randomString    = uuid.NewString()
+		integrationName = "Test Apple Integration " + randomString
+		businessId      = getTestBusinessId()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -55,4 +60,21 @@ func generateAppleIntegrationDataSource(resourceLabel, name, dependsOnResource s
 		depends_on = [%s]
 	}
 	`, resourceName, resourceLabel, name, dependsOnResource)
+}
+
+// getTestBusinessId returns business ID for testing:
+// - If APPLE_MESSAGES_BUSINESS_ID env var is set: returns real business ID
+// - Otherwise: returns fake "test-business-{uuid}" for error scenario testing
+func getTestBusinessId() string {
+	if businessId := os.Getenv("APPLE_MESSAGES_BUSINESS_ID"); businessId != "" {
+		return businessId
+	}
+	// Return fake business ID - creates integration with incomplete status for error testing
+	return "test-business-" + uuid.NewString()
+}
+
+// isUsingRealBusinessId returns true when APPLE_MESSAGES_BUSINESS_ID environment variable is set
+// Used to conditionally expect errors (fake ID) vs success (real ID) in tests
+func isUsingRealBusinessId() bool {
+	return os.Getenv("APPLE_MESSAGES_BUSINESS_ID") != ""
 }
