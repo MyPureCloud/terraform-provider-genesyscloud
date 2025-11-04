@@ -1,11 +1,20 @@
 package outbound_campaignrule
 
 import (
+	"bytes"
 	"fmt"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	responseManagementResponse "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	"io"
+	"log"
 	"math/rand"
+	"net/http"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	outboundSequence "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -1077,6 +1086,441 @@ data "genesyscloud_auth_division_home" "home" {}
 	})
 }
 
+func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
+
+	var (
+		resourceLabel = "campaign_rule"
+		ruleName      = "Terraform test rule " + uuid.NewString()
+
+		contactListLabelSms           = "contact_list_sms"
+		contactListNameSms            = "Terraform test contact list " + uuid.NewString()
+		campaignLabelSms              = "sms_campaign"
+		campaignNameSms               = "TF sms campaign " + uuid.NewString()
+		smsConfigSenderSMSPhoneNumber = "+19198793429"
+
+		contactListLabelEmail                  = "contact_list_email"
+		contactListNameEmail                   = "Terraform test contact list " + uuid.NewString()
+		campaignLabelEmail                     = "email_campaign"
+		campaignNameEmail                      = "TF email campaign " + uuid.NewString()
+		domainId                               = "emailcampaign.inindca.com"
+		emailContentTemplate1Label             = "email_content_template_1"
+		emailContentTemplate1Name              = "TF email template " + uuid.NewString()
+		responseManagementResponseTypeEmail    = "CampaignEmailTemplate"
+		responseManagementResponseTypeSms      = "CampaignSmsTemplate"
+		responseManagementLibraryResourceLabel = "email-config-test"
+		responseManagementLibraryName          = "Terraform Test Response Management Library " + uuid.NewString()
+		responseManagementLibraryResource      = responseManagementLibrary.GenerateResponseManagementLibraryResource(
+			responseManagementLibraryResourceLabel,
+			responseManagementLibraryName,
+		)
+		emailContentTemplate1Resource = responseManagementResponse.GenerateResponseManagementResponseResource(
+			emailContentTemplate1Label,
+			emailContentTemplate1Name,
+			[]string{responseManagementLibrary.ResourceType + "." + responseManagementLibraryResourceLabel + ".id"},
+			util.NullValue,
+			util.NullValue,
+			strconv.Quote(responseManagementResponseTypeEmail),
+			[]string{},
+			responseManagementResponse.GenerateTextsBlock(
+				"test email",
+				"text/plain",
+				strconv.Quote("subject"),
+			),
+			responseManagementResponse.GenerateTextsBlock(
+				"Testing Email Content",
+				"text/html",
+				strconv.Quote("body"),
+			),
+		)
+
+		emailContentTemplate2Label    = "email_content_template_2"
+		emailContentTemplate2Name     = "TF email template " + uuid.NewString()
+		emailContentTemplate2Resource = responseManagementResponse.GenerateResponseManagementResponseResource(
+			emailContentTemplate2Label,
+			emailContentTemplate2Name,
+			[]string{responseManagementLibrary.ResourceType + "." + responseManagementLibraryResourceLabel + ".id"},
+			util.NullValue,
+			util.NullValue,
+			strconv.Quote(responseManagementResponseTypeEmail),
+			[]string{},
+			responseManagementResponse.GenerateTextsBlock(
+				"test email",
+				"text/plain",
+				strconv.Quote("subject"),
+			),
+			responseManagementResponse.GenerateTextsBlock(
+				"Testing Email Content",
+				"text/html",
+				strconv.Quote("body"),
+			),
+		)
+
+		smsContentTemplate1Label    = "sms_content_template_1"
+		smsContentTemplate1Name     = "TF sms template " + uuid.NewString()
+		smsContentTemplate1Resource = responseManagementResponse.GenerateResponseManagementResponseResource(
+			smsContentTemplate1Label,
+			smsContentTemplate1Name,
+			[]string{responseManagementLibrary.ResourceType + "." + responseManagementLibraryResourceLabel + ".id"},
+			util.NullValue,
+			util.NullValue,
+			strconv.Quote(responseManagementResponseTypeSms),
+			[]string{},
+			responseManagementResponse.GenerateTextsBlock(
+				"test sms",
+				"text/plain",
+				strconv.Quote("subject"),
+			),
+		)
+
+		campaignRuleSmsCampaignIds   = []string{"genesyscloud_outbound_messagingcampaign." + campaignLabelSms + ".id"}
+		campaignRuleEmailCampaignIds = []string{"genesyscloud_outbound_messagingcampaign." + campaignLabelEmail + ".id"}
+
+		// Condition 1
+		condition1Type     = "campaignContactsMessaged"
+		condition1Operator = "greaterThan"
+
+		condition1Value = "10"
+
+		// Condition 1 update
+		condition1TypeUpdate      = "campaignProgress"
+		condition1OperatorUpdated = "greaterThan"
+		condition1ValueUpdated    = "0.5"
+
+		// Action 1
+		action1Type            = "setCampaignMessagesPerMinute"
+		emailMessagesPerMinute = "15"
+		smsMessagesPerMinute   = "20"
+
+		// Action 2
+		action2Type          = "changeCampaignTemplate"
+		emailContentTemplate = "genesyscloud_responsemanagement_response." + emailContentTemplate2Label + ".id"
+
+		// Action 1 update
+		messagesPerMinute = "25"
+
+		//// Action 2 update
+		smsContentTemplate = "genesyscloud_responsemanagement_response." + smsContentTemplate1Label + ".id"
+	)
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+		smsConfigSenderSMSPhoneNumber = "+18159823725"
+	}
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "dca" {
+		smsConfigSenderSMSPhoneNumber = "+12567156917"
+	}
+
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Errorf("failed to authorize client: %v", err)
+	}
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		api := platformclientv2.NewRoutingApiWithConfig(config)
+		err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
+		if err != nil {
+			t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
+		}
+		//Do not delete the smsPhoneNumber
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			// Create
+			{
+				PreConfig: func() {
+					// Can be removed once `api/v2/routing/email/outbound/*` is implemented in provider
+					err := CheckOutboundDomainExists(domainId)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) +
+					generateSmsCampaignForCampaignRuleTests(
+						contactListLabelSms,
+						contactListNameSms,
+						campaignLabelSms,
+						campaignNameSms,
+						smsConfigSenderSMSPhoneNumber,
+					) +
+					responseManagementLibraryResource +
+					emailContentTemplate1Resource +
+					emailContentTemplate2Resource +
+					smsContentTemplate1Resource +
+					generateEmailCampaignForCampaignRuleTests(
+						contactListLabelEmail,
+						contactListNameEmail,
+						campaignLabelEmail,
+						campaignNameEmail,
+						emailContentTemplate1Label,
+						domainId,
+					) +
+					generateOutboundCampaignRule(
+						resourceLabel,
+						ruleName,
+						util.FalseValue, // enabled
+						util.FalseValue, // matchAnyConditions
+						generateCampaignRuleEntity(
+							[]string{},
+							[]string{},
+							campaignRuleSmsCampaignIds,
+							campaignRuleEmailCampaignIds,
+						),
+						generateCampaignRuleConditions(
+							"",
+							condition1Type,
+							generateCampaignRuleParameters(
+								condition1Operator,
+								condition1Value,
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							action1Type,
+							[]string{},
+							[]string{},
+							campaignRuleSmsCampaignIds,
+							campaignRuleEmailCampaignIds,
+							"",
+							generateCampaignRuleParameters(
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								smsMessagesPerMinute,
+								emailMessagesPerMinute,
+								"",
+								"",
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							action2Type,
+							[]string{},
+							[]string{},
+							[]string{},
+							[]string{},
+							util.TrueValue,
+							generateCampaignRuleParameters(
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								emailContentTemplate,
+							),
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "match_any_conditions", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "enabled", util.FalseValue),
+
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_entities.0.sms_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelSms, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_entities.0.email_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelEmail, "id"),
+
+					// Condition 1
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_conditions.0.condition_type", condition1Type),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_conditions.0.parameters.0.operator", condition1Operator),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_conditions.0.parameters.0.value", condition1Value),
+
+					// Action 1
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.action_type", action1Type),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.parameters.0.sms_messages_per_minute", smsMessagesPerMinute),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.parameters.0.email_messages_per_minute", emailMessagesPerMinute),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.campaign_rule_action_entities.0.sms_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelSms, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.campaign_rule_action_entities.0.email_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelEmail, "id"),
+
+					// Action 2
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.action_type", action2Type),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.email_content_template",
+						"genesyscloud_responsemanagement_response."+emailContentTemplate2Label, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.campaign_rule_action_entities.0.use_triggering_entity", util.TrueValue),
+				),
+			},
+			// Update
+			{
+				Config: fmt.Sprintf(`
+			data "genesyscloud_auth_division_home" "home" {}
+			`) +
+					responseManagementLibraryResource +
+					emailContentTemplate1Resource +
+					emailContentTemplate2Resource +
+					smsContentTemplate1Resource +
+					generateSmsCampaignForCampaignRuleTests(
+						contactListLabelSms,
+						contactListNameSms,
+						campaignLabelSms,
+						campaignNameSms,
+						smsConfigSenderSMSPhoneNumber,
+					) +
+					generateEmailCampaignForCampaignRuleTests(
+						contactListLabelEmail,
+						contactListNameEmail,
+						campaignLabelEmail,
+						campaignNameEmail,
+						emailContentTemplate1Label,
+						domainId,
+					) +
+					generateOutboundCampaignRule(
+						resourceLabel,
+						ruleName,
+						util.FalseValue, // enabled
+						util.FalseValue, // matchAnyConditions
+						generateCampaignRuleEntity(
+							[]string{},
+							[]string{},
+							campaignRuleSmsCampaignIds,
+							campaignRuleEmailCampaignIds,
+						),
+						generateCampaignRuleConditions(
+							"",
+							condition1TypeUpdate,
+							generateCampaignRuleParameters(
+								condition1OperatorUpdated,
+								condition1ValueUpdated,
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							action1Type,
+							[]string{},
+							[]string{},
+							campaignRuleSmsCampaignIds,
+							campaignRuleEmailCampaignIds,
+							"",
+							generateCampaignRuleParameters(
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								messagesPerMinute,
+								"",
+								"",
+								"",
+								"",
+							),
+						),
+						generateCampaignRuleActions(
+							"",
+							action2Type,
+							[]string{},
+							[]string{},
+							[]string{},
+							[]string{},
+							util.TrueValue,
+							generateCampaignRuleParameters(
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								"",
+								smsContentTemplate,
+								emailContentTemplate,
+							),
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "match_any_conditions", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "enabled", util.FalseValue),
+
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_entities.0.sms_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelSms, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_entities.0.email_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelEmail, "id"),
+
+					// Condition 1
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_conditions.0.condition_type", condition1TypeUpdate),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_conditions.0.parameters.0.operator", condition1OperatorUpdated),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_conditions.0.parameters.0.value", condition1ValueUpdated),
+
+					// Action 1
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.action_type", action1Type),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.parameters.0.messages_per_minute", messagesPerMinute),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.campaign_rule_action_entities.0.sms_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelSms, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.campaign_rule_action_entities.0.email_campaign_ids.0",
+						"genesyscloud_outbound_messagingcampaign."+campaignLabelEmail, "id"),
+
+					// Action 2
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.action_type", action2Type),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.email_content_template",
+						"genesyscloud_responsemanagement_response."+emailContentTemplate2Label, "id"),
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.sms_content_template",
+						"genesyscloud_responsemanagement_response."+smsContentTemplate1Label, "id"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.campaign_rule_action_entities.0.use_triggering_entity", util.TrueValue),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_outbound_campaignrule." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyCampaignRuleDestroyed,
+	})
+}
+
 func generateOutboundCampaignRule(resourceLabel string, name string, enabled string, matchAnyConditions string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_campaignrule" "%s" {
@@ -1371,4 +1815,240 @@ resource "genesyscloud_outbound_callanalysisresponseset" "%s" {
 		flowName,          // genesyscloud_outbound_callanalysisresponseset.responses.callable_person.name
 		flowResourceLabel, // genesyscloud_outbound_callanalysisresponseset.responses.callable_person.data
 	)
+}
+
+func generateSmsCampaignForCampaignRuleTests(
+	contactListLabel string,
+	contactListName string,
+	smsCampaignLabel string,
+	smsCampaignName string,
+	smsPhoneNumber string,
+) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_contact_list" "%s" {
+	name 						 = "%s"
+	column_names                 = ["Cell", "Message"]
+	phone_columns {
+		column_name = "Cell"
+		type        = "cell"
+		callable_time_column = "Cell"
+	}
+}
+
+resource "genesyscloud_outbound_messagingcampaign" "%s" {
+	name                 = "%s"
+	division_id          = data.genesyscloud_auth_division_home.home.id
+	campaign_status      = "off"
+	contact_list_id      = genesyscloud_outbound_contact_list.%s.id
+	always_running       = true
+	messages_per_minute     = 10
+	sms_config {
+		phone_column            = "Cell"
+		sender_sms_phone_number = "%s"
+		message_column 			= "Message"
+	}
+}
+`,
+		contactListLabel,
+		contactListName,
+		smsCampaignLabel,
+		smsCampaignName,
+		contactListLabel, //genesyscloud_outbound_messagingcampaign.contact_list_id
+		smsPhoneNumber,
+	)
+}
+
+func generateEmailCampaignForCampaignRuleTests(
+	contactListLabel string,
+	contactListName string,
+	smsCampaignLabel string,
+	smsCampaignName string,
+	contentTemplateLabel string,
+	emailDomainId string,
+) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_outbound_contact_list" "%s" {
+	name 						 = "%s"
+	column_names                 = ["Work", "Message"]
+	automatic_time_zone_mapping  = false
+	email_columns {
+		column_name             = "Work"
+		type                    = "WORK"
+	}
+}
+
+resource "genesyscloud_outbound_messagingcampaign" "%s" {
+	name                 = "%s"
+	division_id          = data.genesyscloud_auth_division_home.home.id
+	campaign_status      = "off"
+	contact_list_id      = genesyscloud_outbound_contact_list.%s.id
+	always_running       = true
+	messages_per_minute     = 10
+	email_config {
+		email_columns = ["Work"]
+		content_template_id = genesyscloud_responsemanagement_response.%s.id
+		from_address {
+			domain_id   = "%s"
+			local_part  = "TestEmail"
+		}
+	}
+}
+`,
+		contactListLabel,
+		contactListName,
+		smsCampaignLabel,
+		smsCampaignName,
+		contactListLabel,     //genesyscloud_outbound_messagingcampaign.contact_list_id
+		contentTemplateLabel, //genesyscloud_outbound_messagingcampaign.email_config.content_template_id
+		emailDomainId,        //genesyscloud_outbound_messagingcampaign.email_config.from_address.domain_id
+	)
+}
+
+func logResponseBody(response *http.Response) {
+	if response.Body == nil {
+		return
+	}
+	buf, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Print("Error reading response body")
+		return
+	}
+	log.Printf("Response body: %v", string(buf))
+
+	reader := io.NopCloser(bytes.NewBuffer(buf))
+	response.Body = reader
+}
+
+func CheckOutboundDomainExists(id string) error {
+	config, _ := provider.AuthorizeSdk()
+	routingApi := platformclientv2.NewRoutingApiWithConfig(config)
+
+	log.Printf("Checking if outbound domain (%s) exists", id)
+	outboundDomain, resp, err := routingApi.GetRoutingEmailOutboundDomain(id)
+	if err != nil && resp.StatusCode != http.StatusNotFound {
+		return fmt.Errorf("error getting outbound domain (%s): %v", id, err)
+	}
+
+	if isDomainVerified(outboundDomain) {
+		log.Printf("Outbound domain (%s) exists and is verified", id)
+		return nil
+	}
+
+	if resp.StatusCode == 404 {
+		// outbound domain for test does not exist so create it
+		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
+		_, apiResp, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomainrequest{
+			Id: &id,
+		})
+		if postErr != nil {
+			if apiResp != nil {
+				if apiResp.Response != nil {
+					status := apiResp.Response.Status
+					log.Printf("Status: %s", status)
+					logResponseBody(apiResp.Response)
+				} else {
+					log.Print("apiResp.Response is nil")
+				}
+			} else {
+				log.Print("apiResp is nil")
+			}
+
+			return fmt.Errorf("failed to create outbound domain: %v", postErr)
+		}
+
+		log.Printf("Outbound domain (%s) created", id)
+		time.Sleep(3 * time.Second)
+	}
+
+	// ensure domain is verified
+	if !isDomainVerified(outboundDomain) {
+		log.Printf("Verifying outbound domain (%s)...", id)
+
+		result, _, putErr := routingApi.PutRoutingEmailOutboundDomainActivation(id)
+		if putErr != nil {
+			return fmt.Errorf("failed to verify outbound domain (%s): %v", id, err)
+		}
+
+		if checkDomainVerification(result) {
+			log.Printf("Outbound domain (%s) verified", id)
+		}
+	}
+	return nil
+}
+
+func isDomainVerified(domain *platformclientv2.Outbounddomain) bool {
+	if domain == nil ||
+		domain.DkimVerificationResult == nil ||
+		domain.CnameVerificationResult == nil ||
+		domain.DkimVerificationResult.Status == nil ||
+		domain.CnameVerificationResult.Status == nil {
+		return false
+	}
+
+	return *domain.DkimVerificationResult.Status == "VERIFIED" &&
+		*domain.CnameVerificationResult.Status == "VERIFIED"
+}
+
+func checkDomainVerification(domain *platformclientv2.Emailoutbounddomainresult) bool {
+	if domain == nil ||
+		domain.DnsTxtSendingRecord == nil ||
+		domain.DnsCnameBounceRecord == nil ||
+		domain.DnsTxtSendingRecord.VerificationStatus == nil ||
+		domain.DnsCnameBounceRecord.VerificationStatus == nil {
+		return false
+	}
+
+	return *domain.DnsTxtSendingRecord.VerificationStatus == "Verified" &&
+		*domain.DnsCnameBounceRecord.VerificationStatus == "Verified"
+}
+
+func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclientv2.RoutingApi) error {
+	var (
+		phoneNumberType = "local"
+		countryCode     = "US"
+		status          string
+		maxRetries      = 10
+	)
+
+	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber, "compliance")
+	if resp.StatusCode == 200 {
+		log.Printf("Sms number (%s) already exists", inputSmsPhoneNumber)
+		// Number already exists
+		return nil
+	} else if resp.StatusCode == http.StatusNotFound {
+		log.Printf("Sms number (%s) does not exist. Creating...", inputSmsPhoneNumber)
+		body := platformclientv2.Smsphonenumberprovision{
+			PhoneNumber:     &inputSmsPhoneNumber,
+			PhoneNumberType: &phoneNumberType,
+			CountryCode:     &countryCode,
+		}
+		// POST /api/v2/routing/sms/phonenumbers
+		address, _, err := api.PostRoutingSmsPhonenumbers(body)
+		if err != nil {
+			return err
+		}
+		// Ensure status transitions to complete before proceeding
+		for i := 0; i <= maxRetries; i++ {
+			time.Sleep(3 * time.Second)
+			// GET /api/v2/routing/sms/phonenumbers/{addressId}
+			sdkSmsPhoneNumber, _, err := api.GetRoutingSmsPhonenumber(*address.PhoneNumber, "compliance")
+			if err != nil {
+				return err
+			}
+			status = *sdkSmsPhoneNumber.ProvisioningStatus.State
+			if status == "Running" {
+				if i == maxRetries {
+					return fmt.Errorf(`sms phone number status did not transition to "Completed" within max retries %v`, maxRetries)
+				}
+				continue
+			}
+			break
+		}
+		if status == "Failed" {
+			return fmt.Errorf(`sms phone number provisioning failed`)
+		}
+	} else if err != nil {
+		return fmt.Errorf("error checking for sms phone number %v: %v", inputSmsPhoneNumber, err)
+	}
+	return nil
 }

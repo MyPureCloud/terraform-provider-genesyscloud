@@ -31,13 +31,11 @@ func getAllowedActions() []string {
 		"setCampaignPriority",
 		"recycleCampaign",
 		"setCampaignDialingMode",
-		// New actions
 		"setCampaignAbandonRate",
 		"setCampaignNumberOfLines",
 		"setCampaignWeight",
 		"setCampaignMaxCallsPerAgent",
 		"changeCampaignQueue",
-		// Digital campaigns
 		"changeCampaignTemplate",
 		"setCampaignMessagesPerMinute",
 	}
@@ -154,6 +152,13 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 				//ValidateFunc: validation.FloatAtLeast(0.1),
+				ValidateFunc: func(v interface{}, key string) (warns []string, errs []error) {
+					f, err := strconv.ParseFloat(v.(string), 64)
+					if err != nil || f <= 0.1 {
+						errs = append(errs, fmt.Errorf("%q must be a float > 0.1", key))
+					}
+					return nil, nil
+				},
 			},
 			`outbound_line_count`: {
 				Description: `Number of Outbound lines. Required for 'setCampaignNumberOfLines' action`,
@@ -187,6 +192,13 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 				//ValidateFunc: validation.FloatAtLeast(1.0),
+				ValidateFunc: func(v interface{}, key string) (warns []string, errs []error) {
+					f, err := strconv.ParseFloat(v.(string), 64)
+					if err != nil || f <= 1.0 {
+						errs = append(errs, fmt.Errorf("%q must be a float > 1.0", key))
+					}
+					return nil, nil
+				},
 			},
 			`queue_id`: {
 				Description: `The ID of the Queue. Required for 'changeCampaignQueue' action`,
@@ -200,7 +212,7 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					if v := val.(string); v != "" {
 						if num, err := strconv.Atoi(v); err != nil || num < 1 {
-							errs = append(errs, fmt.Errorf("%q must be an integer between 0 and 100 inclusive", key))
+							errs = append(errs, fmt.Errorf("%q must be a positive integer", key))
 						}
 					}
 					return
@@ -213,7 +225,7 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					if v := val.(string); v != "" {
 						if num, err := strconv.Atoi(v); err != nil || num < 1 {
-							errs = append(errs, fmt.Errorf("%q must be an integer between 0 and 100 inclusive", key))
+							errs = append(errs, fmt.Errorf("%q must be a positive integer", key))
 						}
 					}
 					return
@@ -226,7 +238,7 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					if v := val.(string); v != "" {
 						if num, err := strconv.Atoi(v); err != nil || num < 1 {
-							errs = append(errs, fmt.Errorf("%q must be an integer between 0 and 100 inclusive", key))
+							errs = append(errs, fmt.Errorf("%q must be a positive integer", key))
 						}
 					}
 					return
