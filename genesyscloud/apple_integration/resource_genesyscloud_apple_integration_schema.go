@@ -467,7 +467,7 @@ func ResourceAppleIntegration() *schema.Resource {
 // AppleIntegrationExporter returns the resourceExporter object used to hold the genesyscloud_apple_integration exporter's config
 func AppleIntegrationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthAppleIntegrations),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAppleIntegrations),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"supported_content.id":           {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
 			"messaging_setting.id":           {RefType: "genesyscloud_conversations_messaging_settings"},

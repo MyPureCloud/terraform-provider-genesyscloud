@@ -24,8 +24,8 @@ import (
 The resource_genesyscloud_apple_integration.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllAuthAppleIntegration retrieves all of the apple integration via Terraform in the Genesys Cloud and is used for the exporter
-func getAllAuthAppleIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+// getAllAppleIntegrations retrieves all of the apple integration via Terraform in the Genesys Cloud and is used for the exporter
+func getAllAppleIntegrations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getAppleIntegrationProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
