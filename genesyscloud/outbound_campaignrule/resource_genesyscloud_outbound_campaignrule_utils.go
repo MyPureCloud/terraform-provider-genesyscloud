@@ -21,10 +21,6 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		MatchAnyConditions:     &matchAnyConditions,
 	}
 
-	if campaignRuleProcessing, ok := d.GetOk("campaign_rule_processing"); ok {
-		campaignRule.CampaignRuleProcessing = platformclientv2.String(campaignRuleProcessing.(string))
-	}
-
 	return campaignRule
 }
 
