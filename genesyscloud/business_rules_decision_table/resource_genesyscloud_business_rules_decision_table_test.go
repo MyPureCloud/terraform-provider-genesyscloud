@@ -66,8 +66,8 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "version", "1"),
 
 					// Verify complex column structure
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.#", "8"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.#", "3"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.#", "9"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.#", "4"),
 
 					// Verify column IDs are set
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.0.id"),
@@ -78,9 +78,11 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.5.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.6.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.7.id"),
+					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.8.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.0.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.1.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.2.id"),
+					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.3.id"),
 
 					// Verify input columns
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.0.expression.0.contractual.0.schema_property_key", "customer_type"),
@@ -91,6 +93,7 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.5.expression.0.contractual.0.schema_property_key", "last_updated"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.6.expression.0.contractual.0.schema_property_key", "is_active"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.7.expression.0.contractual.0.schema_property_key", "optional_string_empty_type_value"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.8.expression.0.contractual.0.schema_property_key", "customer_tags"),
 
 					// Verify first output column (transfer_queue with queue reference)
 					resource.TestCheckResourceAttrPair(
@@ -111,8 +114,8 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 
 					// Verify rows are present with all literal types
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.#", "8"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.#", "3"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.#", "9"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.#", "4"),
 
 					// Verify inputs are in the EXACT order we configured them
 					// This test will fail if the provider doesn't maintain consistent ordering
@@ -140,16 +143,24 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.7.literal.0.value", ""),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.7.literal.0.type", ""),
 
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.8.literal.0.value", "vip,premium,support"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.8.literal.0.type", "stringList"),
+
 					// Verify outputs are also in correct order
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.0.literal.0.value",
 						"genesyscloud_routing_queue."+queueResourceLabel, "id",
 					),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.0.literal.0.type", "string"),
+
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.1.literal.0.value", "Premium Support"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.1.literal.0.type", "string"),
+
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.2.literal.0.value", ""),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.2.literal.0.type", ""),
+
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.3.literal.0.value", "premium_support,escalation,technical_expert"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.3.literal.0.type", "stringList"),
 
 					// Verify computed fields
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.row_id"),
@@ -177,8 +188,8 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "version", "2"),
 
 					// Verify complex column structure is maintained
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.#", "8"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.#", "3"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.#", "9"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.#", "4"),
 
 					// Verify column IDs are still set after update
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.0.id"),
@@ -189,13 +200,15 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.5.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.6.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.7.id"),
+					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.inputs.8.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.0.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.1.id"),
 					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.2.id"),
+					resource.TestCheckResourceAttrSet("genesyscloud_business_rules_decision_table."+tableResourceLabel, "columns.0.outputs.3.id"),
 
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.#", "1"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.#", "8"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.#", "3"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.#", "9"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.#", "4"),
 
 					// Verify special values in row inputs
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.0.literal.0.value", "Standard"),
@@ -214,6 +227,8 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.6.literal.0.type", "special"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.7.literal.0.value", "Null"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.7.literal.0.type", "special"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.8.literal.0.value", "enterprise,business"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.8.literal.0.type", "stringList"),
 
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.0.literal.0.value",
@@ -224,6 +239,8 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.1.literal.0.type", "string"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.2.literal.0.value", "Null"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.2.literal.0.type", "special"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.3.literal.0.value", "enterprise_support,business_analyst"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.3.literal.0.type", "stringList"),
 				),
 			},
 			{
@@ -248,10 +265,10 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 
 					// Verify updated rows
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.#", "2"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.#", "8"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.#", "3"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.#", "8"),
-					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.#", "3"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.#", "9"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.#", "4"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.#", "9"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.#", "4"),
 
 					// Verify first row
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.0.literal.0.value", "Premium"),
@@ -270,10 +287,15 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.6.literal.0.type", "boolean"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.7.literal.0.value", "this was defaulted to empty value and type first row"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.7.literal.0.type", "string"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.8.literal.0.value", "technical,advanced,escalation"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.8.literal.0.type", "stringList"),
+
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.1.literal.0.value", "Updated Support"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.1.literal.0.type", "string"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.2.literal.0.value", "this was defaulted to empty block first row"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.2.literal.0.type", "string"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.3.literal.0.value", "technical_expert,advanced_support,escalation_specialist"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.3.literal.0.type", "stringList"),
 
 					// Verify second row
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.0.literal.0.value", "VIP"),
@@ -292,10 +314,15 @@ func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.6.literal.0.type", "boolean"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.7.literal.0.value", "this was defaulted to empty value and type second row"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.7.literal.0.type", "string"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.8.literal.0.value", "support,help"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.inputs.8.literal.0.type", "stringList"),
+
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.1.literal.0.value", "Standard Support"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.1.literal.0.type", "string"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.2.literal.0.value", "this was defaulted to empty block second row"),
 					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.2.literal.0.type", "string"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.3.literal.0.value", "standard_support,general_help"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.1.outputs.3.literal.0.type", "stringList"),
 				),
 			},
 			{
@@ -429,6 +456,22 @@ func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T)
 						generateRowsWithInvalidLiteral(queueResourceLabel, "datetime", "not-a-datetime"),
 					),
 				ExpectError: regexp.MustCompile("Failed to add rows: failed to convert row 1.*value 'not-a-datetime' is not a valid datetime"),
+			},
+			{
+				// Test invalid stringList value (empty - violates minItems: 1)
+				Config: generateBusinessRulesSchemaResource(schemaResourceLabel, schemaName, schemaDescription) +
+					generateHomeDivisionReference() +
+					generateRoutingQueueResource(queueResourceLabel, queueName) +
+					generateBusinessRulesDecisionTableResource(
+						"test-decision-table",
+						"tf_decision_table_"+uuid.NewString()[:8],
+						"Test decision table with invalid stringList",
+						"data.genesyscloud_auth_division_home.home.id",
+						"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+						generateColumns(queueResourceLabel),
+						generateRowsWithInvalidLiteral(queueResourceLabel, "stringList", ""),
+					),
+				ExpectError: regexp.MustCompile("Failed to add rows:.*value is required when type is specified"),
 			},
 		},
 	})
