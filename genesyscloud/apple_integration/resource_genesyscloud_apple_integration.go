@@ -83,16 +83,9 @@ func readAppleIntegration(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "messages_for_business_id", appleIntegration.MessagesForBusinessId)
 		resourcedata.SetNillableValue(d, "business_name", appleIntegration.BusinessName)
 		resourcedata.SetNillableValue(d, "logo_url", appleIntegration.LogoUrl)
-		resourcedata.SetNillableValue(d, "status", appleIntegration.Status)
-		if appleIntegration.Recipient != nil {
-			d.Set("recipient_id", *appleIntegration.Recipient.Id)
-		}
-		resourcedata.SetNillableValue(d, "create_status", appleIntegration.CreateStatus)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "create_error", appleIntegration.CreateError, flattenErrorBody)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "apple_i_message_app", appleIntegration.AppleIMessageApp, flattenAppleIMessageApp)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "apple_authentication", appleIntegration.AppleAuthentication, flattenAppleAuthentication)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "apple_pay", appleIntegration.ApplePay, flattenApplePay)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "identity_resolution", appleIntegration.IdentityResolution, flattenAppleIdentityResolutionConfig)
 
 		log.Printf("Read apple integration %s %s", d.Id(), *appleIntegration.Name)
 		return cc.CheckState(d)

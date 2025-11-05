@@ -212,25 +212,7 @@ func ResourceAppleIntegration() *schema.Resource {
 		},
 	}
 
-	errorBodyResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`message`: {
-				Description: `Error message`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`code`: {
-				Description: `Error code`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`status`: {
-				Description: `Error status`,
-				Optional:    true,
-				Type:        schema.TypeInt,
-			},
-		},
-	}
+
 
 	appleIMessageAppResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -344,20 +326,7 @@ func ResourceAppleIntegration() *schema.Resource {
 		},
 	}
 
-	appleIdentityResolutionConfigResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`division_id`: {
-				Description: `The division to use when performing identity resolution.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`resolve_identities`: {
-				Description: `Whether the channel should resolve identities`,
-				Required:    true,
-				Type:        schema.TypeBool,
-			},
-		},
-	}
+
 
 	return &schema.Resource{
 		Description: `Genesys Cloud apple integration`,
@@ -406,32 +375,6 @@ func ResourceAppleIntegration() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`status`: {
-				Description: `The status of the Apple Integration`,
-				Optional:    true,
-				Computed:    true,
-				Type:        schema.TypeString,
-			},
-			`recipient_id`: {
-				Description: `The recipient associated to the Apple messaging Integration. This recipient is used to associate a flow to an integration`,
-				Optional:    true,
-				Computed:    true,
-				Type:        schema.TypeString,
-			},
-			`create_status`: {
-				Description: `Status of asynchronous create operation`,
-				Optional:    true,
-				Computed:    true,
-				Type:        schema.TypeString,
-			},
-			`create_error`: {
-				Description: `Error information returned, if createStatus is set to Error`,
-				Optional:    true,
-				Computed:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        errorBodyResource,
-			},
 			`apple_i_message_app`: {
 				Description: `Interactive Application (iMessage App) Settings.`,
 				Optional:    true,
@@ -453,13 +396,6 @@ func ResourceAppleIntegration() *schema.Resource {
 				MaxItems:    1,
 				Elem:        applePayResource,
 			},
-			`identity_resolution`: {
-				Description: `The configuration to control identity resolution.`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        appleIdentityResolutionConfigResource,
-			},
 		},
 	}
 }
@@ -469,14 +405,8 @@ func AppleIntegrationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAppleIntegrations),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"supported_content.id":           {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
-			"messaging_setting.id":           {RefType: "genesyscloud_conversations_messaging_settings"},
-			"recipient_id":                   {RefType: "genesyscloud_routing_message_recipient"},
-			"identity_resolution.division_id": {RefType: "genesyscloud_auth_division"},
-		},
-		ExcludedAttributes: []string{
-			"create_status",
-			"create_error",
+			"supported_content.id": {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
+			"messaging_setting.id": {RefType: "genesyscloud_conversations_messaging_settings"},
 		},
 	}
 }

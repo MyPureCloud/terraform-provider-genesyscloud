@@ -71,7 +71,7 @@ func TestAccResourceAppleIntegrationBasic(t *testing.T) {
 				ResourceName:            resourceName + "." + resourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"create_status", "create_error", "recipient_id", "name"},
+				ImportStateVerifyIgnore: []string{"name"},
 			},
 		},
 	})

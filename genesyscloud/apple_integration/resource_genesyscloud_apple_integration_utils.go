@@ -30,13 +30,9 @@ func getAppleIntegrationFromResourceData(d *schema.ResourceData) platformclientv
 		MessagesForBusinessId: platformclientv2.String(d.Get("messages_for_business_id").(string)),
 		BusinessName:          platformclientv2.String(d.Get("business_name").(string)),
 		LogoUrl:               platformclientv2.String(d.Get("logo_url").(string)),
-		Status:                platformclientv2.String(d.Get("status").(string)),
-		CreateStatus:          platformclientv2.String(d.Get("create_status").(string)),
-		CreateError:           buildErrorBody(d.Get("create_error").([]interface{})),
-		AppleIMessageApp:      buildAppleIMessageApp(d.Get("apple_i_message_app").([]interface{})),
-		AppleAuthentication:   buildAppleAuthentication(d.Get("apple_authentication").([]interface{})),
-		ApplePay:              buildApplePay(d.Get("apple_pay").([]interface{})),
-		IdentityResolution:    buildAppleIdentityResolutionConfig(d.Get("identity_resolution").([]interface{})),
+		AppleIMessageApp:    buildAppleIMessageApp(d.Get("apple_i_message_app").([]interface{})),
+		AppleAuthentication: buildAppleAuthentication(d.Get("apple_authentication").([]interface{})),
+		ApplePay:            buildApplePay(d.Get("apple_pay").([]interface{})),
 	}
 }
 
@@ -74,14 +70,7 @@ func buildMessagingSettingReference(messagingSetting []interface{}) *platformcli
 	return &sdkMessagingSetting
 }
 
-// buildErrorBody maps an []interface{} into a Genesys Cloud *platformclientv2.Errorbody
-func buildErrorBody(errorBody []interface{}) *platformclientv2.Errorbody {
-	if len(errorBody) == 0 {
-		return nil
-	}
-	// ErrorBody schema is empty - this is read-only data from API
-	return &platformclientv2.Errorbody{}
-}
+
 
 // buildAppleIMessageApp maps an []interface{} into a Genesys Cloud *platformclientv2.Appleimessageapp
 func buildAppleIMessageApp(appleIMessageApp []interface{}) *platformclientv2.Appleimessageapp {
@@ -150,22 +139,7 @@ func buildApplePay(applePay []interface{}) *platformclientv2.Applepay {
 	return &sdkApplePay
 }
 
-// buildAppleIdentityResolutionConfig maps an []interface{} into a Genesys Cloud *platformclientv2.Appleidentityresolutionconfig
-func buildAppleIdentityResolutionConfig(identityResolution []interface{}) *platformclientv2.Appleidentityresolutionconfig {
-	if len(identityResolution) == 0 {
-		return nil
-	}
 
-	identityResolutionMap, ok := identityResolution[0].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	var sdkIdentityResolution platformclientv2.Appleidentityresolutionconfig
-	sdkIdentityResolution.ResolveIdentities = platformclientv2.Bool(identityResolutionMap["resolve_identities"].(bool))
-
-	return &sdkIdentityResolution
-}
 
 // flattenSupportedContentReference maps a Genesys Cloud *platformclientv2.Supportedcontentreference into a []interface{}
 func flattenSupportedContentReference(supportedContent *platformclientv2.Supportedcontentreference) []interface{} {
@@ -193,19 +167,7 @@ func flattenMessagingSettingReference(messagingSetting *platformclientv2.Messagi
 	return []interface{}{messagingSettingMap}
 }
 
-// flattenErrorBody maps a Genesys Cloud *platformclientv2.Errorbody into a []interface{}
-func flattenErrorBody(errorBody *platformclientv2.Errorbody) []interface{} {
-	if errorBody == nil {
-		return nil
-	}
 
-	errorBodyMap := make(map[string]interface{})
-	resourcedata.SetMapValueIfNotNil(errorBodyMap, "message", errorBody.Message)
-	resourcedata.SetMapValueIfNotNil(errorBodyMap, "code", errorBody.Code)
-	resourcedata.SetMapValueIfNotNil(errorBodyMap, "status", errorBody.Status)
-
-	return []interface{}{errorBodyMap}
-}
 
 // flattenAppleIMessageApp maps a Genesys Cloud *platformclientv2.Appleimessageapp into a []interface{}
 func flattenAppleIMessageApp(appleIMessageApp *platformclientv2.Appleimessageapp) []interface{} {
@@ -259,14 +221,3 @@ func flattenApplePay(applePay *platformclientv2.Applepay) []interface{} {
 	return []interface{}{applePayMap}
 }
 
-// flattenAppleIdentityResolutionConfig maps a Genesys Cloud *platformclientv2.Appleidentityresolutionconfig into a []interface{}
-func flattenAppleIdentityResolutionConfig(identityResolution *platformclientv2.Appleidentityresolutionconfig) []interface{} {
-	if identityResolution == nil {
-		return nil
-	}
-
-	identityResolutionMap := make(map[string]interface{})
-	resourcedata.SetMapValueIfNotNil(identityResolutionMap, "resolve_identities", identityResolution.ResolveIdentities)
-
-	return []interface{}{identityResolutionMap}
-}
