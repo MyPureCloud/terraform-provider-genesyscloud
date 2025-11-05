@@ -151,7 +151,6 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Description: `Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action`,
 				Optional:    true,
 				Type:        schema.TypeString,
-				//ValidateFunc: validation.FloatAtLeast(0.1),
 				ValidateFunc: func(v interface{}, key string) (warns []string, errs []error) {
 					f, err := strconv.ParseFloat(v.(string), 64)
 					if err != nil || f <= 0.1 {
@@ -191,7 +190,6 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Description: `Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action`,
 				Optional:    true,
 				Type:        schema.TypeString,
-				//ValidateFunc: validation.FloatAtLeast(1.0),
 				ValidateFunc: func(v interface{}, key string) (warns []string, errs []error) {
 					f, err := strconv.ParseFloat(v.(string), 64)
 					if err != nil || f <= 1.0 {

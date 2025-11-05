@@ -20,7 +20,6 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		CampaignRuleActions:    buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{})),
 		MatchAnyConditions:     &matchAnyConditions,
 	}
-
 	return campaignRule
 }
 
@@ -314,7 +313,7 @@ func flattenCampaignRuleActionEntities(sdkActionEntity *platformclientv2.Campaig
 		}
 	}
 
-	if sdkActionEntity.SmsCampaigns != nil {
+	if sdkActionEntity.EmailCampaigns != nil {
 		for _, campaign := range *sdkActionEntity.EmailCampaigns {
 			emailCampaigns = append(emailCampaigns, *campaign.Id)
 		}
@@ -337,8 +336,6 @@ func flattenRuleParameters(params *platformclientv2.Campaignruleparameters) []in
 	resourcedata.SetMapValueIfNotNil(paramsMap, "value", params.Value)
 	resourcedata.SetMapValueIfNotNil(paramsMap, "priority", params.Priority)
 	resourcedata.SetMapValueIfNotNil(paramsMap, "dialing_mode", params.DialingMode)
-	resourcedata.SetMapValueIfNotNil(paramsMap, "abandon_rate", params.AbandonRate)
-	resourcedata.SetMapValueIfNotNil(paramsMap, "outbound_line_count", params.OutboundLineCount)
 	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "queue_id", params.Queue)
 	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "sms_content_template", params.SmsContentTemplate)
 	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "email_content_template", params.EmailContentTemplate)
