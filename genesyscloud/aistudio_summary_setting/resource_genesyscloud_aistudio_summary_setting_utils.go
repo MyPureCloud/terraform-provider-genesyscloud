@@ -1,6 +1,9 @@
 package aistudio_summary_setting
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -139,4 +142,13 @@ func flattenSummarySettingCustomEntitys(summarySettingCustomEntitys *[]platformc
 	}
 
 	return summarySettingCustomEntityList
+}
+
+func GenerateBasicSummarySettingResource(resourceLabel string, name string, language string, extras ...string) string {
+	return fmt.Sprintf(`resource "genesyscloud_aistudio_summary_setting" "%s" {
+		name = "%s"
+		language = "%s"
+		%s
+	}
+	`, resourceLabel, name, language, strings.Join(extras, "\n"))
 }
