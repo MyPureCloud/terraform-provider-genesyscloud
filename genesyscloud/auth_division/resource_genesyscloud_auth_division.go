@@ -138,6 +138,7 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
 		}
+		log.Printf("Successfully deleted division %s", name)
 		return resp, nil
 	})
 	if diagErr != nil {

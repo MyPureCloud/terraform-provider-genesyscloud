@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -38,4 +39,7 @@ type ExportOutput struct {
 	// ExportedResourceData is the *schema.ResourceData representation of the exported resesource. This is the type we can pass into
 	// the create and update context functions.
 	ExportedResourceData *schema.ResourceData
+
+	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
+	ResourceExporter *resource_exporter.ResourceExporter
 }

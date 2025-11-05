@@ -22,7 +22,7 @@ func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *Ex
 
 	generateDefaults(&input)
 
-	clientConfig, err := createClientConfig(creds)
+	clientConfig, err := CreateClientConfig(creds)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
@@ -66,5 +66,6 @@ func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *Ex
 		ExportData:           exportResponse.Config,
 		ExportDataPath:       input.Directory,
 		ExportedResourceData: exportResponse.ResourceData,
+		ResourceExporter:     exporter,
 	}, diags
 }

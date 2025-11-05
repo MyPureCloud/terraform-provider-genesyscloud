@@ -17,7 +17,7 @@ func TestAccExport(t *testing.T) {
 	}
 
 	t.Log("Authorizing client configuration")
-	clientConfig, err := createClientConfig(*creds)
+	clientConfig, err := CreateClientConfig(*creds)
 	if err != nil {
 		t.Fatal(err)
 	}
