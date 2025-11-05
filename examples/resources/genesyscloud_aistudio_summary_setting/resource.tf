@@ -11,4 +11,6 @@ resource "genesyscloud_aistudio_summary_setting" "summary" {
     internal = "Advisor"
     external = "Member"
   }
+  predefined_insights = []
+  prompt              = ""
 }
