@@ -1,11 +1,9 @@
 package outbound_campaignrule
 
 import (
-	"bytes"
 	"fmt"
 	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responseManagementResponse "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
-	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -1900,21 +1898,6 @@ resource "genesyscloud_outbound_messagingcampaign" "%s" {
 	)
 }
 
-func logResponseBody(response *http.Response) {
-	if response.Body == nil {
-		return
-	}
-	buf, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Print("Error reading response body")
-		return
-	}
-	log.Printf("Response body: %v", string(buf))
-
-	reader := io.NopCloser(bytes.NewBuffer(buf))
-	response.Body = reader
-}
-
 func CheckOutboundDomainExists(id string) error {
 	config, _ := provider.AuthorizeSdk()
 	routingApi := platformclientv2.NewRoutingApiWithConfig(config)
@@ -1933,23 +1916,11 @@ func CheckOutboundDomainExists(id string) error {
 	if resp.StatusCode == 404 {
 		// outbound domain for test does not exist so create it
 		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
-		_, apiResp, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomainrequest{
+		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomainrequest{
 			Id: &id,
 		})
 		if postErr != nil {
-			if apiResp != nil {
-				if apiResp.Response != nil {
-					status := apiResp.Response.Status
-					log.Printf("Status: %s", status)
-					logResponseBody(apiResp.Response)
-				} else {
-					log.Print("apiResp.Response is nil")
-				}
-			} else {
-				log.Print("apiResp is nil")
-			}
-
-			return fmt.Errorf("failed to create outbound domain: %v", postErr)
+			return fmt.Errorf("failed to create outbound domain: %v", err)
 		}
 
 		log.Printf("Outbound domain (%s) created", id)
