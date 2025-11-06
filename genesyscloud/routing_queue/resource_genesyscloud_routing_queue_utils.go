@@ -206,7 +206,41 @@ func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemedia
 		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
 	}
 
+	if enableInactivityTimeout, ok := settingsMap["enable_inactivity_timeout"].(bool); ok {
+		messageMediaSettings.EnableInactivityTimeout = &enableInactivityTimeout
+	}
+
+	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
+		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
+	}
+
 	return &messageMediaSettings
+}
+
+func buildInactivityTimeoutSettings(settings []interface{}) *platformclientv2.Inactivitytimeoutsettings {
+	if len(settings) == 0 {
+		return nil
+	}
+	settingsMap, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	var inactivityTimeoutSettings platformclientv2.Inactivitytimeoutsettings
+
+	if timeoutSeconds, ok := settingsMap["timeout_seconds"].(int); ok {
+		inactivityTimeoutSettings.TimeoutSeconds = &timeoutSeconds
+	}
+
+	if actionType, ok := settingsMap["action_type"].(string); ok {
+		inactivityTimeoutSettings.ActionType = &actionType
+	}
+
+	if flowId, ok := settingsMap["flow_id"].(string); ok {
+		inactivityTimeoutSettings.Flow = &platformclientv2.Domainentityref{Id: &flowId}
+	}
+
+	return &inactivityTimeoutSettings
 }
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
@@ -667,7 +701,25 @@ func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings
 		settingsMap["sub_type_settings"] = flattenSubTypeSettings(*settings.SubTypeSettings)
 	}
 
+	if settings.EnableInactivityTimeout != nil {
+		settingsMap["enable_inactivity_timeout"] = *settings.EnableInactivityTimeout
+	}
+	if settings.InactivityTimeoutSettings != nil {
+		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(*settings.InactivityTimeoutSettings)
+	}
+
 	return []any{settingsMap}
+}
+
+func flattenInactivityTimeoutSettings(settings *platformclientv2.Inactivitytimeoutsettings) []interface{} {
+	if settings == nil {
+		return nil
+	}
+	settingsMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(settingsMap, "timeout_seconds", settings.TimeoutSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "action_type", settings.ActionType)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "flow_id", settings.Flow)
+	return []interface{}{settingsMap}
 }
 
 func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypesettings) []interface{} {
