@@ -1044,6 +1044,49 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	return nil, nil
 }
 
+func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
+	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get queue %s error: %s", d.Id(), err), resp)
+	}
+	if currentQueue.Bullseye == nil || currentQueue.Bullseye.Rings == nil {
+		return nil
+	}
+
+	hasMemberGroups := false
+	for _, ring := range *currentQueue.Bullseye.Rings {
+		if ring.MemberGroups != nil && len(*ring.MemberGroups) > 0 {
+			hasMemberGroups = true
+			break
+		}
+	}
+
+	if !hasMemberGroups {
+		log.Printf("No member_groups found in bullseye rings for queue %s", d.Id())
+		return nil
+	}
+	log.Printf("Clearing member_groups from bullseye rings in queue %s", d.Id())
+
+	clearedRings := make([]platformclientv2.Ring, len(*currentQueue.Bullseye.Rings))
+	for i, ring := range *currentQueue.Bullseye.Rings {
+		clearedRings[i] = ring
+		clearedRings[i].MemberGroups = nil
+	}
+
+	updateQueue.Bullseye = &platformclientv2.Bullseye{
+		Rings: &clearedRings,
+	}
+
+	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), updateQueue)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
+	}
+
+	updateQueue.Bullseye = nil
+	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
+	return nil
+}
+
 // Generate Functions
 
 func GenerateRoutingQueueResourceBasic(resourceLabel string, name string, nestedBlocks ...string) string {

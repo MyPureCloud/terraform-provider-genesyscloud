@@ -368,6 +368,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
 	}
 
+	if d.HasChange("bullseye_rings") && updateQueue.Bullseye == nil {
+		if diagErr := clearBullseyeRingMemberGroups(ctx, d, &updateQueue, proxy); diagErr.HasError() {
+			return diagErr
+		}
+	}
+
 	log.Printf("Updating queue %s", *updateQueue.Name)
 
 	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)
