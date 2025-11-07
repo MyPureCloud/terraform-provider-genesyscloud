@@ -484,7 +484,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "The bullseye ring settings for the queue.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				MaxItems:    5,
+				MaxItems:    6,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"expansion_timeout_seconds": {
@@ -503,6 +503,15 @@ func ResourceRoutingQueue() *schema.Resource {
 							Type:     schema.TypeSet,
 							Optional: true,
 							Elem:     memberGroupResource,
+						},
+						"is_default_ring": {
+							Description: `Indicates whether this ring is the default ring for the queue. Only the ring at the last index of the list can be the default ring.
+							You can only provide six rings if the last ring is the default ring, otherwise the maximum is five. The last ring is always the default ring.
+							Since it is possible to associate a group with the hidden default ring, you can set this field to true specify that it is the default ring.
+							This field exists to temporarily work around an API issue. We do not recommend associating groups with default rings.`,
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
 						},
 					},
 				},

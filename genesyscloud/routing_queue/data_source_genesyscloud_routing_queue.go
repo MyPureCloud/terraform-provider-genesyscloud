@@ -54,7 +54,7 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp)
 	}
 
-	if queues != nil || len(*queues) != 0 {
+	if queues != nil && len(*queues) > 0 {
 		allQueues = append(allQueues, *queues...)
 	}
 

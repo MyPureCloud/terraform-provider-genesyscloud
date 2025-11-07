@@ -522,68 +522,68 @@ func buildSdkConditionalGroupActivation(d *schema.ResourceData) *platformclientv
 	return &sdkCga
 }
 
-func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye {
-	if configRings, ok := d.GetOk("bullseye_rings"); ok {
-		var sdkRings []platformclientv2.Ring
+func buildSdkBullseyeSettings(d *schema.ResourceData, appendDefaultRing bool) *platformclientv2.Bullseye {
+	configRings, ok := d.Get("bullseye_rings").([]any)
+	if !ok || len(configRings) == 0 {
+		return nil
+	}
 
-		for _, configRing := range configRings.([]interface{}) {
-			ringSettings, ok := configRing.(map[string]interface{})
-			if !ok {
-				continue
+	var sdkRings []platformclientv2.Ring
+
+	for _, configRing := range configRings {
+		ringSettings, ok := configRing.(map[string]any)
+		if !ok {
+			continue
+		}
+		var sdkRing platformclientv2.Ring
+
+		if waitSeconds, ok := ringSettings["expansion_timeout_seconds"].(float64); ok {
+			sdkRing.ExpansionCriteria = &[]platformclientv2.Expansioncriterium{
+				{
+					VarType:   &bullseyeExpansionTypeTimeout,
+					Threshold: &waitSeconds,
+				},
 			}
-			var sdkRing platformclientv2.Ring
-
-			if waitSeconds, ok := ringSettings["expansion_timeout_seconds"].(float64); ok {
-				sdkRing.ExpansionCriteria = &[]platformclientv2.Expansioncriterium{
-					{
-						VarType:   &bullseyeExpansionTypeTimeout,
-						Threshold: &waitSeconds,
-					},
-				}
-			}
-
-			if skillsToRemove, ok := ringSettings["skills_to_remove"]; ok {
-				skillIds := skillsToRemove.(*schema.Set).List()
-				if len(skillIds) > 0 {
-					sdkSkillsToRemove := make([]platformclientv2.Skillstoremove, len(skillIds))
-					for i, id := range skillIds {
-						skillID := id.(string)
-						sdkSkillsToRemove[i] = platformclientv2.Skillstoremove{
-							Id: &skillID,
-						}
-					}
-					sdkRing.Actions = &platformclientv2.Actions{
-						SkillsToRemove: &sdkSkillsToRemove,
-					}
-				}
-			}
-
-			if memberGroups, ok := ringSettings["member_groups"]; ok {
-				memberGroupList := memberGroups.(*schema.Set).List()
-				if len(memberGroupList) > 0 {
-
-					sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
-					for i, memberGroup := range memberGroupList {
-						settingsMap := memberGroup.(map[string]interface{})
-						memberGroupID := settingsMap["member_group_id"].(string)
-						memberGroupType := settingsMap["member_group_type"].(string)
-
-						sdkMemberGroups[i] = platformclientv2.Membergroup{
-							Id:      &memberGroupID,
-							VarType: &memberGroupType,
-						}
-					}
-					sdkRing.MemberGroups = &sdkMemberGroups
-				}
-			}
-			sdkRings = append(sdkRings, sdkRing)
 		}
 
-		/*
-			The routing queues API is a little unusual.  You can have up to six bullseye routing rings but the last one is always
-			a treated as the default ring.  This means you can actually ony define a maximum of 5.  So, I have changed the behavior of this
-			resource to only allow you to add 5 items and then the code always adds a 6 item (see the code below) with a default timeout of 2.
-		*/
+		if skillsToRemove, ok := ringSettings["skills_to_remove"]; ok {
+			skillIds := skillsToRemove.(*schema.Set).List()
+			if len(skillIds) > 0 {
+				sdkSkillsToRemove := make([]platformclientv2.Skillstoremove, len(skillIds))
+				for i, id := range skillIds {
+					skillID := id.(string)
+					sdkSkillsToRemove[i] = platformclientv2.Skillstoremove{
+						Id: &skillID,
+					}
+				}
+				sdkRing.Actions = &platformclientv2.Actions{
+					SkillsToRemove: &sdkSkillsToRemove,
+				}
+			}
+		}
+
+		if memberGroups, ok := ringSettings["member_groups"]; ok {
+			memberGroupList := memberGroups.(*schema.Set).List()
+			if len(memberGroupList) > 0 {
+
+				sdkMemberGroups := make([]platformclientv2.Membergroup, len(memberGroupList))
+				for i, memberGroup := range memberGroupList {
+					settingsMap := memberGroup.(map[string]any)
+					memberGroupID := settingsMap["member_group_id"].(string)
+					memberGroupType := settingsMap["member_group_type"].(string)
+
+					sdkMemberGroups[i] = platformclientv2.Membergroup{
+						Id:      &memberGroupID,
+						VarType: &memberGroupType,
+					}
+				}
+				sdkRing.MemberGroups = &sdkMemberGroups
+			}
+		}
+		sdkRings = append(sdkRings, sdkRing)
+	}
+
+	if appendDefaultRing {
 		var defaultSdkRing platformclientv2.Ring
 		defaultTimeoutInt := 2
 		defaultTimeoutFloat := float64(defaultTimeoutInt)
@@ -595,9 +595,26 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 		}
 
 		sdkRings = append(sdkRings, defaultSdkRing)
-		return &platformclientv2.Bullseye{Rings: &sdkRings}
 	}
-	return nil
+
+	return &platformclientv2.Bullseye{Rings: &sdkRings}
+}
+
+func areAnyBullseyeRingsDefault(d *schema.ResourceData) bool {
+	configRings, ok := d.Get("bullseye_rings").([]any)
+	if !ok {
+		return false
+	}
+	for _, configRing := range configRings {
+		ringSettings, ok := configRing.(map[string]any)
+		if !ok {
+			continue
+		}
+		if isDefaultRing, _ := ringSettings["is_default_ring"].(bool); isDefaultRing {
+			return true
+		}
+	}
+	return false
 }
 
 func buildSdkQueueMessagingAddresses(d *schema.ResourceData) *platformclientv2.Queuemessagingaddresses {
@@ -956,43 +973,50 @@ the public API will take the list item in the list and make it the default and i
 to always add a dumb bullseye ring block.  Now, we automatically add one for you.  We only except a maximum of 5 bullseyes_ring blocks, but we will always
 remove the last block returned by the API.
 */
-func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
-	rings := make([]interface{}, len(*sdkRings)-1) //Sizing the target array of Rings to account for us removing the default block
+func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []any {
+	var totalNumberOfRings = len(*sdkRings)
+
+	var rings []any
+
 	for i, sdkRing := range *sdkRings {
-		if i < len(*sdkRings)-1 { //Checking to make sure we are do nothing with the last item in the list by skipping processing if it is defined
-			ringSettings := make(map[string]interface{})
-			if sdkRing.ExpansionCriteria != nil {
-				for _, criteria := range *sdkRing.ExpansionCriteria {
-					if *criteria.VarType == bullseyeExpansionTypeTimeout {
-						ringSettings["expansion_timeout_seconds"] = *criteria.Threshold
-						break
-					}
-				}
-			}
+		ringSettings := make(map[string]any)
 
-			if sdkRing.Actions != nil && sdkRing.Actions.SkillsToRemove != nil {
-				skillIds := make([]interface{}, len(*sdkRing.Actions.SkillsToRemove))
-				for s, skill := range *sdkRing.Actions.SkillsToRemove {
-					skillIds[s] = *skill.Id
-				}
-				ringSettings["skills_to_remove"] = schema.NewSet(schema.HashString, skillIds)
-			}
-
-			if sdkRing.MemberGroups != nil {
-				memberGroups := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
-
-				for _, memberGroup := range *sdkRing.MemberGroups {
-					memberGroupMap := make(map[string]interface{})
-					memberGroupMap["member_group_id"] = *memberGroup.Id
-					memberGroupMap["member_group_type"] = *memberGroup.VarType
-
-					memberGroups.Add(memberGroupMap)
-				}
-
-				ringSettings["member_groups"] = memberGroups
-			}
-			rings[i] = ringSettings
+		// The last ring is the default ring.
+		if i+1 == totalNumberOfRings {
+			ringSettings["is_default_ring"] = true
 		}
+
+		if sdkRing.ExpansionCriteria != nil {
+			for _, criteria := range *sdkRing.ExpansionCriteria {
+				if *criteria.VarType == bullseyeExpansionTypeTimeout {
+					ringSettings["expansion_timeout_seconds"] = *criteria.Threshold
+					break
+				}
+			}
+		}
+
+		if sdkRing.Actions != nil && sdkRing.Actions.SkillsToRemove != nil {
+			skillIds := make([]any, len(*sdkRing.Actions.SkillsToRemove))
+			for s, skill := range *sdkRing.Actions.SkillsToRemove {
+				skillIds[s] = *skill.Id
+			}
+			ringSettings["skills_to_remove"] = schema.NewSet(schema.HashString, skillIds)
+		}
+
+		if sdkRing.MemberGroups != nil {
+			memberGroups := schema.NewSet(schema.HashResource(memberGroupResource), []any{})
+
+			for _, memberGroup := range *sdkRing.MemberGroups {
+				memberGroupMap := make(map[string]any)
+				memberGroupMap["member_group_id"] = *memberGroup.Id
+				memberGroupMap["member_group_type"] = *memberGroup.VarType
+
+				memberGroups.Add(memberGroupMap)
+			}
+
+			ringSettings["member_groups"] = memberGroups
+		}
+		rings = append(rings, ringSettings)
 	}
 	return rings
 }
@@ -1281,7 +1305,7 @@ func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Qu
 		},
 		MediaSettings:                buildSdkMediaSettings(d),
 		RoutingRules:                 buildSdkRoutingRules(d),
-		Bullseye:                     buildSdkBullseyeSettings(d),
+		Bullseye:                     buildSdkBullseyeSettings(d, true),
 		AcwSettings:                  buildSdkAcwSettings(d),
 		AgentOwnedRouting:            constructAgentOwnedRouting(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),

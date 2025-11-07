@@ -2,6 +2,7 @@ package routing_queue
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -84,7 +85,6 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		MediaSettings:                buildSdkMediaSettings(d),
 		RoutingRules:                 buildSdkRoutingRules(d),
-		Bullseye:                     buildSdkBullseyeSettings(d),
 		AcwSettings:                  buildSdkAcwSettings(d),
 		AgentOwnedRouting:            constructAgentOwnedRouting(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
@@ -106,6 +106,12 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		MemberGroups:                 &memberGroups,
 		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
+	}
+
+	configContainsDefaultBullseyeRing := areAnyBullseyeRingsDefault(d)
+	if !configContainsDefaultBullseyeRing {
+		log.Println("No default bullseye ring found. Creating bullseye rings in POST request. Queue name: ", *createQueue.Name)
+		createQueue.Bullseye = buildSdkBullseyeSettings(d, true)
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -151,6 +157,12 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	d.SetId(*queue.Id)
+
+	if configContainsDefaultBullseyeRing {
+		if diagErr := updateRoutingQueueBullseyeSettings(d, sdkConfig, *queue); diagErr.HasError() {
+			return diagErr
+		}
+	}
 
 	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr.HasError() {
@@ -324,12 +336,14 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	peerId := d.Get("peer_id").(string)
 	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
+	configContainsDefaultBullseyeRing := areAnyBullseyeRingsDefault(d)
+
 	updateQueue := platformclientv2.Queuerequest{
 		Name:                         platformclientv2.String(d.Get("name").(string)),
 		Description:                  platformclientv2.String(d.Get("description").(string)),
 		MediaSettings:                buildSdkMediaSettings(d),
 		RoutingRules:                 buildSdkRoutingRules(d),
-		Bullseye:                     buildSdkBullseyeSettings(d),
+		Bullseye:                     buildSdkBullseyeSettings(d, !configContainsDefaultBullseyeRing),
 		AcwSettings:                  buildSdkAcwSettings(d),
 		AgentOwnedRouting:            constructAgentOwnedRouting(d),
 		SkillEvaluationMethod:        platformclientv2.String(d.Get("skill_evaluation_method").(string)),
@@ -525,6 +539,30 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 			}
 		}
 	}
+	return nil
+}
+
+// updateRoutingQueueBullseyeSettings updates the bullseye settings for a queue. This is called when we want to update the bullseye settings
+// and manually create a default bullseye ring.
+func updateRoutingQueueBullseyeSettings(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration, queue platformclientv2.Queue) diag.Diagnostics {
+	proxy := GetRoutingQueueProxy(sdkConfig)
+
+	log.Printf("Updating Routing Queue Bullseye Settings")
+
+	var queueRequest platformclientv2.Queuerequest
+	err := json.Unmarshal([]byte(queue.String()), &queueRequest)
+	if err != nil {
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to unmarshal queue %s for update, error: %s", d.Id(), err), err)
+	}
+
+	queueRequest.Bullseye = buildSdkBullseyeSettings(d, false)
+
+	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &queueRequest)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update queue %s for update, error: %s", d.Id(), err), resp)
+	}
+
+	log.Printf("Updated bullseye settings for queue %s", *queueRequest.Name)
 	return nil
 }
 
