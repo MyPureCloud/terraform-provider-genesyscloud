@@ -86,6 +86,12 @@ func ResourceIdpAdfs() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			`sign_authn_requests`: {
+				Description: `True if the Genesys Cloud authentication request should be signed.`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+				Default:     false,
+			},
 		},
 	}
 }
