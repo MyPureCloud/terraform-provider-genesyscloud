@@ -30,7 +30,7 @@ func getAllAuthAistudioSummarySettings(ctx context.Context, clientConfig *platfo
 	proxy := newAistudioSummarySettingProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	summarySettings, resp, err := proxy.getAllAistudioSummarySetting(ctx)
+	summarySettings, resp, err := proxy.getAllAistudioSummarySetting(ctx, "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get aistudio summary setting: %v", err), resp)
 	}
@@ -38,7 +38,7 @@ func getAllAuthAistudioSummarySettings(ctx context.Context, clientConfig *platfo
 	for _, summarySetting := range *summarySettings {
 		resources[*summarySetting.Id] = &resourceExporter.ResourceMeta{BlockLabel: *summarySetting.Name}
 	}
-
+	log.Printf("Successfully retrieved all aistudio summary settings")
 	return resources, nil
 }
 

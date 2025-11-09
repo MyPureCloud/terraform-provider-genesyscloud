@@ -3,7 +3,8 @@ package aistudio_summary_setting
 import (
 	"context"
 	"fmt"
-	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -19,7 +20,7 @@ var internalProxy *aistudioSummarySettingProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createAistudioSummarySettingFunc func(ctx context.Context, p *aistudioSummarySettingProxy, summarySetting *platformclientv2.Summarysetting) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error)
-type getAllAistudioSummarySettingFunc func(ctx context.Context, p *aistudioSummarySettingProxy) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error)
+type getAllAistudioSummarySettingFunc func(ctx context.Context, p *aistudioSummarySettingProxy, name string) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error)
 type getAistudioSummarySettingIdByNameFunc func(ctx context.Context, p *aistudioSummarySettingProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type getAistudioSummarySettingByIdFunc func(ctx context.Context, p *aistudioSummarySettingProxy, id string) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error)
 type updateAistudioSummarySettingFunc func(ctx context.Context, p *aistudioSummarySettingProxy, id string, summarySetting *platformclientv2.Summarysetting) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error)
@@ -35,14 +36,17 @@ type aistudioSummarySettingProxy struct {
 	getAistudioSummarySettingByIdAttr     getAistudioSummarySettingByIdFunc
 	updateAistudioSummarySettingAttr      updateAistudioSummarySettingFunc
 	deleteAistudioSummarySettingAttr      deleteAistudioSummarySettingFunc
+	summaryCache                          rc.CacheInterface[platformclientv2.Summarysetting]
 }
 
 // newAistudioSummarySettingProxy initializes the aistudio summary setting proxy with all of the data needed to communicate with Genesys Cloud
 func newAistudioSummarySettingProxy(clientConfig *platformclientv2.Configuration) *aistudioSummarySettingProxy {
 	api := platformclientv2.NewAIStudioApiWithConfig(clientConfig)
+	summaryCache := rc.NewResourceCache[platformclientv2.Summarysetting]()
 	return &aistudioSummarySettingProxy{
 		clientConfig:                          clientConfig,
 		aIStudioApi:                           api,
+		summaryCache:                          summaryCache,
 		createAistudioSummarySettingAttr:      createAistudioSummarySettingFn,
 		getAllAistudioSummarySettingAttr:      getAllAistudioSummarySettingFn,
 		getAistudioSummarySettingIdByNameAttr: getAistudioSummarySettingIdByNameFn,
@@ -68,8 +72,8 @@ func (p *aistudioSummarySettingProxy) createAistudioSummarySetting(ctx context.C
 }
 
 // getAistudioSummarySetting retrieves all Genesys Cloud aistudio summary setting
-func (p *aistudioSummarySettingProxy) getAllAistudioSummarySetting(ctx context.Context) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
-	return p.getAllAistudioSummarySettingAttr(ctx, p)
+func (p *aistudioSummarySettingProxy) getAllAistudioSummarySetting(ctx context.Context, name string) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+	return p.getAllAistudioSummarySettingAttr(ctx, p, name)
 }
 
 // getAistudioSummarySettingIdByName returns a single Genesys Cloud aistudio summary setting by a name
@@ -79,6 +83,9 @@ func (p *aistudioSummarySettingProxy) getAistudioSummarySettingIdByName(ctx cont
 
 // getAistudioSummarySettingById returns a single Genesys Cloud aistudio summary setting by Id
 func (p *aistudioSummarySettingProxy) getAistudioSummarySettingById(ctx context.Context, id string) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+	if summaries := rc.GetCacheItem(p.summaryCache, id); summaries != nil { // Get  the summary form teh cache, if not found then call the API
+		return summaries, nil, nil
+	}
 	return p.getAistudioSummarySettingByIdAttr(ctx, p, id)
 }
 
@@ -98,11 +105,15 @@ func createAistudioSummarySettingFn(ctx context.Context, p *aistudioSummarySetti
 }
 
 // getAllAistudioSummarySettingFn is the implementation for retrieving all aistudio summary setting in Genesys Cloud
-func getAllAistudioSummarySettingFn(ctx context.Context, p *aistudioSummarySettingProxy) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+func getAllAistudioSummarySettingFn(ctx context.Context, p *aistudioSummarySettingProxy, name string) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+	return sdkGetAllSummarySettingsFn(ctx, p, name)
+}
+
+func sdkGetAllSummarySettingsFn(ctx context.Context, p *aistudioSummarySettingProxy, name string) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
 	var allSummarySettings []platformclientv2.Summarysetting
 	const pageSize = 100
 
-	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings("", "", "", "", 1, pageSize)
+	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings(name, "", "", "", 1, pageSize)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -114,7 +125,7 @@ func getAllAistudioSummarySettingFn(ctx context.Context, p *aistudioSummarySetti
 	}
 
 	for pageNum := 2; pageNum <= *summarySettings.PageCount; pageNum++ {
-		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings("", "", "", "", pageNum, pageSize)
+		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings(name, "", "", "", pageNum, pageSize)
 		if err != nil {
 			return nil, resp, err
 		}
@@ -133,23 +144,25 @@ func getAllAistudioSummarySettingFn(ctx context.Context, p *aistudioSummarySetti
 
 // getAistudioSummarySettingIdByNameFn is an implementation of the function to get a Genesys Cloud aistudio summary setting by name
 func getAistudioSummarySettingIdByNameFn(ctx context.Context, p *aistudioSummarySettingProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings("", name, "", "", 1, 100)
+	summarySettings, resp, err := getAllAistudioSummarySettingFn(ctx, p, name)
 	if err != nil {
 		return "", resp, false, err
 	}
 
-	if summarySettings.Entities == nil || len(*summarySettings.Entities) == 0 {
-		return "", resp, true, err
+	if summarySettings == nil || len(*summarySettings) == 0 {
+		return "", resp, true, fmt.Errorf("no summary setting found with name: %s", name)
 	}
 
-	for _, summarySetting := range *summarySettings.Entities {
-		if *summarySetting.Name == name {
-			log.Printf("Retrieved the aistudio summary setting id %s by name %s", *summarySetting.Id, name)
-			return *summarySetting.Id, resp, false, nil
+	for _, summary := range *summarySettings {
+		if summary.Name != nil && *summary.Name == name {
+			if summary.Id != nil {
+				return *summary.Id, resp, false, nil
+			}
+			return "", resp, false, fmt.Errorf("summary setting found but has nil ID: %s", name)
 		}
 	}
 
-	return "", resp, true, fmt.Errorf("Unable to find aistudio summary setting with name %s", name)
+	return "", resp, false, fmt.Errorf("unable to find summary setting with name %s", name)
 }
 
 // getAistudioSummarySettingByIdFn is an implementation of the function to get a Genesys Cloud aistudio summary setting by Id
