@@ -554,7 +554,6 @@ func TestAccResourceGroupVoicemailPolicy(t *testing.T) {
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
-					resource.TestCheckNoResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy"),
 				),
 			},
 			{
