@@ -1065,7 +1065,7 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	}
 	g.appendResources(uniqueResources)
 	g.appendResources(existingResources)
-	if mergeExporters != nil && g.exporters != nil {
+	if g.exporters != nil {
 		g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
 	}
 
