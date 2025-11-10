@@ -106,10 +106,6 @@ func createAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySetti
 
 // getAllAiStudioSummarySettingFn is the implementation for retrieving all ai studio summary setting in Genesys Cloud
 func getAllAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySettingProxy, name string) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
-	return sdkGetAllSummarySettingsFn(ctx, p, name)
-}
-
-func sdkGetAllSummarySettingsFn(ctx context.Context, p *aiStudioSummarySettingProxy, name string) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
 	var allSummarySettings []platformclientv2.Summarysetting
 	const pageSize = 100
 
@@ -122,6 +118,7 @@ func sdkGetAllSummarySettingsFn(ctx context.Context, p *aiStudioSummarySettingPr
 	}
 	for _, summarySetting := range *summarySettings.Entities {
 		allSummarySettings = append(allSummarySettings, summarySetting)
+		rc.SetCache(p.summaryCache, *summarySetting.Id, summarySetting)
 	}
 
 	for pageNum := 2; pageNum <= *summarySettings.PageCount; pageNum++ {
@@ -136,6 +133,7 @@ func sdkGetAllSummarySettingsFn(ctx context.Context, p *aiStudioSummarySettingPr
 
 		for _, summarySetting := range *summarySettings.Entities {
 			allSummarySettings = append(allSummarySettings, summarySetting)
+			rc.SetCache(p.summaryCache, *summarySetting.Id, summarySetting)
 		}
 	}
 
