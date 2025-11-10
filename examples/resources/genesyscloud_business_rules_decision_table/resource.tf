@@ -143,6 +143,18 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
     }
 
+    inputs {
+      defaults_to {
+        values = ["general", "support"]
+      }
+      expression {
+        contractual {
+          schema_property_key = "custom_attribute_string_list"
+        }
+        comparator = "ContainsAny"
+      }
+    }
+
     outputs {
       defaults_to {
         value = data.genesyscloud_routing_queue.vip_queue.id
@@ -173,6 +185,15 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       }
       value {
         schema_property_key = "custom_attribute_enum"
+      }
+    }
+
+    outputs {
+      defaults_to {
+        values = ["basic_support", "general_help"]
+      }
+      value {
+        schema_property_key = "custom_attribute_output_list"
       }
     }
   }
@@ -243,6 +264,12 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
         type  = "string"
       }
     }
+    inputs {
+      literal {
+        value = "vip,premium"
+        type  = "stringList"
+      }
+    }
     outputs {
       literal {
         value = data.genesyscloud_routing_queue.vip_queue.id
@@ -259,6 +286,12 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
       literal {
         value = "option_2"
         type  = "string"
+      }
+    }
+    outputs {
+      literal {
+        value = "premium_support,escalation,technical_expert" # Comma-separated string for stringList
+        type  = "stringList"
       }
     }
   }
