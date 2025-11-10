@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -91,15 +92,21 @@ func SetMaxRetriesForTests(retries int) (previous int) {
 
 // RetryWhen Retries up to 10 times while the shouldRetry condition returns true
 // Useful for adding custom retry logic to normally non-retryable error codes
+// Respects Retry-After header if present, otherwise uses exponential backoff
 func RetryWhen(shouldRetry checkResponseFunc, callSdk callSdkFunc, additionalCodes ...int) diag.Diagnostics {
 	var lastErr diag.Diagnostics
 	for i := 0; i < maxRetries; i++ {
 		resp, sdkErr := callSdk()
 		if sdkErr != nil {
 			if resp != nil && shouldRetry(resp, additionalCodes...) {
-				// Wait a second and try again
 				lastErr = sdkErr
-				time.Sleep(time.Duration((i+1)*500) * time.Millisecond) // total 27.5 seconds for the 10 retries with exponential backoff on each retry
+				// Check for Retry-After header first
+				if delay, ok := GetRetryAfterDelay(resp); ok {
+					time.Sleep(delay)
+				} else {
+					// Fall back to exponential backoff if no Retry-After header
+					time.Sleep(time.Duration((i+1)*500) * time.Millisecond) // total 27.5 seconds for the 10 retries with exponential backoff on each retry
+				}
 				continue
 			} else {
 				return sdkErr
@@ -195,4 +202,81 @@ func IsTimeoutError(errDiag error) bool {
 	errStringLower := strings.ToLower(fmt.Sprintf("%v", errDiag))
 	return strings.Contains(errStringLower, "timeout") ||
 		strings.Contains(errStringLower, "context deadline exceeded")
+}
+
+// GetRetryAfterDelay extracts and parses the Retry-After header from an APIResponse.
+// It returns the delay duration and true if the header was present and valid, false otherwise.
+// Retry-After can be either:
+//   - A number of seconds (integer)
+//   - An HTTP date (RFC 1123 format)
+func GetRetryAfterDelay(apiResponse *platformclientv2.APIResponse) (time.Duration, bool) {
+	if apiResponse == nil || apiResponse.Response == nil {
+		return 0, false
+	}
+
+	retryAfterHeader := apiResponse.Response.Header.Get("Retry-After")
+	if retryAfterHeader == "" {
+		return 0, false
+	}
+
+	// Try parsing as integer (seconds)
+	if seconds, err := strconv.Atoi(retryAfterHeader); err == nil {
+		if seconds > 0 {
+			return time.Duration(seconds) * time.Second, true
+		}
+		return 0, false
+	}
+
+	// Try parsing as HTTP date (RFC 1123 format: Mon, 02 Jan 2006 15:04:05 GMT)
+	if httpDate, err := time.Parse(time.RFC1123, retryAfterHeader); err == nil {
+		now := time.Now()
+		delay := httpDate.Sub(now)
+		if delay > 0 {
+			return delay, true
+		}
+		return 0, false
+	}
+
+	// Try parsing as RFC 1123 with timezone
+	if httpDate, err := time.Parse(time.RFC1123Z, retryAfterHeader); err == nil {
+		now := time.Now()
+		delay := httpDate.Sub(now)
+		if delay > 0 {
+			return delay, true
+		}
+		return 0, false
+	}
+
+	// Try parsing as RFC 822 format (alternative date format)
+	if httpDate, err := time.Parse(time.RFC822, retryAfterHeader); err == nil {
+		now := time.Now()
+		delay := httpDate.Sub(now)
+		if delay > 0 {
+			return delay, true
+		}
+		return 0, false
+	}
+
+	// If we can't parse it, return false
+	return 0, false
+}
+
+// RetryableErrorWithRetryAfter creates a retry.RetryableError that respects the Retry-After header
+// from the APIResponse if present. If the Retry-After header is present and valid, it will sleep
+// for the specified duration before returning the retryable error. If the Retry-After header is
+// not present or invalid, it falls back to the default retry behavior.
+// Note: This function should be called within a retry function that has access to context for
+// proper cancellation handling.
+func RetryableErrorWithRetryAfter(ctx context.Context, err error, apiResponse *platformclientv2.APIResponse) *retry.RetryError {
+	if delay, ok := GetRetryAfterDelay(apiResponse); ok {
+		// Sleep for the Retry-After duration, respecting context cancellation
+		select {
+		case <-ctx.Done():
+			// Context cancelled, return non-retryable error
+			return retry.NonRetryableError(fmt.Errorf("context cancelled while waiting for Retry-After: %w", ctx.Err()))
+		case <-time.After(delay):
+			// Delay completed, return retryable error
+		}
+	}
+	return retry.RetryableError(err)
 }
