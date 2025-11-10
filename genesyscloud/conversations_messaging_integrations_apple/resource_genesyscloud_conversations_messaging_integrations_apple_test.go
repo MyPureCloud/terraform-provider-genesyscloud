@@ -1,4 +1,4 @@
-package apple_integration
+package conversations_messaging_integrations_apple
 
 import (
 	"regexp"

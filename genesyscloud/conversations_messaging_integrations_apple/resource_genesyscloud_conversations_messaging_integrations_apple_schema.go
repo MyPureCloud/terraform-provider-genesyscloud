@@ -1,4 +1,4 @@
-package apple_integration
+package conversations_messaging_integrations_apple
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -16,203 +16,17 @@ resource_genesycloud_apple_integration_schema.go holds four functions within it:
 3.  The datasource schema definitions for the apple_integration datasource.
 4.  The resource exporter configuration for the apple_integration exporter.
 */
-const resourceName = "genesyscloud_apple_integration"
+const resourceName = "genesyscloud_conversations_messaging_integrations_apple"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceAppleIntegration())
-	regInstance.RegisterDataSource(resourceName, DataSourceAppleIntegration())
-	regInstance.RegisterExporter(resourceName, AppleIntegrationExporter())
+	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingIntegrationsApple())
+	regInstance.RegisterDataSource(resourceName, DataSourceConversationsMessagingIntegrationsApple())
+	regInstance.RegisterExporter(resourceName, ConversationsMessagingIntegrationsAppleExporter())
 }
 
 // ResourceAppleIntegration registers the genesyscloud_apple_integration resource with Terraform
-func ResourceAppleIntegration() *schema.Resource {
-	mediaTypeResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`type`: {
-				Description: `The media type string as defined by RFC 2046. You can define specific types such as 'image/jpeg', 'video/mpeg', or specify wild cards for a range of types, 'image/*', or all types '*/*'. See https://www.iana.org/assignments/media-types/media-types.xhtml for a list of registered media types.`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-		},
-	}
-
-	mediaTypeAccessResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`inbound`: {
-				Description: `List of media types allowed for inbound messages from customers. If inbound messages from a customer contain media that is not in this list, the media will be dropped from the outbound message.`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        mediaTypeResource,
-			},
-			`outbound`: {
-				Description: `List of media types allowed for outbound messages to customers. If an outbound message is sent that contains media that is not in this list, the message will not be sent.`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        mediaTypeResource,
-			},
-		},
-	}
-
-	mediaTypesResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`allow`: {
-				Description: `Specify allowed media types for inbound and outbound messages. If this field is empty, all inbound and outbound media will be blocked.`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        mediaTypeAccessResource,
-			},
-		},
-	}
-
-	supportedContentReferenceResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`id`: {
-				Description: `The SupportedContent profile ID`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`self_uri`: {
-				Description: `The SupportedContent profile URI`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`name`: {
-				Description: `The SupportedContent profile name`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`media_types`: {
-				Description: `Media types definition for the supported content`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        mediaTypesResource,
-			},
-		},
-	}
-
-	inboundOnlySettingResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`inbound`: {
-				Description: ``,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-		},
-	}
-
-	storySettingResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`mention`: {
-				Description: `Setting relating to Story Mentions`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        inboundOnlySettingResource,
-			},
-			`reply`: {
-				Description: `Setting relating to Story Replies`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        inboundOnlySettingResource,
-			},
-		},
-	}
-
-	contentSettingResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`story`: {
-				Description: `Settings relating to facebook and instagram stories feature`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        storySettingResource,
-			},
-		},
-	}
-
-	settingDirectionResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`inbound`: {
-				Description: `Status for the Inbound Direction`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`outbound`: {
-				Description: `Status for the Outbound Direction`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-		},
-	}
-
-	typingSettingResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`on`: {
-				Description: `Should typing indication Events be sent`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        settingDirectionResource,
-			},
-		},
-	}
-
-	eventSettingResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`typing`: {
-				Description: `Settings regarding typing events`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        typingSettingResource,
-			},
-		},
-	}
-
-	messagingSettingReferenceResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			`id`: {
-				Description: `The messaging Setting profile ID`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`self_uri`: {
-				Description: `The messaging Setting profile URI`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`name`: {
-				Description: `The messaging Setting profile name`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`updated_by_id`: {
-				Description: `User reference that modified this Setting`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`content`: {
-				Description: `Settings relating to message contents`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        contentSettingResource,
-			},
-			`event`: {
-				Description: `Settings relating to events which may occur`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        eventSettingResource,
-			},
-		},
-	}
-
-
+func ResourceConversationsMessagingIntegrationsApple() *schema.Resource {
 
 	appleIMessageAppResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -326,15 +140,13 @@ func ResourceAppleIntegration() *schema.Resource {
 		},
 	}
 
-
-
 	return &schema.Resource{
 		Description: `Genesys Cloud apple integration`,
 
-		CreateContext: provider.CreateWithPooledClient(createAppleIntegration),
-		ReadContext:   provider.ReadWithPooledClient(readAppleIntegration),
-		UpdateContext: provider.UpdateWithPooledClient(updateAppleIntegration),
-		DeleteContext: provider.DeleteWithPooledClient(deleteAppleIntegration),
+		CreateContext: provider.CreateWithPooledClient(createConversationsMessagingIntegrationsApple),
+		ReadContext:   provider.ReadWithPooledClient(readConversationsMessagingIntegrationsApple),
+		UpdateContext: provider.UpdateWithPooledClient(updateConversationsMessagingIntegrationsApple),
+		DeleteContext: provider.DeleteWithPooledClient(deleteConversationsMessagingIntegrationsApple),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -345,20 +157,17 @@ func ResourceAppleIntegration() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeString,
 			},
-			`supported_content`: {
-				Description: `Defines the SupportedContent profile configured for an integration`,
+			`supported_content_id`: {
+				Description: `The ID of the supported content profile configured for this integration`,
 				Optional:    true,
 				Computed:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        supportedContentReferenceResource,
+				Type:        schema.TypeString,
 			},
-			`messaging_setting`: {
-				Description: ``,
+			`messaging_setting_id`: {
+				Description: `The ID of the messaging setting configured for this integration`,
 				Optional:    true,
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Elem:        messagingSettingReferenceResource,
+				Computed:    true,
+				Type:        schema.TypeString,
 			},
 			`messages_for_business_id`: {
 				Description: `The Apple Messages for Business Id for the Apple messaging integration.`,
@@ -401,21 +210,21 @@ func ResourceAppleIntegration() *schema.Resource {
 }
 
 // AppleIntegrationExporter returns the resourceExporter object used to hold the genesyscloud_apple_integration exporter's config
-func AppleIntegrationExporter() *resourceExporter.ResourceExporter {
+func ConversationsMessagingIntegrationsAppleExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAppleIntegrations),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllConversationsMessagingIntegrationsApple),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"supported_content.id": {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
-			"messaging_setting.id": {RefType: "genesyscloud_conversations_messaging_settings"},
+			"supported_content_id": {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
+			"messaging_setting_id": {RefType: "genesyscloud_conversations_messaging_settings"},
 		},
 	}
 }
 
 // DataSourceAppleIntegration registers the genesyscloud_apple_integration data source
-func DataSourceAppleIntegration() *schema.Resource {
+func DataSourceConversationsMessagingIntegrationsApple() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud apple integration data source. Select an apple integration by name`,
-		ReadContext: provider.ReadWithPooledClient(dataSourceAppleIntegrationRead),
+		ReadContext: provider.ReadWithPooledClient(dataSourceConversationsMessagingIntegrationsAppleRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

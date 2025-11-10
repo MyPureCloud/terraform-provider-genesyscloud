@@ -1,4 +1,4 @@
-package apple_integration
+package conversations_messaging_integrations_apple
 
 import (
 	"sync"
@@ -29,7 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[resourceName] = ResourceAppleIntegration()
+	providerResources[resourceName] = ResourceConversationsMessagingIntegrationsApple()
 }
 
 // registerTestDataSources registers all data sources used in the tests
@@ -37,7 +37,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[resourceName] = DataSourceAppleIntegration()
+	providerDataSources[resourceName] = DataSourceConversationsMessagingIntegrationsApple()
 }
 
 // initTestResources initializes all test resources and data sources
@@ -55,7 +55,7 @@ func initTestResources() {
 	regInstance.registerTestResources()
 
 	// Set the internal proxy for testing
-	internalProxy = newAppleIntegrationProxy(sdkConfig)
+	internalProxy = newConversationsMessagingIntegrationsAppleProxy(sdkConfig)
 }
 
 // TestMain runs the test suite for the apple_integration package

@@ -1,4 +1,4 @@
-package apple_integration
+package conversations_messaging_integrations_apple
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -12,65 +12,54 @@ The resource_genesyscloud_apple_integration_utils.go file contains various helpe
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
-// BuildSdkDomainEntityRef builds a Genesys Cloud *platformclientv2.Domainentityref from a resource data field
-func BuildSdkDomainEntityRef(d *schema.ResourceData, idAttr string) *platformclientv2.Domainentityref {
-	idVal := d.Get(idAttr).(string)
-	if idVal == "" {
-		return nil
-	}
-	return &platformclientv2.Domainentityref{Id: &idVal}
-}
+// getAppleIntegrationFromResourceData maps data from schema ResourceData object to a platformclientv2.Appleintegrationrequest for create
+func getConversationsMessagingIntegrationsAppleFromResourceData(d *schema.ResourceData) platformclientv2.Appleintegrationrequest {
+	supportedContentId := d.Get("supported_content_id").(string)
+	messagingSettingId := d.Get("messaging_setting_id").(string)
 
-// getAppleIntegrationFromResourceData maps data from schema ResourceData object to a platformclientv2.Appleintegration
-func getAppleIntegrationFromResourceData(d *schema.ResourceData) platformclientv2.Appleintegration {
-	return platformclientv2.Appleintegration{
+	request := platformclientv2.Appleintegrationrequest{
 		Name:                  platformclientv2.String(d.Get("name").(string)),
-		SupportedContent:      buildSupportedContentReference(d.Get("supported_content").([]interface{})),
-		MessagingSetting:      buildMessagingSettingReference(d.Get("messaging_setting").([]interface{})),
 		MessagesForBusinessId: platformclientv2.String(d.Get("messages_for_business_id").(string)),
 		BusinessName:          platformclientv2.String(d.Get("business_name").(string)),
 		LogoUrl:               platformclientv2.String(d.Get("logo_url").(string)),
+		AppleIMessageApp:      buildAppleIMessageApp(d.Get("apple_i_message_app").([]interface{})),
+		AppleAuthentication:   buildAppleAuthentication(d.Get("apple_authentication").([]interface{})),
+		ApplePay:              buildApplePay(d.Get("apple_pay").([]interface{})),
+	}
+
+	if supportedContentId != "" {
+		request.SupportedContent = &platformclientv2.Supportedcontentreference{Id: &supportedContentId}
+	}
+	if messagingSettingId != "" {
+		request.MessagingSetting = &platformclientv2.Messagingsettingrequestreference{Id: &messagingSettingId}
+	}
+
+	return request
+}
+
+// getAppleIntegrationFromResourceDataForUpdate maps data from schema ResourceData object to a platformclientv2.Appleintegrationupdaterequest for update
+func getConversationsMessagingIntegrationsAppleFromResourceDataForUpdate(d *schema.ResourceData) platformclientv2.Appleintegrationupdaterequest {
+	supportedContentId := d.Get("supported_content_id").(string)
+	messagingSettingId := d.Get("messaging_setting_id").(string)
+
+	request := platformclientv2.Appleintegrationupdaterequest{
+		Name:                platformclientv2.String(d.Get("name").(string)),
+		BusinessName:        platformclientv2.String(d.Get("business_name").(string)),
+		LogoUrl:             platformclientv2.String(d.Get("logo_url").(string)),
 		AppleIMessageApp:    buildAppleIMessageApp(d.Get("apple_i_message_app").([]interface{})),
 		AppleAuthentication: buildAppleAuthentication(d.Get("apple_authentication").([]interface{})),
 		ApplePay:            buildApplePay(d.Get("apple_pay").([]interface{})),
 	}
+
+	if supportedContentId != "" {
+		request.SupportedContent = &platformclientv2.Supportedcontentreference{Id: &supportedContentId}
+	}
+	if messagingSettingId != "" {
+		request.MessagingSetting = &platformclientv2.Messagingsettingrequestreference{Id: &messagingSettingId}
+	}
+
+	return request
 }
-
-// buildSupportedContentReference maps an []interface{} into a Genesys Cloud *platformclientv2.Supportedcontentreference
-func buildSupportedContentReference(supportedContent []interface{}) *platformclientv2.Supportedcontentreference {
-	if len(supportedContent) == 0 {
-		return nil
-	}
-
-	supportedContentMap, ok := supportedContent[0].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	var sdkSupportedContent platformclientv2.Supportedcontentreference
-	resourcedata.BuildSDKStringValueIfNotNil(&sdkSupportedContent.Id, supportedContentMap, "id")
-
-	return &sdkSupportedContent
-}
-
-// buildMessagingSettingReference maps an []interface{} into a Genesys Cloud *platformclientv2.Messagingsettingreference
-func buildMessagingSettingReference(messagingSetting []interface{}) *platformclientv2.Messagingsettingreference {
-	if len(messagingSetting) == 0 {
-		return nil
-	}
-
-	messagingSettingMap, ok := messagingSetting[0].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	var sdkMessagingSetting platformclientv2.Messagingsettingreference
-	resourcedata.BuildSDKStringValueIfNotNil(&sdkMessagingSetting.Id, messagingSettingMap, "id")
-
-	return &sdkMessagingSetting
-}
-
-
 
 // buildAppleIMessageApp maps an []interface{} into a Genesys Cloud *platformclientv2.Appleimessageapp
 func buildAppleIMessageApp(appleIMessageApp []interface{}) *platformclientv2.Appleimessageapp {
@@ -139,36 +128,6 @@ func buildApplePay(applePay []interface{}) *platformclientv2.Applepay {
 	return &sdkApplePay
 }
 
-
-
-// flattenSupportedContentReference maps a Genesys Cloud *platformclientv2.Supportedcontentreference into a []interface{}
-func flattenSupportedContentReference(supportedContent *platformclientv2.Supportedcontentreference) []interface{} {
-	if supportedContent == nil {
-		return nil
-	}
-
-	supportedContentMap := make(map[string]interface{})
-	resourcedata.SetMapValueIfNotNil(supportedContentMap, "id", supportedContent.Id)
-	resourcedata.SetMapValueIfNotNil(supportedContentMap, "self_uri", supportedContent.SelfUri)
-
-	return []interface{}{supportedContentMap}
-}
-
-// flattenMessagingSettingReference maps a Genesys Cloud *platformclientv2.Messagingsettingreference into a []interface{}
-func flattenMessagingSettingReference(messagingSetting *platformclientv2.Messagingsettingreference) []interface{} {
-	if messagingSetting == nil {
-		return nil
-	}
-
-	messagingSettingMap := make(map[string]interface{})
-	resourcedata.SetMapValueIfNotNil(messagingSettingMap, "id", messagingSetting.Id)
-	resourcedata.SetMapValueIfNotNil(messagingSettingMap, "self_uri", messagingSetting.SelfUri)
-
-	return []interface{}{messagingSettingMap}
-}
-
-
-
 // flattenAppleIMessageApp maps a Genesys Cloud *platformclientv2.Appleimessageapp into a []interface{}
 func flattenAppleIMessageApp(appleIMessageApp *platformclientv2.Appleimessageapp) []interface{} {
 	if appleIMessageApp == nil {
@@ -220,4 +179,3 @@ func flattenApplePay(applePay *platformclientv2.Applepay) []interface{} {
 
 	return []interface{}{applePayMap}
 }
-

@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
-	appleIntegration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/apple_integration"
+	integrationApple "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
@@ -283,7 +283,7 @@ func registerResources() {
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
-	appleIntegration.SetRegistrar(regInstance)                             //Registering apple integration
+	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset

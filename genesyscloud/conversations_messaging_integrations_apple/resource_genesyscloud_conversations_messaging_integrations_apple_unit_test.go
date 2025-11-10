@@ -1,4 +1,4 @@
-package apple_integration
+package conversations_messaging_integrations_apple
 
 import (
 	"context"
@@ -22,9 +22,9 @@ func TestUnitAppleIntegrationCreate(t *testing.T) {
 		logoUrl               = "https://logo.url"
 	)
 
-	appleProxy := &appleIntegrationProxy{}
+	appleProxy := &conversationsMessagingIntegrationsAppleProxy{}
 
-	appleProxy.getAppleIntegrationByIdAttr = func(ctx context.Context, p *appleIntegrationProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.getConversationsMessagingIntegrationsAppleByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, appleIntegrationId, id)
 
 		integrationConfig := platformclientv2.Appleintegration{
@@ -42,7 +42,7 @@ func TestUnitAppleIntegrationCreate(t *testing.T) {
 		return &integrationConfig, apiResponse, nil
 	}
 
-	appleProxy.createAppleIntegrationAttr = func(ctx context.Context, p *appleIntegrationProxy, appleIntegration *platformclientv2.Appleintegration) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.createConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, appleIntegration *platformclientv2.Appleintegrationrequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, name, *appleIntegration.Name)
 		assert.Equal(t, messagesForBusinessId, *appleIntegration.MessagesForBusinessId)
 		assert.Equal(t, businessName, *appleIntegration.BusinessName)
@@ -65,13 +65,13 @@ func TestUnitAppleIntegrationCreate(t *testing.T) {
 	ctx := context.Background()
 	gCloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
-	resourceSchema := ResourceAppleIntegration().Schema
+	resourceSchema := ResourceConversationsMessagingIntegrationsApple().Schema
 	resourceDataMap := buildAppleIntegrationResourceMap(appleIntegrationId, name, messagesForBusinessId, businessName, logoUrl)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(appleIntegrationId)
 
-	diag := createAppleIntegration(ctx, d, gCloud)
+	diag := createConversationsMessagingIntegrationsApple(ctx, d, gCloud)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, appleIntegrationId, d.Id())
 }
@@ -85,9 +85,9 @@ func TestUnitAppleIntegrationRead(t *testing.T) {
 		logoUrl               = "https://logo.url"
 	)
 
-	appleProxy := &appleIntegrationProxy{}
+	appleProxy := &conversationsMessagingIntegrationsAppleProxy{}
 
-	appleProxy.getAppleIntegrationByIdAttr = func(ctx context.Context, p *appleIntegrationProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.getConversationsMessagingIntegrationsAppleByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, appleIntegrationId, id)
 
 		integrationConfig := platformclientv2.Appleintegration{
@@ -111,13 +111,13 @@ func TestUnitAppleIntegrationRead(t *testing.T) {
 	ctx := context.Background()
 	gCloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
-	resourceSchema := ResourceAppleIntegration().Schema
+	resourceSchema := ResourceConversationsMessagingIntegrationsApple().Schema
 	resourceDataMap := buildAppleIntegrationResourceMap(appleIntegrationId, name, messagesForBusinessId, businessName, logoUrl)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(appleIntegrationId)
 
-	diag := readAppleIntegration(ctx, d, gCloud)
+	diag := readConversationsMessagingIntegrationsApple(ctx, d, gCloud)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, appleIntegrationId, d.Id())
 	assert.Equal(t, name, d.Get("name").(string))
@@ -135,9 +135,9 @@ func TestUnitAppleIntegrationUpdate(t *testing.T) {
 		logoUrl               = "https://updated-logo.url"
 	)
 
-	appleProxy := &appleIntegrationProxy{}
+	appleProxy := &conversationsMessagingIntegrationsAppleProxy{}
 
-	appleProxy.getAppleIntegrationByIdAttr = func(ctx context.Context, p *appleIntegrationProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.getConversationsMessagingIntegrationsAppleByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, appleIntegrationId, id)
 
 		integrationConfig := platformclientv2.Appleintegration{
@@ -155,18 +155,16 @@ func TestUnitAppleIntegrationUpdate(t *testing.T) {
 		return &integrationConfig, apiResponse, nil
 	}
 
-	appleProxy.updateAppleIntegrationAttr = func(ctx context.Context, p *appleIntegrationProxy, id string, appleIntegration *platformclientv2.Appleintegration) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.updateConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string, appleIntegration *platformclientv2.Appleintegrationupdaterequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, updatedName, *appleIntegration.Name)
-		assert.Equal(t, messagesForBusinessId, *appleIntegration.MessagesForBusinessId)
 		assert.Equal(t, businessName, *appleIntegration.BusinessName)
 		assert.Equal(t, logoUrl, *appleIntegration.LogoUrl)
 
 		integrationConfig := platformclientv2.Appleintegration{
-			Id:                    &appleIntegrationId,
-			Name:                  appleIntegration.Name,
-			MessagesForBusinessId: appleIntegration.MessagesForBusinessId,
-			BusinessName:          appleIntegration.BusinessName,
-			LogoUrl:               appleIntegration.LogoUrl,
+			Id:           &appleIntegrationId,
+			Name:         appleIntegration.Name,
+			BusinessName: appleIntegration.BusinessName,
+			LogoUrl:      appleIntegration.LogoUrl,
 		}
 
 		apiResponse := &platformclientv2.APIResponse{
@@ -182,13 +180,13 @@ func TestUnitAppleIntegrationUpdate(t *testing.T) {
 	ctx := context.Background()
 	gCloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
-	resourceSchema := ResourceAppleIntegration().Schema
+	resourceSchema := ResourceConversationsMessagingIntegrationsApple().Schema
 	resourceDataMap := buildAppleIntegrationResourceMap(appleIntegrationId, updatedName, messagesForBusinessId, businessName, logoUrl)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(appleIntegrationId)
 
-	diag := updateAppleIntegration(ctx, d, gCloud)
+	diag := updateConversationsMessagingIntegrationsApple(ctx, d, gCloud)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, appleIntegrationId, d.Id())
 	assert.Equal(t, updatedName, d.Get("name").(string))
@@ -203,9 +201,9 @@ func TestUnitAppleIntegrationDelete(t *testing.T) {
 		logoUrl               = "https://logo.url"
 	)
 
-	appleProxy := &appleIntegrationProxy{}
+	appleProxy := &conversationsMessagingIntegrationsAppleProxy{}
 
-	appleProxy.deleteAppleIntegrationAttr = func(ctx context.Context, p *appleIntegrationProxy, id string) (*platformclientv2.APIResponse, error) {
+	appleProxy.deleteConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, appleIntegrationId, id)
 
 		apiResponse := &platformclientv2.APIResponse{
@@ -215,7 +213,7 @@ func TestUnitAppleIntegrationDelete(t *testing.T) {
 		return apiResponse, nil
 	}
 
-	appleProxy.getAppleIntegrationByIdAttr = func(ctx context.Context, p *appleIntegrationProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.getConversationsMessagingIntegrationsAppleByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, appleIntegrationId, id)
 		apiResponse := &platformclientv2.APIResponse{
 			StatusCode: http.StatusNotFound,
@@ -230,13 +228,13 @@ func TestUnitAppleIntegrationDelete(t *testing.T) {
 	ctx := context.Background()
 	gCloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
-	resourceSchema := ResourceAppleIntegration().Schema
+	resourceSchema := ResourceConversationsMessagingIntegrationsApple().Schema
 	resourceDataMap := buildAppleIntegrationResourceMap(appleIntegrationId, name, messagesForBusinessId, businessName, logoUrl)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(appleIntegrationId)
 
-	diag := deleteAppleIntegration(ctx, d, gCloud)
+	diag := deleteConversationsMessagingIntegrationsApple(ctx, d, gCloud)
 	assert.Nil(t, diag)
 	assert.Equal(t, appleIntegrationId, d.Id())
 }
@@ -249,8 +247,8 @@ func TestUnitGetAllAppleIntegrations(t *testing.T) {
 		name2 = "Apple Integration 2"
 	)
 
-	appleProxy := &appleIntegrationProxy{}
-	appleProxy.getAllAppleIntegrationAttr = func(ctx context.Context, p *appleIntegrationProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy := &conversationsMessagingIntegrationsAppleProxy{}
+	appleProxy.getAllConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		return &[]platformclientv2.Appleintegration{
 			{
 				Id:   &id1,
@@ -269,22 +267,22 @@ func TestUnitGetAllAppleIntegrations(t *testing.T) {
 	ctx := context.Background()
 	clientConfig := &platformclientv2.Configuration{}
 
-	integrations, diag := getAllAppleIntegrations(ctx, clientConfig)
+	integrations, diag := getAllConversationsMessagingIntegrationsApple(ctx, clientConfig)
 	assert.Nil(t, diag)
 	assert.Equal(t, 2, len(integrations))
 	assert.Contains(t, integrations, id1)
 	assert.Contains(t, integrations, id2)
 }
 
-func TestUnitDataSourceAppleIntegrationRead(t *testing.T) {
+func TestUnitDataSourceConversationsMessagingIntegrationsAppleRead(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetAppleIntegration"
-	appleProxy := &appleIntegrationProxy{}
-	appleProxy.getAppleIntegrationIdByNameAttr = func(ctx context.Context, p *appleIntegrationProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	appleProxy := &conversationsMessagingIntegrationsAppleProxy{}
+	appleProxy.getConversationsMessagingIntegrationsAppleIdByNameAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
 		assert.Equal(t, targetName, name)
 		return targetId, nil, false, nil
 	}
-	appleProxy.getAllAppleIntegrationAttr = func(ctx context.Context, p *appleIntegrationProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.getAllConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		return &[]platformclientv2.Appleintegration{
 			{
 				Id:   &targetId,
@@ -297,14 +295,14 @@ func TestUnitDataSourceAppleIntegrationRead(t *testing.T) {
 	ctx := context.Background()
 	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
 
-	resourceSchema := DataSourceAppleIntegration().Schema
+	resourceSchema := DataSourceConversationsMessagingIntegrationsApple().Schema
 
 	resourceDataMap := map[string]interface{}{
 		"name": targetName,
 	}
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
-	dataSourceAppleIntegrationRead(ctx, d, gcloud)
+	dataSourceConversationsMessagingIntegrationsAppleRead(ctx, d, gcloud)
 	assert.Equal(t, targetId, d.Id())
 }
 

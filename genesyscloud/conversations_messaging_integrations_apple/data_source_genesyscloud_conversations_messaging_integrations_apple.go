@@ -1,4 +1,4 @@
-package apple_integration
+package conversations_messaging_integrations_apple
 
 import (
 	"context"
@@ -19,21 +19,21 @@ import (
 */
 
 // dataSourceAppleIntegrationRead retrieves by name the id in question
-func dataSourceAppleIntegrationRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceConversationsMessagingIntegrationsAppleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getAppleIntegrationProxy(sdkConfig)
+	proxy := getConversationsMessagingIntegrationsAppleProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		appleIntegrationId, _, retryable, err := proxy.getAppleIntegrationIdByName(ctx, name)
+		appleIntegrationId, resp, retryable, err := proxy.getConversationsMessagingIntegrationsAppleIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(fmt.Errorf("Error searching apple integration %s | error: %s", name, err))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching apple integration %s", name), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(fmt.Errorf("No apple integration found with name %s", name))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No apple integration found with name %s", name), resp))
 		}
 
 		d.SetId(appleIntegrationId)
