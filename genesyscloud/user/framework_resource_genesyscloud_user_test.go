@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -11,10 +12,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -276,9 +283,9 @@ func TestAccFrameworkResourceUserAddresses(t *testing.T) {
 		email1            = "terraform-addr-" + uuid.NewString() + "@user.com"
 		email2            = "terraform-other-" + uuid.NewString() + "@user.com"
 		userName          = "Address User"
-		phone1            = "+13174269078"
-		phone2            = "+441434634996"
-		phoneExt1         = "1234"
+		phone1            = "+13173271898" // E.164 format matching SDK
+		phone2            = "+13173271899" // E.164 format matching SDK
+		phoneExt1         = "3532"         // Extension matching SDK
 		phoneExt2         = "5678"
 		phoneMediaType    = "PHONE"
 		smsMediaType      = "SMS"
@@ -397,12 +404,221 @@ func TestAccFrameworkResourceUserAddresses(t *testing.T) {
 				),
 			},
 			{
+				// Test extension-only phone number (SDK edge case)
+				Config: generateFrameworkUserWithAddresses(
+					userResourceLabel,
+					email1,
+					userName,
+					generateFrameworkUserPhoneAddress(
+						util.NullValue,        // No number
+						util.NullValue,        // Default to PHONE
+						util.NullValue,        // Default to WORK
+						strconv.Quote(phone1), // Extension using phone1 value
+					),
+					"", // No email address
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", phone1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
+				// Test extension-only to different extension-only (SDK edge case)
+				Config: generateFrameworkUserWithAddresses(
+					userResourceLabel,
+					email1,
+					userName,
+					generateFrameworkUserPhoneAddress(
+						util.NullValue,        // No number
+						util.NullValue,        // Default to PHONE
+						util.NullValue,        // Default to WORK
+						strconv.Quote(phone2), // Different extension using phone2 value
+					),
+					"", // No email address
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", phone2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
+				// Test extension-only to number without extension (SDK edge case)
+				Config: generateFrameworkUserWithAddresses(
+					userResourceLabel,
+					email1,
+					userName,
+					generateFrameworkUserPhoneAddress(
+						strconv.Quote(phone2), // Number
+						util.NullValue,        // Default to PHONE
+						util.NullValue,        // Default to WORK
+						util.NullValue,        // No extension
+					),
+					"", // No email address
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number", phone2),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
+				// Test number without extension to number with extension (SDK edge case)
+				Config: generateFrameworkUserWithAddresses(
+					userResourceLabel,
+					email1,
+					userName,
+					generateFrameworkUserPhoneAddress(
+						strconv.Quote(phone2),    // Same number
+						util.NullValue,           // Default to PHONE
+						util.NullValue,           // Default to WORK
+						strconv.Quote(phoneExt1), // Add extension
+					),
+					"", // No email address
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number", phone2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", phoneExt1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
+				// Test E.164 format validation with different phone number
+				Config: generateFrameworkUserWithAddresses(
+					userResourceLabel,
+					email1,
+					userName,
+					generateFrameworkUserPhoneAddress(
+						strconv.Quote(phone1), // E.164 formatted number
+						util.NullValue,        // Default to PHONE
+						util.NullValue,        // Default to WORK
+						util.NullValue,        // No extension
+					),
+					"", // No email address
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number", phone1),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
+				),
+			},
+			{
 				// Remove all addresses
 				Config: generateFrameworkUserResource(
 					userResourceLabel,
 					email1,
 					userName,
 					util.NullValue, // Active
+					util.NullValue, // No title
+					util.NullValue, // No department
+					util.NullValue, // No manager
+					util.NullValue, // Default acdAutoAnswer
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.#", "0"),
+				),
+			},
+			{
+				// Import state verification
+				ResourceName:            ResourceType + "." + userResourceLabel,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password"},
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
+	t.Parallel()
+	var (
+		userResourceLabel         = "test-user-extension-pool"
+		email                     = "terraform-ext-pool-" + uuid.NewString() + "@user.com"
+		userName                  = "Extension Pool User"
+		extensionPoolLabel1       = "test-extension-pool-1"
+		extensionPoolLabel2       = "test-extension-pool-2"
+		extensionPoolStartNumber1 = "15000"
+		extensionPoolEndNumber1   = "15001"
+		extensionPoolStartNumber2 = "15002"
+		extensionPoolEndNumber2   = "15003"
+		extension1                = "15000"
+		extension2                = "15002"
+		phoneMediaType            = "PHONE"
+		addrTypeWork              = "WORK"
+	)
+
+	// Clean up extension pools before test (if they exist)
+	// Note: Cleanup is handled in CheckDestroy function
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			map[string]*schema.Resource{
+				"genesyscloud_telephony_providers_edges_extension_pool": telephony_providers_edges_extension_pool.ResourceTelephonyExtensionPool(),
+			},
+			nil, // SDKv2 data sources
+			map[string]func() frameworkresource.Resource{
+				ResourceType: NewUserFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				ResourceType: NewUserFrameworkDataSource,
+			},
+		),
+		Steps: []resource.TestStep{
+			{
+				// Create user with extension pool
+				Config: generateFrameworkUserWithExtensionPool(
+					userResourceLabel,
+					email,
+					userName,
+					extensionPoolLabel1,
+					extensionPoolStartNumber1,
+					extensionPoolEndNumber1,
+					extension1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension_pool_id", "genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolLabel1, "id"),
+				),
+			},
+			{
+				// Update to different extension pool
+				Config: generateFrameworkUserWithExtensionPool(
+					userResourceLabel,
+					email,
+					userName,
+					extensionPoolLabel2,
+					extensionPoolStartNumber2,
+					extensionPoolEndNumber2,
+					extension2,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension_pool_id", "genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolLabel2, "id"),
+				),
+			},
+			{
+				// Remove addresses with extension pool (DEVTOOLING-1238)
+				Config: generateFrameworkUserResource(
+					userResourceLabel,
+					email,
+					userName,
+					util.NullValue, // Default state
 					util.NullValue, // No title
 					util.NullValue, // No department
 					util.NullValue, // No manager
@@ -447,30 +663,40 @@ func TestAccFrameworkResourceUserSkillsAndLanguages(t *testing.T) {
 	// Import routing skill and language packages for resource generation
 	skillResource1 := fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
 		name = "%s"
-	}`, skillResourceLabel1, skillName1)
+	}
+`, skillResourceLabel1, skillName1)
 
 	skillResource2 := fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
 		name = "%s"
-	}`, skillResourceLabel2, skillName2)
+	}
+`, skillResourceLabel2, skillName2)
 
 	langResource1 := fmt.Sprintf(`resource "genesyscloud_routing_language" "%s" {
 		name = "%s"
-	}`, langResourceLabel1, langName1)
+	}
+`, langResourceLabel1, langName1)
 
 	langResource2 := fmt.Sprintf(`resource "genesyscloud_routing_language" "%s" {
 		name = "%s"
-	}`, langResourceLabel2, langName2)
+	}
+`, langResourceLabel2, langName2)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { util.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
-			nil, // SDKv2 resources removed
-			nil, // SDKv2 data sources removed
+			map[string]*schema.Resource{
+				"genesyscloud_routing_skill": routing_skill.ResourceRoutingSkill(),
+			},
+			map[string]*schema.Resource{
+				"genesyscloud_routing_skill": routing_skill.DataSourceRoutingSkill(),
+			},
 			map[string]func() frameworkresource.Resource{
-				ResourceType: NewUserFrameworkResource,
+				ResourceType:                    NewUserFrameworkResource,
+				"genesyscloud_routing_language": routing_language.NewFrameworkRoutingLanguageResource,
 			},
 			map[string]func() datasource.DataSource{
-				ResourceType: NewUserFrameworkDataSource,
+				ResourceType:                    NewUserFrameworkDataSource,
+				"genesyscloud_routing_language": routing_language.NewFrameworkRoutingLanguageDataSource,
 			},
 		),
 		Steps: []resource.TestStep{
@@ -741,7 +967,9 @@ func generateFrameworkUserWithAddresses(resourceLabel, email, name, phoneAddress
 		name = "%s"
 		addresses = [
 			{
-				%s
+				phone_numbers = [
+					%s
+				]
 				%s
 			}
 		]
@@ -754,21 +982,21 @@ func generateFrameworkUserWithMultiplePhones(resourceLabel, email, name string, 
 		name = "%s"
 		addresses = [
 			{
-				%s
+				phone_numbers = [
+					%s
+				]
 			}
 		]
-	}`, ResourceType, resourceLabel, email, name, strings.Join(phoneAddresses, "\n"))
+	}`, ResourceType, resourceLabel, email, name, strings.Join(phoneAddresses, ",\n\t\t\t\t\t"))
 }
 
 func generateFrameworkUserPhoneAddress(phoneNum, phoneMediaType, phoneType, extension string) string {
-	return fmt.Sprintf(`phone_numbers = [
-		{
-			number = %s
-			media_type = %s
-			type = %s
-			extension = %s
-		}
-	]`, phoneNum, phoneMediaType, phoneType, extension)
+	return fmt.Sprintf(`{
+		number = %s
+		media_type = %s
+		type = %s
+		extension = %s
+	}`, phoneNum, phoneMediaType, phoneType, extension)
 }
 
 func generateFrameworkUserEmailAddress(emailAddress, emailType string) string {
@@ -781,31 +1009,63 @@ func generateFrameworkUserEmailAddress(emailAddress, emailType string) string {
 }
 
 func generateFrameworkUserWithSkillsAndLanguages(resourceLabel, email, name, skill, language string) string {
+	skillsBlock := ""
+	if skill != "" {
+		skillsBlock = fmt.Sprintf("routing_skills = [%s]", skill)
+	}
+
+	languagesBlock := ""
+	if language != "" {
+		languagesBlock = fmt.Sprintf("routing_languages = [%s]", language)
+	}
+
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
 		%s
-	}`, ResourceType, resourceLabel, email, name, skill, language)
+	}`, ResourceType, resourceLabel, email, name, skillsBlock, languagesBlock)
 }
 
 func generateFrameworkUserWithMultipleSkillsAndLanguages(resourceLabel, email, name string, skillsAndLanguages ...string) string {
+	var skills []string
+	var languages []string
+
+	// Separate skills from languages based on content
+	for _, item := range skillsAndLanguages {
+		if strings.Contains(item, "skill_id") {
+			skills = append(skills, item)
+		} else if strings.Contains(item, "language_id") {
+			languages = append(languages, item)
+		}
+	}
+
+	var blocks []string
+	if len(skills) > 0 {
+		skillsBlock := fmt.Sprintf("routing_skills = [%s]", strings.Join(skills, ","))
+		blocks = append(blocks, skillsBlock)
+	}
+	if len(languages) > 0 {
+		languagesBlock := fmt.Sprintf("routing_languages = [%s]", strings.Join(languages, ","))
+		blocks = append(blocks, languagesBlock)
+	}
+
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
 		name = "%s"
 		%s
-	}`, ResourceType, resourceLabel, email, name, strings.Join(skillsAndLanguages, "\n"))
+	}`, ResourceType, resourceLabel, email, name, strings.Join(blocks, "\n\t\t"))
 }
 
 func generateFrameworkUserRoutingSkill(skillID, proficiency string) string {
-	return fmt.Sprintf(`routing_skills {
+	return fmt.Sprintf(`{
 		skill_id = %s
 		proficiency = %s
 	}`, skillID, proficiency)
 }
 
 func generateFrameworkUserRoutingLanguage(langID, proficiency string) string {
-	return fmt.Sprintf(`routing_languages {
+	return fmt.Sprintf(`{
 		language_id = %s
 		proficiency = %s
 	}`, langID, proficiency)
@@ -885,7 +1145,7 @@ func TestAccFrameworkResourceUserValidation(t *testing.T) {
 					),
 					"", // No email address
 				),
-				ExpectError: regexp.MustCompile("Phone number must be in E.164 format"),
+				ExpectError: regexp.MustCompile("Phone Number Validation Error"),
 			},
 			{
 				// Test valid phone number passes validation
@@ -956,13 +1216,18 @@ func TestAccFrameworkResourceUserSkillProficiencyValidation(t *testing.T) {
 
 	skillResource := fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
 		name = "%s"
-	}`, skillResourceLabel, skillName)
+	}
+`, skillResourceLabel, skillName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { util.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
-			nil, // SDKv2 resources removed
-			nil, // SDKv2 data sources removed
+			map[string]*schema.Resource{
+				"genesyscloud_routing_skill": routing_skill.ResourceRoutingSkill(),
+			},
+			map[string]*schema.Resource{
+				"genesyscloud_routing_skill": routing_skill.DataSourceRoutingSkill(),
+			},
 			map[string]func() frameworkresource.Resource{
 				ResourceType: NewUserFrameworkResource,
 			},
@@ -983,7 +1248,7 @@ func TestAccFrameworkResourceUserSkillProficiencyValidation(t *testing.T) {
 					),
 					"", // No language
 				),
-				ExpectError: regexp.MustCompile("Attribute routing_skills\\[0\\]\\.proficiency value must be between 0\\.000000 and 5\\.000000"),
+				ExpectError: regexp.MustCompile(`value must be between 0.000000 and 5.000000, got: 10.000000`),
 			},
 			{
 				// Test valid proficiency passes validation
@@ -1254,7 +1519,7 @@ func TestAccFrameworkResourceUserRoutingUtilizationValidation(t *testing.T) {
 					userName,
 					generateFrameworkRoutingUtilizationCall(invalidCapacity, "false"),
 				),
-				ExpectError: regexp.MustCompile("Attribute routing_utilization\\[0\\]\\.call\\[0\\]\\.maximum_capacity value must be between 0 and 25"),
+				ExpectError: regexp.MustCompile(`(?s)value must be.*between 0 and 25.*got.*30`),
 			},
 			{
 				// Test valid capacity passes validation
@@ -1266,6 +1531,369 @@ func TestAccFrameworkResourceUserRoutingUtilizationValidation(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.maximum_capacity", validCapacity),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccFrameworkResourceUserRoutingUtilizationBasic(t *testing.T) {
+	t.Parallel()
+	var (
+		userResourceLabel = "test-user-routing-util-basic"
+		email             = "terraform-routing-basic-" + uuid.NewString() + "@user.com"
+		userName          = "Basic Routing User"
+		maxCapacity0      = "0"
+		maxCapacity1      = "10"
+		maxCapacity2      = "12"
+		utilTypeCall      = "call"
+		utilTypeEmail     = "email"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			nil, // SDKv2 resources removed
+			nil, // SDKv2 data sources removed
+			map[string]func() frameworkresource.Resource{
+				ResourceType: NewUserFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				ResourceType: NewUserFrameworkDataSource,
+			},
+		),
+		Steps: []resource.TestStep{
+			{
+				// Create with utilization settings - matches SDK TestAccResourceUserroutingUtilBasic step 1
+				Config: generateFrameworkUserWithRoutingUtilization(
+					userResourceLabel,
+					email,
+					userName,
+					generateFrameworkRoutingUtilizationAllMediaTypes(maxCapacity1, "false"),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.interruptible_media_types.#"),
+				),
+			},
+			{
+				// Update utilization settings and set different org-level settings - matches SDK step 2
+				Config: generateFrameworkUserWithRoutingUtilization(
+					userResourceLabel,
+					email,
+					userName,
+					generateFrameworkRoutingUtilizationWithSpecificInterruptible(maxCapacity2, "true", utilTypeEmail, utilTypeCall, utilTypeCall, utilTypeCall, utilTypeCall),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+				),
+			},
+			{
+				// Ensure max capacity can be set to 0 - matches SDK step 3
+				Config: generateFrameworkUserWithRoutingUtilization(
+					userResourceLabel,
+					email,
+					userName,
+					generateFrameworkRoutingUtilizationWithSpecificInterruptible(maxCapacity0, "true", utilTypeEmail, utilTypeCall, utilTypeCall, utilTypeCall, utilTypeCall),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+				),
+			},
+			{
+				// Reset to org-level settings by specifying empty routing utilization attribute - matches SDK step 4
+				Config: generateFrameworkUserResource(
+					userResourceLabel,
+					email,
+					userName,
+					util.NullValue, // Active
+					util.NullValue, // No title
+					util.NullValue, // No department
+					util.NullValue, // No manager
+					util.NullValue, // Default acdAutoAnswer
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Organization"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.#", "0"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+func TestAccFrameworkResourceUserRoutingUtilizationWithLabels(t *testing.T) {
+	t.Parallel()
+	var (
+		userResourceLabel       = "test-user-routing-util-labels"
+		email                   = "terraform-routing-labels-" + uuid.NewString() + "@user.com"
+		userName                = "Labels Routing User"
+		maxCapacity0            = "0"
+		maxCapacity1            = "10"
+		maxCapacity2            = "12"
+		utilTypeCall            = "call"
+		utilTypeEmail           = "email"
+		redLabelResourceLabel   = "label_red"
+		blueLabelResourceLabel  = "label_blue"
+		greenLabelResourceLabel = "label_green"
+		redLabelName            = "Terraform Red " + uuid.NewString()
+		blueLabelName           = "Terraform Blue " + uuid.NewString()
+		greenLabelName          = "Terraform Green " + uuid.NewString()
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			map[string]*schema.Resource{
+				"genesyscloud_routing_utilization_label": routing_utilization_label.ResourceRoutingUtilizationLabel(),
+			},
+			map[string]*schema.Resource{
+				"genesyscloud_routing_utilization_label": routing_utilization_label.DataSourceRoutingUtilizationLabel(),
+			},
+			map[string]func() frameworkresource.Resource{
+				ResourceType: NewUserFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				ResourceType: NewUserFrameworkDataSource,
+			},
+		),
+		Steps: []resource.TestStep{
+			{
+				// Create with utilization settings - matches SDK TestAccResourceUserroutingUtilWithLabels step 1
+				Config: generateFrameworkRoutingUtilizationLabelResource(redLabelResourceLabel, redLabelName, "") +
+					generateFrameworkRoutingUtilizationLabelResource(blueLabelResourceLabel, blueLabelName, redLabelResourceLabel) +
+					generateFrameworkRoutingUtilizationLabelResource(greenLabelResourceLabel, greenLabelName, blueLabelResourceLabel) +
+					generateFrameworkUserWithRoutingUtilizationAndLabels(
+						userResourceLabel,
+						email,
+						userName,
+						generateFrameworkRoutingUtilizationAllMediaTypes(maxCapacity1, "false"),
+						generateFrameworkLabelUtilization(redLabelResourceLabel, maxCapacity1, ""),
+						generateFrameworkLabelUtilization(blueLabelResourceLabel, maxCapacity1, redLabelResourceLabel),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.include_non_acd", "false"),
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.interruptible_media_types.#"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity1),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity1),
+				),
+			},
+			{
+				// Update utilization settings and set different org-level settings - matches SDK step 2
+				Config: generateFrameworkRoutingUtilizationLabelResource(redLabelResourceLabel, redLabelName, "") +
+					generateFrameworkRoutingUtilizationLabelResource(blueLabelResourceLabel, blueLabelName, redLabelResourceLabel) +
+					generateFrameworkRoutingUtilizationLabelResource(greenLabelResourceLabel, greenLabelName, blueLabelResourceLabel) +
+					generateFrameworkUserWithRoutingUtilizationAndLabels(
+						userResourceLabel,
+						email,
+						userName,
+						generateFrameworkRoutingUtilizationWithSpecificInterruptible(maxCapacity2, "true", utilTypeEmail, utilTypeCall, utilTypeCall, utilTypeCall, utilTypeCall),
+						generateFrameworkLabelUtilization(redLabelResourceLabel, maxCapacity2, ""),
+						generateFrameworkLabelUtilization(blueLabelResourceLabel, maxCapacity2, redLabelResourceLabel),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity2),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity2),
+				),
+			},
+			{
+				// Ensure max capacity can be set to 0 - matches SDK step 3
+				Config: generateFrameworkRoutingUtilizationLabelResource(redLabelResourceLabel, redLabelName, "") +
+					generateFrameworkRoutingUtilizationLabelResource(blueLabelResourceLabel, blueLabelName, redLabelResourceLabel) +
+					generateFrameworkRoutingUtilizationLabelResource(greenLabelResourceLabel, greenLabelName, blueLabelResourceLabel) +
+					generateFrameworkUserWithRoutingUtilizationAndLabels(
+						userResourceLabel,
+						email,
+						userName,
+						generateFrameworkRoutingUtilizationWithSpecificInterruptible(maxCapacity0, "true", utilTypeEmail, utilTypeCall, utilTypeCall, utilTypeCall, utilTypeCall),
+						generateFrameworkLabelUtilization(redLabelResourceLabel, maxCapacity0, ""),
+						generateFrameworkLabelUtilization(blueLabelResourceLabel, maxCapacity0, redLabelResourceLabel),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.call.0.interruptible_media_types", utilTypeEmail),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.callback.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.chat.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.email.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.include_non_acd", "true"),
+					util.ValidateStringInArray(ResourceType+"."+userResourceLabel, "routing_utilization.0.message.0.interruptible_media_types", utilTypeCall),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.0.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.0.maximum_capacity", maxCapacity0),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.1.label_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.0.label_utilizations.1.maximum_capacity", maxCapacity0),
+				),
+			},
+			{
+				// Reset to org-level settings by specifying empty routing utilization attribute - matches SDK step 4
+				Config: generateFrameworkUserResource(
+					userResourceLabel,
+					email,
+					userName,
+					util.NullValue, // Active
+					util.NullValue, // No title
+					util.NullValue, // No department
+					util.NullValue, // No manager
+					util.NullValue, // Default acdAutoAnswer
+				),
+				Check: resource.ComposeTestCheckFunc(
+					validateFrameworkUserUtilizationLevel(ResourceType+"."+userResourceLabel, "Organization"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "routing_utilization.#", "0"),
+				),
+			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(45 * time.Second)
+			return testVerifyUsersDestroyed(state)
+		},
+	})
+}
+
+func TestAccFrameworkResourceUserProfileSkills(t *testing.T) {
+	t.Parallel()
+	var (
+		userResourceLabel = "test-user-profile-skills"
+		email             = "terraform-profile-skills-" + uuid.NewString() + "@user.com"
+		userName          = "Profile Skills User"
+		skill1            = "Java"
+		skill2            = "Python"
+		skill3            = "JavaScript"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			nil, // SDKv2 resources removed
+			nil, // SDKv2 data sources removed
+			map[string]func() frameworkresource.Resource{
+				ResourceType: NewUserFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				ResourceType: NewUserFrameworkDataSource,
+			},
+		),
+		Steps: []resource.TestStep{
+			{
+				// Test profile skills creation
+				Config: generateFrameworkUserWithProfileSkills(
+					userResourceLabel,
+					email,
+					userName,
+					generateFrameworkProfileSkills(skill1, skill2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "profile_skills.#", "2"),
+				),
+			},
+			{
+				// Test profile skills update
+				Config: generateFrameworkUserWithProfileSkills(
+					userResourceLabel,
+					email,
+					userName,
+					generateFrameworkProfileSkills(skill1, skill2, skill3),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "profile_skills.#", "3"),
+				),
+			},
+			{
+				// Test profile skills removal
+				Config: generateFrameworkUserWithProfileSkills(
+					userResourceLabel,
+					email,
+					userName,
+					"", // No profile skills
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "profile_skills.#", "0"),
 				),
 			},
 		},
@@ -1294,6 +1922,164 @@ func generateFrameworkRoutingUtilizationCall(maxCapacity, includeNonAcd string) 
 			include_non_acd = %s
 		}
 	]`, maxCapacity, includeNonAcd)
+}
+
+func generateFrameworkRoutingUtilizationAllMediaTypes(maxCapacity, includeNonAcd string) string {
+	return fmt.Sprintf(`
+		call = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+			}
+		]
+		callback = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+			}
+		]
+		chat = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+			}
+		]
+		email = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+			}
+		]
+		message = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+			}
+		]`, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd)
+}
+
+func generateFrameworkRoutingUtilizationWithInterruptible(maxCapacity, includeNonAcd, callInterruptible, otherInterruptible string) string {
+	return fmt.Sprintf(`
+		call = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		callback = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		chat = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		email = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		message = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]`, maxCapacity, includeNonAcd, callInterruptible, maxCapacity, includeNonAcd, otherInterruptible, maxCapacity, includeNonAcd, otherInterruptible, maxCapacity, includeNonAcd, otherInterruptible, maxCapacity, includeNonAcd, otherInterruptible)
+}
+
+func generateFrameworkRoutingUtilizationWithSpecificInterruptible(maxCapacity, includeNonAcd, callInterruptible, callbackInterruptible, chatInterruptible, emailInterruptible, messageInterruptible string) string {
+	return fmt.Sprintf(`
+		call = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		callback = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		chat = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		email = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]
+		message = [
+			{
+				maximum_capacity = %s
+				include_non_acd = %s
+				interruptible_media_types = ["%s"]
+			}
+		]`, maxCapacity, includeNonAcd, callInterruptible, maxCapacity, includeNonAcd, callbackInterruptible, maxCapacity, includeNonAcd, chatInterruptible, maxCapacity, includeNonAcd, emailInterruptible, maxCapacity, includeNonAcd, messageInterruptible)
+}
+
+func generateFrameworkUserWithProfileSkills(resourceLabel, email, name, profileSkills string) string {
+	profileSkillsConfig := ""
+	if profileSkills != "" {
+		profileSkillsConfig = fmt.Sprintf("profile_skills = [%s]", profileSkills)
+	}
+
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		%s
+	}`, ResourceType, resourceLabel, email, name, profileSkillsConfig)
+}
+
+func generateFrameworkProfileSkills(skills ...string) string {
+	var skillStrings []string
+	for _, skill := range skills {
+		skillStrings = append(skillStrings, fmt.Sprintf(`"%s"`, skill))
+	}
+	return strings.Join(skillStrings, ", ")
+}
+
+// validateFrameworkUserUtilizationLevel validates that the user's utilization level matches expected value
+// This ensures compatibility with SDK behavior by checking actual API response
+func validateFrameworkUserUtilizationLevel(userResourcePath string, level string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		userResource, ok := state.RootModule().Resources[userResourcePath]
+		if !ok {
+			return fmt.Errorf("Failed to find user %s in state", userResourcePath)
+		}
+		userID := userResource.Primary.ID
+
+		usersAPI := platformclientv2.NewUsersApi()
+		util, _, err := usersAPI.GetRoutingUserUtilization(userID)
+		if err != nil {
+			// Unexpected error
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+
+		if *util.Level != level {
+			return fmt.Errorf("Unexpected utilization level for user %s: %s", userID, *util.Level)
+		}
+
+		return nil
+	}
 }
 
 // testVerifyUsersDestroyed verifies that users are properly destroyed after tests
@@ -1339,4 +2125,552 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 		}
 	}
 	return nil
+}
+
+// Helper functions for routing utilization with labels tests
+
+func generateFrameworkUserWithRoutingUtilizationAndLabels(resourceLabel, email, name, routingUtil string, labelUtilizations ...string) string {
+	labelUtilConfig := ""
+	if len(labelUtilizations) > 0 {
+		labelUtilConfig = fmt.Sprintf("label_utilizations = [\n%s\n]", strings.Join(labelUtilizations, ",\n"))
+	}
+
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		routing_utilization = [
+			{
+				%s
+				%s
+			}
+		]
+	}`, ResourceType, resourceLabel, email, name, routingUtil, labelUtilConfig)
+}
+
+func generateFrameworkLabelUtilization(labelResourceLabel, maxCapacity, interruptingLabelResourceLabel string) string {
+	interruptingConfig := ""
+	if interruptingLabelResourceLabel != "" {
+		interruptingConfig = fmt.Sprintf(`interrupting_label_ids = [genesyscloud_routing_utilization_label.%s.id]`, interruptingLabelResourceLabel)
+	}
+
+	return fmt.Sprintf(`{
+		label_id = genesyscloud_routing_utilization_label.%s.id
+		maximum_capacity = %s
+		%s
+	}`, labelResourceLabel, maxCapacity, interruptingConfig)
+}
+
+func generateFrameworkRoutingUtilizationLabelResource(resourceLabel, name, parentResourceLabel string) string {
+	parentConfig := ""
+	if parentResourceLabel != "" {
+		parentConfig = fmt.Sprintf(`parent_label_id = genesyscloud_routing_utilization_label.%s.id`, parentResourceLabel)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_routing_utilization_label" "%s" {
+		name = "%s"
+		%s
+	}
+	`, resourceLabel, name, parentConfig)
+}
+
+// Framework-compatible helper functions for test migration
+
+// generateFrameworkRoutingUtilMediaType generates a Framework-compatible routing utilization media type configuration
+// This is the Framework equivalent of routingUtilization.GenerateRoutingUtilMediaType from SDK
+func generateFrameworkRoutingUtilMediaType(
+	mediaType string,
+	maxCapacity string,
+	includeNonAcd string,
+	interruptTypes ...string) string {
+
+	interruptConfig := ""
+	if len(interruptTypes) > 0 {
+		interruptConfig = fmt.Sprintf(`interruptible_media_types = [%s]`, strings.Join(interruptTypes, ","))
+	}
+
+	return fmt.Sprintf(`%s = [
+		{
+			maximum_capacity = %s
+			include_non_acd = %s
+			%s
+		}
+	]`, mediaType, maxCapacity, includeNonAcd, interruptConfig)
+}
+
+// generateFrameworkUserWithRoutingUtilizationComplete generates a user with complete routing utilization settings
+// This helper combines user creation with routing utilization for comprehensive testing
+func generateFrameworkUserWithRoutingUtilizationComplete(
+	resourceLabel string,
+	email string,
+	name string,
+	callConfig string,
+	callbackConfig string,
+	chatConfig string,
+	emailConfig string,
+	messageConfig string,
+	labelUtilizations ...string) string {
+
+	labelUtilConfig := ""
+	if len(labelUtilizations) > 0 {
+		labelUtilConfig = fmt.Sprintf("label_utilizations = [\n%s\n]", strings.Join(labelUtilizations, ",\n"))
+	}
+
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		routing_utilization = [
+			{
+				%s
+				%s
+				%s
+				%s
+				%s
+				%s
+			}
+		]
+	}`, ResourceType, resourceLabel, email, name, callConfig, callbackConfig, chatConfig, emailConfig, messageConfig, labelUtilConfig)
+}
+
+// generateFrameworkUserWithPasswordComplete generates a user with password and additional attributes
+// This helper supports comprehensive password testing scenarios
+func generateFrameworkUserWithPasswordComplete(
+	resourceLabel string,
+	email string,
+	name string,
+	password string,
+	state string,
+	title string,
+	department string) string {
+
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		password = %s
+		%s
+		%s
+		%s
+	}`, ResourceType, resourceLabel, email, name, password,
+		generateOptionalAttr("state", state),
+		generateOptionalAttr("title", title),
+		generateOptionalAttr("department", department))
+}
+
+// generateFrameworkUserWithExtensionPoolComplete generates a user with extension pool and additional phone configurations
+// This helper supports comprehensive extension pool integration testing
+func generateFrameworkUserWithExtensionPoolComplete(
+	userResourceLabel string,
+	email string,
+	name string,
+	extensionPoolLabel string,
+	startNumber string,
+	endNumber string,
+	extension string,
+	phoneNumber string,
+	mediaType string,
+	addressType string) string {
+
+	phoneConfig := generateFrameworkUserPhoneAddressWithExtensionPoolComplete(
+		phoneNumber, extension, mediaType, addressType, extensionPoolLabel)
+
+	return fmt.Sprintf(`
+resource "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
+	start_number = "%s"
+	end_number = "%s"
+	description = "Test extension pool for user integration"
+}
+
+resource "%s" "%s" {
+	email = "%s"
+	name = "%s"
+	addresses = [
+		{
+			phone_numbers = [
+				%s
+			]
+		}
+	]
+}
+`, extensionPoolLabel, startNumber, endNumber, ResourceType, userResourceLabel, email, name, phoneConfig)
+}
+
+// generateFrameworkUserPhoneAddressWithExtensionPoolComplete generates a phone address with extension pool and optional phone number
+// This helper supports edge cases like extension-only configurations
+func generateFrameworkUserPhoneAddressWithExtensionPoolComplete(
+	phoneNumber string,
+	extension string,
+	mediaType string,
+	addressType string,
+	extensionPoolLabel string) string {
+
+	numberConfig := ""
+	if phoneNumber != util.NullValue && phoneNumber != "" {
+		numberConfig = fmt.Sprintf(`number = %s`, phoneNumber)
+	}
+
+	return fmt.Sprintf(`{
+		%s
+		extension = "%s"
+		media_type = "%s"
+		type = "%s"
+		extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id
+	}`, numberConfig, extension, mediaType, addressType, extensionPoolLabel)
+}
+
+// Validation helper functions for Framework tests
+
+// validateFrameworkUserRoutingUtilizationSettings validates routing utilization settings match expected values
+func validateFrameworkUserRoutingUtilizationSettings(
+	userResourcePath string,
+	mediaType string,
+	expectedCapacity string,
+	expectedIncludeNonAcd string) resource.TestCheckFunc {
+
+	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("routing_utilization.0.%s.0.maximum_capacity", mediaType), expectedCapacity),
+		resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("routing_utilization.0.%s.0.include_non_acd", mediaType), expectedIncludeNonAcd),
+	)
+}
+
+// validateFrameworkUserPhoneNumberEdgeCases validates phone number edge case scenarios
+func validateFrameworkUserPhoneNumberEdgeCases(
+	userResourcePath string,
+	phoneIndex string,
+	expectedNumber string,
+	expectedExtension string,
+	expectedMediaType string,
+	expectedType string) resource.TestCheckFunc {
+
+	checks := []resource.TestCheckFunc{}
+
+	if expectedNumber != "" {
+		checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.number", phoneIndex), expectedNumber))
+	} else {
+		checks = append(checks, resource.TestCheckNoResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.number", phoneIndex)))
+	}
+
+	if expectedExtension != "" {
+		checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.extension", phoneIndex), expectedExtension))
+	} else {
+		checks = append(checks, resource.TestCheckNoResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.extension", phoneIndex)))
+	}
+
+	checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.media_type", phoneIndex), expectedMediaType))
+	checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.type", phoneIndex), expectedType))
+
+	return resource.ComposeTestCheckFunc(checks...)
+}
+
+// validateFrameworkUserExtensionPoolIntegration validates extension pool integration
+func validateFrameworkUserExtensionPoolIntegration(
+	userResourcePath string,
+	extensionPoolResourcePath string,
+	expectedExtension string) resource.TestCheckFunc {
+
+	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(userResourcePath, "addresses.0.phone_numbers.0.extension", expectedExtension),
+		resource.TestCheckResourceAttrPair(userResourcePath, "addresses.0.phone_numbers.0.extension_pool_id", extensionPoolResourcePath, "id"),
+	)
+}
+
+// validateFrameworkUserPasswordUpdate validates password update functionality
+func validateFrameworkUserPasswordUpdate(
+	userResourcePath string,
+	passwordUpdateTracker *bool,
+	expectedPasswordValue *string) resource.TestCheckFunc {
+
+	return func(state *terraform.State) error {
+		if passwordUpdateTracker != nil && expectedPasswordValue != nil {
+			if *expectedPasswordValue == "" && *passwordUpdateTracker {
+				return fmt.Errorf("expected password update to not be called for empty password")
+			}
+			if *expectedPasswordValue != "" && !*passwordUpdateTracker {
+				return fmt.Errorf("expected password update to be called for non-empty password")
+			}
+		}
+		return nil
+	}
+}
+func TestAccFrameworkResourceUserPassword(t *testing.T) {
+	t.Parallel()
+	var (
+		userResourceLabel = "test-user-password"
+		email             = "terraform-framework-" + uuid.NewString() + "@user.com"
+		userName          = "Password Test User"
+		initialPassword   = "myInitialPassword123!@#"
+		updatedPassword   = "myUpdatedPassword456!@#"
+
+		// Track password updates
+		passwordUpdateCalled bool
+		lastPasswordUpdate   string
+	)
+
+	err := setUserTestsActiveEnvVar()
+	if err != nil {
+		t.Logf("failed to set env var: %s", err.Error())
+	}
+	defer func() {
+		if err = unsetUserTestsActiveEnvVar(); err != nil {
+			t.Logf("failed to unset env var: %s", err.Error())
+		}
+	}()
+
+	// Reset tracking variables
+	passwordUpdateCalled = false
+	lastPasswordUpdate = ""
+
+	// Get the authorized SDK configuration
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create our mock proxy with the authorized configuration
+	userProxyInstance := newUserProxy(sdkConfig)
+	originalUpdatePassword := userProxyInstance.updatePasswordAttr
+
+	userProxyInstance.updatePasswordAttr = func(ctx context.Context, p *userProxy, id string, password string) (*platformclientv2.APIResponse, error) {
+		passwordUpdateCalled = true
+		lastPasswordUpdate = password
+		return originalUpdatePassword(ctx, p, id, password)
+	}
+
+	// Initialize internal proxy
+	internalProxy = userProxyInstance
+	defer func() {
+		internalProxy = nil
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			nil, // SDKv2 resources removed
+			nil, // SDKv2 data sources removed
+			map[string]func() frameworkresource.Resource{
+				ResourceType: NewUserFrameworkResource,
+			},
+			map[string]func() datasource.DataSource{
+				ResourceType: NewUserFrameworkDataSource,
+			},
+		),
+		Steps: []resource.TestStep{
+			{
+				// Create user with initial password
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				Config: generateFrameworkUserWithPassword(
+					userResourceLabel,
+					email,
+					userName,
+					strconv.Quote(initialPassword),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if !passwordUpdateCalled {
+							return fmt.Errorf("expected password update to be called for initial password")
+						}
+						if lastPasswordUpdate != initialPassword {
+							return fmt.Errorf("expected password to be %s, got %s", initialPassword, lastPasswordUpdate)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				// Update with new password
+				Config: generateFrameworkUserWithPassword(
+					userResourceLabel,
+					email,
+					userName,
+					strconv.Quote(updatedPassword),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if !passwordUpdateCalled {
+							return fmt.Errorf("expected password update to be called for password update")
+						}
+						if lastPasswordUpdate != updatedPassword {
+							return fmt.Errorf("expected password to be %s, got %s", updatedPassword, lastPasswordUpdate)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					// Reset for next test
+					passwordUpdateCalled = false
+					lastPasswordUpdate = ""
+				},
+				Config: generateFrameworkUserWithPassword(
+					userResourceLabel,
+					email,
+					userName,
+					`""`, // Empty password
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+userResourceLabel, "id"),
+					func(state *terraform.State) error {
+						if passwordUpdateCalled {
+							return fmt.Errorf("expected password update to not be called for empty password")
+						}
+						return nil
+					},
+				),
+			},
+		},
+		CheckDestroy: testVerifyUsersDestroyed,
+	})
+}
+
+// Helper function to generate Framework user resource with password
+func generateFrameworkUserWithPassword(
+	resourceLabel string,
+	email string,
+	name string,
+	password string,
+) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		password = %s
+	}
+	`, ResourceType, resourceLabel, email, name, password)
+}
+
+// Helper function to generate Framework user with extension pool integration
+func generateFrameworkUserWithExtensionPool(userResourceLabel, email, name, extensionPoolLabel, startNumber, endNumber, extension string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
+	start_number = "%s"
+	end_number = "%s"
+	description = "Test extension pool for user integration"
+}
+
+resource "%s" "%s" {
+	email = "%s"
+	name = "%s"
+	addresses = [
+		{
+			phone_numbers = [
+				{
+					extension = "%s"
+					media_type = "PHONE"
+					type = "WORK"
+					extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id
+				}
+			]
+		}
+	]
+}
+`, extensionPoolLabel, startNumber, endNumber, ResourceType, userResourceLabel, email, name, extension, extensionPoolLabel)
+}
+
+// Helper function to generate Framework user phone address with extension pool
+func generateFrameworkUserPhoneAddressWithExtensionPool(extension, extensionPoolLabel string) string {
+	return fmt.Sprintf(`{
+		extension = "%s"
+		media_type = "PHONE"
+		type = "WORK"
+		extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id
+	}`, extension, extensionPoolLabel)
+}
+
+// Helper function to generate Framework user data source configuration
+func generateUserDataSource(
+	resourceLabel string,
+	email string,
+	name string,
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	dependsOnResource string,
+) string {
+	return fmt.Sprintf(`data "%s" "%s" {
+		email = %s
+		name = %s
+		depends_on = [%s]
+	}`, ResourceType, resourceLabel, email, name, dependsOnResource)
+}
+
+// GenerateBasicUserResource generates a basic user resource with minimum required fields
+func GenerateBasicUserResource(resourceLabel string, email string, name string) string {
+	return GenerateUserResource(resourceLabel, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
+}
+
+func GenerateUserResource(resourceLabel string, email string, name string, state string, title string, department string, manager string, acdAutoAnswer string, profileSkills string, certifications string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		state = %s
+		title = %s
+		department = %s
+		manager = %s
+		acd_auto_answer = %s
+		profile_skills = [%s]
+		certifications = [%s]
+	}
+	`, ResourceType, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}
+
+func GenerateVoicemailUserpolicies(timeout int, sendEmailNotifications bool) string {
+	return fmt.Sprintf(`voicemail_userpolicies {
+		alert_timeout_seconds = %d
+		send_email_notifications = %t
+	}
+	`, timeout, sendEmailNotifications)
+}
+
+// getFrameworkProviderFactories returns provider factories for Framework testing.
+// This creates a muxed provider that includes:
+//   - Framework resources: genesyscloud_user (for creating test users)
+//   - Framework data sources: genesyscloud_user (for testing data source lookups)
+//   - SDKv2 resources: Any dependencies needed (e.g., auth_division if needed)
+//
+// The muxed provider allows tests to use both Framework and SDKv2 resources together.
+func getFrameworkProviderFactories() map[string]func() (tfprotov6.ProviderServer, error) {
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"genesyscloud": func() (tfprotov6.ProviderServer, error) {
+			// Define Framework resources for testing
+			frameworkResources := map[string]func() frameworkresource.Resource{
+				ResourceType: NewUserFrameworkResource,
+			}
+
+			// Define Framework data sources for testing
+			frameworkDataSources := map[string]func() datasource.DataSource{
+				ResourceType: NewUserFrameworkDataSource,
+			}
+
+			// Create muxed provider that includes both Framework and SDKv2 resources
+			// This allows the test to use SDKv2 dependencies (if any) alongside Framework user resource/data source
+			muxFactory := provider.NewMuxedProvider(
+				"test",
+				map[string]*schema.Resource{}, // SDKv2 resources (add dependencies here if needed)
+				map[string]*schema.Resource{}, // SDKv2 data sources (add dependencies here if needed)
+				frameworkResources,
+				frameworkDataSources,
+			)
+
+			serverFactory, err := muxFactory()
+			if err != nil {
+				return nil, err
+			}
+
+			return serverFactory(), nil
+		},
+	}
 }

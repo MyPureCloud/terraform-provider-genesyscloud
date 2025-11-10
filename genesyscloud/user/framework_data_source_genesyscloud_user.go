@@ -4,78 +4,80 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/mail"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	sdkdiag "github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 // Ensure UserFrameworkDataSource satisfies various data source interfaces
 var (
-	_ datasource.DataSource              = &UserFrameworkDataSource{}
-	_ datasource.DataSourceWithConfigure = &UserFrameworkDataSource{}
+	_                   datasource.DataSource              = &UserFrameworkDataSource{}
+	_                   datasource.DataSourceWithConfigure = &UserFrameworkDataSource{}
+	dataSourceUserCache *rc.DataSourceCache
 )
 
-// UserFrameworkDataSource defines the data source implementation for Genesys Cloud User
+// UserFrameworkDataSource implements the Terraform Plugin Framework data source for Genesys Cloud Users.
+//
+// Lifecycle:
+// 1. NewUserFrameworkDataSource() - Creates the data source instance (called by provider during registration)
+// 2. Metadata() - Registers the data source name "genesyscloud_user" (called once at provider startup)
+// 3. Schema() - Defines the data source structure and attributes (called once at provider startup)
+// 4. Configure() - Receives API client configuration from provider (called once at provider startup)
+// 5. Read() - Fetches user data from Genesys Cloud API (called every time Terraform needs the data)
+//
+// Usage in Terraform:
+//
+//	data "genesyscloud_user" "example" {
+//	  email = "user@example.com"  # or name = "John Doe"
+//	}
+//
+// The data source uses a cache (dataSourceUserCache) to improve performance by reducing API calls.
 type UserFrameworkDataSource struct {
 	clientConfig *platformclientv2.Configuration
 }
 
 // UserFrameworkDataSourceModel describes the data source data model
+// The SDKv2 implementation only has the following fields configured in the source code
 type UserFrameworkDataSourceModel struct {
-	Id         types.String `tfsdk:"id"`
-	Email      types.String `tfsdk:"email"`
-	Name       types.String `tfsdk:"name"`
-	State      types.String `tfsdk:"state"`
-	DivisionId types.String `tfsdk:"division_id"`
+	Id    types.String `tfsdk:"id"`
+	Email types.String `tfsdk:"email"`
+	Name  types.String `tfsdk:"name"`
 }
 
-// NewUserFrameworkDataSource creates a new instance of the UserFrameworkDataSource
+// NewUserFrameworkDataSource creates a new instance of the UserFrameworkDataSource.
+// Called by: Provider during registration
+// When: Once when the provider is initialized
 func NewUserFrameworkDataSource() datasource.DataSource {
 	return &UserFrameworkDataSource{}
 }
 
-// Metadata returns the data source type name
+// Metadata sets the data source type name to "genesyscloud_user".
+// Called by: Terraform Plugin Framework
+// When: Once during provider initialization (step 1 of 4)
+// Purpose: Registers the data source name used in Terraform configs
 func (d *UserFrameworkDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_user"
 }
 
-// Schema defines the schema for the data source
+// Schema defines the data source structure (input/output attributes).
+// Called by: Terraform Plugin Framework
+// When: Once during provider initialization (step 2 of 4), after Metadata()
+// Purpose: Defines available fields in: data "genesyscloud_user" "example" { ... }
 func (d *UserFrameworkDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "The ID of the user.",
-				Computed:    true,
-			},
-			"email": schema.StringAttribute{
-				Description: "User email.",
-				Optional:    true,
-			},
-			"name": schema.StringAttribute{
-				Description: "User name.",
-				Optional:    true,
-			},
-			"state": schema.StringAttribute{
-				Description: "The user's state (active, inactive).",
-				Computed:    true,
-			},
-			"division_id": schema.StringAttribute{
-				Description: "The division ID of the user.",
-				Computed:    true,
-			},
-		},
-	}
+	resp.Schema = UserDataSourceSchema()
 }
 
-// Configure adds the provider configured client to the data source
+// Configure receives the provider's API client configuration.
+// Called by: Terraform Plugin Framework
+// When: Once during provider initialization (step 3 of 4), after Schema()
+// Purpose: Receives API credentials and client config to enable API calls
 func (d *UserFrameworkDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured
 	if req.ProviderData == nil {
@@ -94,7 +96,14 @@ func (d *UserFrameworkDataSource) Configure(ctx context.Context, req datasource.
 	d.clientConfig = providerMeta.ClientConfig
 }
 
-// Read refreshes the Terraform state with the latest data
+// Read refreshes the Terraform state with the latest data.
+// Called by: Terraform Plugin Framework
+// When: Every time Terraform needs to read the data source (step 4 of 4)
+//   - During `terraform plan`
+//   - During `terraform apply`
+//   - During `terraform refresh`
+//
+// Purpose: Fetches user data from Genesys Cloud API and stores it in Terraform state
 func (d *UserFrameworkDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config UserFrameworkDataSourceModel
 
@@ -106,78 +115,57 @@ func (d *UserFrameworkDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	// Validate that at least one search field is provided
 	if config.Email.IsNull() && config.Name.IsNull() {
-		resp.Diagnostics.AddError(
-			"Missing Search Field",
-			"Either 'email' or 'name' must be specified to search for a user",
+		resp.Diagnostics.Append(
+			util.BuildFrameworkDiagnosticError(
+				"genesyscloud_user",
+				"no user search field specified",
+				nil,
+			)...,
 		)
 		return
 	}
 
-	// Determine search key - email takes precedence over name
+	// Determine search key
 	var searchKey string
 	if !config.Email.IsNull() {
 		searchKey = config.Email.ValueString()
-	} else {
+	}
+	if !config.Name.IsNull() {
 		searchKey = config.Name.ValueString()
 	}
 
 	log.Printf("Searching for user with key: %s", searchKey)
 
-	// Get user ID using the existing proxy method with retry logic
-	proxy := GetUserProxy(d.clientConfig)
-	userId, diags := d.getUserIdByNameWithRetry(ctx, proxy, searchKey)
-	if diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	// Initialize cache if not already initialized
+	if dataSourceUserCache == nil {
+		dataSourceUserCache = rc.NewDataSourceCache(d.clientConfig, hydrateUserCache, getUserByName)
+	}
+
+	// Retrieve user ID from cache or API
+	userId, sdkDiags := rc.RetrieveId(dataSourceUserCache, ResourceType, searchKey, ctx)
+	if sdkDiags.HasError() {
+		frameworkDiags := util.ConvertSDKDiagnosticsToFramework(sdkDiags)
+		resp.Diagnostics.Append(frameworkDiags...)
 		return
 	}
 
 	// Set the ID in the state
 	config.Id = types.StringValue(userId)
 
-	// Fetch full user details to populate name and email
-	user, _, err := proxy.getUserById(ctx, userId, nil, "")
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading User",
-			fmt.Sprintf("Could not read user %s: %s", userId, err),
-		)
-		return
-	}
-
-	// Set user details in the state
-	if user.Name != nil {
-		config.Name = types.StringValue(*user.Name)
-	} else {
-		config.Name = types.StringNull()
-	}
-	if user.Email != nil {
-		config.Email = types.StringValue(*user.Email)
-	} else {
-		config.Email = types.StringNull()
-	}
-	if user.State != nil {
-		config.State = types.StringValue(*user.State)
-	} else {
-		config.State = types.StringNull()
-	}
-	if user.Division != nil && user.Division.Id != nil {
-		config.DivisionId = types.StringValue(*user.Division.Id)
-	} else {
-		config.DivisionId = types.StringNull()
-	}
-
-	log.Printf("Found user with ID: %s, Name: %s, Email: %s, State: %s, DivisionId: %s", userId,
-		config.Name.ValueString(), config.Email.ValueString(), config.State.ValueString(), config.DivisionId.ValueString())
+	log.Printf("Found user with ID: %s, Name: %s, Email: %s", userId, config.Name.ValueString(), config.Email.ValueString())
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-// getUserIdByNameWithRetry implements retry logic for user lookup with eventual consistency
-func (d *UserFrameworkDataSource) getUserIdByNameWithRetry(ctx context.Context, proxy *userProxy, searchField string) (string, diag.Diagnostics) {
-	var diags diag.Diagnostics
-	var userId string
-
+// getUserByName retrieves a user ID by searching for a user by name or email.
+// Note: Returns SDKv2 diag.Diagnostics for compatibility with resource_cache infrastructure.
+// The cache expects: func(*DataSourceCache, string, context.Context) (string, diag.Diagnostics)
+// This will be updated when the cache is migrated to Plugin Framework.
+func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Context) (string, sdkdiag.Diagnostics) {
+	log.Printf("getUserByName for data source genesyscloud_user")
+	proxy := GetUserProxy(c.ClientConfig)
+	userId := ""
 	exactSearchType := "EXACT"
 	sortOrderAsc := "ASC"
 	emailField := "email"
@@ -185,25 +173,22 @@ func (d *UserFrameworkDataSource) getUserIdByNameWithRetry(ctx context.Context, 
 	searchCriteria := platformclientv2.Usersearchcriteria{
 		VarType: &exactSearchType,
 	}
-
-	// Determine if search field is email or name
-	searchFieldValue, searchFieldType := d.emailorNameDisambiguation(searchField)
+	searchFieldValue, searchFieldType := emailorNameDisambiguation(searchField)
 	searchCriteria.Fields = &[]string{searchFieldType}
 	searchCriteria.Value = &searchFieldValue
 
-	err := retry.RetryContext(ctx, 15*time.Second, func() *retry.RetryError {
-		users, _, getErr := proxy.getUserByName(ctx, platformclientv2.Usersearchrequest{
+	sdkDiags := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+		users, resp, getErr := proxy.getUserByName(ctx, platformclientv2.Usersearchrequest{
 			SortBy:    &emailField,
 			SortOrder: &sortOrderAsc,
 			Query:     &[]platformclientv2.Usersearchcriteria{searchCriteria},
 		})
-
 		if getErr != nil {
-			return retry.NonRetryableError(fmt.Errorf("error requesting users: %s", getErr))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Error requesting users: %s", getErr), resp))
 		}
 
 		if users.Results == nil || len(*users.Results) == 0 {
-			return retry.RetryableError(fmt.Errorf("no users found with search criteria %v", searchCriteria))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
 		}
 
 		// Select first user in the list
@@ -211,24 +196,44 @@ func (d *UserFrameworkDataSource) getUserIdByNameWithRetry(ctx context.Context, 
 		return nil
 	})
 
-	if err != nil {
-		diags.AddError(
-			"Failed to Find User",
-			fmt.Sprintf("Failed to find user with search field '%s': %s", searchField, err),
-		)
-		return "", diags
-	}
-
-	return userId, diags
+	log.Printf("getUserByName completed for data source genesyscloud_user")
+	return userId, sdkDiags
 }
 
-// emailorNameDisambiguation determines if the search field is an email or name
-func (d *UserFrameworkDataSource) emailorNameDisambiguation(searchField string) (string, string) {
-	emailField := "email"
-	nameField := "name"
-	_, err := mail.ParseAddress(searchField)
-	if err == nil {
-		return searchField, emailField
+func hydrateUserCache(c *rc.DataSourceCache, ctx context.Context) error {
+	log.Printf("hydrating cache for data source genesyscloud_user")
+	proxy := GetUserProxy(c.ClientConfig)
+	const pageSize = 100
+	users, response, err := proxy.hydrateUserCache(ctx, pageSize, 1)
+	if err != nil {
+		return fmt.Errorf("failed to get first page of users: %v %v", err, response)
 	}
-	return searchField, nameField
+
+	if users.Entities == nil || len(*users.Entities) == 0 {
+		return nil
+	}
+
+	for _, user := range *users.Entities {
+		c.Cache[*user.Name] = *user.Id
+		c.Cache[*user.Email] = *user.Id
+	}
+
+	for pageNum := 2; pageNum <= *users.PageCount; pageNum++ {
+		users, response, err := proxy.hydrateUserCache(ctx, pageSize, pageNum)
+
+		log.Printf("hydrating cache for data source genesyscloud_user with page number: %v", pageNum)
+		if err != nil {
+			return fmt.Errorf("failed to get page of users: %v %v", err, response)
+		}
+		if users.Entities == nil || len(*users.Entities) == 0 {
+			break
+		}
+		// Add ids to cache
+		for _, user := range *users.Entities {
+			c.Cache[*user.Name] = *user.Id
+			c.Cache[*user.Email] = *user.Id
+		}
+	}
+	log.Printf("cache hydration completed for data source genesyscloud_user")
+	return nil
 }
