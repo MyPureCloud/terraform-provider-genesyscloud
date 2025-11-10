@@ -1,4 +1,4 @@
-resource "genesyscloud_aistudio_summary_setting" "summary" {
+resource "genesyscloud_ai_studio_summary_setting" "summary" {
   name         = "user10"
   language     = "en-au"
   summary_type = "Concise"

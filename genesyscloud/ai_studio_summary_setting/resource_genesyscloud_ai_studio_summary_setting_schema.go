@@ -1,4 +1,4 @@
-package aistudio_summary_setting
+package ai_studio_summary_setting
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -9,24 +9,24 @@ import (
 )
 
 /*
-resource_genesycloud_aistudio_summary_setting_schema.go holds four functions within it:
+resource_genesycloud_ai_studio_summary_setting_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the aistudio_summary_setting resource.
-3.  The datasource schema definitions for the aistudio_summary_setting datasource.
-4.  The resource exporter configuration for the aistudio_summary_setting exporter.
+2.  The resource schema definitions for the ai_studio_summary_setting resource.
+3.  The datasource schema definitions for the ai_studio_summary_setting datasource.
+4.  The resource exporter configuration for the ai_studio_summary_setting exporter.
 */
-const ResourceType = "genesyscloud_aistudio_summary_setting"
+const ResourceType = "genesyscloud_ai_studio_summary_setting"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceType, ResourceAistudioSummarySetting())
-	regInstance.RegisterDataSource(ResourceType, DataSourceAistudioSummarySetting())
-	regInstance.RegisterExporter(ResourceType, AistudioSummarySettingExporter())
+	regInstance.RegisterResource(ResourceType, ResourceAiStudioSummarySetting())
+	regInstance.RegisterDataSource(ResourceType, DataSourceAiStudioSummarySetting())
+	regInstance.RegisterExporter(ResourceType, AiStudioSummarySettingExporter())
 }
 
-// ResourceAistudioSummarySetting registers the genesyscloud_aistudio_summary_setting resource with Terraform
-func ResourceAistudioSummarySetting() *schema.Resource {
+// ResourceAiStudioSummarySetting registers the genesyscloud_ai_studio_summary_setting resource with Terraform
+func ResourceAiStudioSummarySetting() *schema.Resource {
 	summarySettingPIIResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`all`: {
@@ -68,12 +68,12 @@ func ResourceAistudioSummarySetting() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Description: `Genesys Cloud aistudio summary setting`,
+		Description: `Genesys Cloud ai studio summary setting`,
 
-		CreateContext: provider.CreateWithPooledClient(createAistudioSummarySetting),
-		ReadContext:   provider.ReadWithPooledClient(readAistudioSummarySetting),
-		UpdateContext: provider.UpdateWithPooledClient(updateAistudioSummarySetting),
-		DeleteContext: provider.DeleteWithPooledClient(deleteAistudioSummarySetting),
+		CreateContext: provider.CreateWithPooledClient(createAiStudioSummarySetting),
+		ReadContext:   provider.ReadWithPooledClient(readAiStudioSummarySetting),
+		UpdateContext: provider.UpdateWithPooledClient(updateAiStudioSummarySetting),
+		DeleteContext: provider.DeleteWithPooledClient(deleteAiStudioSummarySetting),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -139,27 +139,27 @@ func ResourceAistudioSummarySetting() *schema.Resource {
 	}
 }
 
-// AistudioSummarySettingExporter returns the resourceExporter object used to hold the genesyscloud_aistudio_summary_setting exporter's config
-func AistudioSummarySettingExporter() *resourceExporter.ResourceExporter {
+// AiStudioSummarySettingExporter returns the resourceExporter object used to hold the genesyscloud_ai_studio_summary_setting exporter's config
+func AiStudioSummarySettingExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthAistudioSummarySettings),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthAiStudioSummarySettings),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},
 	}
 }
 
-// DataSourceAistudioSummarySetting registers the genesyscloud_aistudio_summary_setting data source
-func DataSourceAistudioSummarySetting() *schema.Resource {
+// DataSourceAiStudioSummarySetting registers the genesyscloud_ai_studio_summary_setting data source
+func DataSourceAiStudioSummarySetting() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud aistudio summary setting data source. Select an aistudio summary setting by name`,
-		ReadContext: provider.ReadWithPooledClient(dataSourceAistudioSummarySettingRead),
+		Description: `Genesys Cloud ai studio summary setting data source. Select an ai studio summary setting by name`,
+		ReadContext: provider.ReadWithPooledClient(dataSourceAiStudioSummarySettingRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: `aistudio summary setting name`,
+				Description: `ai studio summary setting name`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},

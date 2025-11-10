@@ -1,4 +1,4 @@
-package aistudio_summary_setting
+package ai_studio_summary_setting
 
 import (
 	"fmt"
@@ -11,15 +11,15 @@ import (
 )
 
 /*
-Test Class for the aistudio summary setting Data Source
+Test Class for the ai studio summary setting Data Source
 */
 
-func TestAccDataSourceAistudioSummarySetting(t *testing.T) {
+func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 	//t.Parallel()
 	var (
-		aistudioSummarySettingDataLabel = "data-aistudioSummarySetting"
+		aiStudioSummarySettingDataLabel = "data-aiStudioSummarySetting"
 
-		aiStudioSummarySettingResourceLabel = "resource-aistudioSummarySetting"
+		aiStudioSummarySettingResourceLabel = "resource-aiStudioSummarySetting"
 		resourceName                        = "test-summary-setting"
 		name                                = "summary setting test"
 		language                            = "en-au"
@@ -40,11 +40,11 @@ func TestAccDataSourceAistudioSummarySetting(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Summary Setting
-				Config: GenerateFullAistudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt, externalSystemUrl) + generateAistudioSummarySettingDataSource(aistudioSummarySettingDataLabel, resourceName, "genesyscloud_aistudio_summary_setting."+aiStudioSummarySettingResourceLabel),
+				Config: GenerateFullAiStudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt, externalSystemUrl) + generateAiStudioSummarySettingDataSource(aiStudioSummarySettingDataLabel, resourceName, "genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_aistudio_summary_setting."+aistudioSummarySettingDataLabel, "id",
-						"genesyscloud_aistudio_summary_setting."+aiStudioSummarySettingResourceLabel, "id",
+						"data.genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingDataLabel, "id",
+						"genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel, "id",
 					),
 				),
 			},
@@ -52,8 +52,8 @@ func TestAccDataSourceAistudioSummarySetting(t *testing.T) {
 	})
 }
 
-func generateAistudioSummarySettingDataSource(resresourceName string, resourceName string, dependsOn string) string {
-	return fmt.Sprintf(`data "genesyscloud_aistudio_summary_setting" "%s" {
+func generateAiStudioSummarySettingDataSource(resresourceName string, resourceName string, dependsOn string) string {
+	return fmt.Sprintf(`data "genesyscloud_ai_studio_summary_setting" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}

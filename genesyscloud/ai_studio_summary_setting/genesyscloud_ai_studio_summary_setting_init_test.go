@@ -1,4 +1,4 @@
-package aistudio_summary_setting
+package ai_studio_summary_setting
 
 import (
 	"sync"
@@ -8,8 +8,8 @@ import (
 )
 
 /*
-   The genesyscloud_aistudio_summary_setting_init_test.go file is used to initialize the data sources and resources
-   used in testing the aistudio_summary_setting resource.
+   The genesyscloud_ai_studio_summary_setting_init_test.go file is used to initialize the data sources and resources
+   used in testing the ai_studio_summary_setting resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -28,7 +28,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceAistudioSummarySetting()
+	providerResources[ResourceType] = ResourceAiStudioSummarySetting()
 	// TODO: Add references
 }
 
@@ -37,7 +37,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
 
-	providerDataSources[ResourceType] = DataSourceAistudioSummarySetting()
+	providerDataSources[ResourceType] = DataSourceAiStudioSummarySetting()
 	// TODO: Add references
 }
 
@@ -54,9 +54,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the aistudio_summary_setting package
+	// Run setup function before starting the test suite for the ai_studio_summary_setting package
 	initTestResources()
 
-	// Run the test suite for the aistudio_summary_setting package
+	// Run the test suite for the ai_studio_summary_setting package
 	m.Run()
 }

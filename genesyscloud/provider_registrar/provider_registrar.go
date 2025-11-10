@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-	aistudio "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/aistudio_summary_setting"
+	aiStudioSummarySetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/ai_studio_summary_setting"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
@@ -223,7 +223,7 @@ func resourceMapsAreRegistered() bool {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
-	aistudio.SetRegistrar(regInstance)                                     //Registering aistudio
+	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client

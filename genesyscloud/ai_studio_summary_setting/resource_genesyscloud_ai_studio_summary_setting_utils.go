@@ -1,4 +1,4 @@
-package aistudio_summary_setting
+package ai_studio_summary_setting
 
 import (
 	"fmt"
@@ -12,12 +12,12 @@ import (
 )
 
 /*
-The resource_genesyscloud_aistudio_summary_setting_utils.go file contains various helper methods to marshal
+The resource_genesyscloud_ai_studio_summary_setting_utils.go file contains various helper methods to marshal
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 
-// getAistudioSummarySettingFromResourceData maps data from schema ResourceData object to a platformclientv2.Summarysetting
-func getAistudioSummarySettingFromResourceData(d *schema.ResourceData) platformclientv2.Summarysetting {
+// getAiStudioSummarySettingFromResourceData maps data from schema ResourceData object to a platformclientv2.Summarysetting
+func getAiStudioSummarySettingFromResourceData(d *schema.ResourceData) platformclientv2.Summarysetting {
 	return platformclientv2.Summarysetting{
 		Name:               platformclientv2.String(d.Get("name").(string)),
 		Language:           platformclientv2.String(d.Get("language").(string)),
@@ -145,7 +145,7 @@ func flattenSummarySettingCustomEntitys(summarySettingCustomEntitys *[]platformc
 }
 
 func GenerateBasicSummarySettingResource(resourceLabel string, name string, language string, extras ...string) string {
-	return fmt.Sprintf(`resource "genesyscloud_aistudio_summary_setting" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_ai_studio_summary_setting" "%s" {
 		name = "%s"
 		language = "%s"
 		%s
