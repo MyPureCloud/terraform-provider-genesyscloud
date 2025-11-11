@@ -3,7 +3,6 @@ package guide
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -14,10 +13,6 @@ import (
 )
 
 func TestAccResourceGuideManual(t *testing.T) {
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" {
-		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
-		return
-	}
 
 	if !GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")

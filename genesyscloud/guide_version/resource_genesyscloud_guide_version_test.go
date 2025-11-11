@@ -2,7 +2,6 @@ package guide_version
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -15,9 +14,6 @@ import (
 )
 
 func TestAccResourceGuideVersion(t *testing.T) {
-	if os.Getenv("GENESYSCLOUD_REGION") != "tca" {
-		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
-	}
 
 	if !guide.GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
@@ -148,9 +144,6 @@ func TestAccResourceGuideVersion(t *testing.T) {
 }
 
 func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
-	if os.Getenv("GENESYSCLOUD_REGION") != "tca" {
-		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
-	}
 
 	if !guide.GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
