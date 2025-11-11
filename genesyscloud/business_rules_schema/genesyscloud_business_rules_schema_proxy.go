@@ -10,7 +10,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v172/platformclientv2"
 )
 
 /*
@@ -108,15 +108,57 @@ func (p *businessRulesSchemaProxy) getBusinessRulesSchemaDeletedStatus(ctx conte
 	return p.getBusinessRulesSchemaDeletedStatusAttr(ctx, p, schemaId)
 }
 
+// convertJsonschemadocumentToJsonschemawithdefinitions converts Jsonschemadocument to Jsonschemawithdefinitions
+func convertJsonschemadocumentToJsonschemawithdefinitions(doc *platformclientv2.Jsonschemadocument) *platformclientv2.Jsonschemawithdefinitions {
+	if doc == nil {
+		return nil
+	}
+	return &platformclientv2.Jsonschemawithdefinitions{
+		Schema:      doc.Schema,
+		Title:       doc.Title,
+		Description: doc.Description,
+		Properties:  doc.Properties,
+		Required:    doc.Required,
+	}
+}
+
+// convertDataschemaToCreateRequest converts Dataschema to Businessrulesschemacreaterequest
+func convertDataschemaToCreateRequest(schema *platformclientv2.Dataschema) platformclientv2.Businessrulesschemacreaterequest {
+	req := platformclientv2.Businessrulesschemacreaterequest{
+		JsonSchema: convertJsonschemadocumentToJsonschemawithdefinitions(schema.JsonSchema),
+	}
+	return req
+}
+
+// convertDataschemaToUpdateRequest converts Dataschema to Businessrulesschemaupdaterequest
+func convertDataschemaToUpdateRequest(schema *platformclientv2.Dataschema) platformclientv2.Businessrulesschemaupdaterequest {
+	req := platformclientv2.Businessrulesschemaupdaterequest{
+		JsonSchema: convertJsonschemadocumentToJsonschemawithdefinitions(schema.JsonSchema),
+	}
+	return req
+}
+
+// convertBusinessrulesdataschemaToDataschema converts Businessrulesdataschema to Dataschema
+func convertBusinessrulesdataschemaToDataschema(businessSchema *platformclientv2.Businessrulesdataschema) *platformclientv2.Dataschema {
+	return &platformclientv2.Dataschema{
+		Id:          businessSchema.Id,
+		Name:        businessSchema.Name,
+		Version:     businessSchema.Version,
+		JsonSchema:  businessSchema.JsonSchema,
+		Enabled:     businessSchema.Enabled,
+	}
+}
+
 // createBusinessRulesSchemaFn is an implementation function for creating a Genesys Cloud business rules schema
 func createBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
 	log.Printf("Creating business rules schema: %s", *schema.Name)
-	createdSchema, resp, err := p.businessRulesApi.PostBusinessrulesSchemas(*schema)
+	createReq := convertDataschemaToCreateRequest(schema)
+	createdSchema, resp, err := p.businessRulesApi.PostBusinessrulesSchemas(createReq)
 	log.Printf("Completed call to create business rules schema %s with status code %d, correlation id %s", *schema.Name, resp.StatusCode, resp.CorrelationID)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create business rules schema: %s", err)
 	}
-	return createdSchema, resp, nil
+	return convertBusinessrulesdataschemaToDataschema(createdSchema), resp, nil
 }
 
 // getAllBusinessRulesSchemaFn is the implementation for retrieving all business rules schemas in Genesys Cloud
@@ -129,10 +171,16 @@ func getAllBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProx
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get all business rules schemas: %v", err)
 	}
-	if schemas.Entities == nil || *schemas.Total == 0 {
+	if schemas.Entities == nil || len(*schemas.Entities) == 0 {
 		return &([]platformclientv2.Dataschema{}), resp, nil
 	}
-	return schemas.Entities, resp, nil
+	
+	// Convert Businessrulesdataschema to Dataschema
+	result := make([]platformclientv2.Dataschema, len(*schemas.Entities))
+	for i, businessSchema := range *schemas.Entities {
+		result[i] = *convertBusinessrulesdataschemaToDataschema(&businessSchema)
+	}
+	return &result, resp, nil
 }
 
 // getBusinessRulesSchemasByNameFn is an implementation of the function to get a Genesys Cloud business rules schemas by name
@@ -162,16 +210,21 @@ func getBusinessRulesSchemaByIdFn(ctx context.Context, p *businessRulesSchemaPro
 	if businessRulesSchema != nil {
 		return businessRulesSchema, nil, nil
 	}
-	return p.businessRulesApi.GetBusinessrulesSchema(id)
+	businessSchema, resp, err := p.businessRulesApi.GetBusinessrulesSchema(id)
+	if err != nil {
+		return nil, resp, err
+	}
+	return convertBusinessrulesdataschemaToDataschema(businessSchema), resp, nil
 }
 
 // updateBusinessRulesSchemaFn is an implementation of the function to update a Genesys Cloud business rules schema
 func updateBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, id string, schemaUpdate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
-	schema, resp, err := p.businessRulesApi.PutBusinessrulesSchema(id, *schemaUpdate)
+	updateReq := convertDataschemaToUpdateRequest(schemaUpdate)
+	businessSchema, resp, err := p.businessRulesApi.PutBusinessrulesSchema(id, updateReq)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update business rules schema: %s", err)
 	}
-	return schema, resp, nil
+	return convertBusinessrulesdataschemaToDataschema(businessSchema), resp, nil
 }
 
 // deleteBusinessRulesSchemaFn is an implementation function for deleting a Genesys Cloud business rules schema

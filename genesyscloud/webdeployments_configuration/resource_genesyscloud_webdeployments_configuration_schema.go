@@ -398,6 +398,79 @@ var (
 		},
 	}
 
+	agentVideoSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"allow_camera": {
+				Description: "Whether or not agent camera is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_screen_share": {
+				Description: "Whether or not agent screen share is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_microphone": {
+				Description: "Whether or not agent microphone is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
+	userVideoSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"allow_camera": {
+				Description: "Whether or not user camera is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_screen_share": {
+				Description: "Whether or not user screen share is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_microphone": {
+				Description: "Whether or not user microphone is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
+	videoSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Whether or not video is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"agent": {
+				Description: "Video Settings for agent",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        agentVideoSettings,
+			},
+			"user": {
+				Description: "Video Settings for user",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        userVideoSettings,
+			},
+		},
+	}
+
 	selectorEventTrigger = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"selector": {
@@ -885,6 +958,13 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        cobrowseSettings,
+			},
+			"video": {
+				Description: "Settings concerning video chat",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        videoSettings,
 			},
 			"journey_events": {
 				Description: "Settings concerning journey events",

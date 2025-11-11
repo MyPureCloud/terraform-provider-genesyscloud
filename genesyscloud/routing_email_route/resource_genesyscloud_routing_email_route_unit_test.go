@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v172/platformclientv2"
 )
 
 // TestUnitGetAllRoutingEmailRoutes verifies that errors are returned properly and most importantly that no nil pointer

@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v172/platformclientv2"
 )
 
 var (
@@ -387,7 +387,8 @@ func testVerifyIntegrationAndUsersDestroyed(state *terraform.State) error {
 	usersAPI := platformclientv2.NewUsersApi()
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_integration" {
-			integration, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
+			var expand []string
+			integration, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", expand, "", "")
 			if integration != nil {
 				return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
