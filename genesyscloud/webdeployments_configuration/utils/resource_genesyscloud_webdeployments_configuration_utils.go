@@ -287,7 +287,7 @@ func FlattenBackgroundImageSettings(backgroundImage *platformclientv2.Background
 
 	result := map[string]interface{}{}
 	if backgroundImage.Url != nil {
-		result["url"] = backgroundImage.Url
+		result["url"] = *backgroundImage.Url
 	}
 
 	return []interface{}{result}
