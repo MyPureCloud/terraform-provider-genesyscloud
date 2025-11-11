@@ -184,7 +184,6 @@ func ResourceConversationsMessagingIntegrationsApple() *schema.Resource {
 			`messaging_setting_id`: {
 				Description: `The ID of the messaging setting configured for this integration`,
 				Optional:    true,
-				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`messages_for_business_id`: {
