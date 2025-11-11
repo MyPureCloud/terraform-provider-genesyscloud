@@ -31,7 +31,7 @@ func getAllConversationsMessagingIntegrationsApple(ctx context.Context, clientCo
 
 	appleIntegrations, resp, err := proxy.getAllConversationsMessagingIntegrationsApple(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, "Failed to get apple integration", resp)
+		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get apple integration: %s", err), resp)
 	}
 
 	for _, appleIntegration := range *appleIntegrations {

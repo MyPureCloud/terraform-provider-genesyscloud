@@ -20,8 +20,8 @@ func getConversationsMessagingIntegrationsAppleFromResourceData(d *schema.Resour
 	request := platformclientv2.Appleintegrationrequest{
 		Name:                  platformclientv2.String(d.Get("name").(string)),
 		MessagesForBusinessId: platformclientv2.String(d.Get("messages_for_business_id").(string)),
-		BusinessName:          platformclientv2.String(d.Get("business_name").(string)),
-		LogoUrl:               platformclientv2.String(d.Get("logo_url").(string)),
+		BusinessName:          resourcedata.GetNonZeroPointer[string](d, "business_name"),
+		LogoUrl:               resourcedata.GetNonZeroPointer[string](d, "logo_url"),
 		AppleIMessageApp:      buildAppleIMessageApp(d.Get("apple_i_message_app").([]interface{})),
 		AppleAuthentication:   buildAppleAuthentication(d.Get("apple_authentication").([]interface{})),
 		ApplePay:              buildApplePay(d.Get("apple_pay").([]interface{})),
@@ -44,8 +44,8 @@ func getConversationsMessagingIntegrationsAppleFromResourceDataForUpdate(d *sche
 
 	request := platformclientv2.Appleintegrationupdaterequest{
 		Name:                platformclientv2.String(d.Get("name").(string)),
-		BusinessName:        platformclientv2.String(d.Get("business_name").(string)),
-		LogoUrl:             platformclientv2.String(d.Get("logo_url").(string)),
+		BusinessName:        resourcedata.GetNonZeroPointer[string](d, "business_name"),
+		LogoUrl:             resourcedata.GetNonZeroPointer[string](d, "logo_url"),
 		AppleIMessageApp:    buildAppleIMessageApp(d.Get("apple_i_message_app").([]interface{})),
 		AppleAuthentication: buildAppleAuthentication(d.Get("apple_authentication").([]interface{})),
 		ApplePay:            buildApplePay(d.Get("apple_pay").([]interface{})),

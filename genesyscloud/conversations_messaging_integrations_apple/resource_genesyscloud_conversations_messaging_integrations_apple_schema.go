@@ -2,6 +2,7 @@ package conversations_messaging_integrations_apple
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -94,13 +95,30 @@ func ResourceConversationsMessagingIntegrationsApple() *schema.Resource {
 				Description: `The payment capabilities supported by the merchant.`,
 				Required:    true,
 				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: validation.StringInSlice([]string{
+						"3DS",
+						"creditCard",
+						"debitCard",
+					}, false),
+				},
 			},
 			`supported_payment_networks`: {
 				Description: `The payment networks supported by the merchant.`,
 				Required:    true,
 				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					ValidateFunc: validation.StringInSlice([]string{
+						"amex",
+						"discover",
+						"jcb",
+						"masterCard",
+						"privateLabel",
+						"visa",
+					}, false),
+				},
 			},
 			`payment_certificate_credential_id`: {
 				Description: `The Genesys credentialId the payment certificates are stored under.`,
@@ -158,7 +176,7 @@ func ResourceConversationsMessagingIntegrationsApple() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`supported_content_id`: {
-				Description: `The ID of the supported content profile configured for this integration`,
+				Description: `The ID of the supported content profile configured for this integration. If not set, the default supported content profile will be used.`,
 				Optional:    true,
 				Computed:    true,
 				Type:        schema.TypeString,
