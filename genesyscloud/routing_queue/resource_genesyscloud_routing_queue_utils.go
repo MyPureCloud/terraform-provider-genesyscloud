@@ -701,9 +701,8 @@ func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings
 		settingsMap["sub_type_settings"] = flattenSubTypeSettings(*settings.SubTypeSettings)
 	}
 
-	if settings.EnableInactivityTimeout != nil {
-		settingsMap["enable_inactivity_timeout"] = *settings.EnableInactivityTimeout
-	}
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_inactivity_timeout", settings.EnableInactivityTimeout)
+
 	if settings.InactivityTimeoutSettings != nil {
 		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(*settings.InactivityTimeoutSettings)
 	}
@@ -1245,6 +1244,26 @@ func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enab
 		%s
 	}
 	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateMediaSettingsMessage(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableInactivityTimeout string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`%s {
+		alerting_timeout_sec = %s
+		enable_auto_answer = %s
+		service_level_percentage = %s
+		service_level_duration_ms = %s
+		enable_inactivity_timeout = %s
+		%s
+	}
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableInactivityTimeout, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateInactivityTimeoutSettings(timeoutSeconds string, actionType string) string {
+	return fmt.Sprintf(`inactivity_timeout_settings {
+		timeout_seconds = %s
+		action_type = "%s"
+	}
+	`, timeoutSeconds, actionType)
 }
 
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {
