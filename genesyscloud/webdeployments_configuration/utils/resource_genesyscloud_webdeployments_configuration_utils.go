@@ -187,6 +187,21 @@ func FlattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 	}}
 }
 
+func buildBackgroundImageSettings(backgroundImageSettings []interface{}) *platformclientv2.Backgroundimagesettings {
+	if len(backgroundImageSettings) < 1 {
+		return nil
+	}
+
+	cfg := backgroundImageSettings[0].(map[string]interface{})
+	backgroundImage := &platformclientv2.Backgroundimagesettings{}
+
+	if v, ok := cfg["url"].(string); ok && v != "" {
+		backgroundImage.Url = &v
+	}
+
+	return backgroundImage
+}
+
 func buildAgentVideoSettings(agentSettings []interface{}) *platformclientv2.Agentvideosettings {
 	if len(agentSettings) < 1 {
 		return nil
@@ -203,6 +218,12 @@ func buildAgentVideoSettings(agentSettings []interface{}) *platformclientv2.Agen
 	}
 	if v, ok := cfg["allow_microphone"].(bool); ok {
 		agentVideoSettings.AllowMicrophone = &v
+	}
+	if v, ok := cfg["background"].(string); ok && v != "" {
+		agentVideoSettings.Background = &v
+	}
+	if v, ok := cfg["background_image"]; ok && v != nil {
+		agentVideoSettings.BackgroundImage = buildBackgroundImageSettings(v.([]interface{}))
 	}
 
 	return agentVideoSettings
@@ -259,6 +280,19 @@ func buildVideoSettings(d *schema.ResourceData) *platformclientv2.Videosettings 
 	return videoSettings
 }
 
+func FlattenBackgroundImageSettings(backgroundImage *platformclientv2.Backgroundimagesettings) []interface{} {
+	if backgroundImage == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{}
+	if backgroundImage.Url != nil {
+		result["url"] = backgroundImage.Url
+	}
+
+	return []interface{}{result}
+}
+
 func FlattenAgentVideoSettings(agentSettings *platformclientv2.Agentvideosettings) []interface{} {
 	if agentSettings == nil {
 		return nil
@@ -273,6 +307,12 @@ func FlattenAgentVideoSettings(agentSettings *platformclientv2.Agentvideosetting
 	}
 	if agentSettings.AllowMicrophone != nil {
 		result["allow_microphone"] = agentSettings.AllowMicrophone
+	}
+	if agentSettings.Background != nil {
+		result["background"] = *agentSettings.Background
+	}
+	if agentSettings.BackgroundImage != nil {
+		result["background_image"] = FlattenBackgroundImageSettings(agentSettings.BackgroundImage)
 	}
 
 	return []interface{}{result}

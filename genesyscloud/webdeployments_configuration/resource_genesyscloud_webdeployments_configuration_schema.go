@@ -398,6 +398,17 @@ var (
 		},
 	}
 
+	backgroundImageSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"url": {
+				Description: "BackgroundImage URL for agent video settings",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
 	agentVideoSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"allow_camera": {
@@ -417,6 +428,21 @@ var (
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
+			},
+			"background": {
+				Description:  "Background for agent. Valid values: BLUR, NONE, IMAGE",
+				Type:         schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ValidateFunc: validation.StringInSlice([]string{"BLUR", "NONE", "IMAGE"}, false),
+			},
+			"background_image": {
+				Description: "Background image settings for agent",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        backgroundImageSettings,
 			},
 		},
 	}
