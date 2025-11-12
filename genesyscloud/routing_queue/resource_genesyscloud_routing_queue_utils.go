@@ -953,9 +953,9 @@ If import is done outside Terraform, no dummy ring is added (as in buildSdkBulls
 This is corrected in the flatten function below; the last ring is no longer omitted and buildSdkBullseyeSettings is also corrected.
 */
 func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
-	rings := make([]interface{}, len(*sdkRings)) //Sizing the target array of Rings to account for us removing the default block
+	rings := make([]interface{}, len(*sdkRings))
 	for i, sdkRing := range *sdkRings {
-		if i < len(*sdkRings) { //Checking to make sure we are do nothing with the last item in the list by skipping processing if it is defined
+		if i < len(*sdkRings) {
 			ringSettings := make(map[string]interface{})
 			if sdkRing.ExpansionCriteria != nil {
 				for _, criteria := range *sdkRing.ExpansionCriteria {

@@ -496,6 +496,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    6,
+				MinItems:    2,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"expansion_timeout_seconds": {
