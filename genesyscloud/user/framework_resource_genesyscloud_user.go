@@ -2,12 +2,11 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	pfdiag "github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -16,7 +15,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 // Ensure UserFrameworkResource satisfies various resource interfaces
@@ -304,7 +302,9 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 
 	log.Printf("Created user %s %s", email, *userResponse.Id)
 
-	// Read the user to get the current state
+	// Read back the created user to populate state with server-generated values and ensure consistency.
+	// This matches SDKv2 pattern where Create calls Read to get the final state after creation.
+	// All attributes including addresses, skills, voicemail policies, and routing utilization are fetched.
 	readUser(ctx, &plan, proxy, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -345,119 +345,18 @@ func (r *UserFrameworkResource) Read(ctx context.Context, req resource.ReadReque
 
 	proxy := GetUserProxy(r.clientConfig)
 
-	// Consistency checker removed – not required in Plugin Framework.
-	// PF automatically ensures plan/state alignment and drift handling through validators,
-	// plan modifiers, and read-after-write patterns.
-	// The SDKv2 consistency checker depended on internal ResourceData diffs and reflection,
-	// which are unsupported and unnecessary in PF.
-	// In the Terraform Plugin Framework, schema attribute validators, plan modifiers,
-	// and typed Plan/State models replace the need for an SDKv2-style consistency checker.
-	// See PF docs: Validation (https://developer.hashicorp.com/terraform/plugin/framework/validation)
-	// and Handling Data – Plan Modifiers (https://developer.hashicorp.com/terraform/plugin/framework/handling-data/attributes/list-nested)
-	// for supporting details.
-	// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser(), constants.ConsistencyChecks(), ResourceType)
-	//TODO
-
-	log.Printf("Reading user %s", state.Id.ValueString())
-
-	// Retry logic temporarily commented out – SDKv2 helper/retry is not compatible with Plugin Framework.
-	// PF no longer supports the SDKv2 retry utilities (`helper/retry`, `schema.ResourceData`, `diag`).
-	// RetryContext and related constructs relied on SDKv2 internals, which don’t exist in PF.
-	// In Plugin Framework, retry/wait logic should be reimplemented using:
-	//   - Context-aware loops with backoff (using the `ctx` passed into CRUD methods)
-	//   - Resource-level timeouts defined in the schema (e.g., CreateTimeout, ReadTimeout, UpdateTimeout)
-	//   - Proper diagnostic handling via `resp.Diagnostics` instead of `diag.FromErr()`
-	// A PF-native retry utility (e.g., util_pfretries.go) can be introduced later for read-after-write stabilization.
-	// return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-	//TODO
-
-	currentUser, proxyResponse, errGet := proxy.getUserById(ctx, state.Id.ValueString(), []string{
-		// Expands
-		"skills",
-		"languages",
-		"locations",
-		"profileSkills",
-		"certifications",
-		"employerInfo"},
-		"")
-
-	if errGet != nil {
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s", state.Id.ValueString(), errGet), proxyResponse)
-		resp.Diagnostics.Append(readErr...)
-		if util.IsStatus404(proxyResponse) {
-			log.Printf("While calling getUserById recived 404 error")
-			//TODO
-			//return retry.RetryableError(readErr)
-			return
-
-		}
-		log.Printf("While calling getUserById recived NonRetryableError error")
+	// Fetch current user state from API to detect drift and refresh Terraform state.
+	// This is the primary read operation called during plan, refresh, and before update/delete.
+	// Uses the same helper as Create/Update to ensure consistent state representation across all operations.
+	readUser(ctx, &state, proxy, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		//TODO
-		//return retry.NonRetryableError(readErr)
+		// If there's a 404 error, the resource was deleted outside Terraform
+		// The caller (Read method) should handle removing from state if needed
 		return
 	}
 
-	// Required attributes
-	resourcedata.SetPFNillableValueString(&state.Name, currentUser.Name)
-	resourcedata.SetPFNillableValueString(&state.Email, currentUser.Email)
-	resourcedata.SetPFNillableValueString(&state.DivisionId, currentUser.Division.Id)
-	resourcedata.SetPFNillableValueString(&state.State, currentUser.State)
-	resourcedata.SetPFNillableValueString(&state.Department, currentUser.Department)
-	resourcedata.SetPFNillableValueString(&state.Title, currentUser.Title)
-	resourcedata.SetPFNillableValueBool(&state.AcdAutoAnswer, currentUser.AcdAutoAnswer)
-
-	state.Manager = types.StringNull()
-	if currentUser.Manager != nil && *currentUser.Manager != nil && (*currentUser.Manager).Id != nil {
-		state.Manager = types.StringValue(*(*currentUser.Manager).Id)
-	}
-
-	// Log raw API addresses before flattening
-	{
-		b, _ := json.Marshal(currentUser.Addresses)
-		log.Printf("[INV][SDKv2] ReadUser API.Addresses=%s", string(b))
-	}
-
-	state.Addresses = flattenUserAddresses(ctx, currentUser.Addresses, proxy)
-	state.RoutingSkills = flattenUserSkills(currentUser.Skills)
-	state.RoutingLanguages = flattenUserLanguages(currentUser.Languages)
-	state.Locations = flattenUserLocations(currentUser.Locations)
-	state.ProfileSkills = flattenUserData(currentUser.ProfileSkills)
-	state.Certifications = flattenUserData(currentUser.Certifications)
-	state.EmployerInfo = flattenUserEmployerInfo(currentUser.EmployerInfo)
-
-	//Get attributes from Voicemail/Userpolicies resource
-	currentVoicemailUserpolicies, apiResp, err := proxy.getVoicemailUserpoliciesById(ctx, state.Id.ValueString())
-	if err != nil {
-		//TODO
-		// return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read voicemail userpolicies %s error: %s", d.Id(), err), apiResp))
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read voicemail userpolicies %s error: %s", *state.Id.ValueStringPointer(), err), apiResp)
-		resp.Diagnostics.Append(readErr...)
-		return
-	}
-
-	state.VoicemailUserpolicies = flattenVoicemailUserpolicies(d, currentVoicemailUserpolicies)
-
-	if diagErr := readUserRoutingUtilization(d, proxy); diagErr != nil {
-		//TODO
-		// return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
-		resp.Diagnostics.Append(diagErr...)
-		log.Printf("Error while reading UserRoutingUtilization %s", state.Id.ValueString())
-		return
-	}
-
-	log.Printf("Read user %s %s", state.Id.ValueString(), *currentUser.Email)
-
-	// Log what's about to be set in state (what Terraform will hash for set identity)
-	log.Printf("[INV] STATE about to Set: addresses=%s", invMustJSON(state.Addresses))
-
-	// Log final state identities
-	log.Printf("[INV] FINAL STATE effective addresses: %s", invMustJSON(state.Addresses))
-	if idents := invPhoneIdentitiesFromFrameworkAddresses(state.Addresses); len(idents) > 0 {
-		log.Printf("[INV] FINAL STATE phone identities: %v", idents)
-	}
-	log.Printf("[INV] FINAL STATE routing_utilization: %s", invMustJSON(state.RoutingUtilization))
-	log.Printf("[INV] FINAL STATE voicemail_userpolicies: %s", invMustJSON(state.VoicemailUserpolicies))
-
+	// Set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
@@ -563,7 +462,9 @@ func (r *UserFrameworkResource) Update(ctx context.Context, req resource.UpdateR
 	log.Printf("[INV] BEFORE READ plan.Addresses isNull=%v isUnknown=%v", plan.Addresses.IsNull(), plan.Addresses.IsUnknown())
 	log.Printf("[INV] BEFORE READ plan.Addresses=%s", invMustJSON(plan.Addresses))
 
-	// Read the user to get the current state
+	// Read back the updated user to verify changes and populate state with current API values.
+	// This ensures Terraform state reflects the actual resource state after update operations.
+	// Reuses the same read logic as Create and Read to maintain consistency across CRUD operations.
 	readUser(ctx, &plan, proxy, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -624,7 +525,7 @@ func (r *UserFrameworkResource) Delete(ctx context.Context, req resource.DeleteR
 
 	log.Printf("Deleting user %s", email)
 
-	err := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+	err := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, proxyDelResponse, err := proxy.deleteUser(ctx, state.Id.ValueString())
 		if err != nil {
@@ -670,7 +571,7 @@ func (r *UserFrameworkResource) Delete(ctx context.Context, req resource.DeleteR
 // - State migration scripts
 //
 // Returns: Map of user IDs to ResourceMeta (containing email as block label)
-func GetAllUsers(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func GetAllUsers(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, pfdiag.Diagnostics) {
 	proxy := GetUserProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 

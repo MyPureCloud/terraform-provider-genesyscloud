@@ -62,6 +62,25 @@ func UserResourceSchema() schema.Schema {
 
 Export block label: "{email}"`,
 		Attributes: map[string]schema.Attribute{
+			//TODO
+			/* will handel this condition later
+			// NOTE: phone_extension_pools is defined at the top level (outside addresses.phone_numbers)
+			// instead of being nested under each phone number. In SDKv2, extension_pool_id was excluded
+			// from the custom hash used for the phone_numbers Set to prevent plan diffs when only the
+			// pool mapping changed. Since Plugin Framework does not support custom Set hash functions,
+			// this top-level Computed map preserves the same behavior: extension pool IDs are
+			// represented as computed metadata (identity-insensitive) rather than user-managed fields.
+			// This avoids unwanted diffs when pool assignments change while keeping phone_numbers
+			// identity stable across plans and refreshes.
+			"phone_extension_pools": schema.MapAttribute{
+				ElementType: types.StringType,
+				Computed:    true,
+				Description: "Id of the extension pool which contains this extension." +
+					"Computed mapping of phone identity keys to  (MEDIA|TYPE|E164|EXT) to extension_pool_id." +
+					"Used internally to prevent diffs when pool assignments change.",
+			},
+			//-------------------------------------------------------------------------------------------
+			*/
 			"id": schema.StringAttribute{
 				Description: "The ID of the user.",
 				Computed:    true,
@@ -206,6 +225,9 @@ Export block label: "{email}"`,
 				PlanModifiers: []planmodifier.List{
 					phoneplan.ClearOnOmitList{},
 				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
 				NestedObject: schema.NestedBlockObject{
 					Blocks: map[string]schema.Block{
 						"other_emails": schema.SetNestedBlock{
@@ -238,8 +260,11 @@ Export block label: "{email}"`,
 										Description: "Phone number. Phone number must be in an E.164 number format.",
 										Optional:    true,
 										Validators:  []validator.String{validators.FWValidatePhoneNumber()},
+										//TODO
+										// PlanModifiers for now as Validators will do all the required check
+										// if required we can review and enable it later.
 										// Safe E.164 canonicalization: noop if null/unknown/empty or parse fails
-										PlanModifiers: []planmodifier.String{phoneplan.E164{DefaultRegion: "US"}},
+										//PlanModifiers: []planmodifier.String{phoneplan.E164{DefaultRegion: "US"}},
 									},
 									"media_type": schema.StringAttribute{
 										Description: "Media type of phone number (SMS | PHONE).",
@@ -264,6 +289,11 @@ Export block label: "{email}"`,
 										Optional:    true,
 									},
 									"extension_pool_id": schema.StringAttribute{
+										//TODO
+										//Issue: In SDKv2 hashing you explicitly removed extension_pool_id before hashing
+										// a phone element, so pool changes didn’t create new set elements or diffs.
+										// In PF, set element identity is the full object value; including extension_pool_id
+										// means a pool change will look like an element replacement and cause perpetual diffs.
 										Description:   "Id of the extension pool which contains this extension.",
 										Optional:      true,
 										PlanModifiers: []planmodifier.String{phoneplan.NullIfEmpty{}},
@@ -273,14 +303,14 @@ Export block label: "{email}"`,
 						},
 					},
 				},
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
-				},
 			},
 			"employer_info": schema.ListNestedBlock{
 				Description: "The employer info for this user. If not set, this resource will not manage employer info.",
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
 				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
@@ -308,14 +338,14 @@ Export block label: "{email}"`,
 						},
 					},
 				},
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
-				},
 			},
 			"routing_utilization": schema.ListNestedBlock{
 				Description: "The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings.",
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
 				},
 				NestedObject: schema.NestedBlockObject{
 					Blocks: map[string]schema.Block{
@@ -323,6 +353,9 @@ Export block label: "{email}"`,
 							Description: "Call media settings. If not set, this reverts to the default media type settings.",
 							PlanModifiers: []planmodifier.List{
 								listplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
 							},
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
@@ -346,14 +379,14 @@ Export block label: "{email}"`,
 									},
 								},
 							},
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
-							},
 						},
 						"callback": schema.ListNestedBlock{
 							Description: "Callback media settings. If not set, this reverts to the default media type settings.",
 							PlanModifiers: []planmodifier.List{
 								listplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
 							},
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
@@ -376,9 +409,6 @@ Export block label: "{email}"`,
 										Default:     booldefault.StaticBool(false),
 									},
 								},
-							},
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
 							},
 						},
 						"message": schema.ListNestedBlock{
@@ -386,6 +416,9 @@ Export block label: "{email}"`,
 							PlanModifiers: []planmodifier.List{
 								listplanmodifier.UseStateForUnknown(),
 							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"maximum_capacity": schema.Int64Attribute{
@@ -407,9 +440,6 @@ Export block label: "{email}"`,
 										Default:     booldefault.StaticBool(false),
 									},
 								},
-							},
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
 							},
 						},
 						"email": schema.ListNestedBlock{
@@ -417,6 +447,9 @@ Export block label: "{email}"`,
 							PlanModifiers: []planmodifier.List{
 								listplanmodifier.UseStateForUnknown(),
 							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"maximum_capacity": schema.Int64Attribute{
@@ -438,9 +471,6 @@ Export block label: "{email}"`,
 										Default:     booldefault.StaticBool(false),
 									},
 								},
-							},
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
 							},
 						},
 						"chat": schema.ListNestedBlock{
@@ -448,6 +478,9 @@ Export block label: "{email}"`,
 							PlanModifiers: []planmodifier.List{
 								listplanmodifier.UseStateForUnknown(),
 							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"maximum_capacity": schema.Int64Attribute{
@@ -469,9 +502,6 @@ Export block label: "{email}"`,
 										Default:     booldefault.StaticBool(false),
 									},
 								},
-							},
-							Validators: []validator.List{
-								listvalidator.SizeAtMost(1),
 							},
 						},
 						"label_utilizations": schema.ListNestedBlock{
@@ -502,14 +532,14 @@ Export block label: "{email}"`,
 						},
 					},
 				},
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
-				},
 			},
 			"voicemail_userpolicies": schema.ListNestedBlock{
 				Description: "User's voicemail policies. If not set, default user policies will be applied.",
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
 				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
@@ -523,9 +553,6 @@ Export block label: "{email}"`,
 							Computed:    true,
 						},
 					},
-				},
-				Validators: []validator.List{
-					listvalidator.SizeAtMost(1),
 				},
 			},
 		},
