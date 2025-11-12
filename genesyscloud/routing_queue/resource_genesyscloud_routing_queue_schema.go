@@ -495,7 +495,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "The bullseye ring settings for the queue.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				MaxItems:    5,
+				MaxItems:    6,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"expansion_timeout_seconds": {
