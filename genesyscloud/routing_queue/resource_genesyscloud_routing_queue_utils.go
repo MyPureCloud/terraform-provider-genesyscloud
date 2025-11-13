@@ -581,22 +581,6 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 			sdkRings = append(sdkRings, sdkRing)
 		}
 
-		/*
-			The routing queues API is a little unusual.  You can have up to six bullseye routing rings but the last one is always
-			a treated as the default ring.  This means you can actually ony define a maximum of 5.  So, I have changed the behavior of this
-			resource to only allow you to add 5 items and then the code always adds a 6 item (see the code below) with a default timeout of 2.
-		*/
-		var defaultSdkRing platformclientv2.Ring
-		defaultTimeoutInt := 2
-		defaultTimeoutFloat := float64(defaultTimeoutInt)
-		defaultSdkRing.ExpansionCriteria = &[]platformclientv2.Expansioncriterium{
-			{
-				VarType:   &bullseyeExpansionTypeTimeout,
-				Threshold: &defaultTimeoutFloat,
-			},
-		}
-
-		sdkRings = append(sdkRings, defaultSdkRing)
 		return &platformclientv2.Bullseye{Rings: &sdkRings}
 	}
 	return nil
@@ -959,11 +943,19 @@ This is a change from earlier parts of the API where you could define 6 bullseye
 the public API will take the list item in the list and make it the default and it will not show up on the screen.  To get around this you needed
 to always add a dumb bullseye ring block.  Now, we automatically add one for you.  We only except a maximum of 5 bullseyes_ring blocks, but we will always
 remove the last block returned by the API.
+
+Correction to the above comment:
+
+The last ring (identified as the default/dummy ring) can have member groups attached.
+PS reported this in DEVTOOLING-1167: the last ring is being missed, causing member groups assigned to the bullseye to be omitted.
+This happens when only the export process from the source is managed by CX code and import of the source is managed manually.
+If import is done outside Terraform, no dummy ring is added (as in buildSdkBullseyeSettings). So during subsequent export, valid ring with member groups is skipped due to the omission in the flatten function.
+This is corrected in the flatten function below; the last ring is no longer omitted and buildSdkBullseyeSettings is also corrected.
 */
 func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
-	rings := make([]interface{}, len(*sdkRings)-1) //Sizing the target array of Rings to account for us removing the default block
+	rings := make([]interface{}, len(*sdkRings))
 	for i, sdkRing := range *sdkRings {
-		if i < len(*sdkRings)-1 { //Checking to make sure we are do nothing with the last item in the list by skipping processing if it is defined
+		if i < len(*sdkRings) {
 			ringSettings := make(map[string]interface{})
 			if sdkRing.ExpansionCriteria != nil {
 				for _, criteria := range *sdkRing.ExpansionCriteria {

@@ -359,7 +359,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
 - `agent_owned_routing` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--agent_owned_routing))
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
-- `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
+- `bullseye_rings` (Block List, Max: 6) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
 - `canned_response_libraries` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--canned_response_libraries))
