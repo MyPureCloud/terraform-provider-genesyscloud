@@ -5,7 +5,7 @@ import (
 
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 // generateBusinessRulesDecisionTableResource generates a basic business rules decision table resource
@@ -118,6 +118,17 @@ func generateColumns(queueResourceLabel string) string {
 				comparator = "Equals"
 			}
 		}
+		inputs {
+			defaults_to {
+				values = ["general", "support"]
+			}
+			expression {
+				contractual {
+					schema_property_key = "customer_tags"
+				}
+				comparator = "ContainsAny"
+			}
+		}
 		outputs {
 			defaults_to {
 				value = genesyscloud_routing_queue.%s.id
@@ -146,6 +157,14 @@ func generateColumns(queueResourceLabel string) string {
 			}
 			value {
 				schema_property_key = "optional_string_empty_block"
+			}
+		}
+		outputs {
+			defaults_to {
+				values = ["basic_support", "general_help"]
+			}
+			value {
+				schema_property_key = "assigned_skills"
 			}
 		}
 	}`, queueResourceLabel)
@@ -234,6 +253,12 @@ func generateRows(queueResourceLabel string) string {
 				type  = ""
 			}
 		}
+		inputs {
+			literal {
+				value = "vip,premium,support"
+				type  = "stringList"
+			}
+		}
 		outputs {
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
@@ -248,6 +273,12 @@ func generateRows(queueResourceLabel string) string {
 		}
 		outputs {
 			literal {}
+		}
+		outputs {
+			literal {
+				value = "premium_support,escalation,technical_expert"
+				type  = "stringList"
+			}
 		}
 	}`
 }
@@ -303,6 +334,12 @@ func generateRowsWithSpecials(queueResourceLabel string) string {
 				type  = "special"
 			}
 		}
+		inputs {
+			literal {
+				value = "enterprise,business"
+				type  = "stringList"
+			}
+		}
 		outputs {
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
@@ -319,6 +356,12 @@ func generateRowsWithSpecials(queueResourceLabel string) string {
 			literal {
 				value = "Null"
 				type  = "special"
+			}
+		}
+		outputs {
+			literal {
+				value = "enterprise_support,business_analyst"
+				type  = "stringList"
 			}
 		}
 	}`
@@ -375,6 +418,12 @@ func generateUpdatedRows(queueResourceLabel string) string {
 				type  = "string"
 			}
 		}
+		inputs {
+			literal {
+				value = "technical,advanced,escalation"
+				type  = "stringList"
+			}
+		}
 		outputs {
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
@@ -391,6 +440,12 @@ func generateUpdatedRows(queueResourceLabel string) string {
 			literal {
 				value = "this was defaulted to empty block first row"
 				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "technical_expert,advanced_support,escalation_specialist"
+				type  = "stringList"
 			}
 		}
 	}
@@ -443,6 +498,12 @@ func generateUpdatedRows(queueResourceLabel string) string {
 				type  = "string"
 			}
 		}
+		inputs {
+			literal {
+				value = "support,help"
+				type  = "stringList"
+			}
+		}
 		outputs {
 			literal {
 				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
@@ -459,6 +520,12 @@ func generateUpdatedRows(queueResourceLabel string) string {
 			literal {
 				value = "this was defaulted to empty block second row"
 				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "standard_support,general_help"
+				type  = "stringList"
 			}
 		}
 	}`
@@ -616,6 +683,38 @@ func generateBusinessRulesSchemaResource(resourceLabel, name, description string
 				"description" : "Used to test literal block in rows with empty type and value",
 				"minLength" : 1,
 				"maxLength" : 100
+			},
+			"customer_tags" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/stringList"
+					}
+				],
+				"title" : "customer_tags",
+				"description" : "List of tags associated with the customer",
+				"minItems" : 1,
+				"maxItems" : 10,
+				"uniqueItems" : true,
+				"items" : {
+					"minLength" : 2,
+					"maxLength" : 20
+				}
+			},
+			"assigned_skills" = {
+				"allOf" : [
+					{
+						"$ref" : "#/definitions/stringList"
+					}
+				],
+				"title" : "assigned_skills",
+				"description" : "Skills assigned to the agent",
+				"minItems" : 1,
+				"maxItems" : 15,
+				"uniqueItems" : true,
+				"items" : {
+					"minLength" : 3,
+					"maxLength" : 25
+				}
 			}
 		})
 	}

@@ -40,7 +40,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -133,6 +133,7 @@ type GenesysCloudResourceExporter struct {
 	resourceStateMutex         sync.Mutex
 	resourceTypesMapsMutex     sync.RWMutex
 	unresolvedAttrsMutex       sync.Mutex
+	attributesDecodedMutex     sync.Mutex
 
 	// .. Int
 	maxConcurrentOps int // New field to control concurrency
@@ -201,7 +202,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,
-		maxConcurrentOps:     10, // Default to 10 concurrent operations
+		maxConcurrentOps:     d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
 	}
 
 	// Set max concurrent operations based on provider configuration if available
@@ -627,74 +628,170 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	// Get resources using thread-safe method
 	resources := g.getResources()
 
+	// Initialize channels for results and errors
+	type resourceResult struct {
+		resource     resourceExporter.ResourceInfo
+		configMap    util.JsonMap
+		isDataSource bool
+		diagnostics  diag.Diagnostics
+	}
+
+	resultChan := make(chan resourceResult, len(resources))
+	errorChan := make(chan diag.Diagnostics, len(resources))
+
+	// Initialize semaphore to limit concurrent operations
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	semaphore := make(chan struct{}, maxConcurrentOps)
+
+	// Initialize wait group
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(g.ctx)
+	defer cancel()
+
 	for _, resource := range resources {
-		// 1. Get instance state as JSON Map
-		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
-		if diagErr != nil {
-			diagnostics = append(diagnostics, diagErr...)
-			if diagnostics.HasError() {
+
+		wg.Add(1)
+		go func(resource resourceExporter.ResourceInfo) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			select {
+			case semaphore <- struct{}{}:
+				defer func() { <-semaphore }()
+			case <-ctx.Done():
 				return
 			}
+
+			var result resourceResult
+			result.resource = resource
+
+			// 1. Get instance state as JSON Map
+			jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
+			if diagErr != nil {
+				select {
+				case errorChan <- diagErr:
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			// 2. Determine if instance is a data source
+			result.isDataSource = g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
+
+			// 3. Convert the instance state to a map
+			configMap := maps.Clone(jsonResult)
+
+			// 4. Sanitize the config map
+			unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
+			if len(unresolvableAttrs) > 0 {
+				g.addUnresolvedAttrs(unresolvableAttrs)
+			}
+
+			// 5. Handle custom write attributes (i.e. exporting files like prompts, flows, scripts, etc)
+			if !result.isDataSource {
+				diagErr = g.customWriteAttributes(configMap, resource)
+				if diagErr != nil && diagErr.HasError() {
+					result.diagnostics = diagErr
+				}
+			}
+
+			// 6. Set resulting configMap and return on the results channel
+			result.configMap = configMap
+			select {
+			case resultChan <- result:
+			case <-ctx.Done():
+				return
+			}
+		}(resource)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+		close(errorChan)
+	}()
+
+	// Collect results and handle errors
+	var allDiagnostics diag.Diagnostics
+
+	// Process errors first
+	for diagErr := range errorChan {
+		allDiagnostics = append(allDiagnostics, diagErr...)
+		if allDiagnostics.HasError() {
+			cancel()
+			return allDiagnostics
+		}
+	}
+
+	// Now process successful results
+	for result := range resultChan {
+		if result.diagnostics != nil && result.diagnostics.HasError() {
+			allDiagnostics = append(allDiagnostics, result.diagnostics...)
+			return allDiagnostics
 		}
 
-		// 2. Determine if instance is a data source
-		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
-		if isDataSource {
+		// Handling duplicate block labels
+		// Ensure the maps are instantiated
+		if result.isDataSource {
 			dataSourceMaps := g.getDataSourceTypesMaps()
-			if dataSourceMaps[resource.Type] == nil {
-				dataSourceMaps[resource.Type] = make(ResourceJSONMaps)
+			if dataSourceMaps[result.resource.Type] == nil {
+				dataSourceMaps[result.resource.Type] = make(ResourceJSONMaps)
 			}
 			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
-			// 3. Ensure the resource type is instantiated
 			resourceMaps := g.getResourceTypesMaps()
-			if resourceMaps[resource.Type] == nil {
-				resourceMaps[resource.Type] = make(ResourceJSONMaps)
+			if resourceMaps[result.resource.Type] == nil {
+				resourceMaps[result.resource.Type] = make(ResourceJSONMaps)
 			}
 			g.setResourceTypesMaps(resourceMaps)
 		}
-
 		// Theoretically this should only ever occur when using the Original Sanitizer as it doesn't have guaranteed
 		// uniqueness for generating the block labels. See resource_name_sanitizer_test.go
 		resourceMaps := g.getResourceTypesMaps()
 		dataSourceMaps := g.getDataSourceTypesMaps()
-
-		if len(resourceMaps[resource.Type][resource.BlockLabel]) > 0 || len(dataSourceMaps[resource.Type][resource.BlockLabel]) > 0 {
+		if len(resourceMaps[result.resource.Type][result.resource.BlockLabel]) > 0 || len(dataSourceMaps[result.resource.Type][result.resource.BlockLabel]) > 0 {
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			// The _BRCM prefix is meant to be an identifier so we can tell that the hash was generated here and not in the sanitizer.
-			resource.BlockLabel = resource.BlockLabel + "_BRCM" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-			g.updateSanitizeMap(*g.exporters, resource)
+			result.resource.BlockLabel = result.resource.BlockLabel + "_BRCM" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			g.updateSanitizeMap(*g.exporters, result.resource)
 		}
 
-		// 4. Convert the instance state to a map
-		configMap := maps.Clone(jsonResult)
-
-		// 5. Sanitize the config map
-		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
-		if len(unresolvableAttrs) > 0 {
-			g.addUnresolvedAttrs(unresolvableAttrs)
-		}
-
-		// 6. Add the resource to the appropriate map
-		if isDataSource {
-			dataSourceMaps = g.getDataSourceTypesMaps()
-			dataSourceMaps[resource.Type][resource.BlockLabel] = configMap
-			g.setDataSourceTypesMaps(dataSourceMaps)
+		// Add the resource to the appropriate map (thread-safe)
+		if result.isDataSource {
+			g.addToDataSourceMaps(result.resource.Type, result.resource.BlockLabel, result.configMap)
 		} else {
-			// 6. Handles writing external files as part of the export process
-			diagnostics = append(diagnostics, g.customWriteAttributes(configMap, resource)...)
-			if diagnostics.HasError() {
-				return diagnostics
-			}
-			resourceMaps = g.getResourceTypesMaps()
-			resourceMaps[resource.Type][resource.BlockLabel] = configMap
-			g.setResourceTypesMaps(resourceMaps)
+			g.addToResourceMaps(result.resource.Type, result.resource.BlockLabel, result.configMap)
 		}
 	}
 
 	tflog.Info(g.ctx, fmt.Sprintf("Successfully built resource config map with %d resources", len(resources)))
-	return diagnostics
+	return allDiagnostics
+}
+
+// Helper methods for thread-safe map updates
+func (g *GenesysCloudResourceExporter) addToResourceMaps(resourceType, blockLabel string, configMap util.JsonMap) {
+	g.resourceTypesMapsMutex.Lock()
+	defer g.resourceTypesMapsMutex.Unlock()
+
+	if g.resourceTypesMaps[resourceType] == nil {
+		g.resourceTypesMaps[resourceType] = make(ResourceJSONMaps)
+	}
+	g.resourceTypesMaps[resourceType][blockLabel] = configMap
+}
+
+func (g *GenesysCloudResourceExporter) addToDataSourceMaps(resourceType, blockLabel string, configMap util.JsonMap) {
+	g.dataSourceTypesMapsMutex.Lock()
+	defer g.dataSourceTypesMapsMutex.Unlock()
+
+	if g.dataSourceTypesMaps[resourceType] == nil {
+		g.dataSourceTypesMaps[resourceType] = make(ResourceJSONMaps)
+	}
+	g.dataSourceTypesMaps[resourceType][blockLabel] = configMap
 }
 
 func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
@@ -973,7 +1070,9 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	}
 	g.appendResources(uniqueResources)
 	g.appendResources(existingResources)
-	g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
+	if g.exporters != nil {
+		g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
+	}
 
 	return diagErr
 }
@@ -1201,8 +1300,13 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	defer cancel()
 
 	// Create semaphore to limit concurrent operations to the configured maximum
-	sem := make(chan struct{}, g.maxConcurrentOps)
-	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", g.maxConcurrentOps))
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", maxConcurrentOps))
 
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
@@ -1384,8 +1488,13 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	tflog.Trace(g.ctx, fmt.Sprintf("Retrieved sanitized resource map with %d entries for type %s", len(resourceMap), resType))
 
 	// Create a semaphore to limit concurrent operations
-	sem := make(chan struct{}, g.maxConcurrentOps)
-	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations"))
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", maxConcurrentOps))
 
 	for id, resMeta := range resourceMap {
 		tflog.Trace(g.ctx, fmt.Sprintf("Starting goroutine for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))
@@ -1449,8 +1558,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 							tflog.Debug(g.ctx, fmt.Sprintf("Resource ID %s will NOT be exported as data source", id))
 						}
 					}
-				} else {
-					tflog.Debug(g.ctx, fmt.Sprintf("No ExportAsDataFunc defined for resource ID: %s", id))
 				}
 
 				blockType := ""
@@ -1957,7 +2064,9 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 					configMap[attributeConfigKey] = vStr
 				} else {
 					uid := uuid.NewString()
+					g.attributesDecodedMutex.Lock()
 					attributesDecoded[uid] = decodedData
+					g.attributesDecodedMutex.Unlock()
 					configMap[attributeConfigKey] = uid
 				}
 			}
@@ -1991,15 +2100,7 @@ func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resour
 		return
 	}
 
-	if g.dataSourceTypesMaps[dataSourceType] == nil {
-		g.dataSourceTypesMaps[dataSourceType] = make(ResourceJSONMaps)
-	}
-
-	// add the data source to the export if it hasn't already been added
-	if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceLabel]; ok {
-		return
-	}
-	g.dataSourceTypesMaps[dataSourceType][dataSourceLabel] = dataSourceConfig
+	g.addToDataSourceMaps(dataSourceType, dataSourceLabel, dataSourceConfig)
 }
 
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {

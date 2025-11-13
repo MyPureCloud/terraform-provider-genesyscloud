@@ -15,7 +15,7 @@ import (
 
 	"io"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -101,27 +101,31 @@ func (p *responsemanagementResponseassetProxy) deleteRespManagementRespAsset(ctx
 	return p.deleteRespManagementRespAssetAttr(ctx, p, id)
 }
 
-func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, fileName, divisionId string) (respBody *platformclientv2.Createresponseassetresponse, resp *platformclientv2.APIResponse, err error) {
+func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, name, filePath, divisionId string) (respBody *platformclientv2.Createresponseassetresponse, resp *platformclientv2.APIResponse, err error) {
 	s3Path := ""
-	localFileName := fileName
-	if aws.IsS3Path(fileName) {
+	localFilePath := filePath
+	if aws.IsS3Path(filePath) {
 		// In the case of an S3 path, the filename in the request body should be the last part of the path
 		// We still want the value in the resource data to be the full S3 Path to avoid a diff
-		_ = d.Set("filename", fileName)
-		s3Path = fileName
+		_ = d.Set("filename", filePath)
+		s3Path = filePath
 
 		// get the file name from the end of the s3 path
-		localFileName = strings.Split(fileName, "/")[len(strings.Split(fileName, "/"))-1]
+		localFilePath = strings.Split(filePath, "/")[len(strings.Split(filePath, "/"))-1]
 
-		localFileName = filepath.Join(os.TempDir(), localFileName)
+		localFilePath = filepath.Join(os.TempDir(), localFilePath)
 		// Download the file if it's not present locally
-		if err := downloadFileIfNotPresent(s3Path, localFileName); err != nil {
+		if err := downloadFileIfNotPresent(s3Path, localFilePath); err != nil {
 			return nil, resp, fmt.Errorf("failed to download file from S3: %w", err)
 		}
 	}
 
+	if name == "" {
+		name = localFilePath
+	}
+
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
-		Name: &localFileName,
+		Name: &name,
 	}
 	if divisionId != "" {
 		sdkResponseAsset.DivisionId = &divisionId
@@ -129,12 +133,12 @@ func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx
 
 	postResponseData, resp, err := p.createRespManagementRespAsset(ctx, &sdkResponseAsset)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to upload response asset: %s | error: %s", localFileName, err)
+		return nil, resp, fmt.Errorf("failed to upload response asset: %s | error: %s", localFilePath, err)
 	}
 
 	headers := *postResponseData.Headers
 	url := *postResponseData.Url
-	reader, _, err := files.DownloadOrOpenFile(ctx, localFileName, S3Enabled)
+	reader, _, err := files.DownloadOrOpenFile(ctx, localFilePath, S3Enabled)
 	if err != nil {
 		return nil, resp, err
 	}

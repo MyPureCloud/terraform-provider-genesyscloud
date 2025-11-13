@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -366,6 +366,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if lastAgentRoutingMode != "" {
 		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
+	}
+
+	if d.HasChange("bullseye_rings") && updateQueue.Bullseye == nil {
+		if diagErr := clearBullseyeRingMemberGroups(ctx, d, &updateQueue, proxy); diagErr.HasError() {
+			return diagErr
+		}
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -24,6 +25,7 @@ func buildDefaultsToFromProvider(defaultsToList []interface{}) *platformclientv2
 	defaultsToMap := defaultsToList[0].(map[string]interface{})
 	special, specialOk := defaultsToMap["special"].(string)
 	value, valueOk := defaultsToMap["value"].(string)
+	values, valuesOk := defaultsToMap["values"].([]interface{})
 
 	if specialOk && special != "" {
 		return &platformclientv2.Decisiontablecolumndefaultrowvalue{
@@ -37,12 +39,16 @@ func buildDefaultsToFromProvider(defaultsToList []interface{}) *platformclientv2
 		}
 	}
 
-	// Handle type conversion for output columns
-	if defaultsToMap["value"] != nil {
-		if valueStr, ok := defaultsToMap["value"].(string); ok {
-			return &platformclientv2.Decisiontablecolumndefaultrowvalue{
-				Value: &valueStr,
+	if valuesOk && len(values) > 0 {
+		// Handle values list - use native Values field in v169
+		stringValues := make([]string, len(values))
+		for i, v := range values {
+			if str, ok := v.(string); ok {
+				stringValues[i] = str
 			}
+		}
+		return &platformclientv2.Decisiontablecolumndefaultrowvalue{
+			Values: &stringValues,
 		}
 	}
 
@@ -60,6 +66,8 @@ func flattenDefaultsTo(sdkDefaultsTo *platformclientv2.Decisiontablecolumndefaul
 		defaultsTo["special"] = *sdkDefaultsTo.Special
 	} else if sdkDefaultsTo.Value != nil {
 		defaultsTo["value"] = *sdkDefaultsTo.Value
+	} else if sdkDefaultsTo.Values != nil {
+		defaultsTo["values"] = *sdkDefaultsTo.Values
 	}
 
 	return []interface{}{defaultsTo}
@@ -135,6 +143,18 @@ func convertLiteralValue(value, valueType string) (interface{}, string, error) {
 		}
 	case "special":
 		return &value, "Special", nil
+	case "stringList":
+		// Handle string list - convert comma-separated string to slice
+		if value == "" {
+			return nil, "", nil
+		}
+		// Split comma-separated string into slice
+		stringSlice := strings.Split(value, ",")
+		// Trim whitespace from each element
+		for i, s := range stringSlice {
+			stringSlice[i] = strings.TrimSpace(s)
+		}
+		return &stringSlice, "Strings", nil
 	default:
 		return nil, "", fmt.Errorf("unknown literal type: %s", valueType)
 	}
@@ -636,6 +656,10 @@ func convertSDKLiteralToProvider(sdkLiteral *platformclientv2.Literal) map[strin
 	} else if sdkLiteral.Special != nil {
 		literal["value"] = *sdkLiteral.Special
 		literal["type"] = "special"
+	} else if sdkLiteral.Strings != nil {
+		// Convert string slice back to comma-separated string
+		literal["value"] = strings.Join(*sdkLiteral.Strings, ",")
+		literal["type"] = "stringList"
 	} else {
 		// If no fields are set, return empty values to indicate use of column default
 		literal["value"] = ""

@@ -10,14 +10,14 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -47,6 +47,7 @@ func getAllResponseAssets(ctx context.Context, clientConfig *platformclientv2.Co
 func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, meta any) (diags diag.Diagnostics) {
 	fileName := d.Get("filename").(string)
 	divisionId := d.Get("division_id").(string)
+	name := d.Get("name").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 
@@ -58,7 +59,7 @@ func createRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	log.Printf("Creating Responsemanagement response asset %s", fileName)
-	postResponseData, resp, err := proxy.uploadRespManagementRespAsset(ctx, d, fileName, divisionId)
+	postResponseData, resp, err := proxy.uploadRespManagementRespAsset(ctx, d, name, fileName, divisionId)
 	if err != nil {
 		return append(diags, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to upload response asset: %s | error: %s", fileName, err), resp)...)
 	}
@@ -92,13 +93,11 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read response asset %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		if !aws.IsS3Path(d.Get("filename").(string)) {
-			_ = d.Set("filename", *sdkAsset.Name)
-		}
-
 		if sdkAsset.Division != nil && sdkAsset.Division.Id != nil {
 			_ = d.Set("division_id", *sdkAsset.Division.Id)
 		}
+
+		resourcedata.SetNillableValue(d, "name", sdkAsset.Name)
 
 		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
 
@@ -113,10 +112,15 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)
 	fileName := d.Get("filename").(string)
+	name := d.Get("name").(string)
 	divisionId := d.Get("division_id").(string)
 
 	var bodyRequest platformclientv2.Responseassetrequest
-	bodyRequest.Name = &fileName
+	if name != "" {
+		bodyRequest.Name = &name
+	} else {
+		bodyRequest.Name = &fileName
+	}
 	if divisionId != "" {
 		bodyRequest.DivisionId = &divisionId
 	}
