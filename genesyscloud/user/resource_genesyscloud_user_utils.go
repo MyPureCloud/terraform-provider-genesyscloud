@@ -217,6 +217,197 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	log.Printf("[INV] FINAL STATE voicemail_userpolicies: %s", invMustJSON(model.VoicemailUserpolicies))
 }
 
+// updateUser applies the full Terraform configuration to an existing user and updates all modifiable attributes.
+// This helper is called from Create, Update, and restore operations to ensure consistent update handling across all CRUD operations.
+// Plugin Framework requires this helper pattern because Create/Update methods receive different request/response types
+// (CreateRequest/CreateResponse vs UpdateRequest/UpdateResponse), preventing direct method calls between CRUD operations.
+// It builds SDK request payloads, applies state changes separately, updates core attributes, and applies skills/languages/utilization.
+func updateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, clientConfig *platformclientv2.Configuration, diagnostics *pfdiag.Diagnostics, state ...*UserFrameworkResourceModel) {
+	// Build addresses from plan
+	addresses, addressDiags := buildSdkAddresses(plan.Addresses)
+	*diagnostics = append(*diagnostics, addressDiags...)
+	if diagnostics.HasError() {
+		return
+	}
+
+	email := plan.Email.ValueString()
+	log.Printf("Updating user %s", email)
+
+	// If state changes, it is the only modifiable field, so it must be updated separately
+	var currentState *UserFrameworkResourceModel
+	if len(state) > 0 {
+		currentState = state[0]
+	}
+
+	if currentState != nil && !plan.State.Equal(currentState.State) {
+		log.Printf("Updating state for user %s", email)
+		updateUserRequestBody := platformclientv2.Updateuser{
+			State: platformclientv2.String(plan.State.ValueString()),
+		}
+		diagErr := executeUpdateUser(ctx, plan, proxy, updateUserRequestBody)
+		if diagErr.HasError() {
+			*diagnostics = append(*diagnostics, diagErr...)
+			return
+		}
+	}
+
+	// Update all other attributes
+	updateUserRequestBody := platformclientv2.Updateuser{
+		Name:           platformclientv2.String(plan.Name.ValueString()),
+		Department:     platformclientv2.String(plan.Department.ValueString()),
+		Title:          platformclientv2.String(plan.Title.ValueString()),
+		Manager:        platformclientv2.String(plan.Manager.ValueString()),
+		AcdAutoAnswer:  platformclientv2.Bool(plan.AcdAutoAnswer.ValueBool()),
+		Email:          &email,
+		Addresses:      addresses,
+		Locations:      buildSdkLocations(ctx, plan.Locations),
+		Certifications: buildSdkCertifications(ctx, plan.Certifications),
+		ProfileSkills:  buildSdkProfileSkills(ctx, plan.ProfileSkills),
+		EmployerInfo:   buildSdkEmployerInfo(ctx, plan.EmployerInfo),
+	}
+
+	log.Printf("[INV] UPDATE payload.Addresses=%s", invMustJSON(updateUserRequestBody.Addresses))
+	if updateUserRequestBody.Addresses != nil {
+		invDumpSDKPhones("UPDATE payload (SDK)", *updateUserRequestBody.Addresses)
+	}
+
+	diagErr := executeUpdateUser(ctx, plan, proxy, updateUserRequestBody)
+	if diagErr.HasError() {
+		*diagnostics = append(*diagnostics, diagErr...)
+		return
+	}
+
+	// Apply skills, languages, utilization
+	isUpdate := currentState != nil
+	frameworkDiags := executeAllUpdates(ctx, plan, proxy, clientConfig, isUpdate, currentState)
+	if frameworkDiags.HasError() {
+		*diagnostics = append(*diagnostics, frameworkDiags...)
+		return
+	}
+
+	log.Printf("Finished updating user %s", email)
+
+	// Read back final state
+	readUser(ctx, plan, proxy, diagnostics)
+}
+
+func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourceModel, proxy *userProxy) (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+	var diagnostics pfdiag.Diagnostics
+
+	log.Printf("Getting user utilization")
+
+	apiClient := &proxy.routingApi.Configuration.APIClient
+	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, state.Id.ValueString())
+	headerParams := buildHeaderParams(proxy.routingApi)
+
+	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
+	if err != nil {
+		// Return the response so caller can check for 404
+		return response, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", state.Id.ValueString(), err), response)
+	}
+
+	agentUtilization := &agentUtilizationWithLabels{}
+	err = json.Unmarshal(response.RawBody, &agentUtilization)
+	if err != nil {
+		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
+		diagnostics.AddError(
+			"JSON Unmarshal Error",
+			fmt.Sprintf("Failed to unmarshal routing utilization: %s", err.Error()),
+		)
+		return response, diagnostics
+	}
+
+	// Define the element type for routing_utilization list
+	elemType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"call":               types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
+			"callback":           types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
+			"message":            types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
+			"email":              types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
+			"chat":               types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
+			"label_utilizations": types.ListType{ElemType: types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}},
+		},
+	}
+
+	if agentUtilization == nil {
+		state.RoutingUtilization = types.ListNull(elemType)
+		log.Printf("[INV][PF] readUserRoutingUtilization(): agentUtilization is nil, setting to null")
+		return response, diagnostics
+	}
+
+	if agentUtilization.Level == "Organization" {
+		// If the settings are org-wide, set to empty to indicate no settings on the user
+		emptyList, diags := types.ListValue(elemType, []attr.Value{})
+		diagnostics.Append(diags...)
+		state.RoutingUtilization = emptyList
+		log.Printf("[INV][PF] readUserRoutingUtilization(): Level=Organization, setting to empty list")
+		return response, diagnostics
+	}
+
+	// Build the settings object
+	allSettingsAttrs := map[string]attr.Value{
+		"call":               types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
+		"callback":           types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
+		"message":            types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
+		"email":              types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
+		"chat":               types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
+		"label_utilizations": types.ListNull(types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}),
+	}
+
+	// Flatten media utilization settings
+	if agentUtilization.Utilization != nil {
+		for sdkType, schemaType := range getUtilizationMediaTypes() {
+			if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
+				flattenedMedia, diags := flattenUtilizationSetting(mediaSettings)
+				diagnostics.Append(diags...)
+				allSettingsAttrs[schemaType] = flattenedMedia
+			}
+		}
+	}
+
+	// Flatten label utilizations with filtering based on current state
+	if agentUtilization.LabelUtilizations != nil {
+		// Get the current state's label_utilizations to preserve order
+		var originalLabelUtilizations types.List
+		if !state.RoutingUtilization.IsNull() && !state.RoutingUtilization.IsUnknown() {
+			var currentUtilConfig []RoutingUtilizationModel
+			diags := state.RoutingUtilization.ElementsAs(ctx, &currentUtilConfig, false)
+			diagnostics.Append(diags...)
+
+			if len(currentUtilConfig) > 0 {
+				originalLabelUtilizations = currentUtilConfig[0].LabelUtilizations
+			}
+		}
+
+		if !originalLabelUtilizations.IsNull() && !originalLabelUtilizations.IsUnknown() {
+			// Filter and flatten based on original order
+			filteredLabels, diags := filterAndFlattenLabelUtilizations(ctx, agentUtilization.LabelUtilizations, originalLabelUtilizations)
+			diagnostics.Append(diags...)
+			allSettingsAttrs["label_utilizations"] = filteredLabels
+		} else {
+			// No original labels, return empty list
+			emptyLabels, diags := types.ListValue(types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}, []attr.Value{})
+			diagnostics.Append(diags...)
+			allSettingsAttrs["label_utilizations"] = emptyLabels
+		}
+	}
+
+	// Create the settings object
+	settingsObj, diags := types.ObjectValue(elemType.AttrTypes, allSettingsAttrs)
+	diagnostics.Append(diags...)
+
+	// Create the list with one element
+	utilizationList, diags := types.ListValue(elemType, []attr.Value{settingsObj})
+	diagnostics.Append(diags...)
+
+	state.RoutingUtilization = utilizationList
+
+	log.Printf("[INV][PF] readUserRoutingUtilization(): isNull=%v isUnknown=%v routingUtilization=%s",
+		state.RoutingUtilization.IsNull(), state.RoutingUtilization.IsUnknown(), invMustJSON(state.RoutingUtilization))
+
+	return response, diagnostics
+}
+
 func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) string {
 	ext, getErr, err := proxy.getTelephonyExtensionPoolByExtension(ctx, extNum)
 	if err != nil {
@@ -830,176 +1021,506 @@ func filterAndFlattenLabelUtilizations(ctx context.Context, apiLabels map[string
 	return list, diagnostics
 }
 
-func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourceModel, proxy *userProxy) (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
-	var diagnostics pfdiag.Diagnostics
-
-	log.Printf("Getting user utilization")
-
-	apiClient := &proxy.routingApi.Configuration.APIClient
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, state.Id.ValueString())
-	headerParams := buildHeaderParams(proxy.routingApi)
-
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
-	if err != nil {
-		// Return the response so caller can check for 404
-		return response, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", state.Id.ValueString(), err), response)
-	}
-
-	agentUtilization := &agentUtilizationWithLabels{}
-	err = json.Unmarshal(response.RawBody, &agentUtilization)
-	if err != nil {
-		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
-		diagnostics.AddError(
-			"JSON Unmarshal Error",
-			fmt.Sprintf("Failed to unmarshal routing utilization: %s", err.Error()),
-		)
-		return response, diagnostics
-	}
-
-	// Define the element type for routing_utilization list
-	elemType := types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"call":               types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"callback":           types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"message":            types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"email":              types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"chat":               types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"label_utilizations": types.ListType{ElemType: types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}},
-		},
-	}
-
-	if agentUtilization == nil {
-		state.RoutingUtilization = types.ListNull(elemType)
-		log.Printf("[INV][PF] readUserRoutingUtilization(): agentUtilization is nil, setting to null")
-		return response, diagnostics
-	}
-
-	if agentUtilization.Level == "Organization" {
-		// If the settings are org-wide, set to empty to indicate no settings on the user
-		emptyList, diags := types.ListValue(elemType, []attr.Value{})
-		diagnostics.Append(diags...)
-		state.RoutingUtilization = emptyList
-		log.Printf("[INV][PF] readUserRoutingUtilization(): Level=Organization, setting to empty list")
-		return response, diagnostics
-	}
-
-	// Build the settings object
-	allSettingsAttrs := map[string]attr.Value{
-		"call":               types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"callback":           types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"message":            types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"email":              types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"chat":               types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"label_utilizations": types.ListNull(types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}),
-	}
-
-	// Flatten media utilization settings
-	if agentUtilization.Utilization != nil {
-		for sdkType, schemaType := range getUtilizationMediaTypes() {
-			if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
-				flattenedMedia, diags := flattenUtilizationSetting(mediaSettings)
-				diagnostics.Append(diags...)
-				allSettingsAttrs[schemaType] = flattenedMedia
-			}
-		}
-	}
-
-	// Flatten label utilizations with filtering based on current state
-	if agentUtilization.LabelUtilizations != nil {
-		// Get the current state's label_utilizations to preserve order
-		var originalLabelUtilizations types.List
-		if !state.RoutingUtilization.IsNull() && !state.RoutingUtilization.IsUnknown() {
-			var currentUtilConfig []RoutingUtilizationModel
-			diags := state.RoutingUtilization.ElementsAs(ctx, &currentUtilConfig, false)
-			diagnostics.Append(diags...)
-
-			if len(currentUtilConfig) > 0 {
-				originalLabelUtilizations = currentUtilConfig[0].LabelUtilizations
-			}
-		}
-
-		if !originalLabelUtilizations.IsNull() && !originalLabelUtilizations.IsUnknown() {
-			// Filter and flatten based on original order
-			filteredLabels, diags := filterAndFlattenLabelUtilizations(ctx, agentUtilization.LabelUtilizations, originalLabelUtilizations)
-			diagnostics.Append(diags...)
-			allSettingsAttrs["label_utilizations"] = filteredLabels
-		} else {
-			// No original labels, return empty list
-			emptyLabels, diags := types.ListValue(types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}, []attr.Value{})
-			diagnostics.Append(diags...)
-			allSettingsAttrs["label_utilizations"] = emptyLabels
-		}
-	}
-
-	// Create the settings object
-	settingsObj, diags := types.ObjectValue(elemType.AttrTypes, allSettingsAttrs)
-	diagnostics.Append(diags...)
-
-	// Create the list with one element
-	utilizationList, diags := types.ListValue(elemType, []attr.Value{settingsObj})
-	diagnostics.Append(diags...)
-
-	state.RoutingUtilization = utilizationList
-
-	log.Printf("[INV][PF] readUserRoutingUtilization(): isNull=%v isUnknown=%v routingUtilization=%s",
-		state.RoutingUtilization.IsNull(), state.RoutingUtilization.IsUnknown(), invMustJSON(state.RoutingUtilization))
-
-	return response, diagnostics
-}
-
-//------------------------------ the function below needs refacturing ----------------------------
-
-// buildSdkAddresses converts Framework types.List addresses to SDK Contact slice
 func buildSdkAddresses(addresses types.List) (*[]platformclientv2.Contact, pfdiag.Diagnostics) {
 	var diagnostics pfdiag.Diagnostics
 	sdkAddresses := make([]platformclientv2.Contact, 0)
 
+	// Check if addresses is null or unknown
 	if addresses.IsNull() || addresses.IsUnknown() {
-		return &sdkAddresses, nil
+		return &sdkAddresses, diagnostics
 	}
 
-	addressElements := addresses.Elements()
-	if len(addressElements) == 0 {
-		return &sdkAddresses, nil
+	// Define the model for addresses block
+	type AddressesModel struct {
+		OtherEmails  types.Set `tfsdk:"other_emails"`
+		PhoneNumbers types.Set `tfsdk:"phone_numbers"`
 	}
 
-	// Get the first (and only) address element since MaxItems is 1
-	addressObj, ok := addressElements[0].(types.Object)
-	if !ok {
-		diagnostics.AddError("Invalid Address Type", "Expected address to be an object")
-		return nil, diagnostics
+	// Extract addresses into typed model
+	var addressesBlocks []AddressesModel
+	diags := addresses.ElementsAs(context.Background(), &addressesBlocks, false)
+	diagnostics.Append(diags...)
+	if diagnostics.HasError() {
+		return &sdkAddresses, diagnostics
 	}
 
-	addressAttrs := addressObj.Attributes()
-
-	// Process other_emails
-	if otherEmailsAttr, exists := addressAttrs["other_emails"]; exists && !otherEmailsAttr.IsNull() {
-		otherEmailsSet, ok := otherEmailsAttr.(types.Set)
-		if ok {
-			emailContacts, emailDiags := buildSdkEmails(otherEmailsSet)
-			diagnostics.Append(emailDiags...)
-			if !diagnostics.HasError() {
-				sdkAddresses = append(sdkAddresses, emailContacts...)
-			}
-		}
+	// Check if we have at least one addresses block
+	if len(addressesBlocks) == 0 {
+		return &sdkAddresses, diagnostics
 	}
 
-	// Process phone_numbers
-	if phoneNumbersAttr, exists := addressAttrs["phone_numbers"]; exists && !phoneNumbersAttr.IsNull() {
-		phoneNumbersSet, ok := phoneNumbersAttr.(types.Set)
-		if ok {
-			phoneContacts, phoneDiags := buildSdkPhoneNumbers(phoneNumbersSet)
-			diagnostics.Append(phoneDiags...)
-			if !diagnostics.HasError() {
-				sdkAddresses = append(sdkAddresses, phoneContacts...)
-			}
-		}
+	// Get the first (and only) addresses block
+	addressBlock := addressesBlocks[0]
+
+	// Build emails
+	if !addressBlock.OtherEmails.IsNull() && !addressBlock.OtherEmails.IsUnknown() {
+		emailContacts, emailDiags := buildSdkEmails(addressBlock.OtherEmails)
+		diagnostics.Append(emailDiags...)
+		sdkAddresses = append(sdkAddresses, emailContacts...)
+	}
+
+	// Build phone numbers
+	if !addressBlock.PhoneNumbers.IsNull() && !addressBlock.PhoneNumbers.IsUnknown() {
+		phoneContacts, phoneDiags := buildSdkPhoneNumbers(addressBlock.PhoneNumbers)
+		diagnostics.Append(phoneDiags...)
+		sdkAddresses = append(sdkAddresses, phoneContacts...)
 	}
 
 	return &sdkAddresses, diagnostics
 }
 
-func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs map[string]float64, proxy *userProxy) diag.Diagnostics {
+func buildSdkEmails(configEmails types.Set) ([]platformclientv2.Contact, pfdiag.Diagnostics) {
+	var diagnostics pfdiag.Diagnostics
+
+	// Check if set is null or unknown
+	if configEmails.IsNull() || configEmails.IsUnknown() {
+		return []platformclientv2.Contact{}, diagnostics
+	}
+
+	// Define the model for other_emails
+	type OtherEmailModel struct {
+		Address types.String `tfsdk:"address"`
+		Type    types.String `tfsdk:"type"`
+	}
+
+	// Extract emails into typed model
+	var emails []OtherEmailModel
+	diags := configEmails.ElementsAs(context.Background(), &emails, false)
+	diagnostics.Append(diags...)
+	if diagnostics.HasError() {
+		return []platformclientv2.Contact{}, diagnostics
+	}
+
+	// Pre-allocate result array
+	sdkContacts := make([]platformclientv2.Contact, len(emails))
+
+	// Build contacts
+	for i, email := range emails {
+		emailAddress := email.Address.ValueString()
+		emailType := email.Type.ValueString()
+
+		sdkContacts[i] = platformclientv2.Contact{
+			Address:   &emailAddress,
+			MediaType: &contactTypeEmail,
+			VarType:   &emailType,
+		}
+	}
+
+	return sdkContacts, diagnostics
+}
+
+func buildSdkPhoneNumbers(configPhoneNumbers types.Set) ([]platformclientv2.Contact, pfdiag.Diagnostics) {
+	var diagnostics pfdiag.Diagnostics
+
+	// Check if set is null or unknown
+	if configPhoneNumbers.IsNull() || configPhoneNumbers.IsUnknown() {
+		return []platformclientv2.Contact{}, diagnostics
+	}
+
+	// Define the model for phone_numbers
+	type PhoneNumberModel struct {
+		Number          types.String `tfsdk:"number"`
+		MediaType       types.String `tfsdk:"media_type"`
+		Type            types.String `tfsdk:"type"`
+		Extension       types.String `tfsdk:"extension"`
+		ExtensionPoolId types.String `tfsdk:"extension_pool_id"`
+	}
+
+	// Extract phone numbers into typed model
+	var phoneNumbers []PhoneNumberModel
+	diags := configPhoneNumbers.ElementsAs(context.Background(), &phoneNumbers, false)
+	diagnostics.Append(diags...)
+	if diagnostics.HasError() {
+		return []platformclientv2.Contact{}, diagnostics
+	}
+
+	// Pre-allocate result array
+	sdkContacts := make([]platformclientv2.Contact, len(phoneNumbers))
+
+	// Build contacts
+	for i, phone := range phoneNumbers {
+		// Required fields (have defaults in schema)
+		phoneMediaType := phone.MediaType.ValueString()
+		phoneType := phone.Type.ValueString()
+
+		contact := platformclientv2.Contact{
+			MediaType: &phoneMediaType,
+			VarType:   &phoneType,
+		}
+
+		// Optional field: number
+		if !phone.Number.IsNull() && !phone.Number.IsUnknown() {
+			phoneNum := phone.Number.ValueString()
+			if phoneNum != "" {
+				contact.Address = &phoneNum
+			}
+		}
+
+		// Optional field: extension
+		if !phone.Extension.IsNull() && !phone.Extension.IsUnknown() {
+			phoneExt := phone.Extension.ValueString()
+			if phoneExt != "" {
+				contact.Extension = &phoneExt
+			}
+		}
+
+		sdkContacts[i] = contact
+	}
+
+	return sdkContacts, diagnostics
+}
+
+func getDeletedUserId(email string, proxy *userProxy) (*string, pfdiag.Diagnostics) {
+	var diagnostics pfdiag.Diagnostics
+
+	exactType := "EXACT"
+	results, resp, getErr := proxy.userApi.PostUsersSearch(platformclientv2.Usersearchrequest{
+		Query: &[]platformclientv2.Usersearchcriteria{
+			{
+				Fields:  &[]string{"email"},
+				Value:   &email,
+				VarType: &exactType,
+			},
+			{
+				Fields:  &[]string{"state"},
+				Values:  &[]string{"deleted"},
+				VarType: &exactType,
+			},
+		},
+	})
+
+	if getErr != nil {
+		return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to search for user %s error: %s", email, getErr), resp)
+	}
+
+	if results.Results != nil && len(*results.Results) > 0 {
+		// User found
+		return (*results.Results)[0].Id, diagnostics
+	}
+
+	return nil, diagnostics
+}
+
+func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, clientConfig *platformclientv2.Configuration, diagnostics *pfdiag.Diagnostics) {
+	email := plan.Email.ValueString()
+	state := plan.State.ValueString()
+
+	log.Printf("Restoring deleted user %s", email)
+
+	err := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+		// Get current user (with version)
+		currentUser, proxyResponse, err := proxy.getUserById(ctx, plan.Id.ValueString(), nil, "deleted")
+		if err != nil {
+			return nil, buildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", plan.Id.ValueString(), err), proxyResponse)
+		}
+
+		// Log current addresses before restore PATCH
+		log.Printf("[INV] RESTORE payload for user %s", email)
+		log.Printf("[INV] RESTORE payload.State=%s", state)
+		log.Printf("[INV] RESTORE current.Addresses=%s", invMustJSON(currentUser.Addresses))
+		if currentUser.Addresses != nil {
+			invDumpSDKPhones("RESTORE current addresses (before PATCH)", *currentUser.Addresses)
+		}
+
+		// Restore (change state to active)
+		restoredUser, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, plan.Id.ValueString(), &platformclientv2.Updateuser{
+			State:   &state,
+			Version: currentUser.Version,
+		})
+		if patchErr != nil {
+			return proxyPatchResponse, buildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to restore deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
+		}
+
+		// Log PATCH response
+		if proxyPatchResponse != nil {
+			log.Printf("[INV] RESTORE PATCH status: %v", proxyPatchResponse.StatusCode)
+		}
+		if restoredUser != nil {
+			log.Printf("[INV] RESTORE PATCH response.Addresses=%s", invMustJSON(restoredUser.Addresses))
+			if restoredUser.Addresses != nil {
+				invDumpSDKPhones("RESTORE PATCH response (SDK)", *restoredUser.Addresses)
+			}
+		}
+
+		// Apply full configuration (equivalent to SDKv2's updateUser call)
+		// Pass nil for state since this is a restore (no previous state to compare)
+		updateUser(ctx, plan, proxy, clientConfig, diagnostics)
+		//          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+		//          Matches SDKv2 pattern: restoreDeletedUser calls updateUser
+
+		if diagnostics.HasError() {
+			return nil, *diagnostics
+		}
+
+		log.Printf("[INV] RESTORE complete for user %s", email)
+		log.Printf("[INV] RESTORE final plan.Addresses=%s", invMustJSON(plan.Addresses))
+
+		return nil, nil
+	})
+
+	if err != nil {
+		*diagnostics = append(*diagnostics, err...)
+	}
+}
+
+func executeAllUpdates(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool, state ...*UserFrameworkResourceModel) pfdiag.Diagnostics {
+	var diagnostics pfdiag.Diagnostics
+
+	if updateObjectDivision {
+		var currentState *UserFrameworkResourceModel
+		if len(state) > 0 {
+			currentState = state[0]
+		}
+		diagErr := util.UpdateObjectDivisionPF(ctx, plan, currentState, "USER", sdkConfig)
+		if diagErr.HasError() {
+			diagnostics.Append(diagErr...)
+			return diagnostics
+		}
+	}
+
+	// Update user skills - using standalone function from utils file
+	diagErr := updateUserSkills(ctx, plan, proxy)
+	if diagErr.HasError() {
+		diagnostics.Append(diagErr...)
+		return diagnostics
+	}
+
+	// Update user languages - using standalone function from utils file
+	diagErr = updateUserLanguages(ctx, plan, proxy)
+	if diagErr.HasError() {
+		diagnostics.Append(diagErr...)
+		return diagnostics
+	}
+
+	// Update profile skills - using standalone function from utils file
+	diagErr = updateUserProfileSkills(ctx, plan, proxy)
+	if diagErr.HasError() {
+		diagnostics.Append(diagErr...)
+		return diagnostics
+	}
+
+	// Update routing utilization - using standalone function from utils file
+	log.Printf("DEBUG: About to update routing utilization for user %s", plan.Id.ValueString())
+	diagErr = updateUserRoutingUtilization(ctx, plan, proxy)
+	if diagErr.HasError() {
+		diagnostics.Append(diagErr...)
+		return diagnostics
+	}
+
+	// Update voicemail policies - using standalone function from utils file
+	diagErr = updateUserVoicemailPolicies(ctx, plan, proxy)
+	if diagErr.HasError() {
+		diagnostics.Append(diagErr...)
+		return diagnostics
+	}
+
+	// Update password - using standalone function from utils file
+	diagErr = updatePassword(ctx, plan, proxy)
+	if diagErr.HasError() {
+		diagnostics.Append(diagErr...)
+		return diagnostics
+	}
+
+	return diagnostics
+}
+
+func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+	// In Plugin Framework, we don't have d.HasChange() at the helper level
+	// Change detection happens at the resource Update() method level
+	// This helper is only called when there's a change, so we process unconditionally
+
+	// Check if routing_skills is null or unknown (equivalent to SDKv2's skillsConfig == nil)
+	if plan.RoutingSkills.IsNull() || plan.RoutingSkills.IsUnknown() {
+		// SDKv2 behavior: When skills are nil, return without removing existing skills
+		// This matches the nested if structure in SDKv2 where removal only happens inside skillsConfig != nil
+		log.Printf("Skills are null/unknown for user %s, skipping skill updates", plan.Id.ValueString())
+		return pfdiag.Diagnostics{}
+	}
+
+	// Skills are configured - process them (equivalent to skillsConfig != nil)
+	log.Printf("Updating skills for user %s", plan.Email.ValueString())
+
+	// Build new skills map from Framework types
+	newSkillProfs := make(map[string]float64)
+	skillElements := plan.RoutingSkills.Elements()
+	newSkillIds := make([]string, len(skillElements))
+
+	for i, skillElement := range skillElements {
+		skillObj, ok := skillElement.(types.Object)
+		if !ok {
+			continue
+		}
+
+		skillAttrs := skillObj.Attributes()
+
+		var skillId string
+		var proficiency float64
+
+		if skillIdAttr, exists := skillAttrs["skill_id"]; exists && !skillIdAttr.IsNull() {
+			skillId = skillIdAttr.(types.String).ValueString()
+		}
+
+		if proficiencyAttr, exists := skillAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
+			proficiency = proficiencyAttr.(types.Float64).ValueFloat64()
+		}
+
+		newSkillIds[i] = skillId
+		newSkillProfs[skillId] = proficiency
+	}
+
+	// Get current skills from API
+	oldSdkSkills, getErr := getUserRoutingSkills(plan.Id.ValueString(), proxy)
+	if getErr != nil {
+		// Convert SDK diagnostics to Framework diagnostics
+		return getErr
+	}
+
+	// Build old skills map
+	oldSkillIds := make([]string, len(oldSdkSkills))
+	oldSkillProfs := make(map[string]float64)
+	for i, skill := range oldSdkSkills {
+		oldSkillIds[i] = *skill.Id
+		oldSkillProfs[oldSkillIds[i]] = *skill.Proficiency
+	}
+
+	// Remove skills that are no longer in configuration
+	if len(oldSkillIds) > 0 {
+		skillsToRemove := lists.SliceDifference(oldSkillIds, newSkillIds)
+		for _, skillId := range skillsToRemove {
+			diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+				resp, err := proxy.userApi.DeleteUserRoutingskill(plan.Id.ValueString(), skillId)
+				if err != nil {
+					return resp, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove skill from user %s error: %s", plan.Id.ValueString(), err), resp)
+				}
+				return nil, nil
+			})
+			if diagErr != nil {
+				return diagErr
+			}
+		}
+	}
+
+	// Add or update skills
+	if len(newSkillIds) > 0 {
+		// Skills to add
+		skillsToAddOrUpdate := lists.SliceDifference(newSkillIds, oldSkillIds)
+
+		// Check for existing proficiencies to update which can be done with the same API
+		for skillID, newProf := range newSkillProfs {
+			if oldProf, found := oldSkillProfs[skillID]; found {
+				if newProf != oldProf {
+					skillsToAddOrUpdate = append(skillsToAddOrUpdate, skillID)
+				}
+			}
+		}
+
+		if len(skillsToAddOrUpdate) > 0 {
+			if diagErr := updateUserRoutingSkills(plan.Id.ValueString(), skillsToAddOrUpdate, newSkillProfs, proxy); diagErr != nil {
+				return diagErr
+			}
+		}
+	}
+
+	return pfdiag.Diagnostics{}
+}
+
+func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+	var diagnostics pfdiag.Diagnostics
+
+	if plan.RoutingLanguages.IsNull() || plan.RoutingLanguages.IsUnknown() {
+		return diagnostics
+	}
+
+	// Languages are configured - process them (equivalent to languages != nil block)
+	log.Printf("Updating languages for user %s", plan.Email.ValueString())
+
+	// Build new languages map from Framework types
+	newLangProfs := make(map[string]int)
+	languageElements := plan.RoutingLanguages.Elements()
+	newLangIds := make([]string, len(languageElements))
+
+	for i, languageElement := range languageElements {
+		languageObj, ok := languageElement.(types.Object)
+		if !ok {
+			continue
+		}
+
+		languageAttrs := languageObj.Attributes()
+
+		var languageId string
+		var proficiency int64
+
+		if languageIdAttr, exists := languageAttrs["language_id"]; exists && !languageIdAttr.IsNull() {
+			languageId = languageIdAttr.(types.String).ValueString()
+		}
+
+		if proficiencyAttr, exists := languageAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
+			proficiency = proficiencyAttr.(types.Int64).ValueInt64()
+		}
+
+		newLangIds[i] = languageId
+		newLangProfs[languageId] = int(proficiency)
+	}
+
+	// Get current languages from API
+	oldSdkLangs, getErr := getUserRoutingLanguages(plan.Id.ValueString(), proxy)
+	if getErr != nil {
+
+		return getErr
+	}
+
+	// Build old languages map
+	oldLangIds := make([]string, len(oldSdkLangs))
+	oldLangProfs := make(map[string]int)
+	for i, lang := range oldSdkLangs {
+		oldLangIds[i] = *lang.Id
+		oldLangProfs[oldLangIds[i]] = int(*lang.Proficiency)
+	}
+
+	// Remove languages that are no longer in configuration
+	if len(oldLangIds) > 0 {
+		langsToRemove := lists.SliceDifference(oldLangIds, newLangIds)
+		for _, langID := range langsToRemove {
+			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+				resp, err := proxy.userApi.DeleteUserRoutinglanguage(plan.Id.ValueString(), langID)
+				if err != nil {
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove language from user %s error: %s", plan.Id.ValueString(), err), resp)
+				}
+				return nil, nil
+			})
+			if diagErr != nil {
+				return convertSDKDiagnosticsToFramework(diagErr)
+			}
+		}
+	}
+
+	// Add or update languages
+	if len(newLangIds) > 0 {
+		// Languages to add
+		langsToAddOrUpdate := lists.SliceDifference(newLangIds, oldLangIds)
+
+		// Check for existing proficiencies to update which can be done with the same API
+		for langID, newNum := range newLangProfs {
+			if oldNum, found := oldLangProfs[langID]; found {
+				if newNum != oldNum {
+					langsToAddOrUpdate = append(langsToAddOrUpdate, langID)
+				}
+			}
+		}
+
+		if len(langsToAddOrUpdate) > 0 {
+			if diagErr := updateUserRoutingLanguages(plan.Id.ValueString(), langsToAddOrUpdate, newLangProfs, proxy); diagErr != nil {
+				return diagErr
+			}
+		}
+	}
+
+	log.Printf("Languages updated for user %s", plan.Email.ValueString())
+
+	return diagnostics
+}
+
+func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs map[string]float64, proxy *userProxy) pfdiag.Diagnostics {
 	// Bulk API restricts skills adds to 50 per call
 	const maxBatchSize = 50
 
@@ -1016,11 +1537,13 @@ func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs 
 	chunks := chunksProcess.ChunkItems(skillsToUpdate, chunkBuild, maxBatchSize)
 	// Closure to process the chunks
 
+	//TODO
+	//later we have to modify the Diagnostics from sdkv2 to PF
 	chunkProcessor := func(chunk []platformclientv2.Userroutingskillpost) diag.Diagnostics {
 		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := proxy.userApi.PatchUserRoutingskillsBulk(userID, chunk)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update languages for user %s error: %s", userID, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update skills for user %s error: %s", userID, err), resp)
 			}
 			return nil, nil
 		})
@@ -1031,10 +1554,12 @@ func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs 
 	}
 
 	// Generic Function call which takes in the chunks and the processing function
-	return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+	chunkErr := chunksProcess.ProcessChunks(chunks, chunkProcessor)
+
+	return convertSDKDiagnosticsToFramework(chunkErr)
 }
 
-func updateUserRoutingLanguages(userID string, langsToUpdate []string, langProfs map[string]int, proxy *userProxy) diag.Diagnostics {
+func updateUserRoutingLanguages(userID string, langsToUpdate []string, langProfs map[string]int, proxy *userProxy) pfdiag.Diagnostics {
 	// Bulk API restricts language adds to 50 per call
 	const maxBatchSize = 50
 
@@ -1051,6 +1576,8 @@ func updateUserRoutingLanguages(userID string, langsToUpdate []string, langProfs
 	chunks := chunksProcess.ChunkItems(langsToUpdate, chunkBuild, maxBatchSize)
 	// Closure to process the chunks
 
+	//TODO
+	//later we have to modify the Diagnostics from sdkv2 to PF
 	chunkProcessor := func(chunk []platformclientv2.Userroutinglanguagepost) diag.Diagnostics {
 		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := proxy.userApi.PatchUserRoutinglanguagesBulk(userID, chunk)
@@ -1066,34 +1593,19 @@ func updateUserRoutingLanguages(userID string, langsToUpdate []string, langProfs
 	}
 
 	// Genric Function call which takes in the chunks and the processing function
-	return chunksProcess.ProcessChunks(chunks, chunkProcessor)
+	chunkErr := chunksProcess.ProcessChunks(chunks, chunkProcessor)
+
+	return convertSDKDiagnosticsToFramework(chunkErr)
 }
 
-func getUserRoutingLanguages(userID string, proxy *userProxy) ([]platformclientv2.Userroutinglanguage, diag.Diagnostics) {
-	const maxPageSize = 50
-
-	var sdkLanguages []platformclientv2.Userroutinglanguage
-	for pageNum := 1; ; pageNum++ {
-		langs, resp, err := proxy.userApi.GetUserRoutinglanguages(userID, maxPageSize, pageNum, "")
-		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
-		}
-		if langs == nil || langs.Entities == nil || len(*langs.Entities) == 0 {
-			return sdkLanguages, nil
-		}
-
-		sdkLanguages = append(sdkLanguages, *langs.Entities...)
-	}
-}
-
-func getUserRoutingSkills(userID string, proxy *userProxy) ([]platformclientv2.Userroutingskill, diag.Diagnostics) {
+func getUserRoutingSkills(userID string, proxy *userProxy) ([]platformclientv2.Userroutingskill, pfdiag.Diagnostics) {
 	const maxPageSize = 50
 
 	var sdkSkills []platformclientv2.Userroutingskill
 	for pageNum := 1; ; pageNum++ {
 		skills, resp, err := proxy.userApi.GetUserRoutingskills(userID, maxPageSize, pageNum, "")
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
+			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query skills for user %s error: %s", userID, err), resp)
 		}
 		if skills == nil || skills.Entities == nil || len(*skills.Entities) == 0 {
 			return sdkSkills, nil
@@ -1103,31 +1615,24 @@ func getUserRoutingSkills(userID string, proxy *userProxy) ([]platformclientv2.U
 	}
 }
 
-func getDeletedUserId(email string, proxy *userProxy) (*string, diag.Diagnostics) {
-	exactType := "EXACT"
-	results, resp, getErr := proxy.userApi.PostUsersSearch(platformclientv2.Usersearchrequest{
-		Query: &[]platformclientv2.Usersearchcriteria{
-			{
-				Fields:  &[]string{"email"},
-				Value:   &email,
-				VarType: &exactType,
-			},
-			{
-				Fields:  &[]string{"state"},
-				Values:  &[]string{"deleted"},
-				VarType: &exactType,
-			},
-		},
-	})
-	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to search for user %s error: %s", email, getErr), resp)
+func getUserRoutingLanguages(userID string, proxy *userProxy) ([]platformclientv2.Userroutinglanguage, pfdiag.Diagnostics) {
+	const maxPageSize = 50
+
+	var sdkLanguages []platformclientv2.Userroutinglanguage
+	for pageNum := 1; ; pageNum++ {
+		langs, resp, err := proxy.userApi.GetUserRoutinglanguages(userID, maxPageSize, pageNum, "")
+		if err != nil {
+			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
+		}
+		if langs == nil || langs.Entities == nil || len(*langs.Entities) == 0 {
+			return sdkLanguages, nil
+		}
+
+		sdkLanguages = append(sdkLanguages, *langs.Entities...)
 	}
-	if results.Results != nil && len(*results.Results) > 0 {
-		// User found
-		return (*results.Results)[0].Id, nil
-	}
-	return nil, nil
 }
+
+//------------------------------ the function below needs refacturing EOR----------------------------
 
 // buildSdkSkillsFromFramework converts Framework routing skills to SDK skills
 func buildSdkSkillsFromFramework(routingSkills types.Set) ([]platformclientv2.Userroutingskillpost, diag.Diagnostics) {
@@ -1297,7 +1802,7 @@ func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautil
 	return platformclientv2.Mediautilization{
 		MaximumCapacity:         &maxCapacity,
 		IncludeNonAcd:           &includeNonAcd,
-		InterruptibleMediaTypes: interruptibleMediaTypes,
+		InterruptableMediaTypes: interruptibleMediaTypes,
 	}
 }
 
@@ -1745,374 +2250,6 @@ func executeUpdateUser(ctx context.Context, plan *UserFrameworkResourceModel, pr
 	}, fmt.Sprintf("Failed to update user %s", plan.Id.ValueString()))
 }
 
-// executeAllUpdates executes all additional updates for the user
-// Migrated from (r *UserFrameworkResource) executeAllUpdates method
-// Following SDK pattern: mirrors SDK executeAllUpdates logic for Framework interface
-func executeAllUpdates(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool, state ...*UserFrameworkResourceModel) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	if updateObjectDivision {
-		// Implement Framework-compatible division update logic (Task 6.1, 6.2, 6.3, 6.4, 6.5)
-		var currentState *UserFrameworkResourceModel
-		if len(state) > 0 {
-			currentState = state[0]
-		}
-		diagErr := updateUserDivision(ctx, plan, currentState, sdkConfig)
-		if diagErr.HasError() {
-			// Task 8.4: Return diagnostic messages without stopping other updates when division update fails
-			for _, divisionDiag := range diagErr {
-				diagnostics.AddWarning(
-					"Division Update Failed",
-					fmt.Sprintf("Division update failed for user %s but other updates will continue. %s: %s", plan.Id.ValueString(), divisionDiag.Summary(), divisionDiag.Detail()),
-				)
-			}
-			log.Printf("Division update failed for user %s, continuing with other updates", plan.Id.ValueString())
-		} else {
-			log.Printf("Division update completed successfully for user %s", plan.Id.ValueString())
-		}
-	}
-
-	// Update user skills - using standalone function from utils file
-	diagErr := updateUserSkills(ctx, plan, proxy)
-	if diagErr.HasError() {
-		diagnostics.Append(diagErr...)
-		return diagnostics
-	}
-
-	// Update user languages - using standalone function from utils file
-	diagErr = updateUserLanguages(ctx, plan, proxy)
-	if diagErr.HasError() {
-		diagnostics.Append(diagErr...)
-		return diagnostics
-	}
-
-	// Update profile skills - using standalone function from utils file
-	diagErr = updateUserProfileSkills(ctx, plan, proxy)
-	if diagErr.HasError() {
-		diagnostics.Append(diagErr...)
-		return diagnostics
-	}
-
-	// Update routing utilization - using standalone function from utils file
-	log.Printf("DEBUG: About to update routing utilization for user %s", plan.Id.ValueString())
-	diagErr = updateUserRoutingUtilization(ctx, plan, proxy)
-	if diagErr.HasError() {
-		diagnostics.Append(diagErr...)
-		return diagnostics
-	}
-
-	// Update voicemail policies - using standalone function from utils file
-	diagErr = updateUserVoicemailPolicies(ctx, plan, proxy)
-	if diagErr.HasError() {
-		diagnostics.Append(diagErr...)
-		return diagnostics
-	}
-
-	// Update password - using standalone function from utils file
-	diagErr = updatePassword(ctx, plan, proxy)
-	if diagErr.HasError() {
-		diagnostics.Append(diagErr...)
-		return diagnostics
-	}
-
-	return diagnostics
-}
-
-// updateUserDivision handles division updates for Framework users
-// Migrated from (r *UserFrameworkResource) updateUserDivision method
-// Following SDK pattern: mirrors SDK updateUserDivision logic for Framework interface
-func updateUserDivision(ctx context.Context, plan *UserFrameworkResourceModel, state *UserFrameworkResourceModel, sdkConfig *platformclientv2.Configuration) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	// Task 8.4: Validate user ID is present
-	if plan.Id.IsNull() || plan.Id.ValueString() == "" {
-		// Use SDK-aligned error handling for validation errors
-		frameworkDiags := handleFrameworkValidationError(ResourceType, "user_id", plan.Id, "user ID is missing or empty")
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	// Check if division_id has changed between plan and state (Task 6.1)
-	if state != nil && plan.DivisionId.Equal(state.DivisionId) {
-		// No change in division_id, skip division update logic without errors (Task 6.5)
-		log.Printf("Division ID unchanged for user %s, skipping division update", plan.Id.ValueString())
-		return diagnostics
-	}
-
-	divisionID := plan.DivisionId.ValueString()
-
-	// If division_id is empty, default to home division (Task 6.2)
-	if divisionID == "" {
-		homeDivision, diagErr := util.GetHomeDivisionID()
-		if diagErr != nil {
-			// Use SDK-aligned diagnostic conversion for home division errors
-			frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-			diagnostics.Append(frameworkDiags...)
-			return diagnostics
-		}
-		divisionID = homeDivision
-		log.Printf("Using home division %s for user %s", divisionID, plan.Id.ValueString())
-	}
-
-	// Task 8.4: Validate division ID format
-	if divisionID == "" {
-		// Use SDK-aligned error handling for validation errors
-		frameworkDiags := handleFrameworkValidationError(ResourceType, "division_id", divisionID, "division ID is empty after resolution")
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	// Convert Framework types to format expected by division update utilities (Task 6.2)
-	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
-
-	log.Printf("Updating division for USER %s to %s", plan.Id.ValueString(), divisionID)
-
-	// Call the division update API (Task 6.1)
-	_, divErr := authAPI.PostAuthorizationDivisionObject(divisionID, "USER", []string{plan.Id.ValueString()})
-	if divErr != nil {
-		// Use SDK-aligned error handling for division update errors
-		frameworkDiags := handleFrameworkAPIError(ResourceType, "update user division", plan.Id.ValueString(), divErr, nil)
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	log.Printf("Successfully updated division for USER %s to %s", plan.Id.ValueString(), divisionID)
-	return diagnostics
-}
-
-// updateUserSkills updates user routing skills
-// Following SDK pattern: mirrors SDK updateUserSkills logic for Framework interface
-func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	if plan.RoutingSkills.IsNull() || plan.RoutingSkills.IsUnknown() {
-		// Skills removed from configuration - remove all existing skills
-		log.Printf("DEBUG: Skills removed from configuration - removing all existing skills")
-		oldSdkSkills, err := getUserRoutingSkills(plan.Id.ValueString(), proxy)
-		if err != nil {
-			// Use SDK-aligned diagnostic conversion
-			frameworkDiags := convertSDKDiagnosticsToFramework(err)
-			diagnostics.Append(frameworkDiags...)
-			return diagnostics
-		}
-
-		// Remove all existing skills
-		if len(oldSdkSkills) > 0 {
-			for _, skill := range oldSdkSkills {
-				if skill.Id != nil {
-					// Use SDK-aligned retry logic for skill removal
-					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-						resp, err := proxy.userApi.DeleteUserRoutingskill(plan.Id.ValueString(), *skill.Id)
-						if err != nil {
-							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove skill from user %s error: %s", plan.Id.ValueString(), err), resp)
-						}
-						return nil, nil
-					})
-					if diagErr != nil {
-						// Use SDK-aligned diagnostic conversion
-						frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-						diagnostics.Append(frameworkDiags...)
-						return diagnostics
-					}
-				}
-			}
-		}
-		return diagnostics
-	}
-
-	// Convert Framework skills to SDK format
-	newSkills, skillDiags := buildSdkSkillsFromFramework(plan.RoutingSkills)
-	if len(skillDiags) > 0 {
-		// Use SDK-aligned diagnostic conversion
-		frameworkDiags := convertSDKDiagnosticsToFramework(skillDiags)
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	// Get current skills
-	oldSdkSkills, err := getUserRoutingSkills(plan.Id.ValueString(), proxy)
-	if err != nil {
-		// Use SDK-aligned diagnostic conversion
-		frameworkDiags := convertSDKDiagnosticsToFramework(err)
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	// Build maps for comparison
-	newSkillProfs := make(map[string]float64)
-	newSkillIds := make([]string, len(newSkills))
-	for i, skill := range newSkills {
-		newSkillIds[i] = *skill.Id
-		newSkillProfs[*skill.Id] = *skill.Proficiency
-	}
-
-	oldSkillIds := make([]string, len(oldSdkSkills))
-	oldSkillProfs := make(map[string]float64)
-	for i, skill := range oldSdkSkills {
-		oldSkillIds[i] = *skill.Id
-		oldSkillProfs[*skill.Id] = *skill.Proficiency
-	}
-
-	// Remove skills that are no longer needed
-	if len(oldSkillIds) > 0 {
-		skillsToRemove := lists.SliceDifference(oldSkillIds, newSkillIds)
-		for _, skillId := range skillsToRemove {
-			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				resp, err := proxy.userApi.DeleteUserRoutingskill(plan.Id.ValueString(), skillId)
-				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove skill from user %s error: %s", plan.Id.ValueString(), err), resp)
-				}
-				return nil, nil
-			})
-			if diagErr != nil {
-				// Convert SDK diagnostics to Framework diagnostics
-				frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-				diagnostics.Append(frameworkDiags...)
-				return diagnostics
-			}
-		}
-	}
-
-	// Add or update skills
-	if len(newSkillIds) > 0 {
-		skillsToAddOrUpdate := lists.SliceDifference(newSkillIds, oldSkillIds)
-		// Check for existing proficiencies to update
-		for skillID, newProf := range newSkillProfs {
-			if oldProf, found := oldSkillProfs[skillID]; found {
-				if newProf != oldProf {
-					skillsToAddOrUpdate = append(skillsToAddOrUpdate, skillID)
-				}
-			}
-		}
-
-		if len(skillsToAddOrUpdate) > 0 {
-			if diagErr := updateUserRoutingSkills(plan.Id.ValueString(), skillsToAddOrUpdate, newSkillProfs, proxy); diagErr != nil {
-				// Convert SDK diagnostics to Framework diagnostics
-				frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-				diagnostics.Append(frameworkDiags...)
-				return diagnostics
-			}
-		}
-	}
-
-	return diagnostics
-}
-
-// updateUserLanguages updates user routing languages
-// Following SDK pattern: mirrors SDK updateUserLanguages logic for Framework interface
-func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	if plan.RoutingLanguages.IsNull() || plan.RoutingLanguages.IsUnknown() {
-		// Languages removed from configuration - remove all existing languages
-		log.Printf("DEBUG: Languages removed from configuration - removing all existing languages")
-		oldSdkLanguages, err := getUserRoutingLanguages(plan.Id.ValueString(), proxy)
-		if err != nil {
-			frameworkDiags := convertSDKDiagnosticsToFramework(err)
-			diagnostics.Append(frameworkDiags...)
-			return diagnostics
-		}
-
-		// Remove all existing languages
-		if len(oldSdkLanguages) > 0 {
-			for _, language := range oldSdkLanguages {
-				if language.Id != nil {
-					diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-						resp, err := proxy.userApi.DeleteUserRoutinglanguage(plan.Id.ValueString(), *language.Id)
-						if err != nil {
-							return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove language from user %s error: %s", plan.Id.ValueString(), err), resp)
-						}
-						return nil, nil
-					})
-					if diagErr != nil {
-						frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-						diagnostics.Append(frameworkDiags...)
-						return diagnostics
-					}
-				}
-			}
-		}
-		return diagnostics
-	}
-
-	// Convert Framework languages to SDK format
-	newLanguages, langDiags := buildSdkLanguagesFromFramework(plan.RoutingLanguages)
-	if len(langDiags) > 0 {
-		// Convert SDK diagnostics to Framework diagnostics
-		frameworkDiags := convertSDKDiagnosticsToFramework(langDiags)
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	// Get current languages
-	oldSdkLanguages, err := getUserRoutingLanguages(plan.Id.ValueString(), proxy)
-	if err != nil {
-		// Convert SDK diagnostics to Framework diagnostics
-		frameworkDiags := convertSDKDiagnosticsToFramework(err)
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	// Build maps for comparison
-	newLangProfs := make(map[string]int)
-	newLangIds := make([]string, len(newLanguages))
-	for i, lang := range newLanguages {
-		newLangIds[i] = *lang.Id
-		newLangProfs[*lang.Id] = int(*lang.Proficiency)
-	}
-
-	oldLangIds := make([]string, len(oldSdkLanguages))
-	oldLangProfs := make(map[string]int)
-	for i, lang := range oldSdkLanguages {
-		oldLangIds[i] = *lang.Id
-		oldLangProfs[*lang.Id] = int(*lang.Proficiency)
-	}
-
-	// Remove languages that are no longer needed
-	if len(oldLangIds) > 0 {
-		langsToRemove := lists.SliceDifference(oldLangIds, newLangIds)
-		for _, langID := range langsToRemove {
-			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-				resp, err := proxy.userApi.DeleteUserRoutinglanguage(plan.Id.ValueString(), langID)
-				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove language from user %s error: %s", plan.Id.ValueString(), err), resp)
-				}
-				return nil, nil
-			})
-			if diagErr != nil {
-				// Convert SDK diagnostics to Framework diagnostics
-				frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-				diagnostics.Append(frameworkDiags...)
-				return diagnostics
-			}
-		}
-	}
-
-	// Add or update languages
-	if len(newLangIds) > 0 {
-		langsToAddOrUpdate := lists.SliceDifference(newLangIds, oldLangIds)
-		// Check for existing proficiencies to update
-		for langID, newProf := range newLangProfs {
-			if oldProf, found := oldLangProfs[langID]; found {
-				if newProf != oldProf {
-					langsToAddOrUpdate = append(langsToAddOrUpdate, langID)
-				}
-			}
-		}
-
-		if len(langsToAddOrUpdate) > 0 {
-			if diagErr := updateUserRoutingLanguages(plan.Id.ValueString(), langsToAddOrUpdate, newLangProfs, proxy); diagErr != nil {
-				// Convert SDK diagnostics to Framework diagnostics
-				frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-				diagnostics.Append(frameworkDiags...)
-				return diagnostics
-			}
-		}
-	}
-
-	return diagnostics
-}
-
 // updateUserProfileSkills updates user profile skills
 // Following SDK pattern: mirrors SDK updateUserProfileSkills logic for Framework interface
 func updateUserProfileSkills(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
@@ -2543,68 +2680,6 @@ func getLabelUtilizationObjectType() types.ObjectType {
 			"interrupting_label_ids": types.SetType{ElemType: types.StringType},
 		},
 	}
-}
-
-// restoreDeletedUser restores a deleted user
-// Migrated from (r *UserFrameworkResource) restoreDeletedUser method
-// Following SDK pattern: mirrors SDK restoreDeletedUser logic for Framework interface
-func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics) {
-	email := plan.Email.ValueString()
-	state := plan.State.ValueString()
-
-	log.Printf("Restoring deleted user %s", email)
-
-	currentUser, proxyResponse, err := proxy.getUserById(ctx, plan.Id.ValueString(), nil, "deleted")
-	if err != nil {
-		// Use SDK-aligned error handling for read errors
-		frameworkDiags := buildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", plan.Id.ValueString(), err), proxyResponse)
-		diagnostics.Append(frameworkDiags...)
-		return
-	}
-
-	// Log current addresses before restore PATCH
-	log.Printf("[INV] RESTORE payload for user %s", email)
-	log.Printf("[INV] RESTORE payload.State=%s", state)
-	log.Printf("[INV] RESTORE current.Addresses=%s", invMustJSON(currentUser.Addresses))
-	if currentUser.Addresses != nil {
-		invDumpSDKPhones("RESTORE current addresses (before PATCH)", *currentUser.Addresses)
-	}
-
-	restoredUser, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, plan.Id.ValueString(), &platformclientv2.Updateuser{
-		State:   &state,
-		Version: currentUser.Version,
-	})
-
-	if patchErr != nil {
-		// Use SDK-aligned error handling for restore errors
-		frameworkDiags := handleFrameworkAPIError(ResourceType, "restore deleted user", email, patchErr, nil)
-		diagnostics.Append(frameworkDiags...)
-		return
-	}
-
-	// Log PATCH response
-	if proxyPatchResponse != nil {
-		log.Printf("[INV] RESTORE PATCH status: %v", proxyPatchResponse.StatusCode)
-	}
-	if restoredUser != nil {
-		log.Printf("[INV] RESTORE PATCH response.Addresses=%s", invMustJSON(restoredUser.Addresses))
-		if restoredUser.Addresses != nil {
-			invDumpSDKPhones("RESTORE PATCH response (SDK)", *restoredUser.Addresses)
-		}
-	}
-
-	// Read back the restored user to get current state
-	log.Printf("[INV] Reading back restored user %s", email)
-	readUser(ctx, plan, proxy, diagnostics)
-	if diagnostics.HasError() {
-		return
-	}
-
-	log.Printf("[INV] RESTORE read-back complete for user %s", email)
-	log.Printf("[INV] RESTORE final plan.Addresses=%s", invMustJSON(plan.Addresses))
-
-	// After restoring, we need to perform additional updates
-	// This will be handled by the calling Create method
 }
 
 // hasChanges checks if any of the specified attributes have changes

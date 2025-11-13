@@ -27,6 +27,10 @@ import (
 
 const ResourceType = "genesyscloud_user"
 
+var (
+	contactTypeEmail = "EMAIL"
+)
+
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterFrameworkDataSource(ResourceType, NewUserFrameworkDataSource)

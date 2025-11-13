@@ -183,28 +183,27 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 	id, diagErr := getDeletedUserId(email, proxy)
 	if diagErr.HasError() {
 		for _, sdkDiag := range diagErr {
-			resp.Diagnostics.AddError(sdkDiag.Summary, sdkDiag.Detail)
+			resp.Diagnostics.AddError(sdkDiag.Summary(), sdkDiag.Detail())
 		}
 		return
 	}
 
 	if id != nil {
+		// Found deleted user - restore and configure
 		plan.Id = types.StringValue(*id)
-		log.Printf("Will update addresses after restore for user=%s id=%s", email, *id)
+		log.Printf("Found deleted user %s, restoring", email)
 
-		// Log planned addresses before restore
-		log.Printf("[INV] RESTORE: Will update addresses after restore for user %s", email)
-		log.Printf("[INV] RESTORE: Planned addresses=%s", invMustJSON(addresses))
-		if addresses != nil {
-			invDumpSDKPhones("RESTORE: Planned addresses (SDK)", *addresses)
-		}
-
-		restoreDeletedUser(ctx, &plan, proxy, &resp.Diagnostics)
+		restoreDeletedUser(ctx, &plan, proxy, r.clientConfig, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
+
+		// Set state and RETURN (matches SDKv2 pattern)
+		resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+		return
 	}
 
+	// No deleted user - create new one
 	createUser := platformclientv2.Createuser{
 		Name:       platformclientv2.String(plan.Name.ValueString()),
 		State:      platformclientv2.String(plan.State.ValueString()),
@@ -214,13 +213,11 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 		Addresses:  addresses,
 	}
 
-	// Optional attribute that should not be empty strings
 	if divisionID != "" {
 		createUser.DivisionId = &divisionID
 	}
 
 	log.Printf("Creating user %s", email)
-
 	log.Printf("[INV] CREATE payload.Addresses=%s", invMustJSON(createUser.Addresses))
 	if createUser.Addresses != nil {
 		invDumpSDKPhones("CREATE payload (SDK)", *createUser.Addresses)
@@ -229,41 +226,41 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 	userResponse, proxyPostResponse, postErr := proxy.createUser(ctx, &createUser)
 	if postErr != nil {
 		if proxyPostResponse != nil && proxyPostResponse.Error != nil && (*proxyPostResponse.Error).Code == "general.conflict" {
-			// Check for a deleted user
+			// CREATE failed with conflict - check for deleted user
 			log.Printf("[INV] CREATE failed with conflict, checking for deleted user %s", email)
+
 			id, diagErr := getDeletedUserId(email, proxy)
 			if diagErr.HasError() {
-				frameworkDiags := convertSDKDiagnosticsToFramework(diagErr) //TODO
-				resp.Diagnostics.Append(frameworkDiags...)
+				resp.Diagnostics.Append(diagErr...)
 				return
 			}
+
 			if id != nil {
+				// Found deleted user after conflict - restore and configure
 				plan.Id = types.StringValue(*id)
+				log.Printf("[INV] RESTORE (conflict): Found deleted user, restoring")
 
-				// Log planned addresses before restore (conflict path)
-				log.Printf("[INV] RESTORE (conflict): Will update addresses after restore for user %s", email)
-				log.Printf("[INV] RESTORE (conflict): Planned addresses=%s", invMustJSON(addresses))
-				if addresses != nil {
-					invDumpSDKPhones("RESTORE (conflict): Planned addresses (SDK)", *addresses)
-				}
-
-				restoreDeletedUser(ctx, &plan, proxy, &resp.Diagnostics)
+				restoreDeletedUser(ctx, &plan, proxy, r.clientConfig, &resp.Diagnostics)
 				if resp.Diagnostics.HasError() {
 					return
 				}
 
+				// Set state and RETURN (matches SDKv2 pattern)
 				log.Printf("[INV] RESTORE (conflict): Complete for user %s", email)
 				resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 				return
 			}
 		}
+
+		// Other error
 		resp.Diagnostics.Append(util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create user %s error: %s", email, postErr), proxyPostResponse)...)
 		return
 	}
 
+	// User created successfully
 	plan.Id = types.StringValue(*userResponse.Id)
 
-	// Log CREATE echo (server response) with identity strings
+	// Log CREATE echo (server response)
 	log.Printf("[INV] CREATE echo (server user.Addresses)=%s", invMustJSON(userResponse.Addresses))
 	if userResponse.Addresses != nil {
 		for i, c := range *userResponse.Addresses {
@@ -273,6 +270,7 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// Set attributes that can only be modified in a patch
+	// (These can't be set in createUser, must use PATCH)
 	if hasChanges(&plan, "manager", "locations", "acd_auto_answer", "profile_skills", "certifications", "employer_info") {
 		log.Printf("Updating additional attributes for user %s", email)
 
@@ -286,14 +284,13 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 		}
 
 		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, *userResponse.Id, additionalAttrsUpdate)
-
 		if patchErr != nil {
 			resp.Diagnostics.Append(util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update user %s error: %s", plan.Id.ValueString(), patchErr), proxyPatchResponse)...)
 			return
 		}
 	}
 
-	//TODO remane frameworkDiags
+	// Apply skills, languages, utilization
 	frameworkDiags := executeAllUpdates(ctx, &plan, proxy, r.clientConfig, false)
 	if frameworkDiags.HasError() {
 		resp.Diagnostics.Append(frameworkDiags...)
@@ -310,7 +307,7 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	// Log final state before Set
+	// Log final state
 	log.Printf("[INV] FINAL STATE effective addresses: %s", invMustJSON(plan.Addresses))
 	if idents := invPhoneIdentitiesFromFrameworkAddresses(plan.Addresses); len(idents) > 0 {
 		log.Printf("[INV] FINAL STATE phone identities: %v", idents)
@@ -397,88 +394,26 @@ func (r *UserFrameworkResource) Update(ctx context.Context, req resource.UpdateR
 	log.Printf("[INV] PLAN phone identities:  %v", planIDs)
 	log.Printf("[INV] STATE phone identities: %v", stateIDs)
 
-	// Build addresses from plan
-	addresses, addressDiags := buildSdkAddresses(plan.Addresses)
-	resp.Diagnostics.Append(addressDiags...)
+	// INVESTIGATION: Log plan state before update
+	log.Printf("DEBUG: [INVESTIGATION] Before update - plan.RoutingUtilization.IsNull(): %v", plan.RoutingUtilization.IsNull())
+	log.Printf("[INV] BEFORE UPDATE plan.Addresses isNull=%v isUnknown=%v", plan.Addresses.IsNull(), plan.Addresses.IsUnknown())
+	log.Printf("[INV] BEFORE UPDATE plan.Addresses=%s", invMustJSON(plan.Addresses))
+
+	// Call the helper function that contains all update logic
+	// This matches SDKv2 pattern where Update calls updateUser()
+	updateUser(ctx, &plan, proxy, r.clientConfig, &resp.Diagnostics, &state)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	log.Printf("[INV] addresses(from plan) -> SDK = %s", mustJSON(addresses))
+	// INVESTIGATION: Log plan state after update
+	log.Printf("DEBUG: [INVESTIGATION] After update - plan.RoutingUtilization.IsNull(): %v", plan.RoutingUtilization.IsNull())
+	log.Printf("[INV] AFTER UPDATE plan.Addresses isNull=%v isUnknown=%v", plan.Addresses.IsNull(), plan.Addresses.IsUnknown())
+	log.Printf("[INV] AFTER UPDATE plan.Addresses=%s", invMustJSON(plan.Addresses))
 
-	email := plan.Email.ValueString()
-
-	log.Printf("Updating user %s", email)
-
-	// If state changes, it is the only modifiable field, so it must be updated separately
-	if !plan.State.Equal(state.State) {
-		log.Printf("Updating state for user %s", email)
-		updateUserRequestBody := platformclientv2.Updateuser{
-			State: platformclientv2.String(plan.State.ValueString()),
-		}
-		diagErr := executeUpdateUser(ctx, &plan, proxy, updateUserRequestBody)
-		if diagErr.HasError() {
-			resp.Diagnostics.Append(diagErr...)
-			return
-		}
-	}
-
-	updateUserRequestBody := platformclientv2.Updateuser{
-		Name:           platformclientv2.String(plan.Name.ValueString()),
-		Department:     platformclientv2.String(plan.Department.ValueString()),
-		Title:          platformclientv2.String(plan.Title.ValueString()),
-		Manager:        platformclientv2.String(plan.Manager.ValueString()),
-		AcdAutoAnswer:  platformclientv2.Bool(plan.AcdAutoAnswer.ValueBool()),
-		Email:          &email,
-		Addresses:      addresses,
-		Locations:      buildSdkLocations(ctx, plan.Locations),
-		Certifications: buildSdkCertifications(ctx, plan.Certifications),
-		ProfileSkills:  buildSdkProfileSkills(ctx, plan.ProfileSkills),
-		EmployerInfo:   buildSdkEmployerInfo(ctx, plan.EmployerInfo),
-	}
-
-	log.Printf("[INV] UPDATE payload.Addresses=%s", invMustJSON(updateUserRequestBody.Addresses))
-	if updateUserRequestBody.Addresses != nil {
-		invDumpSDKPhones("UPDATE payload (SDK)", *updateUserRequestBody.Addresses)
-	}
-
-	diagErr := executeUpdateUser(ctx, &plan, proxy, updateUserRequestBody)
-	if diagErr.HasError() {
-		resp.Diagnostics.Append(diagErr...)
-		return
-	}
-
-	frameworkDiags := executeAllUpdates(ctx, &plan, proxy, r.clientConfig, true, &state)
-	if frameworkDiags.HasError() {
-		resp.Diagnostics.Append(frameworkDiags...)
-		return
-	}
-
-	log.Printf("Finished updating user %s", email)
-
-	// INVESTIGATION: Log plan state before read
-	log.Printf("DEBUG: [INVESTIGATION] Before read - plan.RoutingUtilization.IsNull(): %v", plan.RoutingUtilization.IsNull())
-	log.Printf("DEBUG: [INVESTIGATION] Before read - plan.RoutingUtilization.IsUnknown(): %v", plan.RoutingUtilization.IsUnknown())
-	log.Printf("[INV] BEFORE READ plan.Addresses isNull=%v isUnknown=%v", plan.Addresses.IsNull(), plan.Addresses.IsUnknown())
-	log.Printf("[INV] BEFORE READ plan.Addresses=%s", invMustJSON(plan.Addresses))
-
-	// Read back the updated user to verify changes and populate state with current API values.
-	// This ensures Terraform state reflects the actual resource state after update operations.
-	// Reuses the same read logic as Create and Read to maintain consistency across CRUD operations.
-	readUser(ctx, &plan, proxy, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// INVESTIGATION: Log plan state after read
-	log.Printf("DEBUG: [INVESTIGATION] After read - plan.RoutingUtilization.IsNull(): %v", plan.RoutingUtilization.IsNull())
-	log.Printf("DEBUG: [INVESTIGATION] After read - plan.RoutingUtilization.IsUnknown(): %v", plan.RoutingUtilization.IsUnknown())
-	log.Printf("[INV] AFTER READ plan.Addresses isNull=%v isUnknown=%v", plan.Addresses.IsNull(), plan.Addresses.IsUnknown())
-	log.Printf("[INV] AFTER READ plan.Addresses=%s", invMustJSON(plan.Addresses))
-
-	// Log post-flatten identities
+	// Log post-update identities
 	if idents := invPhoneIdentitiesFromFrameworkAddresses(plan.Addresses); len(idents) > 0 {
-		log.Printf("[INV] POST-FLAT phone identities: %v", idents)
+		log.Printf("[INV] POST-UPDATE phone identities: %v", idents)
 	}
 
 	// Log cty.Value structure for deep comparison
