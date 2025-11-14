@@ -169,8 +169,8 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 
 		CreateContext: provider.CreateWithPooledClient(createWorkforceManagementBusinessUnit),
 		ReadContext:   provider.ReadWithPooledClient(readWorkforceManagementBusinessUnit),
-		UpdateContext: provider.UpdateWithPooledClient(updateWorkforceManagementBusinessUnits),
-		DeleteContext: provider.DeleteWithPooledClient(deleteWorkforceManagementBusinessUnits),
+		UpdateContext: provider.UpdateWithPooledClient(updateWorkforceManagementBusinessUnit),
+		DeleteContext: provider.DeleteWithPooledClient(deleteWorkforceManagementBusinessUnit),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

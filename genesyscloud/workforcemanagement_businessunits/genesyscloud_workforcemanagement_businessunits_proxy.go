@@ -18,7 +18,7 @@ out during testing.
 var internalProxy *workforceManagementBusinessUnitsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createWorkforceManagementBusinessUnitsFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, businessUnitResponse *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
+type createWorkforceManagementBusinessUnitFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, businessUnitResponse *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
 type getAllWorkforceManagementBusinessUnitsFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error)
 type getWorkforceManagementBusinessUnitIdByExactNameFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type getWorkforceManagementBusinessUnitByIdFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
@@ -29,7 +29,7 @@ type deleteWorkforceManagementBusinessUnitFunc func(ctx context.Context, p *work
 type workforceManagementBusinessUnitsProxy struct {
 	clientConfig                                        *platformclientv2.Configuration
 	workforceManagementApi                              *platformclientv2.WorkforceManagementApi
-	createWorkforceManagementBusinessUnitsAttr          createWorkforceManagementBusinessUnitsFunc
+	createWorkforceManagementBusinessUnitAttr          createWorkforceManagementBusinessUnitFunc
 	getAllWorkforceManagementBusinessUnitsAttr          getAllWorkforceManagementBusinessUnitsFunc
 	getWorkforceManagementBusinessUnitIdByExactNameAttr getWorkforceManagementBusinessUnitIdByExactNameFunc
 	getWorkforceManagementBusinessUnitByIdAttr         getWorkforceManagementBusinessUnitByIdFunc
@@ -43,7 +43,7 @@ func newWorkforceManagementBusinessUnitsProxy(clientConfig *platformclientv2.Con
 	return &workforceManagementBusinessUnitsProxy{
 		clientConfig:           clientConfig,
 		workforceManagementApi: api,
-		createWorkforceManagementBusinessUnitsAttr:          createWorkforceManagementBusinessUnitsFn,
+		createWorkforceManagementBusinessUnitAttr:          createWorkforceManagementBusinessUnitFn,
 		getAllWorkforceManagementBusinessUnitsAttr:          getAllWorkforceManagementBusinessUnitsFn,
 		getWorkforceManagementBusinessUnitIdByExactNameAttr: getWorkforceManagementBusinessUnitIdByExactNameFn,
 		getWorkforceManagementBusinessUnitByIdAttr:         getWorkforceManagementBusinessUnitByIdFn,
@@ -63,8 +63,8 @@ func getWorkforceManagementBusinessUnitsProxy(clientConfig *platformclientv2.Con
 }
 
 // createWorkforceManagementBusinessUnit creates a Genesys Cloud workforce management business unit
-func (p *workforceManagementBusinessUnitsProxy) createWorkforceManagementBusinessUnits(ctx context.Context, createBuRequest *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
-	return p.createWorkforceManagementBusinessUnitsAttr(ctx, p, createBuRequest)
+func (p *workforceManagementBusinessUnitsProxy) createWorkforceManagementBusinessUnit(ctx context.Context, createBuRequest *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	return p.createWorkforceManagementBusinessUnitAttr(ctx, p, createBuRequest)
 }
 
 // getAllWorkforceManagementBusinessUnits retrieves all Genesys Cloud workforce management business units
@@ -92,8 +92,8 @@ func (p *workforceManagementBusinessUnitsProxy) deleteWorkforceManagementBusines
 	return p.deleteWorkforceManagementBusinessUnitAttr(ctx, p, id)
 }
 
-// createWorkforceManagementBusinessUnitsFn is an implementation function for creating a Genesys Cloud workforce management business unit
-func createWorkforceManagementBusinessUnitsFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, workforceManagementBusinessUnits *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+// createWorkforceManagementBusinessUnitFn is an implementation function for creating a Genesys Cloud workforce management business unit
+func createWorkforceManagementBusinessUnitFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, workforceManagementBusinessUnits *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
 	return p.workforceManagementApi.PostWorkforcemanagementBusinessunits(*workforceManagementBusinessUnits, false)
 }
 

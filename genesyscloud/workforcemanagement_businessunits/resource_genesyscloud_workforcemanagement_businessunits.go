@@ -50,7 +50,7 @@ func createWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resour
 	createBusinessUnitRequest := getCreateWorkforcemanagementBusinessUnitRequestFromResourceData(d)
 
 	log.Printf("Creating workforce management business unit %s", *createBusinessUnitRequest.Name)
-	businessUnitResponse, resp, err := proxy.createWorkforceManagementBusinessUnits(ctx, &createBusinessUnitRequest)
+	businessUnitResponse, resp, err := proxy.createWorkforceManagementBusinessUnit(ctx, &createBusinessUnitRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to create workforce management business unit: %s", err), resp)
 	}
@@ -88,8 +88,8 @@ func readWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resource
 	})
 }
 
-// updateWorkforceManagementBusinessUnits is used by the workforcemanagement_businessunits resource to update a workforce management business unit in Genesys Cloud
-func updateWorkforceManagementBusinessUnits(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+// updateWorkforceManagementBusinessUnit is used by the workforcemanagement_businessunits resource to update a workforce management business unit in Genesys Cloud
+func updateWorkforceManagementBusinessUnit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getWorkforceManagementBusinessUnitsProxy(sdkConfig)
 
@@ -105,8 +105,8 @@ func updateWorkforceManagementBusinessUnits(ctx context.Context, d *schema.Resou
 	return readWorkforceManagementBusinessUnit(ctx, d, meta)
 }
 
-// deleteWorkforceManagementBusinessUnits is used by the workforcemanagement_businessunits resource to delete a workforce management business unit from Genesys cloud
-func deleteWorkforceManagementBusinessUnits(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+// deleteWorkforceManagementBusinessUnit is used by the workforcemanagement_businessunits resource to delete a workforce management business unit from Genesys cloud
+func deleteWorkforceManagementBusinessUnit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getWorkforceManagementBusinessUnitsProxy(sdkConfig)
 
