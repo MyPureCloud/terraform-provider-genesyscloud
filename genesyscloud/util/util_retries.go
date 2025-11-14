@@ -227,34 +227,17 @@ func GetRetryAfterDelay(apiResponse *platformclientv2.APIResponse) (time.Duratio
 		return 0, false
 	}
 
-	// Try parsing as HTTP date (RFC 1123 format: Mon, 02 Jan 2006 15:04:05 GMT)
-	if httpDate, err := time.Parse(time.RFC1123, retryAfterHeader); err == nil {
-		now := time.Now()
-		delay := httpDate.Sub(now)
-		if delay > 0 {
-			return delay, true
+	// Try parsing as HTTP date formats (RFC 1123, RFC 1123 with timezone, RFC 822)
+	dateFormats := []string{time.RFC1123, time.RFC1123Z, time.RFC822}
+	now := time.Now()
+	for _, format := range dateFormats {
+		if httpDate, err := time.Parse(format, retryAfterHeader); err == nil {
+			delay := httpDate.Sub(now)
+			if delay > 0 {
+				return delay, true
+			}
+			return 0, false
 		}
-		return 0, false
-	}
-
-	// Try parsing as RFC 1123 with timezone
-	if httpDate, err := time.Parse(time.RFC1123Z, retryAfterHeader); err == nil {
-		now := time.Now()
-		delay := httpDate.Sub(now)
-		if delay > 0 {
-			return delay, true
-		}
-		return 0, false
-	}
-
-	// Try parsing as RFC 822 format (alternative date format)
-	if httpDate, err := time.Parse(time.RFC822, retryAfterHeader); err == nil {
-		now := time.Now()
-		delay := httpDate.Sub(now)
-		if delay > 0 {
-			return delay, true
-		}
-		return 0, false
 	}
 
 	// If we can't parse it, return false

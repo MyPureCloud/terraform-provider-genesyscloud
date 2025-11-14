@@ -9,20 +9,20 @@ import (
 )
 
 /*
-resource_genesycloud_workforcemanagement_businessunits_schema.go holds four functions within it:
+ResourceName is defined in this file along with four functions:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
 2.  The resource schema definitions for the workforcemanagement_businessunits resource.
 3.  The datasource schema definitions for the workforcemanagement_businessunits datasource.
 4.  The resource exporter configuration for the workforcemanagement_businessunits exporter.
 */
-const resourceName = "genesyscloud_workforcemanagement_businessunits"
+const ResourceName = "genesyscloud_workforcemanagement_businessunits"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceWorkforcemanagementBusinessunits())
-	regInstance.RegisterDataSource(resourceName, DataSourceWorkforcemanagementBusinessunits())
-	regInstance.RegisterExporter(resourceName, WorkforcemanagementBusinessunitsExporter())
+	regInstance.RegisterResource(ResourceName, ResourceWorkforcemanagementBusinessunits())
+	regInstance.RegisterDataSource(ResourceName, DataSourceWorkforcemanagementBusinessunits())
+	regInstance.RegisterExporter(ResourceName, WorkforcemanagementBusinessunitsExporter())
 }
 
 // ResourceWorkforcemanagementBusinessunits registers the genesyscloud_workforcemanagement_businessunits resource with Terraform
@@ -39,13 +39,15 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 
 	schedulerMessageTypeSeverityResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			// See API documentation for valid enum values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/
 			`type`: {
-				Description: `The type of the message`,
+				Description: `The type of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
+			// See API documentation for valid enum values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/
 			`severity`: {
-				Description: `The severity of the message`,
+				Description: `The severity of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -163,12 +165,12 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Description: `Genesys Cloud workforcemanagement businessunits`,
+		Description: `Genesys Cloud workforce management business units`,
 
-		CreateContext: provider.CreateWithPooledClient(createWorkforcemanagementBusinessUnit),
-		ReadContext:   provider.ReadWithPooledClient(readWorkforcemanagementBusinessunits),
-		UpdateContext: provider.UpdateWithPooledClient(updateWorkforcemanagementBusinessunits),
-		DeleteContext: provider.DeleteWithPooledClient(deleteWorkforcemanagementBusinessunits),
+		CreateContext: provider.CreateWithPooledClient(createWorkforceManagementBusinessUnit),
+		ReadContext:   provider.ReadWithPooledClient(readWorkforceManagementBusinessUnit),
+		UpdateContext: provider.UpdateWithPooledClient(updateWorkforceManagementBusinessUnits),
+		DeleteContext: provider.DeleteWithPooledClient(deleteWorkforceManagementBusinessUnits),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -198,9 +200,9 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 // WorkforcemanagementBusinessunitsExporter returns the resourceExporter object used to hold the genesyscloud_workforcemanagement_businessunits exporter's config
 func WorkforcemanagementBusinessunitsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthWorkforcemanagementBusinessunits),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthWorkforceManagementBusinessUnits),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
 }
@@ -208,14 +210,14 @@ func WorkforcemanagementBusinessunitsExporter() *resourceExporter.ResourceExport
 // DataSourceWorkforcemanagementBusinessunits registers the genesyscloud_workforcemanagement_businessunits data source
 func DataSourceWorkforcemanagementBusinessunits() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud workforcemanagement businessunits data source. Select an workforcemanagement businessunits by name`,
+		Description: `Genesys Cloud workforce management business units data source. Select a workforce management business unit by name`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceWorkforcemanagementBusinessunitsRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: `workforcemanagement businessunits name`,
+				Description: `workforce management business unit name`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},

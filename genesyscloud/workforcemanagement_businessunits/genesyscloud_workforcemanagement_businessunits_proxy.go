@@ -13,91 +13,91 @@ with the Genesys Cloud SDK. We use composition here for each function on the pro
 out during testing.
 */
 
-// internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *workforcemanagementBusinessunitsProxy
+// internalProxy is a proxy instance that can be used throughout the package.
+var internalProxy *workforceManagementBusinessUnitsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createWorkforcemanagementBusinessunitsFunc func(ctx context.Context, p *workforcemanagementBusinessunitsProxy, businessUnitResponse *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
-type getAllWorkforcemanagementBusinessunitsFunc func(ctx context.Context, p *workforcemanagementBusinessunitsProxy) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error)
-type getWorkforcemanagementBusinessunitsIdByNameFunc func(ctx context.Context, p *workforcemanagementBusinessunitsProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
-type getWorkforcemanagementBusinessunitsByIdFunc func(ctx context.Context, p *workforcemanagementBusinessunitsProxy, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
-type updateWorkforcemanagementBusinessunitsFunc func(ctx context.Context, p *workforcemanagementBusinessunitsProxy, id string, businessUnitResponse *platformclientv2.Updatebusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
-type deleteWorkforcemanagementBusinessunitsFunc func(ctx context.Context, p *workforcemanagementBusinessunitsProxy, id string) (*platformclientv2.APIResponse, error)
+type createWorkforceManagementBusinessUnitsFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, businessUnitResponse *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
+type getAllWorkforceManagementBusinessUnitsFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error)
+type getWorkforceManagementBusinessUnitIdByExactNameFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
+type getWorkforceManagementBusinessUnitsByIdFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
+type updateWorkforceManagementBusinessUnitsFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string, businessUnitResponse *platformclientv2.Updatebusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error)
+type deleteWorkforceManagementBusinessUnitsFunc func(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string) (*platformclientv2.APIResponse, error)
 
-// workforcemanagementBusinessunitsProxy contains all the methods that call genesys cloud APIs.
-type workforcemanagementBusinessunitsProxy struct {
+// workforceManagementBusinessUnitsProxy contains all the methods that call genesys cloud APIs.
+type workforceManagementBusinessUnitsProxy struct {
 	clientConfig                                    *platformclientv2.Configuration
 	workforceManagementApi                          *platformclientv2.WorkforceManagementApi
-	createWorkforcemanagementBusinessunitsAttr      createWorkforcemanagementBusinessunitsFunc
-	getAllWorkforcemanagementBusinessunitsAttr      getAllWorkforcemanagementBusinessunitsFunc
-	getWorkforcemanagementBusinessunitsIdByNameAttr getWorkforcemanagementBusinessunitsIdByNameFunc
-	getWorkforcemanagementBusinessunitsByIdAttr     getWorkforcemanagementBusinessunitsByIdFunc
-	updateWorkforcemanagementBusinessunitsAttr      updateWorkforcemanagementBusinessunitsFunc
-	deleteWorkforcemanagementBusinessunitsAttr      deleteWorkforcemanagementBusinessunitsFunc
+	createWorkforceManagementBusinessUnitsAttr      createWorkforceManagementBusinessUnitsFunc
+	getAllWorkforceManagementBusinessUnitsAttr      getAllWorkforceManagementBusinessUnitsFunc
+	getWorkforceManagementBusinessUnitIdByExactNameAttr getWorkforceManagementBusinessUnitIdByExactNameFunc
+	getWorkforceManagementBusinessUnitsByIdAttr     getWorkforceManagementBusinessUnitsByIdFunc
+	updateWorkforceManagementBusinessUnitsAttr      updateWorkforceManagementBusinessUnitsFunc
+	deleteWorkforceManagementBusinessUnitsAttr      deleteWorkforceManagementBusinessUnitsFunc
 }
 
-// newWorkforcemanagementBusinessunitsProxy initializes the workforcemanagement businessunits proxy with all the data needed to communicate with Genesys Cloud
-func newWorkforcemanagementBusinessunitsProxy(clientConfig *platformclientv2.Configuration) *workforcemanagementBusinessunitsProxy {
+// newWorkforceManagementBusinessUnitsProxy initializes the workforce management business units proxy with all the data needed to communicate with Genesys Cloud
+func newWorkforceManagementBusinessUnitsProxy(clientConfig *platformclientv2.Configuration) *workforceManagementBusinessUnitsProxy {
 	api := platformclientv2.NewWorkforceManagementApiWithConfig(clientConfig)
-	return &workforcemanagementBusinessunitsProxy{
+	return &workforceManagementBusinessUnitsProxy{
 		clientConfig:           clientConfig,
 		workforceManagementApi: api,
-		createWorkforcemanagementBusinessunitsAttr:      createWorkforcemanagementBusinessunitsFn,
-		getAllWorkforcemanagementBusinessunitsAttr:      getAllWorkforcemanagementBusinessunitsFn,
-		getWorkforcemanagementBusinessunitsIdByNameAttr: getWorkforcemanagementBusinessunitsIdByNameFn,
-		getWorkforcemanagementBusinessunitsByIdAttr:     getWorkforcemanagementBusinessunitsByIdFn,
-		updateWorkforcemanagementBusinessunitsAttr:      updateWorkforcemanagementBusinessunitsFn,
-		deleteWorkforcemanagementBusinessunitsAttr:      deleteWorkforcemanagementBusinessunitsFn,
+		createWorkforceManagementBusinessUnitsAttr:      createWorkforceManagementBusinessUnitsFn,
+		getAllWorkforceManagementBusinessUnitsAttr:      getAllWorkforceManagementBusinessUnitsFn,
+		getWorkforceManagementBusinessUnitIdByExactNameAttr: getWorkforceManagementBusinessUnitIdByExactNameFn,
+		getWorkforceManagementBusinessUnitsByIdAttr:     getWorkforceManagementBusinessUnitsByIdFn,
+		updateWorkforceManagementBusinessUnitsAttr:      updateWorkforceManagementBusinessUnitsFn,
+		deleteWorkforceManagementBusinessUnitsAttr:      deleteWorkforceManagementBusinessUnitsFn,
 	}
 }
 
-// getWorkforcemanagementBusinessunitsProxy acts as a singleton to for the internalProxy.  It also ensures
+// getWorkforceManagementBusinessUnitsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getWorkforcemanagementBusinessunitsProxy(clientConfig *platformclientv2.Configuration) *workforcemanagementBusinessunitsProxy {
+func getWorkforceManagementBusinessUnitsProxy(clientConfig *platformclientv2.Configuration) *workforceManagementBusinessUnitsProxy {
 	if internalProxy == nil {
-		internalProxy = newWorkforcemanagementBusinessunitsProxy(clientConfig)
+		internalProxy = newWorkforceManagementBusinessUnitsProxy(clientConfig)
 	}
 
 	return internalProxy
 }
 
-// createWorkforcemanagementBusinessUnit creates a Genesys Cloud workforcemanagement businessunits
-func (p *workforcemanagementBusinessunitsProxy) createWorkforcemanagementBusinessunits(ctx context.Context, createBuRequest *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
-	return p.createWorkforcemanagementBusinessunitsAttr(ctx, p, createBuRequest)
+// createWorkforceManagementBusinessUnit creates a Genesys Cloud workforce management business unit
+func (p *workforceManagementBusinessUnitsProxy) createWorkforceManagementBusinessUnits(ctx context.Context, createBuRequest *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	return p.createWorkforceManagementBusinessUnitsAttr(ctx, p, createBuRequest)
 }
 
-// getWorkforcemanagementBusinessunits retrieves all Genesys Cloud workforcemanagement businessunits
-func (p *workforcemanagementBusinessunitsProxy) getAllWorkforcemanagementBusinessunits(ctx context.Context) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error) {
-	return p.getAllWorkforcemanagementBusinessunitsAttr(ctx, p)
+// getAllWorkforceManagementBusinessUnits retrieves all Genesys Cloud workforce management business units
+func (p *workforceManagementBusinessUnitsProxy) getAllWorkforceManagementBusinessUnits(ctx context.Context) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error) {
+	return p.getAllWorkforceManagementBusinessUnitsAttr(ctx, p)
 }
 
-// getWorkforcemanagementBusinessunitsIdByName returns a single Genesys Cloud workforcemanagement businessunits by a name
-func (p *workforcemanagementBusinessunitsProxy) getWorkforcemanagementBusinessunitsIdByName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	return p.getWorkforcemanagementBusinessunitsIdByNameAttr(ctx, p, name)
+// getWorkforceManagementBusinessUnitIdByExactName returns a single Genesys Cloud workforce management business unit ID by exact name match
+func (p *workforceManagementBusinessUnitsProxy) getWorkforceManagementBusinessUnitIdByExactName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	return p.getWorkforceManagementBusinessUnitIdByExactNameAttr(ctx, p, name)
 }
 
-// getWorkforcemanagementBusinessunitsById returns a single Genesys Cloud workforcemanagement businessunits by ID
-func (p *workforcemanagementBusinessunitsProxy) getWorkforcemanagementBusinessunitsById(ctx context.Context, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
-	return p.getWorkforcemanagementBusinessunitsByIdAttr(ctx, p, id)
+// getWorkforceManagementBusinessUnitsById returns a single Genesys Cloud workforce management business unit by ID
+func (p *workforceManagementBusinessUnitsProxy) getWorkforceManagementBusinessUnitsById(ctx context.Context, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	return p.getWorkforceManagementBusinessUnitsByIdAttr(ctx, p, id)
 }
 
-// updateWorkforcemanagementBusinessunits updates a Genesys Cloud workforcemanagement businessunits
-func (p *workforcemanagementBusinessunitsProxy) updateWorkforcemanagementBusinessunits(ctx context.Context, id string, updateRequest *platformclientv2.Updatebusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
-	return p.updateWorkforcemanagementBusinessunitsAttr(ctx, p, id, updateRequest)
+// updateWorkforceManagementBusinessUnits updates a Genesys Cloud workforce management business unit
+func (p *workforceManagementBusinessUnitsProxy) updateWorkforceManagementBusinessUnits(ctx context.Context, id string, updateRequest *platformclientv2.Updatebusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	return p.updateWorkforceManagementBusinessUnitsAttr(ctx, p, id, updateRequest)
 }
 
-// deleteWorkforcemanagementBusinessunits deletes a Genesys Cloud workforcemanagement businessunits by Id
-func (p *workforcemanagementBusinessunitsProxy) deleteWorkforcemanagementBusinessunits(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
-	return p.deleteWorkforcemanagementBusinessunitsAttr(ctx, p, id)
+// deleteWorkforceManagementBusinessUnits deletes a Genesys Cloud workforce management business unit by Id
+func (p *workforceManagementBusinessUnitsProxy) deleteWorkforceManagementBusinessUnits(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+	return p.deleteWorkforceManagementBusinessUnitsAttr(ctx, p, id)
 }
 
-// createWorkforcemanagementBusinessunitsFn is an implementation function for creating a Genesys Cloud workforcemanagement businessunits
-func createWorkforcemanagementBusinessunitsFn(ctx context.Context, p *workforcemanagementBusinessunitsProxy, workforcemanagementBusinessunits *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
-	return p.workforceManagementApi.PostWorkforcemanagementBusinessunits(*workforcemanagementBusinessunits, false)
+// createWorkforceManagementBusinessUnitsFn is an implementation function for creating a Genesys Cloud workforce management business unit
+func createWorkforceManagementBusinessUnitsFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, workforceManagementBusinessUnits *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	return p.workforceManagementApi.PostWorkforcemanagementBusinessunits(*workforceManagementBusinessUnits, false)
 }
 
-// getAllWorkforcemanagementBusinessunitsFn is the implementation for retrieving all workforcemanagement businessunits in Genesys Cloud
-func getAllWorkforcemanagementBusinessunitsFn(ctx context.Context, p *workforcemanagementBusinessunitsProxy) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error) {
+// getAllWorkforceManagementBusinessUnitsFn is the implementation for retrieving all workforce management business units in Genesys Cloud
+func getAllWorkforceManagementBusinessUnitsFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error) {
 	businessUnitResponses, resp, err := p.workforceManagementApi.GetWorkforcemanagementBusinessunits("", "")
 	if err != nil {
 		return nil, resp, err
@@ -106,8 +106,8 @@ func getAllWorkforcemanagementBusinessunitsFn(ctx context.Context, p *workforcem
 	return businessUnitResponses.Entities, resp, nil
 }
 
-// getWorkforcemanagementBusinessunitsIdByNameFn is an implementation of the function to get a Genesys Cloud workforcemanagement businessunits by name
-func getWorkforcemanagementBusinessunitsIdByNameFn(ctx context.Context, p *workforcemanagementBusinessunitsProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+// getWorkforceManagementBusinessUnitIdByExactNameFn is an implementation of the function to get a Genesys Cloud workforce management business unit ID by exact name match
+func getWorkforceManagementBusinessUnitIdByExactNameFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
 	businessUnitResponses, resp, err := p.workforceManagementApi.GetWorkforcemanagementBusinessunits("", "")
 	if err != nil {
 		return "", resp, false, err
@@ -119,25 +119,25 @@ func getWorkforcemanagementBusinessunitsIdByNameFn(ctx context.Context, p *workf
 
 	for _, businessUnitResponse := range *businessUnitResponses.Entities {
 		if *businessUnitResponse.Name == name {
-			log.Printf("Retrieved the workforcemanagement businessunits id %s by name %s", *businessUnitResponse.Id, name)
+			log.Printf("Retrieved the workforce management business unit id %s by name %s", *businessUnitResponse.Id, name)
 			return *businessUnitResponse.Id, resp, false, nil
 		}
 	}
 
-	return "", resp, true, fmt.Errorf("unable to find workforcemanagement businessunits with name %s", name)
+	return "", resp, true, fmt.Errorf("unable to find workforce management business unit with name %s", name)
 }
 
-// getWorkforcemanagementBusinessunitsByIdFn is an implementation of the function to get a Genesys Cloud workforcemanagement businessunits by ID
-func getWorkforcemanagementBusinessunitsByIdFn(ctx context.Context, p *workforcemanagementBusinessunitsProxy, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+// getWorkforceManagementBusinessUnitsByIdFn is an implementation of the function to get a Genesys Cloud workforce management business unit by ID
+func getWorkforceManagementBusinessUnitsByIdFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
 	return p.workforceManagementApi.GetWorkforcemanagementBusinessunit(id, []string{"settings"}, false)
 }
 
-// updateWorkforcemanagementBusinessunitsFn is an implementation of the function to update a Genesys Cloud workforcemanagement businessunits
-func updateWorkforcemanagementBusinessunitsFn(ctx context.Context, p *workforcemanagementBusinessunitsProxy, id string, updateRequest *platformclientv2.Updatebusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+// updateWorkforceManagementBusinessUnitsFn is an implementation of the function to update a Genesys Cloud workforce management business unit
+func updateWorkforceManagementBusinessUnitsFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string, updateRequest *platformclientv2.Updatebusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
 	return p.workforceManagementApi.PatchWorkforcemanagementBusinessunit(id, *updateRequest, false)
 }
 
-// deleteWorkforcemanagementBusinessunitsFn is an implementation function for deleting a Genesys Cloud workforcemanagement businessunits
-func deleteWorkforcemanagementBusinessunitsFn(ctx context.Context, p *workforcemanagementBusinessunitsProxy, id string) (*platformclientv2.APIResponse, error) {
+// deleteWorkforceManagementBusinessUnitsFn is an implementation function for deleting a Genesys Cloud workforce management business unit
+func deleteWorkforceManagementBusinessUnitsFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.workforceManagementApi.DeleteWorkforcemanagementBusinessunit(id)
 }

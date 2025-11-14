@@ -21,19 +21,19 @@ import (
 // dataSourceWorkforcemanagementBusinessunitsRead retrieves by name the id in question
 func dataSourceWorkforcemanagementBusinessunitsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newWorkforcemanagementBusinessunitsProxy(sdkConfig)
+	proxy := newWorkforceManagementBusinessUnitsProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		businessUnitResponseId, resp, retryable, err := proxy.getWorkforcemanagementBusinessunitsIdByName(ctx, name)
+		businessUnitResponseId, resp, retryable, err := proxy.getWorkforceManagementBusinessUnitIdByExactName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching workforcemanagement businessunits %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Error searching workforce management business unit %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No workforcemanagement businessunits found with name %s", name), resp), resp)
+			return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("No workforce management business unit found with name %s", name), resp), resp)
 		}
 
 		d.SetId(businessUnitResponseId)

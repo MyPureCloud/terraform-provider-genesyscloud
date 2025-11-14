@@ -300,7 +300,7 @@ func GenerateWorkforcemanagementBusinessUnitResource(resourceLabel string, name 
 		division_id = %s
 		%s
 	}
-	`, resourceName, resourceLabel, name, divisionId, settings)
+	`, ResourceName, resourceLabel, name, divisionId, settings)
 }
 
 // GenerateWorkforcemanagementBusinessUnitSettings generates a terraform settings block for testing

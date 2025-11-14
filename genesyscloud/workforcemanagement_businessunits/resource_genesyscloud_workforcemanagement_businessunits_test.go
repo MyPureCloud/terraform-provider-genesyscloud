@@ -32,12 +32,12 @@ func TestAccResourceWorkforcemanagementBusinessUnitBasic(t *testing.T) {
 					"",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "name", buName),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "name", buName),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      resourceName + "." + buResourceLabel,
+				ResourceName:      ResourceName + "." + buResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -72,9 +72,9 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithSettings(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "name", buName),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.start_day_of_week", startDayOfWeek),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.time_zone", timeZone),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "name", buName),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.start_day_of_week", startDayOfWeek),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.time_zone", timeZone),
 				),
 			},
 			{
@@ -91,8 +91,8 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithSettings(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.start_day_of_week", "Sunday"),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.time_zone", "America/Los_Angeles"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.start_day_of_week", "Sunday"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.time_zone", "America/Los_Angeles"),
 				),
 			},
 		},
@@ -125,8 +125,8 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithShortTermForecasting(t *t
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "name", buName),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.short_term_forecasting.0.default_history_weeks", fmt.Sprintf("%d", defaultHistoryWeeks)),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "name", buName),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.short_term_forecasting.0.default_history_weeks", fmt.Sprintf("%d", defaultHistoryWeeks)),
 				),
 			},
 			{
@@ -143,7 +143,7 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithShortTermForecasting(t *t
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.short_term_forecasting.0.default_history_weeks", "8"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.short_term_forecasting.0.default_history_weeks", "8"),
 				),
 			},
 		},
@@ -180,8 +180,8 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithScheduling(t *testing.T) 
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "name", buName),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.allow_work_plan_per_minute_granularity", "true"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "name", buName),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.allow_work_plan_per_minute_granularity", "true"),
 				),
 			},
 			{
@@ -203,9 +203,9 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithScheduling(t *testing.T) 
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.message_severities.0.type", "AgentSchedule"),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.message_severities.0.severity", "Warning"),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.allow_work_plan_per_minute_granularity", "false"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.message_severities.0.type", "AgentSchedule"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.message_severities.0.severity", "Warning"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.allow_work_plan_per_minute_granularity", "false"),
 				),
 			},
 		},
@@ -246,11 +246,11 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithServiceGoalImpact(t *test
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "name", buName),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.service_level.0.increase_by_percent", "10"),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.service_level.0.decrease_by_percent", "5"),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.average_speed_of_answer.0.increase_by_percent", "15"),
-					resource.TestCheckResourceAttr(resourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.abandon_rate.0.increase_by_percent", "20"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "name", buName),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.service_level.0.increase_by_percent", "10"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.service_level.0.decrease_by_percent", "5"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.average_speed_of_answer.0.increase_by_percent", "15"),
+					resource.TestCheckResourceAttr(ResourceName+"."+buResourceLabel, "settings.0.scheduling.0.service_goal_impact.0.abandon_rate.0.increase_by_percent", "20"),
 				),
 			},
 		},
@@ -261,7 +261,7 @@ func TestAccResourceWorkforcemanagementBusinessUnitWithServiceGoalImpact(t *test
 func testVerifyBusinessUnitsDestroyed(state *terraform.State) error {
 	wfmAPI := platformclientv2.NewWorkforceManagementApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != resourceName {
+		if rs.Type != ResourceName {
 			continue
 		}
 
