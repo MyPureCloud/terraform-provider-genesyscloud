@@ -183,6 +183,7 @@ func ResourceTfExport() *schema.Resource {
 				Default:     10,
 				Type:        schema.TypeInt,
 				Optional:    true,
+				ForceNew:    true,
 			},
 		},
 	}

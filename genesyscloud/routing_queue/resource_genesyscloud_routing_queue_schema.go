@@ -1,6 +1,8 @@
 package routing_queue
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	architectUserPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -15,9 +17,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const ResourceType = "genesyscloud_routing_queue"
@@ -195,6 +194,18 @@ var (
 				Description: "The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.",
 				Type:        schema.TypeString,
 				Optional:    true,
+			},
+			"max_retry_count": {
+				Description:  "Maximum number of retries that should be attempted to try and connect a customer first callback to a customer when the initial callback attempt did not connect.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(0, 20),
+			},
+			"retry_delay_seconds": {
+				Description:  "Delay in seconds between each retry of a customer first callback.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(60, 86400),
 			},
 		},
 	}
@@ -484,7 +495,8 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "The bullseye ring settings for the queue.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				MaxItems:    5,
+				MaxItems:    6,
+				MinItems:    2,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"expansion_timeout_seconds": {
