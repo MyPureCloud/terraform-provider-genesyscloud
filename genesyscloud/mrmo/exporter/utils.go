@@ -41,13 +41,17 @@ func generateDefaults(input *ExportInput) {
 	}
 }
 
-// createClientConfig creates the client config for the export
-func createClientConfig(creds Credentials) (_ *platformclientv2.Configuration, err error) {
+// CreateClientConfig creates the client config for the export
+func CreateClientConfig(creds Credentials) (_ *platformclientv2.Configuration, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("createClientConfig: %w", err)
 		}
 	}()
+
+	if creds.ClientId == "" || creds.ClientSecret == "" || creds.Region == "" {
+		return nil, fmt.Errorf("insufficient client information provided")
+	}
 
 	config := platformclientv2.GetDefaultConfiguration()
 	config.BasePath = provider.GetRegionBasePath(creds.Region)
