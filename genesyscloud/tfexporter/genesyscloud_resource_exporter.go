@@ -640,7 +640,12 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	errorChan := make(chan diag.Diagnostics, len(resources))
 
 	// Initialize semaphore to limit concurrent operations
-	semaphore := make(chan struct{}, g.maxConcurrentOps)
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	semaphore := make(chan struct{}, maxConcurrentOps)
 
 	// Initialize wait group
 	var wg sync.WaitGroup
@@ -1065,7 +1070,7 @@ func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []str
 	}
 	g.appendResources(uniqueResources)
 	g.appendResources(existingResources)
-	if mergeExporters != nil && g.exporters != nil {
+	if g.exporters != nil {
 		g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
 	}
 
@@ -1295,8 +1300,13 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	defer cancel()
 
 	// Create semaphore to limit concurrent operations to the configured maximum
-	sem := make(chan struct{}, g.maxConcurrentOps)
-	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", g.maxConcurrentOps))
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", maxConcurrentOps))
 
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
@@ -1478,8 +1488,13 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	tflog.Trace(g.ctx, fmt.Sprintf("Retrieved sanitized resource map with %d entries for type %s", len(resourceMap), resType))
 
 	// Create a semaphore to limit concurrent operations
-	sem := make(chan struct{}, g.maxConcurrentOps)
-	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations"))
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", maxConcurrentOps))
 
 	for id, resMeta := range resourceMap {
 		tflog.Trace(g.ctx, fmt.Sprintf("Starting goroutine for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))

@@ -359,7 +359,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
 - `agent_owned_routing` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--agent_owned_routing))
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
-- `bullseye_rings` (Block List, Max: 5) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
+- `bullseye_rings` (Block List, Max: 6) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
 - `canned_response_libraries` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--canned_response_libraries))
@@ -604,8 +604,10 @@ Optional:
 - `live_voice_flow_id` (String) The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.
 - `live_voice_reaction_type` (String) The action to take if a live voice is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
 - `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
+- `max_retry_count` (Number) Maximum number of retries that should be attempted to try and connect a customer first callback to a customer when the initial callback attempt did not connect.
 - `mode` (String) The mode callbacks will use on this queue.
 - `pacing_modifier` (Number) Controls the maximum number of outbound calls at one time when mode is CustomerFirst.
+- `retry_delay_seconds` (Number) Delay in seconds between each retry of a customer first callback.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_callback--sub_type_settings))
