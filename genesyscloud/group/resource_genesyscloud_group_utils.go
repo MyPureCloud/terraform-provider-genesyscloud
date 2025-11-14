@@ -1,7 +1,9 @@
 package group
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 	"strings"
 
@@ -11,6 +13,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
+
+func updateGroupVoicemailPolicy(ctx context.Context, d *schema.ResourceData, gp *groupProxy) diag.Diagnostics {
+	voicemailPolicy := buildSdkGroupVoicemailPolicy(d)
+	_, resp, err := gp.updateGroupVoicemailPolicy(ctx, d.Id(), voicemailPolicy)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group voucemail policy %s: %s", d.Id(), err), resp)
+	}
+	return nil
+}
 
 // 'number' and 'extension' conflict with eachother. However, one must be set.
 // This function validates that the user has satisfied these conditions
@@ -128,6 +139,35 @@ func buildSdkGroupAddresses(d *schema.ResourceData) (*[]platformclientv2.Groupco
 	return nil, nil
 }
 
+func buildSdkGroupVoicemailPolicy(d *schema.ResourceData) *platformclientv2.Voicemailgrouppolicy {
+	voicemailPolicies := d.Get("voicemail_policy").([]any)
+	if len(voicemailPolicies) == 0 {
+		return &platformclientv2.Voicemailgrouppolicy{Enabled: platformclientv2.Bool(false)}
+	}
+	var sdkVoicemailPolicy platformclientv2.Voicemailgrouppolicy
+	voicemailPolicyMap, ok := voicemailPolicies[0].(map[string]any)
+	if !ok {
+		return &platformclientv2.Voicemailgrouppolicy{Enabled: platformclientv2.Bool(false)}
+	}
+
+	sdkVoicemailPolicy.Enabled = platformclientv2.Bool(true)
+	sdkVoicemailPolicy.SendEmailNotifications = resourcedata.GetNillableValueFromMap[bool](voicemailPolicyMap, "send_email_notifications", true)
+	sdkVoicemailPolicy.DisableEmailPii = resourcedata.GetNillableValueFromMap[bool](voicemailPolicyMap, "disable_email_pii", true)
+	sdkVoicemailPolicy.IncludeEmailTranscriptions = resourcedata.GetNillableValueFromMap[bool](voicemailPolicyMap, "include_email_transcriptions", true)
+
+	return &sdkVoicemailPolicy
+}
+
+func flattenGroupVoicemailPolicy(sdkVoicemailPolicy *platformclientv2.Voicemailgrouppolicy) []any {
+	voicemailPolicyMap := make(map[string]any, 1)
+
+	resourcedata.SetMapValueIfNotNil(voicemailPolicyMap, "send_email_notifications", sdkVoicemailPolicy.SendEmailNotifications)
+	resourcedata.SetMapValueIfNotNil(voicemailPolicyMap, "disable_email_pii", sdkVoicemailPolicy.DisableEmailPii)
+	resourcedata.SetMapValueIfNotNil(voicemailPolicyMap, "include_email_transcriptions", sdkVoicemailPolicy.IncludeEmailTranscriptions)
+
+	return []any{voicemailPolicyMap}
+}
+
 func GenerateBasicGroupResource(resourceLabel string, name string, nestedBlocks ...string) string {
 	return GenerateGroupResource(resourceLabel, name, util.NullValue, util.NullValue, util.NullValue, util.TrueValue, nestedBlocks...)
 }
@@ -168,4 +208,13 @@ func GenerateGroupOwners(userIDs ...string) string {
 func generateGroupMembers(userIDs ...string) string {
 	return fmt.Sprintf(`member_ids = [%s]
 	`, strings.Join(userIDs, ","))
+}
+
+func generateGroupVoicemailPolicy(sendEmailNotifications, disableEmailPii, includeEmailTranscriptions string) string {
+	return fmt.Sprintf(`voicemail_policy {
+		send_email_notifications = %s
+		disable_email_pii = %s
+		include_email_transcriptions = %s
+	}
+	`, sendEmailNotifications, disableEmailPii, includeEmailTranscriptions)
 }

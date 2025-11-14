@@ -6,3 +6,5 @@
 * [GET /api/v2/groups/{groupId}/individuals](https://developer.mypurecloud.com/api/rest/v2/groups/#get-api-v2-groups--groupId--individuals)
 * [POST /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#post-api-v2-groups--groupId--members)
 * [DELETE /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#delete-api-v2-groups--groupId--members)
+* [GET /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#get-api-v2-voicemail-groups--groupId--policy)
+* [PATCH /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#patch-api-v2-voicemail-groups--groupId--policy)
