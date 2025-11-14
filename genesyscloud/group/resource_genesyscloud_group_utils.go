@@ -145,7 +145,10 @@ func buildSdkGroupVoicemailPolicy(d *schema.ResourceData) *platformclientv2.Voic
 		return &platformclientv2.Voicemailgrouppolicy{Enabled: platformclientv2.Bool(false)}
 	}
 	var sdkVoicemailPolicy platformclientv2.Voicemailgrouppolicy
-	voicemailPolicyMap := voicemailPolicies[0].(map[string]any)
+	voicemailPolicyMap, ok := voicemailPolicies[0].(map[string]any)
+	if !ok {
+		return &platformclientv2.Voicemailgrouppolicy{Enabled: platformclientv2.Bool(false)}
+	}
 
 	sdkVoicemailPolicy.Enabled = platformclientv2.Bool(true)
 	sdkVoicemailPolicy.SendEmailNotifications = resourcedata.GetNillableValueFromMap[bool](voicemailPolicyMap, "send_email_notifications", true)
