@@ -11,8 +11,6 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_settings
   settings {
     start_day_of_week = "Monday"
     time_zone          = "America/New_York"
-
-    metadata {} # Required but read-only - populated by API
   }
 }
 
@@ -27,8 +25,6 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_forecast
     short_term_forecasting {
       default_history_weeks = 8
     }
-
-    metadata {} # Required but read-only - populated by API
   }
 }
 
@@ -42,19 +38,16 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_scheduli
 
     scheduling {
       message_severities {
-        type     = "AgentSchedule"
+        type     = "AgentNotFound"
         severity = "Warning"
       }
 
       sync_time_off_properties = [
-        "PaidTimeOff",
-        "UnpaidTimeOff"
+        "PayableMinutes"
       ]
 
       allow_work_plan_per_minute_granularity = false
     }
-
-    metadata {} # Required but read-only - populated by API
   }
 }
 
@@ -84,8 +77,6 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_service_
         }
       }
     }
-
-    metadata {} # Required but read-only - populated by API
   }
 }
 
@@ -104,18 +95,17 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_complete" {
 
     scheduling {
       message_severities {
-        type     = "AgentSchedule"
+        type     = "AgentNotFound"
         severity = "Warning"
       }
 
       message_severities {
-        type     = "ShiftTrade"
+        type     = "UnableToProduceAgentSchedule"
         severity = "Error"
       }
 
       sync_time_off_properties = [
-        "PaidTimeOff",
-        "UnpaidTimeOff"
+        "PayableMinutes"
       ]
 
       service_goal_impact {
@@ -137,7 +127,5 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_complete" {
 
       allow_work_plan_per_minute_granularity = true
     }
-
-    metadata {} # Required but read-only - populated by API
   }
 }
