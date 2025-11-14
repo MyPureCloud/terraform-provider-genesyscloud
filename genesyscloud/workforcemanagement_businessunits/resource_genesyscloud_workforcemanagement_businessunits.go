@@ -69,7 +69,7 @@ func readWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resource
 	log.Printf("Reading workforce management business unit %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		businessUnitResponse, resp, getErr := proxy.getWorkforceManagementBusinessUnitsById(ctx, d.Id())
+		businessUnitResponse, resp, getErr := proxy.getWorkforceManagementBusinessUnitById(ctx, d.Id())
 		if getErr != nil {
 			// Retry on 409 (conflict) or 429 (rate limit) errors
 			if util.IsStatus409(resp) || (resp != nil && resp.StatusCode == http.StatusTooManyRequests) {
@@ -96,7 +96,7 @@ func updateWorkforceManagementBusinessUnits(ctx context.Context, d *schema.Resou
 	workforceManagementBusinessUnits := getUpdateWorkforcemanagementBusinessUnitRequestFromResourceData(d)
 
 	log.Printf("Updating workforce management business unit %s", *workforceManagementBusinessUnits.Name)
-	businessUnitResponse, resp, err := proxy.updateWorkforceManagementBusinessUnits(ctx, d.Id(), &workforceManagementBusinessUnits)
+	businessUnitResponse, resp, err := proxy.updateWorkforceManagementBusinessUnit(ctx, d.Id(), &workforceManagementBusinessUnits)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to update workforce management business unit %s: %s", d.Id(), err), resp)
 	}
@@ -110,13 +110,13 @@ func deleteWorkforceManagementBusinessUnits(ctx context.Context, d *schema.Resou
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getWorkforceManagementBusinessUnitsProxy(sdkConfig)
 
-	resp, err := proxy.deleteWorkforceManagementBusinessUnits(ctx, d.Id())
+	resp, err := proxy.deleteWorkforceManagementBusinessUnit(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to delete workforce management business unit %s: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getWorkforceManagementBusinessUnitsById(ctx, d.Id())
+		_, resp, err := proxy.getWorkforceManagementBusinessUnitById(ctx, d.Id())
 
 		if err != nil {
 			if util.IsStatus404(resp) {
