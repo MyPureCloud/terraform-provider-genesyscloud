@@ -206,41 +206,18 @@ func IsTimeoutError(errDiag error) bool {
 
 // GetRetryAfterDelay extracts and parses the Retry-After header from an APIResponse.
 // It returns the delay duration and true if the header was present and valid, false otherwise.
-// Retry-After can be either:
-//   - A number of seconds (integer)
-//   - An HTTP date (RFC 1123 format)
+// Retry-After is always specified as a number of seconds (integer).
 func GetRetryAfterDelay(apiResponse *platformclientv2.APIResponse) (time.Duration, bool) {
 	if apiResponse == nil || apiResponse.Response == nil {
 		return 0, false
 	}
 
 	retryAfterHeader := apiResponse.Response.Header.Get("Retry-After")
-	if retryAfterHeader == "" {
-		return 0, false
-	}
-
-	// Try parsing as integer (seconds)
-	if seconds, err := strconv.Atoi(retryAfterHeader); err == nil {
-		if seconds > 0 {
+	if retryAfterHeader != "" {
+		if seconds, err := strconv.Atoi(retryAfterHeader); err == nil && seconds > 0 {
 			return time.Duration(seconds) * time.Second, true
 		}
-		return 0, false
 	}
-
-	// Try parsing as HTTP date formats (RFC 1123, RFC 1123 with timezone, RFC 822)
-	dateFormats := []string{time.RFC1123, time.RFC1123Z, time.RFC822}
-	now := time.Now()
-	for _, format := range dateFormats {
-		if httpDate, err := time.Parse(format, retryAfterHeader); err == nil {
-			delay := httpDate.Sub(now)
-			if delay > 0 {
-				return delay, true
-			}
-			return 0, false
-		}
-	}
-
-	// If we can't parse it, return false
 	return 0, false
 }
 
