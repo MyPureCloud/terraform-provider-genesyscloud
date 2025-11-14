@@ -120,7 +120,16 @@ Required:
 - `domain_name` (String) The domain name associated with the merchant account.
 - `merchant_id` (String) The stores merchant identifier.
 - `payment_capabilities` (List of String) The payment capabilities supported by the merchant.
-- `payment_certificate_credential_id` (String) The Genesys credentialId the payment certificates are stored under.
+- `payment_certificate_credential_id` (String) The Genesys credentialId the payment certificates are stored under. **Note:** This must be a valid and existing credential ID created via `/api/v2/integrations/credentials` endpoint. See [API documentation](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-credentials). Example payload:
+  ```json
+  {
+    "type": "applePayCertificate",
+    "credentialFields": {
+      "merchantKey": "base-64-key",
+      "merchantCertificate": "base-64-cert"
+    }
+  }
+  ```
 - `payment_gateway_url` (String) The url used to process payments.
 - `store_name` (String) The name of the store.
 - `supported_payment_networks` (List of String) The payment networks supported by the merchant.
