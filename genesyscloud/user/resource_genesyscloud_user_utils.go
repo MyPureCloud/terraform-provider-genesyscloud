@@ -9,11 +9,9 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -22,8 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 )
 
@@ -57,6 +53,16 @@ func getMediaUtilizationAttrTypes() map[string]attr.Type {
 		"maximum_capacity":          types.Int64Type,
 		"include_non_acd":           types.BoolType,
 		"interruptible_media_types": types.SetType{ElemType: types.StringType},
+	}
+}
+
+type FrameworkRetryWrapper struct {
+	resourceType string
+}
+
+func newFrameworkRetryWrapper(resourceType string) *FrameworkRetryWrapper {
+	return &FrameworkRetryWrapper{
+		resourceType: resourceType,
 	}
 }
 
@@ -1211,7 +1217,7 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 		// Get current user (with version)
 		currentUser, proxyResponse, err := proxy.getUserById(ctx, plan.Id.ValueString(), nil, "deleted")
 		if err != nil {
-			return nil, buildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", plan.Id.ValueString(), err), proxyResponse)
+			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", plan.Id.ValueString(), err), proxyResponse)
 		}
 
 		// Log current addresses before restore PATCH
@@ -1228,7 +1234,7 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 			Version: currentUser.Version,
 		})
 		if patchErr != nil {
-			return proxyPatchResponse, buildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to restore deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
+			return proxyPatchResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to restore deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
 		}
 
 		// Log PATCH response
@@ -1520,6 +1526,136 @@ func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, 
 	return diagnostics
 }
 
+func updateUserProfileSkills(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+	var diagnostics pfdiag.Diagnostics
+
+	if plan.ProfileSkills.IsNull() || plan.ProfileSkills.IsUnknown() {
+		return diagnostics
+	}
+
+	var profileSkillsSlice []string
+	diags := plan.ProfileSkills.ElementsAs(ctx, &profileSkillsSlice, false)
+	if diags.HasError() {
+		diagnostics.Append(diags...)
+		return diagnostics
+	}
+
+	diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+		_, resp, err := proxy.userApi.PutUserProfileskills(plan.Id.ValueString(), profileSkillsSlice)
+		if err != nil {
+			return resp, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update profile skills for user %s error: %s", plan.Id.ValueString(), err), resp)
+		}
+		return nil, nil
+	})
+
+	if diagErr != nil {
+		return diagErr
+	}
+
+	return diagnostics
+}
+
+func updateUserRoutingUtilization(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+	var diagnostics pfdiag.Diagnostics
+
+	// Check if routing_utilization is null or unknown
+	if plan.RoutingUtilization.IsNull() || plan.RoutingUtilization.IsUnknown() {
+		return diagnostics
+	}
+
+	// SDKv2: var err error
+	var err error
+
+	log.Printf("Updating user utilization for user %s", plan.Id.ValueString())
+
+	// Extract routing utilization from plan
+	var routingUtilizations []RoutingUtilizationModel
+	diags := plan.RoutingUtilization.ElementsAs(ctx, &routingUtilizations, false)
+	if diags.HasError() {
+		diagnostics.Append(diags...)
+		return diagnostics
+	}
+
+	if len(routingUtilizations) > 0 {
+		// Update settings (has configuration)
+		utilization := routingUtilizations[0]
+
+		// Check if label utilizations are present
+		hasLabelUtilizations := !utilization.LabelUtilizations.IsNull() &&
+			!utilization.LabelUtilizations.IsUnknown() &&
+			len(utilization.LabelUtilizations.Elements()) > 0
+
+		if hasLabelUtilizations {
+			// Path A: Has label utilizations - use direct API call
+			apiClient := &proxy.routingApi.Configuration.APIClient
+
+			path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization",
+				proxy.routingApi.Configuration.BasePath, plan.Id.ValueString())
+
+			headerParams := buildHeaderParams(proxy.routingApi)
+
+			requestPayload := make(map[string]interface{})
+
+			requestPayload["utilization"] = buildMediaTypeUtilizations(ctx, utilization)
+
+			var labelUtilizations []LabelUtilizationModel
+			labelDiags := utilization.LabelUtilizations.ElementsAs(ctx, &labelUtilizations, false)
+			if labelDiags.HasError() {
+				diagnostics.Append(labelDiags...)
+				return diagnostics
+			}
+			requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(ctx, labelUtilizations)
+
+			_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil, "")
+		} else {
+			// Path B: No label utilizations - use SDK method
+			sdkSettings := make(map[string]platformclientv2.Mediautilization)
+
+			// Build map of media type → Framework field
+			mediaTypeFields := map[string]types.List{
+				"call":     utilization.Call,
+				"callback": utilization.Callback,
+				"chat":     utilization.Chat,
+				"email":    utilization.Email,
+				"message":  utilization.Message,
+			}
+
+			for sdkType, schemaType := range getUtilizationMediaTypes() {
+				mediaTypeList := mediaTypeFields[schemaType]
+				if !mediaTypeList.IsNull() && !mediaTypeList.IsUnknown() && len(mediaTypeList.Elements()) > 0 {
+					sdkSettings[sdkType] = buildSdkMediaUtilization(ctx, mediaTypeList)
+				}
+			}
+
+			_, _, err = proxy.userApi.PutRoutingUserUtilization(plan.Id.ValueString(), platformclientv2.Utilizationrequest{
+				Utilization: &sdkSettings,
+			})
+		}
+
+		if err != nil {
+			diagnostics.AddError(
+				"Failed to update Routing Utilization",
+				fmt.Sprintf("Failed to update Routing Utilization for user %s: %s", plan.Id.ValueString(), err),
+			)
+			return diagnostics
+		}
+	} else {
+		// Reset to org-wide defaults (empty list)
+		resp, err := proxy.userApi.DeleteRoutingUserUtilization(plan.Id.ValueString())
+		if err != nil {
+			apiDiags := util.BuildAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to delete routing utilization for user %s error: %s", plan.Id.ValueString(), err), resp)
+			diagnostics.Append(convertSDKDiagnosticsToFramework(apiDiags)...)
+			return diagnostics
+		}
+	}
+
+	log.Printf("Updated user utilization for user %s", plan.Id.ValueString())
+
+	// SDKv2: return nil
+	return diagnostics
+}
+
 func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs map[string]float64, proxy *userProxy) pfdiag.Diagnostics {
 	// Bulk API restricts skills adds to 50 per call
 	const maxBatchSize = 50
@@ -1632,121 +1768,89 @@ func getUserRoutingLanguages(userID string, proxy *userProxy) ([]platformclientv
 	}
 }
 
-//------------------------------ the function below needs refacturing EOR----------------------------
-
-// buildSdkSkillsFromFramework converts Framework routing skills to SDK skills
-func buildSdkSkillsFromFramework(routingSkills types.Set) ([]platformclientv2.Userroutingskillpost, diag.Diagnostics) {
-	var diagnostics diag.Diagnostics
-
-	if routingSkills.IsNull() || routingSkills.IsUnknown() {
-		return nil, diagnostics
-	}
-
-	skillElements := routingSkills.Elements()
-	sdkSkills := make([]platformclientv2.Userroutingskillpost, 0, len(skillElements))
-
-	for _, skillElement := range skillElements {
-		skillObj, ok := skillElement.(types.Object)
-		if !ok {
-			diagnostics = append(diagnostics, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Invalid Skill Type",
-				Detail:   "Expected skill to be an object",
-			})
-			continue
-		}
-
-		skillAttrs := skillObj.Attributes()
-
-		var skillId string
-		var proficiency float64
-
-		if skillIdAttr, exists := skillAttrs["skill_id"]; exists && !skillIdAttr.IsNull() {
-			skillId = skillIdAttr.(types.String).ValueString()
-		}
-
-		if proficiencyAttr, exists := skillAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
-			proficiency = proficiencyAttr.(types.Float64).ValueFloat64()
-		}
-
-		sdkSkills = append(sdkSkills, platformclientv2.Userroutingskillpost{
-			Id:          &skillId,
-			Proficiency: &proficiency,
-		})
-	}
-
-	return sdkSkills, diagnostics
+func getUtilizationMediaTypes() map[string]string {
+	return utilizationMediaTypes
 }
 
-// buildSdkLanguagesFromFramework converts Framework routing languages to SDK languages
-func buildSdkLanguagesFromFramework(routingLanguages types.Set) ([]platformclientv2.Userroutinglanguagepost, diag.Diagnostics) {
-	var diagnostics diag.Diagnostics
+func buildLabelUtilizationsRequest(ctx context.Context, labelUtilizations []LabelUtilizationModel) map[string]labelUtilization {
+	request := make(map[string]labelUtilization)
 
-	if routingLanguages.IsNull() || routingLanguages.IsUnknown() {
-		return nil, diagnostics
+	for _, labelUtil := range labelUtilizations {
+		// Extract label_id
+		labelId := labelUtil.LabelId.ValueString()
+
+		// Extract maximum_capacity and convert to int32
+		maxCapacity := int32(labelUtil.MaximumCapacity.ValueInt64())
+
+		// Extract interrupting_label_ids
+		// SDKv2 does no null checking - directly accesses and converts
+		var interruptingIds []string
+		labelUtil.InterruptingLabelIds.ElementsAs(ctx, &interruptingIds, false)
+
+		// Build labelUtilization struct and add to map
+		request[labelId] = labelUtilization{
+			MaximumCapacity:      maxCapacity,
+			InterruptingLabelIds: interruptingIds,
+		}
 	}
 
-	languageElements := routingLanguages.Elements()
-	sdkLanguages := make([]platformclientv2.Userroutinglanguagepost, 0, len(languageElements))
-
-	for _, languageElement := range languageElements {
-		languageObj, ok := languageElement.(types.Object)
-		if !ok {
-			diagnostics = append(diagnostics, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  "Invalid Language Type",
-				Detail:   "Expected language to be an object",
-			})
-			continue
-		}
-
-		languageAttrs := languageObj.Attributes()
-
-		var languageId string
-		var proficiency float64
-
-		if languageIdAttr, exists := languageAttrs["language_id"]; exists && !languageIdAttr.IsNull() {
-			languageId = languageIdAttr.(types.String).ValueString()
-		}
-
-		if proficiencyAttr, exists := languageAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
-			proficiency = float64(proficiencyAttr.(types.Int64).ValueInt64())
-		}
-
-		sdkLanguages = append(sdkLanguages, platformclientv2.Userroutinglanguagepost{
-			Id:          &languageId,
-			Proficiency: &proficiency,
-		})
-	}
-
-	return sdkLanguages, diagnostics
+	return request
 }
 
-func buildMediaTypeUtilizations(allUtilizations map[string]interface{}) *map[string]platformclientv2.Mediautilization {
+func buildMediaTypeUtilizations(ctx context.Context, utilization RoutingUtilizationModel) *map[string]platformclientv2.Mediautilization {
 	settings := make(map[string]platformclientv2.Mediautilization)
 
+	// Translation layer: Convert typed struct fields to map for dynamic access
+	// This bridges the gap between PF's typed models and SDKv2's dynamic maps
+	mediaTypeFields := map[string]types.List{
+		"call":     utilization.Call,
+		"callback": utilization.Callback,
+		"chat":     utilization.Chat,
+		"email":    utilization.Email,
+		"message":  utilization.Message,
+	}
+
 	for sdkType, schemaType := range getUtilizationMediaTypes() {
-		mediaSettings := allUtilizations[schemaType].([]interface{})
-		if len(mediaSettings) > 0 {
-			settings[sdkType] = buildSdkMediaUtilization(mediaSettings)
+		mediaTypeList := mediaTypeFields[schemaType]
+
+		if !mediaTypeList.IsNull() && !mediaTypeList.IsUnknown() && len(mediaTypeList.Elements()) > 0 {
+			settings[sdkType] = buildSdkMediaUtilization(ctx, mediaTypeList)
 		}
 	}
 
 	return &settings
 }
 
-func emailorNameDisambiguation(searchField string) (string, string) {
-	emailField := "email"
-	nameField := "name"
-	_, err := mail.ParseAddress(searchField)
-	if err == nil {
-		return searchField, emailField
-	}
-	return searchField, nameField
-}
+func buildSdkMediaUtilization(ctx context.Context, settings types.List) platformclientv2.Mediautilization {
 
-func getUtilizationMediaTypes() map[string]string {
-	return utilizationMediaTypes
+	// Extract first element (MaxItems=1 in schema)
+	var mediaSettings []MediaUtilizationModel
+	settings.ElementsAs(ctx, &mediaSettings, false)
+
+	settingsModel := mediaSettings[0]
+
+	// Extract maximum_capacity (required field)
+	maxCapacity := int(settingsModel.MaximumCapacity.ValueInt64())
+
+	// Extract include_non_acd (required field)
+	includeNonAcd := settingsModel.IncludeNonAcd.ValueBool()
+
+	// Initialize optional field with empty slice pointer
+	interruptableMediaTypes := &[]string{}
+
+	// Extract interruptible_media_types (optional field)
+	if !settingsModel.InterruptibleMediaTypes.IsNull() && !settingsModel.InterruptibleMediaTypes.IsUnknown() {
+		var mediaTypes []string
+		settingsModel.InterruptibleMediaTypes.ElementsAs(ctx, &mediaTypes, false)
+		interruptableMediaTypes = &mediaTypes
+	}
+
+	// Build and return SDK struct
+	return platformclientv2.Mediautilization{
+		MaximumCapacity:         &maxCapacity,
+		IncludeNonAcd:           &includeNonAcd,
+		InterruptableMediaTypes: interruptableMediaTypes,
+	}
 }
 
 func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
@@ -1763,682 +1867,12 @@ func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]strin
 	return headerParams
 }
 
-func flattenLabelUtilization(labelId string, labelUtilization labelUtilization) map[string]interface{} {
-	utilizationMap := make(map[string]interface{})
-
-	utilizationMap["label_id"] = labelId
-	utilizationMap["maximum_capacity"] = labelUtilization.MaximumCapacity
-	if labelUtilization.InterruptingLabelIds != nil {
-		utilizationMap["interrupting_label_ids"] = lists.StringListToSet(labelUtilization.InterruptingLabelIds)
-	}
-
-	return utilizationMap
-}
-
-func buildSdkMediaUtilization(settings []interface{}) platformclientv2.Mediautilization {
-	settingsMap := settings[0].(map[string]interface{})
-
-	maxCapacity := settingsMap["maximum_capacity"].(int)
-	includeNonAcd := settingsMap["include_non_acd"].(bool)
-
-	// Optional
-	interruptibleMediaTypes := &[]string{}
-	if types, ok := settingsMap["interruptible_media_types"]; ok {
-		// Handle both framework ([]string) and SDK v2 (*schema.Set) types
-		switch v := types.(type) {
-		case []string:
-			// Framework type - already a string slice
-			interruptibleMediaTypes = &v
-		case *schema.Set:
-			// SDK v2 type - convert from Set
-			interruptibleMediaTypes = lists.SetToStringList(v)
-		case []interface{}:
-			// Convert interface slice to string slice
-			stringList := lists.InterfaceListToStrings(v)
-			interruptibleMediaTypes = &stringList
-		}
-	}
-
-	return platformclientv2.Mediautilization{
-		MaximumCapacity:         &maxCapacity,
-		IncludeNonAcd:           &includeNonAcd,
-		InterruptableMediaTypes: interruptibleMediaTypes,
-	}
-}
-
-func buildLabelUtilizationsRequest(labelUtilizations []interface{}) map[string]labelUtilization {
-	request := make(map[string]labelUtilization)
-	for _, labelUtilizationValue := range labelUtilizations {
-		labelUtilizationMap := labelUtilizationValue.(map[string]interface{})
-
-		var interruptingLabelIds []string
-		if ids, ok := labelUtilizationMap["interrupting_label_ids"]; ok && ids != nil {
-			// Handle both framework ([]string) and SDK v2 (*schema.Set) types
-			switch v := ids.(type) {
-			case []string:
-				// Framework type - already a string slice
-				interruptingLabelIds = v
-			case *schema.Set:
-				// SDK v2 type - convert from Set
-				if converted := lists.SetToStringList(v); converted != nil {
-					interruptingLabelIds = *converted
-				}
-			case []interface{}:
-				// Convert interface slice to string slice
-				interruptingLabelIds = lists.InterfaceListToStrings(v)
-			}
-		}
-
-		request[labelUtilizationMap["label_id"].(string)] = labelUtilization{
-			MaximumCapacity:      int32(labelUtilizationMap["maximum_capacity"].(int)),
-			InterruptingLabelIds: interruptingLabelIds,
-		}
-	}
-	return request
-}
-
-func getSdkUtilizationTypes() []string {
-	types := make([]string, 0, len(utilizationMediaTypes))
-	for t := range utilizationMediaTypes {
-		types = append(types, t)
-	}
-	sort.Strings(types)
-	return types
-}
-
-func buildVoicemailUserpoliciesRequest(voicemailUserpolicies []interface{}) platformclientv2.Voicemailuserpolicy {
-	var request platformclientv2.Voicemailuserpolicy
-	if extractMap, ok := voicemailUserpolicies[0].(map[string]interface{}); ok {
-		sendEmailNotifications := extractMap["send_email_notifications"].(bool)
-		request = platformclientv2.Voicemailuserpolicy{
-			SendEmailNotifications: &sendEmailNotifications,
-		}
-		// Optional
-		if alertTimeoutSeconds := extractMap["alert_timeout_seconds"].(int); alertTimeoutSeconds > 0 {
-			request.AlertTimeoutSeconds = &alertTimeoutSeconds
-		}
-	}
-	return request
-}
-
-// Framework Diagnostic Utility Functions
-// These functions provide Framework-specific diagnostic conversion and error handling
-// while preserving identical business logic to SDK equivalents
-
-// convertSDKDiagnosticsToFramework converts SDK v2 diagnostics to Framework diagnostics
-// while preserving identical error messages, severity levels, and diagnostic details
-func convertSDKDiagnosticsToFramework(sdkDiags diag.Diagnostics) pfdiag.Diagnostics {
-	var frameworkDiags pfdiag.Diagnostics
-
-	for _, sdkDiag := range sdkDiags {
-		switch sdkDiag.Severity {
-		case diag.Error:
-			frameworkDiags.AddError(sdkDiag.Summary, sdkDiag.Detail)
-		case diag.Warning:
-			frameworkDiags.AddWarning(sdkDiag.Summary, sdkDiag.Detail)
-		default:
-			// Default to error for unknown severity levels to maintain SDK behavior
-			frameworkDiags.AddError(sdkDiag.Summary, sdkDiag.Detail)
-		}
-	}
-
-	return frameworkDiags
-}
-
-// buildFrameworkAPIDiagnosticError creates Framework diagnostics from API errors
-// using util.BuildAPIDiagnosticError internally to maintain SDK behavior
-func buildFrameworkAPIDiagnosticError(resourceType string, summary string, apiResponse *platformclientv2.APIResponse) pfdiag.Diagnostics {
-	// Use SDK function internally to maintain identical behavior
-	sdkDiags := util.BuildAPIDiagnosticError(resourceType, summary, apiResponse)
-
-	// Convert to Framework format
-	return convertSDKDiagnosticsToFramework(sdkDiags)
-}
-
-// handleFrameworkAPIError handles API errors and returns Framework diagnostics
-// while preserving correlation IDs and status codes
-func handleFrameworkAPIError(resourceType string, operation string, resourceId string, err error, apiResponse *platformclientv2.APIResponse) pfdiag.Diagnostics {
-	summary := fmt.Sprintf("Failed to %s %s %s", operation, resourceType, resourceId)
-	if err != nil {
-		summary = fmt.Sprintf("%s error: %s", summary, err)
-	}
-
-	return buildFrameworkAPIDiagnosticError(resourceType, summary, apiResponse)
-}
-
-// FrameworkRetryWrapper wraps SDK retry logic for Framework compatibility
-type FrameworkRetryWrapper struct {
-	resourceType string
-}
-
-// newFrameworkRetryWrapper creates a retry wrapper for Framework operations
-// using identical SDK retry logic
-func newFrameworkRetryWrapper(resourceType string) *FrameworkRetryWrapper {
-	return &FrameworkRetryWrapper{
-		resourceType: resourceType,
-	}
-}
-
-// executeWithRetry implements retry logic for Framework operations with SDK backoff patterns
-func (w *FrameworkRetryWrapper) executeWithRetry(operation func() (*platformclientv2.APIResponse, error), errorMessage string) pfdiag.Diagnostics {
-	// Use SDK retry logic internally to maintain identical behavior
-	sdkDiags := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		apiResponse, err := operation()
-		if err != nil {
-			return apiResponse, util.BuildAPIDiagnosticError(w.resourceType, errorMessage, apiResponse)
-		}
-		return apiResponse, nil
-	})
-
-	// Convert to Framework format if there are errors
-	if sdkDiags.HasError() {
-		return convertSDKDiagnosticsToFramework(sdkDiags)
-	}
-
-	return pfdiag.Diagnostics{}
-}
-
-// withRetriesForReadFramework implements retry logic for Framework read operations
-// with SDK backoff patterns
-func withRetriesForReadFramework(ctx context.Context, retryFunc func() *retry.RetryError) pfdiag.Diagnostics {
-	// Use SDK timeout values (5 minutes for read operations)
-	timeout := 5 * time.Minute
-
-	err := retry.RetryContext(ctx, timeout, retryFunc)
-	if err != nil {
-		var frameworkDiags pfdiag.Diagnostics
-		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
-			// Handle 404 errors gracefully - this matches SDK behavior
-			frameworkDiags.AddError("Resource Not Found", "The requested resource was not found")
-		} else if util.IsTimeoutError(err) {
-			frameworkDiags.AddError("Operation Timeout", fmt.Sprintf("Operation timed out after %v", timeout))
-		} else {
-			frameworkDiags.AddError("Operation Failed", fmt.Sprintf("Operation failed: %v", err))
-		}
-		return frameworkDiags
-	}
-
-	return pfdiag.Diagnostics{}
-}
-
-// ensureIdenticalTimeoutBehavior ensures Framework operations use identical SDK timeout values
-// (5min read, 3min delete, 2min other)
-func ensureIdenticalTimeoutBehavior(operationType string) time.Duration {
-	switch strings.ToLower(operationType) {
-	case "read":
-		return 5 * time.Minute
-	case "delete":
-		return 3 * time.Minute
-	default:
-		return 2 * time.Minute
-	}
-}
-
-// handleFrameworkTimeout handles timeout errors with SDK-equivalent messages
-func handleFrameworkTimeout(resourceType string, operation string, resourceId string, timeout time.Duration) pfdiag.Diagnostics {
-	var frameworkDiags pfdiag.Diagnostics
-	summary := fmt.Sprintf("%s %s Timeout", strings.Title(operation), resourceType)
-	detail := fmt.Sprintf("Operation timed out after %v for resource %s", timeout, resourceId)
-	frameworkDiags.AddError(summary, detail)
-	return frameworkDiags
-}
-
-// handleFrameworkValidationError handles validation errors preserving SDK error messages
-func handleFrameworkValidationError(resourceType string, field string, value interface{}, validationMessage string) pfdiag.Diagnostics {
-	var frameworkDiags pfdiag.Diagnostics
-	summary := fmt.Sprintf("%s Validation Error", resourceType)
-	detail := fmt.Sprintf("Validation failed for field '%s' with value '%v': %s", field, value, validationMessage)
-	frameworkDiags.AddError(summary, detail)
-	return frameworkDiags
-}
-
-// handleFramework404Error handles 404 errors with SDK behavior patterns
-func handleFramework404Error(resourceType string, resourceId string) pfdiag.Diagnostics {
-	var frameworkDiags pfdiag.Diagnostics
-	summary := fmt.Sprintf("%s Not Found", resourceType)
-	detail := fmt.Sprintf("The %s with ID '%s' was not found", strings.ToLower(resourceType), resourceId)
-	frameworkDiags.AddError(summary, detail)
-	return frameworkDiags
-}
-
-// Framework validation functions for addresses - integrated into build functions
-// Validation is performed during the buildSdkAddressesFromFramework process to match SDK behavior
-
-// validatePhoneNumberE164 validates that a phone number is in E.164 format
-func validatePhoneNumberE164(phoneNumber string) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	// Skip validation in BCP mode (matches SDK behavior)
-	if feature_toggles.BcpModeEnabledExists() {
-		return diagnostics
-	}
-
-	if phoneNumber == "" {
-		return diagnostics // Empty phone numbers are allowed
-	}
-
-	utilE164 := util.NewUtilE164Service()
-	validNum, diags := utilE164.IsValidE164Number(phoneNumber)
-	if diags != nil {
-		diagnostics.AddError(
-			"Phone Number Validation Error",
-			fmt.Sprintf("Failed to validate phone number: %v", diags),
-		)
-		return diagnostics
-	}
-
-	if !validNum {
-		diagnostics.AddError(
-			"Phone Number Validation Error",
-			fmt.Sprintf("Phone number must be in E.164 format: %s", phoneNumber),
-		)
-	}
-
-	return diagnostics
-}
-
-// validatePhoneMediaType validates phone media type values
-func validatePhoneMediaType(mediaType string) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	if mediaType == "" {
-		return diagnostics // Empty values use defaults
-	}
-
-	validMediaTypes := []string{"PHONE", "SMS"}
-	for _, valid := range validMediaTypes {
-		if mediaType == valid {
-			return diagnostics
-		}
-	}
-
-	diagnostics.AddError(
-		"Phone Media Type Validation Error",
-		fmt.Sprintf("Media type must be one of %v, got: %s", validMediaTypes, mediaType),
-	)
-	return diagnostics
-}
-
-// validatePhoneType validates phone type values
-func validatePhoneType(phoneType string) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	if phoneType == "" {
-		return diagnostics // Empty values use defaults
-	}
-
-	validTypes := []string{"WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE", "OTHER"}
-	for _, valid := range validTypes {
-		if phoneType == valid {
-			return diagnostics
-		}
-	}
-
-	diagnostics.AddError(
-		"Phone Type Validation Error",
-		fmt.Sprintf("Type must be one of %v, got: %s", validTypes, phoneType),
-	)
-	return diagnostics
-}
-
-// validateEmailType validates email type values
-func validateEmailType(emailType string) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	if emailType == "" {
-		return diagnostics // Empty values use defaults
-	}
-
-	validTypes := []string{"WORK", "HOME"}
-	for _, valid := range validTypes {
-		if emailType == valid {
-			return diagnostics
-		}
-	}
-
-	diagnostics.AddError(
-		"Email Type Validation Error",
-		fmt.Sprintf("Type must be one of %v, got: %s", validTypes, emailType),
-	)
-	return diagnostics
-}
-
-// Migrated Build Functions from Framework Resource File
-// These functions were moved from UserFrameworkResource methods to standalone functions
-// to follow SDK organizational patterns while preserving identical business logic
-
-// buildSdkLocations converts Framework locations to SDK locations
-// Migrated from (r *UserFrameworkResource) buildSdkLocations method
-func buildSdkLocations(ctx context.Context, locations types.Set) *[]platformclientv2.Location {
-	if locations.IsNull() || locations.IsUnknown() {
-		return nil
-	}
-
-	sdkLocations := make([]platformclientv2.Location, 0)
-	for _, locVal := range locations.Elements() {
-		locObj, ok := locVal.(basetypes.ObjectValue)
-		if !ok {
-			continue
-		}
-		locAttrs := locObj.Attributes()
-
-		locID := locAttrs["location_id"].(basetypes.StringValue).ValueString()
-		locNotes := locAttrs["notes"].(basetypes.StringValue).ValueString()
-
-		sdkLocations = append(sdkLocations, platformclientv2.Location{
-			Id:    &locID,
-			Notes: &locNotes,
-		})
-	}
-	return &sdkLocations
-}
-
-// buildSdkCertifications converts Framework certifications to SDK certifications
-// Migrated from (r *UserFrameworkResource) buildSdkCertifications method
-func buildSdkCertifications(ctx context.Context, certifications types.Set) *[]string {
-	certs := make([]string, 0)
-
-	// If certifications are specified (even if empty), process them
-	if !certifications.IsNull() && !certifications.IsUnknown() {
-		for _, certVal := range certifications.Elements() {
-			certStr, ok := certVal.(basetypes.StringValue)
-			if ok {
-				certs = append(certs, certStr.ValueString())
-			}
-		}
-	}
-	// Always return a slice (even if empty) to allow clearing certifications
-	return &certs
-}
-
-// buildSdkProfileSkills converts Framework profile skills to SDK profile skills
-// Migrated from (r *UserFrameworkResource) buildSdkProfileSkills method
-func buildSdkProfileSkills(ctx context.Context, profileSkills types.Set) *[]string {
-	skills := make([]string, 0)
-
-	// If profile skills are specified (even if empty), process them
-	if !profileSkills.IsNull() && !profileSkills.IsUnknown() {
-		for _, skillVal := range profileSkills.Elements() {
-			skillStr, ok := skillVal.(basetypes.StringValue)
-			if ok {
-				skills = append(skills, skillStr.ValueString())
-			}
-		}
-	}
-	// Always return a slice (even if empty) to allow clearing profile skills
-	return &skills
-}
-
-// buildSdkEmployerInfo converts Framework employer info to SDK employer info
-// Migrated from (r *UserFrameworkResource) buildSdkEmployerInfo method
-func buildSdkEmployerInfo(ctx context.Context, employerInfo types.List) *platformclientv2.Employerinfo {
-	if employerInfo.IsNull() || employerInfo.IsUnknown() {
-		// Return empty employer info object with nil pointers to clear existing data (matches SDK pattern)
-		return &platformclientv2.Employerinfo{}
-	}
-
-	elements := employerInfo.Elements()
-	if len(elements) == 0 {
-		return nil
-	}
-
-	// Get the first (and only) element since MaxItems is 1
-	empInfoObj, ok := elements[0].(basetypes.ObjectValue)
-	if !ok {
-		return nil
-	}
-
-	empAttrs := empInfoObj.Attributes()
-	sdkEmployerInfo := &platformclientv2.Employerinfo{}
-
-	if officialName, exists := empAttrs["official_name"]; exists && !officialName.IsNull() {
-		if nameVal, ok := officialName.(basetypes.StringValue); ok && nameVal.ValueString() != "" {
-			sdkEmployerInfo.OfficialName = platformclientv2.String(nameVal.ValueString())
-		}
-	}
-
-	if employeeId, exists := empAttrs["employee_id"]; exists && !employeeId.IsNull() {
-		if idVal, ok := employeeId.(basetypes.StringValue); ok && idVal.ValueString() != "" {
-			sdkEmployerInfo.EmployeeId = platformclientv2.String(idVal.ValueString())
-		}
-	}
-
-	if employeeType, exists := empAttrs["employee_type"]; exists && !employeeType.IsNull() {
-		if typeVal, ok := employeeType.(basetypes.StringValue); ok && typeVal.ValueString() != "" {
-			sdkEmployerInfo.EmployeeType = platformclientv2.String(typeVal.ValueString())
-		}
-	}
-
-	if dateHire, exists := empAttrs["date_hire"]; exists && !dateHire.IsNull() {
-		if dateVal, ok := dateHire.(basetypes.StringValue); ok && dateVal.ValueString() != "" {
-			dateStr := dateVal.ValueString()
-			sdkEmployerInfo.DateHire = &dateStr
-		}
-	}
-
-	return sdkEmployerInfo
-}
-
-// executeUpdateUser executes a user update with retry logic
-// Migrated from (r *UserFrameworkResource) executeUpdateUser method
-// Following SDK pattern: mirrors SDK executeUpdateUser logic for Framework interface
-func executeUpdateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, updateUser platformclientv2.Updateuser) pfdiag.Diagnostics {
-	// Use SDK-aligned retry logic with version mismatch handling
-	retryWrapper := newFrameworkRetryWrapper(ResourceType)
-
-	return retryWrapper.executeWithRetry(func() (*platformclientv2.APIResponse, error) {
-		// Get current user version (matches SDK pattern)
-		currentUser, proxyResponse, errGet := proxy.getUserById(ctx, plan.Id.ValueString(), nil, "")
-		if errGet != nil {
-			return proxyResponse, errGet
-		}
-
-		updateUser.Version = currentUser.Version
-
-		updatedUser, proxyPatchResponse, patchErr := proxy.updateUser(ctx, plan.Id.ValueString(), &updateUser)
-		if proxyPatchResponse != nil {
-			log.Printf("[INV] UPDATE patch status: %v", proxyPatchResponse.StatusCode)
-		}
-		if patchErr == nil && updatedUser != nil {
-			// Log the immediate PATCH response
-			log.Printf("[INV] UPDATE PATCH response.Addresses=%s", invMustJSON(updatedUser.Addresses))
-			if updatedUser.Addresses != nil {
-				invDumpSDKPhones("UPDATE PATCH response (SDK)", *updatedUser.Addresses)
-			}
-		}
-		return proxyPatchResponse, patchErr
-	}, fmt.Sprintf("Failed to update user %s", plan.Id.ValueString()))
-}
-
-// updateUserProfileSkills updates user profile skills
-// Following SDK pattern: mirrors SDK updateUserProfileSkills logic for Framework interface
-func updateUserProfileSkills(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	// Check if profile skills are configured in the plan
-	if plan.ProfileSkills.IsNull() || plan.ProfileSkills.IsUnknown() {
-		// Profile skills not configured - skip update
-		return diagnostics
-	}
-
-	// Convert Framework Set to string slice
-	var profileSkillsSlice []string
-	diags := plan.ProfileSkills.ElementsAs(ctx, &profileSkillsSlice, false)
-	if diags.HasError() {
-		// Task 8.2: Add appropriate diagnostic messages for profile skills conversion errors
-		diagnostics.Append(diags...)
-		diagnostics.AddError(
-			"Profile Skills Conversion Error",
-			fmt.Sprintf("Failed to convert profile skills for user %s", plan.Id.ValueString()),
-		)
-		return diagnostics
-	}
-
-	log.Printf("Updating profile skills for user %s with %d skills", plan.Id.ValueString(), len(profileSkillsSlice))
-
-	// Use SDK-aligned retry logic with version mismatch handling
-	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		_, resp, err := proxy.userApi.PutUserProfileskills(plan.Id.ValueString(), profileSkillsSlice)
-		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update profile skills for user %s error: %s", plan.Id.ValueString(), err), resp)
-		}
-		return nil, nil
-	})
-
-	if diagErr != nil {
-		// Use SDK-aligned diagnostic conversion
-		frameworkDiags := convertSDKDiagnosticsToFramework(diagErr)
-		diagnostics.Append(frameworkDiags...)
-	} else {
-		log.Printf("Successfully updated profile skills for user %s", plan.Id.ValueString())
-	}
-
-	return diagnostics
-}
-
-// updateUserRoutingUtilization updates user routing utilization
-// Following SDK pattern: mirrors SDK updateUserRoutingUtilization logic for Framework interface
-func updateUserRoutingUtilization(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
-	var diagnostics pfdiag.Diagnostics
-
-	if plan.RoutingUtilization.IsNull() || plan.RoutingUtilization.IsUnknown() {
-		// Routing utilization not configured - skip update
-		return diagnostics
-	}
-
-	log.Printf("DEBUG: Updating user utilization for user %s", plan.Id.ValueString())
-
-	// Extract routing utilization from plan
-	var routingUtilizations []RoutingUtilizationModel
-	diags := plan.RoutingUtilization.ElementsAs(ctx, &routingUtilizations, false)
-	if diags.HasError() {
-		diagnostics.Append(diags...)
-		return diagnostics
-	}
-
-	if len(routingUtilizations) == 0 {
-		// Empty utilization list - reset to org defaults (Task 3.3)
-		log.Printf("Resetting routing utilization to org defaults for user %s", plan.Id.ValueString())
-		log.Printf("[INV] RU PLAN -> DELETE (empty list, resetting to org defaults)")
-		_, err := proxy.userApi.DeleteRoutingUserUtilization(plan.Id.ValueString())
-		if err != nil {
-			diagnostics.AddError(
-				"Failed to reset routing utilization",
-				fmt.Sprintf("Failed to reset routing utilization for user %s: %s", plan.Id.ValueString(), err),
-			)
-		}
-		log.Printf("[INV] RU write sequence: deleted=true posted=false")
-		return diagnostics
-	}
-
-	// Process the utilization configuration
-	utilization := routingUtilizations[0]
-
-	// Log plan state before write
-	log.Printf("[INV] RU PLAN -> payload: has_user_block=%t media_keys=%v",
-		len(routingUtilizations) > 0, getSdkUtilizationTypes())
-	log.Printf("[INV] RU PLAN payload JSON: %s", invMustJSON(utilization))
-
-	// Task 3.1: Detect presence of label utilizations
-	hasLabelUtilizations := !utilization.LabelUtilizations.IsNull() && len(utilization.LabelUtilizations.Elements()) > 0
-
-	var err error
-	if hasLabelUtilizations {
-		// Task 3.4: Use direct API call for label utilizations
-		log.Printf("Label utilizations detected - using direct API call for user %s", plan.Id.ValueString())
-
-		// Build complex payload with both utilization and labelUtilizations sections
-		apiClient := &proxy.routingApi.Configuration.APIClient
-		path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, plan.Id.ValueString())
-		headerParams := buildHeaderParams(proxy.routingApi)
-
-		requestPayload := make(map[string]interface{})
-
-		// Build media type utilizations using existing function
-		allSettings := convertFrameworkToSDKUtilization(ctx, utilization, &diagnostics)
-		if diagnostics.HasError() {
-			return diagnostics
-		}
-		requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-
-		// Build label utilizations using Framework-compatible function (Task 4.2)
-		var labelUtilizations []LabelUtilizationModel
-		labelDiags := utilization.LabelUtilizations.ElementsAs(ctx, &labelUtilizations, false)
-		if labelDiags.HasError() {
-			// Task 8.3: Return clear error messages for invalid label utilization configurations
-			diagnostics.Append(labelDiags...)
-			diagnostics.AddError(
-				"Label Utilization Processing Error",
-				fmt.Sprintf("Failed to process label utilizations for user %s. Ensure all label utilization configurations are valid.", plan.Id.ValueString()),
-			)
-			return diagnostics
-		}
-
-		labelUtilizationsRequest, labelRequestDiags := buildLabelUtilizationsRequestFromFramework(ctx, labelUtilizations)
-		if labelRequestDiags.HasError() {
-			// Task 8.3: Return clear error messages for invalid label utilization configurations
-			diagnostics.Append(labelRequestDiags...)
-			diagnostics.AddError(
-				"Label Utilization Validation Error",
-				fmt.Sprintf("Invalid label utilization configuration for user %s. Please check the label utilization settings and try again.", plan.Id.ValueString()),
-			)
-			return diagnostics
-		}
-		requestPayload["labelUtilizations"] = labelUtilizationsRequest
-
-		_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil, "")
-	} else {
-		// Task 3.2: Use SDK client for media types only
-		log.Printf("No label utilizations - using SDK client for user %s", plan.Id.ValueString())
-
-		// Build simple Utilizationrequest payload
-		sdkSettings := make(map[string]platformclientv2.Mediautilization)
-
-		// Process each media type using existing SDK pattern
-		allSettings := convertFrameworkToSDKUtilization(ctx, utilization, &diagnostics)
-		if diagnostics.HasError() {
-			return diagnostics
-		}
-
-		for sdkType, schemaType := range getUtilizationMediaTypes() {
-			if mediaSettings, ok := allSettings[schemaType]; ok && len(mediaSettings.([]interface{})) > 0 {
-				sdkSettings[sdkType] = buildSdkMediaUtilization(mediaSettings.([]interface{}))
-			}
-		}
-
-		// Task 3.5: Use SDK client PutRoutingUserUtilization method
-		_, _, err = proxy.userApi.PutRoutingUserUtilization(plan.Id.ValueString(), platformclientv2.Utilizationrequest{
-			Utilization: &sdkSettings,
-		})
-	}
-
-	if err != nil {
-		log.Printf("DEBUG: Failed to update routing utilization for user %s: %s", plan.Id.ValueString(), err)
-		log.Printf("[INV] RU write sequence: deleted=%t posted=false (error)", hasLabelUtilizations)
-		// Use SDK-aligned error handling for routing utilization errors
-		frameworkDiags := handleFrameworkAPIError(ResourceType, "update routing utilization", plan.Id.ValueString(), err, nil)
-		diagnostics.Append(frameworkDiags...)
-		return diagnostics
-	}
-
-	log.Printf("DEBUG: Successfully updated user utilization for user %s", plan.Id.ValueString())
-	log.Printf("[INV] RU write sequence: deleted=%t posted=true", hasLabelUtilizations)
-
-	// Add a small delay to allow the API to process the routing utilization update
-	// This matches the pattern used in other parts of the codebase for async operations
-	time.Sleep(2 * time.Second)
-	log.Printf("DEBUG: Waited for routing utilization to take effect for user %s", plan.Id.ValueString())
-
-	return diagnostics
-}
-
-// updateUserVoicemailPolicies updates user voicemail policies
-// Following SDK pattern: mirrors SDK updateUserVoicemailPolicies logic for Framework interface
 func updateUserVoicemailPolicies(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
 	var diagnostics pfdiag.Diagnostics
 
-	if plan.VoicemailUserpolicies.IsNull() || len(plan.VoicemailUserpolicies.Elements()) == 0 {
-		// No voicemail policies configured - skip update
+	// In PF, change detection is handled at resource level
+	// Check if voicemail_userpolicies is null or unknown
+	if plan.VoicemailUserpolicies.IsNull() || plan.VoicemailUserpolicies.IsUnknown() {
 		return diagnostics
 	}
 
@@ -2450,241 +1884,87 @@ func updateUserVoicemailPolicies(ctx context.Context, plan *UserFrameworkResourc
 		return diagnostics
 	}
 
+	// Check if list is empty (should not happen with proper schema, but defensive)
 	if len(voicemailPolicies) == 0 {
 		return diagnostics
 	}
 
-	// Build request body (matches SDK pattern)
-	voicemailPolicy := voicemailPolicies[0]
-	reqBody := platformclientv2.Voicemailuserpolicy{}
+	reqBody := buildVoicemailUserpoliciesRequest(ctx, voicemailPolicies)
 
-	log.Printf("DEBUG: Building voicemail update request - AlertTimeoutSeconds: %v, SendEmailNotifications: %v",
-		voicemailPolicy.AlertTimeoutSeconds, voicemailPolicy.SendEmailNotifications)
-	log.Printf("[INV] VM PLAN -> payload: alert_timeout_seconds=%v email_notif=%v",
-		voicemailPolicy.AlertTimeoutSeconds, voicemailPolicy.SendEmailNotifications)
-
-	if !voicemailPolicy.SendEmailNotifications.IsNull() {
-		reqBody.SendEmailNotifications = voicemailPolicy.SendEmailNotifications.ValueBoolPointer()
-		log.Printf("DEBUG: Setting SendEmailNotifications to %t", *reqBody.SendEmailNotifications)
-	}
-
-	if !voicemailPolicy.AlertTimeoutSeconds.IsNull() {
-		alertTimeout := int(voicemailPolicy.AlertTimeoutSeconds.ValueInt64())
-		if alertTimeout > 0 {
-			reqBody.AlertTimeoutSeconds = &alertTimeout
-			log.Printf("DEBUG: Setting AlertTimeoutSeconds to %d", *reqBody.AlertTimeoutSeconds)
-		} else {
-			log.Printf("DEBUG: AlertTimeoutSeconds is %d (<=0), not setting in request", alertTimeout)
+	diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+		_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(plan.Id.ValueString(), reqBody)
+		if putErr != nil {
+			return proxyPutResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to update voicemail userpolicies for user %s error: %s", plan.Id.ValueString(), putErr), proxyPutResponse)
 		}
-	} else {
-		log.Printf("DEBUG: AlertTimeoutSeconds is null, not setting in request")
+		return nil, nil
+	})
+
+	if diagErr != nil {
+		diagnostics.Append(diagErr...)
+		return diagnostics
 	}
 
-	// Update voicemail policies with retry logic (matches SDK pattern)
-	log.Printf("DEBUG: Updating voicemail policies for user %s", plan.Id.ValueString())
-	log.Printf("DEBUG: Request body - AlertTimeoutSeconds: %v, SendEmailNotifications: %v",
-		reqBody.AlertTimeoutSeconds, reqBody.SendEmailNotifications)
-	log.Printf("[INV] VM payload JSON: %s", invMustJSON(reqBody))
-
-	// Use SDK-aligned retry logic with version mismatch handling
-	retryWrapper := newFrameworkRetryWrapper(ResourceType)
-	frameworkDiags := retryWrapper.executeWithRetry(func() (*platformclientv2.APIResponse, error) {
-		_, resp, err := proxy.voicemailApi.PatchVoicemailUserpolicy(plan.Id.ValueString(), reqBody)
-		return resp, err
-	}, fmt.Sprintf("Failed to update voicemail userpolicies for user %s", plan.Id.ValueString()))
-
-	if frameworkDiags.HasError() {
-		diagnostics.Append(frameworkDiags...)
-	} else {
-		log.Printf("DEBUG: Successfully updated voicemail policies for user %s", plan.Id.ValueString())
-		// Add a small delay to allow the API to process the voicemail policies update
-		// This matches the pattern used in other parts of the codebase for async operations
-		log.Printf("DEBUG: Voicemail policies updated successfully, waiting for API to process...")
-		time.Sleep(2 * time.Second)
-	}
-
+	// SDKv2: return nil
 	return diagnostics
 }
 
-// updatePassword updates user password
-// Following SDK pattern: mirrors SDK updatePassword logic for Framework interface
+func buildVoicemailUserpoliciesRequest(ctx context.Context, voicemailPolicies []VoicemailUserpoliciesModel) platformclientv2.Voicemailuserpolicy {
+	var request platformclientv2.Voicemailuserpolicy
+
+	// Extract first element (MaxItems=1 in schema)
+	if len(voicemailPolicies) > 0 {
+		voicemailPolicy := voicemailPolicies[0]
+
+		// Extract send_email_notifications (required field)
+		sendEmailNotifications := voicemailPolicy.SendEmailNotifications.ValueBool()
+
+		request = platformclientv2.Voicemailuserpolicy{
+			SendEmailNotifications: &sendEmailNotifications,
+		}
+
+		// Extract alert_timeout_seconds (optional field, only if > 0)
+		if !voicemailPolicy.AlertTimeoutSeconds.IsNull() && !voicemailPolicy.AlertTimeoutSeconds.IsUnknown() {
+			alertTimeoutSeconds := int(voicemailPolicy.AlertTimeoutSeconds.ValueInt64())
+			if alertTimeoutSeconds > 0 {
+				request.AlertTimeoutSeconds = &alertTimeoutSeconds
+			}
+		}
+	}
+
+	// SDKv2: return request
+	return request
+}
+
 func updatePassword(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
-	if plan.Password.IsNull() || plan.Password.IsUnknown() || plan.Password.ValueString() == "" {
+
+	// In PF, change detection is handled at resource level
+	// Check if password is null, unknown, or empty
+	if plan.Password.IsNull() || plan.Password.IsUnknown() {
 		return pfdiag.Diagnostics{}
 	}
 
 	password := plan.Password.ValueString()
-	_, err := proxy.updatePassword(ctx, plan.Id.ValueString(), password)
-	if err != nil {
-		// Use SDK-aligned error handling for password update errors
-		return handleFrameworkAPIError(ResourceType, "update password", plan.Id.ValueString(), err, nil)
+
+	if password == "" {
+		// Skip password update if empty
+		return pfdiag.Diagnostics{}
 	}
 
+	_, err := proxy.updatePassword(ctx, plan.Id.ValueString(), password)
+	if err != nil {
+		var diagnostics pfdiag.Diagnostics
+		diagnostics.AddError(
+			"Failed to update password",
+			fmt.Sprintf("Failed to update password for user %s: %s", plan.Id.ValueString(), err),
+		)
+		return diagnostics
+	}
+
+	// SDKv2: return nil
 	return pfdiag.Diagnostics{}
 }
 
-// Helper functions for update operations
-
-// convertFrameworkToSDKUtilization converts Framework routing utilization to SDK format for compatibility with existing functions
-func convertFrameworkToSDKUtilization(ctx context.Context, utilization RoutingUtilizationModel, diagnostics *pfdiag.Diagnostics) map[string]interface{} {
-	allSettings := make(map[string]interface{})
-
-	// Map Framework fields to SDK schema types (matches getUtilizationMediaTypes)
-	mediaTypeFields := map[string]types.List{
-		"call":     utilization.Call,
-		"callback": utilization.Callback,
-		"chat":     utilization.Chat,
-		"email":    utilization.Email,
-		"message":  utilization.Message,
-	}
-
-	// Convert each media type from Framework to SDK format
-	for schemaType, mediaTypeList := range mediaTypeFields {
-		if !mediaTypeList.IsNull() && len(mediaTypeList.Elements()) > 0 {
-			var mediaSettings []MediaUtilizationModel
-			mediaDiags := mediaTypeList.ElementsAs(ctx, &mediaSettings, false)
-			if mediaDiags.HasError() {
-				diagnostics.Append(mediaDiags...)
-				continue
-			}
-
-			if len(mediaSettings) > 0 {
-				mediaSetting := mediaSettings[0]
-
-				// Convert to SDK format (matches SDK schema.ResourceData format)
-				settingsMap := make(map[string]interface{})
-				settingsMap["maximum_capacity"] = int(mediaSetting.MaximumCapacity.ValueInt64())
-				settingsMap["include_non_acd"] = mediaSetting.IncludeNonAcd.ValueBool()
-
-				// Convert interruptible media types to SDK format
-				if !mediaSetting.InterruptibleMediaTypes.IsNull() {
-					var mediaTypes []string
-					diags := mediaSetting.InterruptibleMediaTypes.ElementsAs(ctx, &mediaTypes, false)
-					if !diags.HasError() {
-						// Convert to *schema.Set format expected by existing functions
-						// For now, we'll use a simple slice - the existing functions will handle conversion
-						settingsMap["interruptible_media_types"] = mediaTypes
-					}
-				}
-
-				allSettings[schemaType] = []interface{}{settingsMap}
-			}
-		}
-	}
-
-	// Add label utilizations if present
-	if !utilization.LabelUtilizations.IsNull() && len(utilization.LabelUtilizations.Elements()) > 0 {
-		var labelUtilizations []LabelUtilizationModel
-		labelDiags := utilization.LabelUtilizations.ElementsAs(ctx, &labelUtilizations, false)
-		if !labelDiags.HasError() {
-			// Convert to SDK format
-			labelUtilizationsSlice := make([]interface{}, 0, len(labelUtilizations))
-			for _, labelUtil := range labelUtilizations {
-				labelMap := make(map[string]interface{})
-				labelMap["label_id"] = labelUtil.LabelId.ValueString()
-				labelMap["maximum_capacity"] = int(labelUtil.MaximumCapacity.ValueInt64())
-
-				if !labelUtil.InterruptingLabelIds.IsNull() {
-					var interruptingIds []string
-					diags := labelUtil.InterruptingLabelIds.ElementsAs(ctx, &interruptingIds, false)
-					if !diags.HasError() {
-						labelMap["interrupting_label_ids"] = interruptingIds
-					}
-				}
-
-				labelUtilizationsSlice = append(labelUtilizationsSlice, labelMap)
-			}
-			allSettings["label_utilizations"] = labelUtilizationsSlice
-		}
-	}
-
-	return allSettings
-}
-
-// buildLabelUtilizationsRequestFromFramework builds label utilizations request from Framework types
-// This processes label_id, maximum_capacity, and interrupting_label_ids for each label (Task 4.1)
-func buildLabelUtilizationsRequestFromFramework(ctx context.Context, labelUtilizations []LabelUtilizationModel) (map[string]labelUtilization, pfdiag.Diagnostics) {
-	var diagnostics pfdiag.Diagnostics
-	request := make(map[string]labelUtilization)
-
-	for i, labelUtil := range labelUtilizations {
-		// Task 8.3: Validate label_id is not empty
-		labelId := labelUtil.LabelId.ValueString()
-		if labelId == "" {
-			diagnostics.AddError(
-				"Invalid Label Utilization Configuration",
-				fmt.Sprintf("Label utilization at index %d has empty label_id. Each label utilization must have a valid label_id.", i),
-			)
-			continue
-		}
-
-		// Task 8.3: Validate maximum_capacity is within valid range
-		maxCapacity := int32(labelUtil.MaximumCapacity.ValueInt64())
-		if maxCapacity < 0 || maxCapacity > 25 {
-			diagnostics.AddError(
-				"Invalid Label Utilization Configuration",
-				fmt.Sprintf("Label utilization for label_id '%s' has invalid maximum_capacity %d. Maximum capacity must be between 0 and 25.", labelId, maxCapacity),
-			)
-			continue
-		}
-
-		// Task 8.3: Process interrupting_label_ids with validation
-		var interruptingIds []string
-		if !labelUtil.InterruptingLabelIds.IsNull() && !labelUtil.InterruptingLabelIds.IsUnknown() {
-			diags := labelUtil.InterruptingLabelIds.ElementsAs(ctx, &interruptingIds, false)
-			if diags.HasError() {
-				// Task 8.3: Return clear error messages for invalid label utilization configurations
-				diagnostics.Append(diags...)
-				diagnostics.AddError(
-					"Invalid Label Utilization Configuration",
-					fmt.Sprintf("Failed to process interrupting_label_ids for label_id '%s'. Ensure all interrupting label IDs are valid strings.", labelId),
-				)
-				continue
-			}
-
-			// Task 8.3: Validate interrupting label IDs are not empty
-			for j, interruptingId := range interruptingIds {
-				if interruptingId == "" {
-					diagnostics.AddError(
-						"Invalid Label Utilization Configuration",
-						fmt.Sprintf("Label utilization for label_id '%s' has empty interrupting_label_id at index %d. All interrupting label IDs must be non-empty strings.", labelId, j),
-					)
-				}
-			}
-		}
-
-		// Task 8.3: Check for duplicate label IDs
-		if _, exists := request[labelId]; exists {
-			diagnostics.AddError(
-				"Invalid Label Utilization Configuration",
-				fmt.Sprintf("Duplicate label_id '%s' found in label utilizations. Each label_id must be unique.", labelId),
-			)
-			continue
-		}
-
-		request[labelId] = labelUtilization{
-			MaximumCapacity:      maxCapacity,
-			InterruptingLabelIds: interruptingIds,
-		}
-	}
-
-	return request, diagnostics
-}
-
-// getLabelUtilizationObjectType returns the object type for label utilizations
-func getLabelUtilizationObjectType() types.ObjectType {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"label_id":               types.StringType,
-			"maximum_capacity":       types.Int64Type,
-			"interrupting_label_ids": types.SetType{ElemType: types.StringType},
-		},
-	}
-}
-
-// hasChanges checks if any of the specified attributes have changes
-// Migrated from (r *UserFrameworkResource) hasChanges method
-// Following SDK pattern: mirrors SDK hasChanges logic for Framework interface
 func hasChanges(plan *UserFrameworkResourceModel, attributes ...string) bool {
 	// For create operations, we consider all non-null values as changes
 	for _, attr := range attributes {
@@ -2726,31 +2006,207 @@ func hasChanges(plan *UserFrameworkResourceModel, attributes ...string) bool {
 	return false
 }
 
-// getRoutingUtilizationObjectType returns the object type for routing utilization
-// Moved from Framework resource file to maintain clean separation of concerns
-func getRoutingUtilizationObjectType() types.ObjectType {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"call":               types.ListType{ElemType: getMediaUtilizationObjectType()},
-			"callback":           types.ListType{ElemType: getMediaUtilizationObjectType()},
-			"chat":               types.ListType{ElemType: getMediaUtilizationObjectType()},
-			"email":              types.ListType{ElemType: getMediaUtilizationObjectType()},
-			"message":            types.ListType{ElemType: getMediaUtilizationObjectType()},
-			"label_utilizations": types.ListType{ElemType: getLabelUtilizationObjectType()},
-		},
+func getSdkUtilizationTypes() []string {
+	types := make([]string, 0, len(utilizationMediaTypes))
+	for t := range utilizationMediaTypes {
+		types = append(types, t)
 	}
+	sort.Strings(types)
+	return types
 }
 
-// getMediaUtilizationObjectType returns the object type for media utilization
-// Moved from Framework resource file to maintain clean separation of concerns
-func getMediaUtilizationObjectType() types.ObjectType {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"maximum_capacity":          types.Int64Type,
-			"include_non_acd":           types.BoolType,
-			"interruptible_media_types": types.SetType{ElemType: types.StringType},
-		},
+func buildSdkLocations(ctx context.Context, locations types.Set) *[]platformclientv2.Location {
+	// Check if locations is null or unknown
+	if locations.IsNull() || locations.IsUnknown() {
+		return nil
 	}
+
+	sdkLocations := make([]platformclientv2.Location, 0)
+
+	// Extract locations from Framework Set
+	locationElements := locations.Elements()
+
+	for _, locElement := range locationElements {
+		locObj, ok := locElement.(types.Object)
+		if !ok {
+			continue
+		}
+
+		locAttrs := locObj.Attributes()
+
+		var locID string
+		if locIDAttr, exists := locAttrs["location_id"]; exists && !locIDAttr.IsNull() {
+			locID = locIDAttr.(types.String).ValueString()
+		}
+
+		var locNotes string
+		if locNotesAttr, exists := locAttrs["notes"]; exists && !locNotesAttr.IsNull() {
+			locNotes = locNotesAttr.(types.String).ValueString()
+		}
+
+		sdkLocations = append(sdkLocations, platformclientv2.Location{
+			Id:    &locID,
+			Notes: &locNotes,
+		})
+	}
+
+	return &sdkLocations
+}
+
+func buildSdkCertifications(ctx context.Context, certifications types.Set) *[]string {
+	certs := make([]string, 0)
+
+	// If certifications are specified (even if empty), process them
+	if !certifications.IsNull() && !certifications.IsUnknown() {
+		for _, certVal := range certifications.Elements() {
+			certStr, ok := certVal.(basetypes.StringValue)
+			if ok {
+				certs = append(certs, certStr.ValueString())
+			}
+		}
+	}
+	// Always return a slice (even if empty) to allow clearing certifications
+	return &certs
+}
+
+func buildSdkProfileSkills(ctx context.Context, profileSkills types.Set) *[]string {
+	skills := make([]string, 0)
+
+	// If profile skills are specified (even if empty), process them
+	if !profileSkills.IsNull() && !profileSkills.IsUnknown() {
+		for _, skillVal := range profileSkills.Elements() {
+			skillStr, ok := skillVal.(basetypes.StringValue)
+			if ok {
+				skills = append(skills, skillStr.ValueString())
+			}
+		}
+	}
+	// Always return a slice (even if empty) to allow clearing profile skills
+	return &skills
+}
+
+func buildSdkEmployerInfo(ctx context.Context, employerInfo types.List) *platformclientv2.Employerinfo {
+
+	// Check if employer_info is null or unknown
+	if employerInfo.IsNull() || employerInfo.IsUnknown() {
+		return nil
+	}
+
+	var sdkInfo platformclientv2.Employerinfo
+
+	// Extract employer info from Framework List
+	elements := employerInfo.Elements()
+	if len(elements) > 0 {
+		// Type assert to Object
+		empInfoObj, ok := elements[0].(types.Object)
+		if !ok {
+			return nil
+		}
+
+		empAttrs := empInfoObj.Attributes()
+
+		// Extract official_name (optional, only if non-empty)
+		if officialName, exists := empAttrs["official_name"]; exists && !officialName.IsNull() {
+			if nameVal, ok := officialName.(types.String); ok {
+				offName := nameVal.ValueString()
+				if len(offName) > 0 {
+					sdkInfo.OfficialName = &offName
+				}
+			}
+		}
+
+		// Extract employee_id (optional, only if non-empty)
+		if employeeId, exists := empAttrs["employee_id"]; exists && !employeeId.IsNull() {
+			if idVal, ok := employeeId.(types.String); ok {
+				empID := idVal.ValueString()
+				if len(empID) > 0 {
+					// SDKv2: sdkInfo.EmployeeId = &empID
+					sdkInfo.EmployeeId = &empID
+				}
+			}
+		}
+
+		// Extract employee_type (optional, only if non-empty)
+		if employeeType, exists := empAttrs["employee_type"]; exists && !employeeType.IsNull() {
+			if typeVal, ok := employeeType.(types.String); ok {
+				empType := typeVal.ValueString()
+				if len(empType) > 0 {
+					sdkInfo.EmployeeType = &empType
+				}
+			}
+		}
+
+		// Extract date_hire (optional, only if non-empty)
+		if dateHire, exists := empAttrs["date_hire"]; exists && !dateHire.IsNull() {
+			if dateVal, ok := dateHire.(types.String); ok {
+				dateHireStr := dateVal.ValueString()
+				if len(dateHireStr) > 0 {
+					sdkInfo.DateHire = &dateHireStr
+				}
+			}
+		}
+	}
+
+	return &sdkInfo
+}
+
+func executeUpdateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, updateUser platformclientv2.Updateuser) pfdiag.Diagnostics {
+
+	// Retry on version mismatch errors
+	diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+
+		currentUser, proxyResponse, errGet := proxy.getUserById(ctx, plan.Id.ValueString(), nil, "")
+		if errGet != nil {
+			return proxyResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to read user %s error: %s", plan.Id.ValueString(), errGet), proxyResponse)
+		}
+
+		updateUser.Version = currentUser.Version
+
+		_, proxyPatchResponse, patchErr := proxy.updateUser(ctx, plan.Id.ValueString(), &updateUser)
+		if patchErr != nil {
+			return proxyPatchResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to update user %s | Error: %s.", plan.Id.ValueString(), patchErr), proxyPatchResponse)
+		}
+
+		return proxyPatchResponse, nil
+	})
+
+	if diagErr != nil {
+		return diagErr
+	}
+
+	return pfdiag.Diagnostics{}
+}
+
+//------------------------------ the function below needed for extra logging, //TODO Remove them later----------------------------
+
+func emailorNameDisambiguation(searchField string) (string, string) {
+	emailField := "email"
+	nameField := "name"
+	_, err := mail.ParseAddress(searchField)
+	if err == nil {
+		return searchField, emailField
+	}
+	return searchField, nameField
+}
+
+func convertSDKDiagnosticsToFramework(sdkDiags diag.Diagnostics) pfdiag.Diagnostics {
+	var frameworkDiags pfdiag.Diagnostics
+
+	for _, sdkDiag := range sdkDiags {
+		switch sdkDiag.Severity {
+		case diag.Error:
+			frameworkDiags.AddError(sdkDiag.Summary, sdkDiag.Detail)
+		case diag.Warning:
+			frameworkDiags.AddWarning(sdkDiag.Summary, sdkDiag.Detail)
+		default:
+			// Default to error for unknown severity levels to maintain SDK behavior
+			frameworkDiags.AddError(sdkDiag.Summary, sdkDiag.Detail)
+		}
+	}
+
+	return frameworkDiags
 }
 
 // valueOrEmpty returns the string value of a pointer or "<nil>" if nil
@@ -2759,31 +2215,6 @@ func valueOrEmpty(p *string) string {
 		return "<nil>"
 	}
 	return *p
-}
-
-// safe returns the string value of a pointer or "<nil>" if nil
-func safe(s *string) string {
-	if s == nil {
-		return "<nil>"
-	}
-	return *s
-}
-
-// safeLen returns the length of a slice pointer or 0 if nil
-func safeLen(contacts *[]platformclientv2.Contact) int {
-	if contacts == nil {
-		return 0
-	}
-	return len(*contacts)
-}
-
-// mustJSON marshals to JSON for debug; swallow errors in logs
-func mustJSON(v any) string {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return fmt.Sprintf("<json err: %v>", err)
-	}
-	return string(b)
 }
 
 // invMustJSON marshals to JSON for debug; swallow errors in logs (consistent naming with log-changes1.md)
@@ -2828,60 +2259,10 @@ func invTriString(s types.String) string {
 	}
 }
 
-// invPresence shows presence state for types.List (NULL/UNKNOWN/SET)
-func invPresence(v types.List) string {
-	if v.IsNull() {
-		return "NULL"
-	}
-	if v.IsUnknown() {
-		return "UNKNOWN"
-	}
-	return "SET"
-}
-
 // invSDKPhoneIdentity builds a stable identity string for a phone contact as it appears from the SDK/API
 func invSDKPhoneIdentity(c platformclientv2.Contact) string {
 	return fmt.Sprintf("media=%s|type=%s|number=%s|ext=%s",
 		invStr(c.MediaType), invStr(c.VarType), invStr(c.Address), invStr(c.Extension))
-}
-
-// canonPtrStr canonicalizes API/plan strings: treat "" the same as null
-func canonPtrStr(p *string) *string {
-	if p == nil {
-		return nil
-	}
-	if *p == "" {
-		return nil
-	}
-	return p
-}
-
-// fStringFromPtr builds a Framework types.String from a pointer, using NULL for nil/empty
-func fStringFromPtr(p *string) types.String {
-	if p == nil || *p == "" {
-		return types.StringNull()
-	}
-	return types.StringValue(*p)
-}
-
-// phoneIdentity builds a one-liner identity for debug (not used in hashing, just logs)
-func phoneIdentity(media, typ, number, ext types.String) string {
-	get := func(s types.String) string {
-		switch {
-		case s.IsNull():
-			return "NULL"
-		case s.IsUnknown():
-			return "UNKNOWN"
-		default:
-			v := s.ValueString()
-			if v == "" {
-				return `""`
-			}
-			return v
-		}
-	}
-	return fmt.Sprintf("media=%s|type=%s|number=%s|ext=%s",
-		get(media), get(typ), get(number), get(ext))
 }
 
 // invPhoneIdentitiesFromFrameworkAddresses extracts phone identity strings from a Framework addresses value (plan or state)
