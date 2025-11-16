@@ -102,7 +102,8 @@ func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, su
 			description = "%s"
 			}
 		prompt = "%s"
-	}`, resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt)
+	}
+	`, resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt)
 }
 
 func testVerifyAiStudioSummarySettingDestroyed(state *terraform.State) error {
