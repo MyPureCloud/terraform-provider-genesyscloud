@@ -2,6 +2,7 @@ package ai_studio_summary_setting
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -90,14 +91,16 @@ func ResourceAiStudioSummarySetting() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`summary_type`: {
-				Description: `Level of detail of the generated summary.`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `Level of detail of the generated summary.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Concise", "Detailed"}, false),
 			},
 			`format`: {
-				Description: `Format of the generated summary.`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `Format of the generated summary.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"TextBlock", "BulletPoints", "GroupedTextBlocks", "GroupedBulletPoints"}, false),
 			},
 			`mask_p_i_i`: {
 				Description: `Displaying PII in the generated summary.`,
@@ -126,9 +129,10 @@ func ResourceAiStudioSummarySetting() *schema.Resource {
 				Elem:        summarySettingCustomEntityResource,
 			},
 			`setting_type`: {
-				Description: `Type of the summary setting.`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `Type of the summary setting.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Basic", "Prompt"}, false),
 			},
 			`prompt`: {
 				Description: `Custom prompt of summary setting.`,
