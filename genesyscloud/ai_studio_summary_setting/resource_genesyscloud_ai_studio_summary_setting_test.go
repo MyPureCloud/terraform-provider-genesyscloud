@@ -97,10 +97,7 @@ func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, su
 			internal = "%s"
 			external = "%s"
 		}
-		predefined_insights {
-			label       = "%s"
-			description = "%s"
-			}
+		predefined_insights = [ "%s", "%s" ]
 		prompt = "%s"
 	}
 	`, resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt)
