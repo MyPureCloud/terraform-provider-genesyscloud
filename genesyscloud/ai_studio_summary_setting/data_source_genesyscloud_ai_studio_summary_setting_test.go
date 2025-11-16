@@ -32,7 +32,6 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 		predefinedInsightsLabel             = "label1"
 		predefinedInsightsDescription       = "description1"
 		prompt                              = "Summaries should be no more then 300 characters and include 3 dot points of key information"
-		externalSystemUrl                   = "https://externalsystemurl.com"
 	)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -40,7 +39,7 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Summary Setting
-				Config: GenerateFullAiStudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt, externalSystemUrl) + generateAiStudioSummarySettingDataSource(aiStudioSummarySettingDataLabel, resourceName, "genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel),
+				Config: GenerateFullAiStudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt) + generateAiStudioSummarySettingDataSource(aiStudioSummarySettingDataLabel, resourceName, "genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingDataLabel, "id",
@@ -52,10 +51,10 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 	})
 }
 
-func generateAiStudioSummarySettingDataSource(resresourceName string, resourceName string, dependsOn string) string {
+func generateAiStudioSummarySettingDataSource(resourceName string, name string, dependsOn string) string {
 	return fmt.Sprintf(`data "genesyscloud_ai_studio_summary_setting" "%s" {
 		name = "%s"
 		depends_on = [%s]
 	}
-	`, resresourceName, resourceName, dependsOn)
+	`, resourceName, name, dependsOn)
 }

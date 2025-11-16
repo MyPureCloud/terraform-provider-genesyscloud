@@ -32,7 +32,6 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 		predefinedInsightsLabel       = "label1"
 		predefinedInsightsDescription = "description1"
 		prompt                        = "Summaries should be no more then 300 characters and include 3 dot points of key information"
-		externalSystemUrl             = "https://externalsystemurl.com"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -58,7 +57,7 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 			},
 			{
 				// Update
-				Config: GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt, externalSystemUrl),
+				Config: GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "language", language),
@@ -84,7 +83,7 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 	})
 }
 
-func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt, externalSystemUrl string) string {
+func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt string) string {
 	return fmt.Sprintf(`resource "genesyscloud_ai_studio_summary_setting" "%s" {
 		name             = "%s"
 		language         = "%s"
@@ -103,8 +102,7 @@ func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, su
 			description = "%s"
 			}
 		prompt = "%s"
-		external_system_url = "%s"
-	}`, resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt, externalSystemUrl)
+	}`, resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt)
 }
 
 func testVerifyAiStudioSummarySettingDestroyed(state *terraform.State) error {
