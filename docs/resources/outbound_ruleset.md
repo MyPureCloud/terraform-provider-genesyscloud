@@ -176,10 +176,13 @@ Optional:
 - `data_action_id` (String) The Data Action to use for this condition. Required for a dataActionCondition.
 - `data_not_found_resolution` (Boolean) The result of this condition if the data action returns a result indicating there was no data. Required for a DataActionCondition.
 - `inverted` (Boolean) If true, inverts the result of evaluating this Condition. Default is false.
+- `match_any_conditions` (Boolean) If true, only one sub-condition must match for the condition to be true. If false, all sub-conditions must match. Default is false. Required for a timeAndDateCondition.
 - `operator` (String) An operation with which to evaluate the Condition. Not used for a DataActionCondition.
 - `predicates` (Block List) A list of predicates defining the comparisons to use for this condition. Required for a dataActionCondition. (see [below for nested schema](#nestedblock--rules--conditions--predicates))
 - `property` (String) A value associated with the property type of this Condition. Required for a contactPropertyCondition.
 - `property_type` (String) The type of the property associated with this Condition. Required for a contactPropertyCondition.
+- `sub_conditions` (Block List) A list of sub-conditions to evaluate. Required for a timeAndDateCondition. (see [below for nested schema](#nestedblock--rules--conditions--sub_conditions))
+- `time_zone_id` (String) The time zone to use for this condition. Required for a timeAndDateCondition.
 - `type` (String) The type of the condition.
 - `value` (String) A value associated with this Condition. This could be text, a number, or a relative time. Not used for a DataActionCondition.
 - `value_type` (String) The type of the value associated with this Condition. Not used for a DataActionCondition.
@@ -203,4 +206,29 @@ Required:
 - `output_field` (String) The name of an output field from the data action's output to use for this condition
 - `output_field_missing_resolution` (Boolean) The result of this predicate if the requested output field is missing from the data action's result
 - `output_operator` (String) The operation with which to evaluate this condition
+
+
+<a id="nestedblock--rules--conditions--sub_conditions"></a>
+### Nested Schema for `rules.conditions.sub_conditions`
+
+Required:
+
+- `operator` (String) The operator to use for comparison.
+- `type` (String) The type of time/date sub-condition.Valid values: timeOfDay, dayOfWeek, dayOfMonth, specificDate.
+
+Optional:
+
+- `include_year` (Boolean) If true, includes year in date comparison for specificDate type. When false, only month and day are compared. Default is true. Only applicable for specificDate type.
+- `inverted` (Boolean) If true, inverts the result of evaluating this sub-condition. Default is false.
+- `range` (Block List, Max: 1) A range of values for BETWEEN and IN operators. Format follows the same rules as 'thresholdValue'. (see [below for nested schema](#nestedblock--rules--conditions--sub_conditions--range))
+- `threshold_value` (String) Threshold value for BEFORE or AFTER operators. Format depends on type: timeOfDay: HH:mm, dayOfWeek: 1-7 (Monday-Sunday), dayOfMonth: 1-31 and/ or LAST_DAY, ODD_DAY, EVEN_DAY, specificDate: yyyy-MM-dd (if includeYear=true) or MM-dd (if includeYear=false). For single-value comparison, use a list with one element.
+
+<a id="nestedblock--rules--conditions--sub_conditions--range"></a>
+### Nested Schema for `rules.conditions.sub_conditions.range`
+
+Optional:
+
+- `in_set` (List of String) A set of values that the date/ time data should be in. Required for the IN operator. Format depends on type: dayOfWeek: 1-7 (Monday-Sunday), dayOfMonth: 1-31, and/ or LAST_DAY, ODD_DAY, EVEN_DAY,specificDate: yyyy-MM-dd (if includeYear=true) or MM-dd (if includeYear=false).
+- `max` (String) The maximum value of the range. Required for the operator BETWEEN. Format follows the same rules as 'min'.
+- `min` (String) The minimum value of the range. Required for the operator BETWEEN. Format depends on type: timeOfDay: HH:mm, dayOfWeek: 1-7 (Monday-Sunday), dayOfMonth: 1-31, specificDate: yyyy-MM-dd (if includeYear=true) or MM-dd (if includeYear=false).
 
