@@ -53,6 +53,11 @@ func ResourceAiStudioSummarySetting() *schema.Resource {
 		},
 	}
 
+	summarySettingPredefinedInsightsResource := &schema.Schema{
+		Type:         schema.TypeString,
+		ValidateFunc: validation.StringInSlice([]string{"ReasonForCall", "Resolution", "ActionItems"}, false),
+	}
+
 	summarySettingCustomEntityResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`label`: {
@@ -119,8 +124,9 @@ func ResourceAiStudioSummarySetting() *schema.Resource {
 			`predefined_insights`: {
 				Description: `Set which insights to include in the generated summary by default.`,
 				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeSet,
+				MaxItems:    3,
+				Elem:        summarySettingPredefinedInsightsResource,
 			},
 			`custom_entities`: {
 				Description: `Custom entity definition.`,

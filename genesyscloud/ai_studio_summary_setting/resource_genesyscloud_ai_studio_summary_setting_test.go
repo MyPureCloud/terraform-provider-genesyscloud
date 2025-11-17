@@ -20,18 +20,17 @@ tests for ai_studio_summary_setting.
 func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 	//t.Parallel()
 	var (
-		resourceName                  = "test-summary-setting"
-		name                          = "summary setting test"
-		language                      = "en-au"
-		summaryType                   = "Concise"
-		settingType                   = "Basic"
-		format                        = "BulletPoints"
-		maskPii                       = "true"
-		participantLabelInternal      = "Advisor"
-		participantLabelExternal      = "Member"
-		predefinedInsightsLabel       = "label1"
-		predefinedInsightsDescription = "description1"
-		prompt                        = "Summaries should be no more then 300 characters and include 3 dot points of key information"
+		resourceName             = "test-summary-setting"
+		name                     = "summary setting test"
+		language                 = "en-au"
+		summaryType              = "Concise"
+		settingType              = "Basic"
+		format                   = "BulletPoints"
+		maskPii                  = "true"
+		participantLabelInternal = "Advisor"
+		participantLabelExternal = "Member"
+		predefinedInsights       = "ReasonForCall"
+		prompt                   = "Summaries should be no more then 300 characters and include 3 dot points of key information"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -50,14 +49,13 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "mask_p_i_i", maskPii),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "participant_labels.internal", participantLabelInternal),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "participant_labels.external", participantLabelExternal),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "predefined_insights.0.label", predefinedInsightsLabel),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "predefined_insights.0.description", predefinedInsightsDescription),
+					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "predefined_insights.0", predefinedInsights),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "prompt", prompt),
 				),
 			},
 			{
 				// Update
-				Config: GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt),
+				Config: GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsights, prompt),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "language", language),
@@ -67,8 +65,7 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "mask_p_i_i", maskPii),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "participant_labels.internal", participantLabelInternal),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "participant_labels.external", participantLabelExternal),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "predefined_insights.0.label", predefinedInsightsLabel),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "predefined_insights.0.description", predefinedInsightsDescription),
+					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "predefined_insights.0", predefinedInsights),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "prompt", prompt),
 				),
 			},
@@ -83,7 +80,7 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 	})
 }
 
-func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt string) string {
+func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsights, prompt string) string {
 	return fmt.Sprintf(`resource "genesyscloud_ai_studio_summary_setting" "%s" {
 		name             = "%s"
 		language         = "%s"
@@ -100,7 +97,7 @@ func GenerateFullAiStudioSummarySettingResource(resourceName, name, language, su
 		predefined_insights = [ "%s", "%s" ]
 		prompt = "%s"
 	}
-	`, resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt)
+	`, resourceName, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsights, prompt)
 }
 
 func testVerifyAiStudioSummarySettingDestroyed(state *terraform.State) error {

@@ -29,8 +29,7 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 		maskPii                             = "true"
 		participantLabelInternal            = "Advisor"
 		participantLabelExternal            = "Member"
-		predefinedInsightsLabel             = "label1"
-		predefinedInsightsDescription       = "description1"
+		predefinedInsights                  = "ReasonForCall"
 		prompt                              = "Summaries should be no more then 300 characters and include 3 dot points of key information"
 	)
 	resource.Test(t, resource.TestCase{
@@ -39,7 +38,7 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Summary Setting
-				Config: GenerateFullAiStudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsightsLabel, predefinedInsightsDescription, prompt) + generateAiStudioSummarySettingDataSource(aiStudioSummarySettingDataLabel, resourceName, "genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel),
+				Config: GenerateFullAiStudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsights, prompt) + generateAiStudioSummarySettingDataSource(aiStudioSummarySettingDataLabel, resourceName, "genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingDataLabel, "id",
