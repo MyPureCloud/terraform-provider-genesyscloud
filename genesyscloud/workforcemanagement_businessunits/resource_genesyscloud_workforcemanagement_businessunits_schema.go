@@ -39,15 +39,15 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 
 	schedulerMessageTypeSeverityResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			// See API documentation for valid enum values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/
+			// See API documentation for valid enum values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits
 			`type`: {
-				Description: `The type of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/`,
+				Description: `The type of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits`,
 				Optional:    true,
 				Type:        schema.TypeString,
-			},
-			// See API documentation for valid enum values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/
+			},on
+			// See API documentation for valid enum values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits
 			`severity`: {
-				Description: `The severity of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/`,
+				Description: `The severity of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},

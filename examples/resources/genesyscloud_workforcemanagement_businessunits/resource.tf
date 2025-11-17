@@ -6,11 +6,11 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_basic" {
 # Example: Business Unit with Settings
 resource "genesyscloud_workforcemanagement_businessunits" "example_with_settings" {
   name        = "Example Business Unit with Settings"
-  division_id = "division-id-here" # Optional: omit to use default division
+  division_id = data.genesyscloud_auth_division_home.home.id
 
   settings {
     start_day_of_week = "Monday"
-    time_zone          = "America/New_York"
+    time_zone         = "America/New_York"
   }
 }
 
@@ -20,7 +20,7 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_forecast
 
   settings {
     start_day_of_week = "Monday"
-    time_zone          = "America/New_York"
+    time_zone         = "America/New_York"
 
     short_term_forecasting {
       default_history_weeks = 8
@@ -34,7 +34,7 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_scheduli
 
   settings {
     start_day_of_week = "Monday"
-    time_zone          = "America/New_York"
+    time_zone         = "America/New_York"
 
     scheduling {
       message_severities {
@@ -57,7 +57,7 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_service_
 
   settings {
     start_day_of_week = "Monday"
-    time_zone          = "America/New_York"
+    time_zone         = "America/New_York"
 
     scheduling {
       service_goal_impact {
@@ -83,11 +83,11 @@ resource "genesyscloud_workforcemanagement_businessunits" "example_with_service_
 # Example: Complete Business Unit Configuration
 resource "genesyscloud_workforcemanagement_businessunits" "example_complete" {
   name        = "Example Complete Business Unit"
-  division_id = "division-id-here" # Optional
+  division_id = data.genesyscloud_auth_division_home.home.id
 
   settings {
     start_day_of_week = "Monday"
-    time_zone          = "America/New_York"
+    time_zone         = "America/New_York"
 
     short_term_forecasting {
       default_history_weeks = 8

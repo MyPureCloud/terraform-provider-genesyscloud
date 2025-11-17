@@ -3,7 +3,6 @@ package workforcemanagement_businessunits
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -68,16 +67,16 @@ func readWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resource
 
 	log.Printf("Reading workforce management business unit %s", d.Id())
 
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		businessUnitResponse, resp, getErr := proxy.getWorkforceManagementBusinessUnitById(ctx, d.Id())
-		if getErr != nil {
-			// Retry on 409 (conflict) or 429 (rate limit) errors
-			if util.IsStatus409(resp) || (resp != nil && resp.StatusCode == http.StatusTooManyRequests) {
-				return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp), resp)
+		return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+			businessUnitResponse, resp, getErr := proxy.getWorkforceManagementBusinessUnitById(ctx, d.Id())
+			if getErr != nil {
+				// Retry on 409 (conflict) errors
+				if util.IsStatus409(resp) {
+					return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp), resp)
+				}
+				// All other errors (including 404) are non-retryable
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
 			}
-			// All other errors (including 404) are non-retryable
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
-		}
 
 		resourcedata.SetNillableValue(d, "name", businessUnitResponse.Name)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "settings", businessUnitResponse.Settings, flattenBusinessUnitSettingsResponse)
