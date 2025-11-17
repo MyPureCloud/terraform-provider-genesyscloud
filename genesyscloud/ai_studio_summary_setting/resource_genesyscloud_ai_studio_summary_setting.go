@@ -86,14 +86,14 @@ func readAiStudioSummarySetting(ctx context.Context, d *schema.ResourceData, met
 				return nil
 			}
 			tmp := []platformclientv2.Summarysettingpii{*item}
-			return flattenSummarySettingPIIs(&tmp)
+			return flattenSummarySettingPIIs(&tmp[0])
 		})
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "participant_labels", summarySetting.ParticipantLabels, func(item *platformclientv2.Summarysettingparticipantlabels) []interface{} {
 			if item == nil {
 				return nil
 			}
 			tmp := []platformclientv2.Summarysettingparticipantlabels{*item}
-			return flattenSummarySettingParticipantLabelss(&tmp)
+			return flattenSummarySettingParticipantLabelss(&tmp[0])
 		})
 		resourcedata.SetNillableValue(d, "predefined_insights", summarySetting.PredefinedInsights)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "custom_entities", summarySetting.CustomEntities, flattenSummarySettingCustomEntitys)

@@ -85,40 +85,28 @@ func buildSummarySettingCustomEntitys(summarySettingCustomEntitys []interface{})
 }
 
 // flattenSummarySettingPIIs maps a Genesys Cloud *[]platformclientv2.Summarysettingpii into a []interface{}
-func flattenSummarySettingPIIs(summarySettingPIIs *[]platformclientv2.Summarysettingpii) []interface{} {
-	if len(*summarySettingPIIs) == 0 {
+func flattenSummarySettingPIIs(summarySettingPII *platformclientv2.Summarysettingpii) []interface{} {
+	if summarySettingPII == nil {
 		return nil
 	}
 
-	var summarySettingPIIList []interface{}
-	for _, summarySettingPII := range *summarySettingPIIs {
-		summarySettingPIIMap := make(map[string]interface{})
+	summarySettingPIIMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(summarySettingPIIMap, "all", summarySettingPII.All)
 
-		resourcedata.SetMapValueIfNotNil(summarySettingPIIMap, "all", summarySettingPII.All)
-
-		summarySettingPIIList = append(summarySettingPIIList, summarySettingPIIMap)
-	}
-
-	return summarySettingPIIList
+	return []interface{}{summarySettingPIIMap}
 }
 
 // flattenSummarySettingParticipantLabelss maps a Genesys Cloud *[]platformclientv2.Summarysettingparticipantlabels into a []interface{}
-func flattenSummarySettingParticipantLabelss(summarySettingParticipantLabelss *[]platformclientv2.Summarysettingparticipantlabels) []interface{} {
-	if len(*summarySettingParticipantLabelss) == 0 {
+func flattenSummarySettingParticipantLabelss(summarySettingParticipantLabelss *platformclientv2.Summarysettingparticipantlabels) []interface{} {
+	if summarySettingParticipantLabelss == nil {
 		return nil
 	}
 
-	var summarySettingParticipantLabelsList []interface{}
-	for _, summarySettingParticipantLabels := range *summarySettingParticipantLabelss {
-		summarySettingParticipantLabelsMap := make(map[string]interface{})
+	summarySettingParticipantLabelsMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(summarySettingParticipantLabelsMap, "internal", summarySettingParticipantLabelss.Internal)
+	resourcedata.SetMapValueIfNotNil(summarySettingParticipantLabelsMap, "external", summarySettingParticipantLabelss.External)
 
-		resourcedata.SetMapValueIfNotNil(summarySettingParticipantLabelsMap, "internal", summarySettingParticipantLabels.Internal)
-		resourcedata.SetMapValueIfNotNil(summarySettingParticipantLabelsMap, "external", summarySettingParticipantLabels.External)
-
-		summarySettingParticipantLabelsList = append(summarySettingParticipantLabelsList, summarySettingParticipantLabelsMap)
-	}
-
-	return summarySettingParticipantLabelsList
+	return []interface{}{summarySettingParticipantLabelsMap}
 }
 
 // flattenSummarySettingCustomEntitys maps a Genesys Cloud *[]platformclientv2.Summarysettingcustomentity into a []interface{}
