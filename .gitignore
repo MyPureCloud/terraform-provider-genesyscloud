@@ -30,6 +30,7 @@ terraform-provider-genesyscloud
 .vscode
 .kiro
 .cursor
+.codacy
 **/true
 website/vendor
 vendor/
