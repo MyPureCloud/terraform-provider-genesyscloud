@@ -70,11 +70,6 @@ func readWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resource
 		return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 			businessUnitResponse, resp, getErr := proxy.getWorkforceManagementBusinessUnitById(ctx, d.Id())
 			if getErr != nil {
-				// Retry on 409 (conflict) errors
-				if util.IsStatus409(resp) {
-					return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp), resp)
-				}
-				// All other errors (including 404) are non-retryable
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
 			}
 

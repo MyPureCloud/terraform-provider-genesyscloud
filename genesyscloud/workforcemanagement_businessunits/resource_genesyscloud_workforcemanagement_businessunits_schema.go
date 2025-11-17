@@ -44,7 +44,7 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 				Description: `The type of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits`,
 				Optional:    true,
 				Type:        schema.TypeString,
-			},on
+			},
 			// See API documentation for valid enum values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits
 			`severity`: {
 				Description: `The severity of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits`,
