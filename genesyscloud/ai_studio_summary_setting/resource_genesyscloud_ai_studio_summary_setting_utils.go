@@ -34,39 +34,35 @@ func getAiStudioSummarySettingFromResourceData(d *schema.ResourceData) platformc
 
 // buildSummarySettingPIIs maps an []interface{} into a Genesys Cloud *[]platformclientv2.Summarysettingpii
 func buildSummarySettingPIIs(summarySettingPIIs []interface{}) *platformclientv2.Summarysettingpii {
-	summarySettingPIIsSlice := make([]platformclientv2.Summarysettingpii, 0)
-	for _, summarySettingPII := range summarySettingPIIs {
-		var sdkSummarySettingPII platformclientv2.Summarysettingpii
-		summarySettingPIIsMap, ok := summarySettingPII.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		sdkSummarySettingPII.All = platformclientv2.Bool(summarySettingPIIsMap["all"].(bool))
-
-		summarySettingPIIsSlice = append(summarySettingPIIsSlice, sdkSummarySettingPII)
+	if len(summarySettingPIIs) == 0 {
+		return nil
 	}
 
-	return &summarySettingPIIsSlice[0]
+	summarySettingPIIsMap, ok := summarySettingPIIs[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	return &platformclientv2.Summarysettingpii{
+		All: resourcedata.GetNillableValueFromMap[bool](summarySettingPIIsMap, "all", false),
+	}
 }
 
 // buildSummarySettingParticipantLabelss maps an []interface{} into a Genesys Cloud *[]platformclientv2.Summarysettingparticipantlabels
 func buildSummarySettingParticipantLabelss(summarySettingParticipantLabelss []interface{}) *platformclientv2.Summarysettingparticipantlabels {
-	summarySettingParticipantLabelssSlice := make([]platformclientv2.Summarysettingparticipantlabels, 0)
-	for _, summarySettingParticipantLabels := range summarySettingParticipantLabelss {
-		var sdkSummarySettingParticipantLabels platformclientv2.Summarysettingparticipantlabels
-		summarySettingParticipantLabelssMap, ok := summarySettingParticipantLabels.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkSummarySettingParticipantLabels.Internal, summarySettingParticipantLabelssMap, "internal")
-		resourcedata.BuildSDKStringValueIfNotNil(&sdkSummarySettingParticipantLabels.External, summarySettingParticipantLabelssMap, "external")
-
-		summarySettingParticipantLabelssSlice = append(summarySettingParticipantLabelssSlice, sdkSummarySettingParticipantLabels)
+	if len(summarySettingParticipantLabelss) == 0 {
+		return nil
 	}
 
-	return &summarySettingParticipantLabelssSlice[0]
+	summarySettingParticipantLabelssMap, ok := summarySettingParticipantLabelss[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	return &platformclientv2.Summarysettingparticipantlabels{
+		Internal: resourcedata.GetNillableValueFromMap[string](summarySettingParticipantLabelssMap, "internal", false),
+		External: resourcedata.GetNillableValueFromMap[string](summarySettingParticipantLabelssMap, "external", false),
+	}
 }
 
 // buildSummarySettingCustomEntitys maps an []interface{} into a Genesys Cloud *[]platformclientv2.Summarysettingcustomentity
