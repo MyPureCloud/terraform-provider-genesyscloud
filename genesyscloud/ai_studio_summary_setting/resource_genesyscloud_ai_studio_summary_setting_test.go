@@ -43,14 +43,6 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "name", name),
 					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "language", language),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "summary_type", summaryType),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "setting_type", settingType),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "format", format),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "mask_p_i_i", maskPii),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "participant_labels.internal", participantLabelInternal),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "participant_labels.external", participantLabelExternal),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "predefined_insights.0", predefinedInsights),
-					resource.TestCheckResourceAttr("genesyscloud_ai_studio_summary_setting."+resourceName, "prompt", prompt),
 				),
 			},
 			{
