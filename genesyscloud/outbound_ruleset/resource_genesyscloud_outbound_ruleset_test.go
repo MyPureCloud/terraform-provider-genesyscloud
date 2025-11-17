@@ -404,6 +404,10 @@ func TestAccResourceOutboundRulesetTimeAndDateCondition(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.operator", "IN"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.range.0.in_set.0", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.range.0.in_set.4", "5"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.type", "specificDate"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.operator", "BEFORE"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.threshold_value", "2025-10-10"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.include_year", "true"),
 				),
 			},
 			{
