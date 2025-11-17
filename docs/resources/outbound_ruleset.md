@@ -181,7 +181,7 @@ Optional:
 - `predicates` (Block List) A list of predicates defining the comparisons to use for this condition. Required for a dataActionCondition. (see [below for nested schema](#nestedblock--rules--conditions--predicates))
 - `property` (String) A value associated with the property type of this Condition. Required for a contactPropertyCondition.
 - `property_type` (String) The type of the property associated with this Condition. Required for a contactPropertyCondition.
-- `sub_conditions` (Block List) A list of sub-conditions to evaluate. Required for a timeAndDateCondition. (see [below for nested schema](#nestedblock--rules--conditions--sub_conditions))
+- `sub_conditions` (Block List, Max: 10) A list of sub-conditions to evaluate. Required for a timeAndDateCondition. (see [below for nested schema](#nestedblock--rules--conditions--sub_conditions))
 - `time_zone_id` (String) The time zone to use for this condition. Required for a timeAndDateCondition.
 - `type` (String) The type of the condition.
 - `value` (String) A value associated with this Condition. This could be text, a number, or a relative time. Not used for a DataActionCondition.
@@ -218,7 +218,7 @@ Required:
 
 Optional:
 
-- `include_year` (Boolean) If true, includes year in date comparison for specificDate type. When false, only month and day are compared. Default is true. Only applicable for specificDate type.
+- `include_year` (Boolean) If true, includes year in date comparison for specificDate type. When false, only month and day are compared. Default is true. Only applicable for specificDate type. Defaults to `true`.
 - `inverted` (Boolean) If true, inverts the result of evaluating this sub-condition. Default is false.
 - `range` (Block List, Max: 1) A range of values for BETWEEN and IN operators. Format follows the same rules as 'thresholdValue'. (see [below for nested schema](#nestedblock--rules--conditions--sub_conditions--range))
 - `threshold_value` (String) Threshold value for BEFORE or AFTER operators. Format depends on type: timeOfDay: HH:mm, dayOfWeek: 1-7 (Monday-Sunday), dayOfMonth: 1-31 and/ or LAST_DAY, ODD_DAY, EVEN_DAY, specificDate: yyyy-MM-dd (if includeYear=true) or MM-dd (if includeYear=false). For single-value comparison, use a list with one element.

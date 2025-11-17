@@ -118,7 +118,7 @@ func ResourceOutboundRuleset() *schema.Resource {
 			`include_year`: {
 				Description: `If true, includes year in date comparison for specificDate type. When false, only month and day are compared. Default is true. Only applicable for specificDate type.`,
 				Optional:    true,
-				Computed:    true,
+				Default:     true,
 				Type:        schema.TypeBool,
 			},
 			`threshold_value`: {

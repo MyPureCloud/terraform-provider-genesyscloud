@@ -378,6 +378,11 @@ func TestAccResourceOutboundRulesetTimeAndDateCondition(t *testing.T) {
           in_set = ["1", "2", "3", "4", "5"]
         }
       }
+      sub_conditions {
+        type     = "specificDate"
+        operator = "BEFORE"
+        threshold_value = "2025-10-10"
+      }
     }
     actions {
       type             = "Action"
