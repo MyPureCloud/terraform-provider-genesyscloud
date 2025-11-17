@@ -143,7 +143,7 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMapsForMrMo() (d
 func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstancesForMrMo() diag.Diagnostics {
 	log.Printf("Retrieving Genesys Cloud objects from Genesys Cloud")
 	for resType, exporter := range *g.exporters {
-		log.Printf("Getting exported resources for [%s] o0o", resType)
+		log.Printf("Getting exported resources for [%s]", resType)
 		typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 		if err != nil {
 			return err
