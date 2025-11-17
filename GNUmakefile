@@ -34,6 +34,12 @@ testexamples:
 	TF_UNIT=1 go test ./examples/... -run TestUnitLoadExample -v $(TESTARGS) -timeout 5m || exit 1
 	TF_ACC=1 go test ./examples -run TestAccExampleResourcesComplete -v -timeout 120m -parallel 1
 
+# Run example docs tests for specific resources
+# Usage: make testexamples-specific RESOURCES="genesyscloud_user,genesyscloud_group"
+testexamples-specific:
+	TF_UNIT=1 go test ./examples/... -run TestUnitLoadExample -v $(TESTARGS) -timeout 5m || exit 1
+	TF_ACC=1 TEST_RESOURCE_TYPES="$(RESOURCES)" go test ./examples -run TestAccExampleResourcesComplete -v -timeout 120m -parallel 1
+
 # Generate docs
 docs:
 	go test ./examples -run TestUnitExampleResourcesPlanOnly -v || exit 1

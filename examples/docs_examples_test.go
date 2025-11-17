@@ -31,14 +31,6 @@ import (
 // Set to TRUE to enable this feature, which is useful for debugging configuration issues.
 var SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES = false
 
-// If you need to just test a specific resource type, you can manually override the resource(s)
-// under test by adding resources to this string list like so:
-//
-//	var TEST_SPECIFIC_RESOURCE_TYPES = []string{
-//		"genesyscloud_foo",
-//	}
-var TEST_SPECIFIC_RESOURCE_TYPES = []string{}
-
 // ResultsStatus represents the outcome of a test execution.
 type ResultsStatus string
 
@@ -77,11 +69,12 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 
+	testResourceTypes := getTestResourceTypes()
 	var resources = []string{}
-	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
+	if len(testResourceTypes) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
 	} else {
-		resources = TEST_SPECIFIC_RESOURCE_TYPES
+		resources = testResourceTypes
 	}
 	sort.Strings(resources)
 
@@ -310,10 +303,11 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 	var resources = []string{}
-	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
+	testResourceTypes := getTestResourceTypes()
+	if len(testResourceTypes) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
 	} else {
-		resources = TEST_SPECIFIC_RESOURCE_TYPES
+		resources = testResourceTypes
 	}
 	sort.Strings(resources)
 
