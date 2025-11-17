@@ -232,6 +232,7 @@ func ResourceOutboundRuleset() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeList,
 				MinItems:    1,
+				MaxItems:    10,
 				Elem:        outboundrulesettimeanddateconditionsubconditionResource,
 			},
 			`match_any_conditions`: {
