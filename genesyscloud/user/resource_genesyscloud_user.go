@@ -139,7 +139,8 @@ func (r *UserFrameworkResource) Configure(ctx context.Context, req resource.Conf
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *provider.ProviderMeta, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *provider.ProviderMeta, got: %T. Please report this issue to the provider developers.",
+				req.ProviderData),
 		)
 		return
 	}
@@ -173,7 +174,7 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 	divisionID := plan.DivisionId.ValueString()
 
 	// Build addresses from plan
-	addresses, addressDiags := buildSdkAddresses(plan.Addresses)
+	addresses, addressDiags := buildSdkAddresses(ctx, plan.Addresses)
 	resp.Diagnostics.Append(addressDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -225,7 +226,8 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 
 	userResponse, proxyPostResponse, postErr := proxy.createUser(ctx, &createUser)
 	if postErr != nil {
-		if proxyPostResponse != nil && proxyPostResponse.Error != nil && (*proxyPostResponse.Error).Code == "general.conflict" {
+		if proxyPostResponse != nil && proxyPostResponse.Error != nil &&
+			(*proxyPostResponse.Error).Code == "general.conflict" {
 			// CREATE failed with conflict - check for deleted user
 			log.Printf("[INV] CREATE failed with conflict, checking for deleted user %s", email)
 
@@ -253,7 +255,8 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 		}
 
 		// Other error
-		resp.Diagnostics.Append(util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create user %s error: %s", email, postErr), proxyPostResponse)...)
+		resp.Diagnostics.Append(util.BuildFrameworkAPIDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to create user %s error: %s", email, postErr), proxyPostResponse)...)
 		return
 	}
 
@@ -285,7 +288,8 @@ func (r *UserFrameworkResource) Create(ctx context.Context, req resource.CreateR
 
 		_, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, *userResponse.Id, additionalAttrsUpdate)
 		if patchErr != nil {
-			resp.Diagnostics.Append(util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update user %s error: %s", plan.Id.ValueString(), patchErr), proxyPatchResponse)...)
+			resp.Diagnostics.Append(util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to update user %s error: %s", plan.Id.ValueString(), patchErr), proxyPatchResponse)...)
 			return
 		}
 	}
@@ -464,7 +468,8 @@ func (r *UserFrameworkResource) Delete(ctx context.Context, req resource.DeleteR
 		// Directory occasionally returns version errors on deletes if an object was updated at the same time.
 		_, proxyDelResponse, err := proxy.deleteUser(ctx, state.Id.ValueString())
 		if err != nil {
-			return proxyDelResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete user %s error: %s", state.Id.ValueString(), err), proxyDelResponse)
+			return proxyDelResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to delete user %s error: %s", state.Id.ValueString(), err), proxyDelResponse)
 		}
 		log.Printf("Deleted user %s", email)
 		return nil, nil
@@ -512,14 +517,17 @@ func GetAllUsers(ctx context.Context, clientConfig *platformclientv2.Configurati
 
 	users, resp, err := proxy.GetAllUser(ctx)
 	if err != nil {
-		return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of users error: %s", err), resp)
+		return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to get page of users error: %s", err), resp)
 	}
 
 	for _, user := range *users {
 		if user.Id != nil && user.Email != nil {
-			hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department, user.PrimaryContactInfo, user.Addresses)
+			hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department,
+				user.PrimaryContactInfo, user.Addresses)
 			if err != nil {
-				return nil, util.BuildFrameworkDiagnosticError(ResourceType, fmt.Sprintf("Failed to hash user fields: %s", err), err)
+				return nil, util.BuildFrameworkDiagnosticError(ResourceType,
+					fmt.Sprintf("Failed to hash user fields: %s", err), err)
 			}
 			resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email, BlockHash: hashedUniqueFields}
 		}

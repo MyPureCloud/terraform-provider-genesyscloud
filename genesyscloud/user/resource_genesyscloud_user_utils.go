@@ -119,7 +119,8 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 		"")
 
 	if errGet != nil {
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s", model.Id.ValueString(), errGet), proxyResponse)
+		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s",
+			model.Id.ValueString(), errGet), proxyResponse)
 		*diagnostics = append(*diagnostics, readErr...)
 
 		if util.IsStatus404(proxyResponse) {
@@ -184,7 +185,8 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	// Get attributes from Voicemail/Userpolicies resource
 	currentVoicemailUserpolicies, apiResp, err := proxy.getVoicemailUserpoliciesById(ctx, model.Id.ValueString())
 	if err != nil {
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read voicemail userpolicies %s error: %s", model.Id.ValueString(), err), apiResp)
+		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to read voicemail userpolicies %s error: %s", model.Id.ValueString(), err), apiResp)
 		*diagnostics = append(*diagnostics, readErr...)
 		log.Printf("Error while reading getVoicemailUserpoliciesById in User %s", model.Id.ValueString())
 		return
@@ -206,7 +208,8 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 			return
 		}
 
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization %s error: %s", model.Id.ValueString(), err), apiResponse)
+		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to read routing utilization %s error: %s", model.Id.ValueString(), err), apiResponse)
 		*diagnostics = append(*diagnostics, readErr...)
 		log.Printf("Error while reading readUserRoutingUtilization in User %s", model.Id.ValueString())
 		return
@@ -230,7 +233,7 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 // It builds SDK request payloads, applies state changes separately, updates core attributes, and applies skills/languages/utilization.
 func updateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, clientConfig *platformclientv2.Configuration, diagnostics *pfdiag.Diagnostics, state ...*UserFrameworkResourceModel) {
 	// Build addresses from plan
-	addresses, addressDiags := buildSdkAddresses(plan.Addresses)
+	addresses, addressDiags := buildSdkAddresses(ctx, plan.Addresses)
 	*diagnostics = append(*diagnostics, addressDiags...)
 	if diagnostics.HasError() {
 		return
@@ -303,13 +306,15 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 	log.Printf("Getting user utilization")
 
 	apiClient := &proxy.routingApi.Configuration.APIClient
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, state.Id.ValueString())
+	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath,
+		state.Id.ValueString())
 	headerParams := buildHeaderParams(proxy.routingApi)
 
 	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
 	if err != nil {
 		// Return the response so caller can check for 404
-		return response, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", state.Id.ValueString(), err), response)
+		return response, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to read routing utilization for user %s error: %s", state.Id.ValueString(), err), response)
 	}
 
 	agentUtilization := &agentUtilizationWithLabels{}
@@ -387,7 +392,8 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 
 		if !originalLabelUtilizations.IsNull() && !originalLabelUtilizations.IsUnknown() {
 			// Filter and flatten based on original order
-			filteredLabels, diags := filterAndFlattenLabelUtilizations(ctx, agentUtilization.LabelUtilizations, originalLabelUtilizations)
+			filteredLabels, diags := filterAndFlattenLabelUtilizations(ctx, agentUtilization.LabelUtilizations,
+				originalLabelUtilizations)
 			diagnostics.Append(diags...)
 			allSettingsAttrs["label_utilizations"] = filteredLabels
 		} else {
@@ -799,7 +805,7 @@ func flattenUserLocations(locations *[]platformclientv2.Location) (types.Set, pf
 	elemType := types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"location_id": types.StringType,
-			"notes":       types.Int64Type,
+			"notes":       types.StringType,
 		},
 	}
 
@@ -968,7 +974,8 @@ func flattenUtilizationSetting(mediaSettings mediaUtilization) (types.List, pfdi
 
 	// Handle interruptible media types
 	if len(mediaSettings.InterruptibleMediaTypes) > 0 {
-		interruptibleSet, diags := types.SetValueFrom(context.Background(), types.StringType, mediaSettings.InterruptibleMediaTypes)
+		interruptibleSet, diags := types.SetValueFrom(context.Background(), types.StringType,
+			mediaSettings.InterruptibleMediaTypes)
 		diagnostics.Append(diags...)
 		attrs["interruptible_media_types"] = interruptibleSet
 	}
@@ -1027,7 +1034,7 @@ func filterAndFlattenLabelUtilizations(ctx context.Context, apiLabels map[string
 	return list, diagnostics
 }
 
-func buildSdkAddresses(addresses types.List) (*[]platformclientv2.Contact, pfdiag.Diagnostics) {
+func buildSdkAddresses(ctx context.Context, addresses types.List) (*[]platformclientv2.Contact, pfdiag.Diagnostics) {
 	var diagnostics pfdiag.Diagnostics
 	sdkAddresses := make([]platformclientv2.Contact, 0)
 
@@ -1044,7 +1051,7 @@ func buildSdkAddresses(addresses types.List) (*[]platformclientv2.Contact, pfdia
 
 	// Extract addresses into typed model
 	var addressesBlocks []AddressesModel
-	diags := addresses.ElementsAs(context.Background(), &addressesBlocks, false)
+	diags := addresses.ElementsAs(ctx, &addressesBlocks, false)
 	diagnostics.Append(diags...)
 	if diagnostics.HasError() {
 		return &sdkAddresses, diagnostics
@@ -1196,7 +1203,8 @@ func getDeletedUserId(email string, proxy *userProxy) (*string, pfdiag.Diagnosti
 	})
 
 	if getErr != nil {
-		return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to search for user %s error: %s", email, getErr), resp)
+		return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to search for user %s error: %s", email, getErr), resp)
 	}
 
 	if results.Results != nil && len(*results.Results) > 0 {
@@ -1217,7 +1225,8 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 		// Get current user (with version)
 		currentUser, proxyResponse, err := proxy.getUserById(ctx, plan.Id.ValueString(), nil, "deleted")
 		if err != nil {
-			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s error: %s", plan.Id.ValueString(), err), proxyResponse)
+			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to read user %s error: %s", plan.Id.ValueString(), err), proxyResponse)
 		}
 
 		// Log current addresses before restore PATCH
@@ -1229,12 +1238,14 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 		}
 
 		// Restore (change state to active)
-		restoredUser, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, plan.Id.ValueString(), &platformclientv2.Updateuser{
-			State:   &state,
-			Version: currentUser.Version,
-		})
+		restoredUser, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, plan.Id.ValueString(),
+			&platformclientv2.Updateuser{
+				State:   &state,
+				Version: currentUser.Version,
+			})
 		if patchErr != nil {
-			return proxyPatchResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to restore deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
+			return proxyPatchResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to restore deleted user %s | Error: %s.", email, patchErr), proxyPatchResponse)
 		}
 
 		// Log PATCH response
@@ -1396,7 +1407,8 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 			diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
 				resp, err := proxy.userApi.DeleteUserRoutingskill(plan.Id.ValueString(), skillId)
 				if err != nil {
-					return resp, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove skill from user %s error: %s", plan.Id.ValueString(), err), resp)
+					return resp, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+						fmt.Sprintf("Failed to remove skill from user %s error: %s", plan.Id.ValueString(), err), resp)
 				}
 				return nil, nil
 			})
@@ -1421,7 +1433,8 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 		}
 
 		if len(skillsToAddOrUpdate) > 0 {
-			if diagErr := updateUserRoutingSkills(plan.Id.ValueString(), skillsToAddOrUpdate, newSkillProfs, proxy); diagErr != nil {
+			if diagErr := updateUserRoutingSkills(plan.Id.ValueString(), skillsToAddOrUpdate,
+				newSkillProfs, proxy); diagErr != nil {
 				return diagErr
 			}
 		}
@@ -1490,7 +1503,8 @@ func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, 
 			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 				resp, err := proxy.userApi.DeleteUserRoutinglanguage(plan.Id.ValueString(), langID)
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to remove language from user %s error: %s", plan.Id.ValueString(), err), resp)
+					return resp, util.BuildAPIDiagnosticError(ResourceType,
+						fmt.Sprintf("Failed to remove language from user %s error: %s", plan.Id.ValueString(), err), resp)
 				}
 				return nil, nil
 			})
@@ -1515,7 +1529,8 @@ func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, 
 		}
 
 		if len(langsToAddOrUpdate) > 0 {
-			if diagErr := updateUserRoutingLanguages(plan.Id.ValueString(), langsToAddOrUpdate, newLangProfs, proxy); diagErr != nil {
+			if diagErr := updateUserRoutingLanguages(plan.Id.ValueString(), langsToAddOrUpdate,
+				newLangProfs, proxy); diagErr != nil {
 				return diagErr
 			}
 		}
@@ -1543,7 +1558,8 @@ func updateUserProfileSkills(ctx context.Context, plan *UserFrameworkResourceMod
 	diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
 		_, resp, err := proxy.userApi.PutUserProfileskills(plan.Id.ValueString(), profileSkillsSlice)
 		if err != nil {
-			return resp, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update profile skills for user %s error: %s", plan.Id.ValueString(), err), resp)
+			return resp, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to update profile skills for user %s error: %s", plan.Id.ValueString(), err), resp)
 		}
 		return nil, nil
 	})
@@ -1679,7 +1695,8 @@ func updateUserRoutingSkills(userID string, skillsToUpdate []string, skillProfs 
 		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := proxy.userApi.PatchUserRoutingskillsBulk(userID, chunk)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update skills for user %s error: %s", userID, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType,
+					fmt.Sprintf("Failed to update skills for user %s error: %s", userID, err), resp)
 			}
 			return nil, nil
 		})
@@ -1718,7 +1735,8 @@ func updateUserRoutingLanguages(userID string, langsToUpdate []string, langProfs
 		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 			_, resp, err := proxy.userApi.PatchUserRoutinglanguagesBulk(userID, chunk)
 			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update languages for user %s error: %s", userID, err), resp)
+				return resp, util.BuildAPIDiagnosticError(ResourceType,
+					fmt.Sprintf("Failed to update languages for user %s error: %s", userID, err), resp)
 			}
 			return nil, nil
 		})
@@ -1741,7 +1759,8 @@ func getUserRoutingSkills(userID string, proxy *userProxy) ([]platformclientv2.U
 	for pageNum := 1; ; pageNum++ {
 		skills, resp, err := proxy.userApi.GetUserRoutingskills(userID, maxPageSize, pageNum, "")
 		if err != nil {
-			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query skills for user %s error: %s", userID, err), resp)
+			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to query skills for user %s error: %s", userID, err), resp)
 		}
 		if skills == nil || skills.Entities == nil || len(*skills.Entities) == 0 {
 			return sdkSkills, nil
@@ -1758,7 +1777,8 @@ func getUserRoutingLanguages(userID string, proxy *userProxy) ([]platformclientv
 	for pageNum := 1; ; pageNum++ {
 		langs, resp, err := proxy.userApi.GetUserRoutinglanguages(userID, maxPageSize, pageNum, "")
 		if err != nil {
-			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
+			return nil, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to query languages for user %s error: %s", userID, err), resp)
 		}
 		if langs == nil || langs.Entities == nil || len(*langs.Entities) == 0 {
 			return sdkLanguages, nil
@@ -1895,7 +1915,8 @@ func updateUserVoicemailPolicies(ctx context.Context, plan *UserFrameworkResourc
 		_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(plan.Id.ValueString(), reqBody)
 		if putErr != nil {
 			return proxyPutResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
-				fmt.Sprintf("Failed to update voicemail userpolicies for user %s error: %s", plan.Id.ValueString(), putErr), proxyPutResponse)
+				fmt.Sprintf("Failed to update voicemail userpolicies for user %s error: %s",
+					plan.Id.ValueString(), putErr), proxyPutResponse)
 		}
 		return nil, nil
 	})
