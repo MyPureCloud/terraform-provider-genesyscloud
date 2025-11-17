@@ -21,14 +21,14 @@ func getAiStudioSummarySettingFromResourceData(d *schema.ResourceData) platformc
 	return platformclientv2.Summarysetting{
 		Name:               platformclientv2.String(d.Get("name").(string)),
 		Language:           platformclientv2.String(d.Get("language").(string)),
-		SummaryType:        platformclientv2.String(d.Get("summary_type").(string)),
-		Format:             platformclientv2.String(d.Get("format").(string)),
+		SummaryType:        resourcedata.GetNonZeroPointer[string](d, "summary_type"),
+		Format:             resourcedata.GetNonZeroPointer[string](d, "format"),
 		MaskPII:            buildSummarySettingPIIs(d.Get("mask_p_i_i").([]interface{})),
 		ParticipantLabels:  buildSummarySettingParticipantLabelss(d.Get("participant_labels").([]interface{})),
 		PredefinedInsights: lists.BuildSdkStringListFromInterfaceArray(d, "predefined_insights"),
 		CustomEntities:     buildSummarySettingCustomEntitys(d.Get("custom_entities").([]interface{})),
-		SettingType:        platformclientv2.String(d.Get("setting_type").(string)),
-		Prompt:             platformclientv2.String(d.Get("prompt").(string)),
+		SettingType:        resourcedata.GetNonZeroPointer[string](d, "setting_type"),
+		Prompt:             resourcedata.GetNonZeroPointer[string](d, "prompt"),
 	}
 }
 
