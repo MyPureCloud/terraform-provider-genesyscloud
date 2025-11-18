@@ -121,7 +121,7 @@ func ResourceConversationsMessagingIntegrationsApple() *schema.Resource {
 				},
 			},
 			`payment_certificate_credential_id`: {
-				Description: `The Genesys credentialId the payment certificates are stored under.`,
+				Description: `The Genesys credentialId the payment certificates are stored under. Must be a valid and existing credential ID created via /api/v2/integrations/credentials endpoint. See API documentation: https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-credentials. Example payload: {"type": "applePayCertificate", "credentialFields": {"merchantKey": "base-64-key", "merchantCertificate": "base-64-cert"}}`,
 				Required:    true,
 				Type:        schema.TypeString,
 			},
@@ -233,6 +233,7 @@ func ConversationsMessagingIntegrationsAppleExporter() *resourceExporter.Resourc
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"supported_content_id": {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
 			"messaging_setting_id": {RefType: "genesyscloud_conversations_messaging_settings"},
+			"apple_pay.payment_certificate_credential_id": {RefType: "genesyscloud_integration_credential"},
 		},
 	}
 }
