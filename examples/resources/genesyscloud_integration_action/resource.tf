@@ -103,6 +103,6 @@ resource "genesyscloud_integration_action" "example_function_action" {
     handler         = "index.handler"
     runtime         = "nodejs18.x"
     timeout_seconds = 30
-    file_path       = "/path/to/function.zip"
+    file_path       = "${local.working_dir.integration_action}/function.zip"
   }
 }
