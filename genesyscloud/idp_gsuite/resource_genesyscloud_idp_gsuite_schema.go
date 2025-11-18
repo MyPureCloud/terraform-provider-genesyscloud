@@ -9,6 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -84,10 +85,11 @@ func ResourceIdpGsuite() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`certificates`: {
-				Description: `PEM or DER encoded public X.509 certificates for SAML signature validation.`,
-				Required:    true,
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description:      `PEM or DER encoded public X.509 certificates for SAML signature validation.`,
+				Required:         true,
+				Type:             schema.TypeList,
+				Elem:             &schema.Schema{Type: schema.TypeString},
+				DiffSuppressFunc: util.SuppressCertificateDiff,
 			},
 		},
 	}
