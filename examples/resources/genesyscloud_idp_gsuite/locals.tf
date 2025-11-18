@@ -1,5 +1,5 @@
 locals {
-  gsuite_certificate = utils_certificates.certificates.cert1
+  gsuite_certificate = tls_self_signed_cert.example.cert_pem
   dependencies = {
     resource = [
       "../../common/certificates.tf"

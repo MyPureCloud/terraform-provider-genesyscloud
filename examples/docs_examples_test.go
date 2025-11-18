@@ -80,9 +80,6 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
 
-	// Add some extra built in providers to be able to be used
-	providerFactories = provider.CombineProviderFactories(providerFactories, ExampleUtilsProviderFactory())
-
 	// External providers
 	externalProviders := map[string]resource.ExternalProvider{
 		"random": {
@@ -92,6 +89,10 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 		"time": {
 			Source:            "hashicorp/time",
 			VersionConstraint: "0.13.1",
+		},
+		"tls": {
+			Source:            "hashicorp/tls",
+			VersionConstraint: "~> 4.0",
 		},
 	}
 
@@ -218,9 +219,6 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
 
-	// Add some extra built in providers to be able to be used
-	providerFactories = provider.CombineProviderFactories(providerFactories, ExampleUtilsProviderFactory())
-
 	// External providers
 	externalProviders := map[string]resource.ExternalProvider{
 		"random": {
@@ -230,6 +228,10 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 		"time": {
 			Source:            "hashicorp/time",
 			VersionConstraint: "0.13.1",
+		},
+		"tls": {
+			Source:            "hashicorp/tls",
+			VersionConstraint: "~> 4.0",
 		},
 	}
 
@@ -313,9 +315,6 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
 
-	// Add some extra built in providers to be able to be used
-	providerFactories = provider.CombineProviderFactories(providerFactories, ExampleUtilsProviderFactory())
-
 	// External providers
 	externalProviders := map[string]resource.ExternalProvider{
 		"random": {
@@ -325,6 +324,10 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 		"time": {
 			Source:            "hashicorp/time",
 			VersionConstraint: "0.13.1",
+		},
+		"tls": {
+			Source:            "hashicorp/tls",
+			VersionConstraint: "~> 4.0",
 		},
 	}
 
