@@ -99,12 +99,10 @@ resource "genesyscloud_integration_action" "example_function_action" {
   })
 
   function_config {
-    description       = "Custom function for data processing"
-    handler           = "index.handler"
-    runtime           = "nodejs18.x"
-    timeout_seconds   = 30
-    file_path         = "/path/to/function.zip"
-    file_content_hash = "abc123def456..."
-    publish           = true
+    description     = "Custom function for data processing"
+    handler         = "index.handler"
+    runtime         = "nodejs18.x"
+    timeout_seconds = 30
+    file_path       = "/path/to/function.zip"
   }
 }
