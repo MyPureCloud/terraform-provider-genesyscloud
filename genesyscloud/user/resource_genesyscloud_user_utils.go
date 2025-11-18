@@ -242,7 +242,11 @@ func updateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *us
 	email := plan.Email.ValueString()
 	log.Printf("Updating user %s", email)
 
-	// If state changes, it is the only modifiable field, so it must be updated separately
+	// If state changes, it is the only modifiable field, so it must be updated separately.
+	// Note: During restore (Create -> restoreDeletedUser -> updateUser), the state parameter
+	// is not passed (currentState = nil), so this state update is skipped. State is already
+	// updated in restoreDeletedUser's restore PATCH. This differs from SDK v2 which performs
+	// a redundant state update here (d.HasChange("state") compares "" vs config = true).
 	var currentState *UserFrameworkResourceModel
 	if len(state) > 0 {
 		currentState = state[0]
@@ -280,15 +284,18 @@ func updateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *us
 		invDumpSDKPhones("UPDATE payload (SDK)", *updateUserRequestBody.Addresses)
 	}
 
+	// PATCH core user attributes (name, email, addresses, locations, etc.)
+	// Includes retry logic with version checking for concurrent modification handling
 	diagErr := executeUpdateUser(ctx, plan, proxy, updateUserRequestBody)
 	if diagErr.HasError() {
 		*diagnostics = append(*diagnostics, diagErr...)
 		return
 	}
 
-	// Apply skills, languages, utilization
-	isUpdate := currentState != nil
-	frameworkDiags := executeAllUpdates(ctx, plan, proxy, clientConfig, isUpdate, currentState)
+	// Apply updates requiring separate API endpoints: division, skills, languages,
+	// routing utilization, voicemail policies, and password.
+	// currentState is used for change detection (nil during restore path).
+	frameworkDiags := executeAllUpdates(ctx, plan, proxy, clientConfig, true, currentState)
 	if frameworkDiags.HasError() {
 		*diagnostics = append(*diagnostics, frameworkDiags...)
 		return
@@ -1237,7 +1244,6 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 			invDumpSDKPhones("RESTORE current addresses (before PATCH)", *currentUser.Addresses)
 		}
 
-		// Restore (change state to active)
 		restoredUser, proxyPatchResponse, patchErr := proxy.patchUserWithState(ctx, plan.Id.ValueString(),
 			&platformclientv2.Updateuser{
 				State:   &state,
@@ -1260,7 +1266,8 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 		}
 
 		// Apply full configuration (equivalent to SDKv2's updateUser call)
-		// Pass nil for state since this is a restore (no previous state to compare)
+		// Pass nil for state parameter to updateUser() since this is a restore
+		// (no previous state to compare)
 		updateUser(ctx, plan, proxy, clientConfig, diagnostics)
 		//          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		//          Matches SDKv2 pattern: restoreDeletedUser calls updateUser

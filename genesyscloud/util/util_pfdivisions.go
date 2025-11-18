@@ -116,27 +116,24 @@ func UpdateObjectDivisionPF(ctx context.Context, plan interface{}, state interfa
 	}
 	objectID := objectIDField.Interface().(types.String).ValueString()
 
-	// Extract old division ID from state (if provided)
-	var oldDivisionID types.String
+	// Check if division_id has changed (only if state exists)
+	// If state is nil (Create/Restore operations), always proceed with update
+	// This matches SDKv2 behavior where d.HasChange() returns true during Create
 	if state != nil {
 		stateValue := reflect.ValueOf(state)
 		if stateValue.Kind() == reflect.Ptr {
-			stateValue = stateValue.Elem()
+			if !stateValue.IsNil() {
+				stateValue = stateValue.Elem()
+				oldDivisionIDField := stateValue.FieldByName("DivisionId")
+				if oldDivisionIDField.IsValid() {
+					oldDivisionID := oldDivisionIDField.Interface().(types.String)
+					// Only skip update if state exists AND division hasn't changed
+					if oldDivisionID.Equal(newDivisionID) {
+						return diagErr
+					}
+				}
+			}
 		}
-
-		oldDivisionIDField := stateValue.FieldByName("DivisionId")
-		if oldDivisionIDField.IsValid() {
-			oldDivisionID = oldDivisionIDField.Interface().(types.String)
-		} else {
-			oldDivisionID = types.StringNull()
-		}
-	} else {
-		oldDivisionID = types.StringNull()
-	}
-
-	// Check if division_id has changed
-	if oldDivisionID.Equal(newDivisionID) {
-		return diagErr
 	}
 
 	authAPI := platformclientv2.NewAuthorizationApiWithConfig(sdkConfig)
