@@ -187,6 +187,7 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
 - `authentication_settings` (Block List, Max: 1) Settings for authenticated webdeployments. (see [below for nested schema](#nestedblock--authentication_settings))
 - `cobrowse` (Block List, Max: 1) Settings concerning cobrowse (see [below for nested schema](#nestedblock--cobrowse))
 - `custom_i18n_labels` (Block List) The localization settings for homescreen app (see [below for nested schema](#nestedblock--custom_i18n_labels))
+- `video` (Block List, Max: 1) Settings concerning video chat (see [below for nested schema](#nestedblock--video))
 - `description` (String) Deployment description
 - `headless_mode_enabled` (Boolean) Headless Mode Support which Controls UI components. When enabled, native UI components will be disabled and allows for custom-built UI.
 - `journey_events` (Block List, Max: 1) Settings concerning journey events (see [below for nested schema](#nestedblock--journey_events))
@@ -234,6 +235,44 @@ Required:
 
 - `condition` (String) The condition to be applied to the `url_fragment`. Conditions are 'includes', 'does_not_include', 'starts_with', 'ends_with', 'equals'
 - `url_fragment` (String) A string representing a part of the URL that, when matched according to the specified condition, will trigger a pause in the cobrowse session
+
+
+
+<a id="nestedblock--video"></a>
+### Nested Schema for `video`
+
+Optional:
+
+- `agent` (Block List, Max: 1) Video Settings for agent (see [below for nested schema](#nestedblock--video--agent))
+- `enabled` (Boolean) Whether or not video is enabled
+- `user` (Block List, Max: 1) Video Settings for user (see [below for nested schema](#nestedblock--video--user))
+
+<a id="nestedblock--video--agent"></a>
+### Nested Schema for `video.agent`
+
+Optional:
+
+- `allow_camera` (Boolean) Whether or not agent camera is allowed
+- `allow_microphone` (Boolean) Whether or not agent microphone is allowed
+- `allow_screen_share` (Boolean) Whether or not agent screen share is allowed
+- `background` (String) Background for agent. Valid values: BLUR, NONE, IMAGE
+- `background_image` (Block List, Max: 1) Background image settings for agent (see [below for nested schema](#nestedblock--video--agent--background_image))
+
+<a id="nestedblock--video--agent--background_image"></a>
+### Nested Schema for `video.agent.background_image`
+
+Optional:
+
+- `url` (String) BackgroundImage URL for agent video settings
+
+<a id="nestedblock--video--user"></a>
+### Nested Schema for `video.user`
+
+Optional:
+
+- `allow_camera` (Boolean) Whether or not user camera is allowed
+- `allow_microphone` (Boolean) Whether or not user microphone is allowed
+- `allow_screen_share` (Boolean) Whether or not user screen share is allowed
 
 
 

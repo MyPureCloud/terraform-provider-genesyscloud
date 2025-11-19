@@ -81,6 +81,23 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
       condition    = "Includes"
     }
   }
+  video {
+    enabled = true
+    agent {
+      allow_camera       = true
+      allow_screen_share  = true
+      allow_microphone    = true
+      background         = "BLUR"
+      background_image {
+        url = "https://my-domain/images/background.png"
+      }
+    }
+    user {
+      allow_camera      = true
+      allow_screen_share = true
+      allow_microphone   = true
+    }
+  }
   # journey_events {
   #   enabled                   = true
   #   excluded_query_parameters = ["marketingCampaign"]
