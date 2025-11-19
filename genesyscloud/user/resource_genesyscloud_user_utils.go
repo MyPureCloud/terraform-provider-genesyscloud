@@ -38,7 +38,7 @@ var (
 
 type mediaUtilization struct {
 	MaximumCapacity         int32    `json:"maximumCapacity"`
-	InterruptibleMediaTypes []string `json:"interruptibleMediaTypes"`
+	InterruptableMediaTypes []string `json:"interruptableMediaTypes"`
 	IncludeNonAcd           bool     `json:"includeNonAcd"`
 }
 
@@ -443,8 +443,7 @@ func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) 
 func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Contact, proxy *userProxy) (types.List, pfdiag.Diagnostics) {
 	var diagnostics pfdiag.Diagnostics
 
-	// Return types.ListNull to signal "attribute not set" vs types.ListValue([]) which means "explicitly empty".
-	// Null state allows partial resource management - addresses configured outside Terraform remain untouched.
+	// Return types.ListNull to signal "attribute not set" vs types.ListValue([]) = "explicitly empty"
 	if addresses == nil || len(*addresses) == 0 {
 		return types.ListNull(types.ObjectType{
 			AttrTypes: map[string]attr.Type{
@@ -478,23 +477,37 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 
 	// Process each contact from API
 	for _, address := range *addresses {
-		media := "PHONE" //<-- default aligns with schema
-		if address.MediaType != nil {
-			media = *address.MediaType
+		if address.MediaType == nil {
+			log.Printf("[INV][PF] flattenUserAddresses(): media=nil hence not processing the contact")
+			continue
 		}
 
-		// Handle PHONE and SMS media types
-		if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
+		log.Printf("[INV][PF] flattenUserAddresses(): media=%q type=%q address=%q extension=%q display=%q",
+			valueOrEmpty(address.MediaType), valueOrEmpty(address.VarType),
+			valueOrEmpty(address.Address), valueOrEmpty(address.Extension), valueOrEmpty(address.Display),
+		)
+
+		switch *address.MediaType {
+		case "SMS", "PHONE":
+			// Default media_type to PHONE if API didn't set it, matching schema default
+			media := "PHONE"
+			if address.MediaType != nil && *address.MediaType != "" {
+				media = *address.MediaType
+			}
+
+			// Initialize phoneNumber similar to SDKv2, but with explicit attr.Value types.
+			// Note: extension_pool_id is ALWAYS null in state to keep it out of Set identity
+			// and match SDKv2's hash behavior (which ignored extension_pool_id).
 			phoneNumber := map[string]attr.Value{
 				"media_type":        types.StringValue(media),
-				"extension_pool_id": types.StringValue(""),
 				"number":            types.StringNull(),
 				"extension":         types.StringNull(),
 				"type":              types.StringNull(),
+				"extension_pool_id": types.StringNull(), // <- always null in state
 			}
 
 			//===========================important==========================================
-			// --- PHONE and SMS address variations ---
+			// ---- PHONE/SMS address patterns (same logic as SDKv2) ----
 			// The API can return phone info in 4 distinct ways:
 			// 1. Direct phone number
 			// 2. Internal extension mapped to an extension pool
@@ -503,41 +516,66 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 
 			// Case 1: Address contains a plain phone number (no extension)
 			if address.Address != nil {
-				phoneNumber["number"] = types.StringValue(
-					utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Address, "()")),
-				)
+				raw := strings.Trim(*address.Address, "()")
+				formatted := utilE164.FormatAsCalculatedE164Number(raw)
+				if formatted == "" {
+					// Normalize empty -> null so plan(null) == state(null)
+					phoneNumber["number"] = types.StringNull()
+				} else {
+					phoneNumber["number"] = types.StringValue(formatted)
+				}
 			}
 
-			// Case 2: Extension == Display → true internal extension (extension pool)
-			if address.Extension != nil && address.Display != nil {
-				if *address.Extension == *address.Display {
-					extensionNum := strings.Trim(*address.Extension, "()")
+			// Case 2: Extension == Display → true internal extension (extension mapped to pool)
+			if address.Extension != nil && address.Display != nil && *address.Extension == *address.Display {
+				extensionNum := strings.Trim(*address.Extension, "()")
+				if extensionNum == "" {
+					phoneNumber["extension"] = types.StringNull()
+				} else {
 					phoneNumber["extension"] = types.StringValue(extensionNum)
-
-					// Fetch extension_pool_id
-					poolId := fetchExtensionPoolId(ctx, extensionNum, proxy)
-					if poolId != "" {
-						phoneNumber["extension_pool_id"] = types.StringValue(poolId)
-					}
 				}
+
+				// In SDKv2, extension_pool_id was ignored by the Set hash.
+				// In PF, including it in state would affect Set identity and
+				// cause plan/state mismatches. To keep PF behavior closer to SDKv2,
+				// we deliberately DO NOT store extension_pool_id in state here.
+				//
+				// poolId := fetchExtensionPoolId(ctx, extensionNum, proxy)
+				// if poolId != "" {
+				//     phoneNumber["extension_pool_id"] = types.StringValue(poolId)
+				// }
+				_ = fetchExtensionPoolId // keep reference if you still use it elsewhere
 			}
 
 			// Case 3: Extension ≠ Display → phone number + extension pair
-			if address.Extension != nil && address.Display != nil {
-				if *address.Extension != *address.Display {
-					phoneNumber["extension"] = types.StringValue(*address.Extension)
-					phoneNumber["number"] = types.StringValue(
-						utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Display, "()")),
-					)
+			if address.Extension != nil && address.Display != nil && *address.Extension != *address.Display {
+				ext := strings.Trim(*address.Extension, "()")
+				if ext == "" {
+					phoneNumber["extension"] = types.StringNull()
+				} else {
+					phoneNumber["extension"] = types.StringValue(ext)
+				}
+
+				raw := strings.Trim(*address.Display, "()")
+				formatted := utilE164.FormatAsCalculatedE164Number(raw)
+				if formatted == "" {
+					phoneNumber["number"] = types.StringNull()
+				} else {
+					phoneNumber["number"] = types.StringValue(formatted)
 				}
 			}
 
-			// Case 4: Only Display present → unmapped extension
+			// Case 4: Only Display present → unmapped extension (no pool yet)
 			if address.Address == nil && address.Extension == nil && address.Display != nil {
-				phoneNumber["extension"] = types.StringValue(strings.Trim(*address.Display, "()"))
+				ext := strings.Trim(*address.Display, "()")
+				if ext == "" {
+					phoneNumber["extension"] = types.StringNull()
+				} else {
+					phoneNumber["extension"] = types.StringValue(ext)
+				}
 			}
 
-			// Set phone type
+			// Type: if absent, default to WORK (matches schema default + SDKv2 intent)
 			if address.VarType != nil && *address.VarType != "" {
 				phoneNumber["type"] = types.StringValue(*address.VarType)
 			} else {
@@ -566,7 +604,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				phoneElements = append(phoneElements, phoneObj)
 			}
 
-		} else if *address.MediaType == "EMAIL" {
+		case "EMAIL":
 			// Handle EMAIL media type
 			email := map[string]attr.Value{
 				"type":    types.StringNull(),
@@ -590,6 +628,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			)
 
 			// Create email object and add to collection
+
 			emailObj, objDiags := types.ObjectValue(
 				map[string]attr.Type{
 					"address": types.StringType,
@@ -602,7 +641,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				emailElements = append(emailElements, emailObj)
 			}
 
-		} else {
+		default:
 			log.Printf("Unknown address media type %s", *address.MediaType)
 		}
 	}
@@ -980,9 +1019,9 @@ func flattenUtilizationSetting(mediaSettings mediaUtilization) (types.List, pfdi
 	}
 
 	// Handle interruptible media types
-	if len(mediaSettings.InterruptibleMediaTypes) > 0 {
+	if len(mediaSettings.InterruptableMediaTypes) > 0 {
 		interruptibleSet, diags := types.SetValueFrom(context.Background(), types.StringType,
-			mediaSettings.InterruptibleMediaTypes)
+			mediaSettings.InterruptableMediaTypes)
 		diagnostics.Append(diags...)
 		attrs["interruptible_media_types"] = interruptibleSet
 	}
