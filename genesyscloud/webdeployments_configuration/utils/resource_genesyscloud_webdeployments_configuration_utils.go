@@ -187,6 +187,177 @@ func FlattenCobrowseSettings(cobrowseSettings *platformclientv2.Cobrowsesettings
 	}}
 }
 
+func buildBackgroundImageSettings(backgroundImageSettings []interface{}) *platformclientv2.Backgroundimagesettings {
+	if len(backgroundImageSettings) < 1 {
+		return nil
+	}
+
+	cfg := backgroundImageSettings[0].(map[string]interface{})
+	backgroundImage := &platformclientv2.Backgroundimagesettings{}
+
+	if v, ok := cfg["url"].(string); ok && v != "" {
+		backgroundImage.Url = &v
+	}
+
+	return backgroundImage
+}
+
+func buildAgentVideoSettings(agentSettings []interface{}) *platformclientv2.Agentvideosettings {
+	if len(agentSettings) < 1 {
+		return nil
+	}
+
+	cfg := agentSettings[0].(map[string]interface{})
+	agentVideoSettings := &platformclientv2.Agentvideosettings{}
+
+	if v, ok := cfg["allow_camera"].(bool); ok {
+		agentVideoSettings.AllowCamera = &v
+	}
+	if v, ok := cfg["allow_screen_share"].(bool); ok {
+		agentVideoSettings.AllowScreenShare = &v
+	}
+	if v, ok := cfg["allow_microphone"].(bool); ok {
+		agentVideoSettings.AllowMicrophone = &v
+	}
+	if v, ok := cfg["background"].(string); ok && v != "" {
+		agentVideoSettings.Background = &v
+	}
+	if v, ok := cfg["background_image"]; ok && v != nil {
+		agentVideoSettings.BackgroundImage = buildBackgroundImageSettings(v.([]interface{}))
+	}
+
+	return agentVideoSettings
+}
+
+func buildUserVideoSettings(userSettings []interface{}) *platformclientv2.Uservideosettings {
+	if len(userSettings) < 1 {
+		return nil
+	}
+
+	cfg := userSettings[0].(map[string]interface{})
+	userVideoSettings := &platformclientv2.Uservideosettings{}
+
+	if v, ok := cfg["allow_camera"].(bool); ok {
+		userVideoSettings.AllowCamera = &v
+	}
+	if v, ok := cfg["allow_screen_share"].(bool); ok {
+		userVideoSettings.AllowScreenShare = &v
+	}
+	if v, ok := cfg["allow_microphone"].(bool); ok {
+		userVideoSettings.AllowMicrophone = &v
+	}
+
+	return userVideoSettings
+}
+
+func buildVideoSettings(d *schema.ResourceData) *platformclientv2.Videosettings {
+	value, ok := d.GetOk("video")
+	if !ok {
+		return nil
+	}
+
+	cfgs := value.([]interface{})
+	if len(cfgs) < 1 {
+		return nil
+	}
+
+	cfg := cfgs[0].(map[string]interface{})
+
+	videoSettings := &platformclientv2.Videosettings{}
+
+	if v, ok := cfg["enabled"].(bool); ok {
+		videoSettings.Enabled = &v
+	}
+
+	if v, ok := cfg["agent"]; ok && v != nil {
+		videoSettings.Agent = buildAgentVideoSettings(v.([]interface{}))
+	}
+
+	if v, ok := cfg["user"]; ok && v != nil {
+		videoSettings.User = buildUserVideoSettings(v.([]interface{}))
+	}
+
+	return videoSettings
+}
+
+func FlattenBackgroundImageSettings(backgroundImage *platformclientv2.Backgroundimagesettings) []interface{} {
+	if backgroundImage == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{}
+	if backgroundImage.Url != nil {
+		result["url"] = *backgroundImage.Url
+	}
+
+	return []interface{}{result}
+}
+
+func FlattenAgentVideoSettings(agentSettings *platformclientv2.Agentvideosettings) []interface{} {
+	if agentSettings == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{}
+	if agentSettings.AllowCamera != nil {
+		result["allow_camera"] = agentSettings.AllowCamera
+	}
+	if agentSettings.AllowScreenShare != nil {
+		result["allow_screen_share"] = agentSettings.AllowScreenShare
+	}
+	if agentSettings.AllowMicrophone != nil {
+		result["allow_microphone"] = agentSettings.AllowMicrophone
+	}
+	if agentSettings.Background != nil {
+		result["background"] = *agentSettings.Background
+	}
+	if agentSettings.BackgroundImage != nil {
+		result["background_image"] = FlattenBackgroundImageSettings(agentSettings.BackgroundImage)
+	}
+
+	return []interface{}{result}
+}
+
+func FlattenUserVideoSettings(userSettings *platformclientv2.Uservideosettings) []interface{} {
+	if userSettings == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{}
+	if userSettings.AllowCamera != nil {
+		result["allow_camera"] = userSettings.AllowCamera
+	}
+	if userSettings.AllowScreenShare != nil {
+		result["allow_screen_share"] = userSettings.AllowScreenShare
+	}
+	if userSettings.AllowMicrophone != nil {
+		result["allow_microphone"] = userSettings.AllowMicrophone
+	}
+
+	return []interface{}{result}
+}
+
+func FlattenVideoSettings(videoSettings *platformclientv2.Videosettings) []interface{} {
+	if videoSettings == nil {
+		return nil
+	}
+
+	result := map[string]interface{}{}
+	if videoSettings.Enabled != nil {
+		result["enabled"] = videoSettings.Enabled
+	}
+
+	if videoSettings.Agent != nil {
+		result["agent"] = FlattenAgentVideoSettings(videoSettings.Agent)
+	}
+
+	if videoSettings.User != nil {
+		result["user"] = FlattenUserVideoSettings(videoSettings.User)
+	}
+
+	return []interface{}{result}
+}
+
 func flattenPauseCriteria(pauseCriteria *[]platformclientv2.Pausecriteria) []interface{} {
 	if pauseCriteria == nil {
 		return nil
@@ -294,6 +465,11 @@ func BuildWebDeploymentConfigurationFromResourceData(d *schema.ResourceData) (st
 	cobrowseSettings := buildCobrowseSettings(d)
 	if cobrowseSettings != nil {
 		inputCfg.Cobrowse = cobrowseSettings
+	}
+
+	videoSettings := buildVideoSettings(d)
+	if videoSettings != nil {
+		inputCfg.Video = videoSettings
 	}
 
 	journeySettings := buildJourneySettings(d)
