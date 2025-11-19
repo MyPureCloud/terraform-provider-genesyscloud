@@ -158,10 +158,26 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	model.Addresses, addressDiags = flattenUserAddresses(ctx, currentUser.Addresses, proxy)
 	*diagnostics = append(*diagnostics, addressDiags...)
 
-	// Flatten routing skills
-	var skillsDiags pfdiag.Diagnostics
-	model.RoutingSkills, skillsDiags = flattenUserSkills(currentUser.Skills)
-	*diagnostics = append(*diagnostics, skillsDiags...)
+	// Decide if routing_skills is managed based on incoming model value.
+	// In Create/Update, model is the plan; in Read, it's the existing state.
+	manageRoutingSkills := !model.RoutingSkills.IsNull() && !model.RoutingSkills.IsUnknown()
+
+	if manageRoutingSkills {
+		// User configured routing_skills → we manage them, so mirror the API.
+		var skillsDiags pfdiag.Diagnostics
+		model.RoutingSkills, skillsDiags = flattenUserSkills(currentUser.Skills)
+		*diagnostics = append(*diagnostics, skillsDiags...)
+	} else {
+		// User did NOT configure routing_skills → do not manage skills at all.
+		// Keep the attribute null so Terraform treats it as "unmanaged".
+		elemType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"skill_id":    types.StringType,
+				"proficiency": types.Float64Type,
+			},
+		}
+		model.RoutingSkills = types.SetNull(elemType)
+	}
 
 	// Flatten routing languages
 	var languagesDiags pfdiag.Diagnostics
