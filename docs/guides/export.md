@@ -1,15 +1,16 @@
 ---
 subcategory: ""
-page_title: "Export Genesys Cloud Configuration"
+page_title: "Exporting an existing Genesys Cloud Configuration"
 description: |-
-    A guide to exporting existing Genesys Cloud configuration.
+  A guide to exporting existing Genesys Cloud configuration.
 ---
 
-# Exporting existing Genesys Cloud configuration
+# Exporting an existing Genesys Cloud Configuration
 
 For existing orgs, it may be desirable to have Terraform begin managing your configuration. If there are only a handful of users, queues, etc. to manage, Terraform has an option to [import individual resources](https://www.terraform.io/docs/cli/import/index.html) into a Terraform module.
 
 However, if there are a lot of existing resources it can be painful to manually import all of them into a Terraform state file. To make this easier, a special resource has been defined to export that configuration into a local Terraform [JSON configuration file](https://www.terraform.io/docs/language/syntax/json.html) or [TF configuration file](https://www.terraform.io/language/syntax/configuration). Ensure you have the Terraform CLI installed and create a `.tf` file that requires the genesyscloud provider (click the Use Provider drop down to learn how to use the latest version of the required provider). Add a `provider` block and a `genesyscloud_tf_export` resource to that same file:
+
 ```hcl
 provider "genesyscloud" {
 }
@@ -31,11 +32,11 @@ If state is exported, the config file may not be able to be applied to another o
 
 If exported resources contain references to objects that we don't intend to manage with Terraform or if they cannot be resolved using an API call then a variable will be generated to refer to that object. A definition for that variable will be provided in a generated `terraform.tfvars` file. The reference variables must be filled out with the values of the corresponding resources in a different org before being applied to it.
 
-# Filtering Resources with Regular Expressions
+## Filtering Resources with Regular Expressions
 
 You can use regular expressions to filter which Genesys Cloud resources are exported to Terraform. To do this, specify the resource type followed by `::` and your regex pattern.
 
-In most cases, the regex is matched against the resource name. However, for some resources where the name alone isn’t unique—like Architect flows—we match the regex against a combined label (e.g. "{type}_{name}" in the case of Architect flows).
+In most cases, the regex is matched against the resource name. However, for some resources where the name alone isn’t unique—like Architect flows—we match the regex against a combined label (e.g. "{type}\_{name}" in the case of Architect flows).
 
 When writing your regex pattern, you can choose to match either the sanitized label or the original unsanitized field, depending on which approach provides better control and clarity for your needs. A 'sanitized label' is the formatted ID/label
 that Terraform assigns to an exported resource, where special characters and spaces are replaced with underscores. For example, when exporting users, you can create a regex pattern that matches either the original email field or the sanitized label that will be generated for that resource.
@@ -50,7 +51,7 @@ If your filter isn’t working as expected, check the resource’s description t
 
 > Export block label: `"{example_field}"`
 
-## Include Filter:
+### Include Filter
 
 If you want to include resources that begin or end with “dev” or “test”, use the following format:
 
@@ -63,9 +64,9 @@ resource "genesyscloud_tf_export" "include-filter" {
 }
 ```
 
-## Exclude Filter:
+### Exclude Filter
 
-To exclude certain resources, you can use a similar method:
+To exclude certain resources, you can use a similar method to the above:
 
 ```hcl
 resource "genesyscloud_tf_export" "exclude-filter" {
@@ -76,8 +77,20 @@ resource "genesyscloud_tf_export" "exclude-filter" {
 }
 ```
 
+## Filtering Resources by ID
 
-## Replacing an Exported Resource with a Data Source:
+If you want to include resources when you know the GUID of the given resource, use the `include_filter_resources_by_id` resource attribute and provide the explicit id in the following format:
+
+```hcl
+resource "genesyscloud_tf_export" "include-filter" {
+  directory                = "./genesyscloud/include-filter"
+  export_format            = "hcl"
+  log_permission_errors    = true
+  include_filter_resources_by_id = ["genesyscloud_group::c84be2bb-8da6-486a-8983-a8addbe591ed"]
+}
+```
+
+## Replacing an Exported Resource with a Data Source
 
 In the course of managing your Terraform configuration, circumstances may arise where it becomes desirable to substitute an exported resource with a data source. The following are instances where such an action might be warranted:
 
@@ -94,18 +107,18 @@ resource "genesyscloud_tf_export" "export" {
 }
 ```
 
-## Enable Dependency Resolution:
+## Enable Dependency Resolution
 
 In its standard setup, this Terraform configuration exports only the dependencies explicitly defined in your configuration. However, by enabling `enable_dependency_resolution`, Terraform can automatically export additional dependencies, including static ones associated with an architecture flow. This feature enhances the comprehensiveness of your exports, ensuring that not just the primary resource, but also its related entities, are included.
 
 On the other hand, Terraform also provides the `exclude_attributes` option for instances where certain fields need to be omitted from an export. This, along with the ability to automatically export additional dependencies, contributes to Terraform’s flexible framework for managing resource exports. It allows for granular control over the inclusion or exclusion of elements in the export, ensuring that your exported configuration aligns precisely with your requirements.
 
-## Export State File Comparison:
+## Export State File Comparison
 
-In its standard setup, during a full org download, the exporter doesnt verify if the exported state file is in sync with the exported configuration.
+In its standard setup, during a full org download, the exporter doesn't verify if the exported state file is in sync with the exported configuration.
 This is an experimental feature enabled just for troubleshooting. To enable this,set env value of ENABLE_EXPORTER_STATE_COMPARISON to true.
 
-# Export Architect Flow Configuration Files
+## Export Architect Flow Configuration Files
 
 Prior to v1.61.0, the resource exporter wouldn’t actually export Architect flow configuration files along with the genesyscloud_flow resource. Instead, it would generate a Terraform variable that referenced a non-existent file, leaving it up to the user to manually export the flow file and fill in the gaps.
 
@@ -113,14 +126,14 @@ Those days are over! Now, you can simply toggle a boolean field in the export re
 
 Let’s dive into how you can start using this feature. Once you have upgraded to a version greater than or equal to v1.61.0, you'll need to:
 
-## 1. Acquire Permissions
+### 1. Acquire Permissions
 
 Add the following permissions to your oauth client:
 
-* **Architect > jobExport > Create**
-* **Architect > jobExport > View**
+- **Architect > jobExport > Create**
+- **Architect > jobExport > View**
 
-## 2. Update the Export Resource Configuration
+### 2. Update the Export Resource Configuration
 
 Next, update your export resource configuration by setting `use_legacy_architect_flow_exporter` to false.
 
@@ -136,5 +149,3 @@ resource "genesyscloud_tf_export" "example" {
 ```
 
 After running terraform apply with the example configuration above, all Architect flows matching "ExampleFlowName" will be exported to `./genesyscloud/flows/architect_flows/` in YAML format.
-
-
