@@ -432,8 +432,8 @@ var (
 			"background": {
 				Description:  "Background for agent. Valid values: BLUR, NONE, IMAGE",
 				Type:         schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{"BLUR", "NONE", "IMAGE"}, false),
 			},
 			"background_image": {
