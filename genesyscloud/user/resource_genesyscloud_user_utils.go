@@ -325,42 +325,41 @@ func updateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *us
 
 func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourceModel, proxy *userProxy) (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
 	var diagnostics pfdiag.Diagnostics
-
 	log.Printf("Getting user utilization")
 
-	apiClient := &proxy.routingApi.Configuration.APIClient
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath,
-		state.Id.ValueString())
-	headerParams := buildHeaderParams(proxy.routingApi)
+	// Define reusable type definitions
+	mediaUtilObjType := types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}
+	labelUtilObjType := types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}
 
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
+	elemType := types.ObjectType{AttrTypes: map[string]attr.Type{
+		"call":               types.ListType{ElemType: mediaUtilObjType},
+		"callback":           types.ListType{ElemType: mediaUtilObjType},
+		"message":            types.ListType{ElemType: mediaUtilObjType},
+		"email":              types.ListType{ElemType: mediaUtilObjType},
+		"chat":               types.ListType{ElemType: mediaUtilObjType},
+		"label_utilizations": types.ListType{ElemType: labelUtilObjType},
+	}}
+
+	// Make API call
+	apiClient := &proxy.routingApi.Configuration.APIClient
+	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization",
+		proxy.routingApi.Configuration.BasePath, state.Id.ValueString())
+
+	response, err := apiClient.CallAPI(path, "GET", nil, buildHeaderParams(proxy.routingApi),
+		nil, nil, "", nil, "")
 	if err != nil {
 		// Return the response so caller can check for 404
 		return response, util.BuildFrameworkAPIDiagnosticError(ResourceType,
 			fmt.Sprintf("Failed to read routing utilization for user %s error: %s", state.Id.ValueString(), err), response)
 	}
 
+	// Unmarshal response
 	agentUtilization := &agentUtilizationWithLabels{}
-	err = json.Unmarshal(response.RawBody, &agentUtilization)
-	if err != nil {
+	if err = json.Unmarshal(response.RawBody, &agentUtilization); err != nil {
 		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
-		diagnostics.AddError(
-			"JSON Unmarshal Error",
-			fmt.Sprintf("Failed to unmarshal routing utilization: %s", err.Error()),
-		)
+		diagnostics.AddError("JSON Unmarshal Error",
+			fmt.Sprintf("Failed to unmarshal routing utilization: %s", err.Error()))
 		return response, diagnostics
-	}
-
-	// Define the element type for routing_utilization list
-	elemType := types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"call":               types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"callback":           types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"message":            types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"email":              types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"chat":               types.ListType{ElemType: types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}},
-			"label_utilizations": types.ListType{ElemType: types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}},
-		},
 	}
 
 	if agentUtilization == nil {
@@ -380,12 +379,12 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 
 	// Build the settings object
 	allSettingsAttrs := map[string]attr.Value{
-		"call":               types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"callback":           types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"message":            types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"email":              types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"chat":               types.ListNull(types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}),
-		"label_utilizations": types.ListNull(types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}),
+		"call":               types.ListNull(mediaUtilObjType),
+		"callback":           types.ListNull(mediaUtilObjType),
+		"message":            types.ListNull(mediaUtilObjType),
+		"email":              types.ListNull(mediaUtilObjType),
+		"chat":               types.ListNull(mediaUtilObjType),
+		"label_utilizations": types.ListNull(labelUtilObjType),
 	}
 
 	// Flatten media utilization settings
@@ -407,7 +406,6 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 			var currentUtilConfig []RoutingUtilizationModel
 			diags := state.RoutingUtilization.ElementsAs(ctx, &currentUtilConfig, false)
 			diagnostics.Append(diags...)
-
 			if len(currentUtilConfig) > 0 {
 				originalLabelUtilizations = currentUtilConfig[0].LabelUtilizations
 			}
@@ -415,13 +413,13 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 
 		if !originalLabelUtilizations.IsNull() && !originalLabelUtilizations.IsUnknown() {
 			// Filter and flatten based on original order
-			filteredLabels, diags := filterAndFlattenLabelUtilizations(ctx, agentUtilization.LabelUtilizations,
-				originalLabelUtilizations)
+			filteredLabels, diags := filterAndFlattenLabelUtilizations(ctx,
+				agentUtilization.LabelUtilizations, originalLabelUtilizations)
 			diagnostics.Append(diags...)
 			allSettingsAttrs["label_utilizations"] = filteredLabels
 		} else {
 			// No original labels, return empty list
-			emptyLabels, diags := types.ListValue(types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}, []attr.Value{})
+			emptyLabels, diags := types.ListValue(labelUtilObjType, []attr.Value{})
 			diagnostics.Append(diags...)
 			allSettingsAttrs["label_utilizations"] = emptyLabels
 		}
@@ -434,7 +432,6 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 	// Create the list with one element
 	utilizationList, diags := types.ListValue(elemType, []attr.Value{settingsObj})
 	diagnostics.Append(diags...)
-
 	state.RoutingUtilization = utilizationList
 
 	log.Printf("[INV][PF] readUserRoutingUtilization(): isNull=%v isUnknown=%v routingUtilization=%s",
@@ -459,37 +456,40 @@ func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) 
 func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Contact, proxy *userProxy) (types.List, pfdiag.Diagnostics) {
 	var diagnostics pfdiag.Diagnostics
 
+	// Define reusable type definitions
+	emailObjType := types.ObjectType{AttrTypes: map[string]attr.Type{
+		"address": types.StringType,
+		"type":    types.StringType,
+	}}
+
+	phoneObjType := types.ObjectType{AttrTypes: map[string]attr.Type{
+		"number":            types.StringType,
+		"media_type":        types.StringType,
+		"type":              types.StringType,
+		"extension":         types.StringType,
+		"extension_pool_id": types.StringType,
+	}}
+
+	addressesObjType := types.ObjectType{AttrTypes: map[string]attr.Type{
+		"other_emails":  types.SetType{ElemType: emailObjType},
+		"phone_numbers": types.SetType{ElemType: phoneObjType},
+	}}
+
 	// Return types.ListNull to signal "attribute not set" vs types.ListValue([]) = "explicitly empty"
 	if addresses == nil || len(*addresses) == 0 {
-		return types.ListNull(types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"other_emails": types.SetType{
-					ElemType: types.ObjectType{
-						AttrTypes: map[string]attr.Type{
-							"address": types.StringType,
-							"type":    types.StringType,
-						},
-					},
-				},
-				"phone_numbers": types.SetType{
-					ElemType: types.ObjectType{
-						AttrTypes: map[string]attr.Type{
-							"number":            types.StringType,
-							"media_type":        types.StringType,
-							"type":              types.StringType,
-							"extension":         types.StringType,
-							"extension_pool_id": types.StringType,
-						},
-					},
-				},
-			},
-		}), diagnostics
+		return types.ListNull(addressesObjType), diagnostics
 	}
 
 	// Initialize collections for emails and phone numbers
 	emailElements := make([]attr.Value, 0)
 	phoneElements := make([]attr.Value, 0)
 	utilE164 := util.NewUtilE164Service()
+
+	logContact := func(address *platformclientv2.Contact) {
+		log.Printf("[INV][PF] flattenUserAddresses(): media=%q type=%q address=%q extension=%q display=%q",
+			valueOrEmpty(address.MediaType), valueOrEmpty(address.VarType),
+			valueOrEmpty(address.Address), valueOrEmpty(address.Extension), valueOrEmpty(address.Display))
+	}
 
 	// Process each contact from API
 	for _, address := range *addresses {
@@ -498,10 +498,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			continue
 		}
 
-		log.Printf("[INV][PF] flattenUserAddresses(): media=%q type=%q address=%q extension=%q display=%q",
-			valueOrEmpty(address.MediaType), valueOrEmpty(address.VarType),
-			valueOrEmpty(address.Address), valueOrEmpty(address.Extension), valueOrEmpty(address.Display),
-		)
+		logContact(&address)
 
 		switch *address.MediaType {
 		case "SMS", "PHONE":
@@ -534,10 +531,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			if address.Address != nil {
 				raw := strings.Trim(*address.Address, "()")
 				formatted := utilE164.FormatAsCalculatedE164Number(raw)
-				if formatted == "" {
-					// Normalize empty -> null so plan(null) == state(null)
-					phoneNumber["number"] = types.StringNull()
-				} else {
+				if formatted != "" {
 					phoneNumber["number"] = types.StringValue(formatted)
 				}
 			}
@@ -545,12 +539,9 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			// Case 2: Extension == Display → true internal extension (extension mapped to pool)
 			if address.Extension != nil && address.Display != nil && *address.Extension == *address.Display {
 				extensionNum := strings.Trim(*address.Extension, "()")
-				if extensionNum == "" {
-					phoneNumber["extension"] = types.StringNull()
-				} else {
+				if extensionNum != "" {
 					phoneNumber["extension"] = types.StringValue(extensionNum)
 				}
-
 				// In SDKv2, extension_pool_id was ignored by the Set hash.
 				// In PF, including it in state would affect Set identity and
 				// cause plan/state mismatches. To keep PF behavior closer to SDKv2,
@@ -566,17 +557,12 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			// Case 3: Extension ≠ Display → phone number + extension pair
 			if address.Extension != nil && address.Display != nil && *address.Extension != *address.Display {
 				ext := strings.Trim(*address.Extension, "()")
-				if ext == "" {
-					phoneNumber["extension"] = types.StringNull()
-				} else {
+				if ext != "" {
 					phoneNumber["extension"] = types.StringValue(ext)
 				}
-
 				raw := strings.Trim(*address.Display, "()")
 				formatted := utilE164.FormatAsCalculatedE164Number(raw)
-				if formatted == "" {
-					phoneNumber["number"] = types.StringNull()
-				} else {
+				if formatted != "" {
 					phoneNumber["number"] = types.StringValue(formatted)
 				}
 			}
@@ -584,9 +570,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			// Case 4: Only Display present → unmapped extension (no pool yet)
 			if address.Address == nil && address.Extension == nil && address.Display != nil {
 				ext := strings.Trim(*address.Display, "()")
-				if ext == "" {
-					phoneNumber["extension"] = types.StringNull()
-				} else {
+				if ext != "" {
 					phoneNumber["extension"] = types.StringValue(ext)
 				}
 			}
@@ -598,23 +582,7 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				phoneNumber["type"] = types.StringValue("WORK") // <-- default aligns with schema
 			}
 
-			// Log per contact before adding to collection
-			log.Printf("[INV][PF] flattenUserAddresses(): media=%q type=%q address=%q extension=%q display=%q",
-				valueOrEmpty(address.MediaType), valueOrEmpty(address.VarType),
-				valueOrEmpty(address.Address), valueOrEmpty(address.Extension), valueOrEmpty(address.Display),
-			)
-
-			// Create phone object and add to collection
-			phoneObj, objDiags := types.ObjectValue(
-				map[string]attr.Type{
-					"number":            types.StringType,
-					"media_type":        types.StringType,
-					"type":              types.StringType,
-					"extension":         types.StringType,
-					"extension_pool_id": types.StringType,
-				},
-				phoneNumber,
-			)
+			phoneObj, objDiags := types.ObjectValue(phoneObjType.AttrTypes, phoneNumber)
 			diagnostics.Append(objDiags...)
 			if !objDiags.HasError() {
 				phoneElements = append(phoneElements, phoneObj)
@@ -623,35 +591,18 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 		case "EMAIL":
 			// Handle EMAIL media type
 			email := map[string]attr.Value{
-				"type":    types.StringNull(),
+				"type":    types.StringValue("WORK"), // <-- default aligns with schema
 				"address": types.StringNull(),
 			}
 
 			if address.VarType != nil && *address.VarType != "" {
 				email["type"] = types.StringValue(*address.VarType)
-			} else {
-				email["type"] = types.StringValue("WORK") // <-- default aligns with schema
 			}
-
 			if address.Address != nil {
 				email["address"] = types.StringValue(*address.Address)
 			}
 
-			// Log per contact before adding to collection
-			log.Printf("[INV][PF] flattenUserAddresses(): media=%q type=%q address=%q extension=%q display=%q",
-				valueOrEmpty(address.MediaType), valueOrEmpty(address.VarType),
-				valueOrEmpty(address.Address), valueOrEmpty(address.Extension), valueOrEmpty(address.Display),
-			)
-
-			// Create email object and add to collection
-
-			emailObj, objDiags := types.ObjectValue(
-				map[string]attr.Type{
-					"address": types.StringType,
-					"type":    types.StringType,
-				},
-				email,
-			)
+			emailObj, objDiags := types.ObjectValue(emailObjType.AttrTypes, email)
 			diagnostics.Append(objDiags...)
 			if !objDiags.HasError() {
 				emailElements = append(emailElements, emailObj)
@@ -663,94 +614,26 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 	}
 
 	// Create email set
-	emailSet, setDiags := types.SetValue(
-		types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"address": types.StringType,
-				"type":    types.StringType,
-			},
-		},
-		emailElements,
-	)
+	emailSet, setDiags := types.SetValue(emailObjType, emailElements)
 	diagnostics.Append(setDiags...)
 
 	// Create phone number set
-	phoneSet, setDiags := types.SetValue(
-		types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"number":            types.StringType,
-				"media_type":        types.StringType,
-				"type":              types.StringType,
-				"extension":         types.StringType,
-				"extension_pool_id": types.StringType,
-			},
-		},
-		phoneElements,
-	)
+	phoneSet, setDiags := types.SetValue(phoneObjType, phoneElements)
 	diagnostics.Append(setDiags...)
 
 	// Log final set sizes before return
 	log.Printf("[INV][PF] flattenUserAddresses(): phoneSet size=%d emailSet size=%d",
-		len(phoneElements), len(emailElements),
-	)
+		len(phoneElements), len(emailElements))
 
 	// Create the addresses object containing both sets
-	addressesObj, objDiags := types.ObjectValue(
-		map[string]attr.Type{
-			"other_emails": types.SetType{
-				ElemType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"address": types.StringType,
-						"type":    types.StringType,
-					},
-				},
-			},
-			"phone_numbers": types.SetType{
-				ElemType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"number":            types.StringType,
-						"media_type":        types.StringType,
-						"type":              types.StringType,
-						"extension":         types.StringType,
-						"extension_pool_id": types.StringType,
-					},
-				},
-			},
-		},
-		map[string]attr.Value{
-			"other_emails":  emailSet,
-			"phone_numbers": phoneSet,
-		},
-	)
+	addressesObj, objDiags := types.ObjectValue(addressesObjType.AttrTypes, map[string]attr.Value{
+		"other_emails":  emailSet,
+		"phone_numbers": phoneSet,
+	})
 	diagnostics.Append(objDiags...)
 
 	// Return as a list with one element (matching schema: ListNestedBlock with SizeAtMost(1))
-	addressesList, listDiags := types.ListValue(
-		types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"other_emails": types.SetType{
-					ElemType: types.ObjectType{
-						AttrTypes: map[string]attr.Type{
-							"address": types.StringType,
-							"type":    types.StringType,
-						},
-					},
-				},
-				"phone_numbers": types.SetType{
-					ElemType: types.ObjectType{
-						AttrTypes: map[string]attr.Type{
-							"number":            types.StringType,
-							"media_type":        types.StringType,
-							"type":              types.StringType,
-							"extension":         types.StringType,
-							"extension_pool_id": types.StringType,
-						},
-					},
-				},
-			},
-		},
-		[]attr.Value{addressesObj},
-	)
+	addressesList, listDiags := types.ListValue(addressesObjType, []attr.Value{addressesObj})
 	diagnostics.Append(listDiags...)
 
 	return addressesList, diagnostics
@@ -1422,28 +1305,26 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 	// Build new skills map from Framework types
 	newSkillProfs := make(map[string]float64)
 	skillElements := plan.RoutingSkills.Elements()
-	newSkillIds := make([]string, len(skillElements))
+	newSkillIds := make([]string, 0, len(skillElements))
 
-	for i, skillElement := range skillElements {
+	for _, skillElement := range skillElements {
 		skillObj, ok := skillElement.(types.Object)
 		if !ok {
 			continue
 		}
 
 		skillAttrs := skillObj.Attributes()
-
 		var skillId string
 		var proficiency float64
 
 		if skillIdAttr, exists := skillAttrs["skill_id"]; exists && !skillIdAttr.IsNull() {
 			skillId = skillIdAttr.(types.String).ValueString()
 		}
-
 		if proficiencyAttr, exists := skillAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
 			proficiency = proficiencyAttr.(types.Float64).ValueFloat64()
 		}
 
-		newSkillIds[i] = skillId
+		newSkillIds = append(newSkillIds, skillId)
 		newSkillProfs[skillId] = proficiency
 	}
 
@@ -1455,11 +1336,11 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 	}
 
 	// Build old skills map
-	oldSkillIds := make([]string, len(oldSdkSkills))
+	oldSkillIds := make([]string, 0, len(oldSdkSkills))
 	oldSkillProfs := make(map[string]float64)
-	for i, skill := range oldSdkSkills {
-		oldSkillIds[i] = *skill.Id
-		oldSkillProfs[oldSkillIds[i]] = *skill.Proficiency
+	for _, skill := range oldSdkSkills {
+		oldSkillIds = append(oldSkillIds, *skill.Id)
+		oldSkillProfs[*skill.Id] = *skill.Proficiency
 	}
 
 	// Remove skills that are no longer in configuration
@@ -1487,10 +1368,8 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 
 		// Check for existing proficiencies to update which can be done with the same API
 		for skillID, newProf := range newSkillProfs {
-			if oldProf, found := oldSkillProfs[skillID]; found {
-				if newProf != oldProf {
-					skillsToAddOrUpdate = append(skillsToAddOrUpdate, skillID)
-				}
+			if oldProf, found := oldSkillProfs[skillID]; found && newProf != oldProf {
+				skillsToAddOrUpdate = append(skillsToAddOrUpdate, skillID)
 			}
 		}
 
@@ -1518,44 +1397,41 @@ func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, 
 	// Build new languages map from Framework types
 	newLangProfs := make(map[string]int)
 	languageElements := plan.RoutingLanguages.Elements()
-	newLangIds := make([]string, len(languageElements))
+	newLangIds := make([]string, 0, len(languageElements))
 
-	for i, languageElement := range languageElements {
+	for _, languageElement := range languageElements {
 		languageObj, ok := languageElement.(types.Object)
 		if !ok {
 			continue
 		}
 
 		languageAttrs := languageObj.Attributes()
-
 		var languageId string
 		var proficiency int64
 
 		if languageIdAttr, exists := languageAttrs["language_id"]; exists && !languageIdAttr.IsNull() {
 			languageId = languageIdAttr.(types.String).ValueString()
 		}
-
 		if proficiencyAttr, exists := languageAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
 			proficiency = proficiencyAttr.(types.Int64).ValueInt64()
 		}
 
-		newLangIds[i] = languageId
+		newLangIds = append(newLangIds, languageId)
 		newLangProfs[languageId] = int(proficiency)
 	}
 
 	// Get current languages from API
 	oldSdkLangs, getErr := getUserRoutingLanguages(plan.Id.ValueString(), proxy)
 	if getErr != nil {
-
 		return getErr
 	}
 
 	// Build old languages map
-	oldLangIds := make([]string, len(oldSdkLangs))
+	oldLangIds := make([]string, 0, len(oldSdkLangs))
 	oldLangProfs := make(map[string]int)
-	for i, lang := range oldSdkLangs {
-		oldLangIds[i] = *lang.Id
-		oldLangProfs[oldLangIds[i]] = int(*lang.Proficiency)
+	for _, lang := range oldSdkLangs {
+		oldLangIds = append(oldLangIds, *lang.Id)
+		oldLangProfs[*lang.Id] = int(*lang.Proficiency)
 	}
 
 	// Remove languages that are no longer in configuration
@@ -1583,10 +1459,8 @@ func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, 
 
 		// Check for existing proficiencies to update which can be done with the same API
 		for langID, newNum := range newLangProfs {
-			if oldNum, found := oldLangProfs[langID]; found {
-				if newNum != oldNum {
-					langsToAddOrUpdate = append(langsToAddOrUpdate, langID)
-				}
+			if oldNum, found := oldLangProfs[langID]; found && newNum != oldNum {
+				langsToAddOrUpdate = append(langsToAddOrUpdate, langID)
 			}
 		}
 
@@ -1599,7 +1473,6 @@ func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, 
 	}
 
 	log.Printf("Languages updated for user %s", plan.Email.ValueString())
-
 	return diagnostics
 }
 
@@ -2015,7 +1888,6 @@ func buildVoicemailUserpoliciesRequest(ctx context.Context, voicemailPolicies []
 		}
 	}
 
-	// SDKv2: return request
 	return request
 }
 
@@ -2044,7 +1916,6 @@ func updatePassword(ctx context.Context, plan *UserFrameworkResourceModel, proxy
 		return diagnostics
 	}
 
-	// SDKv2: return nil
 	return pfdiag.Diagnostics{}
 }
 
