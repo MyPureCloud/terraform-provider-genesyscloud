@@ -90,7 +90,10 @@ func buildWfmServiceGoalImpact(wfmServiceGoalImpacts []interface{}) *platformcli
 		wfmServiceGoalImpactsSlice = append(wfmServiceGoalImpactsSlice, sdkWfmServiceGoalImpact)
 	}
 
-	return &wfmServiceGoalImpactsSlice[0] // TODO is this right?
+	if len(wfmServiceGoalImpactsSlice) == 0 {
+		return nil
+	}
+	return &wfmServiceGoalImpactsSlice[0]
 }
 
 // buildWfmServiceGoalImpactSettings maps an []interface{} into a Genesys Cloud *[]platformclientv2.Wfmservicegoalimpactsettings
@@ -124,7 +127,7 @@ func buildBuSchedulingSettings(buSchedulingSettingsResponses []interface{}) *pla
 		}
 
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkBuSchedulingSettingsResponse.MessageSeverities, buSchedulingSettingsResponsesMap, "message_severities", buildSchedulerMessageTypeSeverities)
-		
+
 		// Handle sync_time_off_properties - it's a []interface{} in the schema but needs to be converted to *platformclientv2.Setwrappersynctimeoffproperty
 		if syncTimeOffProps, ok := buSchedulingSettingsResponsesMap["sync_time_off_properties"].([]interface{}); ok && len(syncTimeOffProps) > 0 {
 			syncTimeOffPropertiesList := make([]string, 0)
@@ -135,7 +138,7 @@ func buildBuSchedulingSettings(buSchedulingSettingsResponses []interface{}) *pla
 				Values: &syncTimeOffPropertiesList,
 			}
 		}
-		
+
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkBuSchedulingSettingsResponse.ServiceGoalImpact, buSchedulingSettingsResponsesMap, "service_goal_impact", buildWfmServiceGoalImpactSettings)
 		if allowWorkPlanPerMinuteGranularity, ok := buSchedulingSettingsResponsesMap["allow_work_plan_per_minute_granularity"].(bool); ok {
 			sdkBuSchedulingSettingsResponse.AllowWorkPlanPerMinuteGranularity = platformclientv2.Bool(allowWorkPlanPerMinuteGranularity)
@@ -146,7 +149,6 @@ func buildBuSchedulingSettings(buSchedulingSettingsResponses []interface{}) *pla
 
 	return &buSchedulingSettingsResponsesSlice[0]
 }
-
 
 // buildCreateBusinessUnitSettingsRequest maps an interface{} into a Genesys Cloud *platformclientv2.Createbusinessunitsettingsrequest
 func buildCreateBusinessUnitSettingsRequest(businessUnitSettingsResponses []interface{}) *platformclientv2.Createbusinessunitsettingsrequest {
@@ -266,9 +268,13 @@ func flattenWfmVersionedEntityMetadata(wfmVersionedEntityMetadata *platformclien
 	wfmVersionedEntityMetadataMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(wfmVersionedEntityMetadataMap, "version", wfmVersionedEntityMetadata.Version)
-	resourcedata.SetMapValueIfNotNil(wfmVersionedEntityMetadataMap, "modified_by_id", wfmVersionedEntityMetadata.ModifiedBy.Id)
+	if wfmVersionedEntityMetadata.ModifiedBy != nil {
+		wfmVersionedEntityMetadataMap["modified_by_id"] = *wfmVersionedEntityMetadata.ModifiedBy.Id
+	}
 	resourcedata.SetMapValueIfNotNil(wfmVersionedEntityMetadataMap, "date_modified", wfmVersionedEntityMetadata.DateModified)
-	resourcedata.SetMapValueIfNotNil(wfmVersionedEntityMetadataMap, "created_by_id", wfmVersionedEntityMetadata.CreatedBy.Id)
+	if wfmVersionedEntityMetadata.CreatedBy != nil {
+		wfmVersionedEntityMetadataMap["created_by_id"] = *wfmVersionedEntityMetadata.CreatedBy.Id
+	}
 	resourcedata.SetMapValueIfNotNil(wfmVersionedEntityMetadataMap, "date_created", wfmVersionedEntityMetadata.DateCreated)
 
 	wfmVersionedEntityMetadataList = append(wfmVersionedEntityMetadataList, wfmVersionedEntityMetadataMap)
@@ -340,22 +346,6 @@ func GenerateWorkforcemanagementBusinessUnitMessageSeverities(messageType string
 		severity = "%s"
 	}
 	`, messageType, severity)
-}
-
-// GenerateWorkforcemanagementBusinessUnitSyncTimeOffProperties generates sync_time_off_properties for testing
-func GenerateWorkforcemanagementBusinessUnitSyncTimeOffProperties(properties []string) string {
-	if len(properties) == 0 {
-		return ""
-	}
-	propsStr := ""
-	for i, prop := range properties {
-		if i > 0 {
-			propsStr += ",\n\t\t\t"
-		}
-		propsStr += fmt.Sprintf(`"%s"`, prop)
-	}
-	return fmt.Sprintf(`sync_time_off_properties = [%s]
-	`, propsStr)
 }
 
 // GenerateWorkforcemanagementBusinessUnitServiceGoalImpact generates service_goal_impact block for testing

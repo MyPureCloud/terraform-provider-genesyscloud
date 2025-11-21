@@ -17,6 +17,7 @@ ResourceName is defined in this file along with four functions:
 4.  The resource exporter configuration for the workforcemanagement_businessunits exporter.
 */
 const ResourceName = "genesyscloud_workforcemanagement_businessunits"
+const ResourceType = ResourceName
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {

@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
-	"log"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"log"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -67,11 +67,16 @@ func readWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resource
 
 	log.Printf("Reading workforce management business unit %s", d.Id())
 
-		return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-			businessUnitResponse, resp, getErr := proxy.getWorkforceManagementBusinessUnitById(ctx, d.Id())
-			if getErr != nil {
+	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+		businessUnitResponse, resp, getErr := proxy.getWorkforceManagementBusinessUnitById(ctx, d.Id())
+		if getErr != nil {
+			// 404 indicates the resource does not exist and should not be retried
+			if util.IsStatus404(resp) {
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
 			}
+			// All other errors are also non-retryable
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
+		}
 
 		resourcedata.SetNillableValue(d, "name", businessUnitResponse.Name)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "settings", businessUnitResponse.Settings, flattenBusinessUnitSettingsResponse)

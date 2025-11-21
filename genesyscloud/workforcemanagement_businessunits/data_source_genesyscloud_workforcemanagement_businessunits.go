@@ -29,11 +29,11 @@ func dataSourceWorkforcemanagementBusinessunitsRead(ctx context.Context, d *sche
 		businessUnitResponseId, resp, retryable, err := proxy.getWorkforceManagementBusinessUnitIdByExactName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Error searching workforce management business unit %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching workforce management business unit %s | error: %s", name, err), resp))
 		}
 
 		if retryable {
-			return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("No workforce management business unit found with name %s", name), resp), resp)
+			return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No workforce management business unit found with name %s", name), resp), resp)
 		}
 
 		d.SetId(businessUnitResponseId)
