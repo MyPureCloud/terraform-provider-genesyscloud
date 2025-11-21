@@ -11,22 +11,11 @@ Genesys Cloud apple integration
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-# API Endpoints Used
-
-This resource uses the following Genesys Cloud API endpoints:
-
-## Resource Operations
-- **POST** `/api/v2/conversations/messaging/integrations/apple` - Create Apple Messages for Business integration
-- **GET** `/api/v2/conversations/messaging/integrations/apple/{integrationId}` - Get Apple Messages for Business integration by ID
-- **GET** `/api/v2/conversations/messaging/integrations/apple` - Get all Apple Messages for Business integrations
-- **PATCH** `/api/v2/conversations/messaging/integrations/apple/{integrationId}` - Update Apple Messages for Business integration
-- **DELETE** `/api/v2/conversations/messaging/integrations/apple/{integrationId}` - Delete Apple Messages for Business integration
-
-## Data Source Operations
-- **GET** `/api/v2/conversations/messaging/integrations/apple` - Get all Apple Messages for Business integrations (used to find by name)
-
-## Related API Documentation
-- [Conversations Messaging Integrations Apple API](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-conversations-messaging-integrations-apple)
+* [POST /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-conversations-messaging-integrations-apple)
+* [GET /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple--integrationId-)
+* [PATCH /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-apple--integrationId-)
+* [DELETE /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-apple--integrationId-)
+* [GET /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple)
 
 ## Example Usage
 
@@ -85,7 +74,7 @@ resource "genesyscloud_conversations_messaging_integrations_apple" "example" {
 - `business_name` (String) The name of the business.
 - `logo_url` (String) The url of the businesses logo.
 - `messaging_setting_id` (String) The ID of the messaging setting configured for this integration
-- `supported_content_id` (String) The ID of the supported content profile configured for this integration
+- `supported_content_id` (String) The ID of the supported content profile configured for this integration. If not set, the default supported content profile will be used.
 
 ### Read-Only
 
@@ -120,7 +109,7 @@ Required:
 - `domain_name` (String) The domain name associated with the merchant account.
 - `merchant_id` (String) The stores merchant identifier.
 - `payment_capabilities` (List of String) The payment capabilities supported by the merchant.
-- `payment_certificate_credential_id` (String) The Genesys credentialId the payment certificates are stored under.
+- `payment_certificate_credential_id` (String) The Genesys credentialId the payment certificates are stored under. Must be a valid and existing credential ID created via /api/v2/integrations/credentials endpoint. See API documentation: https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-credentials. Example payload: {"type": "applePayCertificate", "credentialFields": {"merchantKey": "base-64-key", "merchantCertificate": "base-64-cert"}}
 - `payment_gateway_url` (String) The url used to process payments.
 - `store_name` (String) The name of the store.
 - `supported_payment_networks` (List of String) The payment networks supported by the merchant.
