@@ -231,8 +231,8 @@ func ConversationsMessagingIntegrationsAppleExporter() *resourceExporter.Resourc
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllConversationsMessagingIntegrationsApple),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"supported_content_id": {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
-			"messaging_setting_id": {RefType: "genesyscloud_conversations_messaging_settings"},
+			"supported_content_id":                        {RefType: "genesyscloud_conversations_messaging_supportedcontent"},
+			"messaging_setting_id":                        {RefType: "genesyscloud_conversations_messaging_settings"},
 			"apple_pay.payment_certificate_credential_id": {RefType: "genesyscloud_integration_credential"},
 		},
 	}
