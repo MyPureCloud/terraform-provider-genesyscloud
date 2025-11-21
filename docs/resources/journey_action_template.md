@@ -115,10 +115,10 @@ Optional:
 - `body` (String) Body text of the content offer.
 - `call_to_action` (Block Set) Properties customizing the call to action button on the content offer. (see [below for nested schema](#nestedblock--content_offer--call_to_action))
 - `headline` (String) Headline displayed above the body text of the content offer.
+- `image_alt_text` (String) Image description text for accessibility compliance and assistive technology support.
 - `image_url` (String) URL for image displayed on the content offer.
 - `style` (Block Set) Properties customizing the styling of the content offer. (see [below for nested schema](#nestedblock--content_offer--style))
 - `title` (String) Title in the header of the content offer.
-- `image_alt_text` (String) Image description text for accessibility compliance and assistive technology support.
 
 <a id="nestedblock--content_offer--call_to_action"></a>
 ### Nested Schema for `content_offer.call_to_action`
