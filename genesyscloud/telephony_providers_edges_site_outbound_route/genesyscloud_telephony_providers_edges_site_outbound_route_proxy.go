@@ -3,11 +3,9 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-	"log"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -176,7 +174,6 @@ func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy
 		for _, outboundRoute := range *outboundRoutes {
 			if (outboundRoute.Name != nil && *outboundRoute.Name == outboundRouteName) &&
 				(outboundRoute.State != nil && *outboundRoute.State != "deleted") {
-				log.Printf("Found outbound route %s for site %s", outboundRouteName, siteId)
 				return siteId, *outboundRoute.Id, false, resp, nil
 			}
 		}
