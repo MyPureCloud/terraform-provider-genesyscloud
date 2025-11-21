@@ -14,6 +14,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 func TestResourceBusinessRulesDecisionTable(t *testing.T) {
@@ -2980,6 +2981,163 @@ func TestUnitConvertTerraformRowToSDKAllDefaults(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error for valid row with explicit values, got: %v", err)
 	}
+}
+
+func TestUnitPublishDecisionTableVersionRetry409(t *testing.T) {
+	// Minimize the number of retries for faster tests
+	previousRetries := util.SetMaxRetriesForTests(3)
+	defer util.SetMaxRetriesForTests(previousRetries)
+
+	tests := []struct {
+		name          string
+		tableId       string
+		version       int
+		mockResponses []mockPublishResponse
+		expectedError bool
+		expectedCalls int
+	}{
+		{
+			name:    "successful_publish_first_try",
+			tableId: "table-123",
+			version: 1,
+			mockResponses: []mockPublishResponse{
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusOK},
+					err:  nil,
+				},
+			},
+			expectedError: false,
+			expectedCalls: 1,
+		},
+		{
+			name:    "retry_success_after_409",
+			tableId: "table-456",
+			version: 2,
+			mockResponses: []mockPublishResponse{
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusConflict},
+					err:  fmt.Errorf("409 Conflict: Transaction canceled"),
+				},
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusOK},
+					err:  nil,
+				},
+			},
+			expectedError: false,
+			expectedCalls: 2,
+		},
+		{
+			name:    "retry_success_after_multiple_409s",
+			tableId: "table-789",
+			version: 3,
+			mockResponses: []mockPublishResponse{
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusConflict},
+					err:  fmt.Errorf("409 Conflict: Transaction canceled"),
+				},
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusConflict},
+					err:  fmt.Errorf("409 Conflict: Transaction canceled"),
+				},
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusOK},
+					err:  nil,
+				},
+			},
+			expectedError: false,
+			expectedCalls: 3,
+		},
+		{
+			name:    "max_retries_exceeded_all_409s",
+			tableId: "table-999",
+			version: 4,
+			mockResponses: []mockPublishResponse{
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusConflict},
+					err:  fmt.Errorf("409 Conflict: Transaction canceled"),
+				},
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusConflict},
+					err:  fmt.Errorf("409 Conflict: Transaction canceled"),
+				},
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusConflict},
+					err:  fmt.Errorf("409 Conflict: Transaction canceled"),
+				},
+				// This response should not be called but it's added to ensure that the response returns immediately after max retries
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusConflict},
+					err:  fmt.Errorf("409 Conflict: Transaction canceled"),
+				},
+			},
+			expectedError: true,
+			expectedCalls: 3,
+		},
+		{
+			name:    "non_retryable_error_immediate_failure",
+			tableId: "table-111",
+			version: 5,
+			mockResponses: []mockPublishResponse{
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusInternalServerError},
+					err:  fmt.Errorf("500 Internal Server Error"),
+				},
+				// This response should not be called for non-retryable errors
+				{
+					resp: &platformclientv2.APIResponse{StatusCode: http.StatusOK},
+					err:  nil,
+				},
+			},
+			expectedError: true,
+			expectedCalls: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Track number of calls
+			callCount := 0
+			currentResponse := 0
+
+			// Create mock proxy
+			decisionTableProxy := &BusinessRulesDecisionTableProxy{}
+			decisionTableProxy.publishDecisionTableVersionAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {
+				// Verify parameters
+				assert.Equal(t, tt.tableId, tableId)
+				assert.Equal(t, tt.version, version)
+
+				callCount++
+
+				// Return the appropriate response
+				if currentResponse < len(tt.mockResponses) {
+					resp := tt.mockResponses[currentResponse]
+					currentResponse++
+					return resp.resp, resp.err
+				}
+
+				return &platformclientv2.APIResponse{StatusCode: http.StatusInternalServerError}, fmt.Errorf("unexpected call")
+			}
+
+			// Call the function
+			ctx := context.Background()
+			err := publishDecisionTableVersion(ctx, decisionTableProxy, tt.tableId, tt.version)
+
+			// Assert results
+			if tt.expectedError {
+				assert.NotNil(t, err, "Expected error but got nil")
+			} else {
+				assert.Nil(t, err, "Expected no error but got: %v", err)
+			}
+
+			// Verify number of calls
+			assert.Equal(t, tt.expectedCalls, callCount, "Unexpected number of calls to publishDecisionTableVersion")
+		})
+	}
+}
+
+type mockPublishResponse struct {
+	resp *platformclientv2.APIResponse
+	err  error
 }
 
 // Helper functions for unit tests

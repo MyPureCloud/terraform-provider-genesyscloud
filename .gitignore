@@ -31,6 +31,7 @@ terraform-provider-genesyscloud
 .kiro
 .amazonq
 .cursor
+.codacy
 **/true
 website/vendor
 vendor/
