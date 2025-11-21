@@ -85,15 +85,15 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
     enabled = true
     agent {
       allow_camera       = true
-      allow_screen_share  = true
-      allow_microphone    = true
+      allow_screen_share = true
+      allow_microphone   = true
       background         = "BLUR"
       background_image {
         url = "https://my-domain/images/background.png"
       }
     }
     user {
-      allow_camera      = true
+      allow_camera       = true
       allow_screen_share = true
       allow_microphone   = true
     }
