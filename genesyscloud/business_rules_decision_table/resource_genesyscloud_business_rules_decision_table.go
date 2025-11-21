@@ -235,9 +235,15 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 
 // publishDecisionTableVersion publishes a decision table version
 func publishDecisionTableVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int) error {
-	_, err := proxy.publishDecisionTableVersion(ctx, tableId, version)
-	if err != nil {
-		return fmt.Errorf("failed to publish version %d: %s", version, err)
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		resp, err := proxy.publishDecisionTableVersion(ctx, tableId, version)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to publish version %d: %s", version, err), resp)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return fmt.Errorf("failed to publish version %d: %v", version, diagErr)
 	}
 
 	log.Printf("Successfully published decision table %s version %d", tableId, version)
