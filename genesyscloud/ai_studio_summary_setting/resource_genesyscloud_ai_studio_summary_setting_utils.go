@@ -25,7 +25,7 @@ func getAiStudioSummarySettingFromResourceData(d *schema.ResourceData) platformc
 		Format:             resourcedata.GetNonZeroPointer[string](d, "format"),
 		MaskPII:            buildSummarySettingPIIs(d.Get("mask_p_i_i").([]interface{})),
 		ParticipantLabels:  buildSummarySettingParticipantLabelss(d.Get("participant_labels").([]interface{})),
-		PredefinedInsights: lists.BuildSdkStringListFromInterfaceArray(d, "predefined_insights"),
+		PredefinedInsights: lists.SetToStringList(d.Get("predefined_insights").(*schema.Set)),
 		CustomEntities:     buildSummarySettingCustomEntitys(d.Get("custom_entities").([]interface{})),
 		SettingType:        resourcedata.GetNonZeroPointer[string](d, "setting_type"),
 		Prompt:             resourcedata.GetNonZeroPointer[string](d, "prompt"),
