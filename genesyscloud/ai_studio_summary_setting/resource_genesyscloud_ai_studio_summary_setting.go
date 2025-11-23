@@ -81,20 +81,8 @@ func readAiStudioSummarySetting(ctx context.Context, d *schema.ResourceData, met
 		resourcedata.SetNillableValue(d, "language", summarySetting.Language)
 		resourcedata.SetNillableValue(d, "summary_type", summarySetting.SummaryType)
 		resourcedata.SetNillableValue(d, "format", summarySetting.Format)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "mask_p_i_i", summarySetting.MaskPII, func(item *platformclientv2.Summarysettingpii) []interface{} {
-			if item == nil {
-				return nil
-			}
-			tmp := []platformclientv2.Summarysettingpii{*item}
-			return flattenSummarySettingPIIs(&tmp[0])
-		})
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "participant_labels", summarySetting.ParticipantLabels, func(item *platformclientv2.Summarysettingparticipantlabels) []interface{} {
-			if item == nil {
-				return nil
-			}
-			tmp := []platformclientv2.Summarysettingparticipantlabels{*item}
-			return flattenSummarySettingParticipantLabelss(&tmp[0])
-		})
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "mask_p_i_i", summarySetting.MaskPII, flattenSummarySettingPIIs)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "participant_labels", summarySetting.ParticipantLabels, flattenSummarySettingParticipantLabelss)
 		resourcedata.SetNillableValue(d, "predefined_insights", summarySetting.PredefinedInsights)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "custom_entities", summarySetting.CustomEntities, flattenSummarySettingCustomEntitys)
 		resourcedata.SetNillableValue(d, "setting_type", summarySetting.SettingType)
