@@ -56,6 +56,54 @@ func getMediaUtilizationAttrTypes() map[string]attr.Type {
 	}
 }
 
+// Element type definitions - define once, reuse everywhere
+func routingSkillsElementType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"skill_id":    types.StringType,
+			"proficiency": types.Float64Type,
+		},
+	}
+}
+
+func routingLanguagesElementType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"language_id": types.StringType,
+			"proficiency": types.Int64Type,
+		},
+	}
+}
+
+func locationsElementType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"location_id": types.StringType,
+			"notes":       types.StringType,
+		},
+	}
+}
+
+func employerInfoElementType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"official_name": types.StringType,
+			"employee_id":   types.StringType,
+			"employee_type": types.StringType,
+			"date_hire":     types.StringType,
+		},
+	}
+}
+
+func voicemailUserpoliciesElementType() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"alert_timeout_seconds":    types.Int64Type,
+			"send_email_notifications": types.BoolType,
+		},
+	}
+}
+
 type FrameworkRetryWrapper struct {
 	resourceType string
 }
@@ -99,7 +147,7 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	//TODO
 	// Retry logic temporarily commented out – SDKv2 helper/retry is not compatible with Plugin Framework.
 	// PF no longer supports the SDKv2 retry utilities (`helper/retry`, `schema.ResourceData`, `diag`).
-	// RetryContext and related constructs relied on SDKv2 internals, which don’t exist in PF.
+	// RetryContext and related constructs relied on SDKv2 internals, which don't exist in PF.
 	// In Plugin Framework, retry/wait logic should be reimplemented using:
 	//   - Context-aware loops with backoff (using the `ctx` passed into CRUD methods)
 	//   - Resource-level timeouts defined in the schema (e.g., CreateTimeout, ReadTimeout, UpdateTimeout)
@@ -108,48 +156,38 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	// return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 
 	// Fetch user from API with expands
-	currentUser, proxyResponse, errGet := proxy.getUserById(ctx, model.Id.ValueString(), []string{
+	currentUser, proxyResponse, getUserErr := proxy.getUserById(ctx, model.Id.ValueString(), []string{
 		// Expands
 		"skills",
 		"languages",
 		"locations",
 		"profileSkills",
 		"certifications",
-		"employerInfo"},
-		"")
+		"employerInfo",
+	}, "")
 
-	if errGet != nil {
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read user %s | error: %s",
-			model.Id.ValueString(), errGet), proxyResponse)
-		*diagnostics = append(*diagnostics, readErr...)
-
+	if getUserErr != nil {
+		*diagnostics = append(*diagnostics, util.BuildFrameworkAPIDiagnosticError(
+			ResourceType,
+			fmt.Sprintf("Failed to read user %s | error: %s", model.Id.ValueString(), getUserErr),
+			proxyResponse,
+		)...)
 		if util.IsStatus404(proxyResponse) {
 			log.Printf("While calling getUserById received 404 error")
-			return
+		} else {
+			log.Printf("While calling getUserById received NonRetryableError error")
 		}
-
-		log.Printf("While calling getUserById received NonRetryableError error")
 		return
 	}
 
-	// Set required attributes using helper function
-	resourcedata.SetPFNillableValueString(&model.Name, currentUser.Name)
-	resourcedata.SetPFNillableValueString(&model.Email, currentUser.Email)
-	resourcedata.SetPFNillableValueString(&model.DivisionId, currentUser.Division.Id)
-	resourcedata.SetPFNillableValueString(&model.State, currentUser.State)
-	resourcedata.SetPFNillableValueString(&model.Department, currentUser.Department)
-	resourcedata.SetPFNillableValueString(&model.Title, currentUser.Title)
-	resourcedata.SetPFNillableValueBool(&model.AcdAutoAnswer, currentUser.AcdAutoAnswer)
+	// Set basic user attributes
+	setBasicUserAttributes(model, currentUser)
 
 	// Set manager
-	model.Manager = types.StringNull()
-	if currentUser.Manager != nil && *currentUser.Manager != nil && (*currentUser.Manager).Id != nil {
-		model.Manager = types.StringValue(*(*currentUser.Manager).Id)
-	}
+	setManagerAttribute(model, currentUser)
 
 	// Log raw API addresses before flattening
-	{
-		b, _ := json.Marshal(currentUser.Addresses)
+	if b, err := json.Marshal(currentUser.Addresses); err == nil {
 		log.Printf("[INV][SDKv2] ReadUser API.Addresses=%s", string(b))
 	}
 
@@ -158,86 +196,169 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	model.Addresses, addressDiags = flattenUserAddresses(ctx, currentUser.Addresses, proxy)
 	*diagnostics = append(*diagnostics, addressDiags...)
 
-	// Decide if routing_skills is managed based on incoming model value.
-	// In Create/Update, model is the plan; in Read, it's the existing state.
-	manageRoutingSkills := !model.RoutingSkills.IsNull() && !model.RoutingSkills.IsUnknown()
+	// Handle managed attributes with consistent pattern
+	handleManagedRoutingSkills(model, currentUser, diagnostics)
+	handleManagedRoutingLanguages(model, currentUser, diagnostics)
+	handleManagedLocations(model, currentUser, diagnostics)
 
-	if manageRoutingSkills {
-		// User configured routing_skills → we manage them, so mirror the API.
-		var skillsDiags pfdiag.Diagnostics
-		model.RoutingSkills, skillsDiags = flattenUserSkills(currentUser.Skills)
-		*diagnostics = append(*diagnostics, skillsDiags...)
-	} else {
-		// User did NOT configure routing_skills → do not manage skills at all.
-		// Keep the attribute null so Terraform treats it as "unmanaged".
-		elemType := types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"skill_id":    types.StringType,
-				"proficiency": types.Float64Type,
-			},
-		}
-		model.RoutingSkills = types.SetNull(elemType)
-	}
-
-	// Flatten routing languages
-	var languagesDiags pfdiag.Diagnostics
-	model.RoutingLanguages, languagesDiags = flattenUserLanguages(currentUser.Languages)
-	*diagnostics = append(*diagnostics, languagesDiags...)
-
-	// Flatten locations
-	var locationsDiags pfdiag.Diagnostics
-	model.Locations, locationsDiags = flattenUserLocations(currentUser.Locations)
-	*diagnostics = append(*diagnostics, locationsDiags...)
-
-	// Flatten profile skills and certifications
+	// Flatten profile skills and certifications (always managed)
 	model.ProfileSkills = flattenUserData(currentUser.ProfileSkills)
 	model.Certifications = flattenUserData(currentUser.Certifications)
 
-	// Flatten employer info
-	var employerInfoDiags pfdiag.Diagnostics
-	model.EmployerInfo, employerInfoDiags = flattenUserEmployerInfo(currentUser.EmployerInfo)
-	*diagnostics = append(*diagnostics, employerInfoDiags...)
+	// Handle employer info
+	handleManagedEmployerInfo(model, currentUser, diagnostics)
 
-	// Get attributes from Voicemail/Userpolicies resource
-	currentVoicemailUserpolicies, apiResp, err := proxy.getVoicemailUserpoliciesById(ctx, model.Id.ValueString())
-	if err != nil {
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType,
-			fmt.Sprintf("Failed to read voicemail userpolicies %s error: %s", model.Id.ValueString(), err), apiResp)
-		*diagnostics = append(*diagnostics, readErr...)
-		log.Printf("Error while reading getVoicemailUserpoliciesById in User %s", model.Id.ValueString())
+	// Get and handle voicemail userpolicies
+	if !handleVoicemailUserpolicies(ctx, model, proxy, diagnostics) {
 		return
 	}
 
-	// Flatten voicemail userpolicies
-	var voicemailDiags pfdiag.Diagnostics
-	model.VoicemailUserpolicies, voicemailDiags = flattenVoicemailUserpolicies(currentVoicemailUserpolicies)
-	*diagnostics = append(*diagnostics, voicemailDiags...)
-
 	// Get routing utilization
-	apiResponse, diagErr := readUserRoutingUtilization(ctx, model, proxy)
-	if diagErr.HasError() {
-		*diagnostics = append(*diagnostics, diagErr...)
-
-		// Check if it's a 404 - user doesn't exist
-		if util.IsStatus404(apiResponse) {
-			log.Printf("User %s not found (404 from routing utilization)", model.Id.ValueString())
-			return
-		}
-
-		readErr := util.BuildFrameworkAPIDiagnosticError(ResourceType,
-			fmt.Sprintf("Failed to read routing utilization %s error: %s", model.Id.ValueString(), err), apiResponse)
-		*diagnostics = append(*diagnostics, readErr...)
-		log.Printf("Error while reading readUserRoutingUtilization in User %s", model.Id.ValueString())
+	if !handleRoutingUtilization(ctx, model, proxy, diagnostics) {
 		return
 	}
 
 	log.Printf("Read user %s %s", model.Id.ValueString(), *currentUser.Email)
 
 	// Log final state
+	logFinalState(model)
+}
+
+// Helper function to set basic user attributes
+func setBasicUserAttributes(model *UserFrameworkResourceModel, currentUser *platformclientv2.User) {
+	resourcedata.SetPFNillableValueString(&model.Name, currentUser.Name)
+	resourcedata.SetPFNillableValueString(&model.Email, currentUser.Email)
+	resourcedata.SetPFNillableValueString(&model.DivisionId, currentUser.Division.Id)
+	resourcedata.SetPFNillableValueString(&model.State, currentUser.State)
+	resourcedata.SetPFNillableValueString(&model.Department, currentUser.Department)
+	resourcedata.SetPFNillableValueString(&model.Title, currentUser.Title)
+	resourcedata.SetPFNillableValueBool(&model.AcdAutoAnswer, currentUser.AcdAutoAnswer)
+}
+
+// Helper function to set manager attribute
+func setManagerAttribute(model *UserFrameworkResourceModel, currentUser *platformclientv2.User) {
+	model.Manager = types.StringNull()
+	if currentUser.Manager != nil {
+		if manager := *currentUser.Manager; manager != nil && manager.Id != nil {
+			model.Manager = types.StringValue(*manager.Id)
+		}
+	}
+}
+
+// Helper function to handle routing skills
+func handleManagedRoutingSkills(model *UserFrameworkResourceModel, currentUser *platformclientv2.User, diagnostics *pfdiag.Diagnostics) {
+	isManaged := !model.RoutingSkills.IsNull() && !model.RoutingSkills.IsUnknown()
+
+	if isManaged {
+		var skillsDiags pfdiag.Diagnostics
+		model.RoutingSkills, skillsDiags = flattenUserSkills(currentUser.Skills)
+		*diagnostics = append(*diagnostics, skillsDiags...)
+	} else {
+		model.RoutingSkills = types.SetNull(routingSkillsElementType())
+	}
+}
+
+// Helper function to handle routing languages
+func handleManagedRoutingLanguages(model *UserFrameworkResourceModel, currentUser *platformclientv2.User, diagnostics *pfdiag.Diagnostics) {
+	isManaged := !model.RoutingLanguages.IsNull() && !model.RoutingLanguages.IsUnknown()
+
+	if isManaged {
+		var languagesDiags pfdiag.Diagnostics
+		model.RoutingLanguages, languagesDiags = flattenUserLanguages(currentUser.Languages)
+		*diagnostics = append(*diagnostics, languagesDiags...)
+	} else {
+		model.RoutingLanguages = types.SetNull(routingLanguagesElementType())
+	}
+}
+
+// Helper function to handle locations
+func handleManagedLocations(model *UserFrameworkResourceModel, currentUser *platformclientv2.User, diagnostics *pfdiag.Diagnostics) {
+	isManaged := !model.Locations.IsNull() && !model.Locations.IsUnknown()
+
+	if isManaged {
+		var locationsDiags pfdiag.Diagnostics
+		model.Locations, locationsDiags = flattenUserLocations(currentUser.Locations)
+		*diagnostics = append(*diagnostics, locationsDiags...)
+	} else {
+		model.Locations = types.SetNull(locationsElementType())
+		log.Printf("[INV][PF] readUser(): locations unmanaged, keeping null in state")
+	}
+}
+
+// Helper function to handle employer info
+func handleManagedEmployerInfo(model *UserFrameworkResourceModel, currentUser *platformclientv2.User, diagnostics *pfdiag.Diagnostics) {
+	isManaged := !model.EmployerInfo.IsNull() && !model.EmployerInfo.IsUnknown()
+
+	if isManaged {
+		var employerInfoDiags pfdiag.Diagnostics
+		model.EmployerInfo, employerInfoDiags = flattenUserEmployerInfo(currentUser.EmployerInfo)
+		*diagnostics = append(*diagnostics, employerInfoDiags...)
+	} else {
+		model.EmployerInfo = types.ListNull(employerInfoElementType())
+		log.Printf("[INV][PF] readUser(): employer_info unmanaged, keeping null in state")
+	}
+}
+
+// Helper function to handle voicemail userpolicies - returns false if should abort
+func handleVoicemailUserpolicies(ctx context.Context, model *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics) bool {
+	currentVoicemailUserpolicies, apiResp, voicemailErr := proxy.getVoicemailUserpoliciesById(ctx, model.Id.ValueString())
+
+	if voicemailErr != nil {
+		*diagnostics = append(*diagnostics, util.BuildFrameworkAPIDiagnosticError(
+			ResourceType,
+			fmt.Sprintf("Failed to read voicemail userpolicies %s error: %s", model.Id.ValueString(), voicemailErr),
+			apiResp,
+		)...)
+		log.Printf("Error while reading getVoicemailUserpoliciesById in User %s", model.Id.ValueString())
+		return false
+	}
+
+	isManaged := !model.VoicemailUserpolicies.IsNull() && !model.VoicemailUserpolicies.IsUnknown()
+
+	if isManaged {
+		var voicemailDiags pfdiag.Diagnostics
+		model.VoicemailUserpolicies, voicemailDiags = flattenVoicemailUserpolicies(currentVoicemailUserpolicies)
+		*diagnostics = append(*diagnostics, voicemailDiags...)
+	} else {
+		model.VoicemailUserpolicies = types.ListNull(voicemailUserpoliciesElementType())
+		log.Printf("[INV][PF] readUser(): voicemail_userpolicies unmanaged, keeping null in state")
+	}
+
+	return true
+}
+
+// Helper function to handle routing utilization - returns false if should abort
+func handleRoutingUtilization(ctx context.Context, model *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics) bool {
+	apiResponse, diagErr := readUserRoutingUtilization(ctx, model, proxy)
+
+	if diagErr.HasError() {
+		*diagnostics = append(*diagnostics, diagErr...)
+
+		if util.IsStatus404(apiResponse) {
+			log.Printf("User %s not found (404 from routing utilization)", model.Id.ValueString())
+			return false
+		}
+
+		*diagnostics = append(*diagnostics, util.BuildFrameworkAPIDiagnosticError(
+			ResourceType,
+			fmt.Sprintf("Failed to read routing utilization %s", model.Id.ValueString()),
+			apiResponse,
+		)...)
+		log.Printf("Error while reading readUserRoutingUtilization in User %s", model.Id.ValueString())
+		return false
+	}
+
+	return true
+}
+
+// Helper function to log final state
+func logFinalState(model *UserFrameworkResourceModel) {
 	log.Printf("[INV] FINAL STATE effective addresses: %s", invMustJSON(model.Addresses))
+
 	if idents := invPhoneIdentitiesFromFrameworkAddresses(model.Addresses); len(idents) > 0 {
 		log.Printf("[INV] FINAL STATE phone identities: %v", idents)
 	}
+
 	log.Printf("[INV] FINAL STATE routing_utilization: %s", invMustJSON(model.RoutingUtilization))
 	log.Printf("[INV] FINAL STATE voicemail_userpolicies: %s", invMustJSON(model.VoicemailUserpolicies))
 }
@@ -326,7 +447,6 @@ func updateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *us
 func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourceModel, proxy *userProxy) (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
 	var diagnostics pfdiag.Diagnostics
 	log.Printf("Getting user utilization")
-
 	// Define reusable type definitions
 	mediaUtilObjType := types.ObjectType{AttrTypes: getMediaUtilizationAttrTypes()}
 	labelUtilObjType := types.ObjectType{AttrTypes: getLabelUtilizationAttrTypes()}
@@ -377,6 +497,30 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 		return response, diagnostics
 	}
 
+	//Look at existing plan/state to know which media types are actually configured
+	var existingConfigs []RoutingUtilizationModel
+	var existing RoutingUtilizationModel
+	hasExisting := false
+
+	if !state.RoutingUtilization.IsNull() && !state.RoutingUtilization.IsUnknown() {
+		diags := state.RoutingUtilization.ElementsAs(ctx, &existingConfigs, false)
+		diagnostics.Append(diags...)
+		if len(existingConfigs) > 0 {
+			existing = existingConfigs[0]
+			hasExisting = true
+		}
+	}
+
+	isConfiguredMedia := func(list types.List) bool {
+		// If list is null/unknown, user did not configure this media type
+		if list.IsNull() || list.IsUnknown() {
+			return false
+		}
+		// We don’t need to check length here – with MaxItems=1 and required fields,
+		// a non-null/non-unknown list corresponds to “configured”.
+		return true
+	}
+
 	// Build the settings object
 	allSettingsAttrs := map[string]attr.Value{
 		"call":               types.ListNull(mediaUtilObjType),
@@ -391,6 +535,32 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 	if agentUtilization.Utilization != nil {
 		for sdkType, schemaType := range getUtilizationMediaTypes() {
 			if mediaSettings, ok := agentUtilization.Utilization[sdkType]; ok {
+				// 🔹 NEW: Only populate media blocks that are configured in plan/state
+				if hasExisting {
+					switch schemaType {
+					case "call":
+						if !isConfiguredMedia(existing.Call) {
+							continue
+						}
+					case "callback":
+						if !isConfiguredMedia(existing.Callback) {
+							continue
+						}
+					case "message":
+						if !isConfiguredMedia(existing.Message) {
+							continue
+						}
+					case "email":
+						if !isConfiguredMedia(existing.Email) {
+							continue
+						}
+					case "chat":
+						if !isConfiguredMedia(existing.Chat) {
+							continue
+						}
+					}
+				}
+
 				flattenedMedia, diags := flattenUtilizationSetting(mediaSettings)
 				diagnostics.Append(diags...)
 				allSettingsAttrs[schemaType] = flattenedMedia
@@ -552,6 +722,16 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				//     phoneNumber["extension_pool_id"] = types.StringValue(poolId)
 				// }
 				_ = fetchExtensionPoolId // keep reference if you still use it elsewhere
+
+				// *** KEY FIX: for internal extensions, treat as extension-only identity ***
+				// Even if Address is populated (and Case 1 set a number), we force `number`
+				// back to null so that:
+				//
+				//   plan:  extension="9843", number=null
+				//   state: extension="9843", number=null
+				//
+				// and PF can correlate the Set element correctly on create.
+				phoneNumber["number"] = types.StringNull()
 			}
 
 			// Case 3: Extension ≠ Display → phone number + extension pair
@@ -572,6 +752,35 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				ext := strings.Trim(*address.Display, "()")
 				if ext != "" {
 					phoneNumber["extension"] = types.StringValue(ext)
+				}
+			}
+
+			// --- EXTRA NORMALIZATION STEP ---
+			// Some orgs/API responses will store an internal extension like "9843"
+			// but also echo it back as a phone number in E.164 form, e.g. "+19843".
+			// If we keep both:
+			//   plan:  extension="9843", number=null
+			//   state: extension="9843", number="+19843"
+			// the Set element identity will differ and PF can't correlate them.
+			//
+			// To keep PF behavior aligned with SDKv2 for "extension-only" configs,
+			// if `number` is exactly E.164(extension), we treat it as redundant and
+			// clear it back to null so identity is extension-only.
+			if extVal, ok := phoneNumber["extension"].(types.String); ok && !extVal.IsNull() && !extVal.IsUnknown() {
+				if numVal, ok2 := phoneNumber["number"].(types.String); ok2 && !numVal.IsNull() && !numVal.IsUnknown() {
+					extStr := strings.TrimSpace(extVal.ValueString())
+					numStr := strings.TrimSpace(numVal.ValueString())
+
+					if extStr != "" && numStr != "" {
+						// E.164 representation of the extension using same utilE164 helper
+						extAsE164 := utilE164.FormatAsCalculatedE164Number(strings.Trim(extStr, "()"))
+
+						if extAsE164 != "" && extAsE164 == numStr {
+							// Treat this as "extension-only" identity
+							phoneNumber["number"] = types.StringNull()
+							log.Printf("[INV][PF] flattenUserAddresses(): normalized E164 duplicate for extension %q; cleared number", extStr)
+						}
+					}
 				}
 			}
 
