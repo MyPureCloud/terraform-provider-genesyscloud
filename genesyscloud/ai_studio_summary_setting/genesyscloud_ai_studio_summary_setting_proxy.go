@@ -109,7 +109,7 @@ func getAllAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySetti
 	var allSummarySettings []platformclientv2.Summarysetting
 	const pageSize = 100
 
-	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings(name, "", "", "", 1, pageSize)
+	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings("", name, "", "", 1, pageSize)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -122,7 +122,7 @@ func getAllAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySetti
 	}
 
 	for pageNum := 2; pageNum <= *summarySettings.PageCount; pageNum++ {
-		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings(name, "", "", "", pageNum, pageSize)
+		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings("", name, "", "", pageNum, pageSize)
 		if err != nil {
 			return nil, resp, err
 		}

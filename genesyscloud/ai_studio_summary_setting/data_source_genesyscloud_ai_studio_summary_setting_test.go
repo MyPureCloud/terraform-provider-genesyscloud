@@ -20,7 +20,6 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 		aiStudioSummarySettingDataLabel = "data-aiStudioSummarySetting"
 
 		aiStudioSummarySettingResourceLabel = "resource-aiStudioSummarySetting"
-		resourceName                        = "test-summary-setting"
 		name                                = "summary setting test"
 		language                            = "en-au"
 		summaryType                         = "Concise"
@@ -39,7 +38,7 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create Summary Setting
-				Config: GenerateFullAiStudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsights0, predefinedInsights1, prompt) + generateAiStudioSummarySettingDataSource(aiStudioSummarySettingDataLabel, resourceName, "genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel),
+				Config: GenerateFullAiStudioSummarySettingResource(aiStudioSummarySettingResourceLabel, name, language, summaryType, settingType, format, maskPii, participantLabelInternal, participantLabelExternal, predefinedInsights0, predefinedInsights1, prompt) + generateAiStudioSummarySettingDataSource(aiStudioSummarySettingDataLabel, name, "genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingResourceLabel),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.genesyscloud_ai_studio_summary_setting."+aiStudioSummarySettingDataLabel, "id",
