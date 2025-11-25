@@ -2,6 +2,7 @@ package guide_version
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -15,6 +16,10 @@ import (
 
 func TestAccResourceGuideVersion(t *testing.T) {
 
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 	if !guide.GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
 		return
@@ -145,6 +150,10 @@ func TestAccResourceGuideVersion(t *testing.T) {
 
 func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
 
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 	if !guide.GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
 		return

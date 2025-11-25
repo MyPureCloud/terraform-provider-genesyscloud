@@ -3,6 +3,7 @@ package guide
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,6 +14,11 @@ import (
 )
 
 func TestAccResourceGuideManual(t *testing.T) {
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 
 	if !GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
@@ -56,7 +62,10 @@ func TestAccResourceGuidePrompt(t *testing.T) {
 
 		name = "Test Guide Prompt" + uuid.NewString()
 	)
-
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),

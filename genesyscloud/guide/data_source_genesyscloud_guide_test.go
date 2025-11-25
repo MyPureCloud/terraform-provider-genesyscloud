@@ -2,6 +2,7 @@ package guide
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,7 +12,10 @@ import (
 )
 
 func TestAccDataSourceGuide(t *testing.T) {
-
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 	if !GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
 		return
