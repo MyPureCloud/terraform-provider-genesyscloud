@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -106,11 +107,13 @@ func (p *taskManagementWorktypeStatusProxy) getTaskManagementWorktype(ctx contex
 
 // createTaskManagementWorktypeStatusFn is an implementation function for creating a Genesys Cloud task management worktype status
 func createTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, taskManagementWorktypeStatus *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PostTaskmanagementWorktypeStatuses(worktypeId, *taskManagementWorktypeStatus)
 }
 
 // getAllTaskManagementWorktypeStatusFn is the implementation for retrieving all task management worktype status in Genesys Cloud
 func getAllTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string) (*[]platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	statuses, resp, err := p.taskManagementApi.GetTaskmanagementWorktypeStatuses(worktypeId)
 	if err != nil {
 		return nil, resp, err
@@ -121,6 +124,7 @@ func getAllTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagement
 
 // getTaskManagementWorktypeStatusIdByNameFn is an implementation of the function to get a Genesys Cloud task management worktype status by name
 func getTaskManagementWorktypeStatusIdByNameFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	statuses, resp, err := getAllTaskManagementWorktypeStatusFn(ctx, p, worktypeId)
 	if err != nil {
 		return "", resp, false, err
@@ -141,20 +145,24 @@ func getTaskManagementWorktypeStatusIdByNameFn(ctx context.Context, p *taskManag
 
 // getTaskManagementWorktypeStatusByIdFn is an implementation of the function to get a Genesys Cloud task management worktype status by Id
 func getTaskManagementWorktypeStatusByIdFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.GetTaskmanagementWorktypeStatus(worktypeId, statusId)
 }
 
 // updateTaskManagementWorktypeStatusFn is an implementation of the function to update a Genesys Cloud task management worktype status
 func updateTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string, taskManagementWorktypeStatus *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PatchTaskmanagementWorktypeStatus(worktypeId, statusId, *taskManagementWorktypeStatus)
 }
 
 // deleteTaskManagementWorktypeStatusFn is an implementation function for deleting a Genesys Cloud task management worktype status
 func deleteTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.DeleteTaskmanagementWorktypeStatus(worktypeId, statusId)
 }
 
 // getTaskManagementWorktypeFn is an implementation of the function to get a Genesys Cloud task management worktype
 func getTaskManagementWorktypeFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.GetTaskmanagementWorktype(worktypeId, nil)
 }

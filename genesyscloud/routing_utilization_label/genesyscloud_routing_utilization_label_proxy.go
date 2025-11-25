@@ -3,8 +3,10 @@ package routing_utilization_label
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -77,7 +79,10 @@ func (p *routingUtilizationLabelProxy) deleteRoutingUtilizationLabel(ctx context
 	return p.deleteRoutingUtilizationLabelAttr(ctx, p, id, forceDelete)
 }
 
-func getAllRoutingUtilizationLabelsFn(_ context.Context, p *routingUtilizationLabelProxy, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func getAllRoutingUtilizationLabelsFn(ctx context.Context, p *routingUtilizationLabelProxy, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allUtilizationLabels []platformclientv2.Utilizationlabel
 	const pageSize = 100
 
@@ -110,11 +115,17 @@ func getAllRoutingUtilizationLabelsFn(_ context.Context, p *routingUtilizationLa
 	return &allUtilizationLabels, resp, nil
 }
 
-func createRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func createRoutingUtilizationLabelFn(ctx context.Context, p *routingUtilizationLabelProxy, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PostRoutingUtilizationLabels(*req)
 }
 
-func getRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func getRoutingUtilizationLabelFn(ctx context.Context, p *routingUtilizationLabelProxy, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if label := rc.GetCacheItem(p.routingCache, id); label != nil {
 		return label, nil, nil
 	}
@@ -122,6 +133,9 @@ func getRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelP
 }
 
 func getRoutingUtilizationLabelByNameFn(ctx context.Context, p *routingUtilizationLabelProxy, name string) (*platformclientv2.Utilizationlabel, bool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	labels, resp, err := getAllRoutingUtilizationLabelsFn(ctx, p, name)
 	if err != nil {
 		return nil, false, resp, fmt.Errorf("error retrieving routing utilization label by name %s", err)
@@ -140,11 +154,17 @@ func getRoutingUtilizationLabelByNameFn(ctx context.Context, p *routingUtilizati
 	return nil, true, resp, fmt.Errorf("no routing utilization label found with name: %s", name)
 }
 
-func updateRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, id string, req *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+func updateRoutingUtilizationLabelFn(ctx context.Context, p *routingUtilizationLabelProxy, id string, req *platformclientv2.Updateutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PutRoutingUtilizationLabel(id, *req)
 }
 
-func deleteRoutingUtilizationLabelFn(_ context.Context, p *routingUtilizationLabelProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error) {
+func deleteRoutingUtilizationLabelFn(ctx context.Context, p *routingUtilizationLabelProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.routingApi.DeleteRoutingUtilizationLabel(id, forceDelete)
 	if err != nil {
 		return resp, err

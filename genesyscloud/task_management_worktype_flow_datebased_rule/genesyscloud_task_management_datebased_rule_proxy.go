@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -101,11 +102,13 @@ func (p *taskManagementDateBasedRuleProxy) deleteTaskManagementDateBasedRule(ctx
 
 // createTaskManagementDateBasedRuleFn is an implementation function for creating a Genesys Cloud task management datebased rule
 func createTaskManagementDateBasedRuleFn(ctx context.Context, p *taskManagementDateBasedRuleProxy, worktypeId string, dateBasedRuleCreate *platformclientv2.Workitemdatebasedrulecreate) (*platformclientv2.Workitemdatebasedrule, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsDatebasedRules(worktypeId, *dateBasedRuleCreate)
 }
 
 // getAllTaskManagementDateBasedRuleFn is the implementation for retrieving all task management datebased rules in Genesys Cloud
 func getAllTaskManagementDateBasedRuleFn(ctx context.Context, p *taskManagementDateBasedRuleProxy, worktypeId string) (*[]platformclientv2.Workitemdatebasedrule, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 200
 	var (
 		allDateBasedRules []platformclientv2.Workitemdatebasedrule
@@ -133,6 +136,7 @@ func getAllTaskManagementDateBasedRuleFn(ctx context.Context, p *taskManagementD
 
 // getTaskManagementDateBasedRuleIdByNameFn is an implementation of the function to get a Genesys Cloud task management datebased rule by name
 func getTaskManagementDateBasedRuleIdByNameFn(ctx context.Context, p *taskManagementDateBasedRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 200
 	var (
 		after    = ""
@@ -165,6 +169,7 @@ func getTaskManagementDateBasedRuleIdByNameFn(ctx context.Context, p *taskManage
 
 // getTaskManagementDateBasedRuleByIdFn is an implementation of the function to get a Genesys Cloud task management datebased rule by Id
 func getTaskManagementDateBasedRuleByIdFn(ctx context.Context, p *taskManagementDateBasedRuleProxy, worktypeId string, id string) (taskManagementDateBasedRule *platformclientv2.Workitemdatebasedrule, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	dateBasedRule := rc.GetCacheItem(p.dateBasedRuleCache, id)
 	if dateBasedRule != nil {
 		return dateBasedRule, nil, nil
@@ -175,11 +180,13 @@ func getTaskManagementDateBasedRuleByIdFn(ctx context.Context, p *taskManagement
 
 // updateTaskManagementDateBasedRuleFn is an implementation of the function to update a Genesys Cloud task management datebased rule
 func updateTaskManagementDateBasedRuleFn(ctx context.Context, p *taskManagementDateBasedRuleProxy, worktypeId string, id string, dateBasedRuleUpdate *platformclientv2.Workitemdatebasedruleupdate) (*platformclientv2.Workitemdatebasedrule, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PatchTaskmanagementWorktypeFlowsDatebasedRule(worktypeId, id, *dateBasedRuleUpdate)
 }
 
 // deleteTaskManagementDateBasedRuleFn is an implementation function for deleting a Genesys Cloud task management datebased rule
 func deleteTaskManagementDateBasedRuleFn(ctx context.Context, p *taskManagementDateBasedRuleProxy, worktypeId string, id string) (resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorktypeFlowsDatebasedRule(worktypeId, id)
 	if err == nil {
 		rc.DeleteCacheItem(p.dateBasedRuleCache, id)

@@ -787,6 +787,13 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
+		// Automatically inject resource context if not already set
+		// This allows SDK debug logs to include resource type and identifier without requiring
+		// each resource function to manually call SetResourceContext
+		if r != nil {
+			ctx = autoInjectResourceContext(ctx, r)
+		}
+
 		if mrmo.IsActive() {
 			clientConfig, err := mrmo.GetClientConfig()
 			if err != nil {
@@ -834,6 +841,54 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 
 		return result
 	}
+}
+
+// autoInjectResourceContext automatically injects resource context if not already present.
+// This extracts both resource ID and name as separate values.
+// If either value is unavailable, it will be set to "unavailable".
+// Note: The resource type cannot be automatically determined due to import cycle constraints,
+// so resources should call util.SetResourceContext(ctx, d, ResourceType) for complete context.
+// However, this function will still set the resource ID and name, which is useful
+// even without the resource type.
+func autoInjectResourceContext(ctx context.Context, r *schema.ResourceData) context.Context {
+	// Check if context already has resource metadata (don't overwrite)
+	if _, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok {
+		return ctx
+	}
+
+	// Extract resource ID and name
+	resourceId, resourceName := extractResourceIdAndName(r)
+
+	// Set it in context (even without resource type)
+	return WithResourceContext(ctx, "", resourceId, resourceName)
+}
+
+// extractResourceIdAndName extracts both ID and name from ResourceData.
+// Returns "unavailable" for any missing values.
+func extractResourceIdAndName(d *schema.ResourceData) (resourceId, resourceName string) {
+	// Get resource ID
+	if d != nil && d.Id() != "" {
+		resourceId = d.Id()
+	} else {
+		resourceId = "unavailable"
+	}
+
+	// Get resource name
+	if d != nil {
+		if name, ok := d.GetOk("name"); ok {
+			if nameStr, ok := name.(string); ok && nameStr != "" {
+				resourceName = nameStr
+			} else {
+				resourceName = "unavailable"
+			}
+		} else {
+			resourceName = "unavailable"
+		}
+	} else {
+		resourceName = "unavailable"
+	}
+
+	return resourceId, resourceName
 }
 
 // GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method

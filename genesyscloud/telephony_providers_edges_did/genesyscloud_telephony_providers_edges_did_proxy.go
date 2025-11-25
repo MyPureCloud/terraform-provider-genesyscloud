@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -68,7 +69,10 @@ func (t *telephonyProvidersEdgesDidProxy) getTelephonyProvidersEdgesDidIdByDid(c
 }
 
 // getTelephonyProvidersEdgesDidIdByDidFn is an implementation function for getting a telephony DID ID by DID number.
-func getTelephonyProvidersEdgesDidIdByDidFn(_ context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, *platformclientv2.APIResponse, error) {
+func getTelephonyProvidersEdgesDidIdByDidFn(ctx context.Context, t *telephonyProvidersEdgesDidProxy, did string) (string, bool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	utilE164 := util.NewUtilE164Service()
 	const pageSize = 100
 

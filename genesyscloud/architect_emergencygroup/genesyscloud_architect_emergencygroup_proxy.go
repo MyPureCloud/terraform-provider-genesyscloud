@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -74,6 +76,9 @@ func (p *architectEmergencyGroupProxy) createArchitectEmergencyGroup(ctx context
 }
 
 func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGroupProxy) (*[]platformclientv2.Emergencygroup, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var totalRecords []platformclientv2.Emergencygroup
 
 	const pageSize = 100
@@ -108,10 +113,16 @@ func getAllArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyG
 }
 
 func getArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGroupProxy, emergencyGroupId string) (emergencyGroup *platformclientv2.Emergencygroup, apiResponse *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.architectApi.GetArchitectEmergencygroup(emergencyGroupId)
 }
 
 func getArchitectEmergencyGroupIdByNameFn(ctx context.Context, p *architectEmergencyGroupProxy, name string) (emergencyGroup *platformclientv2.Emergencygrouplisting, apiResponse *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageNum = 1
 	const pageSize = 100
 
@@ -119,13 +130,22 @@ func getArchitectEmergencyGroupIdByNameFn(ctx context.Context, p *architectEmerg
 }
 
 func updateArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGroupProxy, emergencyGroupId string, emergencyGroup platformclientv2.Emergencygroup) (*platformclientv2.Emergencygroup, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.architectApi.PutArchitectEmergencygroup(emergencyGroupId, emergencyGroup)
 }
 
 func deleteArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGroupProxy, emergencyGroupId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.architectApi.DeleteArchitectEmergencygroup(emergencyGroupId)
 }
 
 func createArchitectEmergencyGroupFn(ctx context.Context, p *architectEmergencyGroupProxy, emergencyGroup platformclientv2.Emergencygroup) (*platformclientv2.Emergencygroup, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.architectApi.PostArchitectEmergencygroups(emergencyGroup)
 }

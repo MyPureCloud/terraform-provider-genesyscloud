@@ -7,6 +7,8 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -124,6 +126,9 @@ func (p *externalContactsContactsProxy) getExternalContactsOrganizationById(ctx 
 
 // getAllExternalContactsFn is the implementation for retrieving all external contacts in Genesys Cloud
 func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allExternalContacts []platformclientv2.Externalcontact
 	cursor := ""
 	var response *platformclientv2.APIResponse
@@ -158,11 +163,17 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 
 // createExternalContactFn is an implementation function for creating a Genesys Cloud External Contact
 func createExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContact platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.externalContactsApi.PostExternalcontactsContacts(externalContact)
 }
 
 // deleteExternalContactsFn is an implementation function for deleting a Genesys Cloud External Contact
 func deleteExternalContactsFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.externalContactsApi.DeleteExternalcontactsContact(externalContactId)
 	if err != nil {
 		return resp, err
@@ -173,11 +184,17 @@ func deleteExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 
 // getExternalContactByIdFn is an implementation of the function to get a Genesys Cloud External Contact by Id
 func getExternalContactByIdFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.externalContactsApi.GetExternalcontactsContact(externalContactId, nil)
 }
 
 // getExternalContactIdBySearchFn is an implementation of the function to get a Genesys Cloud External contact by a search team
 func getExternalContactIdBySearchFn(ctx context.Context, p *externalContactsContactsProxy, search string) (externalContactId string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageNum = 1
 	const pageSize = 100
 	contacts, resp, err := p.externalContactsApi.GetExternalcontactsContacts(pageSize, pageNum, search, "", nil, nil)
@@ -203,10 +220,16 @@ func getExternalContactIdBySearchFn(ctx context.Context, p *externalContactsCont
 
 // updateExternalContactFn is an implementation of the function to update a Genesys Cloud external contact
 func updateExternalContactFn(ctx context.Context, p *externalContactsContactsProxy, externalContactId string, externalContact platformclientv2.Externalcontact) (*platformclientv2.Externalcontact, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.externalContactsApi.PutExternalcontactsContact(externalContactId, externalContact)
 }
 
 // getExternalContactsOrganizationByIdFn is an implementation of the function to get a Genesys Cloud external contacts organization by Id
 func getExternalContactsOrganizationByIdFn(ctx context.Context, p *externalContactsContactsProxy, id string) (externalContactsOrganization *platformclientv2.Externalorganization, apiResponse *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.externalContactsApi.GetExternalcontactsOrganization(id, []string{}, false)
 }

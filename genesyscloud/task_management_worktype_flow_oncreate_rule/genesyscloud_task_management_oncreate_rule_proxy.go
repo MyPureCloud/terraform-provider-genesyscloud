@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -101,11 +102,13 @@ func (p *taskManagementOnCreateRuleProxy) deleteTaskManagementOnCreateRule(ctx c
 
 // createTaskManagementOnCreateRuleFn is an implementation function for creating a Genesys Cloud task management oncreate rule
 func createTaskManagementOnCreateRuleFn(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string, onCreateRuleCreate *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsOncreateRules(worktypeId, *onCreateRuleCreate)
 }
 
 // getAllTaskManagementOnCreateRuleFn is the implementation for retrieving all task management oncreate rules in Genesys Cloud
 func getAllTaskManagementOnCreateRuleFn(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string) (*[]platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 200
 	var (
 		allOnCreateRules []platformclientv2.Workitemoncreaterule
@@ -133,6 +136,7 @@ func getAllTaskManagementOnCreateRuleFn(ctx context.Context, p *taskManagementOn
 
 // getTaskManagementOnCreateRuleIdByNameFn is an implementation of the function to get a Genesys Cloud task management oncreate rule by name
 func getTaskManagementOnCreateRuleIdByNameFn(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 200
 	var (
 		after    = ""
@@ -165,6 +169,7 @@ func getTaskManagementOnCreateRuleIdByNameFn(ctx context.Context, p *taskManagem
 
 // getTaskManagementOnCreateRuleByIdFn is an implementation of the function to get a Genesys Cloud task management oncreate rule by Id
 func getTaskManagementOnCreateRuleByIdFn(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string, id string) (taskManagementOnCreateRule *platformclientv2.Workitemoncreaterule, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	onCreateRule := rc.GetCacheItem(p.onCreateRuleCache, id)
 	if onCreateRule != nil {
 		return onCreateRule, nil, nil
@@ -175,11 +180,13 @@ func getTaskManagementOnCreateRuleByIdFn(ctx context.Context, p *taskManagementO
 
 // updateTaskManagementOnCreateRuleFn is an implementation of the function to update a Genesys Cloud task management oncreate rule
 func updateTaskManagementOnCreateRuleFn(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string, id string, onCreateRuleUpdate *platformclientv2.Workitemoncreateruleupdate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PatchTaskmanagementWorktypeFlowsOncreateRule(worktypeId, id, *onCreateRuleUpdate)
 }
 
 // deleteTaskManagementOnCreateRuleFn is an implementation function for deleting a Genesys Cloud task management oncreate rule
 func deleteTaskManagementOnCreateRuleFn(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string, id string) (resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorktypeFlowsOncreateRule(worktypeId, id)
 	if err == nil {
 		rc.DeleteCacheItem(p.onCreateRuleCache, id)

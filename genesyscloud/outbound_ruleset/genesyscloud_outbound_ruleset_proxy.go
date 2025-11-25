@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -94,6 +96,9 @@ func (p *outboundRulesetProxy) deleteOutboundRuleset(ctx context.Context, rulese
 
 // createOutboundRulesetFn is an implementation function for creating a Genesys Cloud Outbound Ruleset
 func createOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, ruleset *platformclientv2.Ruleset) (*platformclientv2.Ruleset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	ruleset, resp, err := p.outboundApi.PostOutboundRulesets(*ruleset)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create ruleset: %s", err)
@@ -103,6 +108,9 @@ func createOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rules
 
 // getAllOutboundRulesetFn is the implementation for retrieving all outbound ruleset in Genesys Cloud
 func getAllOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy) (*[]platformclientv2.Ruleset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allRulesets []platformclientv2.Ruleset
 	var response *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
@@ -127,6 +135,9 @@ func getAllOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy) (*[]p
 
 // getOutboundRulesetByIdFn is an implementation of the function to get a Genesys Cloud Outbound Ruleset by Id
 func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (ruleset *platformclientv2.Ruleset, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	ruleset, resp, err := p.outboundApi.GetOutboundRuleset(rulesetId)
 	if err != nil {
 		//This is an API that throws an error on a 404 instead of just returning a 404.
@@ -141,6 +152,9 @@ func getOutboundRulesetByIdFn(ctx context.Context, p *outboundRulesetProxy, rule
 
 // getOutboundRulesetIdBySearchFn is an implementation of the function to get a Genesys Cloud Outbound Ruleset by name
 func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, name string) (rulesetId string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageNum = 1
 	const pageSize = 100
 	rulesets, resp, err := p.outboundApi.GetOutboundRulesets(pageSize, pageNum, true, "", name, "", "")
@@ -168,6 +182,9 @@ func getOutboundRulesetIdByNameFn(ctx context.Context, p *outboundRulesetProxy, 
 
 // updateOutboundRulesetFn is an implementation of the function to update a Genesys Cloud Outbound Rulesets
 func updateOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string, ruleset *platformclientv2.Ruleset) (*platformclientv2.Ruleset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	outboundRuleset, resp, err := getOutboundRulesetByIdFn(ctx, p, rulesetId)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to ruleset by id %s: %s", rulesetId, err)
@@ -183,6 +200,9 @@ func updateOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rules
 
 // deleteOutboundRulesetFn is an implementation function for deleting a Genesys Cloud Outbound Rulesets
 func deleteOutboundRulesetFn(ctx context.Context, p *outboundRulesetProxy, rulesetId string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.outboundApi.DeleteOutboundRuleset(rulesetId)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete ruleset: %s", err)

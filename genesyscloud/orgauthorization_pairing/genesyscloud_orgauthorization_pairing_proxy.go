@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -53,6 +55,9 @@ func (p *orgauthorizationPairingProxy) getOrgauthorizationPairingById(ctx contex
 
 // createOrgauthorizationPairingFn is an implementation function for creating a Genesys Cloud orgauthorization pairing
 func createOrgauthorizationPairingFn(ctx context.Context, p *orgauthorizationPairingProxy, orgauthorizationPairing *platformclientv2.Trustrequestcreate) (*platformclientv2.Trustrequest, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	trustRequestCreate, resp, err := p.organizationAuthorizationApi.PostOrgauthorizationPairings(*orgauthorizationPairing)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create orgauthorization pairing: %s", err)
@@ -62,6 +67,9 @@ func createOrgauthorizationPairingFn(ctx context.Context, p *orgauthorizationPai
 
 // getOrgauthorizationPairingByIdFn is an implementation of the function to get a Genesys Cloud orgauthorization pairing by Id
 func getOrgauthorizationPairingByIdFn(ctx context.Context, p *orgauthorizationPairingProxy, id string) (orgauthorizationPairing *platformclientv2.Trustrequest, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	trustRequestCreate, resp, err := p.organizationAuthorizationApi.GetOrgauthorizationPairing(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to retrieve orgauthorization pairing by id %s: %s", id, err)

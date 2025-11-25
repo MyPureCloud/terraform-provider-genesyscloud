@@ -11,6 +11,7 @@ import (
 	"time"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -267,7 +268,8 @@ func getFlowIdByNameAndTypeFn(ctx context.Context, a *architectFlowProxy, name, 
 	return "", nil, true, noFlowsFoundErr
 }
 
-func getArchitectFlowFn(_ context.Context, p *architectFlowProxy, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+func getArchitectFlowFn(ctx context.Context, p *architectFlowProxy, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	flow := rc.GetCacheItem(p.flowCache, id)
 	if flow != nil {
 		return flow, nil, nil
@@ -275,13 +277,15 @@ func getArchitectFlowFn(_ context.Context, p *architectFlowProxy, id string) (*p
 	return p.api.GetFlow(id, false)
 }
 
-func forceUnlockFlowFn(_ context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
+func forceUnlockFlowFn(ctx context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	log.Printf("Attempting to perform an unlock on flow: %s", flowId)
 	_, resp, err := p.api.PostFlowsActionsUnlock(flowId)
 	return resp, err
 }
 
-func deleteArchitectFlowFn(_ context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
+func deleteArchitectFlowFn(ctx context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.api.DeleteFlow(flowId)
 	if err != nil {
 		return resp, err
@@ -290,11 +294,13 @@ func deleteArchitectFlowFn(_ context.Context, p *architectFlowProxy, flowId stri
 	return resp, err
 }
 
-func createArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
+func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.api.PostFlowsJobs()
 }
 
-func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {
+func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.api.GetFlowsJob(jobId, []string{"messages"})
 }
 

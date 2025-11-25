@@ -37,9 +37,9 @@ func TestAccResourceAppleIntegrationBasic(t *testing.T) {
 					businessId,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName+"."+resourceLabel, "name", integrationName),
-					resource.TestCheckResourceAttr(resourceName+"."+resourceLabel, "messages_for_business_id", businessId),
-					resource.TestCheckResourceAttrSet(resourceName+"."+resourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", integrationName),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "messages_for_business_id", businessId),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "id"),
 				),
 			},
 			func() resource.TestStep {
@@ -60,15 +60,15 @@ func TestAccResourceAppleIntegrationBasic(t *testing.T) {
 				} else {
 					// Real ID: Test successful update operation
 					step.Check = resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(resourceName+"."+resourceLabel, "name", updatedName),
-						resource.TestCheckResourceAttr(resourceName+"."+resourceLabel, "messages_for_business_id", businessId),
+						resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", updatedName),
+						resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "messages_for_business_id", businessId),
 					)
 				}
 				return step
 			}(),
 			{
 				// Import/Read
-				ResourceName:            resourceName + "." + resourceLabel,
+				ResourceName:            ResourceType + "." + resourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"name"},

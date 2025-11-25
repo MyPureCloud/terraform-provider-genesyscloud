@@ -3,8 +3,10 @@ package routing_email_domain
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -87,6 +89,9 @@ func (p *routingEmailDomainProxy) deleteRoutingEmailDomain(ctx context.Context, 
 }
 
 func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy) (*[]platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		allDomains []platformclientv2.Inbounddomain
 		pageSize   = 100
@@ -123,10 +128,16 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 }
 
 func createRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy, routingEmailDomain *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PostRoutingEmailDomains(*routingEmailDomain)
 }
 
 func getRoutingEmailDomainByIdFn(ctx context.Context, p *routingEmailDomainProxy, id string) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if domain := rc.GetCacheItem(p.routingEmailDomainCache, id); domain != nil {
 		return domain, nil, nil
 	}
@@ -134,6 +145,9 @@ func getRoutingEmailDomainByIdFn(ctx context.Context, p *routingEmailDomainProxy
 }
 
 func getRoutingEmailDomainIdByNameFn(ctx context.Context, p *routingEmailDomainProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	domains, resp, err := getAllRoutingEmailDomainsFn(ctx, p)
 	if err != nil {
 		return "", resp, false, err
@@ -154,10 +168,16 @@ func getRoutingEmailDomainIdByNameFn(ctx context.Context, p *routingEmailDomainP
 }
 
 func updateRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy, id string, routingEmailDomainReq *platformclientv2.Inbounddomainpatchrequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PatchRoutingEmailDomain(id, *routingEmailDomainReq)
 }
 
 func deleteRoutingEmailDomainFn(ctx context.Context, p *routingEmailDomainProxy, id string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.routingApi.DeleteRoutingEmailDomain(id)
 	if err != nil {
 		return resp, err

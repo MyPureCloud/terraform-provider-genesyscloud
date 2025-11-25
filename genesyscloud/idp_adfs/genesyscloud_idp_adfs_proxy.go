@@ -3,6 +3,8 @@ package idp_adfs
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -68,6 +70,9 @@ func (p *idpAdfsProxy) deleteIdpAdfs(ctx context.Context, id string) (resp *plat
 
 // getAllIdpAdfsFn is the implementation for retrieving all idp adfs in Genesys Cloud
 func getAllIdpAdfsFn(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Adfs, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	adfs, resp, err := p.identityProviderApi.GetIdentityprovidersAdfs()
 	if err != nil {
 		return nil, resp, err
@@ -78,6 +83,9 @@ func getAllIdpAdfsFn(ctx context.Context, p *idpAdfsProxy) (*platformclientv2.Ad
 
 // updateIdpAdfsFn is an implementation of the function to update a Genesys Cloud idp adfs
 func updateIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string, idpAdfs *platformclientv2.Adfs) (statusCode *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.identityProviderApi.PutIdentityprovidersAdfs(*idpAdfs)
 	if err != nil {
 		return resp, err
@@ -87,6 +95,9 @@ func updateIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string, idpAdfs *p
 
 // deleteIdpAdfsFn is an implementation function for deleting a Genesys Cloud idp adfs
 func deleteIdpAdfsFn(ctx context.Context, p *idpAdfsProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersAdfs()
 	if err != nil {
 		return resp, err

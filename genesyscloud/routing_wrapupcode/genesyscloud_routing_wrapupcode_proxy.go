@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -120,21 +121,33 @@ func (p *routingWrapupcodeProxy) deleteRoutingWrapupcode(ctx context.Context, id
 
 // createRoutingWrapupcodeFn is an implementation function for creating a Genesys Cloud routing wrapupcodes
 func createRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, routingWrapupcode *platformclientv2.Wrapupcoderequest) (*platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PostRoutingWrapupcodes(*routingWrapupcode)
 }
 
 // getRoutingWrapupcodeByIdFn is an implementation of the function to get a Genesys Cloud routing wrapupcodes by Id
 func getRoutingWrapupcodeByIdFn(ctx context.Context, p *routingWrapupcodeProxy, id string) (routingWrapupcode *platformclientv2.Wrapupcode, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.GetRoutingWrapupcode(id)
 }
 
 // updateRoutingWrapupcodeFn is an implementation of the function to update a Genesys Cloud routing wrapupcodes
 func updateRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, id string, routingWrapupcode *platformclientv2.Wrapupcoderequest) (*platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PutRoutingWrapupcode(id, *routingWrapupcode)
 }
 
 // deleteRoutingWrapupcodeFn is an implementation function for deleting a Genesys Cloud routing wrapupcodes
 func deleteRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, id string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.routingApi.DeleteRoutingWrapupcode(id)
 	if err != nil {
 		return resp, err
@@ -145,6 +158,9 @@ func deleteRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, i
 
 // getAllRoutingWrapupcodeFn is the implementation for retrieving all routing wrapupcodes in Genesys Cloud
 func getAllRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allWrapupcodes []platformclientv2.Wrapupcode
 	const pageSize = 100
 
@@ -182,6 +198,9 @@ func getAllRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy) (
 
 // getRoutingWrapupcodeIdByNameFn is an implementation of the function to get a Genesys Cloud routing wrapupcodes by name
 func getRoutingWrapupcodeIdByNameFn(ctx context.Context, p *routingWrapupcodeProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	wrapupcodes, apiResponse, err := getAllRoutingWrapupcodeFn(ctx, p)
 	if err != nil {
 		return "", false, apiResponse, err

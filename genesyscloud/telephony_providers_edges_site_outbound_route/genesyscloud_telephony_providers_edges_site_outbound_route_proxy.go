@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
@@ -109,14 +110,23 @@ func (p *siteOutboundRouteProxy) deleteSiteOutboundRoute(ctx context.Context, si
 }
 
 func getSiteFn(ctx context.Context, p *siteOutboundRouteProxy, id string) (*platformclientv2.Site, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.edgesApi.GetTelephonyProvidersEdgesSite(id)
 }
 
 func createSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string, route *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.edgesApi.PostTelephonyProvidersEdgesSiteOutboundroutes(siteId, *route)
 }
 
 func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allOutboundRoutes []platformclientv2.Outboundroutebase
 
 	const pageSize = 100
@@ -150,6 +160,9 @@ func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, 
 
 // getSiteOutboundRouteByIdFn is an implementation function for getting an outbound route for a Genesys Cloud Site
 func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	// Check if site's outbound route exist in cache
 	route := rc.GetCacheItem(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, outboundRouteId))
 	if route != nil {
@@ -167,6 +180,9 @@ func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, 
 }
 
 func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy, siteIdOrEmpty string, outboundRouteName string) (siteId string, outboundRouteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allSites []platformclientv2.Site
 	unmanagedSites, resp, err := p.siteProxy.GetAllSites(ctx, false)
 	if err != nil {
@@ -200,11 +216,17 @@ func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy
 
 // updateSiteOutboundRouteFn is an implementation function for updating an outbound route for a Genesys Cloud Site
 func updateSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.edgesApi.PutTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId, *outboundRoute)
 }
 
 // deleteSiteOutboundRouteFn is an implementation function for deleting an outbound route for a Genesys Cloud Site
 func deleteSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId)
 	if err != nil {
 		return resp, err

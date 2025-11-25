@@ -3,6 +3,8 @@ package telephony_providers_edges_phonebasesettings
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -80,6 +82,7 @@ func (p *phoneBaseProxy) getAllPhoneBaseSettings(ctx context.Context) (*[]platfo
 
 // getPhoneBaseSettingFn is an implementation function for retrieving a Genesys Cloud Phone Base Setting
 func getPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phoneBase, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
 	if err != nil {
 		return nil, resp, err
@@ -88,6 +91,7 @@ func getPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSett
 }
 
 func getPhoneBaseSettingTemplateFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phoneBase, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesettingsTemplate(phoneBaseSettingsId)
 	if err != nil {
 		return nil, resp, err
@@ -96,11 +100,13 @@ func getPhoneBaseSettingTemplateFn(ctx context.Context, p *phoneBaseProxy, phone
 }
 
 func deletePhoneBaseSettingsFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
 	return resp, err
 }
 
 func putPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSettingsId string, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phoneBase, resp, err := p.edgesApi.PutTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId, body)
 	if err != nil {
 		return nil, resp, err
@@ -109,6 +115,7 @@ func putPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, phoneBaseSett
 }
 
 func postPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, body platformclientv2.Phonebase) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phoneBase, resp, err := p.edgesApi.PostTelephonyProvidersEdgesPhonebasesettings(body)
 	if err != nil {
 		return nil, resp, err
@@ -117,6 +124,7 @@ func postPhoneBaseSettingFn(ctx context.Context, p *phoneBaseProxy, body platfor
 }
 
 func getAllPhoneBaseSettingsFn(ctx context.Context, p *phoneBaseProxy) (*[]platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 100
 	var allPhoneBaseSettings []platformclientv2.Phonebase
 	var response *platformclientv2.APIResponse

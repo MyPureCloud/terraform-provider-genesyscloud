@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -78,10 +80,16 @@ func (p *guideVersionProxy) getGuideById(ctx context.Context, id string) (*Guide
 // GetAll Functions
 
 func GetAllGuidesFn(ctx context.Context, p *guideVersionProxy) (*[]Guide, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return sdkGetAllGuides(ctx, p)
 }
 
-func sdkGetAllGuides(_ context.Context, p *guideVersionProxy) (*[]Guide, *platformclientv2.APIResponse, error) {
+func sdkGetAllGuides(ctx context.Context, p *guideVersionProxy) (*[]Guide, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -151,6 +159,9 @@ func sdkGetAllGuides(_ context.Context, p *guideVersionProxy) (*[]Guide, *platfo
 // Create Functions
 
 func createGuideVersionFn(ctx context.Context, p *guideVersionProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return sdkPostGuideVersion(guideVersion, p, guideId)
 }
 
@@ -189,6 +200,9 @@ func sdkPostGuideVersion(body *CreateGuideVersionRequest, p *guideVersionProxy, 
 // Read Functions
 
 func getGuideVersionByIdFn(ctx context.Context, p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return sdkGetGuideVersionById(p, id, guideId)
 }
 
@@ -222,6 +236,9 @@ func sdkGetGuideVersionById(p *guideVersionProxy, id string, guideId string) (*V
 // Update Functions
 
 func updateGuideVersionFn(ctx context.Context, p *guideVersionProxy, id string, guideId string, guideVersion *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return sdkUpdateGuideVersion(p, id, guideId, guideVersion)
 }
 
@@ -285,6 +302,9 @@ func callAPI(client *http.Client, req *http.Request) ([]byte, *platformclientv2.
 // Functions to publish the guide version
 
 func publishGuideVersionFn(ctx context.Context, p *guideVersionProxy, body *GuideVersionPublishJobRequest) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return sdkPublishGuideVersion(p, body)
 }
 
@@ -332,6 +352,9 @@ func sdkPublishGuideVersion(p *guideVersionProxy, body *GuideVersionPublishJobRe
 }
 
 func getGuideVersionPublishJobStatusFn(ctx context.Context, p *guideVersionProxy, versionId, jobId, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return sdkGetGuideVersionPublishJobStatus(p, versionId, jobId, guideId)
 }
 
@@ -363,6 +386,9 @@ func sdkGetGuideVersionPublishJobStatus(p *guideVersionProxy, versionId, jobId s
 }
 
 func getGuideByIdFn(ctx context.Context, p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return sdkGetGuideById(p, id)
 }
 func sdkGetGuideById(p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {

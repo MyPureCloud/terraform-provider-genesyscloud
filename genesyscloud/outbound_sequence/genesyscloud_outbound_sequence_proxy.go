@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -93,6 +95,9 @@ func (p *outboundSequenceProxy) deleteOutboundSequence(ctx context.Context, id s
 
 // createOutboundSequenceFn is an implementation function for creating a Genesys Cloud outbound sequence
 func createOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	campaignSequence, resp, err := p.outboundApi.PostOutboundSequences(*outboundSequence)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create outbound sequence: %s", err)
@@ -102,6 +107,9 @@ func createOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, out
 
 // getAllOutboundSequenceFn is the implementation for retrieving all outbound sequence in Genesys Cloud
 func getAllOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy) (*[]platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allCampaignSequences []platformclientv2.Campaignsequence
 	const pageSize = 100
 
@@ -134,6 +142,9 @@ func getAllOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy) (*[
 
 // getOutboundSequenceIdByNameFn is an implementation of the function to get a Genesys Cloud outbound sequence by name
 func getOutboundSequenceIdByNameFn(ctx context.Context, p *outboundSequenceProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	campaignSequences, resp, err := p.outboundApi.GetOutboundSequences(100, 1, true, "", name, "", "")
 	if err != nil {
 		return "", false, resp, err
@@ -154,6 +165,9 @@ func getOutboundSequenceIdByNameFn(ctx context.Context, p *outboundSequenceProxy
 
 // getOutboundSequenceByIdFn is an implementation of the function to get a Genesys Cloud outbound sequence by Id
 func getOutboundSequenceByIdFn(ctx context.Context, p *outboundSequenceProxy, id string) (outboundSequence *platformclientv2.Campaignsequence, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	campaignSequence, resp, err := p.outboundApi.GetOutboundSequence(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve outbound sequence by id %s: %s", id, err)
@@ -163,6 +177,9 @@ func getOutboundSequenceByIdFn(ctx context.Context, p *outboundSequenceProxy, id
 
 // updateOutboundSequenceFn is an implementation of the function to update a Genesys Cloud outbound sequence
 func updateOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, id string, outboundSequence *platformclientv2.Campaignsequence) (*platformclientv2.Campaignsequence, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	sequence, resp, err := getOutboundSequenceByIdFn(ctx, p, id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to sequence by id %s: %s", id, err)
@@ -178,6 +195,9 @@ func updateOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, id 
 
 // deleteOutboundSequenceFn is an implementation function for deleting a Genesys Cloud outbound sequence
 func deleteOutboundSequenceFn(ctx context.Context, p *outboundSequenceProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.outboundApi.DeleteOutboundSequence(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete outbound sequence: %s", err)

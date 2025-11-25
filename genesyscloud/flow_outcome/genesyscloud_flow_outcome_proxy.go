@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -85,6 +87,9 @@ func (p *flowOutcomeProxy) updateFlowOutcome(ctx context.Context, id string, flo
 
 // createFlowOutcomeFn is an implementation function for creating a Genesys Cloud flow outcome
 func createFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy, flowOutcome *platformclientv2.Flowoutcome) (*platformclientv2.Flowoutcome, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	flowOutcome, resp, err := p.architectApi.PostFlowsOutcomes(*flowOutcome)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create flow outcome: %s", err)
@@ -94,6 +99,9 @@ func createFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy, flowOutcome *
 
 // getAllFlowOutcomeFn is the implementation for retrieving all flow outcome in Genesys Cloud
 func getAllFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy) (*[]platformclientv2.Flowoutcome, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allFlowOutcomes []platformclientv2.Flowoutcome
 	const pageSize = 100
 
@@ -122,6 +130,9 @@ func getAllFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy) (*[]platformc
 
 // getFlowOutcomeIdByNameFn is an implementation of the function to get a Genesys Cloud flow outcome by name
 func getFlowOutcomeIdByNameFn(ctx context.Context, p *flowOutcomeProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	flowOutcomes, resp, err := p.architectApi.GetFlowsOutcomes(1, 100, "", "", nil, name, "", "", nil)
 	if err != nil {
 		return "", false, resp, err
@@ -142,6 +153,9 @@ func getFlowOutcomeIdByNameFn(ctx context.Context, p *flowOutcomeProxy, name str
 
 // getFlowOutcomeByIdFn is an implementation of the function to get a Genesys Cloud flow outcome by Id
 func getFlowOutcomeByIdFn(ctx context.Context, p *flowOutcomeProxy, id string) (flowOutcome *platformclientv2.Flowoutcome, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	flowOutcome, resp, err := p.architectApi.GetFlowsOutcome(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to retrieve flow outcome by id %s: %s", id, err)
@@ -151,6 +165,9 @@ func getFlowOutcomeByIdFn(ctx context.Context, p *flowOutcomeProxy, id string) (
 
 // updateFlowOutcomeFn is an implementation of the function to update a Genesys Cloud flow outcome
 func updateFlowOutcomeFn(ctx context.Context, p *flowOutcomeProxy, id string, flowOutcome *platformclientv2.Flowoutcome) (*platformclientv2.Flowoutcome, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.architectApi.PutFlowsOutcome(id, *flowOutcome)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update flow outcome: %s", err)

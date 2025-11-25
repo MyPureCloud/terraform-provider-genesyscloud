@@ -35,11 +35,11 @@ func TestAccDataSourceAppleIntegration(t *testing.T) {
 					businessId,
 				) + generateAppleIntegrationDataSource(
 					dataSourceLabel,
-					resourceName+"."+resourceLabel+".name",
-					resourceName+"."+resourceLabel,
+					ResourceType+"."+resourceLabel+".name",
+					ResourceType+"."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceLabel, "id", resourceName+"."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id", ResourceType+"."+resourceLabel, "id"),
 				),
 			},
 		},
@@ -51,7 +51,7 @@ func generateBasicAppleIntegrationResource(resourceLabel, name, businessId strin
 		name = "%s"
 		messages_for_business_id = "%s"
 	}
-	`, resourceName, resourceLabel, name, businessId)
+	`, ResourceType, resourceLabel, name, businessId)
 }
 
 func generateAppleIntegrationDataSource(resourceLabel, name, dependsOnResource string) string {
@@ -59,7 +59,7 @@ func generateAppleIntegrationDataSource(resourceLabel, name, dependsOnResource s
 		name = %s
 		depends_on = [%s]
 	}
-	`, resourceName, resourceLabel, name, dependsOnResource)
+	`, ResourceType, resourceLabel, name, dependsOnResource)
 }
 
 // getTestBusinessId returns business ID for testing:

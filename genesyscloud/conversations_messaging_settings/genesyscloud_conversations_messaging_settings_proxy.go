@@ -6,6 +6,8 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -96,6 +98,9 @@ func (p *conversationsMessagingSettingsProxy) getConversationsMessagingSettingsD
 
 // getAllConversationsMessagingSettingsFn is the implementation for retrieving all conversations messaging settings in Genesys Cloud
 func getAllConversationsMessagingSettingsFn(ctx context.Context, p *conversationsMessagingSettingsProxy) (*[]platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		allMessagingSettings []platformclientv2.Messagingsetting
 		pageSize             = 100
@@ -134,11 +139,17 @@ func getAllConversationsMessagingSettingsFn(ctx context.Context, p *conversation
 
 // createConversationsMessagingSettingsFn is an implementation function for creating a Genesys Cloud conversations messaging settings
 func createConversationsMessagingSettingsFn(ctx context.Context, p *conversationsMessagingSettingsProxy, conversationsMessagingSettings *platformclientv2.Messagingsettingrequest) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.PostConversationsMessagingSettings(*conversationsMessagingSettings)
 }
 
 // getConversationsMessagingSettingsByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging settings by Id
 func getConversationsMessagingSettingsByIdFn(ctx context.Context, p *conversationsMessagingSettingsProxy, id string) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if setting := rc.GetCacheItem(p.messagingSettingsCache, id); setting != nil {
 		return setting, nil, nil
 	}
@@ -147,6 +158,9 @@ func getConversationsMessagingSettingsByIdFn(ctx context.Context, p *conversatio
 
 // getConversationsMessagingSettingsIdByNameFn is an implementation of the function to get a Genesys Cloud conversations messaging settings by name
 func getConversationsMessagingSettingsIdByNameFn(ctx context.Context, p *conversationsMessagingSettingsProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	messagingSettings, resp, err := getAllConversationsMessagingSettingsFn(ctx, p)
 	if err != nil {
 		return "", resp, false, err
@@ -168,11 +182,17 @@ func getConversationsMessagingSettingsIdByNameFn(ctx context.Context, p *convers
 
 // updateConversationsMessagingSettingsFn is an implementation of the function to update a Genesys Cloud conversations messaging settings
 func updateConversationsMessagingSettingsFn(ctx context.Context, p *conversationsMessagingSettingsProxy, id string, messagingSettingRequest *platformclientv2.Messagingsettingpatchrequest) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.PatchConversationsMessagingSetting(id, *messagingSettingRequest)
 }
 
 // deleteConversationsMessagingSettingsFn is an implementation function for deleting a Genesys Cloud conversations messaging settings
 func deleteConversationsMessagingSettingsFn(ctx context.Context, p *conversationsMessagingSettingsProxy, id string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.conversationsApi.DeleteConversationsMessagingSetting(id)
 	if err != nil {
 		return resp, err
@@ -182,5 +202,8 @@ func deleteConversationsMessagingSettingsFn(ctx context.Context, p *conversation
 }
 
 func getConversationsMessagingSettingsDefaultFn(ctx context.Context, p *conversationsMessagingSettingsProxy) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.GetConversationsMessagingSettingsDefault()
 }

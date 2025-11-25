@@ -3,6 +3,8 @@ package routing_utilization
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -51,13 +53,22 @@ func (p *routingUtilizationProxy) deleteRoutingUtilization(ctx context.Context) 
 }
 
 func getRoutingUtilizationFn(ctx context.Context, p *routingUtilizationProxy) (*platformclientv2.Utilizationresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.GetRoutingUtilization()
 }
 
 func updateRoutingUtilizationFn(ctx context.Context, p *routingUtilizationProxy, utilizationRequest *platformclientv2.Utilizationrequest) (*platformclientv2.Utilizationresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PutRoutingUtilization(*utilizationRequest)
 }
 
 func deleteRoutingUtilizationFn(ctx context.Context, p *routingUtilizationProxy) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.DeleteRoutingUtilization()
 }
