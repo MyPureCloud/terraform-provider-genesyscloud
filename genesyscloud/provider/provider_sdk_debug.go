@@ -1,13 +1,17 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/google/uuid"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"runtime"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type sdkDebugRequest struct {
@@ -36,13 +40,13 @@ type sdkDebugResponse struct {
 	DebugType            string `json:"debug_type,omitempty"`             //Indicates whether it is a request or response debug
 	TransactionId        string `json:"transaction_id,omitempty"`         //Unique id to link the request and response
 	InvocationCount      int    `json:"invocation_count,omitempty"`       //Number of times the URL has been invoked.  Will be greater then zero when it is a retry
-	InvocationMethod     string `json:"invocation_method,omitempty"`     //HTTP method that will be invoked
+	InvocationMethod     string `json:"invocation_method,omitempty"`      //HTTP method that will be invoked
 	InvocationUrl        string `json:"invocation_url,omitempty"`         //HTTP URL
 	InvocationStatusCode int    `json:"invocation_status_code,omitempty"` //HTTP status code that has been returned
 	InvocationRetryAfter string `json:"invocation_retry_after,omitempty"` //Retry-After header value
 	ResourceType         string `json:"resource_type,omitempty"`          //Terraform resource type (e.g., "genesyscloud_routing_queue")
 	ResourceId           string `json:"resource_id,omitempty"`            //Terraform resource ID
-	ResourceName         string `json:"resource_name,omitempty"`         //Terraform resource name
+	ResourceName         string `json:"resource_name,omitempty"`          //Terraform resource name
 }
 
 func (s *sdkDebugResponse) ToJSON() (err error, jsonStr string) {
@@ -86,12 +90,12 @@ func getGoroutineID() uint64 {
 	// Get buffer from pool
 	buf := bufferPool.Get().([]byte)
 	defer bufferPool.Put(buf)
-	
+
 	n := runtime.Stack(buf, false)
 	if n == 0 {
 		return 0
 	}
-	
+
 	// Parse the goroutine ID from the stack trace
 	// Format: "goroutine 123 [running]:"
 	// Skip "goroutine " (10 bytes) - optimized parsing
@@ -104,7 +108,7 @@ func getGoroutineID() uint64 {
 			break
 		}
 	}
-	
+
 	return id
 }
 
@@ -137,6 +141,48 @@ type ResourceContext struct {
 	ResourceType string
 	ResourceId   string
 	ResourceName string
+}
+
+// extractIdOrNameFromJSON safely parses JSON and extracts id and name fields.
+// Returns empty strings if the fields cannot be found or if any error occurs.
+// This function never panics and handles all errors gracefully.
+func extractIdOrNameFromJSON(jsonData []byte) (id string, name string) {
+	if len(jsonData) == 0 {
+		return "", ""
+	}
+
+	// Parse JSON into a generic map
+	var jsonMap map[string]interface{}
+	if err := json.Unmarshal(jsonData, &jsonMap); err != nil {
+		// Silently fail - this is expected for non-JSON bodies
+		return "", ""
+	}
+
+	// Extract id field if present
+	if idVal, ok := jsonMap["id"]; ok && idVal != nil {
+		switch v := idVal.(type) {
+		case string:
+			if v != "" {
+				id = v
+			}
+		case float64:
+			// Handle numeric IDs - convert to string
+			id = fmt.Sprintf("%.0f", v)
+		case int:
+			id = fmt.Sprintf("%d", v)
+		case int64:
+			id = fmt.Sprintf("%d", v)
+		}
+	}
+
+	// Extract name field if present
+	if nameVal, ok := jsonMap["name"]; ok && nameVal != nil {
+		if nameStr, ok := nameVal.(string); ok && nameStr != "" {
+			name = nameStr
+		}
+	}
+
+	return id, name
 }
 
 // newSDKDebugRequest creates a new SDK debug request with optional resource context from request context
@@ -177,6 +223,32 @@ func newSDKDebugRequest(request *http.Request, count int) *sdkDebugRequest {
 		debugReq.ResourceName = resourceCtx.ResourceName
 	}
 
+	// If ResourceId or ResourceName are empty, nil, or unavailable, try to extract from request body
+	if debugReq.ResourceId == "" || debugReq.ResourceId == "unavailable" ||
+		debugReq.ResourceName == "" || debugReq.ResourceName == "unavailable" {
+		// Safely attempt to read and parse request body
+		if request.Body != nil {
+			bodyBytes, err := io.ReadAll(request.Body)
+			if err == nil && len(bodyBytes) > 0 {
+				// Restore the body for the actual request
+				request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
+				// Extract id and name from JSON body
+				extractedId, extractedName := extractIdOrNameFromJSON(bodyBytes)
+
+				// Update ResourceId if it was empty/unavailable and we found an id
+				if (debugReq.ResourceId == "" || debugReq.ResourceId == "unavailable") && extractedId != "" {
+					debugReq.ResourceId = extractedId
+				}
+
+				// Update ResourceName if it was empty/unavailable and we found a name
+				if (debugReq.ResourceName == "" || debugReq.ResourceName == "unavailable") && extractedName != "" {
+					debugReq.ResourceName = extractedName
+				}
+			}
+		}
+	}
+
 	return debugReq
 }
 
@@ -201,6 +273,32 @@ func newSDKDebugResponse(response *http.Response) *sdkDebugResponse {
 		}
 	}
 
+	// If ResourceId or ResourceName are empty, nil, or unavailable, try to extract from response body
+	if debugResp.ResourceId == "" || debugResp.ResourceId == "unavailable" ||
+		debugResp.ResourceName == "" || debugResp.ResourceName == "unavailable" {
+		// Safely attempt to read and parse response body
+		if response.Body != nil {
+			bodyBytes, err := io.ReadAll(response.Body)
+			if err == nil && len(bodyBytes) > 0 {
+				// Restore the body in case it's needed later
+				response.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
+				// Extract id and name from JSON body
+				extractedId, extractedName := extractIdOrNameFromJSON(bodyBytes)
+
+				// Update ResourceId if it was empty/unavailable and we found an id
+				if (debugResp.ResourceId == "" || debugResp.ResourceId == "unavailable") && extractedId != "" {
+					debugResp.ResourceId = extractedId
+				}
+
+				// Update ResourceName if it was empty/unavailable and we found a name
+				if (debugResp.ResourceName == "" || debugResp.ResourceName == "unavailable") && extractedName != "" {
+					debugResp.ResourceName = extractedName
+				}
+			}
+		}
+	}
+
 	return debugResp
 }
 
@@ -216,10 +314,10 @@ func WithResourceContext(ctx context.Context, resourceType, resourceId, resource
 		ResourceId:   resourceId,
 		ResourceName: resourceName,
 	})
-	
+
 	// Store the context for the RequestLogHook to access
 	setContextForRequest(ctx)
-	
+
 	return ctx
 }
 
@@ -243,9 +341,9 @@ func EnsureResourceContext(ctx context.Context, resourceType string) context.Con
 
 	// Set resource type with unavailable id/name since we don't have ResourceData in proxy methods
 	ctx = WithResourceContext(ctx, resourceType, "unavailable", "unavailable")
-	
+
 	// Store the context for the RequestLogHook to access
 	setContextForRequest(ctx)
-	
+
 	return ctx
 }
