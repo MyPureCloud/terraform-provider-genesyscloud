@@ -128,6 +128,7 @@ func getLabelUtilizationAttrTypes() map[string]attr.Type {
 // Plugin Framework requires this helper pattern because Create/Read/Update methods receive different request/response types
 // (CreateRequest/CreateResponse vs ReadRequest/ReadResponse), preventing direct method calls between CRUD operations.
 // It fetches user details, voicemail policies, routing utilization, and flattens all complex attributes into Framework types.
+
 func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics) {
 	log.Printf("Reading user %s", model.Id.ValueString())
 
@@ -144,81 +145,87 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	// for supporting details.
 	// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser(), constants.ConsistencyChecks(), ResourceType)
 
-	//TODO
-	// Retry logic temporarily commented out – SDKv2 helper/retry is not compatible with Plugin Framework.
-	// PF no longer supports the SDKv2 retry utilities (`helper/retry`, `schema.ResourceData`, `diag`).
-	// RetryContext and related constructs relied on SDKv2 internals, which don't exist in PF.
-	// In Plugin Framework, retry/wait logic should be reimplemented using:
-	//   - Context-aware loops with backoff (using the `ctx` passed into CRUD methods)
-	//   - Resource-level timeouts defined in the schema (e.g., CreateTimeout, ReadTimeout, UpdateTimeout)
-	//   - Proper diagnostic handling via `resp.Diagnostics` instead of `diag.FromErr()`
-	// A PF-native retry utility (e.g., util_pfretries.go) can be introduced later for read-after-write stabilization.
-	// return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	retryDiags := util.PFWithRetriesForRead(ctx, func() (bool, error) {
 
-	// Fetch user from API with expands
-	currentUser, proxyResponse, getUserErr := proxy.getUserById(ctx, model.Id.ValueString(), []string{
-		// Expands
-		"skills",
-		"languages",
-		"locations",
-		"profileSkills",
-		"certifications",
-		"employerInfo",
-	}, "")
+		// Fetch user from API
+		currentUser, proxyResponse, getUserErr := proxy.getUserById(ctx, model.Id.ValueString(), []string{
+			// Expands
+			"skills",
+			"languages",
+			"locations",
+			"profileSkills",
+			"certifications",
+			"employerInfo",
+		}, "")
 
-	if getUserErr != nil {
-		*diagnostics = append(*diagnostics, util.BuildFrameworkAPIDiagnosticError(
-			ResourceType,
-			fmt.Sprintf("Failed to read user %s | error: %s", model.Id.ValueString(), getUserErr),
-			proxyResponse,
-		)...)
-		if util.IsStatus404(proxyResponse) {
-			log.Printf("While calling getUserById received 404 error")
-		} else {
+		if getUserErr != nil {
+			if util.IsStatus404(proxyResponse) {
+				log.Printf("While calling getUserById received 404 error")
+				return true, fmt.Errorf("API Error: 404")
+			}
 			log.Printf("While calling getUserById received NonRetryableError error")
+			return false, fmt.Errorf("Failed to read user %s | error: %s", model.Id.ValueString(), getUserErr)
 		}
+
+		// Set basic user attributes
+		setBasicUserAttributes(model, currentUser)
+		// Set manager
+		setManagerAttribute(model, currentUser)
+
+		if b, err := json.Marshal(currentUser.Addresses); err == nil {
+			log.Printf("[INV][SDKv2] ReadUser API.Addresses=%s", string(b))
+		}
+
+		var addressDiags pfdiag.Diagnostics
+		model.Addresses, addressDiags = flattenUserAddresses(ctx, currentUser.Addresses, proxy)
+		if addressDiags.HasError() {
+			return false, fmt.Errorf("Failed to flatten addresses: %v", addressDiags)
+		}
+
+		// Handle managed attributes with consistent pattern
+		handleManagedRoutingSkills(model, currentUser, &addressDiags)
+		handleManagedRoutingLanguages(model, currentUser, &addressDiags)
+		handleManagedLocations(model, currentUser, &addressDiags)
+
+		// Flatten profile skills and certifications (always managed)
+		model.ProfileSkills = flattenUserData(currentUser.ProfileSkills)
+		model.Certifications = flattenUserData(currentUser.Certifications)
+
+		// Handle employer info
+		handleManagedEmployerInfo(model, currentUser, &addressDiags)
+
+		// Get and handle voicemail userpolicies
+		if !handleVoicemailUserpolicies(ctx, model, proxy, &addressDiags) {
+			// Function returned false = error occurred
+			// Check if it's retryable (you'd need to inspect tempDiags or modify the function)
+			// For now, treat as retryable (matching SDKv2 behavior)
+			return true, fmt.Errorf("Failed to read voicemail userpolicies")
+		}
+
+		// Get routing utilization
+		if !handleRoutingUtilization(ctx, model, proxy, &addressDiags) {
+			// Function returned false = error occurred
+			// SDKv2 treated this as NonRetryableError
+			return false, fmt.Errorf("Failed to read routing utilization")
+		}
+
+		log.Printf("Read user %s %s", model.Id.ValueString(), *currentUser.Email)
+		return false, nil
+	})
+
+	if retryDiags.HasError() {
+		*diagnostics = append(*diagnostics, retryDiags...)
 		return
 	}
 
-	// Set basic user attributes
-	setBasicUserAttributes(model, currentUser)
-
-	// Set manager
-	setManagerAttribute(model, currentUser)
-
-	// Log raw API addresses before flattening
-	if b, err := json.Marshal(currentUser.Addresses); err == nil {
-		log.Printf("[INV][SDKv2] ReadUser API.Addresses=%s", string(b))
+	if len(retryDiags) > 0 {
+		for _, d := range retryDiags {
+			if d.Severity() == pfdiag.SeverityWarning {
+				*diagnostics = append(*diagnostics, retryDiags...)
+				return
+			}
+		}
 	}
-
-	// Flatten addresses
-	var addressDiags pfdiag.Diagnostics
-	model.Addresses, addressDiags = flattenUserAddresses(ctx, currentUser.Addresses, proxy)
-	*diagnostics = append(*diagnostics, addressDiags...)
-
-	// Handle managed attributes with consistent pattern
-	handleManagedRoutingSkills(model, currentUser, diagnostics)
-	handleManagedRoutingLanguages(model, currentUser, diagnostics)
-	handleManagedLocations(model, currentUser, diagnostics)
-
-	// Flatten profile skills and certifications (always managed)
-	model.ProfileSkills = flattenUserData(currentUser.ProfileSkills)
-	model.Certifications = flattenUserData(currentUser.Certifications)
-
-	// Handle employer info
-	handleManagedEmployerInfo(model, currentUser, diagnostics)
-
-	// Get and handle voicemail userpolicies
-	if !handleVoicemailUserpolicies(ctx, model, proxy, diagnostics) {
-		return
-	}
-
-	// Get routing utilization
-	if !handleRoutingUtilization(ctx, model, proxy, diagnostics) {
-		return
-	}
-
-	log.Printf("Read user %s %s", model.Id.ValueString(), *currentUser.Email)
 
 	// Log final state
 	logFinalState(model)
@@ -1437,11 +1444,12 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 func executeAllUpdates(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, sdkConfig *platformclientv2.Configuration, updateObjectDivision bool, state ...*UserFrameworkResourceModel) pfdiag.Diagnostics {
 	var diagnostics pfdiag.Diagnostics
 
+	var currentState *UserFrameworkResourceModel
+	if len(state) > 0 {
+		currentState = state[0]
+	}
+
 	if updateObjectDivision {
-		var currentState *UserFrameworkResourceModel
-		if len(state) > 0 {
-			currentState = state[0]
-		}
 		diagErr := util.UpdateObjectDivisionPF(ctx, plan, currentState, "USER", sdkConfig)
 		if diagErr.HasError() {
 			diagnostics.Append(diagErr...)
@@ -1450,14 +1458,14 @@ func executeAllUpdates(ctx context.Context, plan *UserFrameworkResourceModel, pr
 	}
 
 	// Update user skills - using standalone function from utils file
-	diagErr := updateUserSkills(ctx, plan, proxy)
+	diagErr := updateUserSkills(ctx, plan, currentState, proxy)
 	if diagErr.HasError() {
 		diagnostics.Append(diagErr...)
 		return diagnostics
 	}
 
 	// Update user languages - using standalone function from utils file
-	diagErr = updateUserLanguages(ctx, plan, proxy)
+	diagErr = updateUserLanguages(ctx, plan, currentState, proxy)
 	if diagErr.HasError() {
 		diagnostics.Append(diagErr...)
 		return diagnostics
@@ -1479,7 +1487,7 @@ func executeAllUpdates(ctx context.Context, plan *UserFrameworkResourceModel, pr
 	}
 
 	// Update voicemail policies - using standalone function from utils file
-	diagErr = updateUserVoicemailPolicies(ctx, plan, proxy)
+	diagErr = updateUserVoicemailPolicies(ctx, plan, currentState, proxy)
 	if diagErr.HasError() {
 		diagnostics.Append(diagErr...)
 		return diagnostics
@@ -1495,46 +1503,63 @@ func executeAllUpdates(ctx context.Context, plan *UserFrameworkResourceModel, pr
 	return diagnostics
 }
 
-func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, state *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+	var diagnostics pfdiag.Diagnostics
+
 	// In Plugin Framework, we don't have d.HasChange() at the helper level
 	// Change detection happens at the resource Update() method level
 	// This helper is only called when there's a change, so we process unconditionally
 
+	// Was this attribute previously managed?
+	wasManaged := state != nil && !state.RoutingSkills.IsNull() && !state.RoutingSkills.IsUnknown()
+
 	// Check if routing_skills is null or unknown (equivalent to SDKv2's skillsConfig == nil)
-	if plan.RoutingSkills.IsNull() || plan.RoutingSkills.IsUnknown() {
+	isConfigured := !plan.RoutingSkills.IsNull() && !plan.RoutingSkills.IsUnknown()
+
+	// Case 1: never managed and still not configured → do nothing, leave API as-is
+	if !wasManaged && !isConfigured {
 		// SDKv2 behavior: When skills are nil, return without removing existing skills
 		// This matches the nested if structure in SDKv2 where removal only happens inside skillsConfig != nil
 		log.Printf("Skills are null/unknown for user %s, skipping skill updates", plan.Id.ValueString())
-		return pfdiag.Diagnostics{}
+		return diagnostics
 	}
 
-	// Skills are configured - process them (equivalent to skillsConfig != nil)
-	log.Printf("Updating skills for user %s", plan.Email.ValueString())
+	// Skills are configured or were previously managed - process them (equivalent to skillsConfig != nil)
+	log.Printf("Updating skills for user %s (wasManaged=%v, isConfigured=%v)", plan.Email.ValueString(), wasManaged, isConfigured)
 
-	// Build new skills map from Framework types
+	// Build new skills map from Framework types only if configured
 	newSkillProfs := make(map[string]float64)
-	skillElements := plan.RoutingSkills.Elements()
-	newSkillIds := make([]string, 0, len(skillElements))
+	newSkillIds := []string{}
 
-	for _, skillElement := range skillElements {
-		skillObj, ok := skillElement.(types.Object)
-		if !ok {
-			continue
+	if isConfigured {
+		skillElements := plan.RoutingSkills.Elements()
+		newSkillIds = make([]string, 0, len(skillElements))
+
+		for _, skillElement := range skillElements {
+			skillObj, ok := skillElement.(types.Object)
+			if !ok {
+				continue
+			}
+
+			skillAttrs := skillObj.Attributes()
+			var skillId string
+			var proficiency float64
+
+			if skillIdAttr, exists := skillAttrs["skill_id"]; exists && !skillIdAttr.IsNull() {
+				skillId = skillIdAttr.(types.String).ValueString()
+			}
+
+			if proficiencyAttr, exists := skillAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
+				proficiency = proficiencyAttr.(types.Float64).ValueFloat64()
+			}
+
+			if skillId == "" {
+				continue
+			}
+
+			newSkillIds = append(newSkillIds, skillId)
+			newSkillProfs[skillId] = proficiency
 		}
-
-		skillAttrs := skillObj.Attributes()
-		var skillId string
-		var proficiency float64
-
-		if skillIdAttr, exists := skillAttrs["skill_id"]; exists && !skillIdAttr.IsNull() {
-			skillId = skillIdAttr.(types.String).ValueString()
-		}
-		if proficiencyAttr, exists := skillAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
-			proficiency = proficiencyAttr.(types.Float64).ValueFloat64()
-		}
-
-		newSkillIds = append(newSkillIds, skillId)
-		newSkillProfs[skillId] = proficiency
 	}
 
 	// Get current skills from API
@@ -1554,7 +1579,16 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 
 	// Remove skills that are no longer in configuration
 	if len(oldSkillIds) > 0 {
-		skillsToRemove := lists.SliceDifference(oldSkillIds, newSkillIds)
+		var skillsToRemove []string
+
+		if !isConfigured {
+			// Block removed in config but was managed before → clear everything
+			skillsToRemove = oldSkillIds
+		} else {
+			// Normal diff behavior
+			skillsToRemove = lists.SliceDifference(oldSkillIds, newSkillIds)
+		}
+
 		for _, skillId := range skillsToRemove {
 			diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
 				resp, err := proxy.userApi.DeleteUserRoutingskill(plan.Id.ValueString(), skillId)
@@ -1570,8 +1604,8 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 		}
 	}
 
-	// Add or update skills
-	if len(newSkillIds) > 0 {
+	// Add or update skills only when attribute is configured in plan
+	if isConfigured && len(newSkillIds) > 0 {
 		// Skills to add
 		skillsToAddOrUpdate := lists.SliceDifference(newSkillIds, oldSkillIds)
 
@@ -1590,43 +1624,60 @@ func updateUserSkills(ctx context.Context, plan *UserFrameworkResourceModel, pro
 		}
 	}
 
-	return pfdiag.Diagnostics{}
+	return diagnostics
 }
 
-func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, state *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
 	var diagnostics pfdiag.Diagnostics
 
-	if plan.RoutingLanguages.IsNull() || plan.RoutingLanguages.IsUnknown() {
+	// Was this attribute previously managed?
+	wasManaged := state != nil && !state.RoutingLanguages.IsNull() && !state.RoutingLanguages.IsUnknown()
+
+	// Check if routing_languages is null or unknown
+	isConfigured := !plan.RoutingLanguages.IsNull() && !plan.RoutingLanguages.IsUnknown()
+
+	// Case 1: never managed and still not configured → do nothing, leave API as-is
+	if !wasManaged && !isConfigured {
+		log.Printf("routing_languages unmanaged for user %s, skipping", plan.Id.ValueString())
 		return diagnostics
 	}
 
-	// Languages are configured - process them (equivalent to languages != nil block)
-	log.Printf("Updating languages for user %s", plan.Email.ValueString())
+	// Languages are configured or were previously managed - process them (equivalent to languages != nil block)
+	log.Printf("Updating languages for user %s (wasManaged=%v, isConfigured=%v)", plan.Email.ValueString(), wasManaged, isConfigured)
 
-	// Build new languages map from Framework types
+	// Build new languages map from Framework types only if configured
 	newLangProfs := make(map[string]int)
-	languageElements := plan.RoutingLanguages.Elements()
-	newLangIds := make([]string, 0, len(languageElements))
+	newLangIds := []string{}
 
-	for _, languageElement := range languageElements {
-		languageObj, ok := languageElement.(types.Object)
-		if !ok {
-			continue
+	if isConfigured {
+		languageElements := plan.RoutingLanguages.Elements()
+		newLangIds = make([]string, 0, len(languageElements))
+
+		for _, languageElement := range languageElements {
+			languageObj, ok := languageElement.(types.Object)
+			if !ok {
+				continue
+			}
+
+			languageAttrs := languageObj.Attributes()
+			var languageId string
+			var proficiency int64
+
+			if languageIdAttr, exists := languageAttrs["language_id"]; exists && !languageIdAttr.IsNull() {
+				languageId = languageIdAttr.(types.String).ValueString()
+			}
+
+			if proficiencyAttr, exists := languageAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
+				proficiency = proficiencyAttr.(types.Int64).ValueInt64()
+			}
+
+			if languageId == "" {
+				continue
+			}
+
+			newLangIds = append(newLangIds, languageId)
+			newLangProfs[languageId] = int(proficiency)
 		}
-
-		languageAttrs := languageObj.Attributes()
-		var languageId string
-		var proficiency int64
-
-		if languageIdAttr, exists := languageAttrs["language_id"]; exists && !languageIdAttr.IsNull() {
-			languageId = languageIdAttr.(types.String).ValueString()
-		}
-		if proficiencyAttr, exists := languageAttrs["proficiency"]; exists && !proficiencyAttr.IsNull() {
-			proficiency = proficiencyAttr.(types.Int64).ValueInt64()
-		}
-
-		newLangIds = append(newLangIds, languageId)
-		newLangProfs[languageId] = int(proficiency)
 	}
 
 	// Get current languages from API
@@ -1645,24 +1696,33 @@ func updateUserLanguages(ctx context.Context, plan *UserFrameworkResourceModel, 
 
 	// Remove languages that are no longer in configuration
 	if len(oldLangIds) > 0 {
-		langsToRemove := lists.SliceDifference(oldLangIds, newLangIds)
+		var langsToRemove []string
+
+		if !isConfigured {
+			// Block removed in config but was managed before → clear everything
+			langsToRemove = oldLangIds
+		} else {
+			// Normal diff behavior
+			langsToRemove = lists.SliceDifference(oldLangIds, newLangIds)
+		}
+
 		for _, langID := range langsToRemove {
-			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
 				resp, err := proxy.userApi.DeleteUserRoutinglanguage(plan.Id.ValueString(), langID)
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType,
+					return resp, util.BuildFrameworkAPIDiagnosticError(ResourceType,
 						fmt.Sprintf("Failed to remove language from user %s error: %s", plan.Id.ValueString(), err), resp)
 				}
 				return nil, nil
 			})
 			if diagErr != nil {
-				return convertSDKDiagnosticsToFramework(diagErr)
+				return diagErr
 			}
 		}
 	}
 
-	// Add or update languages
-	if len(newLangIds) > 0 {
+	// Add or update languages only when attribute is configured in plan
+	if isConfigured && len(newLangIds) > 0 {
 		// Languages to add
 		langsToAddOrUpdate := lists.SliceDifference(newLangIds, oldLangIds)
 
@@ -2031,16 +2091,48 @@ func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]strin
 	return headerParams
 }
 
-func updateUserVoicemailPolicies(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
+func updateUserVoicemailPolicies(ctx context.Context, plan *UserFrameworkResourceModel, state *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
 	var diagnostics pfdiag.Diagnostics
 
-	// In PF, change detection is handled at resource level
-	// Check if voicemail_userpolicies is null or unknown
-	if plan.VoicemailUserpolicies.IsNull() || plan.VoicemailUserpolicies.IsUnknown() {
+	wasManaged := state != nil &&
+		!state.VoicemailUserpolicies.IsNull() &&
+		!state.VoicemailUserpolicies.IsUnknown()
+
+	isConfigured := !plan.VoicemailUserpolicies.IsNull() &&
+		!plan.VoicemailUserpolicies.IsUnknown()
+
+	// Case 1: Unmanaged both before and now -> do nothing
+	if !wasManaged && !isConfigured {
+		log.Printf("voicemail_userpolicies unmanaged for user %s, skipping", plan.Id.ValueString())
 		return diagnostics
 	}
 
-	// Extract voicemail policies from plan
+	// Case 2: Was managed, now block removed -> clear remote policies
+	if wasManaged && !isConfigured {
+		log.Printf("Clearing voicemail_userpolicies for user %s", plan.Id.ValueString())
+		emptyReq := platformclientv2.Voicemailuserpolicy{}
+
+		diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+			_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(plan.Id.ValueString(), emptyReq)
+			if putErr != nil {
+				return proxyPutResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+					fmt.Sprintf("Failed to clear voicemail_userpolicies for user %s: %s",
+						plan.Id.ValueString(), putErr),
+					proxyPutResponse,
+				)
+			}
+			return nil, nil
+		})
+
+		if diagErr != nil {
+			diagnostics.Append(diagErr...)
+		}
+		return diagnostics
+	}
+
+	// Case 3: isConfigured -> normal update
+	log.Printf("Updating voicemail_userpolicies for user %s", plan.Id.ValueString())
+
 	var voicemailPolicies []VoicemailUserpoliciesModel
 	diags := plan.VoicemailUserpolicies.ElementsAs(ctx, &voicemailPolicies, false)
 	if diags.HasError() {
@@ -2048,8 +2140,27 @@ func updateUserVoicemailPolicies(ctx context.Context, plan *UserFrameworkResourc
 		return diagnostics
 	}
 
-	// Check if list is empty (should not happen with proper schema, but defensive)
 	if len(voicemailPolicies) == 0 {
+		// Should not happen with proper schema, but handle defensively
+		// Send empty request to clear settings
+		log.Printf("voicemail_userpolicies list empty for user %s, clearing", plan.Id.ValueString())
+		emptyReq := platformclientv2.Voicemailuserpolicy{}
+
+		diagErr := util.PFRetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, pfdiag.Diagnostics) {
+			_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(plan.Id.ValueString(), emptyReq)
+			if putErr != nil {
+				return proxyPutResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
+					fmt.Sprintf("Failed to clear voicemail_userpolicies for user %s: %s",
+						plan.Id.ValueString(), putErr),
+					proxyPutResponse,
+				)
+			}
+			return nil, nil
+		})
+
+		if diagErr != nil {
+			diagnostics.Append(diagErr...)
+		}
 		return diagnostics
 	}
 
@@ -2059,18 +2170,18 @@ func updateUserVoicemailPolicies(ctx context.Context, plan *UserFrameworkResourc
 		_, proxyPutResponse, putErr := proxy.voicemailApi.PatchVoicemailUserpolicy(plan.Id.ValueString(), reqBody)
 		if putErr != nil {
 			return proxyPutResponse, util.BuildFrameworkAPIDiagnosticError(ResourceType,
-				fmt.Sprintf("Failed to update voicemail userpolicies for user %s error: %s",
-					plan.Id.ValueString(), putErr), proxyPutResponse)
+				fmt.Sprintf("Failed to update voicemail_userpolicies for user %s: %s",
+					plan.Id.ValueString(), putErr),
+				proxyPutResponse,
+			)
 		}
 		return nil, nil
 	})
 
 	if diagErr != nil {
 		diagnostics.Append(diagErr...)
-		return diagnostics
 	}
 
-	// SDKv2: return nil
 	return diagnostics
 }
 
