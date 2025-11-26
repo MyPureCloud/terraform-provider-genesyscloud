@@ -117,7 +117,7 @@ func (d *UserFrameworkDataSource) Read(ctx context.Context, req datasource.ReadR
 	if config.Email.IsNull() && config.Name.IsNull() {
 		resp.Diagnostics.Append(
 			util.BuildFrameworkDiagnosticError(
-				"genesyscloud_user",
+				ResourceType,
 				"no user search field specified",
 				nil,
 			)...,
@@ -152,6 +152,28 @@ func (d *UserFrameworkDataSource) Read(ctx context.Context, req datasource.ReadR
 	// Set the ID in the state
 	config.Id = types.StringValue(userId)
 
+	// Fetch the full user details to populate name and email
+	proxy := GetUserProxy(d.clientConfig)
+	user, response, err := proxy.getUserById(ctx, userId, []string{}, "")
+	if err != nil {
+		resp.Diagnostics.Append(
+			util.BuildFrameworkAPIDiagnosticError(
+				ResourceType,
+				fmt.Sprintf("Failed to retrieve user details for ID %s: %s", userId, err),
+				response,
+			)...,
+		)
+		return
+	}
+
+	// Populate name and email from the API response
+	if user.Name != nil {
+		config.Name = types.StringValue(*user.Name)
+	}
+	if user.Email != nil {
+		config.Email = types.StringValue(*user.Email)
+	}
+
 	log.Printf("Found user with ID: %s, Name: %s, Email: %s", userId, config.Name.ValueString(), config.Email.ValueString())
 
 	// Save data into Terraform state
@@ -163,7 +185,7 @@ func (d *UserFrameworkDataSource) Read(ctx context.Context, req datasource.ReadR
 // The cache expects: func(*DataSourceCache, string, context.Context) (string, diag.Diagnostics)
 // This will be updated when the cache is migrated to Plugin Framework.
 func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Context) (string, sdkdiag.Diagnostics) {
-	log.Printf("getUserByName for data source genesyscloud_user")
+	log.Printf("getUserByName for data source %s", ResourceType)
 	proxy := GetUserProxy(c.ClientConfig)
 	userId := ""
 	exactSearchType := "EXACT"
@@ -184,11 +206,11 @@ func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Contex
 			Query:     &[]platformclientv2.Usersearchcriteria{searchCriteria},
 		})
 		if getErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("Error requesting users: %s", getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting users: %s", getErr), resp))
 		}
 
 		if users.Results == nil || len(*users.Results) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_user", fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
 		}
 
 		// Select first user in the list
@@ -196,12 +218,12 @@ func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Contex
 		return nil
 	})
 
-	log.Printf("getUserByName completed for data source genesyscloud_user")
+	log.Printf("getUserByName completed for data source %s", ResourceType)
 	return userId, sdkDiags
 }
 
 func hydrateUserCache(c *rc.DataSourceCache, ctx context.Context) error {
-	log.Printf("hydrating cache for data source genesyscloud_user")
+	log.Printf("hydrating cache for data source %s", ResourceType)
 	proxy := GetUserProxy(c.ClientConfig)
 	const pageSize = 100
 	users, response, err := proxy.hydrateUserCache(ctx, pageSize, 1)
@@ -221,7 +243,7 @@ func hydrateUserCache(c *rc.DataSourceCache, ctx context.Context) error {
 	for pageNum := 2; pageNum <= *users.PageCount; pageNum++ {
 		users, response, err := proxy.hydrateUserCache(ctx, pageSize, pageNum)
 
-		log.Printf("hydrating cache for data source genesyscloud_user with page number: %v", pageNum)
+		log.Printf("hydrating cache for data source %s with page number: %v", ResourceType, pageNum)
 		if err != nil {
 			return fmt.Errorf("failed to get page of users: %v %v", err, response)
 		}
@@ -234,6 +256,6 @@ func hydrateUserCache(c *rc.DataSourceCache, ctx context.Context) error {
 			c.Cache[*user.Email] = *user.Id
 		}
 	}
-	log.Printf("cache hydration completed for data source genesyscloud_user")
+	log.Printf("cache hydration completed for data source %s", ResourceType)
 	return nil
 }

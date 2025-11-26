@@ -962,50 +962,52 @@ func TestAccFrameworkResourceUserVoicemailPolicies(t *testing.T) {
 // Helper functions for Framework tests
 
 func generateFrameworkUserWithAddresses(resourceLabel, email, name, phoneAddress, emailAddress string) string {
+	phoneBlock := ""
+	if phoneAddress != "" {
+		phoneBlock = fmt.Sprintf(`
+			phone_numbers {
+				%s
+			}`, phoneAddress)
+	}
+
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
 		name = "%s"
-		addresses = [
-			{
-				phone_numbers = [
-					%s
-				]
-				%s
-			}
-		]
-	}`, ResourceType, resourceLabel, email, name, phoneAddress, emailAddress)
+		addresses {%s
+			%s
+		}
+	}`, ResourceType, resourceLabel, email, name, phoneBlock, emailAddress)
 }
 
 func generateFrameworkUserWithMultiplePhones(resourceLabel, email, name string, phoneAddresses ...string) string {
+	phoneBlocks := ""
+	for _, phoneAddr := range phoneAddresses {
+		phoneBlocks += fmt.Sprintf(`
+			phone_numbers {
+				%s
+			}`, phoneAddr)
+	}
+
 	return fmt.Sprintf(`resource "%s" "%s" {
 		email = "%s"
 		name = "%s"
-		addresses = [
-			{
-				phone_numbers = [
-					%s
-				]
-			}
-		]
-	}`, ResourceType, resourceLabel, email, name, strings.Join(phoneAddresses, ",\n\t\t\t\t\t"))
+		addresses {%s
+		}
+	}`, ResourceType, resourceLabel, email, name, phoneBlocks)
 }
 
 func generateFrameworkUserPhoneAddress(phoneNum, phoneMediaType, phoneType, extension string) string {
-	return fmt.Sprintf(`{
-		number = %s
-		media_type = %s
-		type = %s
-		extension = %s
-	}`, phoneNum, phoneMediaType, phoneType, extension)
+	return fmt.Sprintf(`number = %s
+				media_type = %s
+				type = %s
+				extension = %s`, phoneNum, phoneMediaType, phoneType, extension)
 }
 
 func generateFrameworkUserEmailAddress(emailAddress, emailType string) string {
-	return fmt.Sprintf(`other_emails = [
-		{
-			address = %s
-			type = %s
-		}
-	]`, emailAddress, emailType)
+	return fmt.Sprintf(`other_emails {
+				address = %s
+				type = %s
+			}`, emailAddress, emailType)
 }
 
 func generateFrameworkUserWithSkillsAndLanguages(resourceLabel, email, name, skill, language string) string {
