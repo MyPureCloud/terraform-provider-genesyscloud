@@ -10,11 +10,17 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
+
+
+
 // TestAccResourceAppleIntegrationBasic tests basic CRUD operations for apple integration.
 // Uses environment variable APPLE_MESSAGES_BUSINESS_ID for real business ID, otherwise uses fake ID.
 // - With fake ID: Tests error handling (update fails due to incomplete async creation)
 // - With real ID: Tests full CRUD operations (update succeeds)
 func TestAccResourceAppleIntegrationBasic(t *testing.T) {
+	if !checkAppleIntegrationEndpointsEnabled() {
+		t.Skip("Apple integration endpoints are not enabled")
+	}
 	var (
 		resourceLabel   = "test-apple-integration"
 		randomString    = uuid.NewString()
