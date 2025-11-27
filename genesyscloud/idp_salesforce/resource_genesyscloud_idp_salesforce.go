@@ -83,6 +83,7 @@ func readIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta interfa
 		resourcedata.SetNillableValue(d, "slo_uri", salesforce.SloURI)
 		resourcedata.SetNillableValue(d, "slo_binding", salesforce.SloBinding)
 		resourcedata.SetNillableValue(d, "relying_party_identifier", salesforce.RelyingPartyIdentifier)
+		resourcedata.SetNillableValue(d, "sign_authn_requests", salesforce.SignAuthnRequests)
 
 		log.Printf("Read IDP Salesforce")
 		return cc.CheckState(d)
@@ -118,6 +119,8 @@ func updateIdpSalesforce(ctx context.Context, d *schema.ResourceData, meta inter
 	if rpId, _ := d.Get("relying_party_identifier").(string); rpId != "" {
 		update.RelyingPartyIdentifier = &rpId
 	}
+
+	update.SignAuthnRequests = platformclientv2.Bool(d.Get("sign_authn_requests").(bool))
 
 	certificates := lists.BuildSdkStringListFromInterfaceArray(d, "certificates")
 	if certificates != nil {
