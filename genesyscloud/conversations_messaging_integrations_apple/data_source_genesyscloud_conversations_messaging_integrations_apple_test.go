@@ -16,6 +16,9 @@ import (
 // - Fake ID: Creates integration with incomplete status (expected for testing)
 // - Real ID: Creates fully functional integration for comprehensive testing
 func TestAccDataSourceAppleIntegration(t *testing.T) {
+	if !checkAppleIntegrationEndpointsEnabled() {
+		t.Skip("Skipping test as apple integration endpoints are not enabled")
+	}
 	var (
 		resourceLabel   = "test-apple-integration"
 		dataSourceLabel = "test-apple-integration-data"

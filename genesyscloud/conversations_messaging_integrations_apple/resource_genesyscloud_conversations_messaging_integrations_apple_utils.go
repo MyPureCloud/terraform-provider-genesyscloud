@@ -27,6 +27,7 @@ func checkAppleIntegrationEndpointsEnabled() bool {
 		log.Printf("Error checking apple integration endpoints: %v", resp.StatusCode)
 		return false
 	}
+	log.Printf("Apple integration endpoints are enabled")
 	return true
 }
 
