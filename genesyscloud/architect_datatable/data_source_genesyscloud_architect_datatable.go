@@ -17,7 +17,7 @@ import (
 
 func DataSourceArchitectDatatableRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+	archAPI := platformclientv2.NewArchitectApiWithConfig(sdkConfig) //dummy
 
 	name := d.Get("name").(string)
 
