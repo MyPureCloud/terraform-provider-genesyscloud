@@ -19,10 +19,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_idp_onelogin" "onelogin" {
-  name         = "OneLogin"
-  certificates = [local.onelogin_certificate]
-  issuer_uri   = "https://example.com"
-  target_uri   = "https://example.com/login"
+  name                = "OneLogin"
+  certificates        = [local.onelogin_certificate]
+  issuer_uri          = "https://example.com"
+  target_uri          = "https://example.com/login"
+  sign_authn_requests = false
 }
 ```
 
@@ -39,6 +40,7 @@ resource "genesyscloud_idp_onelogin" "onelogin" {
 - `disabled` (Boolean) True if OneLogin is disabled. Defaults to `false`.
 - `name` (String) IDP OneLogin resource name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to OneLogin.
+- `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
 - `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
 - `slo_uri` (String) Provided by OneLogin on app creation
 - `target_uri` (String) Target URI provided by OneLogin.

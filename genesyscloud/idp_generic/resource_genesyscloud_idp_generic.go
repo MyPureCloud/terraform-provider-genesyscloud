@@ -85,6 +85,7 @@ func readIdpGeneric(ctx context.Context, d *schema.ResourceData, meta interface{
 		resourcedata.SetNillableValue(d, "logo_image_data", genericSAML.LogoImageData)
 		resourcedata.SetNillableValue(d, "endpoint_compression", genericSAML.EndpointCompression)
 		resourcedata.SetNillableValue(d, "name_identifier_format", genericSAML.NameIdentifierFormat)
+		resourcedata.SetNillableValue(d, "sign_authn_requests", genericSAML.SignAuthnRequests)
 
 		if genericSAML.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*genericSAML.Certificate}))
@@ -163,5 +164,6 @@ func getIdpGenericFromResourceData(d *schema.ResourceData) platformclientv2.Gene
 		NameIdentifierFormat:   platformclientv2.String(d.Get("name_identifier_format").(string)),
 		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
 		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
+		SignAuthnRequests:      platformclientv2.Bool(d.Get("sign_authn_requests").(bool)),
 	}
 }
