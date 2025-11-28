@@ -37,6 +37,7 @@ type ExporterResourceFilter func(resourceIdMetaMap resourceExporter.ResourceIDMe
 const (
 	LegacyInclude ExporterFilterType = iota
 	IncludeResources
+	IncludeResourcesById
 	ExcludeResources
 )
 
