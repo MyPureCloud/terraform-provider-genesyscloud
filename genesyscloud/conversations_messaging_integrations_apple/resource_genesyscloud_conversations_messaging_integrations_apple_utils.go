@@ -1,11 +1,35 @@
 package conversations_messaging_integrations_apple
 
 import (
+	"log"
+
+	"github.com/google/uuid"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
+
+func checkAppleIntegrationEndpointsEnabled() bool {
+	log.Printf("Checking if apple integration endpoints are enabled")
+	clientConfig := platformclientv2.GetDefaultConfiguration()
+	appleIntegrationApi := platformclientv2.NewConversationsApiWithConfig(clientConfig)
+
+	_, resp, err := appleIntegrationApi.PostConversationsMessagingIntegrationsApple(platformclientv2.Appleintegrationrequest{
+		Name: platformclientv2.String("Test Apple Integration " + uuid.NewString()),
+	})
+	if err != nil {
+		log.Printf("Error checking apple integration endpoints: %v", err)
+		return false
+	}
+
+	if resp.StatusCode >= 400 {
+		log.Printf("Error checking apple integration endpoints: %v", resp.StatusCode)
+		return false
+	}
+	log.Printf("Apple integration endpoints are enabled")
+	return true
+}
 
 /*
 The resource_genesyscloud_apple_integration_utils.go file contains various helper methods to marshal

@@ -15,6 +15,9 @@ import (
 // - With fake ID: Tests error handling (update fails due to incomplete async creation)
 // - With real ID: Tests full CRUD operations (update succeeds)
 func TestAccResourceAppleIntegrationBasic(t *testing.T) {
+	if !checkAppleIntegrationEndpointsEnabled() {
+		t.Skip("Skipping test as apple integration endpoints are not enabled")
+	}
 	var (
 		resourceLabel   = "test-apple-integration"
 		randomString    = uuid.NewString()
