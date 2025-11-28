@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
-func TestAccExport(t *testing.T) {
+func TestAccMrmoExport(t *testing.T) {
 	creds, err := generateCredetials()
 	if err != nil {
 		t.Skipf("Failed to collect the required credentials: %s", err.Error())
