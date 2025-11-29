@@ -50,6 +50,9 @@ func buildBuShortTermForecastingSettings(buShortTermForecastingSettings []interf
 		buShortTermForecastingSettingsSlice = append(buShortTermForecastingSettingsSlice, sdkBuShortTermForecastingSettings)
 	}
 
+	if len(buShortTermForecastingSettingsSlice) == 0 {
+		return nil
+	}
 	return &buShortTermForecastingSettingsSlice[0]
 }
 
@@ -113,7 +116,10 @@ func buildWfmServiceGoalImpactSettings(wfmServiceGoalImpactSettings []interface{
 		wfmServiceGoalImpactSettingsSlice = append(wfmServiceGoalImpactSettingsSlice, sdkWfmServiceGoalImpactSettings)
 	}
 
-	return &wfmServiceGoalImpactSettingsSlice[0] // TODO is this right
+	if len(wfmServiceGoalImpactSettingsSlice) == 0 {
+		return nil
+	}
+	return &wfmServiceGoalImpactSettingsSlice[0]
 }
 
 // buildBuSchedulingSettingsResponses maps an []interface{} into a Genesys Cloud *[]platformclientv2.Buschedulingsettingsrequest
@@ -147,6 +153,9 @@ func buildBuSchedulingSettings(buSchedulingSettingsResponses []interface{}) *pla
 		buSchedulingSettingsResponsesSlice = append(buSchedulingSettingsResponsesSlice, sdkBuSchedulingSettingsResponse)
 	}
 
+	if len(buSchedulingSettingsResponsesSlice) == 0 {
+		return nil
+	}
 	return &buSchedulingSettingsResponsesSlice[0]
 }
 
@@ -168,10 +177,13 @@ func buildCreateBusinessUnitSettingsRequest(businessUnitSettingsResponses []inte
 		businessUnitSettingsResponsesSlice = append(businessUnitSettingsResponsesSlice, sdkBusinessUnitSettingsResponse)
 	}
 
+	if len(businessUnitSettingsResponsesSlice) == 0 {
+		return nil
+	}
 	return &businessUnitSettingsResponsesSlice[0]
 }
 
-// buildCreateBusinessUnitSettingsRequest maps an interface{} into a Genesys Cloud *platformclientv2.Createbusinessunitsettingsrequest
+// buildUpdateBusinessUnitSettingsRequest maps an interface{} into a Genesys Cloud *platformclientv2.Updatebusinessunitsettingsrequest
 func buildUpdateBusinessUnitSettingsRequest(businessUnitSettingsResponses []interface{}) *platformclientv2.Updatebusinessunitsettingsrequest {
 	businessUnitSettingsResponsesSlice := make([]platformclientv2.Updatebusinessunitsettingsrequest, 0)
 	for _, businessUnitSettingsResponse := range businessUnitSettingsResponses {
@@ -189,6 +201,9 @@ func buildUpdateBusinessUnitSettingsRequest(businessUnitSettingsResponses []inte
 		businessUnitSettingsResponsesSlice = append(businessUnitSettingsResponsesSlice, sdkBusinessUnitSettingsResponse)
 	}
 
+	if len(businessUnitSettingsResponsesSlice) == 0 {
+		return nil
+	}
 	return &businessUnitSettingsResponsesSlice[0]
 }
 
