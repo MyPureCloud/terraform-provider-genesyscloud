@@ -61,7 +61,7 @@ func ResourceTfExport() *schema.Resource {
 				},
 				ForceNew:      true,
 				Deprecated:    "Use include_filter_resources attribute instead",
-				ConflictsWith: []string{"include_filter_resources", "exclude_filter_resources"},
+				ConflictsWith: []string{"include_filter_resources", "include_filter_resources_by_id", "exclude_filter_resources"},
 			},
 			"include_filter_resources": {
 				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
@@ -72,7 +72,18 @@ func ResourceTfExport() *schema.Resource {
 					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
-				ConflictsWith: []string{"resource_types", "exclude_filter_resources"},
+				ConflictsWith: []string{"resource_types", "include_filter_resources_by_id", "exclude_filter_resources"},
+			},
+			"include_filter_resources_by_id": {
+				Description: "Include only resources that match a {resourceType}::{resourceId} value.  See export guide for additional information.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
+				},
+				ForceNew:      true,
+				ConflictsWith: []string{"resource_types", "include_filter_resources", "exclude_filter_resources"},
 			},
 			"replace_with_datasource": {
 				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
@@ -92,7 +103,7 @@ func ResourceTfExport() *schema.Resource {
 					ValidateFunc: validators.ValidateSubStringInSlice(resourceExporter.GetAvailableExporterTypes()),
 				},
 				ForceNew:      true,
-				ConflictsWith: []string{"resource_types", "include_filter_resources"},
+				ConflictsWith: []string{"resource_types", "include_filter_resources", "include_filter_resources_by_id"},
 			},
 			"include_state_file": {
 				Description: "Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array.",
@@ -194,6 +205,17 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	if _, ok := d.GetOk("include_filter_resources"); ok {
 		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
+		diagErr := gre.Export()
+		if diagErr.HasError() {
+			return diagErr
+		}
+
+		d.SetId(gre.exportDirPath)
+		return diagErr
+	}
+
+	if _, ok := d.GetOk("include_filter_resources_by_id"); ok {
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResourcesById)
 		diagErr := gre.Export()
 		if diagErr.HasError() {
 			return diagErr

@@ -137,6 +137,7 @@ resource "genesyscloud_tf_export" "exclude_filter" {
 - `export_format` (String) Export the config as hcl or json or json_hcl. Defaults to `json`.
 - `ignore_cyclic_deps` (Boolean) Ignore Cyclic Dependencies when building the flows and do not throw an error. Defaults to `true`.
 - `include_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
+- `include_filter_resources_by_id` (List of String) Include only resources that match a {resourceType}::{resourceId} value.  See export guide for additional information.
 - `include_state_file` (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array. Defaults to `false`.
 - `log_permission_errors` (Boolean) Log permission/product issues rather than fail. Defaults to `false`.
 - `max_concurrent_threads` (Number) Maximum number of concurrent threads to use during export process. This is distinct from the provider's token pool size configuration Defaults to `10`.
