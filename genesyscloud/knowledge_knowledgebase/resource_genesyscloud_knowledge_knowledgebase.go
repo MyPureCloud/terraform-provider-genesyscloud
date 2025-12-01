@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func getAllKnowledgeKnowledgebases(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -132,11 +132,63 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	return readKnowledgeKnowledgebase(ctx, d, meta)
 }
 
+func rebuildDatabase() diag.Diagnostics {
+	log.Printf("Rebuilding knowledge base database")
+
+	architectApi := platformclientv2.NewArchitectApi()
+
+	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
+	if architectError != nil {
+		return diag.Errorf("Failed to build dependency tracking: %v with resp: %v", architectError, resp)
+	}
+
+	if resp.StatusCode != 202 {
+		log.Printf("Dependency tracking rebuild started")
+	}
+
+	for {
+		time.Sleep(10 * time.Second)
+
+		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
+		if buildErr != nil {
+			log.Printf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
+			break
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				log.Printf("Dependency tracking Complete")
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				log.Printf("Dependency tracking status: %s, waiting...", *status.Status)
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				return diag.Errorf("Dependency Rebuild Failed")
+			default:
+				log.Printf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
+			}
+			break
+		} else {
+			log.Printf("No status returned from dependency tracking build, proceeding anyway")
+			break
+		}
+	}
+	return nil
+}
+
 func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgebaseProxy := GetKnowledgebaseProxy(sdkConfig)
+
+	// Rebuild the database before deleting the knowledge base
+	// Return an error if it fails but dont stop the deletion process
+	// The knowledge base may still get deleted without the database rebuild
+	rebuildErr := rebuildDatabase()
+	if rebuildErr != nil {
+		log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+	}
 
 	log.Printf("Deleting knowledge base %s", name)
 	_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())

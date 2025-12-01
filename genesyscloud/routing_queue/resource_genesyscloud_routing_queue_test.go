@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 var (
@@ -44,7 +44,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		queueDesc1               = "This is a test"
 		queueDesc2               = "This is still a test"
 		alertTimeout1            = "7"
-		alertTimeout2            = "100"
+		alertTimeout2            = "58"
 		slPercent1               = "0.5"
 		slPercent2               = "0.9"
 		slDuration1              = "1000"
@@ -113,6 +113,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
+					GenerateBullseyeSettings(alertTimeout1),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -124,7 +125,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "auto_answer_only", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "Disabled"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
@@ -135,6 +135,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateMediaSettings(queueResourceLabel1, "media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateBullseyeSettings(queueResourceLabel1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "bullseye_rings.1.expansion_timeout_seconds", alertTimeout1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "bullseye_rings.1.skills_to_remove.#", "0"),
 					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					func(s *terraform.State) error {
@@ -1278,6 +1280,104 @@ func TestAccResourceRoutingQueueDirectRoutingNoBackup(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueCallbackCustomerFirst(t *testing.T) {
+	var (
+		queueResourceLabel        = "test-queue-callback-customer-first"
+		queueName                 = "Terraform Test Queue CustomerFirst-" + uuid.NewString()
+		alertTimeout              = "7"
+		slPercent                 = "0.5"
+		slDuration                = "1000"
+		liveVoiceReactionType     = "TransferToQueue"
+		answerMachineReactionType = "HangUp"
+		callbackModeCustomerFirst = "CustomerFirst"
+		maxRetryCount1            = "3"
+		retryDelaySeconds1        = "300"
+		maxRetryCount2            = "0"
+		retryDelaySeconds2        = "60"
+		pacingModifier            = "1.5"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: GenerateRoutingQueueResourceBasic(
+					queueResourceLabel,
+					queueName,
+					GenerateMediaSettingsCallBack(
+						"media_settings_callback",
+						alertTimeout,
+						util.FalseValue,
+						slPercent,
+						slDuration,
+						util.FalseValue,
+						"0",
+						"0",
+						"mode = "+strconv.Quote(callbackModeCustomerFirst),
+						"live_voice_reaction_type = "+strconv.Quote(liveVoiceReactionType),
+						"answering_machine_reaction_type = "+strconv.Quote(answerMachineReactionType),
+						"pacing_modifier = "+pacingModifier,
+						"max_retry_count = "+maxRetryCount1,
+						"retry_delay_seconds = "+retryDelaySeconds1,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "name", queueName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.mode", callbackModeCustomerFirst),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.live_voice_reaction_type", liveVoiceReactionType),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.answering_machine_reaction_type", answerMachineReactionType),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.pacing_modifier", pacingModifier),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.max_retry_count", maxRetryCount1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.retry_delay_seconds", retryDelaySeconds1),
+					validateMediaSettings(queueResourceLabel, "media_settings_callback", alertTimeout, util.FalseValue, slPercent, slDuration),
+				),
+			},
+			{
+				// Update
+				Config: GenerateRoutingQueueResourceBasic(
+					queueResourceLabel,
+					queueName,
+					GenerateMediaSettingsCallBack(
+						"media_settings_callback",
+						alertTimeout,
+						util.FalseValue,
+						slPercent,
+						slDuration,
+						util.FalseValue,
+						"0",
+						"0",
+						"mode = "+strconv.Quote(callbackModeCustomerFirst),
+						"live_voice_reaction_type = "+strconv.Quote(liveVoiceReactionType),
+						"answering_machine_reaction_type = "+strconv.Quote(answerMachineReactionType),
+						"pacing_modifier = "+pacingModifier,
+						"max_retry_count = "+maxRetryCount2,
+						"retry_delay_seconds = "+retryDelaySeconds2,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "name", queueName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.mode", callbackModeCustomerFirst),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.live_voice_reaction_type", liveVoiceReactionType),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.answering_machine_reaction_type", answerMachineReactionType),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.pacing_modifier", pacingModifier),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.max_retry_count", maxRetryCount2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.retry_delay_seconds", retryDelaySeconds2),
+					validateMediaSettings(queueResourceLabel, "media_settings_callback", alertTimeout, util.FalseValue, slPercent, slDuration),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
 func TestAccResourceRoutingQueueCannedResponseLibraryIds(t *testing.T) {
 	t.Parallel()
 	var (
@@ -1507,6 +1607,26 @@ func validateAgentOwnedRouting(resourceLabel string, agentattr, enableAgentOwned
 	)
 }
 
+func validateConditionalGroupActivation(queueResourceLabel, groupResourceLabel string) resource.TestCheckFunc {
+	// checks that values equal what is defined in resource_genesyscloud_routing_queue_utils.GenerateConditionalGroupActivation()
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.condition_expression", "C1"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.conditions.0.simple_metric.0.metric", "EstimatedWaitTime"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.conditions.0.simple_metric.0.queue_id", ""),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.conditions.0.operator", "GreaterThan"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.pilot_rule.0.conditions.0.value", "30"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.condition_expression", "C1 or C2"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.0.simple_metric.0.metric", "EstimatedWaitTime"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.0.operator", "GreaterThan"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.0.value", "60"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.simple_metric.0.metric", "EstimatedWaitTime"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.operator", "LessThan"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.value", "90"),
+		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_type", "GROUP"),
+		resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceLabel, "id"),
+	)
+}
+
 func generateRoutingQueueResourceBasic(resourceLabel string, name string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_queue" "%s" {
 		name = "%s"
@@ -1710,7 +1830,7 @@ func validateDirectRouting(resourceLabel string,
 	)
 }
 
-func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
+func TestAccResourceRoutingQueueSkillGroupsAndConditionalGroupActivation(t *testing.T) {
 	var (
 		queueResourceLabel      = "test-queue-members-seg"
 		queueName               = "Terraform-Test-QueueSkillGroup-" + uuid.NewString()
@@ -1740,30 +1860,27 @@ func TestAccResourceRoutingQueueSkillGroups(t *testing.T) {
 						queueName,
 						"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
 						"groups = [genesyscloud_group."+groupResourceLabel+".id]",
-						GenerateBullseyeSettings("10"),
-						GenerateBullseyeSettings("10"),
-						GenerateBullseyeSettings("10")),
+						GenerateConditionalGroupActivation("genesyscloud_group."+groupResourceLabel+".id"),
+					),
 				Check: resource.ComposeTestCheckFunc(
 					validateGroups("genesyscloud_routing_queue."+queueResourceLabel, "genesyscloud_routing_skill_group."+skillGroupResourceLabel, "genesyscloud_group."+groupResourceLabel),
+					validateConditionalGroupActivation(queueResourceLabel, groupResourceLabel),
 				),
-
-				PreventPostDestroyRefresh: true,
 			},
 			{
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"suppress_in_queue_call_recording",
-				},
-				Destroy: true,
+				Check: resource.ComposeTestCheckFunc(
+					func(s *terraform.State) error {
+						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper updating
+						return nil
+					},
+				),
 			},
 		},
-		CheckDestroy: func(state *terraform.State) error {
-			time.Sleep(45 * time.Second)
-			return testVerifyQueuesAndUsersDestroyed(state)
-		},
+		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
 }
 

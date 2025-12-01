@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -79,6 +79,9 @@ func buildConditions(conditions []interface{}) *[]platformclientv2.Condition {
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.AgentWrapupField, conditionMap, "agent_wrapup_field")
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.ContactColumnToDataActionFieldMappings, conditionMap, "contact_column_to_data_action_field_mappings", buildContactcolumntodataactionfieldmappings)
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.Predicates, conditionMap, "predicates", buildDataactionconditionpredicates)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.SubConditions, conditionMap, "sub_conditions", buildTimeAndDataSubConditions)
+		sdkCondition.MatchAnyConditions = resourcedata.GetNillableValueFromMap[bool](conditionMap, "match_any_conditions", true)
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.TimeZoneId, conditionMap, "time_zone_id")
 
 		conditionSlice = append(conditionSlice, sdkCondition)
 	}
@@ -151,6 +154,46 @@ func buildDataactionconditionpredicates(predicates []interface{}) *[]platformcli
 	}
 
 	return &predicatesSlice
+}
+
+func buildTimeAndDataSubConditions(subConditions []any) *[]platformclientv2.Timeanddatesubcondition {
+	subConditionsSlice := make([]platformclientv2.Timeanddatesubcondition, 0)
+	for _, subCondition := range subConditions {
+		var sdkSubCondition platformclientv2.Timeanddatesubcondition
+		subConditionMap, ok := subCondition.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkSubCondition.VarType, subConditionMap, "type")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkSubCondition.Operator, subConditionMap, "operator")
+		sdkSubCondition.Inverted = resourcedata.GetNillableValueFromMap[bool](subConditionMap, "inverted", true)
+		sdkSubCondition.IncludeYear = resourcedata.GetNillableValueFromMap[bool](subConditionMap, "include_year", true)
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkSubCondition.ThresholdValue, subConditionMap, "threshold_value")
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkSubCondition.VarRange, subConditionMap, "range", buildTimeAndDataSubConditionRange)
+
+		subConditionsSlice = append(subConditionsSlice, sdkSubCondition)
+	}
+
+	return &subConditionsSlice
+}
+
+func buildTimeAndDataSubConditionRange(ranges []any) *platformclientv2.Timeanddatesubconditionrange {
+	if len(ranges) == 0 {
+		return nil
+	}
+
+	rangeMap, ok := ranges[0].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	var sdkRange platformclientv2.Timeanddatesubconditionrange
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkRange.Max, rangeMap, "max")
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkRange.Min, rangeMap, "min")
+	resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkRange.InSet, rangeMap, "in_set")
+
+	return &sdkRange
 }
 
 // flattenDialerrules maps a Genesys Cloud *[]platformclientv2.Dialerrule into a []interface{}
@@ -227,6 +270,9 @@ func flattenConditions(conditions *[]platformclientv2.Condition) []interface{} {
 		resourcedata.SetMapValueIfNotNil(conditionMap, "agent_wrapup_field", condition.AgentWrapupField)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionMap, "contact_column_to_data_action_field_mappings", condition.ContactColumnToDataActionFieldMappings, flattenContactcolumntodataactionfieldmappings)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionMap, "predicates", condition.Predicates, flattenDataactionconditionpredicates)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionMap, "sub_conditions", condition.SubConditions, flattenTimeAndDateSubConditions)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "match_any_conditions", condition.MatchAnyConditions)
+		resourcedata.SetMapValueIfNotNil(conditionMap, "time_zone_id", condition.TimeZoneId)
 
 		conditionList = append(conditionList, conditionMap)
 	}
@@ -272,6 +318,37 @@ func flattenDataactionconditionpredicates(predicates *[]platformclientv2.Dataact
 	}
 
 	return predicateList
+}
+
+func flattenTimeAndDateSubConditions(subConditions *[]platformclientv2.Timeanddatesubcondition) []any {
+	if len(*subConditions) == 0 {
+		return nil
+	}
+
+	var subConditionsSlice []any
+	for _, subCondition := range *subConditions {
+		subConditionMap := make(map[string]any)
+
+		resourcedata.SetMapValueIfNotNil(subConditionMap, "type", subCondition.VarType)
+		resourcedata.SetMapValueIfNotNil(subConditionMap, "operator", subCondition.Operator)
+		resourcedata.SetMapValueIfNotNil(subConditionMap, "inverted", subCondition.Inverted)
+		resourcedata.SetMapValueIfNotNil(subConditionMap, "include_year", subCondition.IncludeYear)
+		resourcedata.SetMapValueIfNotNil(subConditionMap, "threshold_value", subCondition.ThresholdValue)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(subConditionMap, "range", subCondition.VarRange, flattenTimeAndDateSubConditionRange)
+
+		subConditionsSlice = append(subConditionsSlice, subConditionMap)
+	}
+
+	return subConditionsSlice
+}
+
+func flattenTimeAndDateSubConditionRange(conditionRange *platformclientv2.Timeanddatesubconditionrange) []any {
+	rangeMap := make(map[string]any)
+	resourcedata.SetMapValueIfNotNil(rangeMap, "min", conditionRange.Min)
+	resourcedata.SetMapValueIfNotNil(rangeMap, "max", conditionRange.Max)
+	resourcedata.SetMapValueIfNotNil(rangeMap, "in_set", conditionRange.InSet)
+
+	return []any{rangeMap}
 }
 
 // look through rule actions to check if the referenced skills exist in our skill map or not

@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 const (
@@ -739,7 +739,7 @@ func min(a, b int) int {
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
 type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
-type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics)
+type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
 	methodWrappedWithRecover := wrapWithRecover(method, constants.Create)
@@ -871,10 +871,10 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 }
 
 func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
-	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 		clientConfig, err := SdkClientPool.acquire(ctx)
 		if err != nil {
-			return nil, nil, diag.FromErr(err)
+			return nil, nil, nil, diag.FromErr(err)
 		}
 		defer func() {
 			if err := SdkClientPool.release(clientConfig); err != nil {
@@ -885,7 +885,7 @@ func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.G
 		// Check if the request has been cancelled
 		select {
 		case <-ctx.Done():
-			return nil, nil, diag.FromErr(ctx.Err()) // Error somewhere, terminate
+			return nil, nil, nil, diag.FromErr(ctx.Err()) // Error somewhere, terminate
 		default:
 		}
 

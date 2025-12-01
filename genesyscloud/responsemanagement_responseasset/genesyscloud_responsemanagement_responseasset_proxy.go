@@ -3,10 +3,19 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+
+	"io"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -92,6 +101,90 @@ func (p *responsemanagementResponseassetProxy) deleteRespManagementRespAsset(ctx
 	return p.deleteRespManagementRespAssetAttr(ctx, p, id)
 }
 
+func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, name, filePath, divisionId string) (respBody *platformclientv2.Createresponseassetresponse, resp *platformclientv2.APIResponse, err error) {
+	s3Path := ""
+	localFilePath := filePath
+	if aws.IsS3Path(filePath) {
+		// In the case of an S3 path, the filename in the request body should be the last part of the path
+		// We still want the value in the resource data to be the full S3 Path to avoid a diff
+		_ = d.Set("filename", filePath)
+		s3Path = filePath
+
+		// get the file name from the end of the s3 path
+		localFilePath = strings.Split(filePath, "/")[len(strings.Split(filePath, "/"))-1]
+
+		localFilePath = filepath.Join(os.TempDir(), localFilePath)
+		// Download the file if it's not present locally
+		if err := downloadFileIfNotPresent(s3Path, localFilePath); err != nil {
+			return nil, resp, fmt.Errorf("failed to download file from S3: %w", err)
+		}
+	}
+
+	if name == "" {
+		name = localFilePath
+	}
+
+	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
+		Name: &name,
+	}
+	if divisionId != "" {
+		sdkResponseAsset.DivisionId = &divisionId
+	}
+
+	postResponseData, resp, err := p.createRespManagementRespAsset(ctx, &sdkResponseAsset)
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to upload response asset: %s | error: %s", localFilePath, err)
+	}
+
+	headers := *postResponseData.Headers
+	url := *postResponseData.Url
+	reader, _, err := files.DownloadOrOpenFile(ctx, localFilePath, S3Enabled)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	s3Uploader := files.NewS3Uploader(reader, nil, nil, headers, "PUT", url)
+	_, err = s3Uploader.Upload()
+	return postResponseData, resp, err
+}
+
+// downloadFileIfNotPresent will download use the DownloadOrOpenFile function to download the file and give it the path/name of filename
+func downloadFileIfNotPresent(s3Path, filename string) error {
+	// Check if the file already exists locally
+	if _, err := os.Stat(filename); err == nil {
+		// File exists - delete it and download it again
+		if err := os.Remove(filename); err != nil {
+			return fmt.Errorf("failed to remove existing file %s: %w", filename, err)
+		}
+	}
+
+	ctx := context.Background()
+	reader, file, err := files.DownloadOrOpenFile(ctx, s3Path, S3Enabled)
+	if err != nil {
+		return fmt.Errorf("failed to download file from %s: %w", s3Path, err)
+	}
+
+	// If we got a file handle, close it after we're done
+	if file != nil {
+		defer file.Close()
+	}
+
+	// Create the local file
+	localFile, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create local file %s: %w", filename, err)
+	}
+	defer localFile.Close()
+
+	// Copy the content from the reader to the local file
+	_, err = io.Copy(localFile, reader)
+	if err != nil {
+		return fmt.Errorf("failed to write content to local file %s: %w", filename, err)
+	}
+
+	return nil
+}
+
 func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
 	var allResponseAssets []platformclientv2.Responseasset
 	var response *platformclientv2.APIResponse
@@ -138,18 +231,14 @@ func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseas
 func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, *platformclientv2.APIResponse, error) {
 	postResponseData, resp, err := p.responseManagementApi.PostResponsemanagementResponseassetsUploads(*respAsset)
 	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to upload response asset: %v", err)
+		return nil, resp, fmt.Errorf("failed to upload response asset: %v", err)
 	}
 	return postResponseData, resp, nil
 }
 
 // updateRespManagementRespAssetFn is an implementation of the function to update a Genesys Cloud responsemanagement responseasset
 func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
-	putResponseData, resp, err := p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
-	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to update Responsemanagement response asset %s: %v", id, err)
-	}
-	return putResponseData, resp, nil
+	return p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
 }
 
 // getRespManagementRespAssetByIdFn is an implementation of the function to get a Genesys Cloud responsemanagement responseasset by Id

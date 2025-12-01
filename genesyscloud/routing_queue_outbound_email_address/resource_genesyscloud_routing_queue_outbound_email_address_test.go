@@ -2,23 +2,20 @@ package routing_queue_outbound_email_address
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"os"
+	"strings"
+	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
@@ -44,7 +41,7 @@ func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
 		t.Errorf("%s is not set", featureToggles.OEAToggleName())
 	}
 
-	cleanupRoutingEmailDomains()
+	routingEmailDomain.CleanupRoutingEmailDomains("terraform")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -134,7 +131,7 @@ func TestAccResourceRoutingQueueOutboundEmailAddressExists(t *testing.T) {
 		t.Errorf("%s is not set", featureToggles.OEAToggleName())
 	}
 
-	cleanupRoutingEmailDomains()
+	routingEmailDomain.CleanupRoutingEmailDomains("terraform")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -248,39 +245,5 @@ func checkQueueId(queueIdChan chan string) func(value string) error {
 
 		close(queueIdChan)
 		return nil
-	}
-}
-
-func cleanupRoutingEmailDomains() {
-	var sdkConfig *platformclientv2.Configuration
-	var err error
-	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-		log.Fatal(err)
-	}
-
-	routingAPI := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
-
-	for pageNum := 1; ; pageNum++ {
-		const pageSize = 100
-		routingEmailDomains, _, getErr := routingAPI.GetRoutingEmailDomains(pageSize, pageNum, false, "")
-		if getErr != nil {
-			log.Printf("failed to get page %v of routing email domains: %v", pageNum, getErr)
-			return
-		}
-
-		if routingEmailDomains.Entities == nil || len(*routingEmailDomains.Entities) == 0 {
-			return
-		}
-
-		for _, routingEmailDomain := range *routingEmailDomains.Entities {
-			if routingEmailDomain.Id != nil && strings.HasPrefix(*routingEmailDomain.Id, "terraform") {
-				_, err := routingAPI.DeleteRoutingEmailDomain(*routingEmailDomain.Id)
-				if err != nil {
-					log.Printf("Failed to delete routing email domain %s: %s", *routingEmailDomain.Id, err)
-					continue
-				}
-				time.Sleep(5 * time.Second)
-			}
-		}
 	}
 }

@@ -79,7 +79,7 @@ func ResourceOutboundCallabletimeset() *schema.Resource {
 			},
 			`callable_times`: {
 				Description: `The list of CallableTimes for which it is acceptable to place outbound calls.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeSet,
 				Elem:        timeSlotResource,
 			},

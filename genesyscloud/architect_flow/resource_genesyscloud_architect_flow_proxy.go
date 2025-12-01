@@ -2,13 +2,17 @@ package architect_flow
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"time"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
@@ -295,72 +299,95 @@ func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId stri
 }
 
 // getAllArchitectFlowsFn is the implementation function for GetAllFlows
-func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
-	totalFlows, resp, err := p.getAllFlows(name, varType, false)
+func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	baseURL := p.clientConfig.BasePath + "/api/v2/flows"
+
+	params := url.Values{}
+	if name != "" {
+		params.Add("name", name)
+	}
+	for _, t := range varType {
+		params.Add("type", t)
+	}
+	params.Add("includeSchemas", "true")
+
+	client := &http.Client{}
+	var allFlows []platformclientv2.Flow
+
+	params.Set("pageSize", "100")
+	params.Set("pageNumber", "1")
+
+	u, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, resp, err
+		return nil, nil, fmt.Errorf("error parsing URL: %v", err)
+	}
+	u.RawQuery = params.Encode()
+
+	flows, apiResp, err := makeFlowRequest(ctx, client, u.String(), p)
+	if err != nil {
+		return nil, apiResp, err
 	}
 
-	totalFlowsWithVirtualAgentEnabled, resp, err := p.getAllFlows(name, varType, true)
-	if err != nil {
-		return nil, resp, err
+	if flows.Entities != nil {
+		allFlows = append(allFlows, *flows.Entities...)
 	}
 
-	totalFlows = append(totalFlows, totalFlowsWithVirtualAgentEnabled...)
+	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
+		params.Set("pageNumber", fmt.Sprintf("%d", pageNum))
+		u.RawQuery = params.Encode()
 
-	for _, flow := range totalFlows {
+		pageFlows, _, err := makeFlowRequest(ctx, client, u.String(), p)
+		if err != nil {
+			return nil, apiResp, err
+		}
+
+		if pageFlows.Entities != nil {
+			allFlows = append(allFlows, *pageFlows.Entities...)
+		}
+	}
+
+	for _, flow := range allFlows {
 		rc.SetCache(p.flowCache, *flow.Id, flow)
 	}
 
-	return &totalFlows, resp, nil
+	return &allFlows, apiResp, nil
 }
 
-func (a *architectFlowProxy) getAllFlows(name string, varType []string, virtualAgentEnabled bool) ([]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
-	const pageSize = 100
-	var totalFlows []platformclientv2.Flow
-
-	flows, resp, err := a.api.GetFlows(
-		varType,
-		1,
-		pageSize,
-		"",
-		"",
-		nil,
-		name,
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"", false,
-		true,
-		virtualAgentEnabled,
-		"",
-		"",
-		nil,
-	)
+func makeFlowRequest(ctx context.Context, client *http.Client, url string, p *architectFlowProxy) (*platformclientv2.Flowentitylisting, *platformclientv2.APIResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get page of flows: %v %v", err, resp)
-	}
-	if flows.Entities == nil || len(*flows.Entities) == 0 {
-		return totalFlows, nil, nil
+		return nil, nil, err
 	}
 
-	totalFlows = append(totalFlows, *flows.Entities...)
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
 
-	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		flows, resp, err = a.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, false, "", "", nil)
-		if err != nil {
-			return nil, resp, fmt.Errorf("failed to get page %d of flows: %v", pageNum, err)
-		}
-		if flows.Entities == nil || len(*flows.Entities) == 0 {
-			break
-		}
-		totalFlows = append(totalFlows, *flows.Entities...)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading response: %v", err)
 	}
 
-	return totalFlows, resp, nil
+	apiResp := &platformclientv2.APIResponse{
+		StatusCode: resp.StatusCode,
+		Response:   resp,
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var flows platformclientv2.Flowentitylisting
+	if err := json.Unmarshal(respBody, &flows); err != nil {
+		return nil, apiResp, err
+	}
+
+	return &flows, apiResp, nil
 }
 
 // generateDownloadUrlFn is the implementation function for the generateDownloadUrl method

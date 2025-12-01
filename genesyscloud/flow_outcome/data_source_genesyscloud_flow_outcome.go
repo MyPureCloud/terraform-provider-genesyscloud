@@ -21,7 +21,7 @@ import (
 // dataSourceFlowOutcomeRead retrieves by name the id in question
 func dataSourceFlowOutcomeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newFlowOutcomeProxy(sdkConfig)
+	proxy := getFlowOutcomeProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

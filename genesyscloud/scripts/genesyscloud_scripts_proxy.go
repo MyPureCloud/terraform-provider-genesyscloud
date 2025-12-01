@@ -4,18 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -415,15 +416,6 @@ func getScriptByIdFn(_ context.Context, p *scriptsProxy, scriptId string) (scrip
 
 // createScriptFn is an implementation function for creating a Genesys Cloud Script
 func createScriptFn(ctx context.Context, filePath, scriptName, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
-	exists, err := scriptExistsWithName(ctx, p, scriptName)
-	if err != nil {
-		return "", err
-	}
-
-	if exists {
-		return "", fmt.Errorf("script with name '%s' already exists. Please provide a unique name", scriptName)
-	}
-
 	resp, err := p.uploadScriptFile(filePath, scriptName, "", substitutions)
 	if err != nil {
 		return "", err
@@ -485,18 +477,6 @@ func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId, divisio
 		return "", fmt.Errorf("script '%s' with id '%s' was not successfully published: %v %v", scriptName, scriptIdAfterUpdate, err, resp)
 	}
 	return scriptIdAfterUpdate, nil
-}
-
-// scriptExistsWithName is a helper method to determine if a script already exists with the name the user is trying to create a script with
-func scriptExistsWithName(ctx context.Context, scriptsProxy *scriptsProxy, scriptName string) (bool, error) {
-	sdkScripts, _, err := scriptsProxy.getScriptsByName(ctx, scriptName)
-	if err != nil {
-		return true, err
-	}
-	if len(sdkScripts) < 1 {
-		return false, nil
-	}
-	return true, nil
 }
 
 func setScriptDivision(scriptId, divisionId string, p *scriptsProxy) error {

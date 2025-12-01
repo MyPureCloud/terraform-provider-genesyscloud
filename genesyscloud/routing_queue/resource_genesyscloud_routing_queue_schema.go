@@ -1,6 +1,8 @@
 package routing_queue
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	architectUserPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -15,9 +17,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const ResourceType = "genesyscloud_routing_queue"
@@ -196,6 +195,18 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"max_retry_count": {
+				Description:  "Maximum number of retries that should be attempted to try and connect a customer first callback to a customer when the initial callback attempt did not connect.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(0, 20),
+			},
+			"retry_delay_seconds": {
+				Description:  "Delay in seconds between each retry of a customer first callback.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntBetween(60, 86400),
+			},
 		},
 	}
 
@@ -253,6 +264,108 @@ var (
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
+			},
+		},
+	}
+
+	cgaSimpleMetric = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"metric": {
+				Description:  "The queue metric being evaluated.  Valid values: EstimatedWaitTime, ServiceLevel, IdleAgentCount.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"EstimatedWaitTime", "ServiceLevel", "IdleAgentCount"}, false),
+			},
+			"queue_id": {
+				Description: "The queue being evaluated for this rule.  If null, the current queue will be used.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
+	cgaCondition = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"simple_metric": {
+				Description: "Instructs this condition to evaluate a simple queue-level metric.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Required:    true,
+				Elem:        cgaSimpleMetric,
+			},
+			"operator": {
+				Description:  "The operator used to compare the actual value against the threshold value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo, EqualTo, NotEqualTo.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo", "EqualTo", "NotEqualTo"}, false),
+			},
+			"value": {
+				Description:  "The threshold value, beyond which a rule evaluates as true.",
+				Type:         schema.TypeFloat,
+				Required:     true,
+				ValidateFunc: validation.FloatBetween(0, 1000000),
+			},
+		},
+	}
+
+	conditionalGroupActivationResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"pilot_rule": {
+				Description: "The pilot rule for this queue, which executes periodically to determine queue health.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MinItems:    1,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"condition_expression": {
+							Description: "A string expression that defines the relationships of conditions in this rule.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"conditions": {
+							Description: "The list of conditions used in this rule.",
+							Type:        schema.TypeList,
+							Required:    true,
+							MinItems:    1,
+							MaxItems:    10,
+							Elem:        cgaCondition,
+						},
+					},
+				},
+			},
+			"rules": {
+				Description: "The set of rules to be periodically executed on the queue (if the pilot rule evaluates as true or there is no pilot rule).",
+				Type:        schema.TypeList,
+				Required:    true,
+				MinItems:    1,
+				MaxItems:    5,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"condition_expression": {
+							Description: "A string expression that defines the relationships of conditions in this rule.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"conditions": {
+							Description: "The list of conditions used in this rule.",
+							Type:        schema.TypeList,
+							Required:    true,
+							MinItems:    1,
+							MaxItems:    10,
+							Elem:        cgaCondition,
+						},
+						"groups": {
+							Description: "The group(s) to activate if the rule evaluates as true.",
+							Type:        schema.TypeList,
+							Required:    true,
+							MinItems:    1,
+							MaxItems:    5,
+							Elem:        memberGroupResource,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -382,7 +495,8 @@ func ResourceRoutingQueue() *schema.Resource {
 				Description: "The bullseye ring settings for the queue.",
 				Type:        schema.TypeList,
 				Optional:    true,
-				MaxItems:    5,
+				MaxItems:    6,
+				MinItems:    2,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"expansion_timeout_seconds": {
@@ -404,6 +518,14 @@ func ResourceRoutingQueue() *schema.Resource {
 						},
 					},
 				},
+			},
+			"conditional_group_activation": {
+				Description: "The Conditional Group Activation settings for the queue.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        conditionalGroupActivationResource,
 			},
 			"conditional_group_routing_rules": {
 				Description: "The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
@@ -678,6 +800,8 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
+			"conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id": {RefType: ResourceType},
+			"conditional_group_activation.rules.conditions.simple_metric.queue_id":      {RefType: ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
 			"outbound_email_address": {"route_id"},

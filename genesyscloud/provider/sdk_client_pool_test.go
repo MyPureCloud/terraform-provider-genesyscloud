@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -574,13 +574,13 @@ func TestSDKClientPool_GetAllWithPooledClient(t *testing.T) {
 	assert.NotNil(t, result)
 
 	// Test GetAllWithPooledClientCustom
-	getAllCustomFunc := func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+	getAllCustomFunc := func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 		assert.NotNil(t, clientConfig)
-		return make(resourceExporter.ResourceIDMetaMap), nil, nil
+		return make(resourceExporter.ResourceIDMetaMap), nil, nil, nil
 	}
 
 	wrappedCustom := GetAllWithPooledClientCustom(getAllCustomFunc)
-	resultCustom, dep, diags := wrappedCustom(context.Background())
+	resultCustom, dep, _, diags := wrappedCustom(context.Background())
 	assert.Nil(t, diags)
 	assert.NotNil(t, resultCustom)
 	assert.Nil(t, dep)
@@ -603,13 +603,13 @@ func TestSDKClientPool_GetAllWithPooledClientCustom(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test GetAllWithPooledClientCustom
-	getAllCustomFunc := func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+	getAllCustomFunc := func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 		assert.NotNil(t, clientConfig)
-		return make(resourceExporter.ResourceIDMetaMap), &resourceExporter.DependencyResource{}, nil
+		return make(resourceExporter.ResourceIDMetaMap), &resourceExporter.DependencyResource{}, nil, nil
 	}
 
 	wrappedCustom := GetAllWithPooledClientCustom(getAllCustomFunc)
-	resultCustom, dep, diags := wrappedCustom(context.Background())
+	resultCustom, dep, _, diags := wrappedCustom(context.Background())
 	assert.Nil(t, diags)
 	assert.NotNil(t, resultCustom)
 	assert.NotNil(t, dep)
@@ -644,12 +644,12 @@ func TestSDKClientPool_GetAllWithPooledClientErrors(t *testing.T) {
 	assert.Contains(t, diags[0].Summary, "test error")
 
 	// Test error from getAllCustomFunc
-	getAllCustomFunc := func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		return nil, nil, diag.Errorf("test custom error")
+	getAllCustomFunc := func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		return nil, nil, nil, diag.Errorf("test custom error")
 	}
 
 	wrappedCustom := GetAllWithPooledClientCustom(getAllCustomFunc)
-	resultCustom, dep, diags := wrappedCustom(context.Background())
+	resultCustom, dep, _, diags := wrappedCustom(context.Background())
 	assert.NotNil(t, diags)
 	assert.Nil(t, resultCustom)
 	assert.Nil(t, dep)

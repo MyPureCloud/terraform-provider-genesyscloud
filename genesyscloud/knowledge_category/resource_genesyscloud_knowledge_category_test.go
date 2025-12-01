@@ -1,9 +1,11 @@
 package knowledge_category
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -11,8 +13,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func TestAccResourceKnowledgeCategoryBasic(t *testing.T) {
@@ -211,29 +214,49 @@ func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescripti
 func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	var knowledgeBaseId string
+
+	// Find the knowledge base ID
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_knowledge_knowledgebase" {
 			knowledgeBaseId = rs.Primary.ID
 			break
 		}
 	}
+
+	// Validate all categories are deleted
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_knowledge_category" {
 			continue
 		}
+
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeCategoryId := id[0]
-		knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(knowledgeBaseId, knowledgeCategoryId)
-		if knowledgeCategory != nil {
-			return fmt.Errorf("Knowledge category (%s) still exists", knowledgeCategoryId)
-		} else if util.IsStatus404(resp) || util.IsStatus400(resp) {
-			// Knowledge base category not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+
+		// Retry for up to 60 seconds
+		if err := util.WithRetries(context.Background(), 60*time.Second, func() *retry.RetryError {
+
+			knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(
+				knowledgeBaseId,
+				knowledgeCategoryId,
+			)
+
+			if knowledgeCategory != nil {
+				//Retryable error
+				return retry.RetryableError(fmt.Errorf("knowledge category (%s) still exists", knowledgeCategoryId))
+			}
+
+			if util.IsStatus404(resp) || util.IsStatus400(resp) {
+				// Deleted successfully
+				return nil
+			}
+
+			// Any other error → fail and stop retries
+			return retry.NonRetryableError(fmt.Errorf("unexpected error: %v", err))
+
+		}); err != nil {
+			return fmt.Errorf("unexpected error: %v", err)
 		}
 	}
-	// Success. All knowledge categories destroyed
+
 	return nil
 }

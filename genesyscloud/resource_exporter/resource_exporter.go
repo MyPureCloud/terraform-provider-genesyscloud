@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -46,7 +46,7 @@ type ResourceMeta struct {
 // ResourceIDMetaMap is a map of IDs to ResourceMeta
 type ResourceIDMetaMap map[string]*ResourceMeta
 
-type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, *DependencyResource, diag.Diagnostics)
+type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, *DependencyResource, []string, diag.Diagnostics)
 
 // GetAllResourcesFunc is a method that returns all resource IDs
 type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)

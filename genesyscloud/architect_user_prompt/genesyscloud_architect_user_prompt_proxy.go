@@ -3,9 +3,6 @@ package architect_user_prompt
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"io"
 	"log"
 	"net/http"
@@ -13,9 +10,13 @@ import (
 	"strings"
 	"time"
 
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -462,7 +463,7 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 	} else {
 		for _, promptResource := range resources.List() {
 			languageExists := false
-			promptResourceMap, ok := promptResource.(map[string]interface{})
+			promptResourceMap, ok := promptResource.(map[string]any)
 			if !ok {
 				continue
 			}
@@ -522,7 +523,7 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 func checkEmptyResource(resources *schema.Set) bool {
 	if resources != nil && len(resources.List()) == 1 {
 		for _, promptResource := range resources.List() {
-			promptResourceMap, ok := promptResource.(map[string]interface{})
+			promptResourceMap, ok := promptResource.(map[string]any)
 			if !ok {
 				continue
 			}

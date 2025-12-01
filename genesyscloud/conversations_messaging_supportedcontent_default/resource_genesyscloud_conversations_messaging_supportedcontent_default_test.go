@@ -2,13 +2,13 @@ package conversations_messaging_supportedcontent_default
 
 import (
 	"fmt"
-	"testing"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"log"
+	"testing"
 
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 
@@ -25,11 +25,16 @@ func TestAccResourceConversationsMessagingSupportedcontentDefault(t *testing.T) 
 	var (
 		defaultResourceLabel = "testSupportedDefaultContent"
 
-		name          = "Terraform Supported Content - " + uuid.NewString()
+		name          = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceLabel = "testSupportedContent"
 		inboundType   = "*/*"
 		outboundType  = "*/*"
 	)
+
+	cleanupErr := cleanUpOldSupportedContentDefaults()
+	if cleanupErr != nil {
+		t.Logf("Error cleaning up old supported content defaults: %v", cleanupErr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -89,5 +94,39 @@ func GenerateSupportedContentDefaultResource(
 }
 
 func testVerifyConversationsMessagingSupportedcontentDefaultDestroyed(state *terraform.State) error {
+	return nil
+}
+
+func cleanUpOldSupportedContentDefaults() error {
+	log.Printf("Cleaning up older conversations messaging supported content defaults")
+	cmMessagingSettingApi := platformclientv2.NewConversationsApiWithConfig(sdkConfig)
+	scDefault, _, err := cmMessagingSettingApi.GetConversationsMessagingSupportedcontentDefault()
+	if err != nil || scDefault == nil {
+		return fmt.Errorf("failed to get conversations messaging supported content default: %w", err)
+	}
+
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		cmMessagingSetting, _, getErr := cmMessagingSettingApi.GetConversationsMessagingSupportedcontent(pageSize, pageNum)
+		if getErr != nil {
+			return fmt.Errorf("failed to get page %v of messaging settings: %w", pageNum, getErr)
+		}
+
+		if cmMessagingSetting.Entities == nil || len(*cmMessagingSetting.Entities) == 0 {
+			break
+		}
+		for _, setting := range *cmMessagingSetting.Entities {
+			if setting.Name != nil && (*setting.Name == "default") && (*setting.Id != *scDefault.Id) { // keep the current default only
+				log.Printf("Deleting messaging settings: %v", *setting.Id)
+				_, err := cmMessagingSettingApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(*setting.Id)
+				if err != nil {
+					log.Printf("failed to delete messaging settings: %v", err)
+					continue
+				}
+				log.Printf("Deleted messaging settings: %v", *setting.Id)
+			}
+		}
+	}
+	log.Printf("Cleaned up old conversations messaging supported content defaults")
 	return nil
 }

@@ -177,8 +177,11 @@ Required:
 
 - `column_name` (String) The name of the contact list column to evaluate.
 - `operator` (String) The operator to use when comparing values.
-- `value` (String) The value to compare against the contact's data.
 - `value_type` (String) The data type the value should be treated as.
+
+Optional:
+
+- `value` (String) The value to compare against the contact's data. If 'value_type' is Numeric or Period, value is required
 
 
 <a id="nestedblock--rules--conditions--data_action_condition_settings"></a>

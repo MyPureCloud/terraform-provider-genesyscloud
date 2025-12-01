@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -26,7 +26,7 @@ type getQualityFormsSurveyByNameFunc func(ctx context.Context, p *qualityFormsSu
 type getQualityFormsSurveyByIdFunc func(ctx context.Context, p *qualityFormsSurveyProxy, id string) (form *platformclientv2.Surveyform, response *platformclientv2.APIResponse, err error)
 type updateQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, id string, form *platformclientv2.Surveyform) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error)
 type deleteQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, id string) (*platformclientv2.APIResponse, error)
-type publishQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, id string, published bool) (*platformclientv2.APIResponse, error)
+type publishQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, id string, published bool) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error)
 type getQualityFormsSurveyVersionsFunc func(ctx context.Context, p *qualityFormsSurveyProxy, formId string, pageSize int, pageNumber int) (*platformclientv2.Surveyformentitylisting, *platformclientv2.APIResponse, error)
 type patchQualityFormsSurveyFunc func(ctx context.Context, p *qualityFormsSurveyProxy, formId string, body platformclientv2.Surveyform) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error)
 
@@ -102,7 +102,7 @@ func (p *qualityFormsSurveyProxy) deleteQualityFormsSurvey(ctx context.Context, 
 }
 
 // publishQualityFormsSurvey publishes or unpublishes a Genesys Cloud quality forms survey
-func (p *qualityFormsSurveyProxy) publishQualityFormsSurvey(ctx context.Context, id string, published bool) (*platformclientv2.APIResponse, error) {
+func (p *qualityFormsSurveyProxy) publishQualityFormsSurvey(ctx context.Context, id string, published bool) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
 	return p.publishQualityFormsSurveyAttr(ctx, p, id, published)
 }
 
@@ -193,15 +193,15 @@ func deleteQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy,
 	return resp, nil
 }
 
-func publishQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, id string, published bool) (*platformclientv2.APIResponse, error) {
-	_, resp, err := p.qualityApi.PostQualityPublishedformsSurveys(platformclientv2.Publishform{
+func publishQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, id string, published bool) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
+	form, resp, err := p.qualityApi.PostQualityPublishedformsSurveys(platformclientv2.Publishform{
 		Id:        &id,
 		Published: &published,
 	})
 	if err != nil {
-		return resp, fmt.Errorf("Failed to publish quality forms survey: %s", err)
+		return nil, resp, fmt.Errorf("Failed to publish quality forms survey: %s", err)
 	}
-	return resp, nil
+	return form, resp, nil
 }
 
 func getQualityFormsSurveyVersionsFn(ctx context.Context, p *qualityFormsSurveyProxy, formId string, pageSize int, pageNumber int) (*platformclientv2.Surveyformentitylisting, *platformclientv2.APIResponse, error) {

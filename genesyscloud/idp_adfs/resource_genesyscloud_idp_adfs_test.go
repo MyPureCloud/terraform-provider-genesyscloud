@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func TestAccResourceIdpAdfs(t *testing.T) {
@@ -41,6 +41,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					util.NullValue, // Not disabled
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "name", name1),
@@ -50,6 +51,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -63,6 +65,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					util.TrueValue, // disabled
 					uri3,
 					slo_binding2,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "name", name1),
@@ -73,6 +76,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_binding", slo_binding2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "sign_authn_requests", util.TrueValue),
 				),
 			},
 			{
@@ -86,6 +90,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					util.FalseValue, // disabled
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "name", name1),
@@ -97,6 +102,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -110,6 +116,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					util.FalseValue, // disabled
 					uri3,
 					slo_binding2,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "name", name1),
@@ -121,6 +128,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_binding", slo_binding2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -134,6 +142,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					util.FalseValue, // disabled
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "name", name1),
@@ -146,6 +155,7 @@ func TestAccResourceIdpAdfs(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_adfs.adfs", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -167,7 +177,8 @@ func generateIdpAdfsResource(
 	partyID string,
 	disabled string,
 	sloURI string,
-	sloBinding string) string {
+	sloBinding string,
+	signAuthnRequests string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_adfs" "adfs" {
 		name = "%s"
 		certificates = %s
@@ -177,8 +188,9 @@ func generateIdpAdfsResource(
         disabled = %s
 		slo_uri = "%s"
 		slo_binding = "%s"
+		sign_authn_requests = %s
 	}
-	`, name, certs, issuerURI, targetURI, partyID, disabled, sloURI, sloBinding)
+	`, name, certs, issuerURI, targetURI, partyID, disabled, sloURI, sloBinding, signAuthnRequests)
 }
 
 func testVerifyIdpAdfsDestroyed(state *terraform.State) error {

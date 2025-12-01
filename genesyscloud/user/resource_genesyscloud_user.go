@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 type agentUtilizationWithLabels struct {
@@ -63,6 +63,8 @@ func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if addrErr != nil {
 		return addrErr
 	}
+
+	waitForExtensionPoolActivation(ctx, d, proxy)
 
 	// Check for a deleted user before creating
 	id, _ := getDeletedUserId(email, proxy)
@@ -207,6 +209,8 @@ func updateUser(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if err != nil {
 		return err
 	}
+
+	waitForExtensionPoolActivation(ctx, d, proxy)
 
 	email := d.Get("email").(string)
 

@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
@@ -102,6 +102,11 @@ func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 	var after string
 	const pageSize = "100"
 
+	rebuildError := rebuildDatabase()
+	if rebuildError != nil {
+		log.Printf("Failed to rebuild database: %v", rebuildError)
+	}
+
 	for {
 		knowledgeBases, _, err := knowledgeApi.GetKnowledgeKnowledgebases("", after, "", pageSize, "", "", true, "", "")
 		if err != nil {
@@ -113,8 +118,22 @@ func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 		}
 
 		for _, knowledgeBase := range *knowledgeBases.Entities {
+			// Check if the knowledge base name starts with the Test name
 			if knowledgeBase.Name != nil && strings.HasPrefix(*knowledgeBase.Name, knowledgeBaseName) {
 				log.Printf("Deleting knowledge base %s", *knowledgeBase.Name)
+				_, _, err := knowledgeApi.DeleteKnowledgeKnowledgebase(*knowledgeBase.Id)
+				if err != nil {
+					// Logging the error rather than returning it to ensure the deletion of other knowledge bases
+					log.Printf("Failed to delete knowledge base %s: %v", *knowledgeBase.Name, err)
+					continue
+				}
+				log.Printf("Deleted knowledge base %s", *knowledgeBase.Name)
+				time.Sleep(5 * time.Second)
+			}
+
+			// Check if the knowledge base description starts with the Test description
+			if knowledgeBase.Description != nil && strings.HasPrefix(*knowledgeBase.Description, "test-knowledgebase-description") {
+				log.Printf("Deleting knowledge base %s, description: %s", *knowledgeBase.Name, *knowledgeBase.Description)
 				_, _, err := knowledgeApi.DeleteKnowledgeKnowledgebase(*knowledgeBase.Id)
 				if err != nil {
 					// Logging the error rather than returning it to ensure the deletion of other knowledge bases

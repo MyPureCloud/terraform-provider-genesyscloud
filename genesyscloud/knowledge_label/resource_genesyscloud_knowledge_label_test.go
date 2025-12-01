@@ -1,9 +1,11 @@
 package knowledge_label
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 
@@ -12,8 +14,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func TestAccResourceKnowledgeLabelBasic(t *testing.T) {
@@ -121,29 +124,54 @@ func generateKnowledgeLabelRequestBody(labelName string, labelColor string) stri
 func testVerifyKnowledgeLabelDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	var knowledgeBaseId string
+
+	// Find the knowledge base
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == knowledgeKnowledgebase.ResourceType {
 			knowledgeBaseId = rs.Primary.ID
 			break
 		}
 	}
+
+	// Validate labels deleted
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != ResourceType {
 			continue
 		}
+
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeLabelId := id[0]
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
-		if err == nil {
-			return fmt.Errorf("knowledge label (%s) still exists", knowledgeLabelId)
-		} else if util.IsStatus404(resp) || util.IsStatus400(resp) {
-			// Knowledge base label not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("unexpected error: %s", err.Error())
+
+		// Add retry logic for slow async deletion
+		if err := util.WithRetries(context.Background(), 60*time.Second, func() *retry.RetryError {
+
+			_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseLabel(
+				knowledgeBaseId,
+				knowledgeLabelId,
+			)
+
+			if err == nil {
+				//Retry
+				return retry.RetryableError(
+					fmt.Errorf("knowledge label (%s) still exists", knowledgeLabelId),
+				)
+			}
+
+			if util.IsStatus404(resp) || util.IsStatus400(resp) {
+				// Deleted
+				return nil
+			}
+
+			// Other error
+			return retry.NonRetryableError(
+				fmt.Errorf("unexpected error: %v", err),
+			)
+
+		}); err != nil {
+			return fmt.Errorf("unexpected error: %v", err)
 		}
 	}
-	// Success. All knowledge labels destroyed
+
+	// Success
 	return nil
 }

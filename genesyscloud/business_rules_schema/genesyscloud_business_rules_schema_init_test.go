@@ -1,10 +1,13 @@
 package business_rules_schema
 
 import (
+	"log"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 /*
@@ -17,6 +20,11 @@ var providerDataSources map[string]*schema.Resource
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
+
+var (
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -41,6 +49,11 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = provider.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk for package business_rules_schema: %v", authErr)
+	}
+
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

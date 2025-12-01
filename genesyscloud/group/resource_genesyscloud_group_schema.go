@@ -35,6 +35,26 @@ var (
 			},
 		},
 	}
+
+	groupVoicemailPolicyResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"send_email_notifications": {
+				Description: "Whether email notifications are sent to group members when a new voicemail is received.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"disable_email_pii": {
+				Description: "Removes any PII from group emails. This is overridden by the analogous organization configuration value. This is always true if HIPAA is enabled or unknown for an organization.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"include_email_transcriptions": {
+				Description: "Whether to include the voicemail transcription in a group notification email.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+		},
+	}
 )
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
@@ -54,7 +74,7 @@ func GroupExporter() *resourceExporter.ResourceExporter {
 		CustomValidateExports: map[string][]string{
 			"E164": {"addresses.number"},
 		},
-		AllowEmptyArrays: []string{"addresses", "owner_ids"},
+		AllowEmptyArrays: []string{"owner_ids"},
 	}
 }
 
@@ -139,6 +159,14 @@ func ResourceGroup() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
+			},
+			"voicemail_policy": {
+				Description: "The voicemail policy associated with this group",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				MinItems:    1,
+				Elem:        groupVoicemailPolicyResource,
 			},
 		},
 	}

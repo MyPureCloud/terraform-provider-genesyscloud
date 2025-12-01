@@ -3,6 +3,7 @@ package organization_authentication_settings
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -28,34 +29,46 @@ func SetRegistrar(l registrar.Registrar) {
 var passwordRequirements = &schema.Resource{
 	Schema: map[string]*schema.Schema{
 		`minimum_length`: {
-			Description: "The minimum character length for passwords",
-			Optional:    true,
-			Type:        schema.TypeInt,
+			Description:      "The minimum character length for passwords",
+			Optional:         true,
+			Type:             schema.TypeInt,
+			Default:          8,
+			ValidateDiagFunc: validators.ValidateIntMin(8),
 		},
 		`minimum_digits`: {
-			Description: "The minimum number of numerals (0-9) that must be included in passwords",
-			Optional:    true,
-			Type:        schema.TypeInt,
+			Description:      "The minimum number of numerals (0-9) that must be included in passwords",
+			Optional:         true,
+			Type:             schema.TypeInt,
+			Default:          1,
+			ValidateDiagFunc: validators.ValidateIntMin(1),
 		},
 		`minimum_letters`: {
-			Description: "The minimum number of characters required for passwords",
-			Optional:    true,
-			Type:        schema.TypeInt,
+			Description:      "The minimum number of characters required for passwords",
+			Optional:         true,
+			Type:             schema.TypeInt,
+			Default:          0,
+			ValidateDiagFunc: validators.ValidateIntMin(0),
 		},
 		`minimum_upper`: {
-			Description: "The minimum number of upper case letters that must be included in passwords",
-			Optional:    true,
-			Type:        schema.TypeInt,
+			Description:      "The minimum number of upper case letters that must be included in passwords",
+			Optional:         true,
+			Type:             schema.TypeInt,
+			Default:          1,
+			ValidateDiagFunc: validators.ValidateIntMin(1),
 		},
 		`minimum_lower`: {
-			Description: "The minimum number of lower case letters that must be included in passwords",
-			Optional:    true,
-			Type:        schema.TypeInt,
+			Description:      "The minimum number of lower case letters that must be included in passwords",
+			Optional:         true,
+			Type:             schema.TypeInt,
+			Default:          1,
+			ValidateDiagFunc: validators.ValidateIntMin(1),
 		},
 		`minimum_specials`: {
-			Description: "The minimum number of special characters that must be included in passwords",
-			Optional:    true,
-			Type:        schema.TypeInt,
+			Description:      "The minimum number of special characters that must be included in passwords",
+			Optional:         true,
+			Type:             schema.TypeInt,
+			Default:          1,
+			ValidateDiagFunc: validators.ValidateIntMin(1),
 		},
 		`minimum_age_seconds`: {
 			Description: "Minimum age of the password (in seconds) before it can be changed",

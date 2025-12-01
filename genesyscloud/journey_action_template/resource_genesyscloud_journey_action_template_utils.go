@@ -1,13 +1,13 @@
 package journey_action_template
 
 import (
-	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 // All buildSdkPatch*  functions are helper method which maps Create operation of journeyApi's Actiontemplates
@@ -36,6 +36,7 @@ func buildSdkPatchContentOffer(patchContentOffer map[string]interface{}) *platfo
 	body := patchContentOffer["body"].(string)
 	callToAction := stringmap.BuildSdkListFirstElement(patchContentOffer, "call_to_action", buildSdkPatchCallToAction, true)
 	style := stringmap.BuildSdkListFirstElement(patchContentOffer, "style", buildSdkPatchContentOfferStylingConfiguration, true)
+	imageAltText := patchContentOffer["image_alt_text"].(string)
 
 	sdkPatchActionTemplate := platformclientv2.Patchcontentoffer{}
 	sdkPatchActionTemplate.SetField("ImageUrl", &imageUrl)
@@ -46,6 +47,7 @@ func buildSdkPatchContentOffer(patchContentOffer map[string]interface{}) *platfo
 	sdkPatchActionTemplate.SetField("Body", &body)
 	sdkPatchActionTemplate.SetField("CallToAction", callToAction)
 	sdkPatchActionTemplate.SetField("Style", style)
+	sdkPatchActionTemplate.SetField("ImageAltText", &imageAltText)
 	return &sdkPatchActionTemplate
 }
 
@@ -174,6 +176,7 @@ func buildSdkContentOffer(contentOffer map[string]interface{}) *platformclientv2
 	body := contentOffer["body"].(string)
 	callToAction := stringmap.BuildSdkListFirstElement(contentOffer, "call_to_action", buildSdkCallToAction, true)
 	style := stringmap.BuildSdkListFirstElement(contentOffer, "style", buildSdkContentOfferStylingConfiguration, true)
+	imageAltText := contentOffer["image_alt_text"].(string)
 
 	return &platformclientv2.Contentoffer{
 		ImageUrl:     &imageUrl,
@@ -184,6 +187,7 @@ func buildSdkContentOffer(contentOffer map[string]interface{}) *platformclientv2
 		Body:         &body,
 		CallToAction: callToAction,
 		Style:        style,
+		ImageAltText: &imageAltText,
 	}
 }
 
@@ -300,6 +304,7 @@ func flattenActionTemplateContentOffer(resource *platformclientv2.Contentoffer) 
 	actionTemplateContentOfferMap["body"] = resource.Body
 	stringmap.SetValueIfNotNil(actionTemplateContentOfferMap, "call_to_action", lists.FlattenAsList(resource.CallToAction, flattenCallToAction))
 	stringmap.SetValueIfNotNil(actionTemplateContentOfferMap, "style", lists.FlattenAsList(resource.Style, flattenStyle))
+	actionTemplateContentOfferMap["image_alt_text"] = resource.ImageAltText
 	return actionTemplateContentOfferMap
 }
 

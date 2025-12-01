@@ -89,6 +89,12 @@ func ResourceIdpOkta() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				MinItems:    1,
 			},
+			`sign_authn_requests`: {
+				Description: `True if the Genesys Cloud authentication request should be signed.`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+				Default:     false,
+			},
 		},
 	}
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -37,6 +37,7 @@ type uploadContactListBulkContactsFunc func(ctx context.Context, p *OutboundCont
 type clearContactListContactsFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error)
 type getContactListContactsExportUrlFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, error error)
 type initiateContactListContactsExportFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (resp *platformclientv2.APIResponse, error error)
+type getOutboundContactListImportStatusFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (importState *platformclientv2.Importstatus, resp *platformclientv2.APIResponse, err error)
 
 // OutboundContactListProxy defines the interface for outbound contact list operations
 type OutboundContactlistProxy struct {
@@ -55,6 +56,7 @@ type OutboundContactlistProxy struct {
 	accessToken                                   string
 	getContactListContactsExportUrlAttr           getContactListContactsExportUrlFunc
 	initiateContactListContactsExportAttr         initiateContactListContactsExportFunc
+	getOutboundContactListImportStatusAttr        getOutboundContactListImportStatusFunc
 	contactListCache                              rc.CacheInterface[platformclientv2.Contactlist]
 }
 
@@ -77,6 +79,7 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 		accessToken:                                   api.Configuration.AccessToken,
 		getContactListContactsExportUrlAttr:           getContactListContactsExportUrlFn,
 		initiateContactListContactsExportAttr:         initiateContactListContactsExportFn,
+		getOutboundContactListImportStatusAttr:        getOutboundContactListImportStatusFn,
 		contactListCache:                              contactListCache,
 	}
 }
@@ -160,6 +163,11 @@ func (p *OutboundContactlistProxy) initiateContactListContactsExport(ctx context
 // getContactListContactsExportUrl gets the export url for a contact list (this is just the URL itself, no authorization included)
 func (p *OutboundContactlistProxy) getContactListContactsExportUrl(ctx context.Context, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
 	return p.getContactListContactsExportUrlAttr(ctx, p, contactListId)
+}
+
+// getOutboundContactListImportStatus gets the import status for a contact list
+func (p *OutboundContactlistProxy) getOutboundContactListImportStatus(ctx context.Context, contactListId string) (importState *platformclientv2.Importstatus, resp *platformclientv2.APIResponse, err error) {
+	return p.getOutboundContactListImportStatusAttr(ctx, p, contactListId)
 }
 
 // createOutboundContactlistFn is an implementation function for creating a Genesys Cloud outbound contactlist
@@ -333,4 +341,8 @@ func createBulkOutboundContactsFormData(filePath, contactListId, contactIdColumn
 	formData["id"] = strings.NewReader(contactListId)
 	formData["contact-id-name"] = strings.NewReader(contactIdColumnName)
 	return formData, nil
+}
+
+func getOutboundContactListImportStatusFn(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (importStatus *platformclientv2.Importstatus, resp *platformclientv2.APIResponse, err error) {
+	return p.outboundApi.GetOutboundContactlistImportstatus(contactListId)
 }

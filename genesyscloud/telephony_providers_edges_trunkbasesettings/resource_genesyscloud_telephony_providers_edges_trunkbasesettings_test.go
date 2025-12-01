@@ -2,6 +2,7 @@ package telephony_providers_edges_trunkbasesettings
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func TestAccResourceTrunkBaseSettings(t *testing.T) {
@@ -123,7 +124,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 			"HQ",
 			[]string{},
 			location.GenerateLocationEmergencyNum(
-				"+13100000003",
+				fmt.Sprintf("+131%v", 10000+rand.Intn(99999-10000)),
 				util.NullValue,
 			),
 			location.GenerateLocationAddress(
@@ -205,7 +206,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 					"HQ",
 					[]string{},
 					location.GenerateLocationEmergencyNum(
-						"+13100000003",
+						fmt.Sprintf("+131%v", 10000+rand.Intn(99999-10000)),
 						util.NullValue,
 					),
 					location.GenerateLocationAddress(

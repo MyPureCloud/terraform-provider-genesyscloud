@@ -75,13 +75,74 @@ func ResourceOutboundRuleset() *schema.Resource {
 		},
 	}
 
+	outboundrulesettimeanddateconditionsubconditionrangeResource := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`min`: {
+				Description: `The minimum value of the range. Required for the operator BETWEEN. Format depends on type: timeOfDay: HH:mm, dayOfWeek: 1-7 (Monday-Sunday), dayOfMonth: 1-31, specificDate: yyyy-MM-dd (if includeYear=true) or MM-dd (if includeYear=false).`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+
+			`max`: {
+				Description: `The maximum value of the range. Required for the operator BETWEEN. Format follows the same rules as 'min'.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`in_set`: {
+				Description: `A set of values that the date/ time data should be in. Required for the IN operator. Format depends on type: dayOfWeek: 1-7 (Monday-Sunday), dayOfMonth: 1-31, and/ or LAST_DAY, ODD_DAY, EVEN_DAY,specificDate: yyyy-MM-dd (if includeYear=true) or MM-dd (if includeYear=false).`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
+
+	outboundrulesettimeanddateconditionsubconditionResource := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`type`: {
+				Description: `The type of time/date sub-condition.Valid values: timeOfDay, dayOfWeek, dayOfMonth, specificDate.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`operator`: {
+				Description:  `The operator to use for comparison.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"EQUALS", "LESS_THAN", "LESS_THAN_EQUALS", "GREATER_THAN", "GREATER_THAN_EQUALS", "CONTAINS", "BEGINS_WITH", "ENDS_WITH", "BEFORE", "AFTER", "IN", "BETWEEN"}, false),
+			},
+			`inverted`: {
+				Description: `If true, inverts the result of evaluating this sub-condition. Default is false.`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+			},
+			`include_year`: {
+				Description: `If true, includes year in date comparison for specificDate type. When false, only month and day are compared. Default is true. Only applicable for specificDate type.`,
+				Optional:    true,
+				Default:     true,
+				Type:        schema.TypeBool,
+			},
+			`threshold_value`: {
+				Description: `Threshold value for BEFORE or AFTER operators. Format depends on type: timeOfDay: HH:mm, dayOfWeek: 1-7 (Monday-Sunday), dayOfMonth: 1-31 and/ or LAST_DAY, ODD_DAY, EVEN_DAY, specificDate: yyyy-MM-dd (if includeYear=true) or MM-dd (if includeYear=false). For single-value comparison, use a list with one element.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`range`: {
+				Description: `A range of values for BETWEEN and IN operators. Format follows the same rules as 'thresholdValue'.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        outboundrulesettimeanddateconditionsubconditionrangeResource,
+			},
+		},
+	}
+
 	outboundrulesetconditionResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`type`: {
 				Description:  `The type of the condition.`,
 				Optional:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`wrapupCondition`, `systemDispositionCondition`, `contactAttributeCondition`, `phoneNumberCondition`, `phoneNumberTypeCondition`, `callAnalysisCondition`, `contactPropertyCondition`, `dataActionCondition`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`wrapupCondition`, `systemDispositionCondition`, `contactAttributeCondition`, `phoneNumberCondition`, `phoneNumberTypeCondition`, `callAnalysisCondition`, `contactPropertyCondition`, `dataActionCondition`, `timeAndDateCondition`}, false),
 			},
 			`inverted`: {
 				Description: `If true, inverts the result of evaluating this Condition. Default is false.`,
@@ -166,6 +227,24 @@ func ResourceOutboundRuleset() *schema.Resource {
 				Type:        schema.TypeList,
 				Elem:        outboundrulesetdataactionconditionpredicateResource,
 			},
+			`sub_conditions`: {
+				Description: `A list of sub-conditions to evaluate. Required for a timeAndDateCondition.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MinItems:    1,
+				MaxItems:    10,
+				Elem:        outboundrulesettimeanddateconditionsubconditionResource,
+			},
+			`match_any_conditions`: {
+				Description: `If true, only one sub-condition must match for the condition to be true. If false, all sub-conditions must match. Default is false. Required for a timeAndDateCondition.`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+			},
+			`time_zone_id`: {
+				Description: `The time zone to use for this condition. Required for a timeAndDateCondition.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 
@@ -181,7 +260,7 @@ func ResourceOutboundRuleset() *schema.Resource {
 				Description:  `Additional type specification for this DialerAction.`,
 				Required:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`DO_NOT_DIAL`, `MODIFY_CONTACT_ATTRIBUTE`, `SWITCH_TO_PREVIEW`, `APPEND_NUMBER_TO_DNC_LIST`, `SCHEDULE_CALLBACK`, `CONTACT_UNCALLABLE`, `NUMBER_UNCALLABLE`, `SET_CALLER_ID`, `SET_SKILLS`, `DATA_ACTION`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`DO_NOT_DIAL`, `MODIFY_CONTACT_ATTRIBUTE`, `SWITCH_TO_PREVIEW`, `APPEND_NUMBER_TO_DNC_LIST`, `APPEND_CUSTOM_ENTRY_TO_DNC_LIST`, `SCHEDULE_CALLBACK`, `CONTACT_UNCALLABLE`, `NUMBER_UNCALLABLE`, `SET_CALLER_ID`, `SET_SKILLS`, `DATA_ACTION`}, false),
 			},
 			`update_option`: {
 				Description:  `Specifies how a contact attribute should be updated. Required for MODIFY_CONTACT_ATTRIBUTE.`,

@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -32,7 +32,7 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 		outboundNotificationWebhookUrl1                 = "https://mock-server.prv-use1.test-pure.cloud/messaging-service/webhook"
 		outboundNotificationWebhookSignatureSecretToken = uuid.NewString()
 
-		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
+		nameSupportedContent       = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceIdSupportedContent = "testSupportedContent"
 		inboundType                = "*/*"
 

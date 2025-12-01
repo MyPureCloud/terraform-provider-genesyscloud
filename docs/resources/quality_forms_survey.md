@@ -101,7 +101,7 @@ resource "genesyscloud_quality_forms_survey" "example_survey_form" {
 
 ### Required
 
-- `language` (String) Language for survey viewer localization. Currently localized languages: da, de, en-US, es, fi, fr, it, ja, ko, nl, no, pl, pt-BR, sv, th, tr, zh-CH, zh-TW
+- `language` (String) Language for survey viewer localization. Currently localized languages: da, de, en-US, es, fi, fr, it, ja, ko, nl, no, pl, pt-BR, sv, th, tr, zh-CN, zh-TW. Languages in beta: pt-PT, he, hi. Languages in alpha: ar, uk
 - `name` (String) The name of the entity.
 - `question_groups` (Block List, Min: 1) A list of question groups. (see [below for nested schema](#nestedblock--question_groups))
 

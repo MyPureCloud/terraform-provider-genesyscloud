@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 func getAllAuthDivisions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -138,13 +138,14 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
 		}
+		log.Printf("Successfully deleted division %s", name)
 		return resp, nil
 	})
 	if diagErr != nil {
 		return diagErr
 	}
 
-	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 		_, resp, err := proxy.getAuthDivisionById(ctx, d.Id(), false, false)
 		if err != nil {
 			if util.IsStatus404(resp) {

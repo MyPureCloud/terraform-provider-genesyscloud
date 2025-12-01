@@ -3,11 +3,13 @@ package external_contacts
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"log"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -18,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -54,24 +56,32 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 			continue
 		}
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
-		blockLabel := ""
+		var blockLabelParts []string
+
 		if externalContact.ExternalOrganization != nil {
 			externalOrg, resp, err := ep.getExternalContactsOrganizationById(ctx, *externalContact.ExternalOrganization.Id)
 			if err != nil {
 				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get external contact organization %s: %v", *externalContact.ExternalOrganization.Id, err), resp)
 			}
-			if externalOrg != nil {
-				blockLabel = blockLabel + "_" + *externalOrg.Name
+			if externalOrg != nil && externalOrg.Name != nil {
+				blockLabelParts = append(blockLabelParts, *externalOrg.Name)
 			}
 		}
 		if externalContact.LastName != nil {
-			blockLabel = blockLabel + "_" + *externalContact.LastName
+			blockLabelParts = append(blockLabelParts, *externalContact.LastName)
 		}
 		if externalContact.FirstName != nil {
-			blockLabel = blockLabel + "_" + *externalContact.FirstName
+			blockLabelParts = append(blockLabelParts, *externalContact.FirstName)
 		}
+
+		blockLabel := strings.Join(blockLabelParts, "_")
 		if blockLabel == "" {
-			blockLabel = *externalContact.Id
+			// Try external system URL as a more portable identifier before falling back to GUID
+			if externalContact.ExternalSystemUrl != nil && *externalContact.ExternalSystemUrl != "" {
+				blockLabel = *externalContact.ExternalSystemUrl
+			} else {
+				blockLabel = *externalContact.Id
+			}
 		}
 		blockHash, err := util.QuickHashFields(externalContact.ExternalIds)
 		if err != nil {
