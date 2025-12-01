@@ -182,14 +182,34 @@ func extractIdOrNameFromJSON(jsonData []byte) (id string, name string) {
 		}
 	}
 
-	// If name not found at top level, check common nested structures
-	if name == "" {
-		// Check for flow.name (used in architect flow job responses)
+	// If id or name not found at top level, check common nested structures
+	if id == "" || name == "" {
+		// Check for flow.id and flow.name (used in architect flow job responses)
 		if flowVal, ok := jsonMap["flow"]; ok && flowVal != nil {
 			if flowMap, ok := flowVal.(map[string]interface{}); ok {
-				if flowNameVal, ok := flowMap["name"]; ok && flowNameVal != nil {
-					if flowNameStr, ok := flowNameVal.(string); ok && flowNameStr != "" {
-						name = flowNameStr
+				// Extract flow.id if we don't have an id yet
+				if id == "" {
+					if flowIdVal, ok := flowMap["id"]; ok && flowIdVal != nil {
+						switch v := flowIdVal.(type) {
+						case string:
+							if v != "" {
+								id = v
+							}
+						case float64:
+							id = fmt.Sprintf("%.0f", v)
+						case int:
+							id = fmt.Sprintf("%d", v)
+						case int64:
+							id = fmt.Sprintf("%d", v)
+						}
+					}
+				}
+				// Extract flow.name if we don't have a name yet
+				if name == "" {
+					if flowNameVal, ok := flowMap["name"]; ok && flowNameVal != nil {
+						if flowNameStr, ok := flowNameVal.(string); ok && flowNameStr != "" {
+							name = flowNameStr
+						}
 					}
 				}
 			}

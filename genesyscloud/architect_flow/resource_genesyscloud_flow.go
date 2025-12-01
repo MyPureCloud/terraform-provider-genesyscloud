@@ -106,7 +106,29 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		flowName = ""
 	}
 
+	// If name is not in ResourceData but we have a flow ID, try to get it from the flow
+	if flowName == "" && d.Id() != "" {
+		flow, _, err := p.GetFlow(ctx, d.Id())
+		if err == nil && flow != nil && flow.Name != nil && *flow.Name != "" {
+			flowName = *flow.Name
+			log.Printf("Retrieved flow name '%s' from API for flow ID %s", flowName, d.Id())
+		}
+	}
+
+	// If still no name, set to "unavailable" so EnsureResourceContext preserves it
+	if flowName == "" {
+		flowName = "unavailable"
+	}
+
 	log.Printf("Updating flow  %s, %s", flowName, d.Id())
+
+	// Set resource context for SDK debug logging with flow name
+	// Use the existing flow ID if available, otherwise it will be updated once we get it from the job
+	flowIdForContext := d.Id()
+	if flowIdForContext == "" {
+		flowIdForContext = "unavailable"
+	}
+	ctx = provider.WithResourceContext(ctx, ResourceType, flowIdForContext, flowName)
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
@@ -158,13 +180,18 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
-	// Set resource context for SDK debug logging before entering retry loop
-	ctx = util.SetResourceContext(ctx, d, ResourceType)
-
 	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := p.GetFlowsDeployJob(ctx, jobId)
 		if err != nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving job status. JobID: %s, flowName: %s, error: %s", jobId, flowName, err), response))
+		}
+
+		// Update resource context with flow ID if we get it from the job response
+		// This ensures subsequent API calls have the correct flow ID in logs
+		if flowJob.Flow != nil && flowJob.Flow.Id != nil {
+			flowID = *flowJob.Flow.Id
+			// Update context with the actual flow ID
+			ctx = provider.WithResourceContext(ctx, ResourceType, flowID, flowName)
 		}
 
 		if flowJob.Status != nil {
@@ -194,6 +221,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 			log.Printf("Success for flow %s, %s", flowName, jobId)
 			if flowJob.Flow != nil && flowJob.Flow.Id != nil {
 				flowID = *flowJob.Flow.Id
+				// Context was already updated above when we extracted flowID
 			} else {
 				log.Printf("Warning: Flow or Flow.Id is nil for successful job %s", jobId)
 			}

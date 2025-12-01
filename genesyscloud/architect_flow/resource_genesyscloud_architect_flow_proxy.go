@@ -295,7 +295,15 @@ func deleteArchitectFlowFn(ctx context.Context, p *architectFlowProxy, flowId st
 }
 
 func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	// Only set resource context if it doesn't already exist
+	// This preserves resource_name and resource_id that may have been set by the caller
+	var resourceCtx interface{}
+	if ctx != nil {
+		resourceCtx = ctx.Value(provider.ResourceContextKey())
+	}
+	if resourceCtx == nil {
+		ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	}
 	return p.api.PostFlowsJobs()
 }
 
