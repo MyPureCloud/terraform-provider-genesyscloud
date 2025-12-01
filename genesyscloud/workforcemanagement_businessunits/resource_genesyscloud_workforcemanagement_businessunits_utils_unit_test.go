@@ -10,9 +10,9 @@ import (
 
 func TestUnitBuildBuShortTermForecastingSettings(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    []interface{}
-		expected *platformclientv2.Bushorttermforecastingsettings
+		name        string
+		input       []interface{}
+		expected    *platformclientv2.Bushorttermforecastingsettings
 		shouldPanic bool
 	}{
 		{
@@ -212,8 +212,8 @@ func TestUnitFlattenSchedulerMessageTypeSeverities(t *testing.T) {
 		expected []interface{}
 	}{
 		{
-			name: "empty_list",
-			input: &[]platformclientv2.Schedulermessagetypeseverity{},
+			name:     "empty_list",
+			input:    &[]platformclientv2.Schedulermessagetypeseverity{},
 			expected: nil,
 		},
 		{
