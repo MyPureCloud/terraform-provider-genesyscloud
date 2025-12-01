@@ -2,23 +2,20 @@ package outbound_campaignrule
 
 import (
 	"fmt"
+	outboundMessagingCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
+	outboundSequence "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
 	responseManagementResponse "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
-	"log"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 	"math/rand"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
-
-	outboundSequence "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -1211,7 +1208,7 @@ func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
 
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
 		api := platformclientv2.NewRoutingApiWithConfig(config)
-		err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
+		err = outboundMessagingCampaign.CreateRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
 		if err != nil {
 			t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 		}
@@ -1226,7 +1223,7 @@ func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
 			{
 				PreConfig: func() {
 					// Can be removed once `api/v2/routing/email/outbound/*` is implemented in provider
-					err := CheckOutboundDomainExists(domainId)
+					err := outboundMessagingCampaign.CheckOutboundDomainExists(domainId)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1896,126 +1893,4 @@ resource "genesyscloud_outbound_messagingcampaign" "%s" {
 		contentTemplateLabel, //genesyscloud_outbound_messagingcampaign.email_config.content_template_id
 		emailDomainId,        //genesyscloud_outbound_messagingcampaign.email_config.from_address.domain_id
 	)
-}
-
-func CheckOutboundDomainExists(id string) error {
-	config, _ := provider.AuthorizeSdk()
-	routingApi := platformclientv2.NewRoutingApiWithConfig(config)
-
-	log.Printf("Checking if outbound domain (%s) exists", id)
-	outboundDomain, resp, err := routingApi.GetRoutingEmailOutboundDomain(id)
-	if err != nil && resp.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("error getting outbound domain (%s): %v", id, err)
-	}
-
-	if isDomainVerified(outboundDomain) {
-		log.Printf("Outbound domain (%s) exists and is verified", id)
-		return nil
-	}
-
-	if resp.StatusCode == 404 {
-		// outbound domain for test does not exist so create it
-		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
-		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomainrequest{
-			Id: &id,
-		})
-		if postErr != nil {
-			return fmt.Errorf("failed to create outbound domain: %v", err)
-		}
-
-		log.Printf("Outbound domain (%s) created", id)
-		time.Sleep(3 * time.Second)
-	}
-
-	// ensure domain is verified
-	if !isDomainVerified(outboundDomain) {
-		log.Printf("Verifying outbound domain (%s)...", id)
-
-		result, _, putErr := routingApi.PutRoutingEmailOutboundDomainActivation(id)
-		if putErr != nil {
-			return fmt.Errorf("failed to verify outbound domain (%s): %v", id, err)
-		}
-
-		if checkDomainVerification(result) {
-			log.Printf("Outbound domain (%s) verified", id)
-		}
-	}
-	return nil
-}
-
-func isDomainVerified(domain *platformclientv2.Outbounddomain) bool {
-	if domain == nil ||
-		domain.DkimVerificationResult == nil ||
-		domain.CnameVerificationResult == nil ||
-		domain.DkimVerificationResult.Status == nil ||
-		domain.CnameVerificationResult.Status == nil {
-		return false
-	}
-
-	return *domain.DkimVerificationResult.Status == "VERIFIED" &&
-		*domain.CnameVerificationResult.Status == "VERIFIED"
-}
-
-func checkDomainVerification(domain *platformclientv2.Emailoutbounddomainresult) bool {
-	if domain == nil ||
-		domain.DnsTxtSendingRecord == nil ||
-		domain.DnsCnameBounceRecord == nil ||
-		domain.DnsTxtSendingRecord.VerificationStatus == nil ||
-		domain.DnsCnameBounceRecord.VerificationStatus == nil {
-		return false
-	}
-
-	return *domain.DnsTxtSendingRecord.VerificationStatus == "Verified" &&
-		*domain.DnsCnameBounceRecord.VerificationStatus == "Verified"
-}
-
-func createRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclientv2.RoutingApi) error {
-	var (
-		phoneNumberType = "local"
-		countryCode     = "US"
-		status          string
-		maxRetries      = 10
-	)
-
-	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber, "compliance")
-	if resp.StatusCode == 200 {
-		log.Printf("Sms number (%s) already exists", inputSmsPhoneNumber)
-		// Number already exists
-		return nil
-	} else if resp.StatusCode == http.StatusNotFound {
-		log.Printf("Sms number (%s) does not exist. Creating...", inputSmsPhoneNumber)
-		body := platformclientv2.Smsphonenumberprovision{
-			PhoneNumber:     &inputSmsPhoneNumber,
-			PhoneNumberType: &phoneNumberType,
-			CountryCode:     &countryCode,
-		}
-		// POST /api/v2/routing/sms/phonenumbers
-		address, _, err := api.PostRoutingSmsPhonenumbers(body)
-		if err != nil {
-			return err
-		}
-		// Ensure status transitions to complete before proceeding
-		for i := 0; i <= maxRetries; i++ {
-			time.Sleep(3 * time.Second)
-			// GET /api/v2/routing/sms/phonenumbers/{addressId}
-			sdkSmsPhoneNumber, _, err := api.GetRoutingSmsPhonenumber(*address.PhoneNumber, "compliance")
-			if err != nil {
-				return err
-			}
-			status = *sdkSmsPhoneNumber.ProvisioningStatus.State
-			if status == "Running" {
-				if i == maxRetries {
-					return fmt.Errorf(`sms phone number status did not transition to "Completed" within max retries %v`, maxRetries)
-				}
-				continue
-			}
-			break
-		}
-		if status == "Failed" {
-			return fmt.Errorf(`sms phone number provisioning failed`)
-		}
-	} else if err != nil {
-		return fmt.Errorf("error checking for sms phone number %v: %v", inputSmsPhoneNumber, err)
-	}
-	return nil
 }
