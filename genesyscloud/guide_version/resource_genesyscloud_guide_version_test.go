@@ -29,8 +29,8 @@ func TestAccResourceGuideVersion(t *testing.T) {
 		guideVersionResourceLabel    = "genesyscloud_guide_version"
 		guideResourceLabel           = "genesyscloud_guide"
 		guideName                    = "Test Guide " + uuid.NewString()
-		instruction                  = "This is a test instruction for the guide version."
-		updatedInstruction           = "This is an updated test instruction for the guide version."
+		instruction                  = "Info Capture\n- Say \"Hello\"\n- Ask \"Could you provide your age\"\n- Store in {{Variable.customerAge}} "
+		updatedInstruction           = "Info Capture\n- Say \"Hello User\"\n- Ask \"Could you provide your age\"\n- Store in {{Variable.customerAge}} "
 		guideVersionResourceFullPath = ResourceType + "." + guideVersionResourceLabel
 	)
 
@@ -44,6 +44,7 @@ func TestAccResourceGuideVersion(t *testing.T) {
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
 						instruction,
+						GenerateVariableBlock("customerAge", "Integer", "Output", "The age of the customer"),
 					),
 			},
 			{
@@ -55,6 +56,7 @@ func TestAccResourceGuideVersion(t *testing.T) {
 						instruction,
 						GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
 						GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
+						GenerateVariableBlock("customerAge", "Integer", "Output", "The age of the customer"),
 						GenerateResourcesBlock(
 							GenerateDataActionBlock("test_data_action_id_1", "Test Data Action 1", "Test data action 1 description"),
 							GenerateDataActionBlock("test_data_action_id_2", "Test Data Action 2", "Test data action 2 description"),
@@ -74,6 +76,10 @@ func TestAccResourceGuideVersion(t *testing.T) {
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.type", "Integer"),
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.scope", "Output"),
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.description", "Test variable 2 description"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.name", "customerAge"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.type", "Integer"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.description", "The age of the customer"),
 
 					// Check multiple data action attributes
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "resources.0.data_action.0.data_action_id", "test_data_action_id_1"),
@@ -96,6 +102,7 @@ func TestAccResourceGuideVersion(t *testing.T) {
 						updatedInstruction,
 						GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
 						GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
+						GenerateVariableBlock("customerAge", "Integer", "Output", "The age of the customer"),
 						GenerateResourcesBlock(
 							GenerateDataActionBlock("updated_data_action_id_1", "Updated Data Action 1", "Updated data action 1 description"),
 							GenerateDataActionBlock("updated_data_action_id_2", "Updated Data Action 2", "Updated data action 2 description"),
@@ -121,6 +128,7 @@ func TestAccResourceGuideVersion(t *testing.T) {
 						updatedInstruction,
 						GenerateVariableBlock("testVar1", "String", "Input", "Test variable 1 description"),
 						GenerateVariableBlock("testVar2", "Integer", "Output", "Test variable 2 description"),
+						GenerateVariableBlock("customerAge", "Integer", "Output", "The age of the customer"),
 						GenerateResourcesBlock(
 							GenerateDataActionBlock("updated_data_action_id_1", "Updated Data Action 1", "Updated data action 1 description"),
 							GenerateDataActionBlock("updated_data_action_id_2", "Updated Data Action 2", "Updated data action 2 description"),
@@ -163,7 +171,7 @@ func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
 		guideResourceLabel           = "genesyscloud_guide"
 		guideName                    = "Test Guide" + uuid.NewString()
 		initialInstruction           = "Call {{Action.TestDataAction}}"
-		updatedInstruction           = "Call The Data Action"
+		updatedInstruction           = "Info Capture\n- Say \"Hello\"\n- Ask \"Could you provide your age\" "
 		guideVersionResourceFullPath = ResourceType + "." + guideVersionResourceLabel
 	)
 
@@ -178,11 +186,7 @@ func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
 						initialInstruction,
-						GenerateVariableBlock("status", "String", "Output", "This is the current status of the ticket.  It can be in an Open, In-progress or Closed Status."),
-						GenerateVariableBlock("ticket_number", "String", "Output", "This is the unique identifier of the ticket that the user created.  This value will be used to look up the ticket."),
-						GenerateVariableBlock("priority", "String", "Output", "This is the priority of the ticket. It will be in of four values: Critical, High, Medium or Low."),
-						GenerateVariableBlock("notes", "String", "Output", "These are the notes the support engineer has added to the ticket."),
-						GenerateVariableBlock("changed", "String", "Output", "This is the date the ticket was last updated or changed"),
+						GenerateVariableBlock("customerAge", "Integer", "Output", "The age of the customer"),
 					),
 				// Expect the publish to fail due to invalid data action
 				ExpectError: regexp.MustCompile("There are invalid data actions in the version"),
@@ -191,21 +195,10 @@ func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_guide."+guideResourceLabel, "name", guideName),
 
 					// Check variable attributes
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "status"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "customerAge"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.type", "Integer"),
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.name", "ticket_number"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.name", "priority"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.name", "notes"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.name", "changed"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.description", "The age of the customer"),
 				),
 			},
 			{
@@ -215,32 +208,17 @@ func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
 						guideVersionResourceLabel,
 						"${genesyscloud_guide."+guideResourceLabel+".id}",
 						updatedInstruction,
-						GenerateVariableBlock("status", "String", "Output", "This is the current status of the ticket.  It can be in an Open, In-progress or Closed Status."),
-						GenerateVariableBlock("ticket_number", "String", "Output", "This is the unique identifier of the ticket that the user created.  This value will be used to look up the ticket."),
-						GenerateVariableBlock("priority", "String", "Output", "This is the priority of the ticket. It will be in of four values: Critical, High, Medium or Low."),
-						GenerateVariableBlock("notes", "String", "Output", "These are the notes the support engineer has added to the ticket."),
-						GenerateVariableBlock("changed", "String", "Output", "This is the date the ticket was last updated or changed"),
+						GenerateVariableBlock("customerAge", "Integer", "Output", "The age of the customer"),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "instruction", updatedInstruction),
 					resource.TestCheckResourceAttr("genesyscloud_guide."+guideResourceLabel, "name", guideName),
 
 					// Verify the variables are still present
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "status"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.type", "String"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.name", "customerAge"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.type", "Integer"),
 					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.name", "ticket_number"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.1.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.name", "priority"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.2.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.name", "notes"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.3.scope", "Output"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.name", "changed"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.type", "String"),
-					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.4.scope", "Output"),
+					resource.TestCheckResourceAttr(guideVersionResourceFullPath, "variables.0.description", "The age of the customer"),
 				),
 			},
 			{
@@ -254,12 +232,15 @@ func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
 }
 
 func GenerateGuideVersionResource(resourceLabel string, guideId string, instruction string, nestedBlocks ...string) string {
+	escapedInstruction := strings.ReplaceAll(instruction, `"`, `\"`)
+	escapedInstruction = strings.ReplaceAll(escapedInstruction, "\n", `\n`)
+
 	return fmt.Sprintf(`resource "%s" "%s" {
 		guide_id = "%s"
 		instruction = "%s"
 		%s
 	}
-	`, ResourceType, resourceLabel, guideId, instruction, strings.Join(nestedBlocks, "\n"))
+	`, ResourceType, resourceLabel, guideId, escapedInstruction, strings.Join(nestedBlocks, "\n"))
 }
 
 func GenerateVariableBlock(name string, varType string, scope string, description string) string {
