@@ -29,12 +29,12 @@ type deleteWorkforceManagementBusinessUnitFunc func(ctx context.Context, p *work
 type workforceManagementBusinessUnitsProxy struct {
 	clientConfig                                        *platformclientv2.Configuration
 	workforceManagementApi                              *platformclientv2.WorkforceManagementApi
-	createWorkforceManagementBusinessUnitAttr          createWorkforceManagementBusinessUnitFunc
+	createWorkforceManagementBusinessUnitAttr           createWorkforceManagementBusinessUnitFunc
 	getAllWorkforceManagementBusinessUnitsAttr          getAllWorkforceManagementBusinessUnitsFunc
 	getWorkforceManagementBusinessUnitIdByExactNameAttr getWorkforceManagementBusinessUnitIdByExactNameFunc
-	getWorkforceManagementBusinessUnitByIdAttr         getWorkforceManagementBusinessUnitByIdFunc
-	updateWorkforceManagementBusinessUnitAttr          updateWorkforceManagementBusinessUnitFunc
-	deleteWorkforceManagementBusinessUnitAttr          deleteWorkforceManagementBusinessUnitFunc
+	getWorkforceManagementBusinessUnitByIdAttr          getWorkforceManagementBusinessUnitByIdFunc
+	updateWorkforceManagementBusinessUnitAttr           updateWorkforceManagementBusinessUnitFunc
+	deleteWorkforceManagementBusinessUnitAttr           deleteWorkforceManagementBusinessUnitFunc
 }
 
 // newWorkforceManagementBusinessUnitsProxy initializes the workforce management business units proxy with all the data needed to communicate with Genesys Cloud
@@ -43,12 +43,12 @@ func newWorkforceManagementBusinessUnitsProxy(clientConfig *platformclientv2.Con
 	return &workforceManagementBusinessUnitsProxy{
 		clientConfig:           clientConfig,
 		workforceManagementApi: api,
-		createWorkforceManagementBusinessUnitAttr:          createWorkforceManagementBusinessUnitFn,
+		createWorkforceManagementBusinessUnitAttr:           createWorkforceManagementBusinessUnitFn,
 		getAllWorkforceManagementBusinessUnitsAttr:          getAllWorkforceManagementBusinessUnitsFn,
 		getWorkforceManagementBusinessUnitIdByExactNameAttr: getWorkforceManagementBusinessUnitIdByExactNameFn,
-		getWorkforceManagementBusinessUnitByIdAttr:         getWorkforceManagementBusinessUnitByIdFn,
-		updateWorkforceManagementBusinessUnitAttr:          updateWorkforceManagementBusinessUnitFn,
-		deleteWorkforceManagementBusinessUnitAttr:          deleteWorkforceManagementBusinessUnitFn,
+		getWorkforceManagementBusinessUnitByIdAttr:          getWorkforceManagementBusinessUnitByIdFn,
+		updateWorkforceManagementBusinessUnitAttr:           updateWorkforceManagementBusinessUnitFn,
+		deleteWorkforceManagementBusinessUnitAttr:           deleteWorkforceManagementBusinessUnitFn,
 	}
 }
 
