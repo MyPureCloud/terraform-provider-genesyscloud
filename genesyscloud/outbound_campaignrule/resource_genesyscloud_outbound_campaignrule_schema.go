@@ -242,12 +242,12 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 					return
 				},
 			},
-			`sms_content_template`: {
+			`sms_content_template_id`: {
 				Description: `The content template to set a SMS campaign to.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
-			`email_content_template`: {
+			`email_content_template_id`: {
 				Description: `The content template to set an Email campaign to.`,
 				Optional:    true,
 				Type:        schema.TypeString,
@@ -395,16 +395,16 @@ func OutboundCampaignruleExporter() *resourceExporter.ResourceExporter {
 			`campaign_rule_conditions.parameters.queue_id`: {
 				RefType: "genesyscloud_routing_queue",
 			},
-			`campaign_rule_actions.parameters.sms_content_template`: {
+			`campaign_rule_actions.parameters.sms_content_template_id`: {
 				RefType: "genesyscloud_responsemanagement_response",
 			},
-			`campaign_rule_conditions.parameters.sms_content_template`: {
+			`campaign_rule_conditions.parameters.sms_content_template_id`: {
 				RefType: "genesyscloud_responsemanagement_response",
 			},
-			`campaign_rule_actions.parameters.email_content_template`: {
+			`campaign_rule_actions.parameters.email_content_template_id`: {
 				RefType: "genesyscloud_responsemanagement_response",
 			},
-			`campaign_rule_conditions.parameters.email_content_template`: {
+			`campaign_rule_conditions.parameters.email_content_template_id`: {
 				RefType: "genesyscloud_responsemanagement_response",
 			},
 		},

@@ -105,7 +105,7 @@ Optional:
 
 - `abandon_rate` (String) Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
-- `email_content_template` (String) The content template to set an Email campaign to.
+- `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
@@ -114,7 +114,7 @@ Optional:
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
 - `relative_weight` (String) Relative weight. Required for 'setCampaignWeight' action
-- `sms_content_template` (String) The content template to set a SMS campaign to.
+- `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
 
@@ -139,7 +139,7 @@ Optional:
 
 - `abandon_rate` (String) Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
-- `email_content_template` (String) The content template to set an Email campaign to.
+- `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
@@ -148,7 +148,7 @@ Optional:
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
 - `relative_weight` (String) Relative weight. Required for 'setCampaignWeight' action
-- `sms_content_template` (String) The content template to set a SMS campaign to.
+- `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
 

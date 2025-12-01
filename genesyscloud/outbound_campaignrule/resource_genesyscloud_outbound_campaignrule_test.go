@@ -1361,7 +1361,7 @@ data "genesyscloud_auth_division_home" "home" {}
 
 					// Action 2
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.action_type", action2Type),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.email_content_template",
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.email_content_template_id",
 						"genesyscloud_responsemanagement_response."+emailContentTemplate2Label, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.campaign_rule_action_entities.0.use_triggering_entity", util.TrueValue),
 				),
@@ -1497,9 +1497,9 @@ data "genesyscloud_auth_division_home" "home" {}
 
 					// Action 2
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.action_type", action2Type),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.email_content_template",
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.email_content_template_id",
 						"genesyscloud_responsemanagement_response."+emailContentTemplate2Label, "id"),
-					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.sms_content_template",
+					resource.TestCheckResourceAttrPair("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.parameters.0.sms_content_template_id",
 						"genesyscloud_responsemanagement_response."+smsContentTemplate1Label, "id"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.1.campaign_rule_action_entities.0.use_triggering_entity", util.TrueValue),
 				),
@@ -1629,10 +1629,10 @@ func generateCampaignRuleParameters(operator string,
 		emailMessagesPerMinuteStr = fmt.Sprintf(`email_messages_per_minute = "%s"`, emailMessagesPerMinute)
 	}
 	if smsContentTemplate != "" {
-		smsContentTemplate = fmt.Sprintf(`sms_content_template = %s`, smsContentTemplate)
+		smsContentTemplate = fmt.Sprintf(`sms_content_template_id = %s`, smsContentTemplate)
 	}
 	if emailContentTemplate != "" {
-		emailContentTemplate = fmt.Sprintf(`email_content_template = %s`, emailContentTemplate)
+		emailContentTemplate = fmt.Sprintf(`email_content_template_id = %s`, emailContentTemplate)
 	}
 
 	return fmt.Sprintf(`

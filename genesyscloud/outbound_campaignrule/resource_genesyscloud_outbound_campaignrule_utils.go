@@ -147,10 +147,10 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 			sdkCampaignRuleParameters.EmailMessagesPerMinute = platformclientv2.Int(num)
 		}
 	}
-	if emailTemplateId, ok := paramsMap["email_content_template"].(string); ok && emailTemplateId != "" {
+	if emailTemplateId, ok := paramsMap["email_content_template_id"].(string); ok && emailTemplateId != "" {
 		sdkCampaignRuleParameters.EmailContentTemplate = &platformclientv2.Domainentityref{Id: &emailTemplateId}
 	}
-	if smsTemplateId, ok := paramsMap["sms_content_template"].(string); ok && smsTemplateId != "" {
+	if smsTemplateId, ok := paramsMap["sms_content_template_id"].(string); ok && smsTemplateId != "" {
 		sdkCampaignRuleParameters.SmsContentTemplate = &platformclientv2.Domainentityref{Id: &smsTemplateId}
 	}
 
@@ -337,8 +337,8 @@ func flattenRuleParameters(params *platformclientv2.Campaignruleparameters) []in
 	resourcedata.SetMapValueIfNotNil(paramsMap, "priority", params.Priority)
 	resourcedata.SetMapValueIfNotNil(paramsMap, "dialing_mode", params.DialingMode)
 	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "queue_id", params.Queue)
-	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "sms_content_template", params.SmsContentTemplate)
-	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "email_content_template", params.EmailContentTemplate)
+	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "sms_content_template_id", params.SmsContentTemplate)
+	resourcedata.SetMapReferenceValueIfNotNil(paramsMap, "email_content_template_id", params.EmailContentTemplate)
 
 	if params.AbandonRate != nil {
 		paramsMap["abandon_rate"] = strconv.FormatFloat(float64(*params.AbandonRate), 'f', -1, 32)
