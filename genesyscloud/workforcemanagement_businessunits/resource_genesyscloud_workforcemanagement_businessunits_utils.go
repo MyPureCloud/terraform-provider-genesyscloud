@@ -50,9 +50,6 @@ func buildBuShortTermForecastingSettings(buShortTermForecastingSettings []interf
 		buShortTermForecastingSettingsSlice = append(buShortTermForecastingSettingsSlice, sdkBuShortTermForecastingSettings)
 	}
 
-	if len(buShortTermForecastingSettingsSlice) == 0 {
-		return nil
-	}
 	return &buShortTermForecastingSettingsSlice[0]
 }
 
@@ -116,9 +113,6 @@ func buildWfmServiceGoalImpactSettings(wfmServiceGoalImpactSettings []interface{
 		wfmServiceGoalImpactSettingsSlice = append(wfmServiceGoalImpactSettingsSlice, sdkWfmServiceGoalImpactSettings)
 	}
 
-	if len(wfmServiceGoalImpactSettingsSlice) == 0 {
-		return nil
-	}
 	return &wfmServiceGoalImpactSettingsSlice[0]
 }
 
@@ -153,9 +147,6 @@ func buildBuSchedulingSettings(buSchedulingSettingsResponses []interface{}) *pla
 		buSchedulingSettingsResponsesSlice = append(buSchedulingSettingsResponsesSlice, sdkBuSchedulingSettingsResponse)
 	}
 
-	if len(buSchedulingSettingsResponsesSlice) == 0 {
-		return nil
-	}
 	return &buSchedulingSettingsResponsesSlice[0]
 }
 
@@ -177,9 +168,6 @@ func buildCreateBusinessUnitSettingsRequest(businessUnitSettingsResponses []inte
 		businessUnitSettingsResponsesSlice = append(businessUnitSettingsResponsesSlice, sdkBusinessUnitSettingsResponse)
 	}
 
-	if len(businessUnitSettingsResponsesSlice) == 0 {
-		return nil
-	}
 	return &businessUnitSettingsResponsesSlice[0]
 }
 
