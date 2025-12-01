@@ -106,6 +106,23 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
       condition    = "Includes"
     }
   }
+  video {
+    enabled = true
+    agent {
+      allow_camera       = true
+      allow_screen_share = true
+      allow_microphone   = true
+      background         = "BLUR"
+      background_image {
+        url = "https://my-domain/images/background.png"
+      }
+    }
+    user {
+      allow_camera       = true
+      allow_screen_share = true
+      allow_microphone   = true
+    }
+  }
   # journey_events {
   #   enabled                   = true
   #   excluded_query_parameters = ["marketingCampaign"]
@@ -194,6 +211,7 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
 - `position` (Block List, Max: 1) Settings concerning position (see [below for nested schema](#nestedblock--position))
 - `status` (String) The current status of the deployment. Valid values: Pending, Active, Inactive, Error, Deleting.
 - `support_center` (Block List, Max: 1) Settings concerning knowledge portal (previously support center) (see [below for nested schema](#nestedblock--support_center))
+- `video` (Block List, Max: 1) Settings concerning video chat (see [below for nested schema](#nestedblock--video))
 
 ### Read-Only
 
@@ -546,4 +564,45 @@ Required:
 - `background_color` (String) Background color for hero section, in hexadecimal format, eg #ffffff
 - `image_uri` (String) Background image for hero section
 - `text_color` (String) Text color for hero section, in hexadecimal format, eg #ffffff
+
+
+
+
+<a id="nestedblock--video"></a>
+### Nested Schema for `video`
+
+Optional:
+
+- `agent` (Block List, Max: 1) Video Settings for agent (see [below for nested schema](#nestedblock--video--agent))
+- `enabled` (Boolean) Whether or not video is enabled
+- `user` (Block List, Max: 1) Video Settings for user (see [below for nested schema](#nestedblock--video--user))
+
+<a id="nestedblock--video--agent"></a>
+### Nested Schema for `video.agent`
+
+Optional:
+
+- `allow_camera` (Boolean) Whether or not agent camera is allowed
+- `allow_microphone` (Boolean) Whether or not agent microphone is allowed
+- `allow_screen_share` (Boolean) Whether or not agent screen share is allowed
+- `background` (String) Background for agent. Valid values: BLUR, NONE, IMAGE
+- `background_image` (Block List, Max: 1) Background image settings for agent (see [below for nested schema](#nestedblock--video--agent--background_image))
+
+<a id="nestedblock--video--agent--background_image"></a>
+### Nested Schema for `video.agent.background_image`
+
+Optional:
+
+- `url` (String) BackgroundImage URL for agent video settings
+
+
+
+<a id="nestedblock--video--user"></a>
+### Nested Schema for `video.user`
+
+Optional:
+
+- `allow_camera` (Boolean) Whether or not user camera is allowed
+- `allow_microphone` (Boolean) Whether or not user microphone is allowed
+- `allow_screen_share` (Boolean) Whether or not user screen share is allowed
 

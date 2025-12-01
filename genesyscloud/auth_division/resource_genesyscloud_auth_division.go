@@ -138,13 +138,14 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
 		}
+		log.Printf("Successfully deleted division %s", name)
 		return resp, nil
 	})
 	if diagErr != nil {
 		return diagErr
 	}
 
-	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 		_, resp, err := proxy.getAuthDivisionById(ctx, d.Id(), false, false)
 		if err != nil {
 			if util.IsStatus404(resp) {

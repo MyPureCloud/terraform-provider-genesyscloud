@@ -133,6 +133,7 @@ func TestAccResourceOAuthClient(t *testing.T) {
 }
 
 func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
+	t.Skipf("Skipping test as GET/PUT oauth client is not supported anymore")
 	var (
 		clientResourceLabel1 = "test-client-expose-secret"
 		clientName1          = "terraform-expose-secret-" + uuid.NewString()

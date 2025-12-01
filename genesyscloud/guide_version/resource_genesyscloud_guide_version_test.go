@@ -15,10 +15,11 @@ import (
 )
 
 func TestAccResourceGuideVersion(t *testing.T) {
-	if os.Getenv("GENESYSCLOUD_REGION") != "tca" {
-		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
-	}
 
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 	if !guide.GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
 		return
@@ -148,10 +149,11 @@ func TestAccResourceGuideVersion(t *testing.T) {
 }
 
 func TestAccResourceGuideVersionPublishFailureAndUpdate(t *testing.T) {
-	if os.Getenv("GENESYSCLOUD_REGION") != "tca" {
-		t.Skip("Skipping test because GENESYSCLOUD_REGION is not set to tca")
-	}
 
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 	if !guide.GuideFtIsEnabled() {
 		t.Skip("Skipping test as guide feature toggle is not enabled")
 		return

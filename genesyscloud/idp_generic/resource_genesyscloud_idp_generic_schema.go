@@ -116,6 +116,12 @@ func ResourceIdpGeneric() *schema.Resource {
 					`urn:oasis:names:tc:SAML:2.0:nameid-format:transient`,
 				}, false),
 			},
+			`sign_authn_requests`: {
+				Description: `True if the Genesys Cloud authentication request should be signed.`,
+				Optional:    true,
+				Default:     false,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 }

@@ -19,10 +19,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_idp_okta" "okta" {
-  name         = "Okta"
-  certificates = [local.okta_certificate]
-  issuer_uri   = "https://example.com"
-  target_uri   = "https://example.com/login"
+  name                = "Okta"
+  certificates        = [local.okta_certificate]
+  issuer_uri          = "https://example.com"
+  target_uri          = "https://example.com/login"
+  sign_authn_requests = false
 }
 ```
 
@@ -39,6 +40,7 @@ resource "genesyscloud_idp_okta" "okta" {
 - `disabled` (Boolean) True if Okta is disabled.
 - `name` (String) IDP Okta name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to Okta.
+- `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
 - `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
 - `slo_uri` (String) Provided by Okta on app creation.
 - `target_uri` (String) Target URI provided by Okta.

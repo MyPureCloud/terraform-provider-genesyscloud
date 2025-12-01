@@ -3,10 +3,12 @@ package provider_registrar
 import (
 	"sync"
 
+	integrationApple "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple"
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	aiStudioSummarySetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/ai_studio_summary_setting"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
@@ -222,6 +224,7 @@ func resourceMapsAreRegistered() bool {
 
 func registerResources() {
 	regInstance := &RegisterInstance{}
+	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
@@ -282,6 +285,7 @@ func registerResources() {
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
+	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset

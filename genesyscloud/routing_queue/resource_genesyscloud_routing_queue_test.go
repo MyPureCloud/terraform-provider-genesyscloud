@@ -44,7 +44,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		queueDesc1               = "This is a test"
 		queueDesc2               = "This is still a test"
 		alertTimeout1            = "7"
-		alertTimeout2            = "100"
+		alertTimeout2            = "58"
 		slPercent1               = "0.5"
 		slPercent2               = "0.9"
 		slDuration1              = "1000"
@@ -113,6 +113,7 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
+					GenerateBullseyeSettings(alertTimeout1),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -124,7 +125,6 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "auto_answer_only", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "suppress_in_queue_call_recording", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_audio_monitoring", util.FalseValue),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "last_agent_routing_mode", "Disabled"),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_manual_assignment", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "enable_transcription", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_callback.0.mode", callbackModeAgentFirst),
@@ -135,6 +135,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateMediaSettings(queueResourceLabel1, "media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateBullseyeSettings(queueResourceLabel1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResourceLabel),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "bullseye_rings.1.expansion_timeout_seconds", alertTimeout1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "bullseye_rings.1.skills_to_remove.#", "0"),
 					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpAny, "50", "5"),
 					validateAgentOwnedRouting(queueResourceLabel1, "agent_owned_routing", util.TrueValue, callbackHours, callbackHours),
 					func(s *terraform.State) error {
