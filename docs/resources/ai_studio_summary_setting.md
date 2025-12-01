@@ -53,7 +53,7 @@ resource "genesyscloud_ai_studio_summary_setting" "summary" {
 - `format` (String) Format of the generated summary.
 - `mask_p_i_i` (Block List, Max: 1) Displaying PII in the generated summary. (see [below for nested schema](#nestedblock--mask_p_i_i))
 - `participant_labels` (Block List, Max: 1) How to refer to interaction participants in the generated summary. (see [below for nested schema](#nestedblock--participant_labels))
-- `predefined_insights` (List of String) Set which insights to include in the generated summary by default.
+- `predefined_insights` (Set of String) Set which insights to include in the generated summary by default.
 - `prompt` (String) Custom prompt of summary setting.
 - `setting_type` (String) Type of the summary setting.
 - `summary_type` (String) Level of detail of the generated summary.
