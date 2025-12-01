@@ -217,7 +217,7 @@ func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsPr
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	action, resp, err := sdkPostIntegrationActionDraft(actionInput, p.integrationsApi)
+	action, resp, err := sdkPostIntegrationActionDraft(ctx, actionInput, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -244,6 +244,9 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	uploadUrl := p.clientConfig.BasePath + "/api/v2/integrations/actions/" + actionId + "/draft/function/upload"
 	log.Printf("DEBUG: Upload URL: %s", uploadUrl)
 
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	// Create HTTP client and request
 	client := &http.Client{}
 	jsonData, err := json.Marshal(uploadRequest)
@@ -251,7 +254,7 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", uploadUrl, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", uploadUrl, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -324,8 +327,8 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 		log.Printf("DEBUG: File opened successfully (no file handle)")
 	}
 
-	// Create upload request to signed URL
-	uploadReq, err := http.NewRequest("PUT", uploadResponse.URL, fileReader)
+	// Create upload request to signed URL with context
+	uploadReq, err := http.NewRequestWithContext(ctx, "PUT", uploadResponse.URL, fileReader)
 	if err != nil {
 		return nil, err
 	}
@@ -428,6 +431,7 @@ func getIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActi
 // getIntegrationActionFunctionFn is the implementation for getting function details of an integration action
 func getIntegrationActionFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	log.Printf("JCC ---The resource type on getIntegrationActioFunctionFn is: %s", ResourceType)
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	functionData, resp, err := p.integrationsApi.GetIntegrationsActionFunction(actionId)
@@ -470,7 +474,7 @@ func createIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, 
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	action, resp, err := sdkPostIntegrationAction(actionInput, p.integrationsApi)
+	action, resp, err := sdkPostIntegrationAction(ctx, actionInput, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -494,7 +498,7 @@ func getIntegrationActionByIdFn(ctx context.Context, p *integrationActionsProxy,
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	action, resp, err := sdkGetIntegrationAction(actionId, p.integrationsApi)
+	action, resp, err := sdkGetIntegrationAction(ctx, actionId, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -557,7 +561,7 @@ func getIntegrationActionTemplateFn(ctx context.Context, p *integrationActionsPr
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	template, resp, err := sdkGetIntegrationActionTemplate(actionId, fileName, p.integrationsApi)
+	template, resp, err := sdkGetIntegrationActionTemplate(ctx, actionId, fileName, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -565,7 +569,10 @@ func getIntegrationActionTemplateFn(ctx context.Context, p *integrationActionsPr
 }
 
 // sdkPostIntegrationAction is the non-sdk helper method for creating an Integration Action
-func sdkPostIntegrationAction(body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+func sdkPostIntegrationAction(ctx context.Context, body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before making HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
@@ -595,7 +602,10 @@ func sdkPostIntegrationAction(body *IntegrationAction, api *platformclientv2.Int
 }
 
 // sdkGetIntegrationAction is the non-sdk helper method for getting an Integration Action
-func sdkGetIntegrationAction(actionId string, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+func sdkGetIntegrationAction(ctx context.Context, actionId string, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before making HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
@@ -632,7 +642,10 @@ func sdkGetIntegrationAction(actionId string, api *platformclientv2.Integrations
 }
 
 // sdkPostIntegrationActionDraft is the non-sdk helper method for creating an Integration Action
-func sdkPostIntegrationActionDraft(body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+func sdkPostIntegrationActionDraft(ctx context.Context, body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before making HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
@@ -662,7 +675,10 @@ func sdkPostIntegrationActionDraft(body *IntegrationAction, api *platformclientv
 }
 
 // sdkGetIntegrationActionTemplate is the non-sdk helper method for getting an Integration Action Template
-func sdkGetIntegrationActionTemplate(actionId, templateName string, api *platformclientv2.IntegrationsApi) (*string, *platformclientv2.APIResponse, error) {
+func sdkGetIntegrationActionTemplate(ctx context.Context, actionId, templateName string, api *platformclientv2.IntegrationsApi) (*string, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before making HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables

@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"time"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -307,6 +307,7 @@ func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId st
 // getAllArchitectFlowsFn is the implementation function for GetAllFlows
 func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/flows"
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	params := url.Values{}
 	if name != "" {
@@ -339,6 +340,7 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 	}
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
+		ctx = provider.EnsureResourceContext(ctx, ResourceType)
 		params.Set("pageNumber", fmt.Sprintf("%d", pageNum))
 		u.RawQuery = params.Encode()
 
@@ -360,6 +362,9 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 }
 
 func makeFlowRequest(ctx context.Context, client *http.Client, url string, p *architectFlowProxy) (*platformclientv2.Flowentitylisting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, nil, err

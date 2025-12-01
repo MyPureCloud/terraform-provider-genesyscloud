@@ -105,7 +105,7 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 	u.RawQuery = q.Encode()
 
-	req, err := createHTTPRequest(action, u.String(), nil, p)
+	req, err := createHTTPRequest(ctx, action, u.String(), nil, p)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -232,10 +232,13 @@ func makeAPIRequest[T any](ctx context.Context, method, url string, requestBody 
 	var req *http.Request
 	var err error
 
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if requestBody != nil {
-		req, err = marshalAndCreateRequest(method, url, requestBody, p)
+		req, err = marshalAndCreateRequest(ctx, method, url, requestBody, p)
 	} else {
-		req, err = createHTTPRequest(method, url, nil, p)
+		req, err = createHTTPRequest(ctx, method, url, nil, p)
 	}
 
 	if err != nil {
@@ -258,6 +261,7 @@ func makeAPIRequest[T any](ctx context.Context, method, url string, requestBody 
 
 // callAPI is a helper function which will be removed when the endpoints are public
 func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	req = req.WithContext(ctx)
 
 	resp, err := client.Do(req)

@@ -168,7 +168,7 @@ func getAllProcessAutomationTriggersResourceMap(ctx context.Context, clientConfi
 	path := integAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
 	for pageNum := 1; ; pageNum++ {
-		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integAPI)
+		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(ctx, path, integAPI)
 
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)

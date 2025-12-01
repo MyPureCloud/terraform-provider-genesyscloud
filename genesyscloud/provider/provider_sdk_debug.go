@@ -175,10 +175,24 @@ func extractIdOrNameFromJSON(jsonData []byte) (id string, name string) {
 		}
 	}
 
-	// Extract name field if present
+	// Extract name field if present (check top-level first)
 	if nameVal, ok := jsonMap["name"]; ok && nameVal != nil {
 		if nameStr, ok := nameVal.(string); ok && nameStr != "" {
 			name = nameStr
+		}
+	}
+
+	// If name not found at top level, check common nested structures
+	if name == "" {
+		// Check for flow.name (used in architect flow job responses)
+		if flowVal, ok := jsonMap["flow"]; ok && flowVal != nil {
+			if flowMap, ok := flowVal.(map[string]interface{}); ok {
+				if flowNameVal, ok := flowMap["name"]; ok && flowNameVal != nil {
+					if flowNameStr, ok := flowNameVal.(string); ok && flowNameStr != "" {
+						name = flowNameStr
+					}
+				}
+			}
 		}
 	}
 
@@ -322,8 +336,10 @@ func WithResourceContext(ctx context.Context, resourceType, resourceId, resource
 }
 
 // EnsureResourceContext ensures that the context has resource metadata set.
-// If the context already has resource metadata, it returns the context unchanged.
-// Otherwise, it sets the ResourceType with unavailable id/name.
+// If the context already has resource metadata, it merges/updates values:
+// - Updates ResourceType if provided and different
+// - Preserves existing ResourceId and ResourceName if they are not "unavailable"
+// - Sets ResourceId and ResourceName to "unavailable" only if they don't exist
 // This is useful in proxy methods where ResourceData is not available.
 // This function also stores the context in goroutine-local storage so it can be
 // accessed by the SDK's RequestLogHook even though the SDK doesn't pass context to HTTP requests.
@@ -332,15 +348,43 @@ func EnsureResourceContext(ctx context.Context, resourceType string) context.Con
 		ctx = context.Background()
 	}
 
-	// Check if context already has resource metadata (don't overwrite)
-	if _, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok {
-		// Store the context for the RequestLogHook to access
-		setContextForRequest(ctx)
-		return ctx
+	// Get existing resource context if it exists
+	var existingCtx *ResourceContext
+	if rc, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok && rc != nil {
+		existingCtx = rc
 	}
 
-	// Set resource type with unavailable id/name since we don't have ResourceData in proxy methods
-	ctx = WithResourceContext(ctx, resourceType, "unavailable", "unavailable")
+	// Determine the values to use
+	var finalResourceType, finalResourceId, finalResourceName string
+
+	if existingCtx != nil {
+		// Use existing values, but update ResourceType if provided
+		finalResourceType = resourceType
+		if finalResourceType == "" {
+			finalResourceType = existingCtx.ResourceType
+		}
+
+		// Preserve existing ResourceId and ResourceName if they're not "unavailable"
+		if existingCtx.ResourceId != "" && existingCtx.ResourceId != "unavailable" {
+			finalResourceId = existingCtx.ResourceId
+		} else {
+			finalResourceId = "unavailable"
+		}
+
+		if existingCtx.ResourceName != "" && existingCtx.ResourceName != "unavailable" {
+			finalResourceName = existingCtx.ResourceName
+		} else {
+			finalResourceName = "unavailable"
+		}
+	} else {
+		// No existing context, set defaults
+		finalResourceType = resourceType
+		finalResourceId = "unavailable"
+		finalResourceName = "unavailable"
+	}
+
+	// Create or update the context with merged values
+	ctx = WithResourceContext(ctx, finalResourceType, finalResourceId, finalResourceName)
 
 	// Store the context for the RequestLogHook to access
 	setContextForRequest(ctx)

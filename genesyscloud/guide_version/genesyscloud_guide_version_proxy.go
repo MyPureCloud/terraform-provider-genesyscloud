@@ -108,14 +108,14 @@ func sdkGetAllGuides(ctx context.Context, p *guideVersionProxy) (*[]Guide, *plat
 
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(action, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, action, u.String(), nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req = buildRequestHeader(req, p)
 
-	body, resp, err := callAPI(client, req)
+	body, resp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -136,7 +136,7 @@ func sdkGetAllGuides(ctx context.Context, p *guideVersionProxy) (*[]Guide, *plat
 			q.Set("pageNumber", fmt.Sprintf("%v", pageNum))
 			req.URL.RawQuery = q.Encode()
 
-			body, resp, err = callAPI(client, req)
+			body, resp, err = callAPI(ctx, client, req)
 			if err != nil {
 				return nil, resp, fmt.Errorf("error fetching page %d: %v", pageNum, err)
 			}
@@ -162,10 +162,13 @@ func createGuideVersionFn(ctx context.Context, p *guideVersionProxy, guideVersio
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return sdkPostGuideVersion(guideVersion, p, guideId)
+	return sdkPostGuideVersion(ctx, guideVersion, p, guideId)
 }
 
-func sdkPostGuideVersion(body *CreateGuideVersionRequest, p *guideVersionProxy, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+func sdkPostGuideVersion(ctx context.Context, body *CreateGuideVersionRequest, p *guideVersionProxy, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -177,14 +180,14 @@ func sdkPostGuideVersion(body *CreateGuideVersionRequest, p *guideVersionProxy, 
 		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
 	}
 
-	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, action, baseURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req = buildRequestHeader(req, p)
 
-	respBody, apiResp, err := callAPI(client, req)
+	respBody, apiResp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
@@ -203,24 +206,27 @@ func getGuideVersionByIdFn(ctx context.Context, p *guideVersionProxy, id string,
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return sdkGetGuideVersionById(p, id, guideId)
+	return sdkGetGuideVersionById(ctx, p, id, guideId)
 }
 
-func sdkGetGuideVersionById(p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+func sdkGetGuideVersionById(ctx context.Context, p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/versions/" + id
 
-	req, err := http.NewRequest(action, baseURL, nil)
+	req, err := http.NewRequestWithContext(ctx, action, baseURL, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req = buildRequestHeader(req, p)
 
-	respBody, apiResp, err := callAPI(client, req)
+	respBody, apiResp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
@@ -239,10 +245,13 @@ func updateGuideVersionFn(ctx context.Context, p *guideVersionProxy, id string, 
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return sdkUpdateGuideVersion(p, id, guideId, guideVersion)
+	return sdkUpdateGuideVersion(ctx, p, id, guideId, guideVersion)
 }
 
-func sdkUpdateGuideVersion(p *guideVersionProxy, id string, guideId string, body *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
+func sdkUpdateGuideVersion(ctx context.Context, p *guideVersionProxy, id string, guideId string, body *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -254,14 +263,14 @@ func sdkUpdateGuideVersion(p *guideVersionProxy, id string, guideId string, body
 		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
 	}
 
-	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, action, baseURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req = buildRequestHeader(req, p)
 
-	respBody, apiResp, err := callAPI(client, req)
+	respBody, apiResp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
@@ -275,7 +284,13 @@ func sdkUpdateGuideVersion(p *guideVersionProxy, id string, guideId string, body
 }
 
 // Helper api call function to be removed once endpoints are public
-func callAPI(client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
+func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before making HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	// Attach context to the request
+	req = req.WithContext(ctx)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error making request: %v", err)
@@ -305,10 +320,13 @@ func publishGuideVersionFn(ctx context.Context, p *guideVersionProxy, body *Guid
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return sdkPublishGuideVersion(p, body)
+	return sdkPublishGuideVersion(ctx, p, body)
 }
 
-func sdkPublishGuideVersion(p *guideVersionProxy, body *GuideVersionPublishJobRequest) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
+func sdkPublishGuideVersion(ctx context.Context, p *guideVersionProxy, body *GuideVersionPublishJobRequest) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -320,14 +338,14 @@ func sdkPublishGuideVersion(p *guideVersionProxy, body *GuideVersionPublishJobRe
 		return nil, nil, fmt.Errorf("error marshaling guide version: %v", err)
 	}
 
-	req, err := http.NewRequest(action, baseURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, action, baseURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req = buildRequestHeader(req, p)
 
-	respBody, apiResp, err := callAPI(client, req)
+	respBody, apiResp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
@@ -355,24 +373,27 @@ func getGuideVersionPublishJobStatusFn(ctx context.Context, p *guideVersionProxy
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return sdkGetGuideVersionPublishJobStatus(p, versionId, jobId, guideId)
+	return sdkGetGuideVersionPublishJobStatus(ctx, p, versionId, jobId, guideId)
 }
 
-func sdkGetGuideVersionPublishJobStatus(p *guideVersionProxy, versionId, jobId string, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
+func sdkGetGuideVersionPublishJobStatus(ctx context.Context, p *guideVersionProxy, versionId, jobId string, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/versions/" + versionId + "/jobs/" + jobId
 
-	req, err := http.NewRequest(action, baseURL, nil)
+	req, err := http.NewRequestWithContext(ctx, action, baseURL, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req = buildRequestHeader(req, p)
 
-	respBody, apiResp, err := callAPI(client, req)
+	respBody, apiResp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}
@@ -389,23 +410,26 @@ func getGuideByIdFn(ctx context.Context, p *guideVersionProxy, id string) (*Guid
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return sdkGetGuideById(p, id)
+	return sdkGetGuideById(ctx, p, id)
 }
-func sdkGetGuideById(p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
+func sdkGetGuideById(ctx context.Context, p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 	action := http.MethodGet
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id
 
-	req, err := http.NewRequest(action, baseURL, nil)
+	req, err := http.NewRequestWithContext(ctx, action, baseURL, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %v", err)
 	}
 
 	req = buildRequestHeader(req, p)
 
-	respBody, apiResp, err := callAPI(client, req)
+	respBody, apiResp, err := callAPI(ctx, client, req)
 	if err != nil {
 		return nil, apiResp, fmt.Errorf("error calling API: %v", err)
 	}

@@ -62,6 +62,9 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagno
 
 	log.Printf("Reading flow  %s", d.Id())
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
@@ -155,6 +158,9 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := p.GetFlowsDeployJob(ctx, jobId)
 		if err != nil {
@@ -233,6 +239,9 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diag
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to unlock targeted flow %s with error %v", d.Id(), err), resp)
 		}
 	}
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		resp, err := p.DeleteFlow(ctx, d.Id())
