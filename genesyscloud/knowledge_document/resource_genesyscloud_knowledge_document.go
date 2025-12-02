@@ -199,6 +199,11 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
+	rebuildErr := rebuildDatabase()
+	if rebuildErr != nil {
+		log.Printf("Failed to rebuild knowledge document database: %v", rebuildErr)
+	}
+
 	log.Printf("Deleting Knowledge document '%s'. Knowledge base ID: '%s'", knowledgeDocumentId, knowledgeBaseId)
 	resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
@@ -218,4 +223,48 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document '%s' still exists", knowledgeDocumentId), resp))
 	})
+}
+
+func rebuildDatabase() diag.Diagnostics {
+	log.Printf("Rebuilding knowledge base database")
+
+	architectApi := platformclientv2.NewArchitectApi()
+
+	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
+	if architectError != nil {
+		return diag.Errorf("Failed to build dependency tracking: %v with resp: %v", architectError, resp)
+	}
+
+	if resp.StatusCode != 202 {
+		log.Printf("Dependency tracking rebuild started")
+	}
+
+	for {
+		time.Sleep(10 * time.Second)
+
+		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
+		if buildErr != nil {
+			log.Printf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
+			break
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				log.Printf("Dependency tracking Complete")
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				log.Printf("Dependency tracking status: %s, waiting...", *status.Status)
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				return diag.Errorf("Dependency Rebuild Failed")
+			default:
+				log.Printf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
+			}
+			break
+		} else {
+			log.Printf("No status returned from dependency tracking build, proceeding anyway")
+			break
+		}
+	}
+	return nil
 }
