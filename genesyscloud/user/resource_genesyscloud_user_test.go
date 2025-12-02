@@ -544,7 +544,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					addrUserResourceLabel4,
 					addrEmail4,
 					addrUserName4,
-				),
+				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
 				Check: resource.ComposeTestCheckFunc(
 					// Basic resource attributes
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "email", addrEmail4),
