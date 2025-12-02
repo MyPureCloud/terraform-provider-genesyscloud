@@ -227,7 +227,7 @@ Export block label: "{email}"`,
 			"addresses": schema.ListNestedBlock{
 				Description: "The address settings for this user. If not set, this resource will not manage addresses.",
 				PlanModifiers: []planmodifier.List{
-					phoneplan.ClearOnOmitList{},
+					listplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.List{
 					listvalidator.SizeAtMost(1),
