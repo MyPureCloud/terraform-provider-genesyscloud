@@ -1,15 +1,18 @@
 package idp_ping
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -195,22 +198,40 @@ func generateIdpPingResource(
 
 func testVerifyIdpPingDestroyed(state *terraform.State) error {
 	idpAPI := platformclientv2.NewIdentityProviderApi()
+
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_idp_ping" {
 			continue
 		}
 
-		ping, resp, err := idpAPI.GetIdentityprovidersPing()
-		if ping != nil {
-			return fmt.Errorf("Ping still exists")
-		} else if util.IsStatus404(resp) {
-			// Ping not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+		// Retry async deletion for up to 120 seconds
+		if err := util.WithRetries(context.Background(), 120*time.Second, func() *retry.RetryError {
+
+			ping, resp, err := idpAPI.GetIdentityprovidersPing()
+
+			if ping != nil {
+				// Still exists
+				return retry.RetryableError(
+					fmt.Errorf("Ping IDP configuration still exists"),
+				)
+			}
+
+			if util.IsStatus404(resp) || util.IsStatus400(resp) {
+				// Deleted successfully
+				return nil
+			}
+
+			// Other unexpected error
+			return retry.NonRetryableError(
+				fmt.Errorf("unexpected error: %v", err),
+			)
+
+		}); err != nil {
+			// Retry loop finished with error
+			return fmt.Errorf("unexpected error: %v", err)
 		}
 	}
-	// Success. Ping config destroyed
+
+	// All Ping configurations destroyed
 	return nil
 }

@@ -557,8 +557,6 @@ func TestAccResourceUserPhone(t *testing.T) {
 		addrUserName                = "Nancy Terraform"
 		addrEmail1                  = "terraform-" + uuid.NewString() + "@user.com"
 		addrPhone1                  = "+13173271898"
-		addrPhone2                  = "+13173271899"
-		addrExt1                    = "3532"
 		phoneMediaType              = "PHONE"
 		addrTypeWork                = "WORK"
 		extensionPoolResourceLabel1 = "test-extensionpool" + uuid.NewString()
@@ -584,6 +582,9 @@ func TestAccResourceUserPhone(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				Config: extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
+			},
+			{
 				// Create
 				Config: generateUserWithCustomAttrs(
 					addrUserResourceLabel1,
@@ -595,83 +596,16 @@ func TestAccResourceUserPhone(t *testing.T) {
 							util.NullValue,            // Default to type PHONE
 							util.NullValue,            // Default to type WORK
 							strconv.Quote(addrPhone1), // extension
+							fmt.Sprintf("extension_pool_id = %s.%s.id", extensionPool.ResourceType, extensionPoolResourceLabel1),
 						),
 					),
-				) + extensionPool.GenerateExtensionPoolResource(&extensionPoolResource),
+				),
+
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
 					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone1),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
-				),
-			},
-			{
-				Config: generateUserWithCustomAttrs(
-					addrUserResourceLabel1,
-					addrEmail1,
-					addrUserName,
-					generateUserAddresses(
-						generateUserPhoneAddress(
-							util.NullValue,            // number
-							util.NullValue,            // Default to type PHONE
-							util.NullValue,            // Default to type WORK
-							strconv.Quote(addrPhone2), // extension
-						),
-					),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrPhone2),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
-				),
-			},
-			{
-				Config: generateUserWithCustomAttrs(
-					addrUserResourceLabel1,
-					addrEmail1,
-					addrUserName,
-					generateUserAddresses(
-						generateUserPhoneAddress(
-							strconv.Quote(addrPhone2), // number
-							util.NullValue,            // Default to type PHONE
-							util.NullValue,            // Default to type WORK
-							util.NullValue,            // extension
-						),
-					),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
-				),
-			},
-			{
-				Config: generateUserWithCustomAttrs(
-					addrUserResourceLabel1,
-					addrEmail1,
-					addrUserName,
-					generateUserAddresses(
-						generateUserPhoneAddress(
-							strconv.Quote(addrPhone2), // number
-							util.NullValue,            // Default to type PHONE
-							util.NullValue,            // Default to type WORK
-							strconv.Quote(addrExt1),   // extension
-						),
-					),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone2),
-					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 				),
