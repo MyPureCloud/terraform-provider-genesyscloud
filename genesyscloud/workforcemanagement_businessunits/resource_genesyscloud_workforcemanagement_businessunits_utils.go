@@ -113,7 +113,7 @@ func buildWfmServiceGoalImpactSettings(wfmServiceGoalImpactSettings []interface{
 		wfmServiceGoalImpactSettingsSlice = append(wfmServiceGoalImpactSettingsSlice, sdkWfmServiceGoalImpactSettings)
 	}
 
-	return &wfmServiceGoalImpactSettingsSlice[0] // TODO is this right
+	return &wfmServiceGoalImpactSettingsSlice[0]
 }
 
 // buildBuSchedulingSettingsResponses maps an []interface{} into a Genesys Cloud *[]platformclientv2.Buschedulingsettingsrequest
@@ -171,7 +171,7 @@ func buildCreateBusinessUnitSettingsRequest(businessUnitSettingsResponses []inte
 	return &businessUnitSettingsResponsesSlice[0]
 }
 
-// buildCreateBusinessUnitSettingsRequest maps an interface{} into a Genesys Cloud *platformclientv2.Createbusinessunitsettingsrequest
+// buildUpdateBusinessUnitSettingsRequest maps an interface{} into a Genesys Cloud *platformclientv2.Updatebusinessunitsettingsrequest
 func buildUpdateBusinessUnitSettingsRequest(businessUnitSettingsResponses []interface{}) *platformclientv2.Updatebusinessunitsettingsrequest {
 	businessUnitSettingsResponsesSlice := make([]platformclientv2.Updatebusinessunitsettingsrequest, 0)
 	for _, businessUnitSettingsResponse := range businessUnitSettingsResponses {
@@ -189,6 +189,9 @@ func buildUpdateBusinessUnitSettingsRequest(businessUnitSettingsResponses []inte
 		businessUnitSettingsResponsesSlice = append(businessUnitSettingsResponsesSlice, sdkBusinessUnitSettingsResponse)
 	}
 
+	if len(businessUnitSettingsResponsesSlice) == 0 {
+		return nil
+	}
 	return &businessUnitSettingsResponsesSlice[0]
 }
 
