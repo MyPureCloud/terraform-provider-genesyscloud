@@ -126,9 +126,6 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 			sdkCampaignRuleParameters.MaxCallsPerAgent = platformclientv2.Float32(float32(num))
 		}
 	}
-	if queueId, ok := paramsMap["queue_id"].(string); ok && queueId != "" {
-		sdkCampaignRuleParameters.Queue = &platformclientv2.Domainentityref{Id: &queueId}
-	}
 	if messagesPerMinute, ok := paramsMap["messages_per_minute"].(string); ok {
 		num, err := strconv.Atoi(messagesPerMinute)
 		if err == nil {
@@ -147,12 +144,9 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 			sdkCampaignRuleParameters.EmailMessagesPerMinute = platformclientv2.Int(num)
 		}
 	}
-	if emailTemplateId, ok := paramsMap["email_content_template_id"].(string); ok && emailTemplateId != "" {
-		sdkCampaignRuleParameters.EmailContentTemplate = &platformclientv2.Domainentityref{Id: &emailTemplateId}
-	}
-	if smsTemplateId, ok := paramsMap["sms_content_template_id"].(string); ok && smsTemplateId != "" {
-		sdkCampaignRuleParameters.SmsContentTemplate = &platformclientv2.Domainentityref{Id: &smsTemplateId}
-	}
+	sdkCampaignRuleParameters.Queue = util.GetNillableDomainEntityRefFromMap(paramsMap, "queue_id")
+	sdkCampaignRuleParameters.EmailContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "email_content_template_id")
+	sdkCampaignRuleParameters.SmsContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "sms_content_template_id")
 
 	return &sdkCampaignRuleParameters
 }
