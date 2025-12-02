@@ -79,6 +79,9 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 
 	dependsMap := make(map[string][]string)
 	architectDependencies := make(map[string][]string)
+	if util.StringExists(resourceKey, totalFlowResources) {
+		return nil, nil, totalFlowResources, nil
+	}
 	dependentResources, dependsMap, cyclicDependsList, err, totalFlowResources := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceLabel, make(resourceExporter.ResourceIDMetaMap), dependsMap, architectDependencies, make([]string, 0), totalFlowResources)
 
 	if err != nil {
@@ -128,7 +131,7 @@ func fetchDepConsumers(ctx context.Context,
 					return nil, nil, nil, err, totalFlowResources
 				}
 				log.Printf("Retrieved dependencies for ID %s", resourceKey)
-
+				strings.Up{}
 				pageCount = *dependencies.PageCount
 
 				// return empty dependsMap and  resources
@@ -258,6 +261,9 @@ func fetchAndProcessDependentConsumers(ctx context.Context,
 	cyclicDependsList []string,
 	totalFlowResources []string,
 	resourceType string) (map[string][]string, []string, error) {
+	if util.StringExists(*consumer.Id, totalFlowResources) {
+		return dependsMap, totalFlowResources, nil
+	}
 	innerDependentResources, innerDependsMap, cyclicDependsList, err, totalFlowResources := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string), architectDependencies, cyclicDependsList, totalFlowResources)
 	dependsMap = stringmap.MergeMaps(dependsMap, buildDependsMap(innerDependentResources, innerDependsMap, *consumer.Id))
 	return dependsMap, totalFlowResources, err
