@@ -131,7 +131,6 @@ func fetchDepConsumers(ctx context.Context,
 					return nil, nil, nil, err, totalFlowResources
 				}
 				log.Printf("Retrieved dependencies for ID %s", resourceKey)
-				strings.Up{}
 				pageCount = *dependencies.PageCount
 
 				// return empty dependsMap and  resources
