@@ -143,7 +143,7 @@ func rebuildDatabase() diag.Diagnostics {
 	}
 
 	if resp.StatusCode != 202 {
-		log.Printf("Dependency tracking rebuild started")
+		log.Printf("Knowledge base dependency tracking rebuild started")
 	}
 
 	for {
@@ -151,8 +151,7 @@ func rebuildDatabase() diag.Diagnostics {
 
 		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
 		if buildErr != nil {
-			log.Printf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
-			break
+			return diag.Errorf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
 		}
 
 		if status != nil && status.Status != nil {
@@ -165,15 +164,13 @@ func rebuildDatabase() diag.Diagnostics {
 			case "BUILDINCOMPLETE", "NOTBUILT":
 				return diag.Errorf("Dependency Rebuild Failed")
 			default:
-				log.Printf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
+				return diag.Errorf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
 			}
-			break
+			return nil
 		} else {
-			log.Printf("No status returned from dependency tracking build, proceeding anyway")
-			break
+			return diag.Errorf("No status returned from dependency tracking build, proceeding anyway")
 		}
 	}
-	return nil
 }
 
 func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -189,6 +186,8 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	if rebuildErr != nil {
 		log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
 	}
+
+	time.Sleep(10 * time.Second)
 
 	log.Printf("Deleting knowledge base %s", name)
 	_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
