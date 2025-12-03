@@ -36,6 +36,13 @@ Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone n
 */
 func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 	t.Parallel()
+	v := os.Getenv("GENESYSCLOUD_REGION")
+	switch v {
+	case "mx-central-1", "ap-southeast-1":
+		t.Skipf("sms number not configured in %s org", v)
+		return
+	}
+
 	var (
 		// Contact list
 		contactListResourceLabel = "contact_list"

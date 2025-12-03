@@ -24,7 +24,12 @@ This test can only pass in a test org because it requires an active provisioned 
 Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
 */
 func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
-
+	v := os.Getenv("GENESYSCLOUD_REGION")
+	switch v {
+	case "mx-central-1", "ap-southeast-1":
+		t.Skipf("sms number not configured in %s org", v)
+		return
+	}
 	var (
 		resourceLabel       = "campaign"
 		dataSourceLabel     = "campaign_data"
