@@ -1081,7 +1081,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 		// Thread-safe write of flowResourcesList
 		g.flowResourcesListMutex.Lock()
-		g.flowResourcesList = flowRexsources
+		g.flowResourcesList = flowResources
 		g.flowResourcesListMutex.Unlock()
 
 		if err != nil {
