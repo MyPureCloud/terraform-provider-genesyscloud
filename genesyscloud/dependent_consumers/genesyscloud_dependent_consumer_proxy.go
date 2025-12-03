@@ -3,6 +3,7 @@ package dependent_consumers
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -22,6 +23,7 @@ type DependentConsumerProxy struct {
 	ArchitectApi                   *platformclientv2.ArchitectApi
 	RetrieveDependentConsumersAttr retrieveDependentConsumersFunc
 	GetPooledClientAttr            retrievePooledClientFunc
+	flowResourcesMutex             sync.Mutex
 }
 
 var gflow = "genesyscloud_flow"
@@ -164,11 +166,14 @@ func fetchDepConsumers(ctx context.Context,
 					}
 				}
 
-				totalFlowResources = append(totalFlowResources, resourceKey)
-			}
+			// Thread-safe append to totalFlowResources
+			p.flowResourcesMutex.Lock()
+			totalFlowResources = append(totalFlowResources, resourceKey)
+			p.flowResourcesMutex.Unlock()
 		}
 	}
-	log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
+}
+log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
 	return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
 }
 
