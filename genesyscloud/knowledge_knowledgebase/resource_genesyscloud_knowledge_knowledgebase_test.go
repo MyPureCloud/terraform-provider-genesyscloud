@@ -25,10 +25,10 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 		knowledgeBaseCoreLanguage1  = "en-US"
 	)
 
-	err := cleanUpKnowledgeBase("Test-Terraform-Knowledge-Base")
-	if err != nil {
-		log.Printf("Failed to clean up knowledge base: %v", err)
-	}
+	// err := cleanUpKnowledgeBase("Test-Terraform-Knowledge-Base")
+	// if err != nil {
+	// 	log.Printf("Failed to clean up knowledge base: %v", err)
+	// }
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

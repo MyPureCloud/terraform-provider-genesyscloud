@@ -149,15 +149,22 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeCategoryProxy(sdkConfig)
 
-	rebuildErr := rebuildDatabase()
-	if rebuildErr != nil {
-		log.Printf("Failed to rebuild knowledge category database: %v", rebuildErr)
-	}
-
 	log.Printf("Deleting knowledge category %s", id)
 	_, resp, err := proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
+		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+			rebuildErr := rebuildDatabase()
+			if rebuildErr != nil {
+				log.Printf("Failed to rebuild knowledge category database: %v", rebuildErr)
+			}
+			time.Sleep(10 * time.Second)
+			_, resp, err = proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
+			if err != nil {
+				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
+			}
+		} else {
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
+		}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

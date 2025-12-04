@@ -199,15 +199,22 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
-	rebuildErr := rebuildDatabase()
-	if rebuildErr != nil {
-		log.Printf("Failed to rebuild knowledge document database: %v", rebuildErr)
-	}
-
 	log.Printf("Deleting Knowledge document '%s'. Knowledge base ID: '%s'", knowledgeDocumentId, knowledgeBaseId)
 	resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
+		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+			rebuildErr := rebuildDatabase()
+			if rebuildErr != nil {
+				log.Printf("Failed to rebuild knowledge document database: %v", rebuildErr)
+			}
+			time.Sleep(10 * time.Second)
+			resp, err = proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
+			}
+		} else {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
+		}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

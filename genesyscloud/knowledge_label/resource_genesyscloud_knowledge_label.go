@@ -153,15 +153,22 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeLabelProxy(sdkConfig)
 
-	rebuildErr := rebuildDatabase()
-	if rebuildErr != nil {
-		log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
-	}
-
 	log.Printf("Deleting knowledge label %s", id)
 	_, resp, err := proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
+		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+			rebuildErr := rebuildDatabase()
+			if rebuildErr != nil {
+				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+			}
+			time.Sleep(10 * time.Second)
+			_, resp, err = proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
+			}
+		} else {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
+		}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
