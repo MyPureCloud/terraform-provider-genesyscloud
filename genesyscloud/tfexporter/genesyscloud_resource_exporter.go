@@ -1106,7 +1106,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 		if len(resources) > 0 && dependsStruct != nil {
 
 			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieved dependencies for resource %s: found %d dependent resources, dependsMap entries: %d",
-			resourceKeys.State.ID, len(resources), len(dependsStruct.DependsMap)))
+				resourceKeys.State.ID, len(resources), len(dependsStruct.DependsMap)))
 			// Thread-safe read of resources for retrieveExportResources
 			resourcesListForExport := g.getResources()
 			resourcesTobeExported := retrieveExportResources(resourcesListForExport, resources)

@@ -166,14 +166,14 @@ func fetchDepConsumers(ctx context.Context,
 					}
 				}
 
-			// Thread-safe append to totalFlowResources
-			p.flowResourcesMutex.Lock()
-			totalFlowResources = append(totalFlowResources, resourceKey)
-			p.flowResourcesMutex.Unlock()
+				// Thread-safe append to totalFlowResources
+				p.flowResourcesMutex.Lock()
+				totalFlowResources = append(totalFlowResources, resourceKey)
+				p.flowResourcesMutex.Unlock()
+			}
 		}
 	}
-}
-log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
+	log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
 	return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
 }
 
