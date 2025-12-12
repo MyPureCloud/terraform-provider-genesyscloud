@@ -175,6 +175,16 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 		//Setting up the resource type filter
 		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
 		gre.resourceFilter = IncludeFilterResourceByRegex    //Setting up the resource filters
+	case IncludeResourcesById:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("include_filter_resources_by_id"); ok {
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = FilterResourceById              //Setting up the resource filters
 	case ExcludeResources:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("exclude_filter_resources"); ok {
@@ -486,6 +496,10 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 	}
 
 	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources_by_id"); ok {
 		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 

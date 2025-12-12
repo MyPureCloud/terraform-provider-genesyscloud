@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestValidateExportInput(t *testing.T) {
+func TestMrmoValidateExportInput(t *testing.T) {
 	tests := []struct {
 		name        string
 		input       ExportInput
@@ -111,7 +111,7 @@ func TestValidateExportInput(t *testing.T) {
 	}
 }
 
-func TestGenerateDefaults(t *testing.T) {
+func TestMrmoGenerateDefaults(t *testing.T) {
 	tests := []struct {
 		name           string
 		input          ExportInput
@@ -196,7 +196,7 @@ func TestGenerateDefaults(t *testing.T) {
 	}
 }
 
-func TestGenerateDefaults_UniqueDirectories(t *testing.T) {
+func TestMrmoGenerateDefaults_UniqueDirectories(t *testing.T) {
 	// Test that multiple calls generate unique directory names
 	input1 := ExportInput{
 		ResourceType:        "genesyscloud_flow",

@@ -19,10 +19,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 ```terraform
 resource "genesyscloud_idp_salesforce" "salesforce" {
-  name         = "Salesforce"
-  certificates = [local.salesforce_certificate]
-  issuer_uri   = "https://example.com"
-  target_uri   = "https://example.com/login"
+  name                = "Salesforce"
+  certificates        = [local.salesforce_certificate]
+  issuer_uri          = "https://example.com"
+  target_uri          = "https://example.com/login"
+  sign_authn_requests = false
 }
 ```
 
@@ -39,6 +40,7 @@ resource "genesyscloud_idp_salesforce" "salesforce" {
 - `disabled` (Boolean) True if Salesforce is disabled. Defaults to `false`.
 - `name` (String) Name of the provider
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to Ping.
+- `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
 - `slo_binding` (String)
 - `slo_uri` (String) Provided on app creation.
 - `target_uri` (String) Target URI provided by Salesforce.

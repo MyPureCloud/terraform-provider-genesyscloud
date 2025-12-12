@@ -20,7 +20,9 @@ import (
 )
 
 func TestAccResourceArchitectEmergencyGroups(t *testing.T) {
-	tempFilePath := filepath.Join(testrunner.GetTestTempPath(), "resource_emergency_flow_test_"+uuid.NewString()+".yaml")
+	tempDir := testrunner.GetTestTempPath()
+	os.MkdirAll(tempDir, 0755)
+	tempFilePath := filepath.Join(tempDir, "resource_emergency_flow_test_"+uuid.NewString()+".yaml")
 
 	defer func() {
 		if err := os.Remove(tempFilePath); err != nil {

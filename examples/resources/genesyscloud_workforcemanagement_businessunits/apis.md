@@ -1,0 +1,5 @@
+* [POST /api/v2/workforcemanagement/businessunits](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#post-api-v2-workforcemanagement-businessunits)
+* [GET /api/v2/workforcemanagement/businessunits](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#get-api-v2-workforcemanagement-businessunits)
+* [GET /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#get-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#patch-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#delete-api-v2-workforcemanagement-businessunits--businessUnitId-)
