@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -143,7 +144,7 @@ func rebuildDatabase() diag.Diagnostics {
 	}
 
 	if resp.StatusCode != 202 {
-		log.Printf("Dependency tracking rebuild started")
+		log.Printf("Knowledge base dependency tracking rebuild started")
 	}
 
 	for {
@@ -151,8 +152,7 @@ func rebuildDatabase() diag.Diagnostics {
 
 		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
 		if buildErr != nil {
-			log.Printf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
-			break
+			return diag.Errorf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
 		}
 
 		if status != nil && status.Status != nil {
@@ -165,15 +165,13 @@ func rebuildDatabase() diag.Diagnostics {
 			case "BUILDINCOMPLETE", "NOTBUILT":
 				return diag.Errorf("Dependency Rebuild Failed")
 			default:
-				log.Printf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
+				return diag.Errorf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
 			}
-			break
+			return nil
 		} else {
-			log.Printf("No status returned from dependency tracking build, proceeding anyway")
-			break
+			return diag.Errorf("No status returned from dependency tracking build, proceeding anyway")
 		}
 	}
-	return nil
 }
 
 func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -182,18 +180,22 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgebaseProxy := GetKnowledgebaseProxy(sdkConfig)
 
-	// Rebuild the database before deleting the knowledge base
-	// Return an error if it fails but dont stop the deletion process
-	// The knowledge base may still get deleted without the database rebuild
-	rebuildErr := rebuildDatabase()
-	if rebuildErr != nil {
-		log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
-	}
-
 	log.Printf("Deleting knowledge base %s", name)
 	_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
+		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+			rebuildErr := rebuildDatabase()
+			if rebuildErr != nil {
+				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+			}
+			time.Sleep(10 * time.Second)
+			_, resp, err = knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
+			}
+		} else {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
+		}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
