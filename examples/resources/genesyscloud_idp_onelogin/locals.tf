@@ -1,5 +1,5 @@
 locals {
-  onelogin_certificate = utils_certificates.certificates.cert1
+  onelogin_certificate = tls_self_signed_cert.example.cert_pem
   dependencies = {
     resource = [
       "../../common/certificates.tf"

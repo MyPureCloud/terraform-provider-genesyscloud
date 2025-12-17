@@ -1,5 +1,5 @@
 locals {
-  ping_certificate = utils_certificates.certificates.cert1
+  ping_certificate = tls_self_signed_cert.example.cert_pem
   dependencies = {
     resource = [
       "../../common/certificates.tf"

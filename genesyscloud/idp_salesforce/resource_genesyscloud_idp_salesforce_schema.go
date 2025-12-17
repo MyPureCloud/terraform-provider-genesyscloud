@@ -1,9 +1,11 @@
 package idp_salesforce
 
 import (
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"time"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -50,10 +52,11 @@ func ResourceIdpSalesforce() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"certificates": {
-				Description: "PEM or DER encoded public X.509 certificates for SAML signature validation.",
-				Type:        schema.TypeList,
-				Required:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description:      "PEM or DER encoded public X.509 certificates for SAML signature validation.",
+				Type:             schema.TypeList,
+				Required:         true,
+				Elem:             &schema.Schema{Type: schema.TypeString},
+				DiffSuppressFunc: util.SuppressCertificateDiff,
 			},
 			"issuer_uri": {
 				Description: "Issuer URI provided by Salesforce.",
