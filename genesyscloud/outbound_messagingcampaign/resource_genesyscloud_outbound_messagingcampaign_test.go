@@ -36,6 +36,13 @@ Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone n
 */
 func TestAccResourceOutboundMessagingCampaign(t *testing.T) {
 	t.Parallel()
+	v := os.Getenv("GENESYSCLOUD_REGION")
+	switch v {
+	case "mx-central-1", "ap-southeast-1":
+		t.Skipf("sms number not configured in %s org", v)
+		return
+	}
+
 	var (
 		// Contact list
 		contactListResourceLabel = "contact_list"
@@ -439,6 +446,10 @@ Since (api/v2/routing/emails/outbound/domains) has no terraform resource current
 this tests relies on a pre-created outbound domain "terraformemailconfig.com"
 */
 func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "us-east-1" {
+		t.Skipf("verification will fail in org other than us-east-1 %s org", v)
+		return
+	}
 	var (
 		// contact_list variables
 
