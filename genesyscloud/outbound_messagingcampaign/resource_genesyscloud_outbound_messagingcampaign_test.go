@@ -446,6 +446,10 @@ Since (api/v2/routing/emails/outbound/domains) has no terraform resource current
 this tests relies on a pre-created outbound domain "terraformemailconfig.com"
 */
 func TestAccResourceOutboundMessagingCampaignWithEmailConfig(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "us-east-1" {
+		t.Skipf("verification will fail in org other than us-east-1 %s org", v)
+		return
+	}
 	var (
 		// contact_list variables
 
