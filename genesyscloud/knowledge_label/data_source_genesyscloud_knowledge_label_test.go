@@ -57,7 +57,7 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 					),
 				),
 			},
-		},
+		}, CheckDestroy: testVerifyKnowledgeLabelDestroyed,
 	})
 }
 
