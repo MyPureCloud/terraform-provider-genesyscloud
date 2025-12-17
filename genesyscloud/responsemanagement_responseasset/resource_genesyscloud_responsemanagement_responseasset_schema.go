@@ -101,5 +101,9 @@ func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporte
 			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
 			SubDirectory:              "response_assets",
 		},
+		ThirdPartyRefAttrs: []string{
+			"filename",
+			"file_content_hash",
+		},
 	}
 }

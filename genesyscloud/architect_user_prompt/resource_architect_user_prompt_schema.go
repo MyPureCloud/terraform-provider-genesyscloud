@@ -31,6 +31,10 @@ func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
 			SubDirectory:              "audio_prompts",
 		},
+		ThirdPartyRefAttrs: []string{
+			"resources.filename",
+			"resources.file_content_hash",
+		},
 	}
 }
 
