@@ -105,5 +105,9 @@ func ExporterScript() *resourceExporter.ResourceExporter {
 		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
 			{Attr: "name"}: {Attr: "script_name"},
 		},
+		ThirdPartyRefAttrs: []string{
+			"filepath",
+			"file_content_hash",
+		},
 	}
 }

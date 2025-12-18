@@ -104,5 +104,11 @@ func ArchitectGrammarLanguageExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"grammar_id": {RefType: "genesyscloud_architect_grammar"},
 		},
+		ThirdPartyRefAttrs: []string{
+			"voice_file_data.file_name",
+			"voice_file_data.file_content_hash",
+			"dtmf_file_data.file_name",
+			"dtmf_file_data.file_content_hash",
+		},
 	}
 }

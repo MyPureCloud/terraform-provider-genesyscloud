@@ -227,6 +227,10 @@ func OutboundContactListExporter() *resourceExporter.ResourceExporter {
 			RetrieveAndWriteFilesFunc: ContactsExporterResolver,
 			SubDirectory:              "contacts",
 		},
+		ThirdPartyRefAttrs: []string{
+			"contacts_filepath",
+			"contacts_file_content_hash",
+		},
 	}
 }
 
