@@ -223,7 +223,7 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 		}
 	}
 
-  // Validate all categories are deleted
+	// Validate all categories are deleted
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_knowledge_category" {
 			continue

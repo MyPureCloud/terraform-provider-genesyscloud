@@ -102,7 +102,7 @@ func ResourceIdpPing() *schema.Resource {
 func IdpPingExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpPings),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},
 	}
