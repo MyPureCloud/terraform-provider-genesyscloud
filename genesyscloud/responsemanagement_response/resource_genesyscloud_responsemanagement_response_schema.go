@@ -108,7 +108,7 @@ var (
 			},
 			`namespace`: {
 				Description: `The messaging template namespace.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`language`: {

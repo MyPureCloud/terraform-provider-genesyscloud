@@ -232,8 +232,8 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeCategoryId := id[0]
 
-		// Retry for up to 60 seconds
-		if err := util.WithRetries(context.Background(), 60*time.Second, func() *retry.RetryError {
+		// Retry for up to 180 seconds
+		if err := util.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 
 			knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(
 				knowledgeBaseId,

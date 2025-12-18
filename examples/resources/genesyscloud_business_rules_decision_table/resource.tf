@@ -6,10 +6,10 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
   columns {
     inputs {
+      defaults_to {
+        value = "anything"
+      }
       expression {
-        defaults_to {
-          value = "anything"
-        }
         contractual {
           schema_property_key = "custom_attribute_string"
         }
@@ -127,7 +127,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
     inputs {
       defaults_to {
-        value = data.genesyscloud_routing_queue.standard_queue.id
+        value = genesyscloud_routing_queue.example_queue.id
       }
       expression {
         contractual {
@@ -157,7 +157,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 
     outputs {
       defaults_to {
-        value = data.genesyscloud_routing_queue.vip_queue.id
+        value = genesyscloud_routing_queue.example_queue2.id
       }
       value {
         schema_property_key = "custom_attribute_queue"
@@ -260,7 +260,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
     }
     inputs {
       literal {
-        value = data.genesyscloud_routing_queue.standard_queue.id
+        value = genesyscloud_routing_queue.example_queue.id
         type  = "string"
       }
     }
@@ -272,7 +272,7 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
     }
     outputs {
       literal {
-        value = data.genesyscloud_routing_queue.vip_queue.id
+        value = genesyscloud_routing_queue.example_queue2.id
         type  = "string"
       }
     }

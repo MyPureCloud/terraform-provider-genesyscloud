@@ -275,7 +275,19 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 
 	resp, err := variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
+		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+			rebuildErr := rebuildDatabase()
+			if rebuildErr != nil {
+				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+			}
+			time.Sleep(10 * time.Second)
+			resp, err = variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
+			}
+		} else {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
+		}
 	}
 
 	if published {
@@ -310,4 +322,48 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document variation %s still exists", ids.knowledgeDocumentVariationID), resp))
 	})
+}
+
+func rebuildDatabase() diag.Diagnostics {
+	log.Printf("Rebuilding knowledge base database")
+
+	architectApi := platformclientv2.NewArchitectApi()
+
+	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
+	if architectError != nil {
+		return diag.Errorf("Failed to build dependency tracking: %v with resp: %v", architectError, resp)
+	}
+
+	if resp.StatusCode != 202 {
+		log.Printf("Dependency tracking rebuild started")
+	}
+
+	for {
+		time.Sleep(10 * time.Second)
+
+		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
+		if buildErr != nil {
+			log.Printf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
+			break
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				log.Printf("Dependency tracking Complete")
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				log.Printf("Dependency tracking status: %s, waiting...", *status.Status)
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				return diag.Errorf("Dependency Rebuild Failed")
+			default:
+				log.Printf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
+			}
+			break
+		} else {
+			log.Printf("No status returned from dependency tracking build, proceeding anyway")
+			break
+		}
+	}
+	return nil
 }
