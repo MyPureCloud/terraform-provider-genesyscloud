@@ -2,7 +2,7 @@ package ai_studio_summary_setting
 
 import (
 	"fmt"
-	"os"
+  "os"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -24,6 +24,7 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 		t.Skipf("virtualAgent product not available in %s org", v)
 		return
 	}
+main
 	var (
 		resourceName             = "test-summary-setting"
 		name                     = "summary setting test"

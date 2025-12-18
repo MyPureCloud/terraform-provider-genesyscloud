@@ -216,8 +216,6 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 	var knowledgeBaseId string
 
 	// Find the knowledge base ID
-
-	// Find the knowledge base ID
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == "genesyscloud_knowledge_knowledgebase" {
 			knowledgeBaseId = rs.Primary.ID
@@ -225,9 +223,7 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 		}
 	}
 
-	// Validate all categories are deleted
-
-	// Validate all categories are deleted
+  // Validate all categories are deleted
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_knowledge_category" {
 			continue
@@ -236,7 +232,7 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 		id := strings.Split(rs.Primary.ID, " ")
 		knowledgeCategoryId := id[0]
 
-		// Retry for up to 60 seconds
+		// Retry for up to 180 seconds
 		if err := util.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 
 			knowledgeCategory, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseCategory(
