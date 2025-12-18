@@ -3,11 +3,11 @@ package team
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
@@ -102,11 +102,42 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members %s: %s", d.Id(), err), resp)
 	}
+
 	if len(*teamListingResponse.Failures) > 0 {
+		// Identify which members failed
+		failedMemberIds := make(map[string]bool)
 		failureReasons := make([]string, len(*teamListingResponse.Failures))
 		for i, failure := range *teamListingResponse.Failures {
+			failedMemberIds[*failure.Id] = true
 			failureReasons[i] = fmt.Sprintf("Member %s: %s", *failure.Id, *failure.Reason)
 		}
+
+		successfullyAddedMembers := make([]string, 0)
+		for _, memberId := range membersToAdd {
+			if !failedMemberIds[memberId] {
+				successfullyAddedMembers = append(successfullyAddedMembers, memberId)
+			}
+		}
+
+		// Rollback
+		if len(successfullyAddedMembers) > 0 {
+			log.Printf("Rolling back %d successfully added members due to partial failure", len(successfullyAddedMembers))
+			maxMembersPerRequest := 25
+			chunkedRollback := lists.ChunkStringSlice(successfullyAddedMembers, maxMembersPerRequest)
+			for _, chunk := range chunkedRollback {
+				rollbackErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+					resp, err := proxy.deleteMembers(ctx, d.Id(), strings.Join(chunk, ","))
+					if err != nil {
+						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to rollback members from team %s: %s", d.Id(), err), resp)
+					}
+					return resp, nil
+				})
+				if rollbackErr != nil {
+					log.Printf("Warning: Failed to rollback some members after partial failure: %v", rollbackErr)
+				}
+			}
+		}
+
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members for team %s: %v", d.Id(), failureReasons), fmt.Errorf("%v", failureReasons))
 	}
 

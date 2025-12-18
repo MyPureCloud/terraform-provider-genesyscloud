@@ -54,12 +54,20 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	// adding members to the team
 	diagErr := updateTeamMembers(ctx, d, sdkConfig)
+
+	// Always read team state from API
+	readDiag := readTeam(ctx, d, meta)
+
 	if diagErr != nil {
 		return diagErr
 	}
 
+	if readDiag != nil {
+		return readDiag
+	}
+
 	log.Printf("Created team %s", *teamObj.Id)
-	return readTeam(ctx, d, meta)
+	return nil
 }
 
 // readTeam is used by the team resource to read a team from genesys cloud
@@ -107,12 +115,19 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 
 	diagErr := updateTeamMembers(ctx, d, sdkConfig)
+
+	readDiag := readTeam(ctx, d, meta)
+
 	if diagErr != nil {
 		return diagErr
 	}
 
+	if readDiag != nil {
+		return readDiag
+	}
+
 	log.Printf("Updated team %s", *teamObj.Id)
-	return readTeam(ctx, d, meta)
+	return nil
 }
 
 // deleteTeam is used by the team resource to delete a team from Genesys cloud
