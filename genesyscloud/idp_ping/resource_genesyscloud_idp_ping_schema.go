@@ -94,12 +94,6 @@ func ResourceIdpPing() *schema.Resource {
 				Type:        schema.TypeBool,
 				Default:     false,
 			},
-			`sign_authn_requests`: {
-				Description: `True if the Genesys Cloud authentication request should be signed.`,
-				Optional:    true,
-				Type:        schema.TypeBool,
-				Default:     false,
-			},
 		},
 	}
 }
@@ -108,7 +102,7 @@ func ResourceIdpPing() *schema.Resource {
 func IdpPingExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpPings),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},
 	}
