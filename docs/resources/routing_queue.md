@@ -674,9 +674,24 @@ Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. Defaults to `false`.
+- `inactivity_timeout_settings` (Block List, Max: 1) Inactivity timeout settings for messages. (see [below for nested schema](#nestedblock--media_settings_message--inactivity_timeout_settings))
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
 - `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
+
+<a id="nestedblock--media_settings_message--inactivity_timeout_settings"></a>
+### Nested Schema for `media_settings_message.inactivity_timeout_settings`
+
+Required:
+
+- `action_type` (String) Action to take when timeout occurs. Valid values: DISCONNECT, SEND_TO_ARCHITECT_FLOW.
+- `timeout_seconds` (Number) Timeout in seconds for inactivity on the interaction.
+
+Optional:
+
+- `flow_id` (String) Flow ID for architect flow action.
+
 
 <a id="nestedblock--media_settings_message--sub_type_settings"></a>
 ### Nested Schema for `media_settings_message.sub_type_settings`
