@@ -104,40 +104,10 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 	}
 
 	if len(*teamListingResponse.Failures) > 0 {
-		// Identify which members failed
-		failedMemberIds := make(map[string]bool)
 		failureReasons := make([]string, len(*teamListingResponse.Failures))
 		for i, failure := range *teamListingResponse.Failures {
-			failedMemberIds[*failure.Id] = true
 			failureReasons[i] = fmt.Sprintf("Member %s: %s", *failure.Id, *failure.Reason)
 		}
-
-		successfullyAddedMembers := make([]string, 0)
-		for _, memberId := range membersToAdd {
-			if !failedMemberIds[memberId] {
-				successfullyAddedMembers = append(successfullyAddedMembers, memberId)
-			}
-		}
-
-		// Rollback
-		if len(successfullyAddedMembers) > 0 {
-			log.Printf("Rolling back %d successfully added members due to partial failure", len(successfullyAddedMembers))
-			maxMembersPerRequest := 25
-			chunkedRollback := lists.ChunkStringSlice(successfullyAddedMembers, maxMembersPerRequest)
-			for _, chunk := range chunkedRollback {
-				rollbackErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-					resp, err := proxy.deleteMembers(ctx, d.Id(), strings.Join(chunk, ","))
-					if err != nil {
-						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to rollback members from team %s: %s", d.Id(), err), resp)
-					}
-					return resp, nil
-				})
-				if rollbackErr != nil {
-					log.Printf("Warning: Failed to rollback some members after partial failure: %v", rollbackErr)
-				}
-			}
-		}
-
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members for team %s: %v", d.Id(), failureReasons), fmt.Errorf("%v", failureReasons))
 	}
 
@@ -147,7 +117,7 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
 	proxy := getTeamProxy(sdkConfig)
 	members, resp, err := proxy.getMembersById(ctx, teamId)
-
+	log.Printf("[DEBUG]readTeamMembers: %v", members)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for team %s: %s", teamId, err), resp)
 	}
