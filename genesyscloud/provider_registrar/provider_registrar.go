@@ -135,6 +135,7 @@ import (
 	edgesTrunk "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunk"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	tfexp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter"
+	bcpTfExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/bcp_tf_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
@@ -359,6 +360,7 @@ func registerResources() {
 	businessRulesDecisionTable.SetRegistrar(regInstance)                   //Registering business rules decision table
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
+	bcpTfExporter.SetRegistrar(regInstance) //Registering bcp tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
 }
 
