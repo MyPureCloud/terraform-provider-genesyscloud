@@ -219,7 +219,10 @@ func TestBcpTfExporter_JSONStructure(t *testing.T) {
 	user := userResources[0]
 	assert.Equal(t, "user1", user.ID)
 	assert.Equal(t, "test_user", user.Name)
-	assert.Empty(t, user.Dependencies)
+	assert.Equal(t, user.Dependencies, BcpResourceDependency{
+		AsProviderResourceList: []string{},
+		AsObjectMap:            map[string][]string{},
+	})
 
 	// Test group resource - will have empty dependencies since resource reading fails in test
 	groupResources := exportData["genesyscloud_group"]
@@ -228,7 +231,10 @@ func TestBcpTfExporter_JSONStructure(t *testing.T) {
 	assert.Equal(t, "group1", group.ID)
 	assert.Equal(t, "test_group", group.Name)
 	// Should have empty dependencies since resource reading fails in test
-	assert.Empty(t, group.Dependencies)
+	assert.Equal(t, group.Dependencies, BcpResourceDependency{
+		AsProviderResourceList: []string{},
+		AsObjectMap:            map[string][]string{},
+	})
 }
 
 func TestBcpTfExporter_Read(t *testing.T) {
@@ -239,11 +245,17 @@ func TestBcpTfExporter_Read(t *testing.T) {
 	// Create test file
 	testData := BcpExportData{
 		"genesyscloud_user": []BcpResource{
-			{ID: "test-id", Name: "test-name", Dependencies: []string{}},
+			{ID: "test-id", Name: "test-name", Dependencies: BcpResourceDependency{}},
 		},
 	}
-	jsonData, _ := json.Marshal(testData)
-	os.WriteFile(filePath, jsonData, 0644)
+	jsonData, err := json.Marshal(testData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filePath, jsonData, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	d := schema.TestResourceDataRaw(t, ResourceBcpTfExporter().Schema, map[string]interface{}{})
 	d.SetId(filePath)
@@ -268,7 +280,10 @@ func TestBcpTfExporter_Delete(t *testing.T) {
 	filePath := filepath.Join(tempDir, filename)
 
 	// Create test file
-	os.WriteFile(filePath, []byte("{}"), 0644)
+	err := os.WriteFile(filePath, []byte("{}"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	d := schema.TestResourceDataRaw(t, ResourceBcpTfExporter().Schema, map[string]interface{}{})
 	d.SetId(filePath)

@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,9 +23,14 @@ import (
 )
 
 type BcpResource struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Dependencies []string `json:"dependencies"`
+	ID           string                `json:"id"`
+	Name         string                `json:"name"`
+	Dependencies BcpResourceDependency `json:"dependencies"`
+}
+
+type BcpResourceDependency struct {
+	AsProviderResourceList []string            `json:"as_provider_resource_list"`
+	AsObjectMap            map[string][]string `json:"as_object_map"`
 }
 
 type BcpExportData map[string][]BcpResource
@@ -33,13 +39,18 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	directory := d.Get("directory").(string)
 	filename := d.Get("filename").(string)
 
+	validatedDir, validatedFilename, err := validatePath(directory, filename)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	exporters := resourceExporter.GetResourceExporters()
 	filteredExporters := filterExporters(ctx, exporters, d)
 	exportData := make(BcpExportData)
 
 	tflog.Info(ctx, "Starting BCP export", map[string]interface{}{
-		"directory":            directory,
-		"filename":             filename,
+		"directory":            validatedDir,
+		"filename":             validatedFilename,
 		"resource_types_count": len(filteredExporters),
 	})
 
@@ -48,13 +59,13 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 			"resource_type": resourceType,
 		})
 
-		err := exporter.LoadSanitizedResourceMap(ctx, resourceType, nil)
-		if err != nil {
+		diagErr := exporter.LoadSanitizedResourceMap(ctx, resourceType, nil)
+		if diagErr != nil {
 			tflog.Error(ctx, "Error loading resources", map[string]interface{}{
 				"resource_type": resourceType,
-				"error":         fmt.Sprintf("%v", err),
+				"error":         fmt.Sprintf("%v", diagErr),
 			})
-			continue
+			return diagErr
 		}
 
 		resourceMap := exporter.GetSanitizedResourceMap()
@@ -85,11 +96,13 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 	}
 
-	if err := os.MkdirAll(directory, 0755); err != nil {
+	if err := os.MkdirAll(validatedDir, 0755); err != nil {
 		return diag.FromErr(err)
 	}
 
-	filePath := filepath.Join(directory, filename)
+	// Paths have already been validated and sanitized
+	// amazonq-ignore-next-line
+	filePath := filepath.Join(validatedDir, validatedFilename)
 	jsonData, err := json.MarshalIndent(exportData, "", "  ")
 	if err != nil {
 		return diag.FromErr(err)
@@ -106,6 +119,43 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		"total_resource_types": len(exportData),
 	})
 	return nil
+}
+
+// Add path validation
+func validatePath(dir, filename string) (string, string, error) {
+	// Clean and validate directory path
+	if strings.Contains(dir, "..") {
+		return "", "", fmt.Errorf("directory path contains invalid traversal sequences")
+	}
+
+	// Validate filename
+	if strings.Contains(filename, "..") || strings.Contains(filename, "/") {
+		return "", "", fmt.Errorf("filename contains invalid characters")
+	}
+
+	// Safety check for path traversal
+	cleanFilePath := filepath.Clean(filename)
+	cleanBaseFilePath := filepath.Base(cleanFilePath)
+	if cleanBaseFilePath != cleanFilePath {
+		return "", "", fmt.Errorf("filename contains invalid path traversal sequences")
+	}
+
+	// Explicit base path validation of dir
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid directory path: %v", err)
+	}
+
+	// Ensure directory is within the current working directory
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return "", "", fmt.Errorf("unable to get current working directory: %v", err)
+	}
+	if !strings.HasPrefix(absDir, workingDir) {
+		return "", "", fmt.Errorf("directory path is outside the current working directory")
+	}
+
+	return absDir, cleanBaseFilePath, nil
 }
 
 func readBcpTfExporter(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
@@ -159,14 +209,16 @@ func filterExporters(ctx context.Context, exporters map[string]*resourceExporter
 	return filtered
 }
 
-func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) []string {
+func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) BcpResourceDependency {
+	bcpResourceDependencies := BcpResourceDependency{}
+
 	// Check if we have proper provider meta for flow dependencies
 	providerMeta, ok := meta.(*provider.ProviderMeta)
 	if !ok || providerMeta.ClientConfig == nil {
 		tflog.Warn(ctx, "No valid client config for flow, skipping dependency resolution", map[string]interface{}{
 			"flow_id": flowID,
 		})
-		return []string{}
+		return bcpResourceDependencies
 	}
 
 	proxy := dependentconsumers.GetDependentConsumerProxy(providerMeta.ClientConfig)
@@ -174,7 +226,7 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		tflog.Error(ctx, "Failed to get dependent consumer proxy for flow", map[string]interface{}{
 			"flow_id": flowID,
 		})
-		return []string{}
+		return bcpResourceDependencies
 	}
 
 	// Create a ResourceInfo for the flow
@@ -191,37 +243,47 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 			"flow_id": flowID,
 			"error":   err.Error(),
 		})
-		return []string{}
+		return bcpResourceDependencies
 	}
 
 	if dependsStruct == nil || dependsStruct.DependsMap == nil {
 		tflog.Debug(ctx, "No dependency structure returned for flow", map[string]interface{}{
 			"flow_id": flowID,
 		})
-		return []string{}
+		return bcpResourceDependencies
 	}
 
 	// Extract dependencies for this specific flow
-	var deps []string
+	var depsAsProviderList []string
+	depsAsObjectMap := make(map[string][]string)
 	if flowDeps, ok := dependsStruct.DependsMap[flowID]; ok {
 		for _, dep := range flowDeps {
 			// Convert from "resourceType.resourceID" to "resourceType::resourceID"
 			parts := strings.SplitN(dep, ".", 2)
 			if len(parts) == 2 {
-				deps = append(deps, fmt.Sprintf("%s::%s", parts[0], parts[1]))
+				depsAsProviderList = append(depsAsProviderList, fmt.Sprintf("%s::%s", parts[0], parts[1]))
+				if _, exists := depsAsObjectMap[parts[0]]; !exists {
+					depsAsObjectMap[parts[0]] = []string{}
+				}
+				depsAsObjectMap[parts[0]] = append(depsAsObjectMap[parts[0]], parts[1])
 			}
 		}
+	}
+
+	deps := BcpResourceDependency{
+		AsProviderResourceList: depsAsProviderList,
+		AsObjectMap:            depsAsObjectMap,
 	}
 
 	tflog.Debug(ctx, "Flow dependencies resolved", map[string]interface{}{
 		"flow_id":            flowID,
 		"dependencies":       deps,
-		"dependencies_count": len(deps),
+		"dependencies_count": len(deps.AsProviderResourceList),
 	})
 	return deps
 }
 
-func getResourceDependencies(ctx context.Context, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, allExporters map[string]*resourceExporter.ResourceExporter, meta interface{}) []string {
+func getResourceDependencies(ctx context.Context, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, allExporters map[string]*resourceExporter.ResourceExporter, meta interface{}) BcpResourceDependency {
 	// For flows, use the dependent consumers proxy
 	if resourceType == "genesyscloud_flow" {
 		return getFlowDependencies(ctx, resourceID, resMeta, meta)
@@ -231,47 +293,66 @@ func getResourceDependencies(ctx context.Context, resourceType, resourceID strin
 	return extractSpecificDependencies(ctx, resourceType, resourceID, resMeta, exporter, allExporters, meta)
 }
 
-func extractSpecificDependencies(ctx context.Context, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, allExporters map[string]*resourceExporter.ResourceExporter, meta interface{}) []string {
-	var deps []string
+func extractSpecificDependencies(ctx context.Context, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, allExporters map[string]*resourceExporter.ResourceExporter, meta interface{}) BcpResourceDependency {
+	bcpResourceDependencies := BcpResourceDependency{
+		AsProviderResourceList: []string{},
+		AsObjectMap:            make(map[string][]string),
+	}
 
 	if exporter.RefAttrs == nil || len(exporter.RefAttrs) == 0 {
-		return deps
+		return bcpResourceDependencies
 	}
 
 	// Get the resource schema and read the actual resource data
 	providerResources, _ := registrar.GetResources()
 	resource, exists := providerResources[resourceType]
 	if !exists {
-		return deps
+		return bcpResourceDependencies
 	}
 
 	// Read the resource state
 	instanceState, err := getResourceState(ctx, resource, resourceID, resMeta, meta)
 	if err != nil || instanceState == nil {
-		return deps
+		return bcpResourceDependencies
 	}
 
 	// Convert instance state to JSON map
 	ctyType := resource.CoreConfigSchema().ImpliedType()
 	stateVal, err := schema.StateValueFromInstanceState(instanceState, ctyType)
 	if err != nil {
-		return deps
+		return bcpResourceDependencies
 	}
 
 	resourceData, err := schema.StateValueToJSONMap(stateVal, ctyType)
 	if err != nil {
-		return deps
+		return bcpResourceDependencies
 	}
 
 	// Extract specific dependencies using RefAttrs
-	depSet := make(map[string]bool)
-	deps = extractDepsFromMap(resourceData, "", exporter, depSet)
+	depSet := make(map[string]map[string]bool)
+	depSet = extractDepsFromMap(resourceData, "", exporter, depSet, 1)
 
-	return deps
+	for refType, guids := range depSet {
+		guidList := make([]string, 0, len(guids))
+		resourceDepList := make([]string, 0, len(guids))
+		for guid := range guids {
+			guidList = append(guidList, guid)
+			resourceDepList = append(resourceDepList, fmt.Sprintf("%s::%s", refType, guid))
+		}
+		bcpResourceDependencies.AsObjectMap[refType] = guidList
+		bcpResourceDependencies.AsProviderResourceList = append(bcpResourceDependencies.AsProviderResourceList, resourceDepList...)
+	}
+
+	return bcpResourceDependencies
 }
 
-func extractDepsFromMap(data map[string]interface{}, prefix string, exporter *resourceExporter.ResourceExporter, depSet map[string]bool) []string {
-	var deps []string
+func extractDepsFromMap(data map[string]interface{}, prefix string, exporter *resourceExporter.ResourceExporter, depSet map[string]map[string]bool, depth int) map[string]map[string]bool {
+
+	// Because this is a recursive function, we need to ensure safety within the recursion so it doesn't get caught in an infinite loop
+	const maxDepth = 100
+	if depth > maxDepth {
+		return depSet
+	}
 
 	for key, val := range data {
 		fullPath := key
@@ -295,10 +376,11 @@ func extractDepsFromMap(data map[string]interface{}, prefix string, exporter *re
 			guids := extractGUIDsFromValue(val)
 			for _, guid := range guids {
 				if guid != "" && isValidGUID(guid) {
-					depRef := fmt.Sprintf("%s::%s", refSettings.RefType, guid)
-					if !depSet[depRef] {
-						depSet[depRef] = true
-						deps = append(deps, depRef)
+					if _, exists := depSet[refSettings.RefType]; !exists {
+						depSet[refSettings.RefType] = make(map[string]bool)
+					}
+					if _, exists := depSet[refSettings.RefType][guid]; !exists {
+						depSet[refSettings.RefType][guid] = true
 					}
 				}
 			}
@@ -307,17 +389,17 @@ func extractDepsFromMap(data map[string]interface{}, prefix string, exporter *re
 		// Recurse into nested structures
 		switch v := val.(type) {
 		case map[string]interface{}:
-			deps = append(deps, extractDepsFromMap(v, fullPath, exporter, depSet)...)
+			depSet = extractDepsFromMap(v, fullPath, exporter, depSet, depth+1)
 		case []interface{}:
 			for _, item := range v {
 				if mapItem, ok := item.(map[string]interface{}); ok {
-					deps = append(deps, extractDepsFromMap(mapItem, fullPath, exporter, depSet)...)
+					depSet = extractDepsFromMap(mapItem, fullPath, exporter, depSet, depth+1)
 				}
 			}
 		}
 	}
 
-	return deps
+	return depSet
 }
 
 func extractGUIDsFromValue(val interface{}) []string {
