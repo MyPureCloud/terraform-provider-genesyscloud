@@ -129,7 +129,7 @@ func getLabelUtilizationAttrTypes() map[string]attr.Type {
 // (CreateRequest/CreateResponse vs ReadRequest/ReadResponse), preventing direct method calls between CRUD operations.
 // It fetches user details, voicemail policies, routing utilization, and flattens all complex attributes into Framework types.
 
-func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics) {
+func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics, isImport ...bool) {
 	log.Printf("Reading user %s", model.Id.ValueString())
 
 	//TODO
@@ -144,6 +144,9 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 	// and Handling Data – Plan Modifiers (https://developer.hashicorp.com/terraform/plugin/framework/handling-data/attributes/list-nested)
 	// for supporting details.
 	// cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceUser(), constants.ConsistencyChecks(), ResourceType)
+
+	// Determine if this is an import operation
+	importMode := len(isImport) > 0 && isImport[0]
 
 	retryDiags := util.PFWithRetriesForRead(ctx, func() (bool, error) {
 
@@ -195,7 +198,7 @@ func readUser(ctx context.Context, model *UserFrameworkResourceModel, proxy *use
 		handleManagedEmployerInfo(model, currentUser, &addressDiags)
 
 		// Get and handle voicemail userpolicies
-		if !handleVoicemailUserpolicies(ctx, model, proxy, &addressDiags) {
+		if !handleVoicemailUserpolicies(ctx, model, proxy, &addressDiags, importMode) {
 			// Function returned false = error occurred
 			// Check if it's retryable (you'd need to inspect tempDiags or modify the function)
 			// For now, treat as retryable (matching SDKv2 behavior)
@@ -307,7 +310,7 @@ func handleManagedEmployerInfo(model *UserFrameworkResourceModel, currentUser *p
 }
 
 // Helper function to handle voicemail userpolicies - returns false if should abort
-func handleVoicemailUserpolicies(ctx context.Context, model *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics) bool {
+func handleVoicemailUserpolicies(ctx context.Context, model *UserFrameworkResourceModel, proxy *userProxy, diagnostics *pfdiag.Diagnostics, isImport ...bool) bool {
 	currentVoicemailUserpolicies, apiResp, voicemailErr := proxy.getVoicemailUserpoliciesById(ctx, model.Id.ValueString())
 
 	if voicemailErr != nil {
@@ -320,9 +323,12 @@ func handleVoicemailUserpolicies(ctx context.Context, model *UserFrameworkResour
 		return false
 	}
 
+	// Determine if this is import mode
+	importMode := len(isImport) > 0 && isImport[0]
 	isManaged := !model.VoicemailUserpolicies.IsNull() && !model.VoicemailUserpolicies.IsUnknown()
 
-	if isManaged {
+	// During import, always populate from API. Otherwise, only if managed.
+	if importMode || isManaged {
 		var voicemailDiags pfdiag.Diagnostics
 		model.VoicemailUserpolicies, voicemailDiags = flattenVoicemailUserpolicies(currentVoicemailUserpolicies)
 		*diagnostics = append(*diagnostics, voicemailDiags...)
@@ -686,14 +692,14 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			}
 
 			// Initialize phoneNumber similar to SDKv2, but with explicit attr.Value types.
-			// Note: extension_pool_id is ALWAYS null in state to keep it out of Set identity
+			// TODO Note: extension_pool_id is ALWAYS null in state to keep it out of Set identity
 			// and match SDKv2's hash behavior (which ignored extension_pool_id).
 			phoneNumber := map[string]attr.Value{
 				"media_type":        types.StringValue(media),
 				"number":            types.StringNull(),
 				"extension":         types.StringNull(),
 				"type":              types.StringNull(),
-				"extension_pool_id": types.StringNull(), // <- always null in state
+				"extension_pool_id": types.StringNull(), // <- always null in state -- TODO
 			}
 
 			//===========================important==========================================

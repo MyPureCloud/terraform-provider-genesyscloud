@@ -349,7 +349,10 @@ func (r *UserFrameworkResource) Read(ctx context.Context, req resource.ReadReque
 	// Fetch current user state from API to detect drift and refresh Terraform state.
 	// This is the primary read operation called during plan, refresh, and before update/delete.
 	// Uses the same helper as Create/Update to ensure consistent state representation across all operations.
-	readUser(ctx, &state, proxy, &resp.Diagnostics)
+	readUser(ctx, &state, proxy, &resp.Diagnostics, false) // false = normal read mode
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	if resp.Diagnostics.HasError() {
 		//TODO
 		// If there's a 404 error, the resource was deleted outside Terraform
@@ -574,4 +577,19 @@ func GetAllUsersSDK(ctx context.Context, clientConfig *platformclientv2.Configur
 // to match the imported user's current state.
 func (r *UserFrameworkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+
+	// Read the resource with import flag
+	var state UserFrameworkResourceModel
+	resp.Diagnostics.Append(resp.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	proxy := GetUserProxy(r.clientConfig)
+	readUser(ctx, &state, proxy, &resp.Diagnostics, true) // true = import mode
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
