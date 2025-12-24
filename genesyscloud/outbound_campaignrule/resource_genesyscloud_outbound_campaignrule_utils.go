@@ -1,12 +1,13 @@
 package outbound_campaignrule
 
 import (
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"strconv"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Campaignrule {
