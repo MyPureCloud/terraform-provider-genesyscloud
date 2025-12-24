@@ -104,6 +104,35 @@ func voicemailUserpoliciesElementType() types.ObjectType {
 	}
 }
 
+// hasNonDefaultVoicemailValues checks if the voicemail policy contains non-default values
+// This helps distinguish between explicit configuration and API-returned defaults during import
+func hasNonDefaultVoicemailValues(voicemail *platformclientv2.Voicemailuserpolicy) bool {
+	if voicemail == nil {
+		return false
+	}
+
+	// Check if send_email_notifications is explicitly set to false (non-default)
+	// Default is typically true, so false indicates explicit configuration
+	if voicemail.SendEmailNotifications != nil && !*voicemail.SendEmailNotifications {
+		return true
+	}
+
+	// Check if alert_timeout_seconds is set to a non-default value
+	// Default timeout is typically around 300-600 seconds, but any explicit value indicates configuration
+	if voicemail.AlertTimeoutSeconds != nil {
+		// If it's not a common default value, consider it explicitly configured
+		timeout := *voicemail.AlertTimeoutSeconds
+		// Common defaults are usually 300, 450, 600 seconds
+		// If it's something else, it's likely explicitly configured
+		if timeout != 300 && timeout != 450 && timeout != 600 {
+			return true
+		}
+	}
+
+	// If we reach here, the values appear to be defaults
+	return false
+}
+
 type FrameworkRetryWrapper struct {
 	resourceType string
 }
@@ -327,8 +356,17 @@ func handleVoicemailUserpolicies(ctx context.Context, model *UserFrameworkResour
 	importMode := len(isImport) > 0 && isImport[0]
 	isManaged := !model.VoicemailUserpolicies.IsNull() && !model.VoicemailUserpolicies.IsUnknown()
 
-	// During import, always populate from API. Otherwise, only if managed.
-	if importMode || isManaged {
+	// During import, only populate if values differ from system defaults OR if explicitly managed in config
+	if importMode {
+		if hasNonDefaultVoicemailValues(currentVoicemailUserpolicies) || isManaged {
+			var voicemailDiags pfdiag.Diagnostics
+			model.VoicemailUserpolicies, voicemailDiags = flattenVoicemailUserpolicies(currentVoicemailUserpolicies)
+			*diagnostics = append(*diagnostics, voicemailDiags...)
+		} else {
+			model.VoicemailUserpolicies = types.ListNull(voicemailUserpoliciesElementType())
+			log.Printf("[INV][PF] Import: voicemail_userpolicies has default values, keeping null")
+		}
+	} else if isManaged {
 		var voicemailDiags pfdiag.Diagnostics
 		model.VoicemailUserpolicies, voicemailDiags = flattenVoicemailUserpolicies(currentVoicemailUserpolicies)
 		*diagnostics = append(*diagnostics, voicemailDiags...)
@@ -502,11 +540,9 @@ func readUserRoutingUtilization(ctx context.Context, state *UserFrameworkResourc
 	}
 
 	if agentUtilization.Level == "Organization" {
-		// If the settings are org-wide, set to empty to indicate no settings on the user
-		emptyList, diags := types.ListValue(elemType, []attr.Value{})
-		diagnostics.Append(diags...)
-		state.RoutingUtilization = emptyList
-		log.Printf("[INV][PF] readUserRoutingUtilization(): Level=Organization, setting to empty list")
+		// If the settings are org-wide, set to null to indicate no settings managed on the user
+		state.RoutingUtilization = types.ListNull(elemType)
+		log.Printf("[INV][PF] readUserRoutingUtilization(): Level=Organization, setting to null")
 		return response, diagnostics
 	}
 
@@ -1784,8 +1820,15 @@ func updateUserProfileSkills(ctx context.Context, plan *UserFrameworkResourceMod
 func updateUserRoutingUtilization(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) pfdiag.Diagnostics {
 	var diagnostics pfdiag.Diagnostics
 
-	// Check if routing_utilization is null or unknown
+	// Check if routing_utilization is null or unknown, reset to organization defaults
 	if plan.RoutingUtilization.IsNull() || plan.RoutingUtilization.IsUnknown() {
+		log.Printf("Routing utilization is null/unknown, resetting to organization defaults for user %s", plan.Id.ValueString())
+		resp, err := proxy.userApi.DeleteRoutingUserUtilization(plan.Id.ValueString())
+		if err != nil {
+			apiDiags := util.BuildAPIDiagnosticError(ResourceType,
+				fmt.Sprintf("Failed to delete routing utilization for user %s error: %s", plan.Id.ValueString(), err), resp)
+			diagnostics.Append(convertSDKDiagnosticsToFramework(apiDiags)...)
+		}
 		return diagnostics
 	}
 
