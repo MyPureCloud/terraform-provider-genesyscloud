@@ -139,6 +139,7 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	workforcemanagementBusinessunits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
 )
 
 /*
@@ -357,6 +358,7 @@ func registerResources() {
 	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
 	businessRulesSchema.SetRegistrar(regInstance)                          //Registering business rules schema
 	businessRulesDecisionTable.SetRegistrar(regInstance)                   //Registering business rules decision table
+	workforcemanagementBusinessunits.SetRegistrar(regInstance)             //Registering workforcemanagement businessunits
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance) //Registering tf exporter
 	registrar.SetResources(providerResources, providerDataSources)

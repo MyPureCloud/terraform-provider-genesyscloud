@@ -31,7 +31,7 @@ func getAllAuthWorkforceManagementBusinessUnits(ctx context.Context, clientConfi
 
 	businessUnitResponses, resp, err := proxy.getAllWorkforceManagementBusinessUnits(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to get workforce management business units: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get workforce management business units: %v", err), resp)
 	}
 
 	for _, businessUnitResponse := range *businessUnitResponses {
@@ -51,7 +51,7 @@ func createWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resour
 	log.Printf("Creating workforce management business unit %s", *createBusinessUnitRequest.Name)
 	businessUnitResponse, resp, err := proxy.createWorkforceManagementBusinessUnit(ctx, &createBusinessUnitRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to create workforce management business unit: %s", err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create workforce management business unit: %s", err), resp)
 	}
 
 	d.SetId(*businessUnitResponse.Id)
@@ -63,7 +63,7 @@ func createWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resour
 func readWorkforceManagementBusinessUnit(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getWorkforceManagementBusinessUnitsProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWorkforcemanagementBusinessunits(), constants.ConsistencyChecks(), ResourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWorkforcemanagementBusinessunits(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading workforce management business unit %s", d.Id())
 
@@ -72,10 +72,10 @@ func readWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resource
 		if getErr != nil {
 			// 404 indicates the resource does not exist and should not be retried
 			if util.IsStatus404(resp) {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
 			}
 			// All other errors are also non-retryable
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read workforce management business unit %s: %s", d.Id(), getErr), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", businessUnitResponse.Name)
@@ -97,7 +97,7 @@ func updateWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resour
 	log.Printf("Updating workforce management business unit %s", *workforceManagementBusinessUnits.Name)
 	businessUnitResponse, resp, err := proxy.updateWorkforceManagementBusinessUnit(ctx, d.Id(), &workforceManagementBusinessUnits)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to update workforce management business unit %s: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update workforce management business unit %s: %s", d.Id(), err), resp)
 	}
 
 	log.Printf("Updated workforce management business unit %s", *businessUnitResponse.Id)
@@ -111,7 +111,7 @@ func deleteWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resour
 
 	resp, err := proxy.deleteWorkforceManagementBusinessUnit(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceName, fmt.Sprintf("Failed to delete workforce management business unit %s: %s", d.Id(), err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete workforce management business unit %s: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -122,9 +122,9 @@ func deleteWorkforceManagementBusinessUnit(ctx context.Context, d *schema.Resour
 				log.Printf("Deleted workforce management business unit %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("Error deleting workforce management business unit %s: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting workforce management business unit %s: %s", d.Id(), err), resp))
 		}
 
-		return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceName, fmt.Sprintf("workforce management business unit %s still exists", d.Id()), resp), resp)
+		return util.RetryableErrorWithRetryAfter(ctx, util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("workforce management business unit %s still exists", d.Id()), resp), resp)
 	})
 }
