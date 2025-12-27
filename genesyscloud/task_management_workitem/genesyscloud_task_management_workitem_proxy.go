@@ -193,7 +193,6 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 		},
 	}
 
-	// Filter for the worktype id
 	if worktypeId != "" {
 		*queryReq.Filters = append(*queryReq.Filters, platformclientv2.Workitemfilter{
 			Name:     platformclientv2.String("typeId"),
@@ -201,10 +200,7 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 			Operator: platformclientv2.String("EQ"),
 			Values:   &[]string{worktypeId},
 		})
-	}
-
-	// Filter for the workbin id
-	if workbinId != "" {
+	} else if workbinId != "" {
 		*queryReq.Filters = append(*queryReq.Filters, platformclientv2.Workitemfilter{
 			Name:     platformclientv2.String("workbinId"),
 			VarType:  platformclientv2.String("String"),
