@@ -18,7 +18,7 @@ require (
 	github.com/mypurecloud/platform-client-sdk-go/v171 v171.0.0
 	github.com/nyaruka/phonenumbers v1.6.7
 	github.com/rjNemo/underscore v0.10.0
-	github.com/shirou/gopsutil/v4 v4.25.11
+	github.com/shirou/gopsutil/v4 v4.25.12
 	github.com/zclconf/go-cty v1.17.0
 	gonum.org/v1/gonum v0.16.0
 )
