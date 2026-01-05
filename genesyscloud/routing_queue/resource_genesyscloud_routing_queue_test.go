@@ -75,8 +75,8 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		// Inactivity timeout settings
 		inactivityTimeoutSeconds1 = "600"
 		inactivityTimeoutSeconds2 = "1200"
-		inactivityActionType1     = "Disconnect"
-		inactivityActionType2     = "Disconnect"
+		inactivityActionType1     = "DISCONNECT"
+		inactivityActionType2     = "DISCONNECT"
 	)
 
 	resource.Test(t, resource.TestCase{

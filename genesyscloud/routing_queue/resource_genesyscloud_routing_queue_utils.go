@@ -237,7 +237,7 @@ func buildInactivityTimeoutSettings(settings []interface{}) *platformclientv2.In
 	}
 
 	if flowId, ok := settingsMap["flow_id"].(string); ok {
-		inactivityTimeoutSettings.Flow = &platformclientv2.Domainentityref{Id: &flowId}
+		inactivityTimeoutSettings.FlowId = &platformclientv2.Domainentityref{Id: platformclientv2.String(flowId)}
 	}
 
 	return &inactivityTimeoutSettings
@@ -704,7 +704,7 @@ func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_inactivity_timeout", settings.EnableInactivityTimeout)
 
 	if settings.InactivityTimeoutSettings != nil {
-		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(*settings.InactivityTimeoutSettings)
+		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(settings.InactivityTimeoutSettings)
 	}
 
 	return []any{settingsMap}
@@ -717,7 +717,7 @@ func flattenInactivityTimeoutSettings(settings *platformclientv2.Inactivitytimeo
 	settingsMap := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(settingsMap, "timeout_seconds", settings.TimeoutSeconds)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "action_type", settings.ActionType)
-	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "flow_id", settings.Flow)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "flow_id", settings.FlowId)
 	return []interface{}{settingsMap}
 }
 
