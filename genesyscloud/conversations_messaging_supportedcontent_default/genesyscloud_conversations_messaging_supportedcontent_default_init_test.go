@@ -1,11 +1,12 @@
 package conversations_messaging_supportedcontent_default
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"log"
 	"sync"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 
