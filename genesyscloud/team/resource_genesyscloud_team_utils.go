@@ -81,10 +81,19 @@ func updateTeamMembers(ctx context.Context, d *schema.ResourceData, sdkConfig *p
 			}
 
 			chunkedMemberIds := lists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
+			var allDiags diag.Diagnostics
 			for _, chunk := range chunkedMemberIds {
-				if err := addGroupMembers(ctx, d, chunk, sdkConfig); err != nil {
-					return err
+				chunkDiags := addGroupMembers(ctx, d, chunk, sdkConfig)
+				if chunkDiags != nil {
+
+					allDiags = append(allDiags, chunkDiags...)
 				}
+			}
+			if allDiags != nil && allDiags.HasError() {
+				return allDiags
+			}
+			if len(allDiags) > 0 {
+				return allDiags
 			}
 		}
 	}
@@ -108,7 +117,10 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 		for i, failure := range *teamListingResponse.Failures {
 			failureReasons[i] = fmt.Sprintf("Member %s: %s", *failure.Id, *failure.Reason)
 		}
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members for team %s: %v", d.Id(), failureReasons), fmt.Errorf("%v", failureReasons))
+
+		return util.BuildDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to add some team members to team %s", d.Id()),
+			fmt.Errorf("Failed to add the following members: %v. State has been synced with members that were successfully added. Please fix the issues and run 'terraform apply' again.", failureReasons))
 	}
 
 	return nil
@@ -117,19 +129,29 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
 	proxy := getTeamProxy(sdkConfig)
 	members, resp, err := proxy.getMembersById(ctx, teamId)
-	log.Printf("[DEBUG]readTeamMembers: %v", members)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for team %s: %s", teamId, err), resp)
 	}
 
 	if members == nil || len(*members) == 0 {
+		log.Printf("[DEBUG]readTeamMembers: No members found for team %s", teamId)
 		return nil, nil
 	}
 
+	// Build list of actual member IDs from API response
 	interfaceList := make([]interface{}, len(*members))
+	memberIds := make([]string, len(*members))
 	for i, member := range *members {
-		interfaceList[i] = *member.Id
+		memberId := *member.Id
+		interfaceList[i] = memberId
+		memberIds[i] = memberId
 	}
+
+	log.Printf("[DEBUG]readTeamMembers: Read %d actual members from API for team %s", len(*members), teamId)
+	if len(memberIds) > 0 {
+		log.Printf("[DEBUG]readTeamMembers: Member IDs from API: %v", memberIds)
+	}
+
 	return schema.NewSet(schema.HashString, interfaceList), nil
 }
 
