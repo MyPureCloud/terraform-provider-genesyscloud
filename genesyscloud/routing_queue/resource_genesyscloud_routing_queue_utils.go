@@ -236,7 +236,7 @@ func buildInactivityTimeoutSettings(settings []interface{}) *platformclientv2.In
 		inactivityTimeoutSettings.ActionType = &actionType
 	}
 
-	if flowId, ok := settingsMap["flow_id"].(string); ok {
+	if flowId, ok := settingsMap["flow_id"].(string); ok && flowId != "" {
 		inactivityTimeoutSettings.FlowId = &platformclientv2.Domainentityref{Id: platformclientv2.String(flowId)}
 	}
 
