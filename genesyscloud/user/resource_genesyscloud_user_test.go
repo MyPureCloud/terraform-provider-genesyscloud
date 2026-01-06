@@ -582,12 +582,12 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 		userName                  = "Extension Pool User"
 		extensionPoolLabel1       = "test-extension-pool-1"
 		extensionPoolLabel2       = "test-extension-pool-2"
-		extensionPoolStartNumber1 = "15000"
-		extensionPoolEndNumber1   = "15001"
-		extensionPoolStartNumber2 = "15002"
-		extensionPoolEndNumber2   = "15003"
-		extension1                = "15000"
-		extension2                = "15002"
+		extensionPoolStartNumber1 = "21000"
+		extensionPoolEndNumber1   = "21001"
+		extensionPoolStartNumber2 = "21002"
+		extensionPoolEndNumber2   = "21003"
+		extension1                = "21000"
+		extension2                = "21002"
 		phoneMediaType            = "PHONE"
 		addrTypeWork              = "WORK"
 	)
@@ -2320,26 +2320,6 @@ func generateUserDataSource(
 		name = %s
 		depends_on = [%s]
 	}`, ResourceType, resourceLabel, email, name, dependsOnResource)
-}
-
-// GenerateBasicUserResource generates a basic user resource with minimum required fields
-func GenerateBasicUserResource(resourceLabel string, email string, name string) string {
-	return GenerateUserResource(resourceLabel, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
-}
-
-func GenerateUserResource(resourceLabel string, email string, name string, state string, title string, department string, manager string, acdAutoAnswer string, profileSkills string, certifications string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		email = "%s"
-		name = "%s"
-		state = %s
-		title = %s
-		department = %s
-		manager = %s
-		acd_auto_answer = %s
-		profile_skills = [%s]
-		certifications = [%s]
-	}
-	`, ResourceType, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
 }
 
 func GenerateVoicemailUserpolicies(timeout int, sendEmailNotifications bool) string {

@@ -16,7 +16,6 @@ const ResourceType = "genesyscloud_routing_wrapupcode"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	// Framework-only registration (SDKv2 removed)
 	regInstance.RegisterFrameworkResource(ResourceType, NewRoutingWrapupcodeFrameworkResource)
 	regInstance.RegisterFrameworkDataSource(ResourceType, NewRoutingWrapupcodeFrameworkDataSource)
 	regInstance.RegisterExporter(ResourceType, RoutingWrapupcodeExporter())

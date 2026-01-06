@@ -12,16 +12,40 @@ import (
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var sdkConfig *platformclientv2.Configuration
-var providerDataSources map[string]*schema.Resource
-var providerResources map[string]*schema.Resource
+/*
+   The genesyscloud_routing_skill_group_init_test.go file is used to initialize the data sources and resources
+   used in testing the routing_skill_group resource.
+
+   Please make sure you register ALL resources and data sources your test cases will use.
+*/
+
+var (
+	// providerDataSources holds a map of all registered datasources
+	providerDataSources map[string]*schema.Resource
+
+	// providerResources holds a map of all registered resources
+	providerResources map[string]*schema.Resource
+
+	// frameworkResources holds a map of all registered Framework resources
+	frameworkResources map[string]func() resource.Resource
+
+	// frameworkDataSources holds a map of all registered Framework data sources
+	frameworkDataSources map[string]func() datasource.DataSource
+
+	sdkConfig *platformclientv2.Configuration
+	authErr   error
+)
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex            sync.RWMutex
+	datasourceMapMutex          sync.RWMutex
+	frameworkResourceMapMutex   sync.RWMutex
+	frameworkDataSourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -31,7 +55,6 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceRoutingSkillGroup()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
-	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 }
 
@@ -42,24 +65,42 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	providerDataSources[ResourceType] = DataSourceRoutingSkillGroup()
 	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
+}
 
+// registerFrameworkTestResources registers all Framework resources used in the tests
+func (r *registerTestInstance) registerFrameworkTestResources() {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+
+	frameworkResources[user.ResourceType] = user.NewUserFrameworkResource
+}
+
+// registerFrameworkTestDataSources registers all Framework data sources used in the tests
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+
+	frameworkDataSources[user.ResourceType] = user.NewUserFrameworkDataSource
 }
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
+	sdkConfig, authErr = provider.AuthorizeSdk()
+	if authErr != nil {
+		log.Fatalf("failed to authorize sdk for the package routing_skill_group: %v", authErr)
+	}
+
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
+	frameworkResources = make(map[string]func() resource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
-
-	var err error
-	sdkConfig, err = provider.AuthorizeSdk()
-	if err != nil {
-		log.Println("Failed to authorize platform configuration: ", err.Error())
-	}
+	regInstance.registerFrameworkTestResources()
+	regInstance.registerFrameworkTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

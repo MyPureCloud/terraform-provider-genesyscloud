@@ -16,6 +16,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -34,7 +35,7 @@ var (
 	providerResources map[string]*schema.Resource
 
 	// frameworkResources holds a map of all registered Framework resources
-	frameworkResources map[string]func() frameworkresource.Resource
+	frameworkResources map[string]func() resource.Resource
 
 	// frameworkDataSources holds a map of all registered Framework data sources
 	frameworkDataSources map[string]func() datasource.DataSource
@@ -96,7 +97,7 @@ func initTestResources() {
 	}
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
-	frameworkResources = make(map[string]func() frameworkresource.Resource)
+	frameworkResources = make(map[string]func() resource.Resource)
 	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}

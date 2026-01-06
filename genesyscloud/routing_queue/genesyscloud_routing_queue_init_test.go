@@ -50,7 +50,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceRoutingQueue()
-	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[group.ResourceType] = group.ResourceGroup()
 	providerResources[architectFlow.ResourceType] = architectFlow.ResourceArchitectFlow()
@@ -75,6 +74,7 @@ func (r *registerTestInstance) registerFrameworkTestResources() {
 	defer r.frameworkResourceMapMutex.Unlock()
 
 	frameworkResources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkResource
+	frameworkResources[user.ResourceType] = user.NewUserFrameworkResource
 }
 
 // registerFrameworkTestDataSources registers all Framework data sources used in the tests
@@ -83,6 +83,7 @@ func (r *registerTestInstance) registerFrameworkTestDataSources() {
 	defer r.frameworkDataSourceMapMutex.Unlock()
 
 	frameworkDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource
+	frameworkDataSources[user.ResourceType] = user.NewUserFrameworkDataSource
 }
 
 // initTestResources initializes all test resources and data sources.

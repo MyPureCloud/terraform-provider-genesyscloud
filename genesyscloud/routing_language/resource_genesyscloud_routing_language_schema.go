@@ -15,7 +15,6 @@ const ResourceType = "genesyscloud_routing_language"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	// Framework-only registration (SDKv2 removed)
 	regInstance.RegisterFrameworkResource(ResourceType, NewFrameworkRoutingLanguageResource)
 	regInstance.RegisterFrameworkDataSource(ResourceType, NewFrameworkRoutingLanguageDataSource)
 	regInstance.RegisterExporter(ResourceType, RoutingLanguageExporter())

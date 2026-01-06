@@ -2657,3 +2657,23 @@ func userTestsAreActive() bool {
 	_, isSet := os.LookupEnv(userTestsActiveEnvVar)
 	return isSet
 }
+
+// GenerateBasicUserResource generates a basic user resource with minimum required fields
+func GenerateBasicUserResource(resourceLabel string, email string, name string) string {
+	return GenerateUserResource(resourceLabel, email, name, util.NullValue, util.NullValue, util.NullValue, util.NullValue, util.NullValue, "", "")
+}
+
+func GenerateUserResource(resourceLabel string, email string, name string, state string, title string, department string, manager string, acdAutoAnswer string, profileSkills string, certifications string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		email = "%s"
+		name = "%s"
+		state = %s
+		title = %s
+		department = %s
+		manager = %s
+		acd_auto_answer = %s
+		profile_skills = [%s]
+		certifications = [%s]
+	}
+	`, ResourceType, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}

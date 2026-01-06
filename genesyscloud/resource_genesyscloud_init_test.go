@@ -24,7 +24,6 @@ import (
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -54,7 +53,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
-	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
@@ -79,7 +77,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingQueue.ResourceType] = routingQueue.DataSourceRoutingQueue()
 	providerDataSources[location.ResourceType] = location.DataSourceLocation()
 	providerDataSources[authDivision.ResourceType] = authDivision.DataSourceAuthDivision()
-	providerDataSources[user.ResourceType] = user.DataSourceUser()
 	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
 	providerDataSources[routingEmailDomain.ResourceType] = routingEmailDomain.DataSourceRoutingEmailDomain()
 	providerDataSources[routingSkillGroup.ResourceType] = routingSkillGroup.DataSourceRoutingSkillGroup()

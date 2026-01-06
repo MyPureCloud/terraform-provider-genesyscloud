@@ -2,12 +2,13 @@ package orgauthorization_pairing
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -33,8 +34,8 @@ func TestAccResourceOrgAuthorizationPairing(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, nil, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			// 1 user and 1 group
 			{

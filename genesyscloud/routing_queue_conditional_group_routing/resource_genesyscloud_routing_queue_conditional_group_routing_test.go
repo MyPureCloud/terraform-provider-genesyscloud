@@ -67,7 +67,7 @@ func TestAccResourceRoutingQueueConditionalGroupRouting(t *testing.T) {
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
 		},
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, nil, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create the queue first so we can save the id to a channel and use it in the later test steps
@@ -307,7 +307,7 @@ func TestAccResourceRoutingQueueConditionalGroupRoutingExists(t *testing.T) {
 		PreCheck: func() {
 			util.TestAccPreCheck(t)
 		},
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, nil, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create rule

@@ -2,9 +2,10 @@ package task_management_workitem
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
 
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -90,8 +91,8 @@ func TestAccDataSourceTaskManagementWorkitem(t *testing.T) {
 			)
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			// Test with using workbin id filter. API requires either or both workbin and worktype id filters.
 			{

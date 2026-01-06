@@ -57,7 +57,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
 	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
-	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContact()
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
@@ -80,6 +79,7 @@ func (r *registerTestInstance) registerFrameworkTestResources() {
 	defer r.frameworkResourceMapMutex.Unlock()
 
 	frameworkResources[routingLanguage.ResourceType] = routingLanguage.NewFrameworkRoutingLanguageResource
+	frameworkResources[user.ResourceType] = user.NewUserFrameworkResource
 }
 
 // registerFrameworkTestDataSources registers all Framework data sources used in the tests
@@ -88,6 +88,7 @@ func (r *registerTestInstance) registerFrameworkTestDataSources() {
 	defer r.frameworkDataSourceMapMutex.Unlock()
 
 	frameworkDataSources[routingLanguage.ResourceType] = routingLanguage.NewFrameworkRoutingLanguageDataSource
+	frameworkDataSources[user.ResourceType] = user.NewUserFrameworkDataSource
 }
 
 // initTestResources initializes all test resources and data sources.

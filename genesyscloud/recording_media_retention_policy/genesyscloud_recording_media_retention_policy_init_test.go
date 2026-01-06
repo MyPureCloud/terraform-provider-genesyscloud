@@ -65,7 +65,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
-	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
 	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
@@ -89,6 +88,7 @@ func (r *registerTestInstance) registerFrameworkTestResources() {
 
 	frameworkResources[routinglanguage.ResourceType] = routinglanguage.NewFrameworkRoutingLanguageResource
 	frameworkResources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkResource
+	frameworkResources[user.ResourceType] = user.NewUserFrameworkResource
 }
 
 // registerFrameworkTestDataSources registers all Framework data sources used in the tests
@@ -98,6 +98,7 @@ func (r *registerTestInstance) registerFrameworkTestDataSources() {
 
 	frameworkDataSources[routinglanguage.ResourceType] = routinglanguage.NewFrameworkRoutingLanguageDataSource
 	frameworkDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource
+	frameworkDataSources[user.ResourceType] = user.NewUserFrameworkDataSource
 }
 
 // initTestResources initializes all test resources and data sources.

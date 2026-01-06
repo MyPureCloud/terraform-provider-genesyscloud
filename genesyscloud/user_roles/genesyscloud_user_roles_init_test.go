@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -24,7 +25,7 @@ var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
 
 // frameworkResources holds a map of all registered Framework resources
-var frameworkResources map[string]func() frameworkresource.Resource
+var frameworkResources map[string]func() resource.Resource
 
 // frameworkDataSources holds a map of all registered Framework data sources
 var frameworkDataSources map[string]func() datasource.DataSource
@@ -42,7 +43,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceUserRoles()
-	// user.ResourceUser() removed - now Framework-only
 	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
@@ -76,7 +76,7 @@ func (r *registerTestInstance) registerFrameworkTestDataSources() {
 func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
 	providerDataSources = make(map[string]*schema.Resource)
-	frameworkResources = make(map[string]func() frameworkresource.Resource)
+	frameworkResources = make(map[string]func() resource.Resource)
 	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}

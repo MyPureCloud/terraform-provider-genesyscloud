@@ -58,8 +58,8 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		groupByAttributesAttribute    = "queueId"
 	)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, nil, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				//Create
