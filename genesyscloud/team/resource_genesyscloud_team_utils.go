@@ -121,8 +121,10 @@ func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclie
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for team %s: %s", teamId, err), resp)
 	}
 
+	// Return empty set instead of nil when there are no members
+	// This ensures the export process can distinguish between "no members" and "not managing members"
 	if members == nil || len(*members) == 0 {
-		return nil, nil
+		return schema.NewSet(schema.HashString, []interface{}{}), nil
 	}
 
 	interfaceList := make([]interface{}, len(*members))
