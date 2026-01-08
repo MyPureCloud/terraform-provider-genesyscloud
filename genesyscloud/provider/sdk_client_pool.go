@@ -864,6 +864,9 @@ func autoInjectResourceContext(ctx context.Context, r *schema.ResourceData) cont
 		resourceTypeFromWrapper = rt
 	}
 
+	// Debug logging
+	log.Printf("[DEBUG] autoInjectResourceContext: resourceTypeFromWrapper=%q", resourceTypeFromWrapper)
+
 	// Extract resource ID and name from ResourceData
 	extractedId, extractedName := extractResourceIdAndName(r)
 
@@ -923,6 +926,8 @@ func WrapResourceWithType(resourceType string, resource *schema.Resource) {
 	if resource == nil {
 		return
 	}
+
+	log.Printf("[DEBUG] WrapResourceWithType: Wrapping resource type=%q", resourceType)
 
 	// Wrap CreateContext
 	if resource.CreateContext != nil {

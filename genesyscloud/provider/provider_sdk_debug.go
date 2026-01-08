@@ -343,6 +343,9 @@ func WithResourceContext(ctx context.Context, resourceType, resourceId, resource
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	log.Printf("[DEBUG] WithResourceContext: resourceType=%q, resourceId=%q, resourceName=%q", resourceType, resourceId, resourceName)
+
 	ctx = context.WithValue(ctx, resourceContextKey{}, &ResourceContext{
 		ResourceType: resourceType,
 		ResourceId:   resourceId,
