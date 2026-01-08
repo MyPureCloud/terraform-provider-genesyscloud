@@ -721,6 +721,53 @@ var (
 		},
 	}
 
+	ipFilter = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"ip_address": {
+				Description: "IP address (IPv4 or IPv6)",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"name": {
+				Description: "Name for the IP filter",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+
+	trackingSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"should_keep_url_fragment": {
+				Description: "Whether or not to keep the URL fragment",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"search_query_parameters": {
+				Description: "List of query parameters used for search e.g. 'q' (maximum 50)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    50,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"excluded_query_parameters": {
+				Description: "List of parameters to be excluded from the query string (maximum 50)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    50,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"ip_filters": {
+				Description: "List of IP address filters (maximum 10)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    10,
+				Elem:        ipFilter,
+			},
+		},
+	}
+
 	journeyEventsSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"enabled": {
@@ -788,6 +835,13 @@ var (
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        scrollPercentageEventTrigger,
+			},
+			"tracking_settings": {
+				Description: "Tracking settings for journey events",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        trackingSettings,
 			},
 		},
 	}
