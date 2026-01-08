@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -101,7 +100,6 @@ func (p *outboundMessagingcampaignProxy) deleteOutboundMessagingcampaign(ctx con
 // createOutboundMessagingcampaignFn is an implementation function for creating a Genesys Cloud outbound messagingcampaign
 func createOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy, outboundMessagingcampaign *platformclientv2.Messagingcampaign) (*platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.outboundApi.PostOutboundMessagingcampaigns(*outboundMessagingcampaign)
 }
@@ -109,7 +107,6 @@ func createOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 // getAllOutboundMessagingcampaignFn is the implementation for retrieving all outbound messagingcampaign in Genesys Cloud
 func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy) (*[]platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allMessagingCampaigns []platformclientv2.Messagingcampaign
 	const pageSize = 100
@@ -147,7 +144,6 @@ func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 // getOutboundMessagingcampaignIdByNameFn is an implementation of the function to get a Genesys Cloud outbound messagingcampaign by name
 func getOutboundMessagingcampaignIdByNameFn(ctx context.Context, p *outboundMessagingcampaignProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	messagingCampaigns, resp, err := getAllOutboundMessagingcampaignFn(ctx, p)
 	if err != nil {
@@ -171,7 +167,6 @@ func getOutboundMessagingcampaignIdByNameFn(ctx context.Context, p *outboundMess
 // getOutboundMessagingcampaignByIdFn is an implementation of the function to get a Genesys Cloud outbound messagingcampaign by Id
 func getOutboundMessagingcampaignByIdFn(ctx context.Context, p *outboundMessagingcampaignProxy, id string) (outboundMessagingcampaign *platformclientv2.Messagingcampaign, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if outboundMessagingcampaign := rc.GetCacheItem(p.obMessagingCampaignCache, id); outboundMessagingcampaign != nil {
 		log.Printf("Retrieved outbound messagingcampaign %s by id from cache", id)
@@ -183,7 +178,6 @@ func getOutboundMessagingcampaignByIdFn(ctx context.Context, p *outboundMessagin
 // updateOutboundMessagingcampaignFn is an implementation of the function to update a Genesys Cloud outbound messagingcampaign
 func updateOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy, id string, outboundMessagingcampaign *platformclientv2.Messagingcampaign) (*platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.outboundApi.PutOutboundMessagingcampaign(id, *outboundMessagingcampaign)
 }
@@ -191,7 +185,6 @@ func updateOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 // deleteOutboundMessagingcampaignFn is an implementation function for deleting a Genesys Cloud outbound messagingcampaign
 func deleteOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy, id string) (*platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	campaign, resp, err := p.outboundApi.DeleteOutboundMessagingcampaign(id)
 	if err != nil {

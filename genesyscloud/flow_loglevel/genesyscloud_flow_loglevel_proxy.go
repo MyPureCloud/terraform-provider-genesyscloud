@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -103,7 +102,6 @@ func (p *flowLogLevelProxy) deleteFlowLogLevelById(ctx context.Context, flowId s
 // createFlowLogLevelFn is an implementation function for creating a Genesys Cloud Flow Log Level
 func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	flowLogLevel, apiResponse, err := p.architectApi.PostFlowInstancesSettingsLoglevels(flowId, *flowLogLevelRequest, nil)
 
@@ -117,7 +115,6 @@ func createFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowId stri
 // getFlowLogLevelByIdFn is an implementation of the function to get a Genesys Cloud Flow Log Level by Id
 func getFlowLogLevelByIdFn(ctx context.Context, p *flowLogLevelProxy, flowId string) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	flowLogLevel, apiResponse, err := p.architectApi.GetFlowInstancesSettingsLoglevels(flowId, nil)
 	if err != nil {
@@ -130,7 +127,6 @@ func getFlowLogLevelByIdFn(ctx context.Context, p *flowLogLevelProxy, flowId str
 // getAllFlowLogLevelsFn is the implementation for retrieving all flow log levels in Genesys Cloud
 func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	var totalFlowLogLevels []platformclientv2.Flowsettingsresponse
@@ -163,7 +159,6 @@ func getAllFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy) (*[]platfo
 // updateFlowLogLevelFn is an implementation of the function to update a Genesys Cloud flow log level
 func updateFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowLogLevelId string, flowLogLevelRequest *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	flowSettingsResponse, apiResponse, err := p.architectApi.PutFlowInstancesSettingsLoglevels(flowLogLevelId, *flowLogLevelRequest, nil)
 	if err != nil {
@@ -175,7 +170,6 @@ func updateFlowLogLevelFn(ctx context.Context, p *flowLogLevelProxy, flowLogLeve
 // deleteFlowLogLevelsFn is an implementation function for deleting a Genesys Cloud Flow Log Level
 func deleteFlowLogLevelsFn(ctx context.Context, p *flowLogLevelProxy, flowLogLevelId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	apiResponse, err := p.architectApi.DeleteFlowInstancesSettingsLoglevels(flowLogLevelId)
 	if err != nil {

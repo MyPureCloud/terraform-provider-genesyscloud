@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -96,7 +95,6 @@ func (p *outboundCampaignruleProxy) deleteOutboundCampaignrule(ctx context.Conte
 // createOutboundCampaignruleFn is an implementation function for creating a Genesys Cloud outbound campaignrule
 func createOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignruleProxy, outboundCampaignrule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	rule, resp, err := p.outboundApi.PostOutboundCampaignrules(*outboundCampaignrule)
 	if err != nil {
@@ -108,7 +106,6 @@ func createOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignrulePr
 // getAllOutboundCampaignruleFn is the implementation for retrieving all outbound campaignrule in Genesys Cloud
 func getAllOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignruleProxy) (*[]platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allCampaignRules []platformclientv2.Campaignrule
 	const pageSize = 100
@@ -146,7 +143,6 @@ func getAllOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignrulePr
 // getOutboundCampaignruleIdByNameFn is an implementation of the function to get a Genesys Cloud outbound campaignrule by name
 func getOutboundCampaignruleIdByNameFn(ctx context.Context, p *outboundCampaignruleProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	campaignRules, resp, err := p.outboundApi.GetOutboundCampaignrules(100, 1, true, "", name, "", "")
 	if err != nil {
@@ -169,7 +165,6 @@ func getOutboundCampaignruleIdByNameFn(ctx context.Context, p *outboundCampaignr
 // getOutboundCampaignruleByIdFn is an implementation of the function to get a Genesys Cloud outbound campaignrule by Id
 func getOutboundCampaignruleByIdFn(ctx context.Context, p *outboundCampaignruleProxy, id string) (outboundCampaignrule *platformclientv2.Campaignrule, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	rule, resp, err := p.outboundApi.GetOutboundCampaignrule(id)
 	if err != nil {
@@ -181,7 +176,6 @@ func getOutboundCampaignruleByIdFn(ctx context.Context, p *outboundCampaignruleP
 // updateOutboundCampaignruleFn is an implementation of the function to update a Genesys Cloud outbound campaignrule
 func updateOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignruleProxy, id string, outboundCampaignrule *platformclientv2.Campaignrule) (*platformclientv2.Campaignrule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	rule, resp, err := getOutboundCampaignruleByIdFn(ctx, p, id)
 	if err != nil {
@@ -199,7 +193,6 @@ func updateOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignrulePr
 // deleteOutboundCampaignruleFn is an implementation function for deleting a Genesys Cloud outbound campaignrule
 func deleteOutboundCampaignruleFn(ctx context.Context, p *outboundCampaignruleProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.outboundApi.DeleteOutboundCampaignrule(id)
 	if err != nil {

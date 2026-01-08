@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -111,7 +110,6 @@ func (p *taskManagementProxy) getTaskManagementWorkitemSchemaDeletedStatus(ctx c
 
 // createTaskManagementWorkitemSchemaFn is an implementation function for creating a Genesys Cloud task management workitem schema
 func createTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	log.Printf("Creating task management workitem schema: %s", *schema.Name)
 	createdSchema, resp, err := p.taskManagementApi.PostTaskmanagementWorkitemsSchemas(*schema)
 	log.Printf("Completed call to create task management workitem schema %s with status code %d, correlation id %s and err %s", *schema.Name, resp.StatusCode, resp.CorrelationID, err)
@@ -123,7 +121,6 @@ func createTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // getAllTaskManagementWorkitemSchemaFn is the implementation for retrieving all task management workitem schemas in Genesys Cloud
 func getAllTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy) (*[]platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// NOTE: At the time of implementation (Preview API) retrieving schemas does not have any sort of pagination.
 	// It seemingly will return all schemas in one call. This might have to be updated as there may be some
 	// undocumented limit or if there would be changes to the API call before release.
@@ -140,7 +137,6 @@ func getAllTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // getTaskManagementWorkitemSchemasByNameFn is an implementation of the function to get a Genesys Cloud task management workitem schemas by name
 func getTaskManagementWorkitemSchemasByNameFn(ctx context.Context, p *taskManagementProxy, name string) (matchingSchemas *[]platformclientv2.Dataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	finalSchemas := []platformclientv2.Dataschema{}
 
 	schemas, resp, err := p.getAllTaskManagementWorkitemSchema(ctx)
@@ -162,7 +158,6 @@ func getTaskManagementWorkitemSchemasByNameFn(ctx context.Context, p *taskManage
 
 // getTaskManagementWorkitemSchemaByIdFn is an implementation of the function to get a Genesys Cloud task management workitem schema by Id
 func getTaskManagementWorkitemSchemaByIdFn(ctx context.Context, p *taskManagementProxy, id string) (schema *platformclientv2.Dataschema, resp *platformclientv2.APIResponse, err error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	workitemSchema := rc.GetCacheItem(p.workitemSchemaCache, id)
 	if workitemSchema != nil {
 		return schema, nil, nil
@@ -172,7 +167,6 @@ func getTaskManagementWorkitemSchemaByIdFn(ctx context.Context, p *taskManagemen
 
 // updateTaskManagementWorkitemSchemaFn is an implementation of the function to update a Genesys Cloud task management workitem schema
 func updateTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, id string, schemaUpdate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	schema, resp, err := p.taskManagementApi.PutTaskmanagementWorkitemsSchema(id, *schemaUpdate)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update task management workitem schema: %s", err)
@@ -182,7 +176,6 @@ func updateTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // deleteTaskManagementWorkitemSchemaFn is an implementation function for deleting a Genesys Cloud task management workitem schema
 func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, id string) (resp *platformclientv2.APIResponse, err error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorkitemsSchema(id)
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete task management workitem schema: %s", err)
@@ -193,7 +186,6 @@ func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // getTaskManagementWorkitemSchemaDeletedStatusFn is an implementation function to get the 'deleted' status of a Genesys Cloud task management workitem schema
 func getTaskManagementWorkitemSchemaDeletedStatusFn(ctx context.Context, p *taskManagementProxy, schemaId string) (isDeleted bool, resp *platformclientv2.APIResponse, err error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	apiClient := &p.clientConfig.APIClient
 
 	// create path and map variables

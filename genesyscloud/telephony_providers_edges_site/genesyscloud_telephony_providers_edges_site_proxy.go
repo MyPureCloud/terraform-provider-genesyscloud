@@ -6,7 +6,6 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -222,7 +221,6 @@ func (p *SiteProxy) getDefaultSiteId(ctx context.Context) (siteId string, resp *
 // getAllManagedSitesFn is an implementation function for retrieving all Genesys Cloud Outbound managed Sites
 func getAllSitesFn(ctx context.Context, p *SiteProxy, managed bool) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allSites []platformclientv2.Site
 	var siteCache rc.CacheInterface[platformclientv2.Site]
@@ -286,7 +284,6 @@ func getAllSitesFn(ctx context.Context, p *SiteProxy, managed bool) (*[]platform
 // createSiteFn is an implementation function for creating a Genesys Cloud Site
 func createSiteFn(ctx context.Context, p *SiteProxy, siteReq *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	site, resp, err := p.edgesApi.PostTelephonyProvidersEdgesSites(*siteReq)
 	if err != nil {
@@ -298,7 +295,6 @@ func createSiteFn(ctx context.Context, p *SiteProxy, siteReq *platformclientv2.S
 // deleteSiteFn is an implementation function for deleting a Genesys Cloud Site
 func deleteSiteFn(ctx context.Context, p *SiteProxy, siteId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesSite(siteId)
 	if err != nil {
@@ -311,7 +307,6 @@ func deleteSiteFn(ctx context.Context, p *SiteProxy, siteId string) (*platformcl
 // getSiteByIdFn is an implementation function for retrieving a Genesys Cloud Site by id
 func getSiteByIdFn(ctx context.Context, p *SiteProxy, siteId string) (*platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var site *platformclientv2.Site
 
@@ -338,7 +333,6 @@ func getSiteByIdFn(ctx context.Context, p *SiteProxy, siteId string) (*platformc
 // getSiteIdByNameFn is an implementation function for retrieving a Genesys Cloud Site by name
 func getSiteIdByNameFn(ctx context.Context, p *SiteProxy, siteName string) (string, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	managed, resp, err := getAllSitesFn(ctx, p, true)
 	if err != nil {
@@ -371,7 +365,6 @@ func getSiteIdByNameFn(ctx context.Context, p *SiteProxy, siteName string) (stri
 // updateSiteFn is an implementation function for updating a Genesys Cloud Site
 func updateSiteFn(ctx context.Context, p *SiteProxy, siteId string, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	updatedSite, resp, err := p.edgesApi.PutTelephonyProvidersEdgesSite(siteId, *site)
 	if err != nil {
@@ -384,7 +377,6 @@ func updateSiteFn(ctx context.Context, p *SiteProxy, siteId string, site *platfo
 // createSiteOutboundRouteFn is an implementation function for creating an outbound route for a Genesys Cloud Site
 func createSiteOutboundRouteFn(ctx context.Context, p *SiteProxy, siteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	obr, resp, err := p.edgesApi.PostTelephonyProvidersEdgesSiteOutboundroutes(siteId, *outboundRoute)
 	if err != nil {
@@ -397,7 +389,6 @@ func createSiteOutboundRouteFn(ctx context.Context, p *SiteProxy, siteId string,
 // getSiteOutboundRoutesFn is an implementation function for getting an outbound route for a Genesys Cloud Site
 func getSiteOutboundRoutesFn(ctx context.Context, p *SiteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allOutboundRoutes = []platformclientv2.Outboundroutebase{}
 	const pageSize = 100
@@ -423,7 +414,6 @@ func getSiteOutboundRoutesFn(ctx context.Context, p *SiteProxy, siteId string) (
 // updateSiteOutboundRouteFn is an implementation function for updating an outbound route for a Genesys Cloud Site
 func updateSiteOutboundRouteFn(ctx context.Context, p *SiteProxy, siteId string, outboundRouteId string, outboundRoute *platformclientv2.Outboundroutebase) (*platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	obrs, resp, err := p.edgesApi.PutTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId, *outboundRoute)
 	if err != nil {
@@ -436,7 +426,6 @@ func updateSiteOutboundRouteFn(ctx context.Context, p *SiteProxy, siteId string,
 // deleteSiteOutboundRouteFn is an implementation function for deleting an outbound route for a Genesys Cloud Site
 func deleteSiteOutboundRouteFn(ctx context.Context, p *SiteProxy, siteId string, outboundRouteId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesSiteOutboundroute(siteId, outboundRouteId)
 	if err != nil {
@@ -448,7 +437,6 @@ func deleteSiteOutboundRouteFn(ctx context.Context, p *SiteProxy, siteId string,
 // getSiteNumberPlansFn is an implementation function for retrieving number plans of a Genesys Cloud Site
 func getSiteNumberPlansFn(ctx context.Context, p *SiteProxy, siteId string) (*[]platformclientv2.Numberplan, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	numberPlans, resp, err := p.edgesApi.GetTelephonyProvidersEdgesSiteNumberplans(siteId)
 	if err != nil {
@@ -461,7 +449,6 @@ func getSiteNumberPlansFn(ctx context.Context, p *SiteProxy, siteId string) (*[]
 // updateSiteNumberPlansFn is an implementation function for updating number plans of a Genesys Cloud Site
 func updateSiteNumberPlansFn(ctx context.Context, p *SiteProxy, siteId string, numberPlansUpdate *[]platformclientv2.Numberplan) (*[]platformclientv2.Numberplan, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	numberPlans, resp, err := p.edgesApi.PutTelephonyProvidersEdgesSiteNumberplans(siteId, *numberPlansUpdate)
 	if err != nil {
@@ -474,7 +461,6 @@ func updateSiteNumberPlansFn(ctx context.Context, p *SiteProxy, siteId string, n
 // getLocationFn is an implementation function for retrieving a Genesys Cloud Location
 func getLocationFn(ctx context.Context, p *SiteProxy, locationId string) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	location, resp, err := p.locationsApi.GetLocation(locationId, nil)
 	if err != nil {
@@ -490,7 +476,6 @@ func getLocationFn(ctx context.Context, p *SiteProxy, locationId string) (*platf
 // getTelephonyMediaregionsFn is an implementation function for retrieving a Genesys Cloud Media Regions
 func getTelephonyMediaregionsFn(ctx context.Context, p *SiteProxy) (*platformclientv2.Mediaregions, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	telephonyRegions, resp, err := p.telephonyApi.GetTelephonyMediaregions()
 	if err != nil {
@@ -503,7 +488,6 @@ func getTelephonyMediaregionsFn(ctx context.Context, p *SiteProxy) (*platformcli
 // setDefaultSiteFn is an implementation function for setting the default Site of a Genesys Cloud org
 func setDefaultSiteFn(ctx context.Context, p *SiteProxy, siteId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	org, resp, err := p.organizationApi.GetOrganizationsMe()
 	if err != nil {
@@ -524,7 +508,6 @@ func setDefaultSiteFn(ctx context.Context, p *SiteProxy, siteId string) (*platfo
 // getDefaultSiteIdFn is an implementation function for getting the default Site of a Genesys Cloud org
 func getDefaultSiteIdFn(ctx context.Context, p *SiteProxy) (string, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	org, resp, err := p.organizationApi.GetOrganizationsMe()
 	if err != nil {

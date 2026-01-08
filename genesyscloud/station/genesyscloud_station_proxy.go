@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -49,7 +48,6 @@ func (p *stationProxy) getStationIdByName(ctx context.Context, stationName strin
 // getStationIdByNameFn is an implementation function for retrieving a Station Id by Name
 func getStationIdByNameFn(ctx context.Context, p *stationProxy, stationName string) (stationId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	stations, resp, err := p.stationsApi.GetStations(pageSize, 1, "", stationName, "", "", "", "")

@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -93,7 +92,6 @@ func (p *architectDatatableRowProxy) deleteArchitectDatatableRow(ctx context.Con
 
 func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var totalRecords []platformclientv2.Datatable
 
@@ -142,7 +140,6 @@ func ConvertDatatable(master platformclientv2.Datatable) *Datatable {
 
 func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	eg := rc.GetCacheItem(p.dataTableCache, datatableId)
 	if eg != nil {
@@ -185,7 +182,6 @@ func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy,
 
 func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var resources []map[string]interface{}
 	const pageSize = 100
@@ -229,7 +225,6 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 
 func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	eg := rc.GetCacheItem(p.dataTableRowCache, tableId+"_"+key)
 	if eg != nil {
@@ -240,21 +235,18 @@ func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowPro
 
 func createArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.architectApi.PostFlowsDatatableRows(tableId, *row)
 }
 
 func updateArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.architectApi.PutFlowsDatatableRow(tableId, key, *row)
 }
 
 func deleteArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, rowId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.architectApi.DeleteFlowsDatatableRow(tableId, rowId)
 	if err != nil {

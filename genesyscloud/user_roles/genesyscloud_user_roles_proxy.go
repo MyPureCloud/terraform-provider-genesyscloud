@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -50,7 +49,6 @@ func (p *userRolesProxy) updateUserRoles(ctx context.Context, roleID string, rol
 }
 
 func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var grants []platformclientv2.Authzgrant
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 
@@ -73,7 +71,6 @@ func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (
 }
 
 func updateUserRolesFn(ctx context.Context, p *userRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Get existing roles/divisions
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 

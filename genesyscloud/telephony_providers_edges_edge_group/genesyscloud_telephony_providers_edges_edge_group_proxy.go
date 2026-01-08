@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -79,7 +78,6 @@ func (p *edgeGroupProxy) getEdgeGroupByName(ctx context.Context, edgeGroupName s
 }
 
 func getEdgeGroupByNameFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (string, bool, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var targetEdgeGroup platformclientv2.Edgegroup
 	edgeGroups, resp, err := getAllEdgeGroupsFn(ctx, p, edgeGroupName, managed)
 	if err != nil {
@@ -104,13 +102,11 @@ func getEdgeGroupByIdFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId stri
 }
 
 func deleteEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string) (*platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesEdgegroup(edgeGroupId)
 	return resp, err
 }
 
 func updateEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId string, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	edgeGroup, resp, err := p.edgesApi.PutTelephonyProvidersEdgesEdgegroup(edgeGroupId, body)
 	if err != nil {
 		return nil, resp, err
@@ -119,7 +115,6 @@ func updateEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, edgeGroupId strin
 }
 
 func createEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, body platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	edgeGroup, resp, err := p.edgesApi.PostTelephonyProvidersEdgesEdgegroups(body)
 	if err != nil {
 		return nil, resp, err
@@ -128,7 +123,6 @@ func createEdgeGroupFn(ctx context.Context, p *edgeGroupProxy, body platformclie
 }
 
 func getAllEdgeGroupsFn(ctx context.Context, p *edgeGroupProxy, edgeGroupName string, managed bool) (*[]platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 100
 	var allEdgeGroups []platformclientv2.Edgegroup
 	var pageNum = 1

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -86,7 +85,6 @@ func (p *journeyViewScheduleProxy) getAllJourneyViewSchedule(ctx context.Context
 
 func getJourneyViewScheduleByViewIdFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Check the cache first
 	journeyViewSchedule := rc.GetCacheItem(p.journeyViewScheduleCache, viewId)
@@ -98,21 +96,18 @@ func getJourneyViewScheduleByViewIdFn(ctx context.Context, p *journeyViewSchedul
 
 func createJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string, journeyViewSchedule *platformclientv2.Journeyviewschedule) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.journeyViewsApi.PostJourneyViewSchedules(viewId, *journeyViewSchedule)
 }
 
 func updateJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string, journeyViewSchedule *platformclientv2.Journeyviewschedule) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.journeyViewsApi.PutJourneyViewSchedules(viewId, *journeyViewSchedule)
 }
 
 func deleteJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProxy, viewId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, resp, err := p.journeyViewsApi.DeleteJourneyViewSchedules(viewId)
 	if err != nil {
@@ -125,7 +120,6 @@ func deleteJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProx
 // getAllJourneyViewScheduleFn is the implementation for retrieving all journey view schedule in Genesys Cloud
 func getAllJourneyViewScheduleFn(ctx context.Context, p *journeyViewScheduleProxy) (*[]platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allJourneyViewSchedules []platformclientv2.Journeyviewschedule
 	const pageSize = 100

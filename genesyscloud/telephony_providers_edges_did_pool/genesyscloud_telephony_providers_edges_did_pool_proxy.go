@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -111,7 +110,6 @@ func (t *telephonyDidPoolProxy) getAllTelephonyDidPools(ctx context.Context) (*[
 // createTelephonyDidPoolFn is an implementation function for creating a Genesys Cloud did pool
 func createTelephonyDidPoolFn(ctx context.Context, t *telephonyDidPoolProxy, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	postDidPool, resp, err := t.telephonyApi.PostTelephonyProvidersEdgesDidpools(*didPool)
 	if err != nil {
@@ -123,7 +121,6 @@ func createTelephonyDidPoolFn(ctx context.Context, t *telephonyDidPoolProxy, did
 // getTelephonyDidPoolByIdFn is an implementation function for reading a Genesys Cloud did pool by ID
 func getTelephonyDidPoolByIdFn(ctx context.Context, t *telephonyDidPoolProxy, id string) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	didPool, resp, err := t.telephonyApi.GetTelephonyProvidersEdgesDidpool(id)
 	if err != nil {
@@ -135,7 +132,6 @@ func getTelephonyDidPoolByIdFn(ctx context.Context, t *telephonyDidPoolProxy, id
 // updateEdgesDidPoolFn is an implementation function for updating a Genesys Cloud did pool
 func updateEdgesDidPoolFn(ctx context.Context, t *telephonyDidPoolProxy, id string, didPool *platformclientv2.Didpool) (*platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	updatedDidPool, resp, err := t.telephonyApi.PutTelephonyProvidersEdgesDidpool(id, *didPool)
 	if err != nil {
@@ -147,7 +143,6 @@ func updateEdgesDidPoolFn(ctx context.Context, t *telephonyDidPoolProxy, id stri
 // deleteTelephonyDidPoolFn is an implementation function for deleting a Genesys Cloud did pool
 func deleteTelephonyDidPoolFn(ctx context.Context, t *telephonyDidPoolProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := t.telephonyApi.DeleteTelephonyProvidersEdgesDidpool(id)
 	return resp, err
@@ -156,7 +151,6 @@ func deleteTelephonyDidPoolFn(ctx context.Context, t *telephonyDidPoolProxy, id 
 // getAllTelephonyDidPoolsFn is an implementation function for reading all Genesys Cloud did pools
 func getAllTelephonyDidPoolsFn(ctx context.Context, t *telephonyDidPoolProxy) (*[]platformclientv2.Didpool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var (
 		allDidPools []platformclientv2.Didpool
@@ -197,7 +191,6 @@ func getAllTelephonyDidPoolsFn(ctx context.Context, t *telephonyDidPoolProxy) (*
 // getTelephonyDidPoolIdByStartAndEndNumberFn is an implementation function for finding a Genesys Cloud did pool using the start and end number
 func getTelephonyDidPoolIdByStartAndEndNumberFn(ctx context.Context, t *telephonyDidPoolProxy, start, end string) (string, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	utilE164 := util.NewUtilE164Service()
 	allDidPools, resp, err := getAllTelephonyDidPoolsFn(ctx, t)

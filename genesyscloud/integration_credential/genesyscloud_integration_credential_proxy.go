@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -117,7 +116,6 @@ func (p *integrationCredsProxy) getIntegrationById(ctx context.Context, integrat
 // getAllIntegrationCredsFn is the implementation for getting all integration credentials in Genesys Cloud using cursor-based paging
 func getAllIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allCreds []platformclientv2.Credentialinfo
 	var after string
@@ -154,7 +152,6 @@ func getAllIntegrationCredsFn(ctx context.Context, p *integrationCredsProxy) (*[
 // createIntegrationCredFn is the implementation for creating an integration credential in Genesys Cloud
 func createIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, createCredential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	credential, resp, err := p.integrationsApi.PostIntegrationsCredentials(*createCredential)
 	if err != nil {
@@ -166,7 +163,6 @@ func createIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, crea
 // getIntegrationCredByIdFn is the implementation for getting an integration credential by id in Genesys Cloud
 func getIntegrationCredByIdFn(ctx context.Context, p *integrationCredsProxy, credentialId string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	credential, resp, err := p.integrationsApi.GetIntegrationsCredential(credentialId)
 	if err != nil {
@@ -178,7 +174,6 @@ func getIntegrationCredByIdFn(ctx context.Context, p *integrationCredsProxy, cre
 // getIntegrationCredByNameFn is the implementation for getting an integration credential by name in Genesys Cloud
 func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, credentialName string) (*platformclientv2.Credentialinfo, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var foundCred *platformclientv2.Credentialinfo
 	var resp *platformclientv2.APIResponse
@@ -224,7 +219,6 @@ func getIntegrationCredByNameFn(ctx context.Context, p *integrationCredsProxy, c
 // updateIntegrationCredFn is the implementation for updating an integration credential in Genesys Cloud
 func updateIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	credInfo, resp, err := p.integrationsApi.PutIntegrationsCredential(credentialId, *credential)
 	if err != nil {
@@ -236,7 +230,6 @@ func updateIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, cred
 // deleteIntegrationCredFn is the implementation for deleting an integration credential in Genesys Cloud
 func deleteIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, credentialId string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.integrationsApi.DeleteIntegrationsCredential(credentialId)
 	if err != nil {
@@ -248,7 +241,6 @@ func deleteIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, cred
 // getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
 func getIntegrationByIdFn(ctx context.Context, p *integrationCredsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	const pageNum = 1

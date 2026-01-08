@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -55,7 +54,6 @@ func (p *authProductProxy) getAuthorizationProduct(ctx context.Context, name str
 // getAuthorizationProductFn is an implementation of the function to get a Genesys Cloud authorization product by name
 func getAuthorizationProductFn(ctx context.Context, p *authProductProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	authProducts, apiResponse, err := p.authApi.GetAuthorizationProducts()
 	if err != nil {

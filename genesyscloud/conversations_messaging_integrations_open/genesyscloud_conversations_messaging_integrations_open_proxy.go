@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -97,7 +96,6 @@ func (p *conversationsMessagingIntegrationsOpenProxy) deleteConversationsMessagi
 // createConversationsMessagingIntegrationsOpenFn is an implementation function for creating a Genesys Cloud conversations messaging integrations open
 func createConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationrequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.PostConversationsMessagingIntegrationsOpen(*conversationsMessagingIntegrationsOpen)
 }
@@ -105,7 +103,6 @@ func createConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 // getAllConversationsMessagingIntegrationsOpenFn is the implementation for retrieving all conversations messaging integrations open in Genesys Cloud
 func getAllConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allOpenIntegrationRequests []platformclientv2.Openintegration
 	const pageSize = 100
@@ -139,7 +136,6 @@ func getAllConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 // getConversationsMessagingIntegrationsOpenIdByNameFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations open by name
 func getConversationsMessagingIntegrationsOpenIdByNameFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	openIntegrationRequests, resp, err := getAllConversationsMessagingIntegrationsOpenFn(ctx, p)
 	if err != nil {
@@ -163,7 +159,6 @@ func getConversationsMessagingIntegrationsOpenIdByNameFn(ctx context.Context, p 
 // getConversationsMessagingIntegrationsOpenByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations open by Id
 func getConversationsMessagingIntegrationsOpenByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string) (conversationsMessagingIntegrationsOpen *platformclientv2.Openintegration, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	openIntegration, resp, err := p.conversationsApi.GetConversationsMessagingIntegrationsOpenIntegrationId(id, "")
 	if err != nil {
@@ -176,7 +171,6 @@ func getConversationsMessagingIntegrationsOpenByIdFn(ctx context.Context, p *con
 // updateConversationsMessagingIntegrationsOpenFn is an implementation of the function to update a Genesys Cloud conversations messaging integrations open
 func updateConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationupdaterequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.PatchConversationsMessagingIntegrationsOpenIntegrationId(id, *conversationsMessagingIntegrationsOpen)
 }
@@ -184,7 +178,6 @@ func updateConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 // deleteConversationsMessagingIntegrationsOpenFn is an implementation function for deleting a Genesys Cloud conversations messaging integrations open
 func deleteConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.DeleteConversationsMessagingIntegrationsOpenIntegrationId(id)
 }

@@ -115,7 +115,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		}
 	}
 
-	// If still no name, set to "unavailable" so EnsureResourceContext preserves it
+	// If still no name, set to "unavailable" so the resource context preserves it
 	if flowName == "" {
 		flowName = "unavailable"
 	}

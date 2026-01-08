@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -140,7 +139,6 @@ func (p *qualityFormsEvaluationProxy) getEvaluationFormRecentVerId(ctx context.C
 // publishQualityFormsEvaluationFn is an implementation function for publishing a Genesys Cloud quality forms evaluation
 func publishQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Check if the form is already published
 	form, apiResponse, err := p.qualityApi.GetQualityFormsEvaluation(id)
@@ -169,7 +167,6 @@ func publishQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluat
 // createQualityFormsEvaluationFn is an implementation function for creating a Genesys Cloud quality forms evaluation
 func createQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluationProxy, evaluationForm *platformclientv2.Evaluationform) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	form, apiResponse, err := p.qualityApi.PostQualityFormsEvaluations(*evaluationForm)
 	if err != nil {
@@ -181,7 +178,6 @@ func createQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluati
 // getAllQualityFormsEvaluationFn is the implementation for retrieving all quality forms evaluations in Genesys Cloud
 func getAllQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluationProxy) (*[]platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allForms []platformclientv2.Evaluationformresponse
 	const pageSize = 100
@@ -216,7 +212,6 @@ func getAllQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluati
 // getQualityFormsEvaluationIdByNameFn is an implementation of the function to get a Genesys Cloud quality forms evaluation by name
 func getQualityFormsEvaluationIdByNameFn(ctx context.Context, p *qualityFormsEvaluationProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	forms, apiResponse, err := getAllQualityFormsEvaluationFn(ctx, p)
 	if err != nil {
@@ -240,7 +235,6 @@ func getQualityFormsEvaluationIdByNameFn(ctx context.Context, p *qualityFormsEva
 // getQualityFormsEvaluationByIdFn is an implementation of the function to get a Genesys Cloud quality forms evaluation by Id
 func getQualityFormsEvaluationByIdFn(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (evaluationForm *platformclientv2.Evaluationformresponse, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	form, apiResponse, err := p.qualityApi.GetQualityFormsEvaluation(id)
 	if err != nil {
@@ -252,7 +246,6 @@ func getQualityFormsEvaluationByIdFn(ctx context.Context, p *qualityFormsEvaluat
 // updateQualityFormsEvaluationFn is an implementation of the function to update a Genesys Cloud quality forms evaluation
 func updateQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluationProxy, id string, evaluationForm *platformclientv2.Evaluationform) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, apiResponse, err := getQualityFormsEvaluationByIdFn(ctx, p, id)
 	if err != nil {
@@ -269,7 +262,6 @@ func updateQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluati
 // deleteQualityFormsEvaluationFn is an implementation function for deleting a Genesys Cloud quality forms evaluation
 func deleteQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluationProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.qualityApi.DeleteQualityFormsEvaluation(id)
 	if err != nil {
@@ -281,7 +273,6 @@ func deleteQualityFormsEvaluationFn(ctx context.Context, p *qualityFormsEvaluati
 // getQualityFormsEvaluationsBulkContextsFn is an implementation function for retrieving published evaluation forms by context IDs
 func getQualityFormsEvaluationsBulkContextsFn(ctx context.Context, p *qualityFormsEvaluationProxy, contextIds []string) ([]platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	publishedVersions, apiResponse, err := p.qualityApi.GetQualityFormsEvaluationsBulkContexts(contextIds)
 	if err != nil {
@@ -293,7 +284,6 @@ func getQualityFormsEvaluationsBulkContextsFn(ctx context.Context, p *qualityFor
 // getEvaluationFormRecentVerIdFn is an implementation function for retrieving the latest unpublished version ID of a form
 func getEvaluationFormRecentVerIdFn(ctx context.Context, p *qualityFormsEvaluationProxy, formId string) (string, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const maxRetries = 3
 	var wait = 1 * time.Second

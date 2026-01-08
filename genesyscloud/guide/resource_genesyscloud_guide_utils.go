@@ -11,7 +11,6 @@ import (
 	"net/url"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 // GenerateGuideResource generates terraform for a guide resource
@@ -46,7 +45,6 @@ func GuideFtIsEnabled() bool {
 	req.Header.Set("Authorization", "Bearer "+clientConfig.AccessToken)
 
 	ctx := context.Background()
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error sending request: %v", err)
@@ -69,7 +67,6 @@ func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
 // createHTTPRequest creates a new HTTP request with proper headers
 func createHTTPRequest(ctx context.Context, method, url string, body io.Reader, p *guideProxy) (*http.Request, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {

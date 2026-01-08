@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -98,7 +97,6 @@ func (p *routingSkillGroupsProxy) getRoutingSkillGroupsMemberDivison(ctx context
 // getAllRoutingSkillGroupsFn is the implementation for retrieving all routing skill groups in Genesys Cloud
 func getAllRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, name string) (*[]platformclientv2.Skillgroupdefinition, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var (
 		allSkillGroups []platformclientv2.Skillgroupdefinition
@@ -139,7 +137,6 @@ func getAllRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy,
 // createRoutingSkillGroupsFn is an implementation function for creating a Genesys Cloud routing skill groups
 func createRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, routingSkillGroups *platformclientv2.Skillgroupwithmemberdivisions) (*platformclientv2.Skillgroupwithmemberdivisions, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.PostRoutingSkillgroups(*routingSkillGroups)
 }
@@ -147,7 +144,6 @@ func createRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy,
 // getRoutingSkillGroupsByIdFn is an implementation of the function to get a Genesys Cloud routing skill groups by Id
 func getRoutingSkillGroupsByIdFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.GetRoutingSkillgroup(id)
 }
@@ -155,7 +151,6 @@ func getRoutingSkillGroupsByIdFn(ctx context.Context, p *routingSkillGroupsProxy
 // getRoutingSkillGroupsIdByNameFn is an implementation of the function to get a Genesys Cloud routing skill groups by name
 func getRoutingSkillGroupsIdByNameFn(ctx context.Context, p *routingSkillGroupsProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	skillGroup, resp, err := getAllRoutingSkillGroupsFn(ctx, p, name)
 	if err != nil {
@@ -179,7 +174,6 @@ func getRoutingSkillGroupsIdByNameFn(ctx context.Context, p *routingSkillGroupsP
 // updateRoutingSkillGroupsFn is an implementation of the function to update a Genesys Cloud routing skill groups
 func updateRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, id string, routingSkillGroups *platformclientv2.Skillgroup) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.PatchRoutingSkillgroup(id, *routingSkillGroups)
 }
@@ -187,21 +181,18 @@ func updateRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy,
 // deleteRoutingSkillGroupsFn is an implementation function for deleting a Genesys Cloud routing skill groups
 func deleteRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.DeleteRoutingSkillgroup(id)
 }
 
 func createRoutingSkillGroupsMemberDivisionFn(ctx context.Context, p *routingSkillGroupsProxy, id string, reqBody platformclientv2.Skillgroupmemberdivisions) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.PostRoutingSkillgroupMembersDivisions(id, reqBody)
 }
 
 func getRoutingSkillGroupsMemberDivisonFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroupmemberdivisionlist, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.GetRoutingSkillgroupMembersDivisions(id, "")
 }

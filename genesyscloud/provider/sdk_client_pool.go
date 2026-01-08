@@ -843,24 +843,122 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 	}
 }
 
-// autoInjectResourceContext automatically injects resource context if not already present.
-// This extracts both resource ID and name as separate values.
-// If either value is unavailable, it will be set to "unavailable".
-// Note: The resource type cannot be automatically determined due to import cycle constraints,
-// so resources should call util.SetResourceContext(ctx, d, ResourceType) for complete context.
-// However, this function will still set the resource ID and name, which is useful
-// even without the resource type.
+// resourceTypeContextKey is a context key for storing resource type during registration wrapping
+type resourceTypeContextKey struct{}
+
+// autoInjectResourceContext automatically injects resource context, merging with any existing context.
+// This extracts resource ID and name from ResourceData, and resource type from context (set during registration).
+// If the context already has resource metadata, it merges values:
+// - Uses resource type from registration wrapper (resourceTypeContextKey) if available, otherwise preserves existing
+// - Preserves existing ResourceId and ResourceName if they are not empty/"unavailable"
+// - Falls back to extracting from ResourceData if existing values are empty/"unavailable"
+// This function always calls setContextForRequest to ensure the SDK logging hooks can access the context.
 func autoInjectResourceContext(ctx context.Context, r *schema.ResourceData) context.Context {
-	// Check if context already has resource metadata (don't overwrite)
-	if _, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok {
-		return ctx
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
-	// Extract resource ID and name
-	resourceId, resourceName := extractResourceIdAndName(r)
+	// Get resource type from registration wrapper context key
+	resourceTypeFromWrapper := ""
+	if rt, ok := ctx.Value(resourceTypeContextKey{}).(string); ok {
+		resourceTypeFromWrapper = rt
+	}
 
-	// Set it in context (even without resource type)
-	return WithResourceContext(ctx, "", resourceId, resourceName)
+	// Extract resource ID and name from ResourceData
+	extractedId, extractedName := extractResourceIdAndName(r)
+
+	// Get existing resource context if it exists
+	var existingCtx *ResourceContext
+	if rc, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok && rc != nil {
+		existingCtx = rc
+	}
+
+	// Determine final values by merging existing context with new data
+	var finalResourceType, finalResourceId, finalResourceName string
+
+	if existingCtx != nil {
+		// Merge with existing context
+
+		// Resource type: prefer wrapper type, then existing, then empty
+		if resourceTypeFromWrapper != "" {
+			finalResourceType = resourceTypeFromWrapper
+		} else if existingCtx.ResourceType != "" {
+			finalResourceType = existingCtx.ResourceType
+		}
+
+		// Resource ID: prefer existing good value, then extracted, then "unavailable"
+		if existingCtx.ResourceId != "" && existingCtx.ResourceId != "unavailable" {
+			finalResourceId = existingCtx.ResourceId
+		} else if extractedId != "" && extractedId != "unavailable" {
+			finalResourceId = extractedId
+		} else {
+			finalResourceId = "unavailable"
+		}
+
+		// Resource Name: prefer existing good value, then extracted, then "unavailable"
+		if existingCtx.ResourceName != "" && existingCtx.ResourceName != "unavailable" {
+			finalResourceName = existingCtx.ResourceName
+		} else if extractedName != "" && extractedName != "unavailable" {
+			finalResourceName = extractedName
+		} else {
+			finalResourceName = "unavailable"
+		}
+	} else {
+		// No existing context, use extracted/wrapper values
+		finalResourceType = resourceTypeFromWrapper
+		finalResourceId = extractedId
+		finalResourceName = extractedName
+	}
+
+	// Always call WithResourceContext which also calls setContextForRequest
+	// This ensures the SDK logging hooks can access the resource context
+	return WithResourceContext(ctx, finalResourceType, finalResourceId, finalResourceName)
+}
+
+// WrapResourceWithType wraps the CRUD methods of a schema.Resource to automatically inject
+// the resource type into the context. This should be called during resource registration.
+// This allows autoInjectResourceContext to include the resource type without requiring
+// each resource file to manually call SetResourceContext.
+func WrapResourceWithType(resourceType string, resource *schema.Resource) {
+	if resource == nil {
+		return
+	}
+
+	// Wrap CreateContext
+	if resource.CreateContext != nil {
+		originalCreate := resource.CreateContext
+		resource.CreateContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalCreate(ctx, d, meta)
+		}
+	}
+
+	// Wrap ReadContext
+	if resource.ReadContext != nil {
+		originalRead := resource.ReadContext
+		resource.ReadContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalRead(ctx, d, meta)
+		}
+	}
+
+	// Wrap UpdateContext
+	if resource.UpdateContext != nil {
+		originalUpdate := resource.UpdateContext
+		resource.UpdateContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalUpdate(ctx, d, meta)
+		}
+	}
+
+	// Wrap DeleteContext
+	if resource.DeleteContext != nil {
+		originalDelete := resource.DeleteContext
+		resource.DeleteContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalDelete(ctx, d, meta)
+		}
+	}
 }
 
 // extractResourceIdAndName extracts both ID and name from ResourceData.

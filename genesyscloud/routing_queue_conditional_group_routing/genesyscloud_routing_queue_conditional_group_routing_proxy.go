@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
@@ -71,7 +70,6 @@ func (p *routingQueueConditionalGroupRoutingProxy) updateRoutingQueueConditionRo
 // getRoutingQueueConditionRoutingFn is an implementation function for getting the conditional group routing rules for a queue
 func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var (
 		queue *platformclientv2.Queue
@@ -97,7 +95,6 @@ func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCondi
 // updateRoutingQueueConditionRoutingFn is an implementation function for updating the conditional group routing rules for a queue
 func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string, rules *[]platformclientv2.Conditionalgrouproutingrule) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Get the routing queue the rules belong to
 	queue, resp, err := p.getRoutingQueueById(ctx, queueId)
@@ -162,7 +159,6 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 // getRoutingQueueByIdFn is an implementation function for getting a queue by ID
 func getRoutingQueueByIdFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.GetRoutingQueue(id, nil)
 }

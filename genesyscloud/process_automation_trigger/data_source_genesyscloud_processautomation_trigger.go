@@ -76,7 +76,6 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 
 func getAllProcessAutomationTriggers(ctx context.Context, path string, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTriggers, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	apiClient := &api.Configuration.APIClient
 

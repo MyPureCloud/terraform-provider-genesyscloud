@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
@@ -78,16 +76,11 @@ func (p *routingSmsAddressProxy) deleteSmsAddress(id string) (*platformclientv2.
 
 // createSmsAddressFn is an implementation function for creating a Genesys Cloud Sms Address
 func createSmsAddressFn(p *routingSmsAddressProxy, body platformclientv2.Smsaddressprovision) (*platformclientv2.Smsaddress, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx := provider.EnsureResourceContext(context.Background(), "genesyscloud_routing_sms_address")
-	_ = ctx
 	return p.routingApi.PostRoutingSmsAddresses(body)
 }
 
 // getAllSmsAddressesFn is an implementation function for getting all Sms Addresses
 func getAllSmsAddressesFn(p *routingSmsAddressProxy, ctx context.Context) (*[]platformclientv2.Smsaddress, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_routing_sms_address")
 
 	var allSmsAddresses []platformclientv2.Smsaddress
 	var response *platformclientv2.APIResponse
@@ -110,16 +103,11 @@ func getAllSmsAddressesFn(p *routingSmsAddressProxy, ctx context.Context) (*[]pl
 
 // getSmsAddressByIdFn is an implementation function for getting a Genesys Cloud Sms Address by ID
 func getSmsAddressByIdFn(p *routingSmsAddressProxy, id string) (*platformclientv2.Smsaddress, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx := provider.EnsureResourceContext(context.Background(), "genesyscloud_routing_sms_address")
-	_ = ctx
 	return p.routingApi.GetRoutingSmsAddress(id)
 }
 
 // getSmsAddressIdByNameFn is an implementation function for getting a sms address ID by name.
 func getSmsAddressIdByNameFn(p *routingSmsAddressProxy, name string, ctx context.Context) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_routing_sms_address")
 
 	smsAddresses, resp, err := getAllSmsAddressesFn(p, ctx)
 	if err != nil {
@@ -141,8 +129,5 @@ func getSmsAddressIdByNameFn(p *routingSmsAddressProxy, name string, ctx context
 
 // deleteSmsAddressByIdFn is an implementation function for deleting a Genesys Cloud Sms Address by ID
 func deleteSmsAddressByIdFn(p *routingSmsAddressProxy, id string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx := provider.EnsureResourceContext(context.Background(), "genesyscloud_routing_sms_address")
-	_ = ctx
 	return p.routingApi.DeleteRoutingSmsAddress(id)
 }

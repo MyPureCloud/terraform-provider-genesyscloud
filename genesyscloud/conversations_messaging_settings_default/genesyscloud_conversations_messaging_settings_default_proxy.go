@@ -3,7 +3,6 @@ package conversations_messaging_settings_default
 import (
 	"context"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -70,7 +69,6 @@ func (p *conversationsMessagingSettingsDefaultProxy) deleteConversationsMessagin
 // getConversationsMessagingSettingsDefaultFn is an implementation of the function to get a Genesys Cloud conversations messaging settings default by Id
 func getConversationsMessagingSettingsDefaultFn(ctx context.Context, p *conversationsMessagingSettingsDefaultProxy) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.GetConversationsMessagingSettingsDefault()
 }
@@ -78,7 +76,6 @@ func getConversationsMessagingSettingsDefaultFn(ctx context.Context, p *conversa
 // updateConversationsMessagingSettingsDefaultFn is an implementation of the function to update a Genesys Cloud conversations messaging settings default
 func updateConversationsMessagingSettingsDefaultFn(ctx context.Context, p *conversationsMessagingSettingsDefaultProxy, conversationsMessagingSettingsDefault *platformclientv2.Messagingsettingdefaultrequest) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.PutConversationsMessagingSettingsDefault(*conversationsMessagingSettingsDefault)
 }
@@ -86,7 +83,6 @@ func updateConversationsMessagingSettingsDefaultFn(ctx context.Context, p *conve
 // deleteConversationsMessagingSettingsDefaultFn is an implementation function for deleting a Genesys Cloud conversations messaging settings default
 func deleteConversationsMessagingSettingsDefaultFn(ctx context.Context, p *conversationsMessagingSettingsDefaultProxy) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.DeleteConversationsMessagingSettingsDefault()
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -72,7 +71,6 @@ func (p *routingSkillProxy) deleteRoutingSkill(ctx context.Context, id string) (
 
 func getAllRoutingSkillsFn(ctx context.Context, p *routingSkillProxy, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allRoutingSkills []platformclientv2.Routingskill
 	const pageSize = 100
@@ -111,14 +109,12 @@ func getAllRoutingSkillsFn(ctx context.Context, p *routingSkillProxy, name strin
 
 func createRoutingSkillFn(ctx context.Context, p *routingSkillProxy, routingSkill *platformclientv2.Routingskill) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.PostRoutingSkills(*routingSkill)
 }
 
 func getRoutingSkillByIdFn(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if skill := rc.GetCacheItem(p.routingSkillCache, id); skill != nil {
 		return skill, nil, nil
@@ -128,7 +124,6 @@ func getRoutingSkillByIdFn(ctx context.Context, p *routingSkillProxy, id string)
 
 func getRoutingSkillIdByNameFn(ctx context.Context, p *routingSkillProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	routingSkills, resp, err := getAllRoutingSkillsFn(ctx, p, name)
 	if err != nil {
@@ -153,7 +148,6 @@ func getRoutingSkillIdByNameFn(ctx context.Context, p *routingSkillProxy, name s
 
 func deleteRoutingSkillFn(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.routingApi.DeleteRoutingSkill(id)
 	if err != nil {

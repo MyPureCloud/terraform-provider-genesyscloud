@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -120,7 +119,6 @@ func (p *qualityFormsSurveyProxy) patchQualityFormsSurvey(ctx context.Context, f
 
 func createQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, form *platformclientv2.Surveyform) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	surveyForm, resp, err := p.qualityApi.PostQualityFormsSurveys(*form)
 	if err != nil {
@@ -131,7 +129,6 @@ func createQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy,
 
 func getAllQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, name string) (*[]platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allForms []platformclientv2.Surveyform
 	const pageSize = 100
@@ -165,7 +162,6 @@ func getAllQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy,
 
 func getQualityFormsSurveyByIdFn(ctx context.Context, p *qualityFormsSurveyProxy, id string) (form *platformclientv2.Surveyform, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	form, resp, err := p.qualityApi.GetQualityFormsSurvey(id)
 	if err != nil {
@@ -176,7 +172,6 @@ func getQualityFormsSurveyByIdFn(ctx context.Context, p *qualityFormsSurveyProxy
 
 func getQualityFormsSurveyByNameFn(ctx context.Context, p *qualityFormsSurveyProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	forms, resp, err := getAllQualityFormsSurveyFn(ctx, p, name)
 	if err != nil {
@@ -193,7 +188,6 @@ func getQualityFormsSurveyByNameFn(ctx context.Context, p *qualityFormsSurveyPro
 
 func updateQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, id string, form *platformclientv2.Surveyform) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	formResponse, resp, err := p.qualityApi.PutQualityFormsSurvey(id, *form)
 	if err != nil {
@@ -204,7 +198,6 @@ func updateQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy,
 
 func deleteQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.qualityApi.DeleteQualityFormsSurvey(id)
 	if err != nil {
@@ -215,7 +208,6 @@ func deleteQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy,
 
 func publishQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, id string, published bool) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	form, resp, err := p.qualityApi.PostQualityPublishedformsSurveys(platformclientv2.Publishform{
 		Id:        &id,
@@ -229,7 +221,6 @@ func publishQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy
 
 func getQualityFormsSurveyVersionsFn(ctx context.Context, p *qualityFormsSurveyProxy, formId string, pageSize int, pageNumber int) (*platformclientv2.Surveyformentitylisting, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	formVersions, resp, err := p.qualityApi.GetQualityFormsSurveyVersions(formId, 25, 1)
 	if err != nil {
@@ -240,7 +231,6 @@ func getQualityFormsSurveyVersionsFn(ctx context.Context, p *qualityFormsSurveyP
 
 func patchQualityFormsSurveyFn(ctx context.Context, p *qualityFormsSurveyProxy, formId string, body platformclientv2.Surveyform) (*platformclientv2.Surveyform, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	formResponse, resp, err := p.qualityApi.PatchQualityFormsSurvey(formId, body)
 	if err != nil {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
@@ -103,7 +102,6 @@ func (p *taskManagementOnAttributeChangeRuleProxy) deleteTaskManagementOnAttribu
 // createTaskManagementOnAttributeChangeRuleFn is an implementation function for creating a Genesys Cloud task management onattributechange rule
 func createTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskManagementOnAttributeChangeRuleProxy, worktypeId string, onAttributeChangeRuleCreate *platformclientv2.Workitemonattributechangerulecreate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.taskManagementApi.PostTaskmanagementWorktypeFlowsOnattributechangeRules(worktypeId, *onAttributeChangeRuleCreate)
 }
@@ -111,7 +109,6 @@ func createTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskMan
 // getAllTaskManagementOnAttributeChangeRuleFn is the implementation for retrieving all task management onattributechange rules in Genesys Cloud
 func getAllTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskManagementOnAttributeChangeRuleProxy, worktypeId string) (*[]platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 200
 	var (
@@ -141,7 +138,6 @@ func getAllTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskMan
 // getTaskManagementOnAttributeChangeRuleIdByNameFn is an implementation of the function to get a Genesys Cloud task management onattributechange rule by name
 func getTaskManagementOnAttributeChangeRuleIdByNameFn(ctx context.Context, p *taskManagementOnAttributeChangeRuleProxy, worktypeId string, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 200
 	var (
@@ -176,7 +172,6 @@ func getTaskManagementOnAttributeChangeRuleIdByNameFn(ctx context.Context, p *ta
 // getTaskManagementOnAttributeChangeRuleByIdFn is an implementation of the function to get a Genesys Cloud task management onattributechange rule by Id
 func getTaskManagementOnAttributeChangeRuleByIdFn(ctx context.Context, p *taskManagementOnAttributeChangeRuleProxy, worktypeId string, id string) (taskManagementOnAttributeChangeRule *platformclientv2.Workitemonattributechangerule, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	onAttributeChangeRule := rc.GetCacheItem(p.onAttributeChangeRuleCache, id)
 	if onAttributeChangeRule != nil {
@@ -189,7 +184,6 @@ func getTaskManagementOnAttributeChangeRuleByIdFn(ctx context.Context, p *taskMa
 // updateTaskManagementOnAttributeChangeRuleFn is an implementation of the function to update a Genesys Cloud task management onattributechange rule
 func updateTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskManagementOnAttributeChangeRuleProxy, worktypeId string, id string, onAttributeChangeRuleUpdate *platformclientv2.Workitemonattributechangeruleupdate) (*platformclientv2.Workitemonattributechangerule, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.taskManagementApi.PatchTaskmanagementWorktypeFlowsOnattributechangeRule(worktypeId, id, *onAttributeChangeRuleUpdate)
 }
@@ -197,7 +191,6 @@ func updateTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskMan
 // deleteTaskManagementOnAttributeChangeRuleFn is an implementation function for deleting a Genesys Cloud task management onattributechange rule
 func deleteTaskManagementOnAttributeChangeRuleFn(ctx context.Context, p *taskManagementOnAttributeChangeRuleProxy, worktypeId string, id string) (resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorktypeFlowsOnattributechangeRule(worktypeId, id)
 	if err == nil {

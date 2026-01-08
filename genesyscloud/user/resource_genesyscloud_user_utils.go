@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -312,7 +311,6 @@ func updateUserRoutingUtilization(ctx context.Context, d *schema.ResourceData, p
 
 				if len(labelUtilizations) > 0 {
 					// Set resource context for SDK debug logging
-					ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 					apiClient := &proxy.routingApi.Configuration.APIClient
 

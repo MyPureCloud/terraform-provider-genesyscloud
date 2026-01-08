@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -63,7 +62,6 @@ func (p *outboundSettingsProxy) updateOutboundSettings(ctx context.Context, outb
 // getOutboundSettingsFn is an implementation of the function to get a Genesys Cloud outbound settings by Id
 func getOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	outboundSettings, resp, err := p.outboundApi.GetOutboundSettings()
 	if err != nil {
@@ -75,7 +73,6 @@ func getOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy) (*plat
 // updateOutboundSettingsFn is an implementation of the function to update a Genesys Cloud outbound settings
 func updateOutboundSettingsFn(ctx context.Context, p *outboundSettingsProxy, outboundSettings *platformclientv2.Outboundsettings) (*platformclientv2.Outboundsettings, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.outboundApi.PatchOutboundSettings(*outboundSettings, false)
 	if err != nil {

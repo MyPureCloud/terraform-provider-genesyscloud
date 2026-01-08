@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
@@ -61,7 +60,6 @@ func (p *routingQueueOutboundEmailAddressProxy) updateRoutingQueueOutboundEmailA
 // getRoutingQueueOutboundEmailAddressFn is an implementation function for getting the outbound email address for a queue
 func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var (
 		queue *platformclientv2.Queue
@@ -93,7 +91,6 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 // updateRoutingQueueOutboundEmailAddressFn is an implementation function for updating the outbound email address for a queue
 func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string, address *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Get the routing queue the rules belong to
 	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil)

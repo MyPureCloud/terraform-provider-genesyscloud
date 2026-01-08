@@ -6,7 +6,6 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -101,7 +100,6 @@ func (p *supportedContentProxy) deleteSupportedContent(ctx context.Context, id s
 // createSupportedContentFn is an implementation function for creating a Genesys Cloud supported content
 func createSupportedContentFn(ctx context.Context, p *supportedContentProxy, supportedContent *platformclientv2.Supportedcontent) (*platformclientv2.Supportedcontent, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.PostConversationsMessagingSupportedcontent(*supportedContent)
 }
@@ -109,7 +107,6 @@ func createSupportedContentFn(ctx context.Context, p *supportedContentProxy, sup
 // getAllSupportedContentFn is the implementation for retrieving all supported content in Genesys Cloud
 func getAllSupportedContentFn(ctx context.Context, p *supportedContentProxy) (*[]platformclientv2.Supportedcontent, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allSupportedContents []platformclientv2.Supportedcontent
 	const pageSize = 100
@@ -147,7 +144,6 @@ func getAllSupportedContentFn(ctx context.Context, p *supportedContentProxy) (*[
 // getSupportedContentIdByNameFn is an implementation of the function to get a Genesys Cloud supported content by name
 func getSupportedContentIdByNameFn(ctx context.Context, p *supportedContentProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	supportedContents, resp, err := getAllSupportedContentFn(ctx, p)
 	if err != nil {
@@ -171,7 +167,6 @@ func getSupportedContentIdByNameFn(ctx context.Context, p *supportedContentProxy
 // getSupportedContentByIdFn is an implementation of the function to get a Genesys Cloud supported content by Id
 func getSupportedContentByIdFn(ctx context.Context, p *supportedContentProxy, id string) (supportedContent *platformclientv2.Supportedcontent, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	content := rc.GetCacheItem(p.supportedContentCache, id)
 	if content != nil {
@@ -183,7 +178,6 @@ func getSupportedContentByIdFn(ctx context.Context, p *supportedContentProxy, id
 // updateSupportedContentFn is an implementation of the function to update a Genesys Cloud supported content
 func updateSupportedContentFn(ctx context.Context, p *supportedContentProxy, id string, supportedContent *platformclientv2.Supportedcontent) (*platformclientv2.Supportedcontent, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.conversationsApi.PatchConversationsMessagingSupportedcontentSupportedContentId(id, *supportedContent)
 }
@@ -191,7 +185,6 @@ func updateSupportedContentFn(ctx context.Context, p *supportedContentProxy, id 
 // deleteSupportedContentFn is an implementation function for deleting a Genesys Cloud supported content
 func deleteSupportedContentFn(ctx context.Context, p *supportedContentProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.conversationsApi.DeleteConversationsMessagingSupportedcontentSupportedContentId(id)
 	if err != nil {

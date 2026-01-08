@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -122,7 +121,6 @@ func (p *journeyOutcomeProxy) deleteJourneyOutcome(ctx context.Context, id strin
 // createJourneyOutcomeFn is an implementation function for creating a Genesys Cloud journey outcome
 func createJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, outcome *platformclientv2.Outcomerequest) (*platformclientv2.Outcome, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	outcomeRes, resp, err := p.journeyApi.PostJourneyOutcomes(*outcome)
 	if err != nil {
@@ -134,7 +132,6 @@ func createJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, outcome
 // getAllJourneyOutcomesFn is the implementation for retrieving all journey outcomes in Genesys Cloud
 func getAllJourneyOutcomesFn(ctx context.Context, p *journeyOutcomeProxy) (*[]platformclientv2.Outcome, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allOutcomes []platformclientv2.Outcome
 	const pageSize = 100
@@ -173,7 +170,6 @@ func getAllJourneyOutcomesFn(ctx context.Context, p *journeyOutcomeProxy) (*[]pl
 // getJourneyOutcomeIdByNameFn is an implementation function for getting a journey outcome by name
 func getJourneyOutcomeIdByNameFn(ctx context.Context, p *journeyOutcomeProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	outcomes, resp, err := p.getAllJourneyOutcomes(ctx)
 	if err != nil {
@@ -196,7 +192,6 @@ func getJourneyOutcomeIdByNameFn(ctx context.Context, p *journeyOutcomeProxy, na
 // getJourneyOutcomeByIdFn is an implementation function for getting a journey outcome by ID
 func getJourneyOutcomeByIdFn(ctx context.Context, p *journeyOutcomeProxy, id string) (outcome *platformclientv2.Outcome, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	outcome, resp, err := p.journeyApi.GetJourneyOutcome(id)
 	if err != nil {
@@ -208,7 +203,6 @@ func getJourneyOutcomeByIdFn(ctx context.Context, p *journeyOutcomeProxy, id str
 // updateJourneyOutcomeFn is an implementation function for updating a journey outcome
 func updateJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, id string, outcome *platformclientv2.Patchoutcome) (*platformclientv2.Outcome, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	outcomeRes, resp, err := p.journeyApi.PatchJourneyOutcome(id, *outcome)
 	if err != nil {
@@ -220,7 +214,6 @@ func updateJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, id stri
 // deleteJourneyOutcomeFn is an implementation function for deleting a journey outcome
 func deleteJourneyOutcomeFn(ctx context.Context, p *journeyOutcomeProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.journeyApi.DeleteJourneyOutcome(id)
 	if err != nil {

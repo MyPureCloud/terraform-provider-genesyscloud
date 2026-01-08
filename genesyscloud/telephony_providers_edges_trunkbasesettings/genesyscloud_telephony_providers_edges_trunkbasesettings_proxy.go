@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
@@ -85,7 +84,6 @@ func (p *trunkbaseSettingProxy) DeleteTrunkBaseSetting(ctx context.Context, trun
 }
 
 func getTrunkBaseSettingByIdFn(ctx context.Context, p *trunkbaseSettingProxy, trunkBaseSettingId string) (*platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	tb := rc.GetCacheItem(p.trunkBaseCache, trunkBaseSettingId)
 	if tb != nil {
 		return tb, nil, nil
@@ -96,7 +94,6 @@ func getTrunkBaseSettingByIdFn(ctx context.Context, p *trunkbaseSettingProxy, tr
 }
 
 func getAllTrunkBaseSettingsFn(ctx context.Context, p *trunkbaseSettingProxy, name string) (*[]platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var allTrunkbaseSettings []platformclientv2.Trunkbase
 	const pageSize = 100
 
@@ -185,17 +182,14 @@ func getTelephonyProvidersEdgesTrunkbasesettings(p *trunkbaseSettingProxy, pageN
 }
 
 func createTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, trunkBaseSetting platformclientv2.Trunkbase) (*platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.edgesApi.PostTelephonyProvidersEdgesTrunkbasesettings(trunkBaseSetting)
 }
 
 func updateTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, trunkbaseSettingId string, trunkBaseSetting platformclientv2.Trunkbase) (*platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.edgesApi.PutTelephonyProvidersEdgesTrunkbasesetting(trunkbaseSettingId, trunkBaseSetting)
 }
 
 func deleteTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, trunkBaseSettingId string) (*platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesTrunkbasesetting(trunkBaseSettingId)
 	if err != nil {
 		return resp, err

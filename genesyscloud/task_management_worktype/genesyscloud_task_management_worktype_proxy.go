@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
@@ -108,7 +107,6 @@ func (p *TaskManagementWorktypeProxy) deleteTaskManagementWorktype(ctx context.C
 // createTaskManagementWorktypeFn is an implementation function for creating a Genesys Cloud task management worktype
 func createTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorktypeProxy, taskManagementWorktype *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.taskManagementApi.PostTaskmanagementWorktypes(*taskManagementWorktype)
 }
@@ -116,7 +114,6 @@ func createTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorkty
 // getAllTaskManagementWorktypeFn is the implementation for retrieving all task management worktype in Genesys Cloud
 func getAllTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorktypeProxy) (*[]platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allWorktypes []platformclientv2.Worktype
 	pageSize := 200
@@ -186,7 +183,6 @@ func getWorkType(name string, p *TaskManagementWorktypeProxy) (*platformclientv2
 // getTaskManagementWorktypeIdByNameFn is an implementation of the function to get a Genesys Cloud task management worktype by name
 func getTaskManagementWorktypeIdByNameFn(ctx context.Context, p *TaskManagementWorktypeProxy, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	worktype, retry, resp, err := getWorkType(name, p)
 	if err != nil {
@@ -200,7 +196,6 @@ func getTaskManagementWorktypeIdByNameFn(ctx context.Context, p *TaskManagementW
 // getTaskManagementWorktypeByNameFn Retrieves the full worktype item rather than just the id
 func getTaskManagementWorktypeByNameFn(ctx context.Context, p *TaskManagementWorktypeProxy, name string) (workItemType *platformclientv2.Worktype, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	worktype, retry, resp, err := getWorkType(name, p)
 	if err != nil {
@@ -214,7 +209,6 @@ func getTaskManagementWorktypeByNameFn(ctx context.Context, p *TaskManagementWor
 // getTaskManagementWorktypeByIdFn is an implementation of the function to get a Genesys Cloud task management worktype by Id
 func getTaskManagementWorktypeByIdFn(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (taskManagementWorktype *platformclientv2.Worktype, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	worktype := rc.GetCacheItem(p.worktypeCache, id)
 	if worktype != nil {
@@ -227,7 +221,6 @@ func getTaskManagementWorktypeByIdFn(ctx context.Context, p *TaskManagementWorkt
 // updateTaskManagementWorktypeFn is an implementation of the function to update a Genesys Cloud task management worktype
 func updateTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorktypeProxy, id string, worktypeUpdate *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.taskManagementApi.PatchTaskmanagementWorktype(id, *worktypeUpdate)
 }
@@ -235,7 +228,6 @@ func updateTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorkty
 // deleteTaskManagementWorktypeFn is an implementation function for deleting a Genesys Cloud task management worktype
 func deleteTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorktype(id)
 	if err != nil {

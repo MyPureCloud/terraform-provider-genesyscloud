@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -196,7 +195,6 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 
 func sdkGetRoutingQueueMembers(ctx context.Context, queueID, memberBy string, pageNumber, pageSize int, sdkConfig *platformclientv2.Configuration) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	// SDK does not support nil values for boolean query params yet, so we must manually construct this HTTP request for now

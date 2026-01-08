@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 
@@ -77,14 +76,12 @@ func (p *guideProxy) getDeleteJobStatusById(ctx context.Context, id string, guid
 
 func getAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkGetAllGuidesFn(ctx, p, name)
 }
 
 func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{}
 	action := http.MethodGet
@@ -154,7 +151,6 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 func createGuideFn(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides"
 	return makeAPIRequest[Guide](ctx, http.MethodPost, baseURL, guide, p)
@@ -162,7 +158,6 @@ func createGuideFn(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Gui
 
 func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if guide := rc.GetCacheItem(p.guideCache, id); guide != nil {
 		return guide, nil, nil
@@ -173,7 +168,6 @@ func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *pla
 
 func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	guides, resp, err := getAllGuidesFn(ctx, p, name)
 	if err != nil {
@@ -198,7 +192,6 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 
 func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id + "/jobs"
 	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodDelete, baseURL, nil, p)
@@ -211,7 +204,6 @@ func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObject
 
 func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/jobs/" + jobId
 	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodGet, baseURL, nil, p)
@@ -233,7 +225,6 @@ func makeAPIRequest[T any](ctx context.Context, method, url string, requestBody 
 	var err error
 
 	// Set resource context for SDK debug logging before creating HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if requestBody != nil {
 		req, err = marshalAndCreateRequest(ctx, method, url, requestBody, p)
@@ -261,7 +252,6 @@ func makeAPIRequest[T any](ctx context.Context, method, url string, requestBody 
 
 // callAPI is a helper function which will be removed when the endpoints are public
 func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	req = req.WithContext(ctx)
 
 	resp, err := client.Do(req)
