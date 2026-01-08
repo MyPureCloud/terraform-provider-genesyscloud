@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -20,8 +20,9 @@ var (
 )
 
 var (
-	ErrConfigNil = errors.New("client configuration is nil")
-	ErrNotActive = errors.New("MRMO is not active")
+	ErrConfigNil                      = errors.New("client configuration is nil")
+	ErrNotActive                      = errors.New("MRMO is not active")
+	MRMO_CXASCODE_INTEGRATION_ENABLED = "MRMO_CXASCODE_INTEGRATION_ENABLED"
 )
 
 // GetClientConfig returns the current client configuration
@@ -42,7 +43,7 @@ func GetClientConfig() (*platformclientv2.Configuration, error) {
 
 // IsActive returns whether MRMO is currently active
 func IsActive() bool {
-	return os.Getenv("MRMO_CXASCODE_INTEGRATION_ENABLED") != ""
+	return os.Getenv(MRMO_CXASCODE_INTEGRATION_ENABLED) != ""
 }
 
 // Activate activates MRMO with the provided client configuration

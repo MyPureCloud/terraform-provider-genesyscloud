@@ -1,9 +1,11 @@
 package knowledge_document_variation
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -11,8 +13,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentVariationBasic(t *testing.T) {
@@ -670,6 +673,7 @@ func generateKnowledgeDocumentAlternatives(phrase string, autocomplete bool) str
 
 func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
+
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != ResourceType {
 			continue
@@ -680,24 +684,54 @@ func testVerifyKnowledgeDocumentVariationDestroyed(state *terraform.State) error
 		knowledgeBaseId := id[1]
 		knowledgeDocumentId := id[2]
 
-		publishedKnowledgeDocumentVariation, publishedResp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Published", nil)
-		// check both published and draft variations
-		if publishedKnowledgeDocumentVariation != nil {
-			return fmt.Errorf("knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
-		} else if util.IsStatus404(publishedResp) || util.IsStatus400(publishedResp) {
-			draftKnowledgeDocumentVariation, draftResp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(knowledgeDocumentVariationId, knowledgeDocumentId, knowledgeBaseId, "Draft", nil)
+		// Retry destruction validation for up to 180 seconds
+		if err := util.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
 
-			if draftKnowledgeDocumentVariation != nil {
-				return fmt.Errorf("knowledge document variation (%s) still exists", knowledgeDocumentVariationId)
-			} else if util.IsStatus404(draftResp) || util.IsStatus400(draftResp) {
-				// Knowledge base document not found as expected
-				continue
-			} else {
-				return fmt.Errorf("unexpected error: %s", draftErr)
+			// --- Check Published variation ---
+			publishedVariation, publishedResp, publishedErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(
+				knowledgeDocumentVariationId,
+				knowledgeDocumentId,
+				knowledgeBaseId,
+				"Published",
+				nil,
+			)
+
+			if publishedVariation != nil {
+				// Variation still exists → retry
+				return retry.RetryableError(fmt.Errorf("knowledge document variation (%s) still exists", knowledgeDocumentVariationId))
 			}
-		} else {
-			return fmt.Errorf("unexpected error: %s", publishedErr)
+
+			if !(util.IsStatus404(publishedResp) || util.IsStatus400(publishedResp)) {
+				// Unexpected error → stop retries
+				return retry.NonRetryableError(fmt.Errorf("unexpected error: %v", publishedErr))
+			}
+
+			// --- Check Draft variation ---
+			draftVariation, draftResp, draftErr := knowledgeAPI.GetKnowledgeKnowledgebaseDocumentVariation(
+				knowledgeDocumentVariationId,
+				knowledgeDocumentId,
+				knowledgeBaseId,
+				"Draft",
+				nil,
+			)
+
+			if draftVariation != nil {
+				// Variation still exists → retry
+				return retry.RetryableError(fmt.Errorf("knowledge document variation (%s) still exists", knowledgeDocumentVariationId))
+			}
+
+			if util.IsStatus404(draftResp) || util.IsStatus400(draftResp) {
+				// Both variations gone → success
+				return nil
+			}
+
+			// Unexpected error → stop retries
+			return retry.NonRetryableError(fmt.Errorf("unexpected error: %v", draftErr))
+
+		}); err != nil {
+			return fmt.Errorf("unexpected error: %v", err)
 		}
 	}
+
 	return nil
 }

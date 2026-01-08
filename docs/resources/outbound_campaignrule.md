@@ -78,8 +78,7 @@ resource "genesyscloud_outbound_campaignrule" "campaign_rule" {
 
 Required:
 
-- `action_type` (String) The action to take on the campaignRuleActionEntities
-(turnOnCampaign | turnOffCampaign | turnOnSequence | turnOffSequence | setCampaignPriority | recycleCampaign | setCampaignDialingMode).
+- `action_type` (String) The action to take on the campaignRuleActionEntities (turnOnCampaign | turnOffCampaign | turnOnSequence | turnOffSequence | setCampaignPriority | recycleCampaign | setCampaignDialingMode | setCampaignAbandonRate | setCampaignNumberOfLines | setCampaignWeight | setCampaignMaxCallsPerAgent | changeCampaignQueue | changeCampaignTemplate | setCampaignMessagesPerMinute)
 - `campaign_rule_action_entities` (Block Set, Min: 1) The list of entities that this action will apply to. (see [below for nested schema](#nestedblock--campaign_rule_actions--campaign_rule_action_entities))
 
 Optional:
@@ -93,7 +92,9 @@ Optional:
 Optional:
 
 - `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `email_campaign_ids` (List of String) The list of Email campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an Email campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
 - `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence. Changing the outboundCampaignRuleEntitySequenceRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `sms_campaign_ids` (List of String) The list of SMS campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an SMS campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
 - `use_triggering_entity` (Boolean) If true, the CampaignRuleAction will apply to the same entity that triggered the CampaignRuleCondition. Defaults to `false`.
 
 
@@ -102,9 +103,19 @@ Optional:
 
 Optional:
 
+- `abandon_rate` (String) Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
+- `email_content_template_id` (String) The content template to set an Email campaign to.
+- `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
+- `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
 - `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
+- `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
+- `relative_weight` (String) Relative weight. Required for 'setCampaignWeight' action
+- `sms_content_template_id` (String) The content template to set a SMS campaign to.
+- `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
 
 
@@ -114,7 +125,7 @@ Optional:
 
 Required:
 
-- `condition_type` (String) The type of condition to evaluate (campaignProgress | campaignAgents).
+- `condition_type` (String) The type of condition to evaluate (campaignProgress | campaignAgents | campaignRecordsAttempted | campaignContactsMessaged | campaignBusinessSuccess | campaignBusinessNeutral | campaignBusinessFailure | campaignValidAttempts | campaignRightPartyContacts)
 - `parameters` (Block Set, Min: 1) The parameters for the CampaignRuleCondition. (see [below for nested schema](#nestedblock--campaign_rule_conditions--parameters))
 
 Optional:
@@ -126,9 +137,19 @@ Optional:
 
 Optional:
 
+- `abandon_rate` (String) Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
+- `email_content_template_id` (String) The content template to set an Email campaign to.
+- `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
+- `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
 - `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
+- `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
+- `relative_weight` (String) Relative weight. Required for 'setCampaignWeight' action
+- `sms_content_template_id` (String) The content template to set a SMS campaign to.
+- `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
 
 
@@ -139,5 +160,7 @@ Optional:
 Optional:
 
 - `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `email_campaign_ids` (List of String) The list of Email campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an Email campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
 - `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence. Changing the outboundCampaignRuleEntitySequenceRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `sms_campaign_ids` (List of String) The list of SMS campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an SMS campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
 

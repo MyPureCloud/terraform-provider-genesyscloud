@@ -295,7 +295,7 @@ func newSDKDebugResponse(response *http.Response) *sdkDebugResponse {
 		InvocationMethod:     response.Request.Method,
 		InvocationUrl:        response.Request.URL.Path,
 		InvocationStatusCode: response.StatusCode,
-		InvocationRetryAfter: response.Request.Header.Get("Retry-After"),
+		InvocationRetryAfter: response.Header.Get("Retry-After"),
 	}
 
 	// Extract resource context from request context if available

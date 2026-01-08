@@ -7,10 +7,14 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
-func TestAccExport(t *testing.T) {
+func TestAccMrmoExport(t *testing.T) {
+	err := os.Setenv("MRMO_CXASCODE_INTEGRATION_ENABLED", "MRM0")
+	if err != nil {
+		return
+	}
 	creds, err := generateCredetials()
 	if err != nil {
 		t.Skipf("Failed to collect the required credentials: %s", err.Error())

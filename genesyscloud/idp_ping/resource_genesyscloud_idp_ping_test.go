@@ -1,17 +1,20 @@
 package idp_ping
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceIdpPing(t *testing.T) {
@@ -41,6 +44,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					util.NullValue, // Not disabled
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -50,6 +54,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -63,6 +68,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					util.TrueValue, // disabled
 					uri3,
 					slo_binding2,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -73,6 +79,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", util.TrueValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.TrueValue),
 				),
 			},
 			{
@@ -86,6 +93,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					util.FalseValue, // disabled
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -97,6 +105,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -110,6 +119,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					util.FalseValue, // disabled
 					uri3,
 					slo_binding2,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -121,6 +131,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -134,6 +145,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					util.FalseValue, // disabled
 					uri3,
 					slo_binding2,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -146,6 +158,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -167,7 +180,8 @@ func generateIdpPingResource(
 	partyID string,
 	disabled string,
 	sloURI string,
-	sloBinding string) string {
+	sloBinding string,
+	signAuthnRequests string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_ping" "ping" {
 		name = "%s"
 		certificates = %s
@@ -177,28 +191,47 @@ func generateIdpPingResource(
         disabled = %s
 		slo_uri = "%s"
 		slo_binding = "%s"
+		sign_authn_requests = %s
 	}
-	`, name, certs, issuerURI, targetURI, partyID, disabled, sloURI, sloBinding)
+	`, name, certs, issuerURI, targetURI, partyID, disabled, sloURI, sloBinding, signAuthnRequests)
 }
 
 func testVerifyIdpPingDestroyed(state *terraform.State) error {
 	idpAPI := platformclientv2.NewIdentityProviderApi()
+
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "genesyscloud_idp_ping" {
 			continue
 		}
 
-		ping, resp, err := idpAPI.GetIdentityprovidersPing()
-		if ping != nil {
-			return fmt.Errorf("Ping still exists")
-		} else if util.IsStatus404(resp) {
-			// Ping not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+		// Retry async deletion for up to 120 seconds
+		if err := util.WithRetries(context.Background(), 120*time.Second, func() *retry.RetryError {
+
+			ping, resp, err := idpAPI.GetIdentityprovidersPing()
+
+			if ping != nil {
+				// Still exists
+				return retry.RetryableError(
+					fmt.Errorf("Ping IDP configuration still exists"),
+				)
+			}
+
+			if util.IsStatus404(resp) || util.IsStatus400(resp) {
+				// Deleted successfully
+				return nil
+			}
+
+			// Other unexpected error
+			return retry.NonRetryableError(
+				fmt.Errorf("unexpected error: %v", err),
+			)
+
+		}); err != nil {
+			// Retry loop finished with error
+			return fmt.Errorf("unexpected error: %v", err)
 		}
 	}
-	// Success. Ping config destroyed
+
+	// All Ping configurations destroyed
 	return nil
 }

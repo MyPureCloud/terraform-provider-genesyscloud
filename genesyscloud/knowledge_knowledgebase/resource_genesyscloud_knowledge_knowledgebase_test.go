@@ -1,6 +1,7 @@
 package knowledge_knowledgebase
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -12,8 +13,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
@@ -75,23 +77,41 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 
 func testVerifyKnowledgebasesDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
+
+	// Validate all knowledge bases are deleted
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != ResourceType {
 			continue
 		}
 
-		knowledgeBase, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(rs.Primary.ID)
-		if knowledgeBase != nil {
-			return fmt.Errorf("Knowledge base (%s) still exists", rs.Primary.ID)
-		} else if util.IsStatus404(resp) {
-			// Knowledge base not found as expected
-			continue
-		} else {
+		knowledgeBaseId := rs.Primary.ID
+
+		// Retry for async deletion
+		if err := util.WithRetries(context.Background(), 120*time.Second, func() *retry.RetryError {
+
+			knowledgeBase, resp, err := knowledgeAPI.GetKnowledgeKnowledgebase(knowledgeBaseId)
+
+			if knowledgeBase != nil {
+				// Still exists
+				return retry.RetryableError(
+					fmt.Errorf("knowledge base (%s) still exists", knowledgeBaseId),
+				)
+			}
+
+			if util.IsStatus404(resp) || util.IsStatus400(resp) {
+				// Deleted successfully
+				return nil
+			}
+
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return retry.NonRetryableError(fmt.Errorf("unexpected error: %v", err))
+
+		}); err != nil {
+			return fmt.Errorf("unexpected error: %v", err)
 		}
 	}
-	// Success. All knowledge bases destroyed
+
+	// Success
 	return nil
 }
 

@@ -36,6 +36,10 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": ResourceArchitectFlow().Schema["filepath"],
 		},
+		ThirdPartyRefAttrs: []string{
+			"filepath",
+			"file_content_hash",
+		},
 	}
 
 	// new feature
@@ -46,6 +50,7 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 			RetrieveAndWriteFilesFunc: architectFlowResolver,
 			SubDirectory:              ExportSubDirectoryName,
 		},
+		ThirdPartyRefAttrs: legacyExporter.ThirdPartyRefAttrs,
 	}
 
 	resourceExporter.SetNewFlowResourceExporter(newExporter)

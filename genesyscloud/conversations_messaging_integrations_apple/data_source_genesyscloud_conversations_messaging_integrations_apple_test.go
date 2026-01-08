@@ -1,12 +1,17 @@
 package conversations_messaging_integrations_apple
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -16,6 +21,9 @@ import (
 // - Fake ID: Creates integration with incomplete status (expected for testing)
 // - Real ID: Creates fully functional integration for comprehensive testing
 func TestAccDataSourceAppleIntegration(t *testing.T) {
+	if !checkAppleIntegrationEndpointsEnabled() {
+		t.Skip("Skipping test as apple integration endpoints are not enabled")
+	}
 	var (
 		resourceLabel   = "test-apple-integration"
 		dataSourceLabel = "test-apple-integration-data"
@@ -43,6 +51,7 @@ func TestAccDataSourceAppleIntegration(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyAppleIntegrationDeleted,
 	})
 }
 
@@ -77,4 +86,45 @@ func getTestBusinessId() string {
 // Used to conditionally expect errors (fake ID) vs success (real ID) in tests
 func isUsingRealBusinessId() bool {
 	return os.Getenv("APPLE_MESSAGES_BUSINESS_ID") != ""
+}
+
+func testVerifyAppleIntegrationDeleted(state *terraform.State) error {
+	conversationApi := platformclientv2.NewConversationsApi()
+	var integrationId string
+
+	// Find the Apple integration ID from state
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_conversations_messaging_integrations_apple" {
+			integrationId = rs.Primary.ID
+			break
+		}
+	}
+
+	if integrationId == "" {
+		return fmt.Errorf("Apple integration ID not found in state")
+	}
+
+	// Retry for up to 120 seconds, checking if the integration is deleted
+	if err := util.WithRetries(context.Background(), 120*time.Second, func() *retry.RetryError {
+
+		integration, resp, err := conversationApi.GetConversationsMessagingIntegrationsAppleIntegrationId(integrationId, "")
+
+		if integration != nil {
+			// Still exists → retry
+			return retry.RetryableError(fmt.Errorf("Apple integration (%s) still exists", integrationId))
+		}
+
+		if util.IsStatus404(resp) || util.IsStatus400(resp) {
+			// Deleted successfully
+			return nil
+		}
+
+		// Any unexpected error → non-retryable failure
+		return retry.NonRetryableError(fmt.Errorf("unexpected error: %v", err))
+
+	}); err != nil {
+		return fmt.Errorf("error verifying Apple integration deletion: %v", err)
+	}
+
+	return nil
 }

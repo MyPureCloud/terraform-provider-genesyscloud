@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*
@@ -174,8 +173,21 @@ func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, 
 	return outboundRoute, resp, nil
 }
 
-func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy, siteIdOrEmpty string, outboundRouteName string) (siteId string, outboundRouteId string, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
+func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy, siteId string, outboundRouteName string) (string, string, bool, *platformclientv2.APIResponse, error) {
+	if siteId != "" {
+		outboundRoutes, resp, err := p.getAllSiteOutboundRoutes(ctx, siteId)
+		if err != nil {
+			return "", "", false, resp, err
+		}
+
+		for _, outboundRoute := range *outboundRoutes {
+			if (outboundRoute.Name != nil && *outboundRoute.Name == outboundRouteName) &&
+				(outboundRoute.State != nil && *outboundRoute.State != "deleted") {
+				return siteId, *outboundRoute.Id, false, resp, nil
+			}
+		}
+		return "", "", true, resp, fmt.Errorf("no outbound route found with name %s", outboundRouteName)
+	}
 
 	var allSites []platformclientv2.Site
 	unmanagedSites, resp, err := p.siteProxy.GetAllSites(ctx, false)
@@ -193,9 +205,6 @@ func getSiteOutboundRouteByNameFn(ctx context.Context, p *siteOutboundRouteProxy
 		outboundRoutes, resp, err := p.getAllSiteOutboundRoutes(ctx, *site.Id)
 		if err != nil {
 			return "", "", false, resp, err
-		}
-		if siteIdOrEmpty != "" && *site.Id != siteIdOrEmpty {
-			continue
 		}
 		for _, outboundRoute := range *outboundRoutes {
 			if (outboundRoute.Name != nil && *outboundRoute.Name == outboundRouteName) &&

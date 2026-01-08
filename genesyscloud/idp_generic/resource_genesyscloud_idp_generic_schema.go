@@ -9,6 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -84,10 +85,11 @@ func ResourceIdpGeneric() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`certificates`: {
-				Description: `PEM or DER encoded public X.509 certificates for SAML signature validation.`,
-				Required:    true,
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description:      `PEM or DER encoded public X.509 certificates for SAML signature validation.`,
+				Required:         true,
+				Type:             schema.TypeList,
+				Elem:             &schema.Schema{Type: schema.TypeString},
+				DiffSuppressFunc: util.SuppressCertificateDiff,
 			},
 			`logo_image_data`: {
 				Description: `Base64 encoded SVG image.`,
@@ -115,6 +117,12 @@ func ResourceIdpGeneric() *schema.Resource {
 					`urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`,
 					`urn:oasis:names:tc:SAML:2.0:nameid-format:transient`,
 				}, false),
+			},
+			`sign_authn_requests`: {
+				Description: `True if the Genesys Cloud authentication request should be signed.`,
+				Optional:    true,
+				Default:     false,
+				Type:        schema.TypeBool,
 			},
 		},
 	}

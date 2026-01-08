@@ -7,4 +7,5 @@ resource "genesyscloud_idp_generic" "generic" {
   logo_image_data          = filebase64("${local.working_dir.idp_generic}/logo.svg")
   endpoint_compression     = false
   name_identifier_format   = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+  sign_authn_requests      = false
 }

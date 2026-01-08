@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
@@ -43,7 +43,11 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 					util.TrueValue, // Subdomain clear
 					util.NullValue,
 				),
-				Check: resource.ComposeTestCheckFunc(
+				Check: resource.ComposeTestCheckFunc( //Wait for resource creatio
+					func(state *terraform.State) error {
+						time.Sleep(45 * time.Second)
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "domain_id", domainId),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "subdomain", util.TrueValue),
 				),

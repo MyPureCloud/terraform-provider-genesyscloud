@@ -11,9 +11,10 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
 )
 
 /*

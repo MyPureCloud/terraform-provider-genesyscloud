@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -82,6 +82,7 @@ func readIdpGsuite(ctx context.Context, d *schema.ResourceData, meta interface{}
 		resourcedata.SetNillableValue(d, "relying_party_identifier", gSuite.RelyingPartyIdentifier)
 		resourcedata.SetNillableValue(d, "slo_uri", gSuite.SloURI)
 		resourcedata.SetNillableValue(d, "slo_binding", gSuite.SloBinding)
+		resourcedata.SetNillableValue(d, "sign_authn_requests", gSuite.SignAuthnRequests)
 
 		if gSuite.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*gSuite.Certificate}))
@@ -157,5 +158,6 @@ func getIdpGsuiteFromResourceData(d *schema.ResourceData) platformclientv2.Gsuit
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
 		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
 		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
+		SignAuthnRequests:      platformclientv2.Bool(d.Get("sign_authn_requests").(bool)),
 	}
 }

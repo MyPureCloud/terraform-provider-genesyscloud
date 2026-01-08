@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
 )
@@ -309,6 +309,169 @@ resource "genesyscloud_outbound_ruleset" "%s" {
 			},
 			{
 				// Import/Read
+				ResourceName:      "genesyscloud_outbound_ruleset." + ruleSetResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyroutingRulesetDestroyed,
+	})
+}
+
+func TestAccResourceOutboundRulesetTimeAndDateCondition(t *testing.T) {
+	t.Parallel()
+	var (
+		contactListResourceLabel  = "contact-list"
+		contactListName           = "Test Contact List " + uuid.NewString()
+		previewModeColumnName     = "Cell"
+		previewModeAcceptedValues = []string{strconv.Quote(previewModeColumnName)}
+		columnNames               = []string{strconv.Quote("Cell"), strconv.Quote("Home")}
+		automaticTimeZoneMapping  = util.FalseValue
+
+		ruleSetResourceLabel = "rule-set"
+		ruleSetName          = "Test Rule Set " + uuid.NewString()
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: obContactList.GenerateOutboundContactList(
+					contactListResourceLabel,
+					contactListName,
+					util.NullValue,
+					strconv.Quote(previewModeColumnName),
+					previewModeAcceptedValues,
+					columnNames,
+					automaticTimeZoneMapping,
+					util.NullValue,
+					util.NullValue,
+					obContactList.GeneratePhoneColumnsBlock(
+						"Cell",
+						"cell",
+						strconv.Quote("Cell"),
+					),
+				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
+  name            = "%s"
+  contact_list_id = genesyscloud_outbound_contact_list.%s.id
+  rules {
+    name     = "Time and Date rule"
+    order    = 0
+    category = "DIALER_PRECALL"
+    conditions {
+      type                 = "timeAndDateCondition"
+      time_zone_id         = "Europe/Dublin"
+      match_any_conditions = false
+      sub_conditions {
+        type     = "timeOfDay"
+        operator = "BETWEEN"
+        range {
+          min = "09:00"
+          max = "17:00"
+        }
+      }
+      sub_conditions {
+        type     = "dayOfWeek"
+        operator = "IN"
+        range {
+          in_set = ["1", "2", "3", "4", "5"]
+        }
+      }
+      sub_conditions {
+        type     = "specificDate"
+        operator = "BEFORE"
+        threshold_value = "2025-10-10"
+      }
+    }
+    actions {
+      type             = "Action"
+      action_type_name = "DO_NOT_DIAL"
+    }
+  }
+}`, ruleSetResourceLabel, ruleSetName, contactListResourceLabel),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "name", ruleSetName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.name", "Time and Date rule"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.type", "timeAndDateCondition"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.time_zone_id", "Europe/Dublin"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.match_any_conditions", "false"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.0.type", "timeOfDay"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.0.operator", "BETWEEN"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.0.range.0.min", "09:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.0.range.0.max", "17:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.type", "dayOfWeek"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.operator", "IN"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.range.0.in_set.0", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.range.0.in_set.4", "5"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.type", "specificDate"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.operator", "BEFORE"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.threshold_value", "2025-10-10"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.2.include_year", "true"),
+				),
+			},
+			{
+				Config: obContactList.GenerateOutboundContactList(
+					contactListResourceLabel,
+					contactListName,
+					util.NullValue,
+					strconv.Quote(previewModeColumnName),
+					previewModeAcceptedValues,
+					columnNames,
+					automaticTimeZoneMapping,
+					util.NullValue,
+					util.NullValue,
+					obContactList.GeneratePhoneColumnsBlock(
+						"Cell",
+						"cell",
+						strconv.Quote("Cell"),
+					),
+				) + fmt.Sprintf(`resource "genesyscloud_outbound_ruleset" "%s" {
+  name            = "%s"
+  contact_list_id = genesyscloud_outbound_contact_list.%s.id
+  rules {
+    name     = "Time and Date rule"
+    order    = 0
+    category = "DIALER_PRECALL"
+    conditions {
+      type                 = "timeAndDateCondition"
+      time_zone_id         = "America/Chicago"
+      match_any_conditions = true
+      sub_conditions {
+        type     = "timeOfDay"
+        operator = "BETWEEN"
+        range {
+          min = "08:00"
+          max = "18:00"
+        }
+      }
+      sub_conditions {
+        type     = "dayOfMonth"
+        operator = "IN"
+        range {
+          in_set = ["1", "15", "LAST_DAY"]
+        }
+      }
+    }
+    actions {
+      type             = "Action"
+      action_type_name = "CONTACT_UNCALLABLE"
+    }
+  }
+}`, ruleSetResourceLabel, ruleSetName, contactListResourceLabel),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "name", ruleSetName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.time_zone_id", "America/Chicago"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.match_any_conditions", "true"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.0.range.0.min", "08:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.0.range.0.max", "18:00"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.type", "dayOfMonth"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.range.0.in_set.0", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.conditions.0.sub_conditions.1.range.0.in_set.2", "LAST_DAY"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_ruleset."+ruleSetResourceLabel, "rules.0.actions.0.action_type_name", "CONTACT_UNCALLABLE"),
+				),
+			},
+			{
 				ResourceName:      "genesyscloud_outbound_ruleset." + ruleSetResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,

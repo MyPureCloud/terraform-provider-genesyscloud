@@ -285,13 +285,16 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
     service_level_percentage  = 0.8
     service_level_duration_ms = 20000
   }
-  member_groups {
-    member_group_id   = [genesyscloud_group.example_group.id]
-    member_group_type = "SKILLGROUP"
-  }
-  member_groups {
-    member_group_id   = [genesyscloud_group.example_group2.id]
-    member_group_type = "GROUP"
+  bullseye_rings {
+    expansion_timeout_seconds = 15.1
+    member_groups {
+      member_group_id   = genesyscloud_group.example_group.id
+      member_group_type = "SKILLGROUP"
+    }
+    member_groups {
+      member_group_id   = genesyscloud_group.example_group2.id
+      member_group_type = "GROUP"
+    }
   }
   conditional_group_activation {
     pilot_rule {
@@ -308,7 +311,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
       condition_expression = "C1 or C2"
       conditions {
         simple_metric {
-          queue_id = [genesyscloud_routing_queue.example_queue.id]
+          queue_id = genesyscloud_routing_queue.example_queue.id
           metric   = "IdleAgentCount"
         }
         operator = "GreaterThan"
@@ -316,14 +319,14 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
       }
       conditions {
         simple_metric {
-          queue_id = [genesyscloud_routing_queue.example_queue.id]
+          queue_id = genesyscloud_routing_queue.example_queue.id
           metric   = "EstimatedWaitTime"
         }
         operator = "LessThanOrEqualTo"
         value    = 60
       }
       groups {
-        member_group_id   = [genesyscloud_group.example_group.id]
+        member_group_id   = genesyscloud_group.example_group.id
         member_group_type = "SKILLGROUP"
       }
     }
@@ -331,14 +334,14 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
       condition_expression = "C1"
       conditions {
         simple_metric {
-          queue_id = [genesyscloud_routing_queue.example_queue2.id]
+          queue_id = genesyscloud_routing_queue.example_queue2.id
           metric   = "IdleAgentCount"
         }
         operator = "GreaterThanOrEqualTo"
         value    = 10
       }
       groups {
-        member_group_id   = [genesyscloud_group.example_group2.id]
+        member_group_id   = genesyscloud_group.example_group2.id
         member_group_type = "GROUP"
       }
     }
