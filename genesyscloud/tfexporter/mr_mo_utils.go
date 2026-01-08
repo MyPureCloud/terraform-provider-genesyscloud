@@ -37,7 +37,7 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string,
 			log.Printf("Replaced flow exporter with new exporter")
 			flowExporterToUse = resourceExporter.GetNewFlowResourceExporter()
 		} else {
-			// Use legacy exporter to be more efficient (delete)
+			// Use legacy exporter to be more efficient (more appropriate for flow deletion events that don't only require the ResourceData be exported)
 			log.Printf("Using legacy flow exporter")
 			flowExporterToUse = architectFlow.ArchitectFlowExporter()
 		}
