@@ -22,6 +22,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
+	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -592,8 +593,17 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 		addrTypeWork              = "WORK"
 	)
 
-	// Clean up extension pools before test (if they exist)
-	// Note: Cleanup is handled in CheckDestroy function
+	// ADD HERE: Pre-test cleanup (matching SDKv2 pattern)
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber1)
+	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
+	if err != nil {
+		t.Log(err)
+	}
+	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber2)
+	err = extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber2)
+	if err != nil {
+		t.Log(err)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { util.TestAccPreCheck(t) },
@@ -611,15 +621,24 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 		),
 		Steps: []resource.TestStep{
 			{
-				// Create user with extension pool
-				Config: generateFrameworkUserWithExtensionPool(
-					userResourceLabel,
-					email,
-					userName,
+				// Step 1: Create user with extension pool 1
+				Config: generateFrameworkUserWithCustomAttrs(
+					userResourceLabel, email, userName,
+					generateFrameworkUserAddresses(
+						generateFrameworkUserPhoneAddress(
+							util.NullValue,            // number
+							util.NullValue,            // Default to PHONE
+							util.NullValue,            // Default to WORK
+							strconv.Quote(extension1), // extension
+							// NOTE: extension_pool_id handling depends on Option 1 vs 2 - leave as TODO for now
+							"# TODO: extension_pool_id field handling",
+						),
+					),
+				) + generateFrameworkExtensionPoolResource(
 					extensionPoolLabel1,
 					extensionPoolStartNumber1,
 					extensionPoolEndNumber1,
-					extension1,
+					"Test extension pool 1 for user integration",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
@@ -627,21 +646,34 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension1),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
-					// TODO: Commented out - SDKv2 used hashing for Set identity, not possible in PF. Will revisit.
-					// resource.TestCheckResourceAttrPair(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension_pool_id", "genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolLabel1, "id"),
-
+					// NOTE: extension_pool_id assertion depends on Option 1 vs 2 - leave as TODO
+					// TODO: Add appropriate extension_pool_id assertion based on chosen option
 				),
 			},
 			{
-				// Update to different extension pool
-				Config: generateFrameworkUserWithExtensionPool(
-					userResourceLabel,
-					email,
-					userName,
+				// Step 2: Update to extension pool 2 - KEEP BOTH POOLS ✅
+				Config: generateFrameworkUserWithCustomAttrs(
+					userResourceLabel, email, userName,
+					generateFrameworkUserAddresses(
+						generateFrameworkUserPhoneAddress(
+							util.NullValue,            // number
+							util.NullValue,            // Default to PHONE
+							util.NullValue,            // Default to WORK
+							strconv.Quote(extension2), // extension
+							// NOTE: extension_pool_id handling depends on Option 1 vs 2 - leave as TODO for now
+							"# TODO: extension_pool_id field handling",
+						),
+					),
+				) + generateFrameworkExtensionPoolResource(
+					extensionPoolLabel1,
+					extensionPoolStartNumber1,
+					extensionPoolEndNumber1,
+					"Test extension pool 1 for user integration",
+				) + generateFrameworkExtensionPoolResource(
 					extensionPoolLabel2,
 					extensionPoolStartNumber2,
 					extensionPoolEndNumber2,
-					extension2,
+					"Test extension pool 2 for user integration",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
@@ -649,31 +681,48 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension2),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
-					// TODO: Commented out - SDKv2 used hashing for Set identity, not possible in PF. Will revisit.
-					// resource.TestCheckResourceAttrPair(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension_pool_id", "genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolLabel2, "id"),
-
+					// NOTE: extension_pool_id assertion depends on Option 1 vs 2 - leave as TODO
+					// TODO: Add appropriate extension_pool_id assertion based on chosen option
 				),
 			},
 			{
-				// ------------------------------------------------------------
-				// Remove addresses with extension pool (DEVTOOLING-1238)
-				// ------------------------------------------------------------
-				Config: generateFrameworkUserResource(
-					userResourceLabel,
-					email,
-					userName,
-					util.NullValue, // Default state
-					util.NullValue, // No title
-					util.NullValue, // No department
-					util.NullValue, // No manager
-					util.NullValue, // Default acdAutoAnswer
+				// Step 3: Remove addresses - KEEP BOTH POOLS ✅
+				// NOTE: This implements DEVTOOLING-1238 functionality but may fail due to API asymmetric behavior
+				// where phone_numbers are deleted but other_emails are not when addresses block is omitted
+				Config: generateFrameworkUserWithCustomAttrs(
+					userResourceLabel, email, userName,
+					// No addresses block - DEVTOOLING-1238 implementation
+				) + generateFrameworkExtensionPoolResource(
+					extensionPoolLabel1,
+					extensionPoolStartNumber1,
+					extensionPoolEndNumber1,
+					"Test extension pool 1 for user integration",
+				) + generateFrameworkExtensionPoolResource(
+					extensionPoolLabel2,
+					extensionPoolStartNumber2,
+					extensionPoolEndNumber2,
+					"Test extension pool 2 for user integration",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.#", "0"),
 				),
 			},
 			{
-				// Import state verification
+				// Step 4: Import state verification (keep both pools)
+				Config: generateFrameworkUserWithCustomAttrs(
+					userResourceLabel, email, userName,
+					// No addresses block
+				) + generateFrameworkExtensionPoolResource(
+					extensionPoolLabel1,
+					extensionPoolStartNumber1,
+					extensionPoolEndNumber1,
+					"Test extension pool 1 for user integration",
+				) + generateFrameworkExtensionPoolResource(
+					extensionPoolLabel2,
+					extensionPoolStartNumber2,
+					extensionPoolEndNumber2,
+					"Test extension pool 2 for user integration",
+				),
 				ResourceName:            ResourceType + "." + userResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
@@ -2105,154 +2154,6 @@ func generateFrameworkUserWithRoutingUtilizationComplete(
 	}`, ResourceType, resourceLabel, email, name, callConfig, callbackConfig, chatConfig, emailConfig, messageConfig, labelUtilConfig)
 }
 
-func generateFrameworkUserWithPasswordComplete(
-	resourceLabel string,
-	email string,
-	name string,
-	password string,
-	state string,
-	title string,
-	department string) string {
-
-	return fmt.Sprintf(`resource "%s" "%s" {
-		email = "%s"
-		name = "%s"
-		password = %s
-		%s
-		%s
-		%s
-	}`, ResourceType, resourceLabel, email, name, password,
-		generateOptionalAttr("state", state),
-		generateOptionalAttr("title", title),
-		generateOptionalAttr("department", department))
-}
-
-func generateFrameworkUserWithExtensionPoolComplete(
-	userResourceLabel string,
-	email string,
-	name string,
-	extensionPoolLabel string,
-	startNumber string,
-	endNumber string,
-	extension string,
-	phoneNumber string,
-	mediaType string,
-	addressType string) string {
-
-	phoneConfig := generateFrameworkUserPhoneAddressWithExtensionPoolComplete(
-		phoneNumber, extension, mediaType, addressType, extensionPoolLabel)
-
-	return fmt.Sprintf(`
-resource "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
-	start_number = "%s"
-	end_number = "%s"
-	description = "Test extension pool for user integration"
-}
-
-resource "%s" "%s" {
-	email = "%s"
-	name = "%s"
-	addresses = [
-		{
-			phone_numbers = [
-				%s
-			]
-		}
-	]
-}
-`, extensionPoolLabel, startNumber, endNumber, ResourceType, userResourceLabel, email, name, phoneConfig)
-}
-
-func generateFrameworkUserPhoneAddressWithExtensionPoolComplete(
-	phoneNumber string,
-	extension string,
-	mediaType string,
-	addressType string,
-	extensionPoolLabel string) string {
-
-	numberConfig := ""
-	if phoneNumber != util.NullValue && phoneNumber != "" {
-		numberConfig = fmt.Sprintf(`number = %s`, phoneNumber)
-	}
-
-	return fmt.Sprintf(`{
-		%s
-		extension = "%s"
-		media_type = "%s"
-		type = "%s"
-		extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id
-	}`, numberConfig, extension, mediaType, addressType, extensionPoolLabel)
-}
-
-func validateFrameworkUserRoutingUtilizationSettings(
-	userResourcePath string,
-	mediaType string,
-	expectedCapacity string,
-	expectedIncludeNonAcd string) resource.TestCheckFunc {
-
-	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("routing_utilization.0.%s.0.maximum_capacity", mediaType), expectedCapacity),
-		resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("routing_utilization.0.%s.0.include_non_acd", mediaType), expectedIncludeNonAcd),
-	)
-}
-
-func validateFrameworkUserPhoneNumberEdgeCases(
-	userResourcePath string,
-	phoneIndex string,
-	expectedNumber string,
-	expectedExtension string,
-	expectedMediaType string,
-	expectedType string) resource.TestCheckFunc {
-
-	checks := []resource.TestCheckFunc{}
-
-	if expectedNumber != "" {
-		checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.number", phoneIndex), expectedNumber))
-	} else {
-		checks = append(checks, resource.TestCheckNoResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.number", phoneIndex)))
-	}
-
-	if expectedExtension != "" {
-		checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.extension", phoneIndex), expectedExtension))
-	} else {
-		checks = append(checks, resource.TestCheckNoResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.extension", phoneIndex)))
-	}
-
-	checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.media_type", phoneIndex), expectedMediaType))
-	checks = append(checks, resource.TestCheckResourceAttr(userResourcePath, fmt.Sprintf("addresses.0.phone_numbers.%s.type", phoneIndex), expectedType))
-
-	return resource.ComposeTestCheckFunc(checks...)
-}
-
-func validateFrameworkUserExtensionPoolIntegration(
-	userResourcePath string,
-	extensionPoolResourcePath string,
-	expectedExtension string) resource.TestCheckFunc {
-
-	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(userResourcePath, "addresses.0.phone_numbers.0.extension", expectedExtension),
-		resource.TestCheckResourceAttrPair(userResourcePath, "addresses.0.phone_numbers.0.extension_pool_id", extensionPoolResourcePath, "id"),
-	)
-}
-
-func validateFrameworkUserPasswordUpdate(
-	userResourcePath string,
-	passwordUpdateTracker *bool,
-	expectedPasswordValue *string) resource.TestCheckFunc {
-
-	return func(state *terraform.State) error {
-		if passwordUpdateTracker != nil && expectedPasswordValue != nil {
-			if *expectedPasswordValue == "" && *passwordUpdateTracker {
-				return fmt.Errorf("expected password update to not be called for empty password")
-			}
-			if *expectedPasswordValue != "" && !*passwordUpdateTracker {
-				return fmt.Errorf("expected password update to be called for non-empty password")
-			}
-		}
-		return nil
-	}
-}
-
 // Helper function to generate Framework user resource with password
 func generateFrameworkUserWithPassword(
 	resourceLabel string,
@@ -2272,38 +2173,47 @@ func generateFrameworkUserWithPassword(
 // TODO: In SDKv2, hashing was used for Set identity mapping which excluded extension_pool_id.
 // This is not possible in Plugin Framework. We need to implement separate logic or a compatible
 // approach. For now, commenting out extension_pool_id - will revisit this logic later.
-func generateFrameworkUserWithExtensionPool(userResourceLabel, email, name, extensionPoolLabel, startNumber, endNumber, extension string) string {
+// NEW: Separate extension pool generation (like SDKv2)
+func generateFrameworkExtensionPoolResource(label, startNumber, endNumber, description string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_telephony_providers_edges_extension_pool" "%s" {
-	start_number = "%s"
-	end_number = "%s"
-	description = "Test extension pool for user integration"
+    start_number = "%s"
+    end_number = "%s"
+    description = "%s"
+}`, label, startNumber, endNumber, description)
 }
 
-resource "%s" "%s" {
-	email = "%s"
-	name = "%s"
-	addresses {
-		phone_numbers {
-			extension = "%s"
-			media_type = "PHONE"
-			type = "WORK"
-			# TODO: Temporarily commented - extension_pool_id causes Set identity mismatch in PF
-			# extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.<extensionPoolLabel>.id
-		}
+// NEW: Modular user generation (like SDKv2's generateUserWithCustomAttrs)
+func generateFrameworkUserWithCustomAttrs(resourceLabel, email, name string, attrs ...string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+        email = "%s"
+        name = "%s"
+        %s
+    }`, ResourceType, resourceLabel, email, name, strings.Join(attrs, "\n"))
+}
+
+// NEW: Addresses block generation (like SDKv2's generateUserAddresses)
+// Wraps phone content in phone_numbers blocks for extension pool tests
+func generateFrameworkUserAddresses(nestedBlocks ...string) string {
+	var phoneBlocks []string
+	for _, block := range nestedBlocks {
+		phoneBlocks = append(phoneBlocks, fmt.Sprintf(`phone_numbers {
+            %s
+        }`, block))
 	}
-}
-`, extensionPoolLabel, startNumber, endNumber, ResourceType, userResourceLabel, email, name, extension)
+	return fmt.Sprintf(`addresses {
+        %s
+    }`, strings.Join(phoneBlocks, "\n"))
 }
 
-// Helper function to generate Framework user phone address with extension pool
-func generateFrameworkUserPhoneAddressWithExtensionPool(extension, extensionPoolLabel string) string {
-	return fmt.Sprintf(`{
-		extension = "%s"
-		media_type = "PHONE"
-		type = "WORK"
-		extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id
-	}`, extension, extensionPoolLabel)
+// MODIFY: Update existing generateFrameworkUserPhoneAddress to match SDKv2 signature
+// Returns phone number attributes content (not wrapped in phone_numbers block)
+func generateFrameworkUserPhoneAddress(phoneNum, phoneMediaType, phoneType, extension string, extras ...string) string {
+	return fmt.Sprintf(`number = %s
+        media_type = %s
+        type = %s
+        extension = %s
+        %s`, phoneNum, phoneMediaType, phoneType, extension, strings.Join(extras, "\n"))
 }
 
 // Helper function to generate Framework user data source configuration
@@ -2443,30 +2353,6 @@ func generateFrameworkUserWithAddresses(resourceLabel, email, name, phoneAddress
 			%s
 		}
 	}`, ResourceType, resourceLabel, email, name, phoneBlock, emailAddress)
-}
-
-func generateFrameworkUserWithMultiplePhones(resourceLabel, email, name string, phoneAddresses ...string) string {
-	phoneBlocks := ""
-	for _, phoneAddr := range phoneAddresses {
-		phoneBlocks += fmt.Sprintf(`
-			phone_numbers {
-				%s
-			}`, phoneAddr)
-	}
-
-	return fmt.Sprintf(`resource "%s" "%s" {
-		email = "%s"
-		name = "%s"
-		addresses {%s
-		}
-	}`, ResourceType, resourceLabel, email, name, phoneBlocks)
-}
-
-func generateFrameworkUserPhoneAddress(phoneNum, phoneMediaType, phoneType, extension string) string {
-	return fmt.Sprintf(`number = %s
-				media_type = %s
-				type = %s
-				extension = %s`, phoneNum, phoneMediaType, phoneType, extension)
 }
 
 func generateFrameworkUserEmailAddress(emailAddress, emailType string) string {
@@ -2613,35 +2499,6 @@ func generateFrameworkRoutingUtilizationAllMediaTypes(maxCapacity, includeNonAcd
 			maximum_capacity = %s
 			include_non_acd = %s
 		}`, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd, maxCapacity, includeNonAcd)
-}
-
-func generateFrameworkRoutingUtilizationWithInterruptible(maxCapacity, includeNonAcd, callInterruptible, otherInterruptible string) string {
-	return fmt.Sprintf(`
-		call {
-			maximum_capacity = %s
-			include_non_acd = %s
-			interruptible_media_types = ["%s"]
-		}
-		callback {
-			maximum_capacity = %s
-			include_non_acd = %s
-			interruptible_media_types = ["%s"]
-		}
-		chat {
-			maximum_capacity = %s
-			include_non_acd = %s
-			interruptible_media_types = ["%s"]
-		}
-		email {
-			maximum_capacity = %s
-			include_non_acd = %s
-			interruptible_media_types = ["%s"]
-		}
-		message {
-			maximum_capacity = %s
-			include_non_acd = %s
-			interruptible_media_types = ["%s"]
-		}`, maxCapacity, includeNonAcd, callInterruptible, maxCapacity, includeNonAcd, otherInterruptible, maxCapacity, includeNonAcd, otherInterruptible, maxCapacity, includeNonAcd, otherInterruptible, maxCapacity, includeNonAcd, otherInterruptible)
 }
 
 func generateFrameworkRoutingUtilizationWithSpecificInterruptible(maxCapacity, includeNonAcd, callInterruptible, callbackInterruptible, chatInterruptible, emailInterruptible, messageInterruptible string) string {
