@@ -290,6 +290,7 @@ var (
 				Description: "The ID of the selected default answer option.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 			"not_applicable": {
 				Description: "True if the default answer is N/A.",
