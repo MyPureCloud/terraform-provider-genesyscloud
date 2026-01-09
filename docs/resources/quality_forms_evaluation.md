@@ -142,7 +142,6 @@ Optional:
 
 - `answer_options` (Block List) Options from which to choose an answer for this question. Required for multipleChoiceQuestion type. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options))
 - `comments_required` (Boolean) Specifies whether comments are required. Defaults to `false`.
-- `default_answer` (Block List, Max: 1) The default answer for this question. (see [below for nested schema](#nestedblock--question_groups--questions--default_answer))
 - `help_text` (String) Help text for the question.
 - `is_critical` (Boolean) True if the question is a critical question Defaults to `false`.
 - `is_kill` (Boolean) True if the question is a fatal question Defaults to `false`.
@@ -182,15 +181,6 @@ Required:
 
 
 
-<a id="nestedblock--question_groups--questions--default_answer"></a>
-### Nested Schema for `question_groups.questions.default_answer`
-
-Optional:
-
-- `id` (String) The ID of the selected default answer option.
-- `not_applicable` (Boolean) True if the default answer is N/A. Defaults to `false`.
-
-
 <a id="nestedblock--question_groups--questions--multiple_select_option_questions"></a>
 ### Nested Schema for `question_groups.questions.multiple_select_option_questions`
 
@@ -202,7 +192,6 @@ Optional:
 
 - `answer_options` (Block List) Options from which to choose an answer for this option question. Required for multipleChoiceQuestion type options. (see [below for nested schema](#nestedblock--question_groups--questions--multiple_select_option_questions--answer_options))
 - `comments_required` (Boolean) Specifies whether comments are required. Defaults to `false`.
-- `default_answer` (Block List, Max: 1) The default answer for this option question. (see [below for nested schema](#nestedblock--question_groups--questions--multiple_select_option_questions--default_answer))
 - `help_text` (String) Help text for the option.
 - `is_critical` (Boolean) True if the option is a critical question Defaults to `false`.
 - `is_kill` (Boolean) True if the option is a fatal question Defaults to `false`.
@@ -239,15 +228,6 @@ Required:
 - `operator` (String) The operator for the assistance condition. Valid values: EXISTS, NOTEXISTS.
 - `topic_ids` (List of String) List of topic IDs which would be combined together using logical OR operator.
 
-
-
-<a id="nestedblock--question_groups--questions--multiple_select_option_questions--default_answer"></a>
-### Nested Schema for `question_groups.questions.multiple_select_option_questions.default_answer`
-
-Optional:
-
-- `id` (String) The ID of the selected default answer option.
-- `not_applicable` (Boolean) True if the default answer is N/A. Defaults to `false`.
 
 
 <a id="nestedblock--question_groups--questions--multiple_select_option_questions--visibility_condition"></a>

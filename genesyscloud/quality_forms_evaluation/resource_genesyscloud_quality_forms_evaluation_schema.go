@@ -125,14 +125,6 @@ var (
 				Optional:    true,
 				Elem:        evaluationFormMultipleSelectOptionQuestion,
 			},
-			"default_answer": {
-				Description: "The default answer for this question.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Computed:    true,
-				MaxItems:    1,
-				Elem:        evaluationFormDefaultAnswer,
-			},
 			"is_kill": {
 				Description: "True if the question is a fatal question",
 				Type:        schema.TypeBool,
@@ -214,14 +206,6 @@ var (
 				Optional:    true,
 				Elem:        evaluationFormAnswerOptionsResource,
 			},
-			"default_answer": {
-				Description: "The default answer for this option question.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Computed:    true,
-				MaxItems:    1,
-				Elem:        evaluationFormDefaultAnswer,
-			},
 			"is_kill": {
 				Description: "True if the option is a fatal question",
 				Type:        schema.TypeBool,
@@ -283,23 +267,6 @@ var (
 			},
 		},
 	}
-
-	evaluationFormDefaultAnswer = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "The ID of the selected default answer option.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-			},
-			"not_applicable": {
-				Description: "True if the default answer is N/A.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-		},
-	}
 )
 
 type EvaluationFormQuestionGroupStruct struct {
@@ -330,7 +297,6 @@ type EvaluationFormQuestionStruct struct {
 	VisibilityCondition           VisibilityConditionStruct
 	AnswerOptions                 []AnswerOptionStruct
 	MultipleSelectOptionQuestions []MultipleSelectOptionQuestionStruct
-	DefaultAnswer                 *DefaultAnswerStruct
 }
 
 type MultipleSelectOptionQuestionStruct struct {
@@ -343,7 +309,6 @@ type MultipleSelectOptionQuestionStruct struct {
 	IsCritical          bool
 	VisibilityCondition VisibilityConditionStruct
 	AnswerOptions       []AnswerOptionStruct
-	DefaultAnswer       *DefaultAnswerStruct
 }
 
 type AnswerOptionStruct struct {
@@ -356,11 +321,6 @@ type AnswerOptionStruct struct {
 type AssistanceConditionStruct struct {
 	Operator string
 	TopicIds []string
-}
-
-type DefaultAnswerStruct struct {
-	Id            string
-	NotApplicable bool
 }
 
 type VisibilityConditionStruct struct {

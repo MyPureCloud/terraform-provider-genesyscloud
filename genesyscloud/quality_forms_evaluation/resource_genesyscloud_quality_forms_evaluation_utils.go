@@ -2,6 +2,7 @@ package quality_forms_evaluation
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -96,10 +97,6 @@ func buildSdkQuestions(questions []interface{}) *[]platformclientv2.Evaluationqu
 		visibilityCondition := questionsMap["visibility_condition"].([]interface{})
 		sdkQuestion.VisibilityCondition = BuildSdkVisibilityCondition(visibilityCondition)
 
-		// Handle default_answer
-		defaultAnswer := questionsMap["default_answer"].([]interface{})
-		sdkQuestion.DefaultAnswer = buildSdkDefaultAnswer(defaultAnswer)
-
 		sdkQuestions = append(sdkQuestions, sdkQuestion)
 	}
 
@@ -144,10 +141,6 @@ func buildSdkMultipleSelectOptionQuestions(optionQuestions []interface{}) *[]pla
 
 		visibilityCondition := optionMap["visibility_condition"].([]interface{})
 		sdkQuestion.VisibilityCondition = BuildSdkVisibilityCondition(visibilityCondition)
-
-		// Handle default_answer
-		defaultAnswer := optionMap["default_answer"].([]interface{})
-		sdkQuestion.DefaultAnswer = buildSdkDefaultAnswer(defaultAnswer)
 
 		sdkQuestions = append(sdkQuestions, sdkQuestion)
 	}
@@ -209,29 +202,6 @@ func buildSdkAssistanceConditions(assistanceConditions []interface{}) *[]platfor
 	}
 
 	return &sdkConditions
-}
-
-func buildSdkDefaultAnswer(defaultAnswer []interface{}) *platformclientv2.Defaultanswer {
-	if len(defaultAnswer) == 0 {
-		return nil
-	}
-
-	defaultAnswerMap, ok := defaultAnswer[0].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	sdkDefaultAnswer := &platformclientv2.Defaultanswer{}
-
-	if id, ok := defaultAnswerMap["id"].(string); ok && id != "" {
-		sdkDefaultAnswer.Id = &id
-	}
-
-	if notApplicable, ok := defaultAnswerMap["not_applicable"].(bool); ok {
-		sdkDefaultAnswer.NotApplicable = &notApplicable
-	}
-
-	return sdkDefaultAnswer
 }
 
 func BuildSdkVisibilityCondition(visibilityCondition []interface{}) *platformclientv2.Visibilitycondition {
@@ -304,11 +274,15 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 
 	for _, question := range *questions {
 		questionMap := make(map[string]interface{})
+
+		questionText := ""
+		if question.Text != nil {
+			questionText = *question.Text
+			questionMap["text"] = *question.Text
+		}
+
 		if question.Id != nil {
 			questionMap["id"] = *question.Id
-		}
-		if question.Text != nil {
-			questionMap["text"] = *question.Text
 		}
 		if question.HelpText != nil {
 			questionMap["help_text"] = *question.HelpText
@@ -331,14 +305,21 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 		if question.VisibilityCondition != nil {
 			questionMap["visibility_condition"] = FlattenVisibilityCondition(question.VisibilityCondition)
 		}
-		if question.AnswerOptions != nil {
+		if question.AnswerOptions != nil && len(*question.AnswerOptions) > 0 {
 			questionMap["answer_options"] = FlattenAnswerOptions(question.AnswerOptions)
 		}
-		if question.MultipleSelectOptionQuestions != nil {
+		if question.MultipleSelectOptionQuestions != nil && len(*question.MultipleSelectOptionQuestions) > 0 {
 			questionMap["multiple_select_option_questions"] = flattenMultipleSelectOptionQuestions(question.MultipleSelectOptionQuestions)
+			log.Printf("flattenQuestions: Question '%s' has %d multiple_select_option_questions", questionText, len(*question.MultipleSelectOptionQuestions))
 		}
-		if question.DefaultAnswer != nil {
-			questionMap["default_answer"] = flattenDefaultAnswer(question.DefaultAnswer)
+
+		// Log warning if SDK failed to unmarshal multipleSelectOptionQuestions
+		if question.VarType != nil && *question.VarType == "multipleSelectQuestion" {
+			if question.MultipleSelectOptionQuestions == nil {
+				log.Printf("ERROR: flattenQuestions: SDK unmarshal failure - Question '%s' (type=%s) has MultipleSelectOptionQuestions=nil. The SDK may have failed to deserialize the 'multipleSelectOptionQuestions' field from the API response. Check if the API response contains this field.", questionText, *question.VarType)
+			} else if len(*question.MultipleSelectOptionQuestions) == 0 {
+				log.Printf("ERROR: flattenQuestions: SDK unmarshal failure - Question '%s' (type=%s) has MultipleSelectOptionQuestions=[] (empty array). The SDK may have failed to deserialize the nested questions from the API response.", questionText, *question.VarType)
+			}
 		}
 
 		questionList = append(questionList, questionMap)
@@ -384,9 +365,6 @@ func flattenMultipleSelectOptionQuestions(optionQuestions *[]platformclientv2.Ev
 		}
 		if option.AnswerOptions != nil {
 			optionMap["answer_options"] = FlattenAnswerOptions(option.AnswerOptions)
-		}
-		if option.DefaultAnswer != nil {
-			optionMap["default_answer"] = flattenDefaultAnswer(option.DefaultAnswer)
 		}
 
 		optionList = append(optionList, optionMap)
@@ -440,22 +418,6 @@ func flattenAssistanceConditions(assistanceConditions *[]platformclientv2.Assist
 		conditionList = append(conditionList, conditionMap)
 	}
 	return conditionList
-}
-
-func flattenDefaultAnswer(defaultAnswer *platformclientv2.Defaultanswer) []interface{} {
-	if defaultAnswer == nil {
-		return nil
-	}
-
-	defaultAnswerMap := make(map[string]interface{})
-	if defaultAnswer.Id != nil {
-		defaultAnswerMap["id"] = *defaultAnswer.Id
-	}
-	if defaultAnswer.NotApplicable != nil {
-		defaultAnswerMap["not_applicable"] = *defaultAnswer.NotApplicable
-	}
-
-	return []interface{}{defaultAnswerMap}
 }
 
 func FlattenVisibilityCondition(visibilityCondition *platformclientv2.Visibilitycondition) []interface{} {
@@ -554,7 +516,6 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
             is_critical       = %v
             %s
             %s
-            %s
         }
         `, question.Text,
 			question.HelpText,
@@ -565,7 +526,6 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
 			question.IsCritical,
 			GenerateFormVisibilityCondition(&question.VisibilityCondition),
 			optionsString,
-			GenerateDefaultAnswer(question.DefaultAnswer),
 		)
 
 		questionsString += questionString
@@ -599,7 +559,6 @@ func GenerateMultipleSelectOptionQuestions(optionQuestions *[]MultipleSelectOpti
             is_critical       = %v
             %s
             %s
-            %s
         }
         `, option.Text,
 			option.HelpText,
@@ -610,7 +569,6 @@ func GenerateMultipleSelectOptionQuestions(optionQuestions *[]MultipleSelectOpti
 			option.IsCritical,
 			GenerateFormVisibilityCondition(&option.VisibilityCondition),
 			GenerateFormAnswerOptions(&option.AnswerOptions),
-			GenerateDefaultAnswer(option.DefaultAnswer),
 		)
 
 		optionsString += optionString
@@ -689,30 +647,6 @@ func GenerateAssistanceConditions(assistanceConditions *[]AssistanceConditionStr
 	}
 
 	return conditionsString
-}
-
-func GenerateDefaultAnswer(defaultAnswer *DefaultAnswerStruct) string {
-	if defaultAnswer == nil {
-		return ""
-	}
-
-	if defaultAnswer.Id == "" && !defaultAnswer.NotApplicable {
-		return ""
-	}
-
-	idString := ""
-	if defaultAnswer.Id != "" {
-		idString = fmt.Sprintf(`id = "%s"`, defaultAnswer.Id)
-	}
-
-	return fmt.Sprintf(`
-    default_answer {
-        %s
-        not_applicable = %v
-    }
-    `, idString,
-		defaultAnswer.NotApplicable,
-	)
 }
 
 func GenerateFormVisibilityCondition(condition *VisibilityConditionStruct) string {
