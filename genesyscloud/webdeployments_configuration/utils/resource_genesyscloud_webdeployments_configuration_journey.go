@@ -123,18 +123,20 @@ func buildTrackingSettings(settings []interface{}) *platformclientv2.Trackingset
 		trackingSettings.ShouldKeepUrlFragment = &shouldKeepUrlFragment
 	}
 
-	if searchQueryParams := setting["search_query_parameters"].([]interface{}); searchQueryParams != nil {
+	if searchQueryParams, ok := setting["search_query_parameters"].([]interface{}); ok && searchQueryParams != nil {
 		searchParams := lists.InterfaceListToStrings(searchQueryParams)
 		trackingSettings.SearchQueryParameters = &searchParams
 	}
 
-	if excludedQueryParams := setting["excluded_query_parameters"].([]interface{}); excludedQueryParams != nil {
+	if excludedQueryParams, ok := setting["excluded_query_parameters"].([]interface{}); ok && excludedQueryParams != nil {
 		excludedParams := lists.InterfaceListToStrings(excludedQueryParams)
 		trackingSettings.ExcludedQueryParameters = &excludedParams
 	}
 
-	if ipFilters := buildIpFilters(setting["ip_filters"].([]interface{})); ipFilters != nil {
-		trackingSettings.IpFilters = ipFilters
+	if ipFiltersData, ok := setting["ip_filters"].([]interface{}); ok && ipFiltersData != nil {
+		if ipFilters := buildIpFilters(ipFiltersData); ipFilters != nil {
+			trackingSettings.IpFilters = ipFilters
+		}
 	}
 
 	return trackingSettings
