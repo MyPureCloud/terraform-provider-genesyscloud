@@ -302,7 +302,7 @@ Optional:
 - `scroll_depth_event` (Block List) Details about a scroll percentage event trigger (see [below for nested schema](#nestedblock--journey_events--scroll_depth_event))
 - `search_query_parameters` (List of String, Deprecated) *DEPRECATED: This field has no effect and will be removed in a later version.* List of query parameters used for search (e.g. 'q')
 - `should_keep_url_fragment` (Boolean, Deprecated) *DEPRECATED: This field has no effect and will be removed in a later version.* Whether or not to keep the URL fragment
-- `tracking_settings` (Block List, Max: 1) Tracking settings for journey events (see [below for nested schema](#nestedblock--journey_events--tracking_settings))
+- `tracking_settings` (Block List, Max: 1) Configuration settings for tracking behavior and filtering (see [below for nested schema](#nestedblock--journey_events--tracking_settings))
 
 <a id="nestedblock--journey_events--click_event"></a>
 ### Nested Schema for `journey_events.click_event`
@@ -360,17 +360,17 @@ Required:
 Optional:
 
 - `excluded_query_parameters` (List of String) List of parameters to be excluded from the query string (maximum 50)
-- `search_query_parameters` (List of String) List of query parameters used for search (maximum 50)
+- `search_query_parameters` (List of String) List of query parameters used for search e.g. 'query' (maximum 50)
 - `should_keep_url_fragment` (Boolean) Whether to keep the URL fragment & it defaults to `false`.
-- `ip_filters` (Block List) List of IP address filters (maximum 10) (see [below for nested schema](#nestedblock--journey_events--tracking_settings--ip_filters))
+- `ip_filters` (Block List) IP address filtering configuration for tracking restrictions (maximum 10) (see [below for nested schema](#nestedblock--journey_events--tracking_settings--ip_filters))
 
 <a id="nestedblock--journey_events--tracking_settings--ip_filters"></a>
 ### Nested Schema for `journey_events.tracking_settings.ip_filters`
 
 Required:
 
-- `ip_address` (String) IP address (IPv4 or IPv6)
-- `name` (String) Name for the IP filter
+- `ip_address` (String) IP address or CIDR range to filter e.g. '192.168.1.0/24'
+- `name` (String) Descriptive name for the IP address filter
 
 
 
