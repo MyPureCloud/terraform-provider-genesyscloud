@@ -129,6 +129,20 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
 
   #   pageview_config = "Auto"
 
+  #   tracking_settings {
+  #     should_keep_url_fragment   = true
+  #     search_query_parameters    = ["q", "search", "term"]
+  #     excluded_query_parameters  = ["utm_source", "utm_medium"]
+  #     ip_filters {
+  #       ip_address = "192.168.1.1"
+  #       name       = "office-network"
+  #     }
+  #     ip_filters {
+  #       ip_address = "2001:db8::1"
+  #       name       = "ipv6-network"
+  #     }
+  #   }
+
   #   click_event {
   #     selector   = ".promo-button"
   #     event_name = "promo:interest"
@@ -288,6 +302,7 @@ Optional:
 - `scroll_depth_event` (Block List) Details about a scroll percentage event trigger (see [below for nested schema](#nestedblock--journey_events--scroll_depth_event))
 - `search_query_parameters` (List of String, Deprecated) *DEPRECATED: This field has no effect and will be removed in a later version.* List of query parameters used for search (e.g. 'q')
 - `should_keep_url_fragment` (Boolean, Deprecated) *DEPRECATED: This field has no effect and will be removed in a later version.* Whether or not to keep the URL fragment
+- `tracking_settings` (Block List, Max: 1) Tracking settings for journey events (see [below for nested schema](#nestedblock--journey_events--tracking_settings))
 
 <a id="nestedblock--journey_events--click_event"></a>
 ### Nested Schema for `journey_events.click_event`
@@ -337,6 +352,25 @@ Required:
 
 - `event_name` (String) Name of event triggered after scrolling to the specified percentage
 - `percentage` (Number) Percentage of a webpage at which an event is triggered
+
+
+<a id="nestedblock--journey_events--tracking_settings"></a>
+### Nested Schema for `journey_events.tracking_settings`
+
+Optional:
+
+- `excluded_query_parameters` (List of String) List of parameters to be excluded from the query string (maximum 50)
+- `search_query_parameters` (List of String) List of query parameters used for search (maximum 50)
+- `should_keep_url_fragment` (Boolean) Whether to keep the URL fragment & it defaults to `false`.
+- `ip_filters` (Block List) List of IP address filters (maximum 10) (see [below for nested schema](#nestedblock--journey_events--tracking_settings--ip_filters))
+
+<a id="nestedblock--journey_events--tracking_settings--ip_filters"></a>
+### Nested Schema for `journey_events.tracking_settings.ip_filters`
+
+Required:
+
+- `ip_address` (String) IP address (IPv4 or IPv6)
+- `name` (String) Name for the IP filter
 
 
 
