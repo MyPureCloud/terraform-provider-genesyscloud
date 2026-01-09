@@ -78,6 +78,11 @@ type authSettings struct {
 	allowSessionUpgrade bool
 }
 
+type testIpFilter struct {
+	ipAddress string
+	name      string
+}
+
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 	t.Parallel()
 	var (
@@ -1223,6 +1228,343 @@ func generateAuthenticationSettings(authSettings authSettings) string {
 			allow_session_upgrade = %s
   		}
 	`, strconv.FormatBool(authSettings.enabled), authSettings.integrationId, strconv.FormatBool(authSettings.allowSessionUpgrade))
+}
+
+func generateTrackingSettingsBlock(shouldKeepUrlFragment bool, searchParams []string, excludedParams []string, ipFilters []testIpFilter) string {
+	return fmt.Sprintf(`
+	journey_events {
+		enabled = true
+		tracking_settings {
+			should_keep_url_fragment = %t
+			search_query_parameters = %s
+			excluded_query_parameters = %s
+			%s
+		}
+	}`,
+		shouldKeepUrlFragment,
+		util.GenerateStringArrayEnquote(searchParams...),
+		util.GenerateStringArrayEnquote(excludedParams...),
+		generateIpFiltersBlocks(ipFilters),
+	)
+}
+
+func generateIpFiltersBlocks(ipFilters []testIpFilter) string {
+	if len(ipFilters) == 0 {
+		return ""
+	}
+
+	var blocks []string
+	for _, filter := range ipFilters {
+		blocks = append(blocks, fmt.Sprintf(`
+			ip_filters {
+				ip_address = "%s"
+				name = "%s"
+			}`, filter.ipAddress, filter.name))
+	}
+	return strings.Join(blocks, "")
+}
+
+func generateJourneyEventsBlock(enabled bool, pageviewConfig string, excludedParam string, searchParams []string, excludedParams []string) string {
+	var searchParamsStr, excludedParamsStr string
+	if len(searchParams) > 0 {
+		searchParamsStr = fmt.Sprintf("search_query_parameters = %s", util.GenerateStringArrayEnquote(searchParams...))
+	}
+	if len(excludedParams) > 0 {
+		excludedParamsStr = fmt.Sprintf("excluded_query_parameters = %s", util.GenerateStringArrayEnquote(excludedParams...))
+	}
+	if excludedParam != "" {
+		excludedParamsStr = fmt.Sprintf("excluded_query_parameters = [\"%s\"]", excludedParam)
+	}
+
+	var pageviewStr string
+	if pageviewConfig != "" {
+		pageviewStr = fmt.Sprintf("pageview_config = \"%s\"", pageviewConfig)
+	}
+
+	return fmt.Sprintf(`
+	journey_events {
+		enabled = %t
+		%s
+		%s
+		%s
+	}`, enabled, pageviewStr, searchParamsStr, excludedParamsStr)
+}
+
+func TestAccResourceWebDeploymentsConfigurationTrackingSettings(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel     = "webdeploy-tracking-test"
+		resourcePath      = ResourceType + "." + resourceLabel
+		configName        = "tf-tracking-config-" + uuid.NewString()
+		configDescription = "Test Configuration with Tracking Settings"
+		languages         = []string{"en-us"}
+		defaultLang       = "en-us"
+	)
+
+	cleanupWebDeploymentsConfiguration(t, "tf-tracking-config-")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			// Create with basic tracking settings
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						true,                          // should_keep_url_fragment
+						[]string{"q", "search"},       // search_query_parameters
+						[]string{"utm_source", "ref"}, // excluded_query_parameters
+						[]testIpFilter{ // ip_filters
+							{"192.168.1.1", "office-network"},
+							{"10.0.0.1", "vpn-network"},
+						},
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", configName),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.0", "q"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.1", "search"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.0", "utm_source"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.1", "ref"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", "192.168.1.1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.name", "office-network"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.1.ip_address", "10.0.0.1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.1.name", "vpn-network"),
+				),
+			},
+			// Update tracking settings
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						false,                    // should_keep_url_fragment (changed)
+						[]string{"query"},        // search_query_parameters (changed)
+						[]string{"utm_campaign"}, // excluded_query_parameters (changed)
+						[]testIpFilter{
+							{"2001:db8::1", "ipv6-network"}, // ip_filters (changed to IPv6)
+						},
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.0", "query"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.0", "utm_campaign"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", "2001:db8::1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.name", "ipv6-network"),
+				),
+			},
+			// Test with minimal tracking settings (only boolean field)
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						true,             // should_keep_url_fragment
+						[]string{},       // empty search_query_parameters
+						[]string{},       // empty excluded_query_parameters
+						[]testIpFilter{}, // empty ip_filters
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", "0"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", "0"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", "0"),
+				),
+			},
+			// Remove tracking settings (test without tracking_settings block)
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateJourneyEventsBlock(true, "", "", []string{}, []string{}), // journey_events without tracking_settings
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.#", "0"),
+				),
+			},
+		},
+		CheckDestroy: verifyConfigurationDestroyed,
+	})
+}
+
+func TestAccResourceWebDeploymentsConfigurationTrackingSettingsLimits(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel     = "webdeploy-limits-test"
+		resourcePath      = ResourceType + "." + resourceLabel
+		configName        = "tf-limits-config-" + uuid.NewString()
+		configDescription = "Test Configuration with Maximum Limits"
+		languages         = []string{"en-us"}
+		defaultLang       = "en-us"
+	)
+
+	// Generate maximum allowed parameters (50 each)
+	maxSearchParams := make([]string, 50)
+	maxExcludedParams := make([]string, 50)
+	for i := 0; i < 50; i++ {
+		maxSearchParams[i] = fmt.Sprintf("search_param_%d", i)
+		maxExcludedParams[i] = fmt.Sprintf("excluded_param_%d", i)
+	}
+
+	// Generate maximum allowed IP filters (10)
+	maxIpFilters := make([]testIpFilter, 10)
+	for i := 0; i < 10; i++ {
+		maxIpFilters[i] = testIpFilter{
+			ipAddress: fmt.Sprintf("192.168.1.%d", i+1),
+			name:      fmt.Sprintf("host_%d", i+1),
+		}
+	}
+
+	cleanupWebDeploymentsConfiguration(t, "tf-limits-config-")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						true,
+						maxSearchParams,
+						maxExcludedParams,
+						maxIpFilters,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", "50"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", "50"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", "10"),
+					// Test first and last elements
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.0", "search_param_0"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.49", "search_param_49"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", "192.168.1.1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.9.ip_address", "192.168.1.10"),
+				),
+			},
+		},
+		CheckDestroy: verifyConfigurationDestroyed,
+	})
+}
+
+func TestAccResourceWebDeploymentsConfigurationTrackingSettingsIntegration(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel     = "webdeploy-integration-test"
+		resourcePath      = ResourceType + "." + resourceLabel
+		configName        = "tf-integration-config-" + uuid.NewString()
+		configDescription = "Test Configuration with Tracking Settings Integration"
+		languages         = []string{"en-us"}
+		defaultLang       = "en-us"
+	)
+
+	cleanupWebDeploymentsConfiguration(t, "tf-integration-config-")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			// Test tracking_settings with other journey_events fields
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					`journey_events {
+						enabled = true
+						pageview_config = "Auto"
+						excluded_query_parameters = ["legacy_param"]
+						tracking_settings {
+							should_keep_url_fragment = true
+							search_query_parameters = ["q"]
+							excluded_query_parameters = ["new_param"]
+							ip_filters {
+								ip_address = "192.168.1.100"
+								name = "test-host"
+							}
+						}
+					}`,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.pageview_config", "Auto"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.excluded_query_parameters.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.excluded_query_parameters.0", "legacy_param"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.0", "q"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.0", "new_param"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", "192.168.1.100"),
+				),
+			},
+			// Test IPv6 and mixed IP addresses
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						false,
+						[]string{"search", "q", "term"},
+						[]string{"utm_source", "utm_medium", "utm_campaign"},
+						[]testIpFilter{
+							{"192.168.1.1", "ipv4-host"},
+							{"2001:db8:85a3::8a2e:370:7334", "ipv6-host"},
+							{"::1", "localhost-ipv6"},
+							{"10.0.0.0/24", "subnet-range"},
+						},
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", "3"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", "3"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", "4"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", "192.168.1.1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.1.ip_address", "2001:db8:85a3::8a2e:370:7334"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.2.ip_address", "::1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.3.ip_address", "10.0.0.0/24"),
+				),
+			},
+		},
+		CheckDestroy: verifyConfigurationDestroyed,
+	})
 }
 
 func verifyConfigurationDestroyed(state *terraform.State) error {
