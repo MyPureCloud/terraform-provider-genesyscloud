@@ -133,7 +133,7 @@ func TestBuildTrackingSettings(t *testing.T) {
 		assert.Equal(t, true, *result.ShouldKeepUrlFragment)
 		assert.Equal(t, []string{}, *result.SearchQueryParameters)
 		assert.Equal(t, []string{}, *result.ExcludedQueryParameters)
-		assert.Nil(t, result.IpFilters) // Empty array should result in nil
+		assert.Nil(t, result.IpFilters)
 	})
 }
 
@@ -271,21 +271,6 @@ func TestBuildJourneySettingsWithTrackingSettings(t *testing.T) {
 		assert.Equal(t, []string{"utm_source"}, *trackingSettings.ExcludedQueryParameters)
 		assert.NotNil(t, trackingSettings.IpFilters)
 		assert.Len(t, *trackingSettings.IpFilters, 1)
-	})
-
-	t.Run("Journey settings without tracking_settings", func(t *testing.T) {
-		cfg := map[string]interface{}{
-			"enabled": true,
-		}
-
-		// Test that missing tracking_settings doesn't break anything
-		if trackingSettingsData, ok := cfg["tracking_settings"].([]interface{}); ok {
-			trackingSettings := buildTrackingSettings(trackingSettingsData)
-			assert.Nil(t, trackingSettings)
-		} else {
-			// This is the expected path - tracking_settings key doesn't exist
-			assert.True(t, true) // Test passes
-		}
 	})
 }
 

@@ -724,12 +724,12 @@ var (
 	ipFilter = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"ip_address": {
-				Description: "IP address (IPv4 or IPv6)",
+				Description: "IP address or CIDR range to filter e.g. '192.168.1.0/24'",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 			"name": {
-				Description: "Name for the IP filter",
+				Description: "Descriptive name for the IP address filter",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -739,27 +739,27 @@ var (
 	trackingSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"should_keep_url_fragment": {
-				Description: "Whether or not to keep the URL fragment",
+				Description: "Whether to keep the URL fragment & it defaults to `false`",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 			"search_query_parameters": {
-				Description: "List of query parameters used for search e.g. 'q' (maximum 50)",
+				Description: "List of query parameters used for search e.g. 'query'",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    50,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"excluded_query_parameters": {
-				Description: "List of parameters to be excluded from the query string (maximum 50)",
+				Description: "List of parameters to be excluded from the query string",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    50,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"ip_filters": {
-				Description: "List of IP address filters (maximum 10)",
+				Description: "IP address filtering configuration for tracking restrictions",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    10,
@@ -837,7 +837,7 @@ var (
 				Elem:        scrollPercentageEventTrigger,
 			},
 			"tracking_settings": {
-				Description: "Tracking settings for journey events",
+				Description: "Configuration settings for tracking behavior and filtering",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
