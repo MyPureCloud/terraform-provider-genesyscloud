@@ -420,7 +420,9 @@ func (p *architectUserPromptProxy) retrieveFilenameAndUploadPromptAsset(ctx cont
 	}
 	filename := filenameTagsArray[0]
 
-	if err := p.uploadPromptFile(ctx, *asset.UploadUri, filename); err != nil {
+	uploadUrl := fmt.Sprintf("https://api.inindca.com/api/v2/architect/prompts/%s/resources/en-us/uploads", *asset.PromptId)
+
+	if err := p.uploadPromptFile(ctx, uploadUrl, filename); err != nil {
 		return fmt.Errorf("failed to upload user prompt resource '%s' to %s", filename, *asset.UploadUri)
 	}
 	return nil
