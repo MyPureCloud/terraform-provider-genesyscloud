@@ -1,4 +1,4 @@
-package dictionary_feedback
+package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 /*
-The genesyscloud_dictionary_feedback_proxy.go file contains the proxy structures and methods that interact
+The genesyscloud_speechandtextanalytics_dictionaryfeedback_proxy.go file contains the proxy structures and methods that interact
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
 out during testing.
 */

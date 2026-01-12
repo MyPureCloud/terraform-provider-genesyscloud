@@ -1,4 +1,4 @@
-package dictionary_feedback
+package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_dictionary_feedback.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_speechandtextanalytics_dictionaryfeedback.go contains all of the methods that perform the core logic for a resource.
 */
 
 // getAllAuthDictionaryFeedback retrieves all of the dictionary feedback via Terraform in the Genesys Cloud and is used for the exporter
@@ -42,7 +42,7 @@ func getAllAuthDictionaryFeedbacks(ctx context.Context, clientConfig *platformcl
 	return resources, nil
 }
 
-// createDictionaryFeedback is used by the dictionary_feedback resource to create Genesys cloud dictionary feedback
+// createDictionaryFeedback is used by the speechandtextanalytics_dictionaryfeedback resource to create Genesys cloud dictionary feedback
 func createDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getDictionaryFeedbackProxy(sdkConfig)
@@ -60,7 +60,7 @@ func createDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta 
 	return readDictionaryFeedback(ctx, d, meta)
 }
 
-// readDictionaryFeedback is used by the dictionary_feedback resource to read an dictionary feedback from genesys cloud
+// readDictionaryFeedback is used by the speechandtextanalytics_dictionaryfeedback resource to read an dictionary feedback from genesys cloud
 func readDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getDictionaryFeedbackProxy(sdkConfig)
@@ -89,7 +89,7 @@ func readDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta in
 	})
 }
 
-// updateDictionaryFeedback is used by the dictionary_feedback resource to update an dictionary feedback in Genesys Cloud
+// updateDictionaryFeedback is used by the speechandtextanalytics_dictionaryfeedback resource to update an dictionary feedback in Genesys Cloud
 func updateDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getDictionaryFeedbackProxy(sdkConfig)
@@ -106,7 +106,7 @@ func updateDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta 
 	return readDictionaryFeedback(ctx, d, meta)
 }
 
-// deleteDictionaryFeedback is used by the dictionary_feedback resource to delete an dictionary feedback from Genesys cloud
+// deleteDictionaryFeedback is used by the speechandtextanalytics_dictionaryfeedback resource to delete an dictionary feedback from Genesys cloud
 func deleteDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getDictionaryFeedbackProxy(sdkConfig)

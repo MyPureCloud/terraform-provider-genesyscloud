@@ -1,4 +1,4 @@
-package dictionary_feedback
+package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"sync"
@@ -8,8 +8,8 @@ import (
 )
 
 /*
-   The genesyscloud_dictionary_feedback_init_test.go file is used to initialize the data sources and resources
-   used in testing the dictionary_feedback resource.
+   The genesyscloud_speechandtextanalytics_dictionaryfeedback_init_test.go file is used to initialize the data sources and resources
+   used in testing the speechandtextanalytics_dictionaryfeedback resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -54,9 +54,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the dictionary_feedback package
+	// Run setup function before starting the test suite for the speechandtextanalytics_dictionaryfeedback package
 	initTestResources()
 
-	// Run the test suite for the dictionary_feedback package
+	// Run the test suite for the speechandtextanalytics_dictionaryfeedback package
 	m.Run()
 }

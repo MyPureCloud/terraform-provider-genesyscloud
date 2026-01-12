@@ -1,11 +1,12 @@
-package dictionary_feedback
+package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -14,7 +15,7 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_dictionary_feedback.go contains the data source implementation
+   The data_source_genesyscloud_speechandtextanalytics_dictionaryfeedback.go contains the data source implementation
    for the resource.
 */
 

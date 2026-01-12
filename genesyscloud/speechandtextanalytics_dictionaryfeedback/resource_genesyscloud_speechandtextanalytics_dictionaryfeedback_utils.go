@@ -1,4 +1,4 @@
-package dictionary_feedback
+package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -9,7 +9,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_dictionary_feedback_utils.go file contains various helper methods to marshal
+The resource_genesyscloud_speechandtextanalytics_dictionaryfeedback_utils.go file contains various helper methods to marshal
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
 

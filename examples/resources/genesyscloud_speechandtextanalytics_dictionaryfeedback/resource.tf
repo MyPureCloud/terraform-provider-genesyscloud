@@ -1,4 +1,4 @@
-resource "genesyscloud_dictionary_feedback" "Genesys" {
+resource "genesyscloud_speechandtextanalytics_dictionaryfeedback" "Genesys" {
   term        = "Genesys"
   dialect     = "en-AU"
   sounds_like = ["Genesis"]

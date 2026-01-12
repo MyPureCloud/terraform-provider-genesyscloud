@@ -1,4 +1,4 @@
-package dictionary_feedback
+package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -9,14 +9,14 @@ import (
 )
 
 /*
-resource_genesycloud_dictionary_feedback_schema.go holds four functions within it:
+resource_genesycloud_speechandtextanalytics_dictionaryfeedback_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the dictionary_feedback resource.
-3.  The datasource schema definitions for the dictionary_feedback datasource.
-4.  The resource exporter configuration for the dictionary_feedback exporter.
+2.  The resource schema definitions for the speechandtextanalytics_dictionaryfeedback resource.
+3.  The datasource schema definitions for the speechandtextanalytics_dictionaryfeedback datasource.
+4.  The resource exporter configuration for the speechandtextanalytics_dictionaryfeedback exporter.
 */
-const ResourceType = "genesyscloud_dictionary_feedback"
+const ResourceType = "genesyscloud_speechandtextanalytics_dictionaryfeedback"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -25,7 +25,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(ResourceType, DictionaryFeedbackExporter())
 }
 
-// ResourceDictionaryFeedback registers the genesyscloud_dictionary_feedback resource with Terraform
+// ResourceDictionaryFeedback registers the genesyscloud_speechandtextanalytics_dictionaryfeedback resource with Terraform
 func ResourceDictionaryFeedback() *schema.Resource {
 	dictionaryFeedbackExamplePhraseResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -90,7 +90,7 @@ func ResourceDictionaryFeedback() *schema.Resource {
 	}
 }
 
-// DictionaryFeedbackExporter returns the resourceExporter object used to hold the genesyscloud_dictionary_feedback exporter's config
+// DictionaryFeedbackExporter returns the resourceExporter object used to hold the genesyscloud_speechandtextanalytics_dictionaryfeedback exporter's config
 func DictionaryFeedbackExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthDictionaryFeedbacks),
@@ -100,7 +100,7 @@ func DictionaryFeedbackExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-// DataSourceDictionaryFeedback registers the genesyscloud_dictionary_feedback data source
+// DataSourceDictionaryFeedback registers the genesyscloud_speechandtextanalytics_dictionaryfeedback data source
 func DataSourceDictionaryFeedback() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud dictionary feedback data source. Select an dictionary feedback by name`,
