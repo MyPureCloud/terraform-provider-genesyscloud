@@ -24,7 +24,7 @@ var internalProxy *dictionaryFeedbackProxy
 type (
 	createDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy, dictionaryFeedback *platformclientv2.Dictionaryfeedback) (*platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
 	getAllDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy) (*[]platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
-	getDictionaryFeedbackIdByNameFunc func(ctx context.Context, p *dictionaryFeedbackProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
+	getDictionaryFeedbackIdByTermFunc func(ctx context.Context, p *dictionaryFeedbackProxy, term string) (string, *platformclientv2.APIResponse, bool, error)
 	getDictionaryFeedbackByIdFunc     func(ctx context.Context, p *dictionaryFeedbackProxy, id string) (*platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
 	updateDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy, id string, dictionaryFeedback *platformclientv2.Dictionaryfeedback) (*platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
 	deleteDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy, id string) (*platformclientv2.APIResponse, error)
@@ -36,7 +36,7 @@ type dictionaryFeedbackProxy struct {
 	speechTextAnalyticsApi            *platformclientv2.SpeechTextAnalyticsApi
 	createDictionaryFeedbackAttr      createDictionaryFeedbackFunc
 	getAllDictionaryFeedbackAttr      getAllDictionaryFeedbackFunc
-	getDictionaryFeedbackIdByNameAttr getDictionaryFeedbackIdByNameFunc
+	getDictionaryFeedbackIdByTermAttr getDictionaryFeedbackIdByTermFunc
 	getDictionaryFeedbackByIdAttr     getDictionaryFeedbackByIdFunc
 	updateDictionaryFeedbackAttr      updateDictionaryFeedbackFunc
 	deleteDictionaryFeedbackAttr      deleteDictionaryFeedbackFunc
@@ -53,7 +53,7 @@ func newDictionaryFeedbackProxy(clientConfig *platformclientv2.Configuration) *d
 		dictionaryFeedbackCache:           dictionaryFeedbackCache,
 		createDictionaryFeedbackAttr:      createDictionaryFeedbackFn,
 		getAllDictionaryFeedbackAttr:      getAllDictionaryFeedbackFn,
-		getDictionaryFeedbackIdByNameAttr: getDictionaryFeedbackIdByNameFn,
+		getDictionaryFeedbackIdByTermAttr: getDictionaryFeedbackIdByTermFn,
 		getDictionaryFeedbackByIdAttr:     getDictionaryFeedbackByIdFn,
 		updateDictionaryFeedbackAttr:      updateDictionaryFeedbackFn,
 		deleteDictionaryFeedbackAttr:      deleteDictionaryFeedbackFn,
@@ -80,9 +80,9 @@ func (p *dictionaryFeedbackProxy) getAllDictionaryFeedback(ctx context.Context) 
 	return p.getAllDictionaryFeedbackAttr(ctx, p)
 }
 
-// getDictionaryFeedbackIdByName returns a single Genesys Cloud dictionary feedback by a name
-func (p *dictionaryFeedbackProxy) getDictionaryFeedbackIdByName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	return p.getDictionaryFeedbackIdByNameAttr(ctx, p, name)
+// getDictionaryFeedbackIdByTerm returns a single Genesys Cloud dictionary feedback by a term
+func (p *dictionaryFeedbackProxy) getDictionaryFeedbackIdByTerm(ctx context.Context, term string) (string, *platformclientv2.APIResponse, bool, error) {
+	return p.getDictionaryFeedbackIdByTermAttr(ctx, p, term)
 }
 
 // getDictionaryFeedbackById returns a single Genesys Cloud dictionary feedback by Id
@@ -155,14 +155,14 @@ func getAllDictionaryFeedbackFn(ctx context.Context, p *dictionaryFeedbackProxy)
 	return &allDictionaryFeedbacks, nil, nil
 }
 
-// getDictionaryFeedbackIdByNameFn is an implementation of the function to get a Genesys Cloud dictionary feedback by name
-func getDictionaryFeedbackIdByNameFn(ctx context.Context, p *dictionaryFeedbackProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	// As there is no API to GET based on "name" used cache to get term and if not in cache then getAll
+// getDictionaryFeedbackIdByTermFn is an implementation of the function to get a Genesys Cloud dictionary feedback by term
+func getDictionaryFeedbackIdByTermFn(ctx context.Context, p *dictionaryFeedbackProxy, term string) (string, *platformclientv2.APIResponse, bool, error) {
+	// As there is no API to GET based on "term" used cache to get term and if not in cache then getAll
 	dictionaryFeedbacks := rc.GetCache(p.dictionaryFeedbackCache)
 	if dictionaryFeedbacks != nil {
 		for _, dictionaryFeedback := range *dictionaryFeedbacks {
-			if *dictionaryFeedback.Term == name {
-				log.Printf("Retrieved the dictionary feedback id %s by name %s from cache", *dictionaryFeedback.Id, name)
+			if *dictionaryFeedback.Term == term {
+				log.Printf("Retrieved the dictionary feedback id %s by term %s from cache", *dictionaryFeedback.Id, term)
 				return *dictionaryFeedback.Id, nil, false, nil
 			}
 		}
@@ -174,13 +174,13 @@ func getDictionaryFeedbackIdByNameFn(ctx context.Context, p *dictionaryFeedbackP
 	}
 
 	for _, dictionaryFeedbackGet := range *dictionaryFeedbacksReq {
-		if *dictionaryFeedbackGet.Term == name {
-			log.Printf("Retrieved the dictionary feedback id %s by name %s", *dictionaryFeedbackGet.Id, name)
+		if *dictionaryFeedbackGet.Term == term {
+			log.Printf("Retrieved the dictionary feedback id %s by term %s", *dictionaryFeedbackGet.Id, term)
 			return *dictionaryFeedbackGet.Id, nil, false, nil
 		}
 	}
 
-	return "", resp, true, fmt.Errorf("Unable to find dictionary feedback with name %s", name)
+	return "", resp, true, fmt.Errorf("Unable to find dictionary feedback with term %s", term)
 }
 
 // getDictionaryFeedbackByIdFn is an implementation of the function to get a Genesys Cloud dictionary feedback by Id

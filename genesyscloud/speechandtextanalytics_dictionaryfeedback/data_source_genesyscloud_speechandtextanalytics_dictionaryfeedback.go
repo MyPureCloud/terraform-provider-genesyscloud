@@ -19,22 +19,22 @@ import (
    for the resource.
 */
 
-// dataSourceDictionaryFeedbackRead retrieves by name the id in question
+// dataSourceDictionaryFeedbackRead retrieves by term the id in question
 func dataSourceDictionaryFeedbackRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := newDictionaryFeedbackProxy(sdkConfig)
 
-	name := d.Get("name").(string)
+	term := d.Get("term").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		dictionaryFeedbackId, resp, retryable, err := proxy.getDictionaryFeedbackIdByName(ctx, name)
+		dictionaryFeedbackId, resp, retryable, err := proxy.getDictionaryFeedbackIdByTerm(ctx, term)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching dictionary feedback %s | error: %s", name, err), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching dictionary feedback %s | error: %s", term, err), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No dictionary feedback found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No dictionary feedback found with term %s", term), resp))
 		}
 
 		d.SetId(dictionaryFeedbackId)

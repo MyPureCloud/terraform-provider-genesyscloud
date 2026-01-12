@@ -103,14 +103,14 @@ func DictionaryFeedbackExporter() *resourceExporter.ResourceExporter {
 // DataSourceDictionaryFeedback registers the genesyscloud_speechandtextanalytics_dictionaryfeedback data source
 func DataSourceDictionaryFeedback() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud dictionary feedback data source. Select an dictionary feedback by name`,
+		Description: `Genesys Cloud dictionary feedback data source. Select an dictionary feedback by term`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceDictionaryFeedbackRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: `dictionary feedback name`,
+			"term": {
+				Description: `dictionary feedback term`,
 				Type:        schema.TypeString,
 				Required:    true,
 			},
