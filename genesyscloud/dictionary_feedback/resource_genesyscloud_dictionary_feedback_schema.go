@@ -83,7 +83,7 @@ func ResourceDictionaryFeedback() *schema.Resource {
 			`sounds_like`: {
 				Description: `A list of up to 10 terms that give examples of how the term sounds`,
 				Optional:    true,
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},

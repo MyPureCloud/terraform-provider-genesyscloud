@@ -30,6 +30,7 @@ import (
 	cMessageSettingsDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	cmSupportedContentDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
+	dictionaryFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dictionary_feedback"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	externalSource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
@@ -233,6 +234,7 @@ func registerResources() {
 	emergencyGroup.SetRegistrar(regInstance)                               //Registering architect emergency group
 	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
 	architectSchedules.SetRegistrar(regInstance)                           //Registering architect schedules
+	dictionaryFeedback.SetRegistrar(regInstance)                           //Registering dictionary feedback
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language

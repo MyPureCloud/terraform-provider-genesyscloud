@@ -3,12 +3,13 @@ package dictionary_feedback
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"log"
-	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -35,7 +36,7 @@ func getAllAuthDictionaryFeedbacks(ctx context.Context, clientConfig *platformcl
 	}
 
 	for _, dictionaryFeedback := range *dictionaryFeedbacks {
-		resources[*dictionaryFeedback.Id] = &resourceExporter.ResourceMeta{BlockLabel: *dictionaryFeedback.Name}
+		resources[*dictionaryFeedback.Id] = &resourceExporter.ResourceMeta{BlockLabel: *dictionaryFeedback.Term}
 	}
 
 	return resources, nil
@@ -48,14 +49,14 @@ func createDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta 
 
 	dictionaryFeedback := getDictionaryFeedbackFromResourceData(d)
 
-	log.Printf("Creating dictionary feedback %s", *dictionaryFeedback.Name)
-	dictionaryFeedback, resp, err := proxy.createDictionaryFeedback(ctx, &dictionaryFeedback)
+	log.Printf("Creating dictionary feedback %s", *dictionaryFeedback.Term)
+	dictionaryFeedbackPtr, resp, err := proxy.createDictionaryFeedback(ctx, &dictionaryFeedback)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create dictionary feedback: %s", err), resp)
 	}
 
-	d.SetId(*dictionaryFeedback.Id)
-	log.Printf("Created dictionary feedback %s", *dictionaryFeedback.Id)
+	d.SetId(*dictionaryFeedbackPtr.Id)
+	log.Printf("Created dictionary feedback %s", *dictionaryFeedbackPtr.Id)
 	return readDictionaryFeedback(ctx, d, meta)
 }
 
@@ -83,7 +84,7 @@ func readDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta in
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "example_phrases", dictionaryFeedback.ExamplePhrases, flattenDictionaryFeedbackExamplePhrases)
 		resourcedata.SetNillableValue(d, "sounds_like", dictionaryFeedback.SoundsLike)
 
-		log.Printf("Read dictionary feedback %s %s", d.Id(), *dictionaryFeedback.Name)
+		log.Printf("Read dictionary feedback %s %s", d.Id(), *dictionaryFeedback.Term)
 		return cc.CheckState(d)
 	})
 }
@@ -95,13 +96,13 @@ func updateDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta 
 
 	dictionaryFeedback := getDictionaryFeedbackFromResourceData(d)
 
-	log.Printf("Updating dictionary feedback %s", *dictionaryFeedback.Name)
-	dictionaryFeedback, resp, err := proxy.updateDictionaryFeedback(ctx, d.Id(), &dictionaryFeedback)
+	log.Printf("Updating dictionary feedback %s", *dictionaryFeedback.Term)
+	dictionaryFeedbackPtr, resp, err := proxy.updateDictionaryFeedback(ctx, d.Id(), &dictionaryFeedback)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update dictionary feedback %s: %s", d.Id(), err), resp)
 	}
 
-	log.Printf("Updated dictionary feedback %s", *dictionaryFeedback.Id)
+	log.Printf("Updated dictionary feedback %s", *dictionaryFeedbackPtr.Id)
 	return readDictionaryFeedback(ctx, d, meta)
 }
 

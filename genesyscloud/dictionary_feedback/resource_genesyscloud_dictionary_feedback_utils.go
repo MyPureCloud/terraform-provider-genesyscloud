@@ -1,6 +1,7 @@
 package dictionary_feedback
 
 import (
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,14 +15,16 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 
 // getDictionaryFeedbackFromResourceData maps data from schema ResourceData object to a platformclientv2.Dictionaryfeedback
 func getDictionaryFeedbackFromResourceData(d *schema.ResourceData) platformclientv2.Dictionaryfeedback {
+	//Force float32 conversion to stop type error
+	float64Value := d.Get("boost_value").(float64)
+	float32Value := float32(float64Value)
 	return platformclientv2.Dictionaryfeedback{
 		Term:           platformclientv2.String(d.Get("term").(string)),
 		Dialect:        platformclientv2.String(d.Get("dialect").(string)),
-		BoostValue:     platformclientv2.Float64(d.Get("boost_value").(float64)),
+		BoostValue:     platformclientv2.Float32(float32Value),
 		Source:         platformclientv2.String(d.Get("source").(string)),
 		ExamplePhrases: buildDictionaryFeedbackExamplePhrases(d.Get("example_phrases").([]interface{})),
-		// TODO: Handle sounds_like property
-
+		SoundsLike:     lists.SetToStringList(d.Get("sounds_like").(*schema.Set)),
 	}
 }
 
