@@ -88,6 +88,7 @@ resource "genesyscloud_task_management_worktype" "example_worktype_without_assig
 - `description` (String) The description of the Worktype.
 - `disable_default_status_creation` (Boolean) Optionally set this flag to disable Default Status creation
 - `division_id` (String) The division to which this entity belongs.
+- `flow_rules_enabled` (Boolean) When set to true, the worktype's flow rules will be processed. Default value is false. Defaults to `false`.
 - `schema_id` (String) Id of the workitem schema.
 - `schema_version` (Number) Version of the workitem schema to use. If not provided, the worktype will use the latest version.
 
