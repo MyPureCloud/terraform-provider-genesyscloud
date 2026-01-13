@@ -18,7 +18,7 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 
 // getDictionaryFeedbackFromResourceData maps data from schema ResourceData object to a platformclientv2.Dictionaryfeedback
 func getDictionaryFeedbackFromResourceData(d *schema.ResourceData) platformclientv2.Dictionaryfeedback {
-	//Force float32 conversion to stop type error
+	// Force float32 conversion to stop type error
 	float64Value := d.Get("boost_value").(float64)
 	float32Value := float32(float64Value)
 	return platformclientv2.Dictionaryfeedback{
@@ -76,9 +76,13 @@ func validateExamplePhrases(d *schema.ResourceData) error {
 	for i, p := range phrases {
 		phraseMap := p.(map[string]interface{})
 		phraseText := phraseMap["phrase"].(string)
+		words := strings.Fields(phraseText)
 
 		if !strings.Contains(strings.ToLower(phraseText), strings.ToLower(term)) {
 			return fmt.Errorf("Example phrase %d ('%s') must contain the term '%s'.", i+1, phraseText, term)
+		}
+		if len(words) < 3 {
+			return fmt.Errorf("Example phrase %d ('%s') must contain at least 3 words", i+1, phraseText)
 		}
 	}
 	return nil
