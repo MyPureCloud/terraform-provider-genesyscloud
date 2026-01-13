@@ -30,9 +30,10 @@ func getAllAuthDictionaryFeedbacks(ctx context.Context, clientConfig *platformcl
 	proxy := newDictionaryFeedbackProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
+	log.Println("Getting all dictionary feedback terms")
 	dictionaryFeedbacks, resp, err := proxy.getAllDictionaryFeedback(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get dictionary feedback: %v", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all dictionary feedback: %v", err), resp)
 	}
 
 	for _, dictionaryFeedback := range *dictionaryFeedbacks {
