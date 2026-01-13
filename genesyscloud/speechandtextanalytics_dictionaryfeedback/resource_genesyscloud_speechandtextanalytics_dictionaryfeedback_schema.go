@@ -2,6 +2,7 @@ package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -65,10 +66,11 @@ func ResourceDictionaryFeedback() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`boost_value`: {
-				Description: `A weighted value assigned to a phrase. The higher the value, the higher the likelihood that the system will choose the word or phrase from the possible alternatives. Boost range is from 1.0 to 10.0. Default is 2.0`,
-				Optional:    true,
-				Type:        schema.TypeFloat,
-				Default:     2.0,
+				Description:  `A weighted value assigned to a phrase. The higher the value, the higher the likelihood that the system will choose the word or phrase from the possible alternatives. Boost range is from 1.0 to 10.0. Default is 2.0`,
+				Optional:     true,
+				Type:         schema.TypeFloat,
+				Default:      2.0,
+				ValidateFunc: validation.FloatBetween(0.0, 10.0),
 			},
 			`source`: {
 				Description: `The source of the given dictionary feedback`,
