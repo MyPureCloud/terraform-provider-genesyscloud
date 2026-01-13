@@ -76,12 +76,6 @@ func ResourceContextKey() resourceContextKey {
 // The storage is cleaned up automatically when contexts are no longer referenced.
 var contextStorage = &sync.Map{} // map[uint64]context.Context
 
-// currentResourceContext holds the most recently set ResourceContext.
-// This is used as a fallback when goroutine-based lookup fails (e.g., when SDK runs on different goroutine).
-// Protected by mutex for thread-safety.
-var currentResourceContext *ResourceContext
-var currentResourceContextMutex sync.RWMutex
-
 // bufferPool reduces allocations for the stack trace buffer
 var bufferPool = sync.Pool{
 	New: func() interface{} {
@@ -118,60 +112,30 @@ func getGoroutineID() uint64 {
 	return id
 }
 
-// setContextForRequest stores the context for the current goroutine AND as the current active context.
+// setContextForRequest stores the context for the current goroutine.
 // This allows the RequestLogHook to access the context even though
 // the SDK doesn't pass context to HTTP requests.
-// We store by goroutine ID (for same-goroutine access) and also as "current" context (for cross-goroutine access).
 func setContextForRequest(ctx context.Context) {
 	if ctx == nil {
 		return
 	}
 
-	// Extract ResourceContext
-	var rc *ResourceContext
-	if rcVal, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok && rcVal != nil {
-		rc = rcVal
-	}
-
-	// Store by goroutine ID (original approach)
+	// Store by goroutine ID
 	goroutineID := getGoroutineID()
 	if goroutineID > 0 {
 		contextStorage.Store(goroutineID, ctx)
 	}
-
-	// Also store as current context for cross-goroutine lookup (when SDK runs on different goroutine)
-	if rc != nil {
-		currentResourceContextMutex.Lock()
-		currentResourceContext = rc
-		currentResourceContextMutex.Unlock()
-		log.Printf("[DEBUG] setContextForRequest: goroutineID=%d, set current resourceType=%q", goroutineID, rc.ResourceType)
-	}
 }
 
 // getContextForRequest retrieves the context for the current goroutine.
-// If not found by goroutine ID, falls back to the current active context.
 func getContextForRequest() context.Context {
 	goroutineID := getGoroutineID()
 	if goroutineID > 0 {
 		if ctx, ok := contextStorage.Load(goroutineID); ok {
-			// Debug: log when context is found
-			if rc, okCtx := ctx.(context.Context).Value(resourceContextKey{}).(*ResourceContext); okCtx && rc != nil {
-				log.Printf("[DEBUG] getContextForRequest: goroutineID=%d, FOUND by goroutineID resourceType=%q", goroutineID, rc.ResourceType)
-			}
 			return ctx.(context.Context)
 		}
 	}
-	// Goroutine-based lookup failed, this is expected when SDK runs on different goroutine
-	// Fall back to current context (set by the most recent autoInjectResourceContext call)
 	return nil
-}
-
-// getCurrentResourceContext returns the current active ResourceContext.
-// This is used as a fallback when goroutine-based lookup fails.
-func getCurrentResourceContext() *ResourceContext {
-	currentResourceContextMutex.RLock()
-	defer currentResourceContextMutex.RUnlock()
-	return currentResourceContext
 }
 
 // ResourceContext holds Terraform resource metadata
@@ -288,15 +252,6 @@ func newSDKDebugRequest(request *http.Request, count int) *sdkDebugRequest {
 		}
 	}
 
-	// If still not found, use the current active context (fallback for cross-goroutine scenarios)
-	// This handles the case where SDK HTTP requests run on a different goroutine
-	if resourceCtx == nil {
-		resourceCtx = getCurrentResourceContext()
-		if resourceCtx != nil {
-			log.Printf("[DEBUG] newSDKDebugRequest: using current context fallback, resourceType=%q", resourceCtx.ResourceType)
-		}
-	}
-
 	// Set resource context fields if found
 	if resourceCtx != nil {
 		debugReq.ResourceType = resourceCtx.ResourceType
@@ -351,11 +306,6 @@ func newSDKDebugResponse(response *http.Response) *sdkDebugResponse {
 		if rc, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok && rc != nil {
 			resourceCtx = rc
 		}
-	}
-
-	// If not found in request context, use the current active context (fallback for cross-goroutine scenarios)
-	if resourceCtx == nil {
-		resourceCtx = getCurrentResourceContext()
 	}
 
 	// Set resource context fields if found
