@@ -1,6 +1,8 @@
 package speechandtextanalytics_dictionaryfeedback
 
 import (
+	"regexp"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -36,9 +38,11 @@ func ResourceDictionaryFeedback() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`source`: {
-				Description: `The source of the given Example Phrase`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `The source of the given Example Phrase`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				Default:      "Manual",
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^Manual$`), "value must be 'Manual'"),
 			},
 		},
 	}
@@ -73,9 +77,11 @@ func ResourceDictionaryFeedback() *schema.Resource {
 				ValidateFunc: validation.FloatBetween(0.0, 10.0),
 			},
 			`source`: {
-				Description: `The source of the given dictionary feedback`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `The source of the given dictionary feedback`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				Default:      "Manual",
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^Manual$`), "value must be 'Manual'"),
 			},
 			`example_phrases`: {
 				Description: `A list of at least 3 and up to 20 unique phrases that are example usage of the term`,
