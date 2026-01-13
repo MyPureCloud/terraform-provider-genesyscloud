@@ -313,15 +313,6 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 			log.Printf("flattenQuestions: Question '%s' has %d multiple_select_option_questions", questionText, len(*question.MultipleSelectOptionQuestions))
 		}
 
-		// Log warning if SDK failed to unmarshal multipleSelectOptionQuestions
-		if question.VarType != nil && *question.VarType == "multipleSelectQuestion" {
-			if question.MultipleSelectOptionQuestions == nil {
-				log.Printf("ERROR: flattenQuestions: SDK unmarshal failure - Question '%s' (type=%s) has MultipleSelectOptionQuestions=nil. The SDK may have failed to deserialize the 'multipleSelectOptionQuestions' field from the API response. Check if the API response contains this field.", questionText, *question.VarType)
-			} else if len(*question.MultipleSelectOptionQuestions) == 0 {
-				log.Printf("ERROR: flattenQuestions: SDK unmarshal failure - Question '%s' (type=%s) has MultipleSelectOptionQuestions=[] (empty array). The SDK may have failed to deserialize the nested questions from the API response.", questionText, *question.VarType)
-			}
-		}
-
 		questionList = append(questionList, questionMap)
 	}
 	return questionList
