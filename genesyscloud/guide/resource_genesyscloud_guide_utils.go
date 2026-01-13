@@ -1,10 +1,7 @@
 package guide
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -54,40 +51,40 @@ func GuideFtIsEnabled() bool {
 	return resp.StatusCode < 500
 }
 
-// setRequestHeader sets the request header for the guide proxy
-func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
+// setGuideRequestHeader sets the request header for the guide proxy
+func setGuideRequestHeader(r *http.Request, p *guideProxy) *http.Request {
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
 	return r
 }
 
-// createHTTPRequest creates a new HTTP request with proper headers
-func createHTTPRequest(method, url string, body io.Reader, p *guideProxy) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
-	}
-	req = setRequestHeader(req, p)
-	return req, nil
-}
+// // createHTTPRequest creates a new HTTP request with proper headers
+// func createHTTPRequest(method, url string, body io.Reader, p *guideProxy) (*http.Request, error) {
+// 	req, err := http.NewRequest(method, url, body)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error creating request: %v", err)
+// 	}
+// 	req = setRequestHeader(req, p)
+// 	return req, nil
+// }
 
-// marshalAndCreateRequest marshals a body to JSON and creates an HTTP request
-func marshalAndCreateRequest(method, url string, body interface{}, p *guideProxy) (*http.Request, error) {
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling request body: %v", err)
-	}
-	return createHTTPRequest(method, url, bytes.NewBuffer(jsonBody), p)
-}
+// // marshalAndCreateRequest marshals a body to JSON and creates an HTTP request
+// func marshalAndCreateRequest(method, url string, body interface{}, p *guideProxy) (*http.Request, error) {
+// 	jsonBody, err := json.Marshal(body)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error marshaling request body: %v", err)
+// 	}
+// 	return createHTTPRequest(method, url, bytes.NewBuffer(jsonBody), p)
+// }
 
-// unmarshalResponse unmarshals a JSON response into the target struct
-func unmarshalResponse(respBody []byte, target interface{}) error {
-	if err := json.Unmarshal(respBody, target); err != nil {
-		return fmt.Errorf("error unmarshaling response: %v", err)
-	}
-	return nil
-}
+// // unmarshalResponse unmarshals a JSON response into the target struct
+// func unmarshalResponse(respBody []byte, target interface{}) error {
+// 	if err := json.Unmarshal(respBody, target); err != nil {
+// 		return fmt.Errorf("error unmarshaling response: %v", err)
+// 	}
+// 	return nil
+// }
 
 // Structs
 

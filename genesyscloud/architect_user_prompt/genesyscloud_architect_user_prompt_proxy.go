@@ -1,18 +1,21 @@
 package architect_user_prompt
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"path/filepath"
+	"os"
 	"strings"
 	"time"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	files "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	request "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/request"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -36,6 +39,11 @@ type updateArchitectUserPromptResourceFunc func(ctx context.Context, p *architec
 type getArchitectUserPromptIdByNameFunc func(ctx context.Context, p *architectUserPromptProxy, name string) (string, *platformclientv2.APIResponse, error, bool)
 type uploadPromptFileFunc func(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error
 type getArchitectUserPromptResourcesFunc func(ctx context.Context, p *architectUserPromptProxy, promptId string) (*[]platformclientv2.Promptasset, *platformclientv2.APIResponse, error)
+
+type uploadResponse struct {
+	Url     string            `json:"url"`
+	Headers map[string]string `json:"headers"`
+}
 
 // ArchitectUserPromptProxy - proxy for Architect User Prompts
 type architectUserPromptProxy struct {
@@ -408,8 +416,10 @@ func (p *architectUserPromptProxy) verifyPromptResourceFilesAreTranscoded(ctx co
 	return response, nil
 }
 
-// retrieveFilenameAndUploadPromptAsset takes a Promptasset struct, finds the file name in the tags, and uses the
-// UploadUri to upload the file
+/*
+retrieveFilenameAndUploadPromptAsset takes a Promptasset struct, finds the file name in the tags,
+uses the upload url to generate a presigned url, then uses that presigned url to upload the prompt asset wav file.
+*/
 func (p *architectUserPromptProxy) retrieveFilenameAndUploadPromptAsset(ctx context.Context, asset *platformclientv2.Promptasset) error {
 	if asset.UploadUri == nil || asset.Tags == nil {
 		return nil
@@ -420,8 +430,14 @@ func (p *architectUserPromptProxy) retrieveFilenameAndUploadPromptAsset(ctx cont
 	}
 	filename := filenameTagsArray[0]
 
-	if err := p.uploadPromptFile(ctx, *asset.UploadUri, filename); err != nil {
-		return fmt.Errorf("failed to upload user prompt resource '%s' to %s", filename, *asset.UploadUri)
+	language := "en-us"
+	if asset.Language != nil && len(*asset.Language) > 0 {
+		language = *asset.Language
+	}
+	uploadUrl := fmt.Sprintf("%s/api/v2/architect/prompts/%s/resources/%s/uploads", p.clientConfig.BasePath, language, *asset.PromptId)
+
+	if err := p.uploadPromptFile(ctx, uploadUrl, filename); err != nil {
+		return fmt.Errorf("failed to upload user prompt resource '%s' to %s", filename, uploadUrl)
 	}
 	return nil
 }
@@ -556,6 +572,7 @@ func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromp
 }
 
 func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
+	// Get the prompt asset audio file.
 	reader, file, err := files.DownloadOrOpenFile(ctx, filename, S3Enabled)
 	if err != nil {
 		return err
@@ -564,28 +581,96 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 		defer file.Close()
 	}
 
-	formData := make(map[string]io.Reader, 0)
-	if file != nil {
-		formData["file"] = file
+	apiRequest := request.NewAPIRequest[uploadResponse, architectUserPromptProxy](setArchitectUserPromptRequestHeader)
+	// Generate a presigned url for upload.
+	body, _, err := apiRequest.MakeAPIRequest(ctx, http.MethodPost, uploadUri, nil, p)
+	if err != nil {
+		return err
+	}
+	if body == nil {
+		return errors.New("no presigned url found in response")
 	}
 
-	headers := make(map[string]string)
-	headers["Authorization"] = p.clientConfig.AccessToken
-
-	s3Uploader := files.NewS3Uploader(nil, formData, nil, headers, http.MethodPost, uploadUri)
-
-	// for hosted files
-	if file == nil {
-		part, err := s3Uploader.Writer.CreateFormFile("file", filepath.Base(filename))
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(part, reader)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = s3Uploader.Upload()
+	// Upload the file.
+	err = uploadWavFile(body.Url, body.Headers, reader, p)
 	return err
+}
+
+// uploadWavFile performs an HTTP PUT request with the raw file data to the presigned URL.
+func uploadWavFile(presignedURL string, headers map[string]string, reader io.Reader, p *architectUserPromptProxy) error {
+	var size int64
+	var file *os.File
+	var buffer *bytes.Buffer
+	if f, ok := reader.(*os.File); ok {
+		file = f
+		fileInfo, err := file.Stat()
+		if err != nil {
+			return fmt.Errorf("failed to get file info: %w", err)
+		}
+		size = fileInfo.Size()
+	} else {
+		b, err := io.ReadAll(reader)
+		if err != nil {
+			return fmt.Errorf("failed to read file: %w", err)
+		}
+		size = int64(len(b))
+		buffer = bytes.NewBuffer(b)
+
+	}
+
+	var req *http.Request
+	var err error
+
+	if buffer != nil {
+		req, err = http.NewRequest("PUT", presignedURL, buffer)
+		if err != nil {
+			return fmt.Errorf("failed to create PUT request: %w", err)
+		}
+	} else {
+		req, err = http.NewRequest("PUT", presignedURL, reader)
+		if err != nil {
+			return fmt.Errorf("failed to create PUT request: %w", err)
+		}
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	// req.Header.Set("Authorization", p.clientConfig.AccessToken)
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
+	// Don't set Content-Type here - S3Uploader will set it to multipart/form-data with boundary
+	req.Header.Set("Host", "fileupload.inindca.com")
+	req.Header.Set("Origin", "https://apps.inindca.com")
+	req.Header.Set("Referer", "https://apps.inindca.com")
+	req.Header.Set("Pragma", "no-cache")
+	req.Header.Set("Content-Type", "audio/wav")
+	req.ContentLength = size
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to perform PUT request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+func setArchitectUserPromptRequestHeader(r *http.Request, p *architectUserPromptProxy) *http.Request {
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept", "application/json")
+	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	r.Header.Set("Content-Length", "0")
+	r.Header.Set("Host", p.clientConfig.BasePath[8:])
+	return r
 }
