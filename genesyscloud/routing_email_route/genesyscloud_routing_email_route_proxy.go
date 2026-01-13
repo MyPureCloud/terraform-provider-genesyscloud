@@ -6,6 +6,8 @@ import (
 	"log"
 	"reflect"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -94,6 +96,7 @@ func (p *routingEmailRouteProxy) deleteRoutingEmailRoute(ctx context.Context, do
 
 func getAllRoutingEmailRouteByDomainIdFn(ctx context.Context, p *routingEmailRouteProxy, domains []platformclientv2.Inbounddomain, pattern string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	var allInboundRoutes = make(map[string][]platformclientv2.Inboundroute)
@@ -121,6 +124,7 @@ func getAllRoutingEmailRouteByDomainIdFn(ctx context.Context, p *routingEmailRou
 // getAllRoutingEmailRouteFn is the implementation for retrieving all routing email route in Genesys Cloud
 func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, domainId, pattern string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	var apiResponse *platformclientv2.APIResponse
@@ -160,6 +164,7 @@ func getAllRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 // createRoutingEmailRouteFn is an implementation function for creating a Genesys Cloud routing email route
 func createRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, routingEmailRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	inboundRoute, resp, err := p.routingApi.PostRoutingEmailDomainRoutes(domainId, *routingEmailRoute)
 	if err != nil {
@@ -171,6 +176,7 @@ func createRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 // updateRoutingEmailRouteFn is an implementation of the function to update a Genesys Cloud routing email route
 func updateRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, id string, domainId string, routingEmailRoute *platformclientv2.Inboundroute) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	inboundRoute, resp, err := p.routingApi.PutRoutingEmailDomainRoute(domainId, id, *routingEmailRoute)
 	if err != nil {
@@ -182,6 +188,7 @@ func updateRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, i
 // deleteRoutingEmailRouteFn is an implementation function for deleting a Genesys Cloud routing email route
 func deleteRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.routingApi.DeleteRoutingEmailDomainRoute(domainId, id)
 	if err != nil {
@@ -193,6 +200,7 @@ func deleteRoutingEmailRouteFn(ctx context.Context, p *routingEmailRouteProxy, d
 // getRoutingEmailRouteByIdFn is an implementation of the function to get a Genesys Cloud routing email route by Id
 func getRoutingEmailRouteByIdFn(ctx context.Context, p *routingEmailRouteProxy, domainId string, id string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	inboundRoute, resp, err := p.routingApi.GetRoutingEmailDomainRoute(domainId, id, nil)
 	if err != nil {
@@ -204,6 +212,7 @@ func getRoutingEmailRouteByIdFn(ctx context.Context, p *routingEmailRouteProxy, 
 // getRoutingEmailRouteIdByNameFn is an implementation of the function to get a Genesys Cloud routing email route by name
 func getRoutingEmailRouteIdByPatternFn(ctx context.Context, p *routingEmailRouteProxy, pattern string, domainId string) (string, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	inboundRoutesMap, resp, err := getAllRoutingEmailRouteFn(ctx, p, domainId, pattern)
 	if err != nil {

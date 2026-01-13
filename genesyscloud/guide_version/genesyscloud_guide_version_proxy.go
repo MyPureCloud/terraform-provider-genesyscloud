@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -79,12 +81,14 @@ func (p *guideVersionProxy) getGuideById(ctx context.Context, id string) (*Guide
 
 func GetAllGuidesFn(ctx context.Context, p *guideVersionProxy) (*[]Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkGetAllGuides(ctx, p)
 }
 
 func sdkGetAllGuides(ctx context.Context, p *guideVersionProxy) (*[]Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -156,12 +160,14 @@ func sdkGetAllGuides(ctx context.Context, p *guideVersionProxy) (*[]Guide, *plat
 
 func createGuideVersionFn(ctx context.Context, p *guideVersionProxy, guideVersion *CreateGuideVersionRequest, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkPostGuideVersion(ctx, guideVersion, p, guideId)
 }
 
 func sdkPostGuideVersion(ctx context.Context, body *CreateGuideVersionRequest, p *guideVersionProxy, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -198,12 +204,14 @@ func sdkPostGuideVersion(ctx context.Context, body *CreateGuideVersionRequest, p
 
 func getGuideVersionByIdFn(ctx context.Context, p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkGetGuideVersionById(ctx, p, id, guideId)
 }
 
 func sdkGetGuideVersionById(ctx context.Context, p *guideVersionProxy, id string, guideId string) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -235,12 +243,14 @@ func sdkGetGuideVersionById(ctx context.Context, p *guideVersionProxy, id string
 
 func updateGuideVersionFn(ctx context.Context, p *guideVersionProxy, id string, guideId string, guideVersion *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkUpdateGuideVersion(ctx, p, id, guideId, guideVersion)
 }
 
 func sdkUpdateGuideVersion(ctx context.Context, p *guideVersionProxy, id string, guideId string, body *UpdateGuideVersion) (*VersionResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -276,6 +286,7 @@ func sdkUpdateGuideVersion(ctx context.Context, p *guideVersionProxy, id string,
 // Helper api call function to be removed once endpoints are public
 func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before making HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Attach context to the request
 	req = req.WithContext(ctx)
@@ -307,12 +318,14 @@ func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byt
 
 func publishGuideVersionFn(ctx context.Context, p *guideVersionProxy, body *GuideVersionPublishJobRequest) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkPublishGuideVersion(ctx, p, body)
 }
 
 func sdkPublishGuideVersion(ctx context.Context, p *guideVersionProxy, body *GuideVersionPublishJobRequest) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -358,12 +371,14 @@ func sdkPublishGuideVersion(ctx context.Context, p *guideVersionProxy, body *Gui
 
 func getGuideVersionPublishJobStatusFn(ctx context.Context, p *guideVersionProxy, versionId, jobId, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkGetGuideVersionPublishJobStatus(ctx, p, versionId, jobId, guideId)
 }
 
 func sdkGetGuideVersionPublishJobStatus(ctx context.Context, p *guideVersionProxy, versionId, jobId string, guideId string) (*VersionJobResponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -393,11 +408,13 @@ func sdkGetGuideVersionPublishJobStatus(ctx context.Context, p *guideVersionProx
 
 func getGuideByIdFn(ctx context.Context, p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return sdkGetGuideById(ctx, p, id)
 }
 func sdkGetGuideById(ctx context.Context, p *guideVersionProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,

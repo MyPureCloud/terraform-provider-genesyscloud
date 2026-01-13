@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -95,6 +97,7 @@ func (p *outboundDigitalrulesetProxy) deleteOutboundDigitalruleset(ctx context.C
 // createOutboundDigitalrulesetFn is an implementation function for creating a Genesys Cloud outbound digitalruleset
 func createOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrulesetProxy, outboundDigitalruleset *platformclientv2.Digitalruleset) (*platformclientv2.Digitalruleset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.outboundApi.PostOutboundDigitalrulesets(*outboundDigitalruleset)
 }
@@ -102,6 +105,7 @@ func createOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrules
 // getAllOutboundDigitalrulesetFn is the implementation for retrieving all outbound digitalruleset in Genesys Cloud
 func getAllOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrulesetProxy) (*[]platformclientv2.Digitalruleset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allDigitalRuleSets []platformclientv2.Digitalruleset
 	const pageSize = 100
@@ -135,6 +139,7 @@ func getAllOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrules
 // getOutboundDigitalrulesetIdByNameFn is an implementation of the function to get a Genesys Cloud outbound digitalruleset by name
 func getOutboundDigitalrulesetIdByNameFn(ctx context.Context, p *outboundDigitalrulesetProxy, name string) (id string, response *platformclientv2.APIResponse, retryable bool, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	digitalRuleSets, resp, err := p.outboundApi.GetOutboundDigitalrulesets(pageSize, 1, "", "", "", []string{})
@@ -159,6 +164,7 @@ func getOutboundDigitalrulesetIdByNameFn(ctx context.Context, p *outboundDigital
 // getOutboundDigitalrulesetByIdFn is an implementation of the function to get a Genesys Cloud outbound digitalruleset by Id
 func getOutboundDigitalrulesetByIdFn(ctx context.Context, p *outboundDigitalrulesetProxy, id string) (outboundDigitalruleset *platformclientv2.Digitalruleset, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.outboundApi.GetOutboundDigitalruleset(id)
 }
@@ -166,6 +172,7 @@ func getOutboundDigitalrulesetByIdFn(ctx context.Context, p *outboundDigitalrule
 // updateOutboundDigitalrulesetFn is an implementation of the function to update a Genesys Cloud outbound digitalruleset
 func updateOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrulesetProxy, id string, outboundDigitalruleset *platformclientv2.Digitalruleset) (*platformclientv2.Digitalruleset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	digitalRuleSet, resp, err := getOutboundDigitalrulesetByIdFn(ctx, p, id)
 	if err != nil {
@@ -183,6 +190,7 @@ func updateOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrules
 // deleteOutboundDigitalrulesetFn is an implementation function for deleting a Genesys Cloud outbound digitalruleset
 func deleteOutboundDigitalrulesetFn(ctx context.Context, p *outboundDigitalrulesetProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.outboundApi.DeleteOutboundDigitalruleset(id)
 }

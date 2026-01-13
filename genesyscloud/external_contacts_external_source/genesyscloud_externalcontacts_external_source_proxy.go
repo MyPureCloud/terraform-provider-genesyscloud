@@ -7,6 +7,8 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -94,6 +96,7 @@ func (p *externalContactsExternalSourceProxy) deleteExternalContactsExternalSour
 // createExternalContactsExternalSourceFn is an implementation function for creating a Genesys Cloud external contacts external source
 func createExternalContactsExternalSourceFn(ctx context.Context, p *externalContactsExternalSourceProxy, externalContactsExternalSource *platformclientv2.Externalsource) (*platformclientv2.Externalsource, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.externalContactsApi.PostExternalcontactsExternalsources(*externalContactsExternalSource)
 }
@@ -101,6 +104,7 @@ func createExternalContactsExternalSourceFn(ctx context.Context, p *externalCont
 // getAllExternalContactsExternalSourceFn is the implementation for retrieving all external contacts external source in Genesys Cloud
 func getAllExternalContactsExternalSourceFn(ctx context.Context, p *externalContactsExternalSourceProxy, query string) (*[]platformclientv2.Externalsource, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allExternalSources []platformclientv2.Externalsource
 	var response *platformclientv2.APIResponse
@@ -157,6 +161,7 @@ func getAllExternalContactsExternalSourceFn(ctx context.Context, p *externalCont
 // getExternalContactsExternalSourceIdByNameFn is an implementation of the function to get a Genesys Cloud external contacts external source by name
 func getExternalContactsExternalSourceIdByNameFn(ctx context.Context, p *externalContactsExternalSourceProxy, name string) (id string, retryable bool, apiResponse *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	externalSources, response, err := p.getAllExternalContactsExternalSources(ctx, name)
 	if err != nil {
@@ -182,6 +187,7 @@ func getExternalContactsExternalSourceIdByNameFn(ctx context.Context, p *externa
 // getExternalContactsExternalSourceByIdFn is an implementation of the function to get a Genesys Cloud external contacts external source by Id
 func getExternalContactsExternalSourceByIdFn(ctx context.Context, p *externalContactsExternalSourceProxy, id string) (externalContactsExternalSource *platformclientv2.Externalsource, apiResponse *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if externalSource := rc.GetCacheItem(p.externalSourcesCache, id); externalSource != nil {
 		return externalSource, nil, nil
@@ -192,6 +198,7 @@ func getExternalContactsExternalSourceByIdFn(ctx context.Context, p *externalCon
 // updateExternalContactsExternalSourceFn is an implementation of the function to update a Genesys Cloud external contacts external source
 func updateExternalContactsExternalSourceFn(ctx context.Context, p *externalContactsExternalSourceProxy, id string, externalContactsExternalSource *platformclientv2.Externalsource) (*platformclientv2.Externalsource, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.externalContactsApi.PutExternalcontactsExternalsource(id, *externalContactsExternalSource)
 }
@@ -199,6 +206,7 @@ func updateExternalContactsExternalSourceFn(ctx context.Context, p *externalCont
 // deleteExternalContactsExternalSourceFn is an implementation function for deleting a Genesys Cloud external contacts external source
 func deleteExternalContactsExternalSourceFn(ctx context.Context, p *externalContactsExternalSourceProxy, id string) (apiResponse *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, response, err := p.externalContactsApi.DeleteExternalcontactsExternalsource(id)
 	if err != nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -70,6 +72,7 @@ func (p *idpGsuiteProxy) deleteIdpGsuite(ctx context.Context, id string) (respon
 // getIdpGsuiteFn is the implementation for retrieving all idp gsuite in Genesys Cloud
 func getIdpGsuiteFn(ctx context.Context, p *idpGsuiteProxy) (*platformclientv2.Gsuite, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.identityProviderApi.GetIdentityprovidersGsuite()
 }
@@ -77,6 +80,7 @@ func getIdpGsuiteFn(ctx context.Context, p *idpGsuiteProxy) (*platformclientv2.G
 // updateIdpGsuiteFn is an implementation of the function to update a Genesys Cloud idp gsuite
 func updateIdpGsuiteFn(ctx context.Context, p *idpGsuiteProxy, id string, idpGsuite *platformclientv2.Gsuite) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.identityProviderApi.PutIdentityprovidersGsuite(*idpGsuite)
 }
@@ -84,6 +88,7 @@ func updateIdpGsuiteFn(ctx context.Context, p *idpGsuiteProxy, id string, idpGsu
 // deleteIdpGsuiteFn is an implementation function for deleting a Genesys Cloud idp gsuite
 func deleteIdpGsuiteFn(ctx context.Context, p *idpGsuiteProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersGsuite()
 	if err != nil {

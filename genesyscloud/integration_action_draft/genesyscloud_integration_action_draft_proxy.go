@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -83,6 +85,7 @@ func (p *integrationActionsProxy) getIntegrationActionDraftTemplate(ctx context.
 
 func getAllIntegrationActionDraftsFn(ctx context.Context, p *integrationActionsProxy, name string) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allActions []platformclientv2.Action
 	var resp *platformclientv2.APIResponse
@@ -114,18 +117,21 @@ func getAllIntegrationActionDraftsFn(ctx context.Context, p *integrationActionsP
 
 func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, body platformclientv2.Postactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.integrationsApi.PostIntegrationsActionsDrafts(body)
 }
 
 func getIntegrationActionDraftByIdFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.integrationsApi.GetIntegrationsActionDraft(actionId, "contract", false, true)
 }
 
 func getIntegrationActionDraftByNameFn(ctx context.Context, p *integrationActionsProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	drafts, resp, err := getAllIntegrationActionDraftsFn(ctx, p, name)
 	if err != nil {
@@ -146,12 +152,14 @@ func getIntegrationActionDraftByNameFn(ctx context.Context, p *integrationAction
 
 func updateIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string, body platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.integrationsApi.PatchIntegrationsActionDraft(actionId, body)
 }
 
 func deleteIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.integrationsApi.DeleteIntegrationsActionDraft(actionId)
 	if err != nil {
@@ -162,6 +170,7 @@ func deleteIntegrationActionDraftFn(ctx context.Context, p *integrationActionsPr
 
 func getIntegrationActionDraftTemplateFn(ctx context.Context, p *integrationActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.integrationsApi.GetIntegrationsActionDraftTemplate(actionId, fileName)
 }

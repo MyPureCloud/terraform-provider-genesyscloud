@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -94,6 +96,7 @@ func (p *responsemanagementResponseProxy) deleteResponsemanagementResponse(ctx c
 // createResponsemanagementResponseFn is an implementation function for creating a Genesys Cloud responsemanagement response
 func createResponsemanagementResponseFn(ctx context.Context, p *responsemanagementResponseProxy, responsemanagementResponse *platformclientv2.Response) (*platformclientv2.Response, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	response, resp, err := p.responseManagementApi.PostResponsemanagementResponses(*responsemanagementResponse, "")
 	if err != nil {
@@ -105,6 +108,7 @@ func createResponsemanagementResponseFn(ctx context.Context, p *responsemanageme
 // getAllResponsemanagementResponseFn is the implementation for retrieving all responsemanagement response in Genesys Cloud
 func getAllResponsemanagementResponseFn(ctx context.Context, p *responsemanagementResponseProxy, libraryId string) (*[]platformclientv2.Response, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allResponseManagementResponses []platformclientv2.Response
 	const pageSize = 100
@@ -185,6 +189,7 @@ func getAllResponsemanagementResponseFn(ctx context.Context, p *responsemanageme
 // getResponsemanagementResponseIdByNameFn is an implementation of the function to get a Genesys Cloud responsemanagement response by name
 func getResponsemanagementResponseIdByNameFn(ctx context.Context, p *responsemanagementResponseProxy, name string, libraryId string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	responses, resp, err := getAllResponsemanagementResponseFn(ctx, p, libraryId)
 	if err != nil {
@@ -205,6 +210,7 @@ func getResponsemanagementResponseIdByNameFn(ctx context.Context, p *responseman
 // getResponsemanagementResponseByIdFn is an implementation of the function to get a Genesys Cloud responsemanagement response by Id
 func getResponsemanagementResponseByIdFn(ctx context.Context, p *responsemanagementResponseProxy, id string) (responsemanagementResponse *platformclientv2.Response, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	mamangementResponse, resp, err := p.responseManagementApi.GetResponsemanagementResponse(id, "")
 	if err != nil {
@@ -216,6 +222,7 @@ func getResponsemanagementResponseByIdFn(ctx context.Context, p *responsemanagem
 // updateResponsemanagementResponseFn is an implementation of the function to update a Genesys Cloud responsemanagement response
 func updateResponsemanagementResponseFn(ctx context.Context, p *responsemanagementResponseProxy, id string, response *platformclientv2.Response) (*platformclientv2.Response, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	responsemanagementResponse, resp, err := p.responseManagementApi.GetResponsemanagementResponse(id, "")
 	if err != nil {
@@ -234,6 +241,7 @@ func updateResponsemanagementResponseFn(ctx context.Context, p *responsemanageme
 // deleteResponsemanagementResponseFn is an implementation function for deleting a Genesys Cloud responsemanagement response
 func deleteResponsemanagementResponseFn(ctx context.Context, p *responsemanagementResponseProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.responseManagementApi.DeleteResponsemanagementResponse(id)
 	if err != nil {

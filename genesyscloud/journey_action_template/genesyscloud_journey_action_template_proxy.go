@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
@@ -121,6 +122,7 @@ func (p *journeyActionTemplateProxy) deleteJourneyActionTemplate(ctx context.Con
 // createJourneyActionTemplateFn is an implementation function for creating a Genesys Cloud journey action template
 func createJourneyActionTemplateFn(ctx context.Context, p *journeyActionTemplateProxy, template *platformclientv2.Actiontemplate) (*platformclientv2.Actiontemplate, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	actionTemplate, resp, err := p.journeyApi.PostJourneyActiontemplates(*template)
 	if err != nil {
@@ -132,6 +134,7 @@ func createJourneyActionTemplateFn(ctx context.Context, p *journeyActionTemplate
 // getAllJourneyActionTemplatesFn is the implementation for retrieving all journey action templates in Genesys Cloud
 func getAllJourneyActionTemplatesFn(ctx context.Context, p *journeyActionTemplateProxy) (*[]platformclientv2.Actiontemplate, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allTemplates []platformclientv2.Actiontemplate
 	const pageSize = 100
@@ -170,6 +173,7 @@ func getAllJourneyActionTemplatesFn(ctx context.Context, p *journeyActionTemplat
 // getJourneyActionTemplateIdByNameFn is an implementation function for getting a journey action template by name
 func getJourneyActionTemplateIdByNameFn(ctx context.Context, p *journeyActionTemplateProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	templates, resp, err := p.getAllJourneyActionTemplates(ctx)
 	if err != nil {
@@ -192,6 +196,7 @@ func getJourneyActionTemplateIdByNameFn(ctx context.Context, p *journeyActionTem
 // getJourneyActionTemplateByIdFn is an implementation function for getting a journey action template by ID
 func getJourneyActionTemplateByIdFn(ctx context.Context, p *journeyActionTemplateProxy, id string) (template *platformclientv2.Actiontemplate, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	template, resp, err := p.journeyApi.GetJourneyActiontemplate(id)
 	if err != nil {
@@ -203,6 +208,7 @@ func getJourneyActionTemplateByIdFn(ctx context.Context, p *journeyActionTemplat
 // updateJourneyActionTemplateFn is an implementation function for updating a journey action template
 func updateJourneyActionTemplateFn(ctx context.Context, p *journeyActionTemplateProxy, id string, template *platformclientv2.Patchactiontemplate) (*platformclientv2.Actiontemplate, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	templateResp, resp, err := p.journeyApi.PatchJourneyActiontemplate(id, *template)
 	if err != nil {
@@ -214,6 +220,7 @@ func updateJourneyActionTemplateFn(ctx context.Context, p *journeyActionTemplate
 // deleteJourneyActionTemplateFn is an implementation function for deleting a journey action template
 func deleteJourneyActionTemplateFn(ctx context.Context, p *journeyActionTemplateProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.journeyApi.DeleteJourneyActiontemplate(id, true)
 	if err != nil {

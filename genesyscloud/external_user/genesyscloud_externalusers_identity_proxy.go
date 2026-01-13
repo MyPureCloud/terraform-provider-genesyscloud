@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
@@ -73,6 +74,7 @@ func (p *externalUserIdentityProxy) deleteExternalUserIdentity(ctx context.Conte
 
 func createExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityProxy, userId string, externalIdentity platformclientv2.Userexternalidentifier) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	externaIdObject, apiResponse, err := callExternalUserAPI(p.externalUserApi, userId, externalIdentity)
 
@@ -84,6 +86,7 @@ func createExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityPr
 
 func getAllExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityProxy, userId string) (*[]platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	externalIdList, response, err := p.externalUserApi.GetUserExternalid(userId)
 	for _, externalId := range externalIdList {
@@ -98,6 +101,7 @@ func getAllExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityPr
 
 func getExternalUserIdentityByIdFn(ctx context.Context, p *externalUserIdentityProxy, userId, authorityName, externalKey string) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if externalId := rc.GetCacheItem(p.externalUserIdentityCache, createCompoundKey(userId, authorityName, externalKey)); externalId != nil {
 		return externalId, nil, nil
@@ -121,6 +125,7 @@ func getExternalUserIdentityByIdFn(ctx context.Context, p *externalUserIdentityP
 
 func deleteExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityProxy, userId, authorityName, externalKey string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	apiResponse, err := p.externalUserApi.DeleteUserExternalidAuthorityNameExternalKey(userId, authorityName, externalKey)
 	rc.DeleteCacheItem(p.externalUserIdentityCache, createCompoundKey(userId, authorityName, externalKey))

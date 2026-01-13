@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
@@ -121,6 +122,7 @@ func (p *journeySegmentProxy) deleteJourneySegment(ctx context.Context, id strin
 // getAllJourneySegmentsFn is the implementation for retrieving all journey segments in Genesys Cloud
 func getAllJourneySegmentsFn(ctx context.Context, p *journeySegmentProxy) (*[]platformclientv2.Journeysegment, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if p == nil || p.journeyApi == nil {
 		return nil, nil, fmt.Errorf("invalid journey segment proxy or API client")
@@ -177,6 +179,7 @@ func getAllJourneySegmentsFn(ctx context.Context, p *journeySegmentProxy) (*[]pl
 // getJourneySegmentIdByNameFn retrieves a journey segment ID by its name
 func getJourneySegmentIdByNameFn(ctx context.Context, p *journeySegmentProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if p == nil {
 		return "", false, nil, fmt.Errorf("invalid journey segment proxy")
@@ -213,6 +216,7 @@ func getJourneySegmentIdByNameFn(ctx context.Context, p *journeySegmentProxy, na
 // getJourneySegmentByIdFn retrieves a journey segment by its ID
 func getJourneySegmentByIdFn(ctx context.Context, p *journeySegmentProxy, id string) (*platformclientv2.Journeysegment, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if p == nil {
 		return nil, nil, fmt.Errorf("invalid journey segment proxy")
@@ -242,6 +246,7 @@ func getJourneySegmentByIdFn(ctx context.Context, p *journeySegmentProxy, id str
 // createJourneySegmentFn is an implementation function for creating a Genesys Cloud journey segment
 func createJourneySegmentFn(ctx context.Context, p *journeySegmentProxy, segment *platformclientv2.Journeysegmentrequest) (*platformclientv2.Journeysegment, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	respSegment, resp, err := p.journeyApi.PostJourneySegments(*segment)
 	if err != nil {
@@ -253,6 +258,7 @@ func createJourneySegmentFn(ctx context.Context, p *journeySegmentProxy, segment
 // updateJourneySegmentFn updates an existing journey segment
 func updateJourneySegmentFn(ctx context.Context, p *journeySegmentProxy, id string, segment *platformclientv2.Patchsegment) (*platformclientv2.Journeysegment, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	updatedSegment, resp, err := p.journeyApi.PatchJourneySegment(id, *segment)
 	if err != nil {
@@ -267,6 +273,7 @@ func updateJourneySegmentFn(ctx context.Context, p *journeySegmentProxy, id stri
 // deleteJourneySegmentFn deletes a journey segment by its ID
 func deleteJourneySegmentFn(ctx context.Context, p *journeySegmentProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.journeyApi.DeleteJourneySegment(id)
 	if err != nil {
 		return resp, err

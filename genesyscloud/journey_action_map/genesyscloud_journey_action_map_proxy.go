@@ -3,9 +3,10 @@ package journey_action_map
 import (
 	"context"
 	"fmt"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
@@ -122,6 +123,7 @@ func (p *journeyActionMapProxy) deleteJourneyActionMap(ctx context.Context, id s
 // createJourneyActionMapFn is an implementation function for creating a Genesys Cloud journey action map
 func createJourneyActionMapFn(ctx context.Context, p *journeyActionMapProxy, actionMap *platformclientv2.Actionmap) (*platformclientv2.Actionmap, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	actionLMap, resp, err := p.journeyApi.PostJourneyActionmaps(*actionMap)
 	if err != nil {
@@ -133,6 +135,7 @@ func createJourneyActionMapFn(ctx context.Context, p *journeyActionMapProxy, act
 // getAllJourneyActionMapsFn is the implementation for retrieving all journey action maps in Genesys Cloud
 func getAllJourneyActionMapsFn(ctx context.Context, p *journeyActionMapProxy) (*[]platformclientv2.Actionmap, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allActionMaps []platformclientv2.Actionmap
 	const pageSize = 100
@@ -171,6 +174,7 @@ func getAllJourneyActionMapsFn(ctx context.Context, p *journeyActionMapProxy) (*
 // getJourneyActionMapIdByNameFn is an implementation function for getting a Genesys Cloud journey action map by name
 func getJourneyActionMapIdByNameFn(ctx context.Context, p *journeyActionMapProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	actionMaps, apiResponse, err := getAllJourneyActionMapsFn(ctx, p)
 	if err != nil {
@@ -194,6 +198,7 @@ func getJourneyActionMapIdByNameFn(ctx context.Context, p *journeyActionMapProxy
 // getJourneyActionMapByIdFn is an implementation function for getting a Genesys Cloud journey action map by ID
 func getJourneyActionMapByIdFn(ctx context.Context, p *journeyActionMapProxy, id string) (actionMap *platformclientv2.Actionmap, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	actionMap, resp, err := p.journeyApi.GetJourneyActionmap(id)
 	if err != nil {
@@ -205,6 +210,7 @@ func getJourneyActionMapByIdFn(ctx context.Context, p *journeyActionMapProxy, id
 // updateJourneyActionMapFn is an implementation function for updating a Genesys Cloud journey action map
 func updateJourneyActionMapFn(ctx context.Context, p *journeyActionMapProxy, id string, journeyActionMap *platformclientv2.Patchactionmap) (*platformclientv2.Actionmap, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	actionMap, apiResponse, err := getJourneyActionMapByIdFn(ctx, p, id)
 	if err != nil {
@@ -222,6 +228,7 @@ func updateJourneyActionMapFn(ctx context.Context, p *journeyActionMapProxy, id 
 // deleteJourneyActionMapFn is an implementation function for deleting a Genesys Cloud journey action map
 func deleteJourneyActionMapFn(ctx context.Context, p *journeyActionMapProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.journeyApi.DeleteJourneyActionmap(id)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -79,6 +80,7 @@ func (p *knowledgebaseProxy) deleteKnowledgebase(ctx context.Context, knowledgeb
 
 func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgebaseProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var (
 		after    string
@@ -118,24 +120,28 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgebaseProxy, p
 
 func getKnowledgebaseByIdFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.KnowledgeApi.GetKnowledgeKnowledgebase(knowledgebaseId)
 }
 
 func createKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseRequest *platformclientv2.Knowledgebasecreaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.KnowledgeApi.PostKnowledgeKnowledgebases(*knowledgebaseRequest)
 }
 
 func updateKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string, updateBody *platformclientv2.Knowledgebaseupdaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.KnowledgeApi.PatchKnowledgeKnowledgebase(knowledgebaseId, *updateBody)
 }
 
 func deleteKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	delete, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebase(knowledgebaseId)
 	if err != nil {

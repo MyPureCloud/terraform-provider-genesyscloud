@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -94,6 +96,7 @@ func (p *responsemanagementLibraryProxy) deleteResponsemanagementLibrary(ctx con
 // createResponsemanagementLibraryFn is an implementation function for creating a Genesys Cloud responsemanagement library
 func createResponsemanagementLibraryFn(ctx context.Context, p *responsemanagementLibraryProxy, responsemanagementLibrary *platformclientv2.Library) (*platformclientv2.Library, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	library, resp, err := p.responseManagementApi.PostResponsemanagementLibraries(*responsemanagementLibrary)
 	if err != nil {
@@ -105,6 +108,7 @@ func createResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 // getAllResponsemanagementLibraryFn is the implementation for retrieving all responsemanagement library in Genesys Cloud
 func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagementLibraryProxy, name string) (*[]platformclientv2.Library, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allLibrarys []platformclientv2.Library
 	const pageSize = 100
@@ -140,6 +144,7 @@ func getAllResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 // getResponsemanagementLibraryIdByNameFn is an implementation of the function to get a Genesys Cloud responsemanagement library by name
 func getResponsemanagementLibraryIdByNameFn(ctx context.Context, p *responsemanagementLibraryProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	librarys, resp, err := getAllResponsemanagementLibraryFn(ctx, p, name)
 	if err != nil {
@@ -162,6 +167,7 @@ func getResponsemanagementLibraryIdByNameFn(ctx context.Context, p *responsemana
 // getResponsemanagementLibraryByIdFn is an implementation of the function to get a Genesys Cloud responsemanagement library by Id
 func getResponsemanagementLibraryByIdFn(ctx context.Context, p *responsemanagementLibraryProxy, id string) (responsemanagementLibrary *platformclientv2.Library, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	library, resp, err := p.responseManagementApi.GetResponsemanagementLibrary(id)
 	if err != nil {
@@ -173,6 +179,7 @@ func getResponsemanagementLibraryByIdFn(ctx context.Context, p *responsemanageme
 // updateResponsemanagementLibraryFn is an implementation of the function to update a Genesys Cloud responsemanagement library
 func updateResponsemanagementLibraryFn(ctx context.Context, p *responsemanagementLibraryProxy, id string, responsemanagementLibrary *platformclientv2.Library) (*platformclientv2.Library, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	lib, resp, err := getResponsemanagementLibraryByIdFn(ctx, p, id)
 	if err != nil {
@@ -190,6 +197,7 @@ func updateResponsemanagementLibraryFn(ctx context.Context, p *responsemanagemen
 // deleteResponsemanagementLibraryFn is an implementation function for deleting a Genesys Cloud responsemanagement library
 func deleteResponsemanagementLibraryFn(ctx context.Context, p *responsemanagementLibraryProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.responseManagementApi.DeleteResponsemanagementLibrary(id)
 	if err != nil {

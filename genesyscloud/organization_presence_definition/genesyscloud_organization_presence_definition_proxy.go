@@ -3,6 +3,8 @@ package organization_presence_definition
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -85,6 +87,7 @@ func (p *organizationPresenceDefinitionProxy) deleteOrganizationPresenceDefiniti
 // createOrganizationPresenceDefinitionFn is an implementation function for creating a Genesys Cloud organization presence definition
 func createOrganizationPresenceDefinitionFn(ctx context.Context, p *organizationPresenceDefinitionProxy, organizationPresenceDefinition *platformclientv2.Organizationpresencedefinition) (*platformclientv2.Organizationpresencedefinition, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.presenceApi.PostPresenceDefinitions(*organizationPresenceDefinition)
 }
@@ -92,6 +95,7 @@ func createOrganizationPresenceDefinitionFn(ctx context.Context, p *organization
 // getAllOrganizationPresenceDefinitionFn is the implementation for retrieving all organization presence definition in Genesys Cloud
 func getAllOrganizationPresenceDefinitionFn(ctx context.Context, p *organizationPresenceDefinitionProxy) (*[]platformclientv2.Organizationpresencedefinition, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allOrganizationPresenceDefinitions []platformclientv2.Organizationpresencedefinition
 
@@ -115,6 +119,7 @@ func getAllOrganizationPresenceDefinitionFn(ctx context.Context, p *organization
 // getOrganizationPresenceDefinitionByIdFn is an implementation of the function to get a Genesys Cloud organization presence definition by Id
 func getOrganizationPresenceDefinitionByIdFn(ctx context.Context, p *organizationPresenceDefinitionProxy, id string) (*platformclientv2.Organizationpresencedefinition, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.presenceApi.GetPresenceDefinition(id, "")
 }
@@ -122,6 +127,7 @@ func getOrganizationPresenceDefinitionByIdFn(ctx context.Context, p *organizatio
 // updateOrganizationPresenceDefinitionFn is an implementation of the function to update a Genesys Cloud organization presence definition
 func updateOrganizationPresenceDefinitionFn(ctx context.Context, p *organizationPresenceDefinitionProxy, id string, organizationPresenceDefinition *platformclientv2.Organizationpresencedefinition) (*platformclientv2.Organizationpresencedefinition, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.presenceApi.PutPresenceDefinition(id, *organizationPresenceDefinition)
 }
@@ -129,6 +135,7 @@ func updateOrganizationPresenceDefinitionFn(ctx context.Context, p *organization
 // deleteOrganizationPresenceDefinitionFn is an implementation function for deleting a Genesys Cloud organization presence definition
 func deleteOrganizationPresenceDefinitionFn(ctx context.Context, p *organizationPresenceDefinitionProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.presenceApi.DeletePresenceDefinition(id)
 }

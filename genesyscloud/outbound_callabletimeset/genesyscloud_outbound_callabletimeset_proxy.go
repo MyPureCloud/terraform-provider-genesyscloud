@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -93,6 +95,7 @@ func (p *outboundCallableTimesetProxy) deleteOutboundCallabletimeset(ctx context
 // createOutboundCallabletimesetFn is an implementation function for creating a Genesys Cloud Outbound Callable Timeset
 func createOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTimesetProxy, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	timeset, resp, err := p.outboundApi.PostOutboundCallabletimesets(*timeset)
 	if err != nil {
@@ -104,6 +107,7 @@ func createOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTim
 // getAllOutboundCallableTimesetFn is the implementation for retrieving all outbound callable timesets in Genesys Cloud
 func getAllOutboundCallableTimesetFn(ctx context.Context, p *outboundCallableTimesetProxy) (*[]platformclientv2.Callabletimeset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allCallableTimesets []platformclientv2.Callabletimeset
 
@@ -143,6 +147,7 @@ func getAllOutboundCallableTimesetFn(ctx context.Context, p *outboundCallableTim
 // getOutboundCallabletimesetByIdFn is an implementation of the function to get a Genesys Cloud Outbound Callabletimeset by Id
 func getOutboundCallabletimesetByIdFn(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string) (timeset *platformclientv2.Callabletimeset, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	timeset, resp, err := p.outboundApi.GetOutboundCallabletimeset(timesetId)
 	if err != nil {
@@ -159,6 +164,7 @@ func getOutboundCallabletimesetByIdFn(ctx context.Context, p *outboundCallableTi
 // getOutboundCallabletimesetIdByNameFn is an implementation of the function to get a Genesys Cloud Outbound Callabletimeset by name
 func getOutboundCallabletimesetByNameFn(ctx context.Context, p *outboundCallableTimesetProxy, name string) (timesetId string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	timesets, resp, err := getAllOutboundCallableTimesetFn(ctx, p)
 	if err != nil {
@@ -179,6 +185,7 @@ func getOutboundCallabletimesetByNameFn(ctx context.Context, p *outboundCallable
 // updateOutboundCallabletimesetFn is an implementation of the function to update a Genesys Cloud Outbound Callabletimesets
 func updateOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string, timeset *platformclientv2.Callabletimeset) (*platformclientv2.Callabletimeset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	outboundCallabletimeset, resp, err := getOutboundCallabletimesetByIdFn(ctx, p, timesetId)
 	if err != nil {
@@ -196,6 +203,7 @@ func updateOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTim
 // deleteOutboundCallabletimesetFn is an implementation function for deleting a Genesys Cloud Outbound Callabletimesets
 func deleteOutboundCallabletimesetFn(ctx context.Context, p *outboundCallableTimesetProxy, timesetId string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.outboundApi.DeleteOutboundCallabletimeset(timesetId)
 	if err != nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -124,6 +126,7 @@ func (p *integrationsProxy) updateIntegrationConfig(ctx context.Context, integra
 // getAllIntegrationsFn is the implementation for retrieving all integrations in Genesys Cloud
 func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allIntegrations []platformclientv2.Integration
 	var resp *platformclientv2.APIResponse
@@ -145,6 +148,7 @@ func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platfor
 // createIntegrationFn is the implementation for creating an integration in Genesys Cloud
 func createIntegrationFn(ctx context.Context, p *integrationsProxy, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	integration, resp, err := p.integrationsApi.PostIntegrations(*integrationReq)
 	if err != nil {
@@ -156,6 +160,7 @@ func createIntegrationFn(ctx context.Context, p *integrationsProxy, integrationR
 // getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
 func getIntegrationByIdFn(ctx context.Context, p *integrationsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	const pageNum = 1
@@ -169,6 +174,7 @@ func getIntegrationByIdFn(ctx context.Context, p *integrationsProxy, integration
 // getIntegrationByNameFn is the implementation for getting a Genesys Cloud Integration by name
 func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var foundIntegration *platformclientv2.Integration
 	var resp *platformclientv2.APIResponse
@@ -199,6 +205,7 @@ func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrati
 // updateIntegrationFn is the implementation for updating a Genesys Cloud Integration
 func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 25
 	const pageNum = 1
@@ -212,6 +219,7 @@ func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationI
 // deleteIntegrationFn is the implementation for deleting a Genesys Cloud Integration
 func deleteIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, resp, err := p.integrationsApi.DeleteIntegration(integrationId)
 	if err != nil {
@@ -223,6 +231,7 @@ func deleteIntegrationFn(ctx context.Context, p *integrationsProxy, integrationI
 // getIntegrationConfigFn is the implementation for getting the current config of a Genesys Cloud Integration
 func getIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integrationId string) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	config, resp, err := p.integrationsApi.GetIntegrationConfigCurrent(integrationId)
 	if err != nil {
@@ -234,6 +243,7 @@ func getIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integrati
 // updateIntegrationConfigFn is the implementation for updating a Genesys Cloud Integration Config
 func updateIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	config, resp, err := p.integrationsApi.PutIntegrationConfigCurrent(integrationId, *integrationConfig)
 	if err != nil {

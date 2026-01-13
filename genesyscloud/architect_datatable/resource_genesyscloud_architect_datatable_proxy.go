@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -69,6 +71,7 @@ func (p *architectDatatableProxy) deleteArchitectDatatable(ctx context.Context, 
 
 func createOrUpdateArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, createAction bool, datatable *Datatable) (*Datatable, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	apiClient := &p.architectApi.Configuration.APIClient
 	action := http.MethodPost
@@ -108,6 +111,7 @@ func createOrUpdateArchitectDatatableFn(ctx context.Context, p *architectDatatab
 
 func getArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	apiClient := &p.architectApi.Configuration.APIClient
 
@@ -145,12 +149,14 @@ func getArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, da
 
 func deleteArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, datatableId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.architectApi.DeleteFlowsDatatable(datatableId, true)
 }
 
 func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var totalRecords []platformclientv2.Datatable
 

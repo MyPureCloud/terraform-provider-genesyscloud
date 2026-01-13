@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -70,6 +72,7 @@ func (p *idpOktaProxy) deleteIdpOkta(ctx context.Context, id string) (response *
 // getIdpOktaFn is the implementation for retrieving all idp okta in Genesys Cloud
 func getIdpOktaFn(ctx context.Context, p *idpOktaProxy) (*platformclientv2.Okta, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.identityProviderApi.GetIdentityprovidersOkta()
 }
@@ -77,6 +80,7 @@ func getIdpOktaFn(ctx context.Context, p *idpOktaProxy) (*platformclientv2.Okta,
 // updateIdpOktaFn is an implementation of the function to update a Genesys Cloud idp okta
 func updateIdpOktaFn(ctx context.Context, p *idpOktaProxy, id string, idpOkta *platformclientv2.Okta) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.identityProviderApi.PutIdentityprovidersOkta(*idpOkta)
 }
@@ -84,6 +88,7 @@ func updateIdpOktaFn(ctx context.Context, p *idpOktaProxy, id string, idpOkta *p
 // deleteIdpOktaFn is an implementation function for deleting a Genesys Cloud idp okta
 func deleteIdpOktaFn(ctx context.Context, p *idpOktaProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersOkta()
 	if err != nil {

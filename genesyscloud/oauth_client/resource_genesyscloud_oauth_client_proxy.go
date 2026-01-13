@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -201,12 +202,14 @@ func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platform
 
 func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return o.integrationApi.GetIntegrationsCredential(id)
 }
 
 func updateIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string, credential platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return o.integrationApi.PutIntegrationsCredential(id, credential)
 }

@@ -269,6 +269,7 @@ func getFlowIdByNameAndTypeFn(ctx context.Context, a *architectFlowProxy, name, 
 }
 
 func getArchitectFlowFn(ctx context.Context, p *architectFlowProxy, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	flow := rc.GetCacheItem(p.flowCache, id)
 	if flow != nil {
 		return flow, nil, nil
@@ -277,12 +278,14 @@ func getArchitectFlowFn(ctx context.Context, p *architectFlowProxy, id string) (
 }
 
 func forceUnlockFlowFn(ctx context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	log.Printf("Attempting to perform an unlock on flow: %s", flowId)
 	_, resp, err := p.api.PostFlowsActionsUnlock(flowId)
 	return resp, err
 }
 
 func deleteArchitectFlowFn(ctx context.Context, p *architectFlowProxy, flowId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.api.DeleteFlow(flowId)
 	if err != nil {
 		return resp, err
@@ -299,17 +302,20 @@ func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*pla
 		resourceCtx = ctx.Value(provider.ResourceContextKey())
 	}
 	if resourceCtx == nil {
+		ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	}
 	return p.api.PostFlowsJobs()
 }
 
 func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.api.GetFlowsJob(jobId, []string{"messages"})
 }
 
 // getAllArchitectFlowsFn is the implementation function for GetAllFlows
 func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/flows"
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	params := url.Values{}
 	if name != "" {
@@ -342,6 +348,7 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 	}
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
+		ctx = provider.EnsureResourceContext(ctx, ResourceType)
 		params.Set("pageNumber", fmt.Sprintf("%d", pageNum))
 		u.RawQuery = params.Encode()
 
@@ -364,6 +371,7 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 
 func makeFlowRequest(ctx context.Context, client *http.Client, url string, p *architectFlowProxy) (*platformclientv2.Flowentitylisting, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging before creating HTTP request
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

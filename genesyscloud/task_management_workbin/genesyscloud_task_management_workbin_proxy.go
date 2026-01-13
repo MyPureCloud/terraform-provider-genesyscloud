@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
@@ -98,6 +99,7 @@ func (p *taskManagementWorkbinProxy) deleteTaskManagementWorkbin(ctx context.Con
 // createTaskManagementWorkbinFn is an implementation function for creating a Genesys Cloud task management workbin
 func createTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbinProxy, taskManagementWorkbin *platformclientv2.Workbincreate) (*platformclientv2.Workbin, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	workbin, resp, err := p.taskManagementApi.PostTaskmanagementWorkbins(*taskManagementWorkbin)
 	if err != nil {
@@ -109,6 +111,7 @@ func createTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 // getAllTaskManagementWorkbinFn is the implementation for retrieving all task management workbin in Genesys Cloud
 func getAllTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbinProxy) (*[]platformclientv2.Workbin, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allWorkbins []platformclientv2.Workbin
 	pageSize := 200
@@ -138,6 +141,7 @@ func getAllTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 // getTaskManagementWorkbinIdByNameFn is an implementation of the function to get a Genesys Cloud task management workbin by name
 func getTaskManagementWorkbinIdByNameFn(ctx context.Context, p *taskManagementWorkbinProxy, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	workbins, resp, err := p.getAllTaskManagementWorkbin(ctx)
 	if err != nil {
@@ -155,6 +159,7 @@ func getTaskManagementWorkbinIdByNameFn(ctx context.Context, p *taskManagementWo
 // getTaskManagementWorkbinByIdFn is an implementation of the function to get a Genesys Cloud task management workbin by Id
 func getTaskManagementWorkbinByIdFn(ctx context.Context, p *taskManagementWorkbinProxy, id string) (taskManagementWorkbin *platformclientv2.Workbin, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	workbin := rc.GetCacheItem(p.workbinCache, id)
 	if workbin != nil {
@@ -167,6 +172,7 @@ func getTaskManagementWorkbinByIdFn(ctx context.Context, p *taskManagementWorkbi
 // updateTaskManagementWorkbinFn is an implementation of the function to update a Genesys Cloud task management workbin
 func updateTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbinProxy, id string, taskManagementWorkbin *platformclientv2.Workbinupdate) (*platformclientv2.Workbin, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	workbin, resp, err := p.taskManagementApi.PatchTaskmanagementWorkbin(id, *taskManagementWorkbin)
 	if err != nil {
@@ -178,6 +184,7 @@ func updateTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 // deleteTaskManagementWorkbinFn is an implementation function for deleting a Genesys Cloud task management workbin
 func deleteTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbinProxy, id string) (resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorkbin(id)
 	if err != nil {

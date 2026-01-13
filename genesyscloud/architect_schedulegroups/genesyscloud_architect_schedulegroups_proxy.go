@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -94,6 +96,7 @@ func (p *architectSchedulegroupsProxy) deleteArchitectSchedulegroups(ctx context
 // createArchitectSchedulegroupsFn is an implementation function for creating a Genesys Cloud architect schedulegroups
 func createArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	scheduleGroup, apiResponse, err := p.architectApi.PostArchitectSchedulegroups(*architectSchedulegroups)
 	if err != nil {
@@ -105,6 +108,7 @@ func createArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 // getAllArchitectSchedulegroupsFn is the implementation for retrieving all architect schedulegroups in Genesys Cloud
 func getAllArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy) (*[]platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allScheduleGroups []platformclientv2.Schedulegroup
 	const pageSize = 100
@@ -156,6 +160,7 @@ func getArchitectSchedulegroupsIdByNameFn(ctx context.Context, p *architectSched
 // getArchitectSchedulegroupsByIdFn is an implementation of the function to get a Genesys Cloud architect schedulegroups by Id
 func getArchitectSchedulegroupsByIdFn(ctx context.Context, p *architectSchedulegroupsProxy, id string) (architectSchedulegroups *platformclientv2.Schedulegroup, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	scheduleGroup, apiResponse, err := p.architectApi.GetArchitectSchedulegroup(id)
 	if err != nil {
@@ -167,6 +172,7 @@ func getArchitectSchedulegroupsByIdFn(ctx context.Context, p *architectScheduleg
 // updateArchitectSchedulegroupsFn is an implementation of the function to update a Genesys Cloud architect schedulegroups
 func updateArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy, id string, architectSchedulegroups *platformclientv2.Schedulegroup) (*platformclientv2.Schedulegroup, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	group, apiResponse, err := getArchitectSchedulegroupsByIdFn(ctx, p, id)
 	if err != nil {
@@ -183,6 +189,7 @@ func updateArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegr
 // deleteArchitectSchedulegroupsFn is an implementation function for deleting a Genesys Cloud architect schedulegroups
 func deleteArchitectSchedulegroupsFn(ctx context.Context, p *architectSchedulegroupsProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.architectApi.DeleteArchitectSchedulegroup(id)
 	if err != nil {

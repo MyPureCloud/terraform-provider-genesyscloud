@@ -3,8 +3,9 @@ package group
 import (
 	"context"
 	"fmt"
-
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
@@ -113,18 +114,21 @@ func (p *groupProxy) getGroupVoicemailPolicy(ctx context.Context, id string) (*p
 
 func createGroupFn(ctx context.Context, p *groupProxy, group *platformclientv2.Groupcreate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.groupsApi.PostGroups(*group)
 }
 
 func updateGroupFn(ctx context.Context, p *groupProxy, id string, group *platformclientv2.Groupupdate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.groupsApi.PutGroup(id, *group)
 }
 
 func deleteGroupFn(ctx context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.groupsApi.DeleteGroup(id)
 	if err != nil {
@@ -136,6 +140,7 @@ func deleteGroupFn(ctx context.Context, p *groupProxy, id string) (*platformclie
 
 func getGroupByIdFn(ctx context.Context, p *groupProxy, id string) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	group := rc.GetCacheItem(p.groupCache, id)
 	if group != nil {
@@ -146,18 +151,21 @@ func getGroupByIdFn(ctx context.Context, p *groupProxy, id string) (*platformcli
 
 func addGroupMembersFn(ctx context.Context, p *groupProxy, id string, members *platformclientv2.Groupmembersupdate) (*interface{}, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.groupsApi.PostGroupMembers(id, *members)
 }
 
 func deleteGroupMembersFn(ctx context.Context, p *groupProxy, id string, members string) (*interface{}, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.groupsApi.DeleteGroupMembers(id, members)
 }
 
 func getGroupMembersFn(ctx context.Context, p *groupProxy, id string) (*[]string, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	members, response, err := p.groupsApi.GetGroupIndividuals(id)
 
@@ -176,6 +184,7 @@ func getGroupMembersFn(ctx context.Context, p *groupProxy, id string) (*[]string
 
 func getGroupByNameFn(ctx context.Context, p *groupProxy, name string) (*platformclientv2.Groupssearchresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	exactSearchType := "EXACT"
 	nameField := "name"
@@ -196,6 +205,7 @@ func getGroupByNameFn(ctx context.Context, p *groupProxy, name string) (*platfor
 
 func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Group, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allGroups []platformclientv2.Group
 	const pageSize = 100
@@ -224,12 +234,14 @@ func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Grou
 
 func updateGroupVoicemailPolicyFn(ctx context.Context, p *groupProxy, id string, policy *platformclientv2.Voicemailgrouppolicy) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.voicemailApi.PatchVoicemailGroupPolicy(id, *policy)
 }
 
 func getGroupVoicemailPolicyFn(ctx context.Context, p *groupProxy, id string) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.voicemailApi.GetVoicemailGroupPolicy(id)
 }

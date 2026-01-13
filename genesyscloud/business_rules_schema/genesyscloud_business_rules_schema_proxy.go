@@ -10,6 +10,8 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -111,6 +113,7 @@ func (p *businessRulesSchemaProxy) getBusinessRulesSchemaDeletedStatus(ctx conte
 // createBusinessRulesSchemaFn is an implementation function for creating a Genesys Cloud business rules schema
 func createBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Businessrulesschemacreaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	log.Printf("Creating business rules schema: %s", *schema.JsonSchema.Title)
 	createdSchema, resp, err := p.businessRulesApi.PostBusinessrulesSchemas(*schema)
@@ -124,6 +127,7 @@ func createBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProx
 // getAllBusinessRulesSchemaFn is the implementation for retrieving all business rules schemas in Genesys Cloud
 func getAllBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy) (*[]platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// NOTE: At the time of implementation (Preview API) retrieving schemas does not have any sort of pagination.
 	// It seemingly will return all schemas in one call. This might have to be updated as there may be some
@@ -144,6 +148,7 @@ func getAllBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProx
 // getBusinessRulesSchemasByNameFn is an implementation of the function to get a Genesys Cloud business rules schemas by name
 func getBusinessRulesSchemasByNameFn(ctx context.Context, p *businessRulesSchemaProxy, name string) (matchingSchemas *[]platformclientv2.Businessrulesdataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	finalSchemas := []platformclientv2.Businessrulesdataschema{}
 
@@ -167,6 +172,7 @@ func getBusinessRulesSchemasByNameFn(ctx context.Context, p *businessRulesSchema
 // getBusinessRulesSchemaByIdFn is an implementation of the function to get a Genesys Cloud business rules schema by Id
 func getBusinessRulesSchemaByIdFn(ctx context.Context, p *businessRulesSchemaProxy, id string) (schema *platformclientv2.Businessrulesdataschema, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	businessRulesSchema := rc.GetCacheItem(p.businessRulesSchemaCache, id)
 	if businessRulesSchema != nil {
@@ -178,6 +184,7 @@ func getBusinessRulesSchemaByIdFn(ctx context.Context, p *businessRulesSchemaPro
 // updateBusinessRulesSchemaFn is an implementation of the function to update a Genesys Cloud business rules schema
 func updateBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, id string, schemaUpdate *platformclientv2.Businessrulesschemaupdaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	schema, resp, err := p.businessRulesApi.PutBusinessrulesSchema(id, *schemaUpdate)
 	if err != nil {
@@ -189,6 +196,7 @@ func updateBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProx
 // deleteBusinessRulesSchemaFn is an implementation function for deleting a Genesys Cloud business rules schema
 func deleteBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProxy, id string) (resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err = p.businessRulesApi.DeleteBusinessrulesSchema(id)
 	if err != nil {
@@ -201,6 +209,7 @@ func deleteBusinessRulesSchemaFn(ctx context.Context, p *businessRulesSchemaProx
 // getBusinessRulesSchemaDeletedStatusFn is an implementation function to get the 'deleted' status of a Genesys Cloud business rules schema
 func getBusinessRulesSchemaDeletedStatusFn(ctx context.Context, p *businessRulesSchemaProxy, schemaId string) (isDeleted bool, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	apiClient := &p.clientConfig.APIClient
 	// create path and map variables

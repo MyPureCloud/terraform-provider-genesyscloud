@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -70,6 +72,7 @@ func (p *idpOneloginProxy) deleteIdpOnelogin(ctx context.Context, id string) (re
 // getAllIdpOneloginFn is the implementation for retrieving all idp onelogin in Genesys Cloud
 func getIdpOneloginFn(ctx context.Context, p *idpOneloginProxy) (*platformclientv2.Onelogin, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.identityProviderApi.GetIdentityprovidersOnelogin()
 }
@@ -77,6 +80,7 @@ func getIdpOneloginFn(ctx context.Context, p *idpOneloginProxy) (*platformclient
 // updateIdpOneloginFn is an implementation of the function to update a Genesys Cloud idp onelogin
 func updateIdpOneloginFn(ctx context.Context, p *idpOneloginProxy, id string, idpOnelogin *platformclientv2.Onelogin) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.identityProviderApi.PutIdentityprovidersOnelogin(*idpOnelogin)
 }
@@ -84,6 +88,7 @@ func updateIdpOneloginFn(ctx context.Context, p *idpOneloginProxy, id string, id
 // deleteIdpOneloginFn is an implementation function for deleting a Genesys Cloud idp onelogin
 func deleteIdpOneloginFn(ctx context.Context, p *idpOneloginProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersOnelogin()
 	if err != nil {

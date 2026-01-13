@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -173,6 +174,7 @@ func (p *OutboundContactlistProxy) getOutboundContactListImportStatus(ctx contex
 // createOutboundContactlistFn is an implementation function for creating a Genesys Cloud outbound contactlist
 func createOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProxy, outboundContactlist *platformclientv2.Contactlist) (*platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.outboundApi.PostOutboundContactlists(*outboundContactlist)
 }
@@ -180,6 +182,7 @@ func createOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProx
 // getAllOutboundContactlistFn is the implementation for retrieving all outbound contactlist in Genesys Cloud
 func getAllOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProxy, name string) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allContactlists []platformclientv2.Contactlist
 	const pageSize = 100
@@ -218,6 +221,7 @@ func getAllOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProx
 // getOutboundContactlistIdByNameFn is an implementation of the function to get a Genesys Cloud outbound contactlist by name
 func getOutboundContactlistIdByNameFn(ctx context.Context, p *OutboundContactlistProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	contactLists, resp, err := getAllOutboundContactlistFn(ctx, p, name)
 	if err != nil {
@@ -237,6 +241,7 @@ func getOutboundContactlistIdByNameFn(ctx context.Context, p *OutboundContactlis
 // getOutboundContactlistByIdFn is an implementation of the function to get a Genesys Cloud outbound contactlist by Id
 func getOutboundContactlistByIdFn(ctx context.Context, p *OutboundContactlistProxy, id string) (outboundContactlist *platformclientv2.Contactlist, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	if contactList := rc.GetCacheItem(p.contactListCache, id); contactList != nil {
 		return contactList, nil, nil
@@ -250,6 +255,7 @@ func getOutboundContactlistByIdFn(ctx context.Context, p *OutboundContactlistPro
 // getOutboundContactlistContactRecordLengthFn is an implementation of the function to return a total count of contacts in a contact list
 func getOutboundContactlistContactRecordLengthFn(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (recordLength int, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	blankReqBody := platformclientv2.Contactlistingrequest{}
 	contactListing, resp, err := p.outboundApi.PostOutboundContactlistContactsSearch(contactListId, blankReqBody)
@@ -262,6 +268,7 @@ func getOutboundContactlistContactRecordLengthFn(ctx context.Context, p *Outboun
 // updateOutboundContactlistFn is an implementation of the function to update a Genesys Cloud outbound contactlist
 func updateOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProxy, id string, outboundContactlist *platformclientv2.Contactlist) (*platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	contactList, resp, err := p.outboundApi.GetOutboundContactlist(id, false, false)
 	if err != nil {
@@ -275,6 +282,7 @@ func updateOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProx
 // deleteOutboundContactlistFn is an implementation function for deleting a Genesys Cloud outbound contactlist
 func deleteOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.outboundApi.DeleteOutboundContactlist(id)
 	if err != nil {
@@ -287,6 +295,7 @@ func deleteOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProx
 // uploadContactListBulkContactsFn uploads a CSV file to S3 of contacts
 func uploadContactListBulkContactsFn(ctx context.Context, p *OutboundContactlistProxy, contactListId, filePath, contactIdColumnName string) ([]byte, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	formData, err := createBulkOutboundContactsFormData(filePath, contactListId, contactIdColumnName)
 	if err != nil {
@@ -303,6 +312,7 @@ func uploadContactListBulkContactsFn(ctx context.Context, p *OutboundContactlist
 
 func clearContactListContactsFn(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.outboundApi.PostOutboundContactlistClear(contactListId)
 	if err != nil {
@@ -314,6 +324,7 @@ func clearContactListContactsFn(ctx context.Context, p *OutboundContactlistProxy
 // initiateContactListContactsExportFn is an implementation function for retrieving the export URL for a contact list's contacts
 func initiateContactListContactsExportFn(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var (
 		body platformclientv2.Contactsexportrequest
@@ -334,6 +345,7 @@ func initiateContactListContactsExportFn(ctx context.Context, p *OutboundContact
 // getContactListContactsExportUrlFn is an implementation function for retrieving the export URL for a contact list's contacts
 func getContactListContactsExportUrlFn(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (exportUrl string, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	data, resp, err := p.outboundApi.GetOutboundContactlistExport(contactListId, "")
 
@@ -366,6 +378,7 @@ func createBulkOutboundContactsFormData(filePath, contactListId, contactIdColumn
 
 func getOutboundContactListImportStatusFn(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (importStatus *platformclientv2.Importstatus, resp *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.outboundApi.GetOutboundContactlistImportstatus(contactListId)
 }

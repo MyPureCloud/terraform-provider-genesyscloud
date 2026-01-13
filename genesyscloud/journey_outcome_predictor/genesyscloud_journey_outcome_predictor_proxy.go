@@ -3,6 +3,8 @@ package journey_outcome_predictor
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -77,6 +79,7 @@ func (p *journeyOutcomePredictorProxy) deleteJourneyOutcomePredictor(ctx context
 // createJourneyOutcomePredictorFn is an implementation function for creating a Genesys Cloud journey outcome predictor
 func createJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredictorProxy, outcomePredictor *platformclientv2.Outcomepredictorrequest) (*platformclientv2.Outcomepredictor, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	predictor, resp, err := p.journeyApi.PostJourneyOutcomesPredictors(*outcomePredictor)
 	if err != nil {
@@ -89,6 +92,7 @@ func createJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredi
 // getAllJourneyOutcomePredictorFn is the implementation for retrieving all journey outcome predictor in Genesys Cloud
 func getAllJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredictorProxy) (*[]platformclientv2.Outcomepredictor, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allPredictors []platformclientv2.Outcomepredictor
 	predictors, resp, err := p.journeyApi.GetJourneyOutcomesPredictors()
@@ -107,6 +111,7 @@ func getAllJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredi
 // getJourneyOutcomePredictorByIdFn is an implementation of the function to get a Genesys Cloud journey outcome predictor by Id
 func getJourneyOutcomePredictorByIdFn(ctx context.Context, p *journeyOutcomePredictorProxy, predictorId string) (journeyOutcomePredictor *platformclientv2.Outcomepredictor, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	predictor, resp, err := p.journeyApi.GetJourneyOutcomesPredictor(predictorId)
 	if err != nil {
@@ -119,6 +124,7 @@ func getJourneyOutcomePredictorByIdFn(ctx context.Context, p *journeyOutcomePred
 // deleteJourneyOutcomePredictorFn is an implementation function for deleting a Genesys Cloud journey outcome predictor
 func deleteJourneyOutcomePredictorFn(ctx context.Context, p *journeyOutcomePredictorProxy, predictorId string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.journeyApi.DeleteJourneyOutcomesPredictor(predictorId)
 	if err != nil {
