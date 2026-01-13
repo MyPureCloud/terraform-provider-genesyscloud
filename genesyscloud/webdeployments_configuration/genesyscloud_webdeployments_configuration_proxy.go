@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -96,6 +97,7 @@ func (p *webDeploymentsConfigurationProxy) updateWebdeploymentsConfigurationVers
 }
 
 func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy) (*platformclientv2.Webdeploymentconfigurationversionentitylisting, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	configurations, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurations(false)
 
 	if getErr != nil {
@@ -105,10 +107,12 @@ func getAllWebDeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsC
 }
 
 func getWebdeploymentsConfigurationVersionFn(ctx context.Context, p *webDeploymentsConfigurationProxy, id string, version string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.GetWebdeploymentsConfigurationVersion(id, version)
 }
 
 func determineLatestVersionFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) string {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	version := ""
 	draft := "DRAFT"
 	_ = util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -150,21 +154,26 @@ func determineLatestVersionFn(ctx context.Context, p *webDeploymentsConfiguratio
 }
 
 func deleteWebDeploymentConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.DeleteWebdeploymentsConfiguration(configurationId)
 }
 
 func getWebdeploymentsConfigurationVersionsDraftFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.GetWebdeploymentsConfigurationVersionsDraft(configurationId)
 }
 
 func createWebdeploymentsConfigurationFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PostWebdeploymentsConfigurations(configurationVersion)
 }
 
 func createWebdeploymentsConfigurationVersionsDraftPublishFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PostWebdeploymentsConfigurationVersionsDraftPublish(configurationId)
 }
 
 func updateWebdeploymentsConfigurationVersionsDraftFn(ctx context.Context, p *webDeploymentsConfigurationProxy, configurationId string, configurationVersion platformclientv2.Webdeploymentconfigurationversion) (*platformclientv2.Webdeploymentconfigurationversion, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PutWebdeploymentsConfigurationVersionsDraft(configurationId, configurationVersion)
 }

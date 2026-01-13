@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -115,6 +117,9 @@ func (p *customAuthActionsProxy) getIntegrationById(ctx context.Context, integra
 
 // getAllIntegrationCustomAuthActionsFn is the implementation for getting all integration custom auth actions in Genesys Cloud
 func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActionsProxy) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	actions := []platformclientv2.Action{}
 	const pageSize = 100
 
@@ -151,6 +156,9 @@ func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActi
 
 // getCustomAuthActionByIdFn is the implementation for getting an integration custom auth actions by id in Genesys Cloud
 func getCustomAuthActionByIdFn(ctx context.Context, p *customAuthActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	action, resp, err := p.integrationsApi.GetIntegrationsAction(actionId, "", true, true)
 	if err != nil {
 		return nil, resp, err
@@ -160,6 +168,9 @@ func getCustomAuthActionByIdFn(ctx context.Context, p *customAuthActionsProxy, a
 
 // updateCustomAuthActionFn is the implementation for updating an integration custom auth action in Genesys Cloud
 func updateCustomAuthActionFn(ctx context.Context, p *customAuthActionsProxy, actionId string, updateAction *platformclientv2.Updateactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	action, resp, err := p.integrationsApi.PatchIntegrationsAction(actionId, *updateAction)
 	if err != nil {
 		return nil, resp, err
@@ -169,6 +180,9 @@ func updateCustomAuthActionFn(ctx context.Context, p *customAuthActionsProxy, ac
 
 // getIntegrationActionTemplateFn is the implementation for getting the integration action template in Genesys Cloud
 func getIntegrationActionTemplateFn(ctx context.Context, p *customAuthActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	template, resp, err := p.integrationsApi.GetIntegrationsActionTemplate(actionId, fileName)
 	if err != nil {
 		return nil, resp, err
@@ -178,6 +192,9 @@ func getIntegrationActionTemplateFn(ctx context.Context, p *customAuthActionsPro
 
 // getIntegrationTypeFn is the implementation for getting the type of an integration in Genesys Cloud
 func getIntegrationTypeFn(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	integration, resp, err := p.integrationsApi.GetIntegration(integrationId, 1, 1, "", nil, "", "")
 	if err != nil {
 		return "", resp, err
@@ -187,6 +204,9 @@ func getIntegrationTypeFn(ctx context.Context, p *customAuthActionsProxy, integr
 
 // getIntegrationCredentialsTypeFn is the implementation for getting the type of an integration credential in Genesys Cloud
 func getIntegrationCredentialsTypeFn(ctx context.Context, p *customAuthActionsProxy, integrationId string) (string, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	integrationConfig, resp, err := p.integrationsApi.GetIntegrationConfigCurrent(integrationId)
 	if err != nil {
 		return "", resp, err
@@ -210,6 +230,9 @@ func getIntegrationCredentialsTypeFn(ctx context.Context, p *customAuthActionsPr
 
 // getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
 func getIntegrationByIdFn(ctx context.Context, p *customAuthActionsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageSize = 100
 	const pageNum = 1
 	integration, resp, err := p.integrationsApi.GetIntegration(integrationId, pageSize, pageNum, "", nil, "", "")

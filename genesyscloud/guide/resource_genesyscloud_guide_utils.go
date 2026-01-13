@@ -2,6 +2,7 @@ package guide
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,7 +44,8 @@ func GuideFtIsEnabled() bool {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+clientConfig.AccessToken)
 
-	resp, err := client.Do(req)
+	ctx := context.Background()
+	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error sending request: %v", err)
 		return false
@@ -63,8 +65,10 @@ func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
 }
 
 // createHTTPRequest creates a new HTTP request with proper headers
-func createHTTPRequest(method, url string, body io.Reader, p *guideProxy) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
+func createHTTPRequest(ctx context.Context, method, url string, body io.Reader, p *guideProxy) (*http.Request, error) {
+	// Set resource context for SDK debug logging before creating HTTP request
+
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %v", err)
 	}
@@ -73,12 +77,12 @@ func createHTTPRequest(method, url string, body io.Reader, p *guideProxy) (*http
 }
 
 // marshalAndCreateRequest marshals a body to JSON and creates an HTTP request
-func marshalAndCreateRequest(method, url string, body interface{}, p *guideProxy) (*http.Request, error) {
+func marshalAndCreateRequest(ctx context.Context, method, url string, body interface{}, p *guideProxy) (*http.Request, error) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling request body: %v", err)
 	}
-	return createHTTPRequest(method, url, bytes.NewBuffer(jsonBody), p)
+	return createHTTPRequest(ctx, method, url, bytes.NewBuffer(jsonBody), p)
 }
 
 // unmarshalResponse unmarshals a JSON response into the target struct
