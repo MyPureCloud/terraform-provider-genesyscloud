@@ -292,6 +292,121 @@ func TestAccResourceEvaluationFormCompleteWithPublish(t *testing.T) {
 	})
 }
 
+func TestAccResourceEvaluationFormWithMultipleSelectQuestions(t *testing.T) {
+	formResourceLabel := "test-evaluation-form-multi-select"
+
+	// Evaluation form with multiple select questions
+	evaluationForm := EvaluationFormStruct{
+		Name:      "terraform-form-multiselect-" + uuid.NewString(),
+		Published: false,
+		QuestionGroups: []EvaluationFormQuestionGroupStruct{
+			{
+				Name:                    "Test Question Group",
+				DefaultAnswersToHighest: true,
+				DefaultAnswersToNA:      false,
+				NaEnabled:               true,
+				Weight:                  100,
+				ManualWeight:            true,
+				Questions: []EvaluationFormQuestionStruct{
+					{
+						Text:     "Regular multiple choice question",
+						HelpText: "Help text for the question",
+						Type:     "multipleChoiceQuestion",
+						AnswerOptions: []AnswerOptionStruct{
+							{
+								Text:  "Yes",
+								Value: 1,
+							},
+							{
+								Text:  "No",
+								Value: 0,
+							},
+						},
+					},
+					{
+						Text:     "Multiple Select Question - Exceptions",
+						HelpText: "Select all that apply",
+						Type:     "multipleSelectQuestion",
+						MultipleSelectOptionQuestions: []MultipleSelectOptionQuestionStruct{
+							{
+								Text:     "Option ALC",
+								HelpText: "",
+								Type:     "multipleChoiceQuestion",
+								AnswerOptions: []AnswerOptionStruct{
+									{
+										BuiltInType: "Unselected",
+										Value:       0,
+									},
+									{
+										BuiltInType: "Selected",
+										Value:       1,
+									},
+								},
+							},
+							{
+								Text:     "Option BLB",
+								HelpText: "",
+								Type:     "multipleChoiceQuestion",
+								AnswerOptions: []AnswerOptionStruct{
+									{
+										BuiltInType: "Unselected",
+										Value:       0,
+									},
+									{
+										BuiltInType: "Selected",
+										Value:       1,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create evaluation form with multiple select questions
+				Config: GenerateEvaluationFormResource(formResourceLabel, &evaluationForm),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "name", evaluationForm.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.name", evaluationForm.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.#", "2"),
+					// Check first question (multiple choice)
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.0.text", evaluationForm.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.0.type", "multipleChoiceQuestion"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.0.answer_options.#", "2"),
+					// Check second question (multiple select)
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.text", evaluationForm.QuestionGroups[0].Questions[1].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.type", "multipleSelectQuestion"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.#", "2"),
+					// Check first option question
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.text", "Option ALC"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.type", "multipleChoiceQuestion"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.answer_options.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.answer_options.0.built_in_type", "Unselected"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.answer_options.1.built_in_type", "Selected"),
+					// Check second option question
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.1.text", "Option BLB"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            ResourceType + "." + formResourceLabel,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"published"},
+			},
+		},
+		CheckDestroy: testVerifyEvaluationFormDestroyed,
+	})
+}
+
 func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 	formResourceLabel1 := "test-evaluation-form-1"
 
@@ -405,10 +520,6 @@ func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 		}
 
 		form, resp, err := qualityAPI.GetQualityFormsEvaluation(rs.Primary.ID)
-		if form != nil {
-			continue
-		}
-
 		if form != nil {
 			return fmt.Errorf("Evaluation form (%s) still exists", rs.Primary.ID)
 		}
