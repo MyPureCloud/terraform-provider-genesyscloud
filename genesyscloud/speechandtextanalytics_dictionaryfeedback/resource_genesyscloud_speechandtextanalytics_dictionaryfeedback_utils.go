@@ -71,11 +71,7 @@ func flattenDictionaryFeedbackExamplePhrases(dictionaryFeedbackExamplePhrases *[
 
 func validateExamplePhrases(d *schema.ResourceData) error {
 	term := d.Get("term").(string)
-	phrases, ok := d.Get("example_phrases").([]interface{})
-
-	if !ok || len(phrases) < 3 || len(phrases) > 20 {
-		return fmt.Errorf("At least 3 example phrases are required with a max of 20, %d were provided.", len(phrases))
-	}
+	phrases := d.Get("example_phrases").([]interface{})
 
 	for i, p := range phrases {
 		phraseMap := p.(map[string]interface{})

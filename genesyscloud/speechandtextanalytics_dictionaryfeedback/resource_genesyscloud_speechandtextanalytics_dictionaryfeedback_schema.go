@@ -68,6 +68,7 @@ func ResourceDictionaryFeedback() *schema.Resource {
 				Description: `A weighted value assigned to a phrase. The higher the value, the higher the likelihood that the system will choose the word or phrase from the possible alternatives. Boost range is from 1.0 to 10.0. Default is 2.0`,
 				Optional:    true,
 				Type:        schema.TypeFloat,
+				Default:     2.0,
 			},
 			`source`: {
 				Description: `The source of the given dictionary feedback`,
@@ -79,6 +80,8 @@ func ResourceDictionaryFeedback() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeList,
 				Elem:        dictionaryFeedbackExamplePhraseResource,
+				MaxItems:    20,
+				MinItems:    3,
 				// ValidateFunc and ValidateDiagFunc are not yet in lists or sets... done this validation in the create and update via utils
 			},
 			`sounds_like`: {
