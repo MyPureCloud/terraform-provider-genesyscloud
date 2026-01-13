@@ -79,6 +79,7 @@ func ResourceDictionaryFeedback() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeList,
 				Elem:        dictionaryFeedbackExamplePhraseResource,
+				// ValidateFunc and ValidateDiagFunc are not yet in lists or sets... done this validation in the create and update via utils
 			},
 			`sounds_like`: {
 				Description: `A list of up to 10 terms that give examples of how the term sounds`,

@@ -1,6 +1,9 @@
 package speechandtextanalytics_dictionaryfeedback
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -64,4 +67,23 @@ func flattenDictionaryFeedbackExamplePhrases(dictionaryFeedbackExamplePhrases *[
 	}
 
 	return dictionaryFeedbackExamplePhraseList
+}
+
+func validateExamplePhrases(d *schema.ResourceData) error {
+	term := d.Get("term").(string)
+	phrases, ok := d.Get("example_phrases").([]interface{})
+
+	if !ok || len(phrases) < 3 || len(phrases) > 20 {
+		return fmt.Errorf("At least 3 example phrases are required with a max of 20, %d were provided.", len(phrases))
+	}
+
+	for i, p := range phrases {
+		phraseMap := p.(map[string]interface{})
+		phraseText := phraseMap["phrase"].(string)
+
+		if !strings.Contains(strings.ToLower(phraseText), strings.ToLower(term)) {
+			return fmt.Errorf("Example phrase %d ('%s') must contain the term '%s'.", i+1, phraseText, term)
+		}
+	}
+	return nil
 }

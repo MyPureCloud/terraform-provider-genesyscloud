@@ -49,6 +49,12 @@ func createDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta 
 
 	dictionaryFeedback := getDictionaryFeedbackFromResourceData(d)
 
+	// validate that term is in the phrases and length of phrases List
+	err := validateExamplePhrases(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	log.Printf("Creating dictionary feedback %s", *dictionaryFeedback.Term)
 	dictionaryFeedbackPtr, resp, err := proxy.createDictionaryFeedback(ctx, &dictionaryFeedback)
 	if err != nil {
@@ -95,6 +101,12 @@ func updateDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta 
 	proxy := getDictionaryFeedbackProxy(sdkConfig)
 
 	dictionaryFeedback := getDictionaryFeedbackFromResourceData(d)
+
+	// validate that term is in the phrases and length of phrases List
+	err := validateExamplePhrases(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	log.Printf("Updating dictionary feedback %s", *dictionaryFeedback.Term)
 	dictionaryFeedbackPtr, resp, err := proxy.updateDictionaryFeedback(ctx, d.Id(), &dictionaryFeedback)
