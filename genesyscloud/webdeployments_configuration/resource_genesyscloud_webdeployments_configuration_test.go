@@ -1293,17 +1293,15 @@ func generateJourneyEventsBlock(enabled bool, pageviewConfig string, excludedPar
 func TestAccResourceWebDeploymentsConfigurationTrackingSettings(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceLabel     = "webdeploy-tracking-test"
-		resourcePath      = ResourceType + "." + resourceLabel
-		configName        = "tf-tracking-config-" + uuid.NewString()
-		configDescription = "Test Configuration with Tracking Settings"
-		languages         = []string{"en-us"}
-		defaultLang       = "en-us"
-		// Create with basic tracking settings
-		searchParams   = []string{"q", "search"}
-		excludedParams = []string{"utm_source", "ref"}
-		ipFilters      = []testIpFilter{{"192.168.1.1", "office-network"}, {"10.0.0.1", "vpn-network"}}
-		// Update tracking settings
+		resourceLabel        = "webdeploy-tracking-test"
+		resourcePath         = ResourceType + "." + resourceLabel
+		configName           = "tf-tracking-config-" + uuid.NewString()
+		configDescription    = "Test Configuration with Tracking Settings"
+		languages            = []string{"en-us"}
+		defaultLang          = "en-us"
+		searchParams         = []string{"q", "search"}
+		excludedParams       = []string{"utm_source", "ref"}
+		ipFilters            = []testIpFilter{{"192.168.1.1", "office-network"}, {"10.0.0.1", "vpn-network"}}
 		searchParamsUpdate   = []string{"query"}
 		excludedParamsUpdate = []string{"utm_campaign"}
 		ipFiltersUpdate      = []testIpFilter{{"2001:db8::1", "ipv6-network"}}
