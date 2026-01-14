@@ -13,8 +13,8 @@ import (
 )
 
 var internalProxy *guideProxy
-var requestutil = request.NewRequestUtil[Guide, guideProxy](setGuideRequestHeader)
-var deleteutil = request.NewRequestUtil[DeleteObjectJob, guideProxy](setGuideRequestHeader)
+var requestutil = request.NewRequestUtil[Guide](setGuideRequestHeader)
+var deleteutil = request.NewRequestUtil[DeleteObjectJob](setGuideRequestHeader)
 
 type getAllGuidesFunc func(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error)
 type createGuideFunc func(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error)

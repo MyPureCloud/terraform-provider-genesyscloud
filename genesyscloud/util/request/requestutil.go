@@ -12,10 +12,10 @@ import (
 )
 
 type RequestUtil[T any, U any] struct {
-	setRequestHeader func(r *http.Request, p *U) *http.Request
+	setRequestHeader func(r *http.Request, p *U) (*http.Request, error)
 }
 
-func NewRequestUtil[T, U any](setRequestHeader func(r *http.Request, p *U) *http.Request) *RequestUtil[T, U] {
+func NewRequestUtil[T, U any](setRequestHeader func(r *http.Request, p *U) (*http.Request, error)) *RequestUtil[T, U] {
 	return &RequestUtil[T, U]{
 		setRequestHeader,
 	}
@@ -57,7 +57,11 @@ func (a *RequestUtil[T, U]) CreateHTTPRequest(method, url string, body io.Reader
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %v", err)
 	}
-	req = a.setRequestHeader(req, p)
+	req, err = a.setRequestHeader(req, p)
+	if err != nil {
+		return nil, fmt.Errorf("error setting request header: %v", err)
+	}
+
 	return req, nil
 }
 

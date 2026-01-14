@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -581,9 +582,9 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 		defer file.Close()
 	}
 
-	apiRequest := request.NewRequestUtil[uploadResponse, architectUserPromptProxy](setArchitectUserPromptRequestHeader)
+	requestutil := request.NewRequestUtil[uploadResponse](setArchitectUserPromptRequestHeader)
 	// Generate a presigned url for upload.
-	body, _, err := apiRequest.MakeAPIRequest(ctx, http.MethodPost, uploadUri, nil, p)
+	body, _, err := requestutil.MakeAPIRequest(ctx, http.MethodPost, uploadUri, nil, p)
 	if err != nil {
 		return err
 	}
@@ -592,12 +593,12 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 	}
 
 	// Upload the file.
-	err = uploadWavFile(body.Url, body.Headers, reader, p)
+	err = uploadWavFile(body.Url, body.Headers, reader)
 	return err
 }
 
 // uploadWavFile performs an HTTP PUT request with the raw file data to the presigned URL.
-func uploadWavFile(presignedURL string, headers map[string]string, reader io.Reader, p *architectUserPromptProxy) error {
+func uploadWavFile(presignedURL string, headers map[string]string, reader io.Reader) error {
 	var size int64
 	var file *os.File
 	var buffer *bytes.Buffer
@@ -637,12 +638,10 @@ func uploadWavFile(presignedURL string, headers map[string]string, reader io.Rea
 		req.Header.Set(k, v)
 	}
 
-	// req.Header.Set("Authorization", p.clientConfig.AccessToken)
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
-	// Don't set Content-Type here - S3Uploader will set it to multipart/form-data with boundary
 	req.Header.Set("Host", "fileupload.inindca.com")
 	req.Header.Set("Origin", "https://apps.inindca.com")
 	req.Header.Set("Referer", "https://apps.inindca.com")
@@ -666,11 +665,16 @@ func uploadWavFile(presignedURL string, headers map[string]string, reader io.Rea
 	return nil
 }
 
-func setArchitectUserPromptRequestHeader(r *http.Request, p *architectUserPromptProxy) *http.Request {
+func setArchitectUserPromptRequestHeader(r *http.Request, p *architectUserPromptProxy) (*http.Request, error) {
+	u, err := url.Parse(p.clientConfig.BasePath)
+	if err != nil {
+		return nil, err
+	}
+
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
 	r.Header.Set("Content-Length", "0")
-	r.Header.Set("Host", p.clientConfig.BasePath[8:])
-	return r
+	r.Header.Set("Host", u.Host)
+	return r, nil
 }
