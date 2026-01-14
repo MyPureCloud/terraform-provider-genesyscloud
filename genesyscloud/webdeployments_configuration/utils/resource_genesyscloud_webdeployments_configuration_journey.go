@@ -116,7 +116,11 @@ func buildTrackingSettings(settings []interface{}) *platformclientv2.Trackingset
 		return nil
 	}
 
-	setting := settings[0].(map[string]interface{})
+	setting, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
 	trackingSettings := &platformclientv2.Trackingsettings{}
 
 	if shouldKeepUrlFragment, ok := setting["should_keep_url_fragment"].(bool); ok {
