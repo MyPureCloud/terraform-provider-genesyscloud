@@ -1,0 +1,5 @@
+* [GET /api/v2/users/rules](TodoWhenApisArePublic)
+* [POST /api/v2/users/rules](TodoWhenApisArePublic)
+* [DELETE /api/v2/users/rules/{ruleId}](TodoWhenApisArePublic)
+* [GET /api/v2/users/rules/{ruleId}](TodoWhenApisArePublic)
+* [PATCH /api/v2/users/rules/{ruleId}](TodoWhenApisArePublic)

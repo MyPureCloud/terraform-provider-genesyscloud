@@ -10,20 +10,20 @@ resource "genesyscloud_learning_modules" "example_learning_module" {
   enforce_content_order   = false
   is_published            = false
   inform_steps {
-    "type"         = "Url"
-    "name"         = "Example name"
-    "value"        = "https://www.example.com"
-    "order"        = 1
-    "display_name" = "Example display name"
-    "description"  = "Example description"
+    type         = "Url"
+    name         = "Example name"
+    value        = "https://www.example.com"
+    order        = 1
+    display_name = "Example display name"
+    description  = "Example description"
   }
   inform_steps {
-    "type"         = "Richtext"
-    "name"         = "Example name"
-    "value"        = "<b>Example</b>"
-    "order"        = 2
-    "display_name" = "Example display name"
-    "description"  = "Example description"
+    type         = "Richtext"
+    name         = "Example name"
+    value        = "<b>Example</b>"
+    order        = 2
+    display_name = "Example display name"
+    description  = "Example description"
   }
   assessment_form {
     pass_percent = 80
