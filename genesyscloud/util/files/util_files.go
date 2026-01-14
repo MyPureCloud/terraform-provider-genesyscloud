@@ -25,26 +25,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
-// NamedReader is an interface for readers that have a name
-type NamedReader interface {
-	io.Reader
-	Name() string
-}
-
-type namedReader struct {
-	io.Reader
-	name string
-}
-
-func (nr *namedReader) Name() string {
-	return nr.name
-}
-
-// NewNamedReader creates a NamedReader from an io.Reader and a filename
-func NewNamedReader(r io.Reader, name string) NamedReader {
-	return &namedReader{Reader: r, name: name}
-}
-
 type S3Uploader struct {
 	reader        io.Reader
 	formData      map[string]io.Reader
@@ -186,12 +166,10 @@ func (s *S3Uploader) createFormData() error {
 
 		// For the "file" field, always create a form file, even for non-file readers (like S3)
 		if key == "file" {
-			// Try to get filename from the reader if it's a file or NamedReader
+			// Try to get filename from the reader if it's a file
 			filename := "script.json" // default filename
 			if file, ok := r.(*os.File); ok {
 				filename = file.Name()
-			} else if namedR, ok := r.(NamedReader); ok {
-				filename = namedR.Name()
 			}
 			fw, err = s.Writer.CreateFormFile(key, filename)
 		} else {
