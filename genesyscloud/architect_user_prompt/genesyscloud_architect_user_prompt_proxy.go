@@ -581,7 +581,7 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 		defer file.Close()
 	}
 
-	apiRequest := request.NewAPIRequest[uploadResponse, architectUserPromptProxy](setArchitectUserPromptRequestHeader)
+	apiRequest := request.NewRequestUtil[uploadResponse, architectUserPromptProxy](setArchitectUserPromptRequestHeader)
 	// Generate a presigned url for upload.
 	body, _, err := apiRequest.MakeAPIRequest(ctx, http.MethodPost, uploadUri, nil, p)
 	if err != nil {

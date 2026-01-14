@@ -13,7 +13,8 @@ import (
 )
 
 var internalProxy *guideProxy
-var apiRequest = request.NewAPIRequest[Guide, guideProxy](setGuideRequestHeader)
+var requestutil = request.NewRequestUtil[Guide, guideProxy](setGuideRequestHeader)
+var deleteutil = request.NewRequestUtil[DeleteObjectJob, guideProxy](setGuideRequestHeader)
 
 type getAllGuidesFunc func(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error)
 type createGuideFunc func(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error)
@@ -98,18 +99,18 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 	u.RawQuery = q.Encode()
 
-	req, err := apiRequest.CreateHTTPRequest(action, u.String(), nil, p)
+	req, err := requestutil.CreateHTTPRequest(action, u.String(), nil, p)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	body, resp, err := apiRequest.CallAPI(ctx, client, req)
+	body, resp, err := requestutil.CallAPI(ctx, client, req)
 	if err != nil {
 		return nil, resp, err
 	}
 
 	var guides GuideEntityListing
-	if err := apiRequest.UnmarshalResponse(body, &guides); err != nil {
+	if err := requestutil.UnmarshalResponse(body, &guides); err != nil {
 		return nil, resp, err
 	}
 
@@ -123,13 +124,13 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 		q.Set("pageNumber", fmt.Sprintf("%v", pageNum))
 		req.URL.RawQuery = q.Encode()
 
-		body, resp, err = apiRequest.CallAPI(ctx, client, req)
+		body, resp, err = requestutil.CallAPI(ctx, client, req)
 		if err != nil {
 			return nil, resp, err
 		}
 
 		var respBody GuideEntityListing
-		if err := apiRequest.UnmarshalResponse(body, &respBody); err != nil {
+		if err := requestutil.UnmarshalResponse(body, &respBody); err != nil {
 			return nil, resp, err
 		}
 
@@ -147,7 +148,7 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 func createGuideFn(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides"
-	return apiRequest.MakeAPIRequest(ctx, http.MethodPost, baseURL, guide, p)
+	return requestutil.MakeAPIRequest(ctx, http.MethodPost, baseURL, guide, p)
 }
 
 func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
@@ -155,7 +156,7 @@ func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *pla
 		return guide, nil, nil
 	}
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id
-	return apiRequest.MakeAPIRequest[Guide](ctx, http.MethodGet, baseURL, nil, p)
+	return requestutil.MakeAPIRequest(ctx, http.MethodGet, baseURL, nil, p)
 }
 
 func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
@@ -182,7 +183,7 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 
 func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id + "/jobs"
-	jobResponse, resp, err := apiRequest.MakeAPIRequest[DeleteObjectJob](ctx, http.MethodDelete, baseURL, nil, p)
+	jobResponse, resp, err := deleteutil.MakeAPIRequest(ctx, http.MethodDelete, baseURL, nil, p)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -192,7 +193,7 @@ func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObject
 
 func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/jobs/" + jobId
-	jobResponse, resp, err := apiRequest.MakeAPIRequest[DeleteObjectJob](ctx, http.MethodGet, baseURL, nil, p)
+	jobResponse, resp, err := deleteutil.MakeAPIRequest(ctx, http.MethodGet, baseURL, nil, p)
 	if err != nil {
 		return nil, resp, err
 	}
