@@ -1,0 +1,5 @@
+* [GET /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-learning-modules)
+* [POST /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-learning-modules)
+* [DELETE /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-learning-modules--moduleId-)
+* [GET /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-learning-modules--moduleId-)
+* [PUT /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-learning-modules--moduleId-)
