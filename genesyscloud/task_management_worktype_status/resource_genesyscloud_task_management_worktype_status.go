@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -72,6 +72,7 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		DefaultDestinationStatusId:   resourcedata.GetNillableValue[string](d, "default_destination_status_id"),
 		StatusTransitionDelaySeconds: resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"),
 		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
+		AutoTerminateWorkitem:        platformclientv2.Bool(d.Get("auto_terminate_workitem").(bool)),
 	}
 
 	err := validateSchema(d)
@@ -172,6 +173,7 @@ func readTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceDat
 		}
 		resourcedata.SetNillableValue(d, "status_transition_delay_seconds", workitemStatus.StatusTransitionDelaySeconds)
 		resourcedata.SetNillableValue(d, "status_transition_time", workitemStatus.StatusTransitionTime)
+		resourcedata.SetNillableValue(d, "auto_terminate_workitem", workitemStatus.AutoTerminateWorkitem)
 
 		// Check if this status is the default on the worktype
 		worktype, resp, err := proxy.worktypeProxy.GetTaskManagementWorktypeById(ctx, worktypeId)
@@ -208,6 +210,7 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		DefaultDestinationStatusId:   resourcedata.GetNillableValue[string](d, "default_destination_status_id"),
 		StatusTransitionDelaySeconds: resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"),
 		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
+		AutoTerminateWorkitem:        platformclientv2.Bool(d.Get("auto_terminate_workitem").(bool)),
 	}
 
 	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>

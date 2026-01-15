@@ -105,6 +105,11 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},
+			`auto_terminate_workitem`: {
+				Description: `When set to true, workitems will be automatically terminated when they enter this status (typically used for Closed category statuses).`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 }

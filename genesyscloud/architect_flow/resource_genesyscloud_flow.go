@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -242,10 +242,11 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diag
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
 			}
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp)
 			if resp.StatusCode == http.StatusConflict {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(diagErr)
 		}
 		return nil
 	})
