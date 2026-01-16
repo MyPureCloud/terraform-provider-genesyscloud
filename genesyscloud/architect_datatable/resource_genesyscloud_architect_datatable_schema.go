@@ -4,7 +4,6 @@ package architect_datatable
 // @chat: #Genesys Cloud Architect support
 // @description: Manages Genesys Cloud architect datatables and their schemas
 
-
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
