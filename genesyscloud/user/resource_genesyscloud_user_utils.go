@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
@@ -420,6 +421,10 @@ func logFinalState(model *UserFrameworkResourceModel) {
 // (CreateRequest/CreateResponse vs UpdateRequest/UpdateResponse), preventing direct method calls between CRUD operations.
 // It builds SDK request payloads, applies state changes separately, updates core attributes, and applies skills/languages/utilization.
 func updateUser(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy, clientConfig *platformclientv2.Configuration, diagnostics *pfdiag.Diagnostics, state ...*UserFrameworkResourceModel) {
+	// Wait for extension pool activation if needed (migrated from SDKv2)
+	// This must be called BEFORE buildSdkAddresses to ensure pools are ready
+	waitForExtensionPoolActivation(ctx, plan, proxy)
+
 	// Build addresses from plan
 	addresses, addressDiags := buildSdkAddresses(ctx, plan.Addresses)
 	*diagnostics = append(*diagnostics, addressDiags...)
@@ -728,14 +733,16 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			}
 
 			// Initialize phoneNumber similar to SDKv2, but with explicit attr.Value types.
-			// TODO Note: extension_pool_id is ALWAYS null in state to keep it out of Set identity
-			// and match SDKv2's hash behavior (which ignored extension_pool_id).
+			// Note: extension_pool_id starts as null and is populated in Case 2 (internal extensions)
+			// by calling fetchExtensionPoolId(). Unlike SDKv2 which excluded extension_pool_id from
+			// Set hash, Plugin Framework includes all fields in Set identity, so pool changes will
+			// cause Set element replacements (acceptable trade-off).
 			phoneNumber := map[string]attr.Value{
 				"media_type":        types.StringValue(media),
 				"number":            types.StringNull(),
 				"extension":         types.StringNull(),
 				"type":              types.StringNull(),
-				"extension_pool_id": types.StringNull(), // <- always null in state -- TODO
+				"extension_pool_id": types.StringNull(), // <- populated in Case 2 for internal extensions
 			}
 
 			//===========================important==========================================
@@ -761,16 +768,19 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				if extensionNum != "" {
 					phoneNumber["extension"] = types.StringValue(extensionNum)
 				}
-				// In SDKv2, extension_pool_id was ignored by the Set hash.
-				// In PF, including it in state would affect Set identity and
-				// cause plan/state mismatches. To keep PF behavior closer to SDKv2,
-				// we deliberately DO NOT store extension_pool_id in state here.
+
+				// FIX: Fetch and store the actual extension pool ID (matches SDKv2 behavior)
+				// The API auto-assigns extensions to pools based on number ranges.
+				// We must fetch the pool ID separately using the extension number.
 				//
-				// poolId := fetchExtensionPoolId(ctx, extensionNum, proxy)
-				// if poolId != "" {
-				//     phoneNumber["extension_pool_id"] = types.StringValue(poolId)
-				// }
-				_ = fetchExtensionPoolId // keep reference if you still use it elsewhere
+				// Note: SDKv2 stored pool ID in state but excluded it from Set hash to prevent
+				// diffs when pool changed. Plugin Framework doesn't support custom hash functions,
+				// so pool changes will cause Set element replacements (delete+add). This is an
+				// acceptable trade-off and matches AWS provider patterns during PF migration.
+				poolId := fetchExtensionPoolId(ctx, extensionNum, proxy)
+				if poolId != "" {
+					phoneNumber["extension_pool_id"] = types.StringValue(poolId)
+				}
 
 				// *** KEY FIX: for internal extensions, treat as extension-only identity ***
 				// Even if Address is populated (and Case 1 set a number), we force `number`
@@ -1480,6 +1490,95 @@ func restoreDeletedUser(ctx context.Context, plan *UserFrameworkResourceModel, p
 
 	if err != nil {
 		*diagnostics = append(*diagnostics, err...)
+	}
+}
+
+// waitForExtensionPoolActivation waits for newly created extension pools to be fully activated
+// before assigning extensions to users. This prevents timing issues where the telephony backend
+// hasn't finished activating the pool yet. Migrated from SDKv2.
+func waitForExtensionPoolActivation(ctx context.Context, plan *UserFrameworkResourceModel, proxy *userProxy) {
+	// Define local models for parsing (same as in buildSdkAddresses)
+	type AddressesModel struct {
+		OtherEmails  types.Set `tfsdk:"other_emails"`
+		PhoneNumbers types.Set `tfsdk:"phone_numbers"`
+	}
+
+	type PhoneNumberModel struct {
+		Number          types.String `tfsdk:"number"`
+		MediaType       types.String `tfsdk:"media_type"`
+		Type            types.String `tfsdk:"type"`
+		Extension       types.String `tfsdk:"extension"`
+		ExtensionPoolId types.String `tfsdk:"extension_pool_id"`
+	}
+
+	// Check if addresses exist
+	if plan.Addresses.IsNull() || plan.Addresses.IsUnknown() {
+		return
+	}
+
+	// Get addresses list
+	var addresses []AddressesModel
+	diags := plan.Addresses.ElementsAs(ctx, &addresses, false)
+	if diags.HasError() {
+		log.Printf("Warning: could not parse addresses for extension pool validation")
+		return
+	}
+
+	if len(addresses) == 0 {
+		return
+	}
+
+	// Get phone_numbers from first address block
+	firstAddress := addresses[0]
+	if firstAddress.PhoneNumbers.IsNull() || firstAddress.PhoneNumbers.IsUnknown() {
+		return
+	}
+
+	var phoneNumbers []PhoneNumberModel
+	diags = firstAddress.PhoneNumbers.ElementsAs(ctx, &phoneNumbers, false)
+	if diags.HasError() {
+		log.Printf("Warning: could not parse phone numbers for extension pool validation")
+		return
+	}
+
+	// Track which pools we've already waited for (avoid duplicate waits)
+	waitedPools := make(map[string]bool)
+
+	// Loop through all phone numbers
+	for _, phone := range phoneNumbers {
+		// Check if extension_pool_id is specified
+		if phone.ExtensionPoolId.IsNull() || phone.ExtensionPoolId.IsUnknown() {
+			continue
+		}
+
+		extensionPoolId := phone.ExtensionPoolId.ValueString()
+		if extensionPoolId == "" {
+			continue
+		}
+
+		// Skip if we already waited for this pool
+		if waitedPools[extensionPoolId] {
+			continue
+		}
+
+		// Fetch the extension pool from API
+		pool, _, err := proxy.getTelephonyExtensionPoolById(ctx, extensionPoolId)
+		if err != nil {
+			log.Printf("Warning: could not validate the extension pool %s on user creation: %s",
+				extensionPoolId, err)
+			return
+		}
+
+		// Check if pool was created within last 5 seconds
+		if pool.DateCreated != nil && time.Since(*pool.DateCreated) < 5*time.Second {
+			log.Printf("Waiting 5 seconds for extension pool %s to be created", extensionPoolId)
+
+			// WAIT 5 seconds for pool activation
+			time.Sleep(5 * time.Second)
+
+			// Mark this pool as waited
+			waitedPools[extensionPoolId] = true
+		}
 	}
 }
 

@@ -587,8 +587,8 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 		extensionPoolEndNumber1   = "21001"
 		extensionPoolStartNumber2 = "21002"
 		extensionPoolEndNumber2   = "21003"
-		extension1                = "21000"
-		extension2                = "21002"
+		extension1                = "21001" // Test END boundary (Gap #2 fix)
+		extension2                = "21003" // Test END boundary (Gap #2 fix)
 		phoneMediaType            = "PHONE"
 		addrTypeWork              = "WORK"
 	)
@@ -630,8 +630,8 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 							util.NullValue,            // Default to PHONE
 							util.NullValue,            // Default to WORK
 							strconv.Quote(extension1), // extension
-							// NOTE: extension_pool_id handling depends on Option 1 vs 2 - leave as TODO for now
-							"# TODO: extension_pool_id field handling",
+							// NOTE: extension_pool_id is now properly tested (Gap #1 fix)
+							fmt.Sprintf("extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id", extensionPoolLabel1),
 						),
 					),
 				) + generateFrameworkExtensionPoolResource(
@@ -643,11 +643,21 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					// Validate addresses structure (Gap #4 fix)
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.#", "1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.#", "1"),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension1),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
-					// NOTE: extension_pool_id assertion depends on Option 1 vs 2 - leave as TODO
-					// TODO: Add appropriate extension_pool_id assertion based on chosen option
+					// Verify number is not set when using extension (Gap #4 fix)
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number"),
+					// Verify extension_pool_id is set and matches the pool resource (Gap #1 fix)
+					resource.TestCheckResourceAttrPair(
+						ResourceType+"."+userResourceLabel,
+						"addresses.0.phone_numbers.0.extension_pool_id",
+						"genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolLabel1,
+						"id",
+					),
 				),
 			},
 			{
@@ -660,8 +670,8 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 							util.NullValue,            // Default to PHONE
 							util.NullValue,            // Default to WORK
 							strconv.Quote(extension2), // extension
-							// NOTE: extension_pool_id handling depends on Option 1 vs 2 - leave as TODO for now
-							"# TODO: extension_pool_id field handling",
+							// NOTE: extension_pool_id is now properly tested (Gap #1 fix)
+							fmt.Sprintf("extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id", extensionPoolLabel2),
 						),
 					),
 				) + generateFrameworkExtensionPoolResource(
@@ -678,12 +688,62 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
+					// Validate addresses structure (Gap #4 fix)
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.#", "1"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.#", "1"),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension2),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
-					// NOTE: extension_pool_id assertion depends on Option 1 vs 2 - leave as TODO
-					// TODO: Add appropriate extension_pool_id assertion based on chosen option
+					// Verify number is not set when using extension (Gap #4 fix)
+					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number"),
+					// Verify extension_pool_id is updated to new pool (Gap #1 fix)
+					resource.TestCheckResourceAttrPair(
+						ResourceType+"."+userResourceLabel,
+						"addresses.0.phone_numbers.0.extension_pool_id",
+						"genesyscloud_telephony_providers_edges_extension_pool."+extensionPoolLabel2,
+						"id",
+					),
 				),
+			},
+			{
+				// Step 2.5: Import state verification with extension pool (Gap #7 fix)
+				Config: generateFrameworkUserWithCustomAttrs(
+					userResourceLabel, email, userName,
+					generateFrameworkUserAddresses(
+						generateFrameworkUserPhoneAddress(
+							util.NullValue,
+							util.NullValue,
+							util.NullValue,
+							strconv.Quote(extension2),
+							fmt.Sprintf("extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id", extensionPoolLabel2),
+						),
+					),
+				) + generateFrameworkExtensionPoolResource(
+					extensionPoolLabel1,
+					extensionPoolStartNumber1,
+					extensionPoolEndNumber1,
+					"Test extension pool 1 for user integration",
+				) + generateFrameworkExtensionPoolResource(
+					extensionPoolLabel2,
+					extensionPoolStartNumber2,
+					extensionPoolEndNumber2,
+					"Test extension pool 2 for user integration",
+				),
+				ResourceName:            ResourceType + "." + userResourceLabel,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password"},
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if len(states) == 0 {
+						return fmt.Errorf("no states returned from import")
+					}
+					// Verify extension_pool_id is imported correctly
+					poolId := states[0].Attributes["addresses.0.phone_numbers.0.extension_pool_id"]
+					if poolId == "" {
+						return fmt.Errorf("extension_pool_id not imported correctly")
+					}
+					return nil
+				},
 			},
 			{
 				// Step 3: Remove addresses - KEEP BOTH POOLS ✅
