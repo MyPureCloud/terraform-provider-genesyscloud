@@ -587,8 +587,8 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 		extensionPoolEndNumber1   = "21001"
 		extensionPoolStartNumber2 = "21002"
 		extensionPoolEndNumber2   = "21003"
-		extension1                = "21001" // Test END boundary (Gap #2 fix)
-		extension2                = "21003" // Test END boundary (Gap #2 fix)
+		extension1                = "21001"
+		extension2                = "21003"
 		phoneMediaType            = "PHONE"
 		addrTypeWork              = "WORK"
 	)
@@ -630,7 +630,6 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 							util.NullValue,            // Default to PHONE
 							util.NullValue,            // Default to WORK
 							strconv.Quote(extension1), // extension
-							// NOTE: extension_pool_id is now properly tested (Gap #1 fix)
 							fmt.Sprintf("extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id", extensionPoolLabel1),
 						),
 					),
@@ -643,15 +642,12 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
-					// Validate addresses structure (Gap #4 fix)
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.#", "1"),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.#", "1"),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension1),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
-					// Verify number is not set when using extension (Gap #4 fix)
 					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number"),
-					// Verify extension_pool_id is set and matches the pool resource (Gap #1 fix)
 					resource.TestCheckResourceAttrPair(
 						ResourceType+"."+userResourceLabel,
 						"addresses.0.phone_numbers.0.extension_pool_id",
@@ -670,7 +666,6 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 							util.NullValue,            // Default to PHONE
 							util.NullValue,            // Default to WORK
 							strconv.Quote(extension2), // extension
-							// NOTE: extension_pool_id is now properly tested (Gap #1 fix)
 							fmt.Sprintf("extension_pool_id = genesyscloud_telephony_providers_edges_extension_pool.%s.id", extensionPoolLabel2),
 						),
 					),
@@ -688,15 +683,12 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "email", email),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "name", userName),
-					// Validate addresses structure (Gap #4 fix)
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.#", "1"),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.#", "1"),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.extension", extension2),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.type", addrTypeWork),
-					// Verify number is not set when using extension (Gap #4 fix)
 					resource.TestCheckNoResourceAttr(ResourceType+"."+userResourceLabel, "addresses.0.phone_numbers.0.number"),
-					// Verify extension_pool_id is updated to new pool (Gap #1 fix)
 					resource.TestCheckResourceAttrPair(
 						ResourceType+"."+userResourceLabel,
 						"addresses.0.phone_numbers.0.extension_pool_id",
@@ -706,7 +698,7 @@ func TestAccFrameworkResourceUserAddressWithExtensionPool(t *testing.T) {
 				),
 			},
 			{
-				// Step 2.5: Import state verification with extension pool (Gap #7 fix)
+				// Step 2.5: Import state verification with extension pool
 				Config: generateFrameworkUserWithCustomAttrs(
 					userResourceLabel, email, userName,
 					generateFrameworkUserAddresses(
@@ -2151,24 +2143,6 @@ func generateFrameworkLabelUtilization(labelResourceLabel, maxCapacity, interrup
 	}`, labelResourceLabel, maxCapacity, interruptingConfig)
 }
 
-func generateFrameworkRoutingUtilMediaType(
-	mediaType string,
-	maxCapacity string,
-	includeNonAcd string,
-	interruptTypes ...string) string {
-
-	interruptConfig := ""
-	if len(interruptTypes) > 0 {
-		interruptConfig = fmt.Sprintf(`interruptible_media_types = [%s]`, strings.Join(interruptTypes, ","))
-	}
-
-	return fmt.Sprintf(`%s {
-		maximum_capacity = %s
-		include_non_acd = %s
-		%s
-	}`, mediaType, maxCapacity, includeNonAcd, interruptConfig)
-}
-
 func generateFrameworkRoutingUtilizationLabelResource(resourceLabel, name, dependsOnResource string) string {
 	dependsOn := ""
 	if dependsOnResource != "" {
@@ -2180,38 +2154,6 @@ func generateFrameworkRoutingUtilizationLabelResource(resourceLabel, name, depen
 		%s
 	}
 	`, resourceLabel, name, dependsOn)
-}
-
-func generateFrameworkUserWithRoutingUtilizationComplete(
-	resourceLabel string,
-	email string,
-	name string,
-	callConfig string,
-	callbackConfig string,
-	chatConfig string,
-	emailConfig string,
-	messageConfig string,
-	labelUtilizations ...string) string {
-
-	labelUtilConfig := ""
-	if len(labelUtilizations) > 0 {
-		labelUtilConfig = fmt.Sprintf("label_utilizations = [\n%s\n]", strings.Join(labelUtilizations, ",\n"))
-	}
-
-	return fmt.Sprintf(`resource "%s" "%s" {
-		email = "%s"
-		name = "%s"
-		routing_utilization = [
-			{
-				%s
-				%s
-				%s
-				%s
-				%s
-				%s
-			}
-		]
-	}`, ResourceType, resourceLabel, email, name, callConfig, callbackConfig, chatConfig, emailConfig, messageConfig, labelUtilConfig)
 }
 
 // Helper function to generate Framework user resource with password
