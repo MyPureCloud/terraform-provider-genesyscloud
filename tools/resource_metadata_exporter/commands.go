@@ -44,6 +44,7 @@ var templateCmd = &cobra.Command{
 // Command flags
 var (
 	discoverPath     string
+	exportPath       string
 	exportFormat     string
 	exportOutput     string
 	validatePath     string
@@ -56,8 +57,10 @@ func init() {
 	discoverCmd.Flags().StringVarP(&discoverPath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
 
 	// Export command flags
+	exportCmd.Flags().StringVarP(&exportPath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
 	exportCmd.Flags().StringVarP(&exportFormat, "format", "f", "markdown", "Output format (markdown, json, csv)")
 	exportCmd.Flags().StringVarP(&exportOutput, "output", "o", "", "Output file (defaults to stdout)")
+	exportCmd.MarkFlagRequired("format")
 
 	// Validate command flags
 	validateCmd.Flags().StringVarP(&validatePath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
@@ -100,14 +103,7 @@ func runDiscover(cmd *cobra.Command, args []string) error {
 }
 
 func runExport(cmd *cobra.Command, args []string) error {
-	// Use the real discovery framework to get metadata
-	// Default to genesyscloud directory if not specified
-	scanPath := "./genesyscloud"
-	if discoverPath != "" {
-		scanPath = discoverPath
-	}
-	
-	discovery := NewResourceDiscovery(scanPath)
+	discovery := NewResourceDiscovery(exportPath)
 	metadata, err := discovery.DiscoverResources()
 	if err != nil {
 		return fmt.Errorf("failed to discover resources: %w", err)
@@ -201,41 +197,64 @@ func runTemplate(cmd *cobra.Command, args []string) error {
 }
 
 // Export functions
-func exportMarkdown(metadata []ResourceMetadata, output io.Writer) error {
-	fmt.Fprintln(output, "# Genesys Cloud Terraform Provider - Resource Metadata")
-	fmt.Fprintln(output)
-	fmt.Fprintln(output, "| Resource Type | Package | Team | Chat Room | Description |")
-	fmt.Fprintln(output, "|---------------|---------|------|-----------|-------------|")
+func exportMarkdown(annotations []ResourceMetadata, output io.Writer) error {
+	heading := `# CX as Code - Resource Support Directory
 
-	for _, m := range metadata {
+This report contains the information and contact details for the teams that are responsible for the resources in the CX as Code project.
+	
+Total Resources: %d
+
+`
+	fmt.Fprintf(output, heading, len(annotations))
+
+	fmt.Fprintln(output, "| Resource Type | Package | Team | Genesys Cloud Chat Room | Description |")
+	fmt.Fprintln(output, "|--------------|:--------:|------|:-----------------------------:|-------------|")
+
+	for _, a := range annotations {
+		resourceType := strings.ReplaceAll(a.ResourceType, "_", "\\_")
+		packageName := fmt.Sprintf("`%s`", a.PackageName)
+		chatRoom := strings.TrimPrefix(a.TeamChatRoom, "#")
+
+		teamName := a.TeamName
+		if teamName == "" {
+			teamName = "Unknown Team"
+		}
+
+		if chatRoom == "" {
+			chatRoom = "Unknown Chat Room"
+		}
+
+		description := a.Description
+		if description == "" {
+			description = "N/A"
+		}
+
 		fmt.Fprintf(output, "| %s | %s | %s | %s | %s |\n",
-			m.ResourceType,
-			m.PackageName,
-			m.TeamName,
-			m.TeamChatRoom,
-			m.Description)
+			resourceType,
+			packageName,
+			teamName,
+			chatRoom,
+			description)
 	}
 
 	return nil
 }
 
-func exportJSON(metadata []ResourceMetadata, output io.Writer) error {
+func exportJSON(annotations []ResourceMetadata, output io.Writer) error {
 	encoder := json.NewEncoder(output)
 	encoder.SetIndent("", "  ")
-	return encoder.Encode(metadata)
+	return encoder.Encode(annotations)
 }
 
-func exportCSV(metadata []ResourceMetadata, output io.Writer) error {
+func exportCSV(annotations []ResourceMetadata, output io.Writer) error {
 	writer := csv.NewWriter(output)
 	defer writer.Flush()
 
-	// Write header
 	if err := writer.Write([]string{"Resource Type", "Package", "Team", "Chat Room", "Description"}); err != nil {
 		return err
 	}
 
-	// Write data
-	for _, m := range metadata {
+	for _, m := range annotations {
 		if err := writer.Write([]string{
 			m.ResourceType,
 			m.PackageName,
