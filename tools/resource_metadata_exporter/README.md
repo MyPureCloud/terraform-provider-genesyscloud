@@ -97,6 +97,7 @@ Exports discovered metadata in various formats.
 resource-metadata-exporter export [flags]
 
 Flags:
+  -p, --path   string   Path to scan for resource schema files (default "./genesyscloud")
   -f, --format string   Output format (markdown, json, csv) (default "markdown")
   -o, --output string   Output file (defaults to stdout)
 ```
@@ -322,12 +323,15 @@ Use Go build tags for metadata:
 Generates a human-readable table format:
 
 ```markdown
-# Genesys Cloud Terraform Provider - Resource Metadata
+# CX as Code - Resource Support Directory
 
-| Resource Type | Package | Team | Chat Room | Description |
-|---------------|---------|------|-----------|-------------|
-| genesyscloud_flow | architect_flow | Platform Team | #platform-team | Manages Genesys Cloud flows |
-| genesyscloud_queue | routing_queue | Routing Team | #routing-team | Manages routing queues |
+This report contains the information and contact details for the teams that are responsible for the resources in the CX as Code project.
+	
+Total Resources: 2
+
+| Resource Type | Package | Team | Genesys Cloud Chat Room | Description |
+|--------------|:--------:|------|:-----------------------------:|-------------|
+| genesyscloud\_flow | `architect_flow` | Platform Team | platform-team | Manages Genesys Cloud flows |
 ```
 
 ### JSON
