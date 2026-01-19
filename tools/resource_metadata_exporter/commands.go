@@ -153,31 +153,51 @@ func runExport(cmd *cobra.Command, args []string) error {
 func runValidate(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Validating metadata in: %s\n", validatePath)
 
-	// Mock validation results
-	validResources := []string{
-		"genesyscloud_flow",
-		"genesyscloud_queue",
-		"genesyscloud_user",
+	// Use the real discovery framework
+	discovery := NewResourceDiscovery(validatePath)
+
+	// Get all schema files using the findAllSchemaFiles method
+	allSchemaFiles, err := discovery.findAllSchemaFiles()
+	if err != nil {
+		return fmt.Errorf("failed to scan directory: %w", err)
 	}
 
-	invalidResources := []string{
-		"genesyscloud_unknown",
+	var validResources []string
+	var invalidResources []string
+
+	// Check each file
+	for _, file := range allSchemaFiles {
+		metadata, _ := discovery.extractMetadataFromFile(file)
+
+		if metadata != nil && metadata.TeamName != "" {
+			validResources = append(validResources, metadata.ResourceType)
+		} else {
+			// Extract filename from path for invalid resources
+			parts := strings.Split(file, "/")
+			filename := parts[len(parts)-1] // Get last part (filename)
+			invalidResources = append(invalidResources, filename)
+		}
 	}
 
+	// Print results
+	fmt.Printf("\nValidation Results:\n")
+	fmt.Printf("==================\n")
+	fmt.Printf("Total schema files: %d\n", len(allSchemaFiles))
 	fmt.Printf("Valid resources: %d\n", len(validResources))
+
 	for _, resource := range validResources {
-		fmt.Printf("  ✓ %s\n", resource)
+		fmt.Printf("  %s\n", resource)
 	}
 
 	if len(invalidResources) > 0 {
-		fmt.Printf("Invalid resources: %d\n", len(invalidResources))
+		fmt.Printf("\nInvalid resources: %d\n", len(invalidResources))
 		for _, resource := range invalidResources {
-			fmt.Printf("  ✗ %s (missing team annotation)\n", resource)
+			fmt.Printf("  %s (missing team annotation)\n", resource)
 		}
 		return fmt.Errorf("validation failed: %d resources missing metadata", len(invalidResources))
 	}
 
-	fmt.Println("All resources have valid metadata!")
+	fmt.Println("\nAll resources have valid metadata")
 	return nil
 }
 
@@ -271,11 +291,10 @@ func NewResourceDiscovery(basePath string) *ResourceDiscovery {
 	}
 }
 
-// DiscoverResources scans the codebase for resource schema files and extracts metadata
-func (d *ResourceDiscovery) DiscoverResources() ([]ResourceMetadata, error) {
-	var allMetadata []ResourceMetadata
+// findAllSchemaFiles scans the directory and returns all schema file paths
+func (d *ResourceDiscovery) findAllSchemaFiles() ([]string, error) {
+	var schemaFiles []string
 
-	// Walk through the genesyscloud directory
 	err := filepath.Walk(d.basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -288,22 +307,40 @@ func (d *ResourceDiscovery) DiscoverResources() ([]ResourceMetadata, error) {
 
 		// Look for schema files (specifically resource schema files in genesyscloud directory)
 		if strings.HasSuffix(path, "_schema.go") && strings.Contains(path, "genesyscloud") {
-			metadata, err := d.extractMetadataFromFile(path)
-			if err != nil {
-				// Log error but continue scanning
-				fmt.Printf("Warning: Failed to extract metadata from %s: %v\n", path, err)
-				return nil
-			}
-
-			if metadata != nil {
-				allMetadata = append(allMetadata, *metadata)
-			}
+			schemaFiles = append(schemaFiles, path)
 		}
 
 		return nil
 	})
 
-	return allMetadata, err
+	return schemaFiles, err
+}
+
+// DiscoverResources scans the codebase for resource schema files and extracts metadata
+func (d *ResourceDiscovery) DiscoverResources() ([]ResourceMetadata, error) {
+	var allMetadata []ResourceMetadata
+
+	// Get all schema files using the reusable method
+	schemaFiles, err := d.findAllSchemaFiles()
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract metadata from each file
+	for _, path := range schemaFiles {
+		metadata, err := d.extractMetadataFromFile(path)
+		if err != nil {
+			// Log error but continue scanning
+			fmt.Printf("Warning: Failed to extract metadata from %s: %v\n", path, err)
+			continue
+		}
+
+		if metadata != nil {
+			allMetadata = append(allMetadata, *metadata)
+		}
+	}
+
+	return allMetadata, nil
 }
 
 // extractMetadataFromFile extracts metadata from a single schema file

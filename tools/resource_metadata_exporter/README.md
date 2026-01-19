@@ -34,10 +34,10 @@ git clone <repository-url>
 cd terraform-provider-genesyscloud/tools/resource_metadata_exporter
 
 # Build the tool
-make build
+make -f GNUMakefile build
 
 # Or build for all platforms
-make build-all
+make -f GNUMakefile build-all
 ```
 
 ### Installation
