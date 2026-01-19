@@ -60,7 +60,6 @@ func init() {
 	exportCmd.Flags().StringVarP(&exportPath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
 	exportCmd.Flags().StringVarP(&exportFormat, "format", "f", "markdown", "Output format (markdown, json, csv)")
 	exportCmd.Flags().StringVarP(&exportOutput, "output", "o", "", "Output file (defaults to stdout)")
-	exportCmd.MarkFlagRequired("format")
 
 	// Validate command flags
 	validateCmd.Flags().StringVarP(&validatePath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
