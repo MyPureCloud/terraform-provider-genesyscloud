@@ -651,7 +651,7 @@ func uploadWavFile(presignedURL string, headers map[string]string, reader io.Rea
 
 	// Construct header values based on the environment (inferred from the API base path)
 	host := fmt.Sprintf("fileupload%s", basePathSuffix)
-	origin := fmt.Sprintf("%sapps%s", u.Scheme, basePathSuffix)
+	origin := fmt.Sprintf("%s://apps%s", u.Scheme, basePathSuffix)
 	referer := origin
 
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
