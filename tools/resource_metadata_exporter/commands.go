@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -41,6 +42,13 @@ var templateCmd = &cobra.Command{
 	RunE:  runTemplate,
 }
 
+var reportCmd = &cobra.Command{
+	Use:   "report",
+	Short: "Generate a documentation report with markdown and links to JSON/CSV",
+	Long:  "Generates a comprehensive report in markdown format with embedded content and links to JSON and CSV exports for documentation publishing",
+	RunE:  runReport,
+}
+
 // Command flags
 var (
 	discoverPath     string
@@ -50,6 +58,8 @@ var (
 	validatePath     string
 	templateResource string
 	templatePackage  string
+	reportPath       string
+	reportOutput     string
 )
 
 func init() {
@@ -69,6 +79,10 @@ func init() {
 	templateCmd.Flags().StringVarP(&templatePackage, "package", "p", "", "Package name (required)")
 	templateCmd.MarkFlagRequired("resource")
 	templateCmd.MarkFlagRequired("package")
+
+	// Report command flags
+	reportCmd.Flags().StringVarP(&reportPath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
+	reportCmd.Flags().StringVarP(&reportOutput, "output", "o", "./resource-annotation-report", "Output location and base name for the report")
 }
 
 func runDiscover(cmd *cobra.Command, args []string) error {
@@ -215,17 +229,102 @@ func runTemplate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// Export functions
-func exportMarkdown(annotations []ResourceMetadata, output io.Writer) error {
-	heading := `# CX as Code - Resource Support Directory
+func runReport(cmd *cobra.Command, args []string) error {
+	discovery := NewResourceDiscovery(reportPath)
+	metadata, err := discovery.DiscoverResources()
+	if err != nil {
+		return fmt.Errorf("failed to discover resources: %w", err)
+	}
+
+	var fullMetadata []ResourceMetadata
+	for _, m := range metadata {
+		fullMetadata = append(fullMetadata, ResourceMetadata{
+			ResourceType: m.ResourceType,
+			PackageName:  m.PackageName,
+			TeamName:     m.TeamName,
+			TeamChatRoom: m.TeamChatRoom,
+			Description:  m.Description,
+		})
+	}
+
+	reportBaseName := filepath.Base(reportOutput)
+	reportPath := filepath.Dir(reportOutput)
+
+	jsonPath := filepath.Join(reportPath, reportBaseName+".json")
+	jsonFile, err := os.Create(jsonPath)
+	if err != nil {
+		return fmt.Errorf("failed to create JSON file: %w", err)
+	}
+	if err := exportJSON(fullMetadata, jsonFile); err != nil {
+		jsonFile.Close()
+		return fmt.Errorf("failed to export JSON: %w", err)
+	}
+	jsonFile.Close()
+
+	csvPath := filepath.Join(reportPath, reportBaseName+".csv")
+	csvFile, err := os.Create(csvPath)
+	if err != nil {
+		return fmt.Errorf("failed to create CSV file: %w", err)
+	}
+	if err := exportCSV(fullMetadata, csvFile); err != nil {
+		csvFile.Close()
+		return fmt.Errorf("failed to export CSV: %w", err)
+	}
+	csvFile.Close()
+
+	reportFilePath := filepath.Join(reportPath, reportBaseName+".md")
+	reportFile, err := os.Create(reportFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create report file: %w", err)
+	}
+	defer reportFile.Close()
+
+	reportHeader := `# CX as Code - Resource Support Directory
 
 This report contains the information and contact details for the teams that are responsible for the resources in the CX as Code project.
-	
-Total Resources: %d
+
+---
 
 `
-	fmt.Fprintf(output, heading, len(annotations))
 
+	if _, err := reportFile.WriteString(reportHeader); err != nil {
+		return fmt.Errorf("failed to write report header: %w", err)
+	}
+
+	if err := exportMarkdown(fullMetadata, reportFile); err != nil {
+		return fmt.Errorf("failed to export markdown: %w", err)
+	}
+
+	reportFooter := fmt.Sprintf(`
+---
+
+## About This Report
+
+This report is automatically generated from resource metadata annotations in the [Terraform provider codebase](https://github.com/MyPureCloud/terraform-provider-genesyscloud).
+
+**Last Updated**: %s
+
+**Total Resources**: %d
+`, getCurrentDate(), len(fullMetadata))
+
+	if _, err := reportFile.WriteString(reportFooter); err != nil {
+		return fmt.Errorf("failed to write report footer: %w", err)
+	}
+
+	fmt.Printf("Report generated successfully!\n")
+	fmt.Printf("  Report: %s\n", reportFilePath)
+	fmt.Printf("  JSON:   %s\n", jsonPath)
+	fmt.Printf("  CSV:    %s\n", csvPath)
+
+	return nil
+}
+
+func getCurrentDate() string {
+	return time.Now().Format("2006-01-02")
+}
+
+// Export functions
+func exportMarkdown(annotations []ResourceMetadata, output io.Writer) error {
 	fmt.Fprintln(output, "| Resource Type | Package | Team | Genesys Cloud Chat Room | Description |")
 	fmt.Fprintln(output, "|--------------|:--------:|------|:-----------------------------:|-------------|")
 
