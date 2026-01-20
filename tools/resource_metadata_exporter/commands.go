@@ -279,7 +279,12 @@ func runReport(cmd *cobra.Command, args []string) error {
 	}
 	defer reportFile.Close()
 
-	reportHeader := `# CX as Code - Resource Support Directory
+	reportHeader := `---
+title: Resource Support Directory
+order: 2
+---
+
+# CX as Code - Resource Support Directory
 
 This report contains the information and contact details for the teams that are responsible for the resources in the CX as Code project.
 
@@ -311,7 +316,53 @@ This report is automatically generated from resource metadata annotations in the
 		return fmt.Errorf("failed to write report footer: %w", err)
 	}
 
+	indexPath := filepath.Join(reportPath, "index.md")
+	indexFile, err := os.Create(indexPath)
+	if err != nil {
+		return fmt.Errorf("failed to create index file: %w", err)
+	}
+	defer indexFile.Close()
+
+	indexContent := fmt.Sprintf(`---
+title: Overview
+group: Resource Reports
+order: 1
+---
+
+This directory contains resource annotation reports generated from the [Terraform provider codebase](https://github.com/MyPureCloud/terraform-provider-genesyscloud). These reports provide information about team ownership and contact details for resources in the CX as Code Terraform Provider.
+
+## Available Reports
+
+The reports are available in multiple formats:
+
+- **[Markdown Report](%s.md)**
+- **[JSON Report](%s.json)**
+- **[CSV Report](%s.csv)**
+
+## Report Contents
+
+Each report contains:
+- Resource type identifiers
+- Package names
+- Team ownership information
+- Genesys Cloud Chat room contact details
+- Resource descriptions
+
+## Last Updated
+
+Reports are automatically generated.
+
+**Last Updated**: %s
+
+**Total Resources**: %d
+`, reportBaseName, reportBaseName, reportBaseName, getCurrentDate(), len(fullMetadata))
+
+	if _, err := indexFile.WriteString(indexContent); err != nil {
+		return fmt.Errorf("failed to write index file: %w", err)
+	}
+
 	fmt.Printf("Report generated successfully!\n")
+	fmt.Printf("  Index:  %s\n", indexPath)
 	fmt.Printf("  Report: %s\n", reportFilePath)
 	fmt.Printf("  JSON:   %s\n", jsonPath)
 	fmt.Printf("  CSV:    %s\n", csvPath)
