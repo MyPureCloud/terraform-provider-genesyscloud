@@ -179,6 +179,10 @@ func shouldExportLocationAsData(ctx context.Context, sdkConfig *platformclientv2
 // shouldIncludeAddress returns true if the address field should be included in a
 // PATCH update for a Location resource.
 //
+// When emergency_number is set for a location, the API does not allow address
+// updates. Therefore, address must be excluded from the PATCH request body
+// when updating other fields, unless the address itself has changed.
+//
 // When running inside Terraform, this defers to d.HasChange("address").
 // When reused outside Terraform (MRMO active), Terraform diffs are unreliable,
 // so the function compares the desired local address with the remote address
@@ -186,7 +190,7 @@ func shouldExportLocationAsData(ctx context.Context, sdkConfig *platformclientv2
 //
 // The address is included only when it differs from the remote value or when
 // no remote address exists. On API read failure, the function logs a warning
-// and returns false to avoid sending an invalid PATCH request.
+// and returns false.
 func shouldIncludeAddress(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) bool {
 	var err error
 
