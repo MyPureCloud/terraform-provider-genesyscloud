@@ -42,34 +42,34 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceName, term, dialect, examplePhrase1, examplePhrase1, examplePhrase3),
+				Config: GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(ResourceType, resourceName, term, dialect, examplePhrase1, examplePhrase1, examplePhrase3),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "term", term),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "dialect", dialect),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.0.phrase", examplePhrase1),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.1.phrase", examplePhrase2),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.2.phrase", examplePhrase3),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "term", term),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "dialect", dialect),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.0.phrase", examplePhrase1),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.1.phrase", examplePhrase2),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.2.phrase", examplePhrase3),
 				),
 			},
 			{
 				// Update
-				Config: GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3),
+				Config: GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(ResourceType, resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "term", term),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "dialect", dialect),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "boost_value", boostValue),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "source", source),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.0.phrase", examplePhrase1),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.0.source", source),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.1.phrase", examplePhrase2),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.1.source", source),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.2.phrase", examplePhrase3),
-					resource.TestCheckResourceAttr("genesyscloud_speechandtextanalytics_dictionaryfeedback."+resourceName, "example_phrase.2.source", source),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "term", term),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "dialect", dialect),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "boost_value", boostValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "source", source),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.0.phrase", examplePhrase1),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.0.source", source),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.1.phrase", examplePhrase2),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.1.source", source),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.2.phrase", examplePhrase3),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrase.2.source", source),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_speechandtextanalytics_dictionaryfeedback." + resourceName,
+				ResourceName:      ResourceType + "." + resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -78,8 +78,8 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 	})
 }
 
-func GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3 string) string {
-	return fmt.Sprintf(`resource "genesyscloud_speechandtextanalytics_dictionaryfeedback" "%s" {
+func GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType, resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3 string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
 	term = "%s"
 	dialect = "%s"
 	boost_value = "%s"
@@ -89,18 +89,18 @@ func GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceName, 
 	example_phrases { phrase = "%s" }
 	example_phrases { phrase = "%s" }
 	}
-	`, resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3)
+	`, resourceType, resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3)
 }
 
-func GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceLabel, term, dialect, examplePhrase1, examplePhrase2, examplePhrase3 string) string {
-	return fmt.Sprintf(`resource "genesyscloud_speechandtextanalytics_dictionaryfeedback" "%s" {
+func GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType, resourceLabel, term, dialect, examplePhrase1, examplePhrase2, examplePhrase3 string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
 		term = "%s"
 		dialect = "%s"
 		example_phrases { phrase = "%s" }
 		example_phrases { phrase = "%s" }
 		example_phrases { phrase = "%s" }
 	}
-	`, resourceLabel, term, dialect, examplePhrase1, examplePhrase2, examplePhrase3)
+	`, ResourceType, resourceLabel, term, dialect, examplePhrase1, examplePhrase2, examplePhrase3)
 }
 
 func testVerifyDictionaryFeedbackDestroyed(state *terraform.State) error {

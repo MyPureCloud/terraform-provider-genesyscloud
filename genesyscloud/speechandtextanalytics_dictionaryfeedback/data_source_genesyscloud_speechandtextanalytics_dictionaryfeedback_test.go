@@ -41,11 +41,11 @@ func TestAccDataSourceDictionaryFeedback(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create feedback setting
-				Config: GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(speechAndTextAnalyticsDictionaryFeedbackResourceLabel, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3) + generateSpeechAndTextAnalyticsDictionaryFeedbackDataSource(speechAndTextAnalyticsDictionaryFeedbackDataLabel, term, "genesyscloud_speechandtextanalytics_dictionaryfeedback."+speechAndTextAnalyticsDictionaryFeedbackResourceLabel),
+				Config: GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(ResourceType, speechAndTextAnalyticsDictionaryFeedbackResourceLabel, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3) + generateSpeechAndTextAnalyticsDictionaryFeedbackDataSource(ResourceType, speechAndTextAnalyticsDictionaryFeedbackDataLabel, term, ResourceType+"."+speechAndTextAnalyticsDictionaryFeedbackResourceLabel),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_speechandtextanalytics_dictionaryfeedback."+speechAndTextAnalyticsDictionaryFeedbackDataLabel, "id",
-						"genesyscloud_speechandtextanalytics_dictionaryfeedback."+speechAndTextAnalyticsDictionaryFeedbackResourceLabel, "id",
+						"data."+ResourceType+"."+speechAndTextAnalyticsDictionaryFeedbackDataLabel, "id",
+						""+ResourceType+"."+speechAndTextAnalyticsDictionaryFeedbackResourceLabel, "id",
 					),
 				),
 			},
@@ -53,10 +53,10 @@ func TestAccDataSourceDictionaryFeedback(t *testing.T) {
 	})
 }
 
-func generateSpeechAndTextAnalyticsDictionaryFeedbackDataSource(resourceName, term, dependsOn string) string {
-	return fmt.Sprintf(`data "genesyscloud_speechandtextanalytics_dictionaryfeedback" "%s" {
+func generateSpeechAndTextAnalyticsDictionaryFeedbackDataSource(resourceType, resourceName, term, dependsOn string) string {
+	return fmt.Sprintf(`data "%s" "%s" {
 		term = "%s"
 		depends_on = [%s]
 	}
-	`, resourceName, term, dependsOn)
+	`, resourceType, resourceName, term, dependsOn)
 }
