@@ -42,7 +42,7 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(ResourceType, resourceName, term, dialect, examplePhrase1, examplePhrase1, examplePhrase3),
+				Config: GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(ResourceType, resourceName, term, dialect, examplePhrase1, examplePhrase2, examplePhrase3),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "term", term),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "dialect", dialect),
