@@ -59,4 +59,4 @@ test/temp/*
 
 public/data/dependency_tree*
 
-tools/resource_metadata_exporter/build/
+tools/resource_metadata_exporter/build/*

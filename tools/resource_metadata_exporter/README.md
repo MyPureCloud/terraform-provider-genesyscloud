@@ -69,6 +69,9 @@ resource-metadata-exporter validate --path ./genesyscloud
 
 # Generate template
 resource-metadata-exporter template --resource genesyscloud_new_resource --package new_package
+
+# Generate documentation report
+resource-metadata-exporter report --output resource-metadata-report.md
 ```
 
 ### Command Reference
@@ -149,6 +152,31 @@ Required flags:
 ```bash
 resource-metadata-exporter template --resource genesyscloud_new_resource --package new_package
 ```
+
+#### Report Command
+
+```bash
+resource-metadata-exporter report [flags]
+
+Flags:
+  -p, --path string      Path to scan for resource schema files (default "./genesyscloud")
+  -o, --output string    Output location and base name for the report (default "resource-annotation-report")
+```
+
+**Examples:**
+```bash
+# Generate report with default name
+resource-metadata-exporter report
+
+# Generate report with custom name
+resource-metadata-exporter report --output docs/resource-ownership
+```
+
+**Output:**
+The report command generates three files:
+- `{output-name}.md` - Markdown report
+- `{output-name}.json` - JSON export
+- `{output-name}.csv` - CSV export
 
 ## Resource Annotation Guide
 
@@ -421,6 +449,9 @@ resource-metadata-exporter discover --path ./genesyscloud
 resource-metadata-exporter validate --path ./genesyscloud
 
 # 3. Export report
+resource-metadata-exporter report --output resource-ownership.md
+
+# Or export individual formats
 resource-metadata-exporter export --format markdown --output resource-ownership.md
 
 # 4. Generate template for new resource
@@ -434,7 +465,7 @@ resource-metadata-exporter template --resource genesyscloud_new_feature --packag
 resource-metadata-exporter validate --path ./genesyscloud || exit 1
 
 # Generate reports for documentation
-resource-metadata-exporter export --format markdown --output docs/resource-ownership.md
+resource-metadata-exporter report --output docs/resource-ownership
 ```
 
 ## Troubleshooting
