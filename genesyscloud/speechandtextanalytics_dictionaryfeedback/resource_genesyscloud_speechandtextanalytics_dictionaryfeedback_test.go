@@ -84,7 +84,7 @@ func GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType, 
 	dialect = "%s"
 	boost_value = "%s"
 	source = "%s"
-	sounds_like ["%s"]
+	sounds_like = ["%s"]
 	example_phrases { phrase = "%s" }
 	example_phrases { phrase = "%s" }
 	example_phrases { phrase = "%s" }
