@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectUserPromptProxy
+var urlRegex = regexp.MustCompile("^http(?:s)?://[a-zA-Z0-9_-]{1,}(\\..+)$")
 
 type createArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string, checkCache bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
@@ -593,12 +595,12 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 	}
 
 	// Upload the file.
-	err = uploadWavFile(body.Url, body.Headers, reader)
+	err = uploadWavFile(body.Url, body.Headers, reader, p)
 	return err
 }
 
 // uploadWavFile performs an HTTP PUT request with the raw file data to the presigned URL.
-func uploadWavFile(presignedURL string, headers map[string]string, reader io.Reader) error {
+func uploadWavFile(presignedURL string, headers map[string]string, reader io.Reader, p *architectUserPromptProxy) error {
 	var size int64
 	var file *os.File
 	var buffer *bytes.Buffer
@@ -638,13 +640,27 @@ func uploadWavFile(presignedURL string, headers map[string]string, reader io.Rea
 		req.Header.Set(k, v)
 	}
 
+	// Parse the API base path into a *url.URL object.
+	u, err := url.Parse(p.clientConfig.BasePath)
+	if err != nil {
+		return err
+	}
+
+	submatch := urlRegex.FindStringSubmatch(p.clientConfig.BasePath)
+	basePathSuffix := submatch[1]
+
+	// Construct header values based on the environment (inferred from the API base path)
+	host := fmt.Sprintf("fileupload%s", basePathSuffix)
+	origin := fmt.Sprintf("%sapps%s", u.Scheme, basePathSuffix)
+	referer := origin
+
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Host", "fileupload.inindca.com")
-	req.Header.Set("Origin", "https://apps.inindca.com")
-	req.Header.Set("Referer", "https://apps.inindca.com")
+	req.Header.Set("Host", host)
+	req.Header.Set("Origin", origin)
+	req.Header.Set("Referer", referer)
 	req.Header.Set("Pragma", "no-cache")
 	req.Header.Set("Content-Type", "audio/wav")
 	req.ContentLength = size
