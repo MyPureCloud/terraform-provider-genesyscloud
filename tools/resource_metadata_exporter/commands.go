@@ -44,8 +44,8 @@ var templateCmd = &cobra.Command{
 
 var reportCmd = &cobra.Command{
 	Use:   "report",
-	Short: "Generate a documentation report with markdown and links to JSON/CSV",
-	Long:  "Generates a comprehensive report in markdown format with embedded content and links to JSON and CSV exports for documentation publishing",
+	Short: "Generate a documentation report in all formats",
+	Long:  "Generates a comprehensive report in markdown, JSON, and CSV formats for documentation publishing",
 	RunE:  runReport,
 }
 
