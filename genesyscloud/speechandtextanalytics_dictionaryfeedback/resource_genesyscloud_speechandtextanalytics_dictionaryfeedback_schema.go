@@ -74,7 +74,7 @@ func ResourceDictionaryFeedback() *schema.Resource {
 				Optional:     true,
 				Type:         schema.TypeFloat,
 				Default:      2.0,
-				ValidateFunc: validation.FloatBetween(0.0, 10.0),
+				ValidateFunc: validation.FloatBetween(1.0, 10.0),
 			},
 			`source`: {
 				Description:  `The source of the given dictionary feedback`,
