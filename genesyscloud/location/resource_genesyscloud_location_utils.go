@@ -3,8 +3,11 @@ package location
 import (
 	"context"
 	"fmt"
+	"log"
+	"reflect"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -37,34 +40,37 @@ func buildSdkLocationEmergencyNumber(d *schema.ResourceData) *platformclientv2.L
 	return &platformclientv2.Locationemergencynumber{}
 }
 
-func buildSdkLocationAddress(d *schema.ResourceData) *platformclientv2.Locationaddress {
-	if addressConfig := d.Get("address"); addressConfig != nil {
-		if addrList := addressConfig.([]interface{}); len(addrList) > 0 {
-			addrMap := addrList[0].(map[string]interface{})
-
-			city := addrMap["city"].(string)
-			country := addrMap["country"].(string)
-			zip := addrMap["zip_code"].(string)
-			street1 := addrMap["street1"].(string)
-			address := platformclientv2.Locationaddress{
-				City:    &city,
-				Country: &country,
-				Zipcode: &zip,
-				Street1: &street1,
-			}
-			// Optional values
-			if state, ok := addrMap["state"]; ok {
-				stateStr := state.(string)
-				address.State = &stateStr
-			}
-			if street2, ok := addrMap["street2"]; ok {
-				street2Str := street2.(string)
-				address.Street2 = &street2Str
-			}
-			return &address
-		}
+func buildSdkLocationAddress(addressList []any) *platformclientv2.Locationaddress {
+	if len(addressList) == 0 {
+		return &platformclientv2.Locationaddress{}
 	}
-	return &platformclientv2.Locationaddress{}
+
+	addrMap, ok := addressList[0].(map[string]any)
+	if !ok {
+		return &platformclientv2.Locationaddress{}
+	}
+
+	city := addrMap["city"].(string)
+	country := addrMap["country"].(string)
+	zip := addrMap["zip_code"].(string)
+	street1 := addrMap["street1"].(string)
+
+	address := platformclientv2.Locationaddress{
+		City:    &city,
+		Country: &country,
+		Zipcode: &zip,
+		Street1: &street1,
+	}
+
+	// Optional values
+	if state, ok := addrMap["state"].(string); ok {
+		address.State = &state
+	}
+	if street2, ok := addrMap["street2"].(string); ok {
+		address.Street2 = &street2
+	}
+
+	return &address
 }
 
 func flattenLocationEmergencyNumber(numberConfig *platformclientv2.Locationemergencynumber) []interface{} {
@@ -168,4 +174,70 @@ func shouldExportLocationAsData(ctx context.Context, sdkConfig *platformclientv2
 		return true, nil
 	}
 	return false, nil
+}
+
+// shouldIncludeAddress returns true if the address field should be included in a
+// PATCH update for a Location resource.
+//
+// When emergency_number is set for a location, the API does not allow address
+// updates. Therefore, address must be excluded from the PATCH request body
+// when updating other fields, unless the address itself has changed.
+//
+// When running inside Terraform, this defers to d.HasChange("address").
+// When reused outside Terraform (MRMO active), Terraform diffs are unreliable,
+// so the function compares the desired local address with the remote address
+// fetched from the API.
+//
+// The address is included only when it differs from the remote value or when
+// no remote address exists. On API read failure, the function logs a warning
+// and returns false.
+func shouldIncludeAddress(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) bool {
+	var err error
+
+	defer func() {
+		if err != nil {
+			log.Printf("[WARNING] shouldIncludeAddress failed: %s", err.Error())
+		}
+	}()
+
+	if !mrmo.IsActive() {
+		return d.HasChange("address")
+	}
+
+	localAddress := buildSdkLocationAddress(d.Get("address").([]any))
+
+	apiInstance := platformclientv2.NewLocationsApiWithConfig(sdkConfig)
+	remoteLocation, _, err := apiInstance.GetLocation(d.Id(), nil)
+	if err != nil {
+		err = fmt.Errorf("failed to read location: %w", err)
+		return false
+	}
+
+	if remoteLocation.Address == nil || localAddress == nil {
+		return true
+	}
+
+	// flatten and rebuild so the API response conforms to the TF schema e.g only relevant fields are taken into account
+	remoteAddressRD := flattenLocationAddress(remoteLocation.Address)
+	remoteAddress := buildSdkLocationAddress(remoteAddressRD)
+
+	return !reflect.DeepEqual(
+		normaliseAddress(localAddress),
+		normaliseAddress(remoteAddress),
+	)
+}
+
+// normaliseAddress ensures that optional fields are nil and not their zero value.
+func normaliseAddress(address *platformclientv2.Locationaddress) *platformclientv2.Locationaddress {
+	if address == nil {
+		return &platformclientv2.Locationaddress{}
+	}
+
+	addressCopy := *address
+
+	if addressCopy.Street2 != nil && *addressCopy.Street2 == "" {
+		addressCopy.Street2 = nil
+	}
+
+	return &addressCopy
 }
