@@ -3,6 +3,8 @@ package conversations_messaging_supportedcontent_default
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -60,10 +62,16 @@ func (p *conversationsMessagingSupportedcontentDefaultProxy) updateConversations
 
 // getConversationsMessagingSupportedcontentDefaultFn is the implementation for retrieving all conversations messaging supportedcontent default in Genesys Cloud
 func getConversationsMessagingSupportedcontentDefaultFn(ctx context.Context, p *conversationsMessagingSupportedcontentDefaultProxy) (*platformclientv2.Supportedcontent, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.GetConversationsMessagingSupportedcontentDefault()
 }
 
 // updateConversationsMessagingSupportedcontentDefaultFn is an implementation of the function to update a Genesys Cloud conversations messaging supportedcontent default
 func updateConversationsMessagingSupportedcontentDefaultFn(ctx context.Context, p *conversationsMessagingSupportedcontentDefaultProxy, id string, conversationsMessagingSupportedcontentDefault *platformclientv2.Supportedcontentreference) (*platformclientv2.Supportedcontent, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.PutConversationsMessagingSupportedcontentDefault(*conversationsMessagingSupportedcontentDefault)
 }

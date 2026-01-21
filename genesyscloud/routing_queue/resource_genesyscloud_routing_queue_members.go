@@ -62,7 +62,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 	log.Printf("%d members belong to queue %s", queueMembers, queueID)
 
 	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(queueID, memberBy, pageNum, 100, sdkConfig)
+		users, resp, err := sdkGetRoutingQueueMembers(ctx, queueID, memberBy, pageNum, 100, sdkConfig)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
 		}
@@ -193,7 +193,9 @@ func updateQueueUserRingNum(queueID string, userID string, ringNum int, sdkConfi
 	return nil
 }
 
-func sdkGetRoutingQueueMembers(queueID, memberBy string, pageNumber, pageSize int, sdkConfig *platformclientv2.Configuration) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
+func sdkGetRoutingQueueMembers(ctx context.Context, queueID, memberBy string, pageNumber, pageSize int, sdkConfig *platformclientv2.Configuration) (*platformclientv2.Queuememberentitylisting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+
 	api := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 	// SDK does not support nil values for boolean query params yet, so we must manually construct this HTTP request for now
 	apiClient := &api.Configuration.APIClient

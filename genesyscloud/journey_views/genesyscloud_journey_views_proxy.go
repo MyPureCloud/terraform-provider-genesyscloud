@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
@@ -84,7 +85,10 @@ func (p *journeyViewsProxy) deleteJourneyView(ctx context.Context, viewId string
 	return resp, nil
 }
 
-func getJourneyViewByViewIdFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+func getJourneyViewByViewIdFn(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	// Check the cache first
 	journeyView := rc.GetCacheItem(p.journeyViewCache, viewId)
 	if journeyView != nil {
@@ -94,6 +98,9 @@ func getJourneyViewByViewIdFn(_ context.Context, p *journeyViewsProxy, viewId st
 }
 
 func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName string) (string, *platformclientv2.APIResponse, error, bool) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	journeys, resp, err := p.getAllJourneyViews(ctx, viewName)
 	if err != nil {
 		return "", resp, err, false
@@ -112,16 +119,25 @@ func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName 
 	return "", resp, fmt.Errorf("unable to find journey view with name %s", viewName), true
 }
 
-func createJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+func createJourneyViewFn(ctx context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.journeyViewsApi.PostJourneyViews(*journeyView)
 }
 
-func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string, versionId int, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+func updateJourneyViewFn(ctx context.Context, p *journeyViewsProxy, viewId string, versionId int, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	versionIdToString := strconv.Itoa(versionId)
 	return p.journeyViewsApi.PutJourneyViewVersion(viewId, versionIdToString, *journeyView)
 }
 
-func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
+func deleteJourneyViewFn(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.journeyViewsApi.DeleteJourneyView(viewId)
 	if err != nil {
 		return resp, err
@@ -132,6 +148,9 @@ func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string)
 
 // GetAllJourneyViewsFn is the implementation for retrieving all journey views in Genesys Cloud
 func getAllJourneyViewsFn(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allJourneys []platformclientv2.Journeyview
 	const pageSize = 100
 

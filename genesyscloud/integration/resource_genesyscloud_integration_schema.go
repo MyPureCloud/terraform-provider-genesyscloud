@@ -20,7 +20,7 @@ resource_genesyscloud_integration_schema.go should hold four types of functions 
 4.  The resource exporter configuration for the integration exporter.
 */
 const ResourceType = "genesyscloud_integration"
-const WebhookResourceType = "genesyscloud_integration_webhook"
+const WebhookResourceType = "genesyscloud_integration_webhookmake si"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
