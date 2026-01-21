@@ -38,6 +38,7 @@ import (
 	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
+	greeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
@@ -226,6 +227,7 @@ func registerResources() {
 	regInstance := &RegisterInstance{}
 	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
+	greeting.SetRegistrar(regInstance)                                     //Registering greeting
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
 	dt.SetRegistrar(regInstance)                                           //Registering architect data table

@@ -19,6 +19,7 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		CampaignRuleEntities:   buildCampaignRuleEntities(d.Get("campaign_rule_entities").(*schema.Set)),
 		CampaignRuleConditions: buildCampaignRuleConditions(d.Get("campaign_rule_conditions").([]interface{})),
 		CampaignRuleActions:    buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{})),
+		CampaignRuleProcessing: platformclientv2.String(d.Get("campaign_rule_processing").(string)),
 		MatchAnyConditions:     &matchAnyConditions,
 	}
 	return campaignRule

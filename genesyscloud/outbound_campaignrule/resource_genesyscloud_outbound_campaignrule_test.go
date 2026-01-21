@@ -109,6 +109,7 @@ func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
 		paramRulesValueUpdated           = "50"
 		paramRulesDialingModeUpdated     = ""
 		paramRulesPriorityUpdated        = ""
+		campaignRuleProcessing           = "v2"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -128,6 +129,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.FalseValue, // enabled
 						util.FalseValue, // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -219,6 +221,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleNameUpdated,
 						util.TrueValue, // enabled
 						util.TrueValue, // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -299,6 +302,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleNameUpdated,
 						util.FalseValue, // enabled
 						util.TrueValue,  // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -353,9 +357,10 @@ data "genesyscloud_auth_division_home" "home" {}
 
 func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 	var (
-		resourceLabel   = "campaign_rule"
-		ruleName        = "Terraform test rule " + uuid.NewString()
-		ruleNameUpdated = "Terraform test rule " + uuid.NewString()
+		resourceLabel          = "campaign_rule"
+		ruleName               = "Terraform test rule " + uuid.NewString()
+		ruleNameUpdated        = "Terraform test rule " + uuid.NewString()
+		campaignRuleProcessing = "v2"
 
 		campaign1ResourceLabel = "campaign1"
 		campaign1Name          = "TF Test Campaign " + uuid.NewString()
@@ -454,6 +459,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.TrueValue,  // enabled
 						util.FalseValue, // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -545,6 +551,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleNameUpdated,
 						util.FalseValue, // enabled
 						util.TrueValue,  // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							campaignRuleEntitySequenceIds,
@@ -603,8 +610,9 @@ func TestAccResourceOutboundCampaignRuleActions(t *testing.T) {
 		resourceLabel = "campaign_rule"
 		ruleName      = "Terraform test rule " + uuid.NewString()
 
-		queueLabel    = "queue1"
-		queueNameAttr = "Terraform test queue " + uuid.NewString()
+		queueLabel             = "queue1"
+		queueNameAttr          = "Terraform test queue " + uuid.NewString()
+		campaignRuleProcessing = "v2"
 
 		campaign1ResourceLabel = "campaign1"
 		campaign1Name          = "TF Test Campaign " + uuid.NewString()
@@ -725,6 +733,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.FalseValue, // enabled
 						util.FalseValue, // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							[]string{},
@@ -891,6 +900,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.TrueValue, // enabled
 						util.TrueValue, // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							campaignRuleEntityCampaignIds,
 							[]string{},
@@ -1085,8 +1095,9 @@ data "genesyscloud_auth_division_home" "home" {}
 func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
 
 	var (
-		resourceLabel = "campaign_rule"
-		ruleName      = "Terraform test rule " + uuid.NewString()
+		resourceLabel          = "campaign_rule"
+		ruleName               = "Terraform test rule " + uuid.NewString()
+		campaignRuleProcessing = "v2"
 
 		contactListLabelSms           = "contact_list_sms"
 		contactListNameSms            = "Terraform test contact list " + uuid.NewString()
@@ -1256,6 +1267,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.FalseValue, // enabled
 						util.FalseValue, // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							[]string{},
 							[]string{},
@@ -1393,6 +1405,7 @@ data "genesyscloud_auth_division_home" "home" {}
 						ruleName,
 						util.FalseValue, // enabled
 						util.FalseValue, // matchAnyConditions
+						campaignRuleProcessing,
 						generateCampaignRuleEntity(
 							[]string{},
 							[]string{},
@@ -1513,14 +1526,15 @@ data "genesyscloud_auth_division_home" "home" {}
 	})
 }
 
-func generateOutboundCampaignRule(resourceLabel string, name string, enabled string, matchAnyConditions string, nestedBlocks ...string) string {
+func generateOutboundCampaignRule(resourceLabel string, name string, enabled string, matchAnyConditions string, campaignRuleProcessing string, nestedBlocks ...string) string {
 	return fmt.Sprintf(`
 resource "genesyscloud_outbound_campaignrule" "%s" {
 	name                 = "%s"
 	enabled              = %s
 	match_any_conditions = %s
+	campaign_rule_processing = "%s"
 	%s
-}`, resourceLabel, name, enabled, matchAnyConditions, strings.Join(nestedBlocks, "\n"))
+}`, resourceLabel, name, enabled, matchAnyConditions, campaignRuleProcessing, strings.Join(nestedBlocks, "\n"))
 }
 
 func generateCampaignRuleEntity(campaignIds []string, sequenceIds []string, smsCampaignIds []string, emailCampaignIds []string) string {
