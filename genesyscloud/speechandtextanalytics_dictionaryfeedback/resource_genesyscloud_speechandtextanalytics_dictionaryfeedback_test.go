@@ -28,7 +28,7 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 		resourceName   = "test-dictionary-feedback"
 		term           = "genesys"
 		dialect        = "en-AU"
-		boostValue     = "2.0"
+		boostValue     = "2"
 		source         = "Manual"
 		soundsLike     = "genesis"
 		examplePhrase1 = "welcome to genesys"
