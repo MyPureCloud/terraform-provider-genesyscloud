@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var (
@@ -71,6 +71,12 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 		callbackModeAgentFirst   = "AgentFirst"
 		userID                   string
 		groupName                = "MySeries6Groupv20_" + uuid.NewString()
+
+		// Inactivity timeout settings
+		inactivityTimeoutSeconds1 = "600"
+		inactivityTimeoutSeconds2 = "1200"
+		inactivityActionType1     = "DISCONNECT"
+		inactivityActionType2     = "DISCONNECT"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -111,7 +117,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettingsCallBack("media_settings_callback", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue, slDuration1, slDuration1, "mode="+strconv.Quote(callbackModeAgentFirst)),
 					GenerateMediaSettings("media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					GenerateMediaSettings("media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
-					GenerateMediaSettings("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					GenerateMediaSettingsMessage("media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1, util.TrueValue,
+						GenerateInactivityTimeoutSettings(inactivityTimeoutSeconds1, inactivityActionType1),
+					),
 					GenerateBullseyeSettingsWithMemberGroup(alertTimeout1, "genesyscloud_group."+bullseyeMemberGroupLabel+".id", bullseyeMemberGroupType, "genesyscloud_routing_skill."+queueSkillResourceLabel+".id"),
 					GenerateBullseyeSettings(alertTimeout1),
 					GenerateRoutingRules(routingRuleOpAny, "50", util.NullValue),
@@ -134,6 +142,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateMediaSettings(queueResourceLabel1, "media_settings_chat", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_email", alertTimeout1, util.TrueValue, slPercent1, slDuration1),
 					validateMediaSettings(queueResourceLabel1, "media_settings_message", alertTimeout1, util.FalseValue, slPercent1, slDuration1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_message.0.enable_inactivity_timeout", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_message.0.inactivity_timeout_settings.0.timeout_seconds", inactivityTimeoutSeconds1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_message.0.inactivity_timeout_settings.0.action_type", inactivityActionType1),
 					validateBullseyeSettings(queueResourceLabel1, 1, alertTimeout1, "genesyscloud_routing_skill."+queueSkillResourceLabel),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "bullseye_rings.1.expansion_timeout_seconds", alertTimeout1),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "bullseye_rings.1.skills_to_remove.#", "0"),
@@ -175,7 +186,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					GenerateMediaSettings("media_settings_callback", alertTimeout2, util.TrueValue, slPercent2, slDuration2, "mode = "+util.NullValue),
 					GenerateMediaSettings("media_settings_chat", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					GenerateMediaSettings("media_settings_email", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
-					GenerateMediaSettings("media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					GenerateMediaSettingsMessage("media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2, util.TrueValue,
+						GenerateInactivityTimeoutSettings(inactivityTimeoutSeconds2, inactivityActionType2),
+					),
 					GenerateBullseyeSettings(alertTimeout2),
 					GenerateBullseyeSettings(alertTimeout2),
 					GenerateBullseyeSettings(alertTimeout2),
@@ -203,6 +216,9 @@ func TestAccResourceRoutingQueueBasic(t *testing.T) {
 					validateMediaSettings(queueResourceLabel1, "media_settings_chat", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					validateMediaSettings(queueResourceLabel1, "media_settings_email", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
 					validateMediaSettings(queueResourceLabel1, "media_settings_message", alertTimeout2, util.FalseValue, slPercent2, slDuration2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_message.0.enable_inactivity_timeout", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_message.0.inactivity_timeout_settings.0.timeout_seconds", inactivityTimeoutSeconds2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel1, "media_settings_message.0.inactivity_timeout_settings.0.action_type", inactivityActionType2),
 					validateBullseyeSettings(queueResourceLabel1, 3, alertTimeout2, ""),
 					validateRoutingRules(queueResourceLabel1, 0, routingRuleOpMeetsThresh, "90", "30"),
 					validateRoutingRules(queueResourceLabel1, 1, routingRuleOpAny, "45", "15"),

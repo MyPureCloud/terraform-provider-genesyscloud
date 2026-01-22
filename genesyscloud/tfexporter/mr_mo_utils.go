@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -27,6 +28,21 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string,
 	diags = append(diags, g.retrieveSanitizedResourceMapsForMrMo()...)
 	if diags.HasError() {
 		return nil, diags
+	}
+
+	if resType == architectFlow.ResourceType {
+		var flowExporterToUse *resourceExporter.ResourceExporter
+		if generateOutputFiles {
+			// Use archy export service to download the flow config file (create, update)
+			log.Printf("Replaced flow exporter with new exporter")
+			flowExporterToUse = resourceExporter.GetNewFlowResourceExporter()
+		} else {
+			// Use legacy exporter to be more efficient (more appropriate for flow deletion events that don't only require the ResourceData be exported)
+			log.Printf("Using legacy flow exporter")
+			flowExporterToUse = architectFlow.ArchitectFlowExporter()
+		}
+		flowExporterToUse.SetSanitizedResourceMap(exporter.GetSanitizedResourceMap())
+		(*g.exporters)[resType] = flowExporterToUse
 	}
 
 	// Step #3 Filter out all resources from the resType exporters SanitizedResourceMap besides the one at index "{resourceId}"

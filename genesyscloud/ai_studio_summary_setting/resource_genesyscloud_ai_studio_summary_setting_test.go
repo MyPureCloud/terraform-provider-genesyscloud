@@ -24,6 +24,7 @@ func TestAccResourceAiStudioSummarySetting(t *testing.T) {
 		t.Skipf("virtualAgent product not available in %s org", v)
 		return
 	}
+
 	var (
 		resourceName             = "test-summary-setting"
 		name                     = "summary setting test"

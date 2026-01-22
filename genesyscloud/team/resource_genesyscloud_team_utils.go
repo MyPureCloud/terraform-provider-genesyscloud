@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
@@ -133,9 +133,11 @@ func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclie
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read members for team %s: %s", teamId, err), resp)
 	}
 
+	// Return empty set instead of nil when there are no members
+	// This ensures the export process can distinguish between "no members" and "not managing members"
 	if members == nil || len(*members) == 0 {
 		log.Printf("[DEBUG]readTeamMembers: No members found for team %s", teamId)
-		return nil, nil
+		return schema.NewSet(schema.HashString, []interface{}{}), nil
 	}
 
 	// Build list of actual member IDs from API response

@@ -21,6 +21,7 @@ func TestAccDataSourceAiStudioSummarySetting(t *testing.T) {
 		t.Skipf("virtualAgent product not available in %s org", v)
 		return
 	}
+
 	var (
 		aiStudioSummarySettingDataLabel = "data-aiStudioSummarySetting"
 

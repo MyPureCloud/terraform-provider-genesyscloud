@@ -135,6 +135,12 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
+			`flow_rules_enabled`: {
+				Description: `When set to true, the worktype's flow rules will be processed. Default value is false.`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+				Default:     false,
+			},
 		},
 	}
 }
