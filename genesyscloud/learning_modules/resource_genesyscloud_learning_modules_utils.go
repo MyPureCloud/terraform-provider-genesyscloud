@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -98,6 +98,22 @@ func buildSdkCoverArt(resourceCoverArtId string) *platformclientv2.Learningmodul
 
 	return &platformclientv2.Learningmodulecoverartrequest{
 		Id: &resourceCoverArtId,
+	}
+}
+
+func buildSdkAutoAssign(resourceAutoAssignList []interface{}) *platformclientv2.Learningmoduleautoassignrequest {
+	if len(resourceAutoAssignList) <= 0 {
+		return nil
+	}
+
+	resourceAutoAssign, ok := resourceAutoAssignList[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	return &platformclientv2.Learningmoduleautoassignrequest{
+		Enabled: platformclientv2.Bool(resourceAutoAssign["enabled"].(bool)),
+		RuleId:  platformclientv2.String(resourceAutoAssign["rule_id"].(string)),
 	}
 }
 
@@ -269,6 +285,21 @@ func flattenCoverArt(coverArt *platformclientv2.Learningmodulecoverartresponse) 
 	}
 
 	return coverArt.Id
+}
+
+func flattenAutoAssign(autoAssign *platformclientv2.Learningmoduleautoassignresponse) []interface{} {
+	if autoAssign == nil {
+		return nil
+	}
+
+	autoAssignMap := make(map[string]interface{})
+	if autoAssign.Enabled != nil {
+		autoAssignMap["enabled"] = *autoAssign.Enabled
+	}
+	if autoAssign.Rule != nil {
+		autoAssignMap["rule_id"] = *autoAssign.Rule.Id
+	}
+	return []interface{}{autoAssignMap}
 }
 
 func flattenReviewAssessmentResults(reviewAssessmentResults *platformclientv2.Reviewassessmentresults) []interface{} {

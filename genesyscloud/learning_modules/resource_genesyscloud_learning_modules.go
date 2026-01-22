@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -39,7 +39,6 @@ func getAllAuthLearningModules(ctx context.Context, clientConfig *platformclient
 	return resources, nil
 }
 
-// TODO implement autoAssign once it's available in the SDK
 // createLearningModule is used by the learning_modules resource to create Genesys cloud learning module
 func createLearningModule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -70,6 +69,7 @@ func createLearningModule(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 	learningModule.EnforceContentOrder = platformclientv2.Bool(d.Get("enforce_content_order").(bool))
 	learningModule.ReviewAssessmentResults = buildSdkReviewAssessmentResults(d.Get("review_assessment_results").([]interface{}))
+	learningModule.AutoAssign = buildSdkAutoAssign(d.Get("auto_assign").([]interface{}))
 
 	log.Printf("Creating learning module %s", *learningModule.Name)
 	module, resp, err := proxy.createLearningModule(ctx, &learningModule)
@@ -128,7 +128,9 @@ func readLearningModule(ctx context.Context, d *schema.ResourceData, meta interf
 		if module.ReviewAssessmentResults != nil {
 			d.Set("review_assessment_results", flattenReviewAssessmentResults(module.ReviewAssessmentResults))
 		}
-		// TODO auto assign resourcedata.SetNillableValue(d, "auto_assign", flattenAutoAssign(module.AutoAssign))
+		if module.AutoAssign != nil {
+			d.Set("auto_assign", flattenAutoAssign(module.AutoAssign))
+		}
 		resourcedata.SetNillableValue(d, "is_published", module.IsPublished)
 
 		log.Printf("Read learning module %s %s", d.Id(), *module.Name)
@@ -136,7 +138,6 @@ func readLearningModule(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 }
 
-// TODO update with autoAssign once it's available in the SDK
 // updateLearningModule is used by the learning_modules resource to update a learning module in Genesys Cloud
 func updateLearningModule(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -167,6 +168,7 @@ func updateLearningModule(ctx context.Context, d *schema.ResourceData, meta inte
 	}
 	learningModule.EnforceContentOrder = platformclientv2.Bool(d.Get("enforce_content_order").(bool))
 	learningModule.ReviewAssessmentResults = buildSdkReviewAssessmentResults(d.Get("review_assessment_results").([]interface{}))
+	learningModule.AutoAssign = buildSdkAutoAssign(d.Get("auto_assign").([]interface{}))
 
 	log.Printf("Updating learning module %s: %s", *learningModule.Name, d.Id())
 

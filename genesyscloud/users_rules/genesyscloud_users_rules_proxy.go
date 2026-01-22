@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -108,12 +108,14 @@ func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm stri
 	const pageNumber = 1
 	const sortOrder = ""
 	expand := []string{}
+	const enabled = true
 
 	usersRules, resp, err := p.usersRulesApi.GetUsersRules(
 		types,
 		pageNumber,
 		pageSize,
 		expand,
+		enabled,
 		searchTerm,
 		sortOrder,
 	)
@@ -133,6 +135,7 @@ func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm stri
 			pageNum,
 			pageSize,
 			expand,
+			enabled,
 			searchTerm,
 			sortOrder,
 		)

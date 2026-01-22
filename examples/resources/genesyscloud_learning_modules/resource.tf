@@ -3,7 +3,7 @@ resource "genesyscloud_learning_modules" "example_learning_module" {
   description             = "Example description"
   completion_time_in_days = 10
   type                    = "Native"
-  cover_art_id            = "05cde3c7-d48e-41af-a7a5-44f4f01acefb"
+  cover_art_id            = ""
   length_in_minutes       = 15
   excluded_from_catalog   = false
   external_id             = ""
@@ -88,9 +88,5 @@ resource "genesyscloud_learning_modules" "example_learning_module" {
   review_assessment_results {
     by_assignees = true
     by_viewers   = true
-  }
-  auto_assign {
-    enabled = true
-    rule_id = "be53142d-3389-482e-aba5-92a13c671af1"
   }
 }
