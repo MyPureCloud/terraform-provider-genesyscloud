@@ -230,6 +230,52 @@ func runTemplate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func createMarkdownFileWithContent(
+	exportFunc func([]ResourceMetadata, io.Writer) error,
+	metadata []ResourceMetadata,
+	filePath string,
+	title string,
+	order int,
+	codeBlockType string,
+) error {
+	var buffer bytes.Buffer
+	if err := exportFunc(metadata, &buffer); err != nil {
+		return fmt.Errorf("failed to export %s: %w", codeBlockType, err)
+	}
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create %s markdown file: %w", codeBlockType, err)
+	}
+	defer file.Close()
+
+	header := fmt.Sprintf(`---
+title: %s
+order: %d
+---
+
+`, title, order)
+
+	if _, err := file.WriteString(header); err != nil {
+		return fmt.Errorf("failed to write %s markdown header: %w", codeBlockType, err)
+	}
+
+	codeBlockStart := fmt.Sprintf("```%s\n", codeBlockType)
+	if _, err := file.WriteString(codeBlockStart); err != nil {
+		return fmt.Errorf("failed to write %s code block start: %w", codeBlockType, err)
+	}
+
+	if _, err := file.Write(buffer.Bytes()); err != nil {
+		return fmt.Errorf("failed to write %s content: %w", codeBlockType, err)
+	}
+
+	if _, err := file.WriteString("\n```\n"); err != nil {
+		return fmt.Errorf("failed to write %s code block end: %w", codeBlockType, err)
+	}
+
+	return nil
+}
+
 func runReport(cmd *cobra.Command, args []string) error {
 	discovery := NewResourceDiscovery(reportPath)
 	metadata, err := discovery.DiscoverResources()
@@ -251,70 +297,28 @@ func runReport(cmd *cobra.Command, args []string) error {
 	reportBaseName := filepath.Base(reportOutput)
 	reportPath := filepath.Dir(reportOutput)
 
-	var jsonBuffer bytes.Buffer
-	if err := exportJSON(fullMetadata, &jsonBuffer); err != nil {
-		return fmt.Errorf("failed to export JSON: %w", err)
-	}
 	jsonMarkdownPath := filepath.Join(reportPath, reportBaseName+".json.md")
-	jsonMarkdownFile, err := os.Create(jsonMarkdownPath)
-	if err != nil {
-		return fmt.Errorf("failed to create JSON markdown file: %w", err)
-	}
-	defer jsonMarkdownFile.Close()
-
-	jsonHeader := fmt.Sprintf(`---
-title: Resource Support Directory (JSON)
-order: 3
----
-`)
-
-	if _, err := jsonMarkdownFile.WriteString(jsonHeader); err != nil {
-		return fmt.Errorf("failed to write JSON markdown header: %w", err)
+	if err := createMarkdownFileWithContent(
+		exportJSON,
+		fullMetadata,
+		jsonMarkdownPath,
+		"Resource Support Directory (JSON)",
+		3,
+		"json",
+	); err != nil {
+		return err
 	}
 
-	if _, err := jsonMarkdownFile.WriteString("```json\n"); err != nil {
-		return fmt.Errorf("failed to write JSON code block start: %w", err)
-	}
-
-	if _, err := jsonMarkdownFile.Write(jsonBuffer.Bytes()); err != nil {
-		return fmt.Errorf("failed to write JSON content: %w", err)
-	}
-
-	if _, err := jsonMarkdownFile.WriteString("\n```\n"); err != nil {
-		return fmt.Errorf("failed to write JSON code block end: %w", err)
-	}
-
-	var csvBuffer bytes.Buffer
-	if err := exportCSV(fullMetadata, &csvBuffer); err != nil {
-		return fmt.Errorf("failed to export CSV: %w", err)
-	}
 	csvMarkdownPath := filepath.Join(reportPath, reportBaseName+".csv.md")
-	csvMarkdownFile, err := os.Create(csvMarkdownPath)
-	if err != nil {
-		return fmt.Errorf("failed to create CSV markdown file: %w", err)
-	}
-	defer csvMarkdownFile.Close()
-
-	csvHeader := fmt.Sprintf(`---
-title: Resource Support Directory (CSV)
-order: 4
----
-`)
-
-	if _, err := csvMarkdownFile.WriteString(csvHeader); err != nil {
-		return fmt.Errorf("failed to write CSV markdown header: %w", err)
-	}
-
-	if _, err := csvMarkdownFile.WriteString("```csv\n"); err != nil {
-		return fmt.Errorf("failed to write CSV code block start: %w", err)
-	}
-
-	if _, err := csvMarkdownFile.Write(csvBuffer.Bytes()); err != nil {
-		return fmt.Errorf("failed to write CSV content: %w", err)
-	}
-
-	if _, err := csvMarkdownFile.WriteString("\n```\n"); err != nil {
-		return fmt.Errorf("failed to write CSV code block end: %w", err)
+	if err := createMarkdownFileWithContent(
+		exportCSV,
+		fullMetadata,
+		csvMarkdownPath,
+		"Resource Support Directory (CSV)",
+		4,
+		"csv",
+	); err != nil {
+		return err
 	}
 
 	reportFilePath := filepath.Join(reportPath, reportBaseName+".md")
