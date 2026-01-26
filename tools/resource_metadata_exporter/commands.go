@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -250,27 +251,71 @@ func runReport(cmd *cobra.Command, args []string) error {
 	reportBaseName := filepath.Base(reportOutput)
 	reportPath := filepath.Dir(reportOutput)
 
-	jsonPath := filepath.Join(reportPath, reportBaseName+".json")
-	jsonFile, err := os.Create(jsonPath)
-	if err != nil {
-		return fmt.Errorf("failed to create JSON file: %w", err)
-	}
-	if err := exportJSON(fullMetadata, jsonFile); err != nil {
-		jsonFile.Close()
+	var jsonBuffer bytes.Buffer
+	if err := exportJSON(fullMetadata, &jsonBuffer); err != nil {
 		return fmt.Errorf("failed to export JSON: %w", err)
 	}
-	jsonFile.Close()
-
-	csvPath := filepath.Join(reportPath, reportBaseName+".csv")
-	csvFile, err := os.Create(csvPath)
+	jsonMarkdownPath := filepath.Join(reportPath, reportBaseName+".json.md")
+	jsonMarkdownFile, err := os.Create(jsonMarkdownPath)
 	if err != nil {
-		return fmt.Errorf("failed to create CSV file: %w", err)
+		return fmt.Errorf("failed to create JSON markdown file: %w", err)
 	}
-	if err := exportCSV(fullMetadata, csvFile); err != nil {
-		csvFile.Close()
+	defer jsonMarkdownFile.Close()
+
+	jsonHeader := fmt.Sprintf(`---
+title: Resource Support Directory (JSON)
+order: 3
+---
+`)
+
+	if _, err := jsonMarkdownFile.WriteString(jsonHeader); err != nil {
+		return fmt.Errorf("failed to write JSON markdown header: %w", err)
+	}
+
+	if _, err := jsonMarkdownFile.WriteString("```json\n"); err != nil {
+		return fmt.Errorf("failed to write JSON code block start: %w", err)
+	}
+
+	if _, err := jsonMarkdownFile.Write(jsonBuffer.Bytes()); err != nil {
+		return fmt.Errorf("failed to write JSON content: %w", err)
+	}
+
+	if _, err := jsonMarkdownFile.WriteString("\n```\n"); err != nil {
+		return fmt.Errorf("failed to write JSON code block end: %w", err)
+	}
+
+	var csvBuffer bytes.Buffer
+	if err := exportCSV(fullMetadata, &csvBuffer); err != nil {
 		return fmt.Errorf("failed to export CSV: %w", err)
 	}
-	csvFile.Close()
+	csvMarkdownPath := filepath.Join(reportPath, reportBaseName+".csv.md")
+	csvMarkdownFile, err := os.Create(csvMarkdownPath)
+	if err != nil {
+		return fmt.Errorf("failed to create CSV markdown file: %w", err)
+	}
+	defer csvMarkdownFile.Close()
+
+	csvHeader := fmt.Sprintf(`---
+title: Resource Support Directory (CSV)
+order: 4
+---
+`)
+
+	if _, err := csvMarkdownFile.WriteString(csvHeader); err != nil {
+		return fmt.Errorf("failed to write CSV markdown header: %w", err)
+	}
+
+	if _, err := csvMarkdownFile.WriteString("```csv\n"); err != nil {
+		return fmt.Errorf("failed to write CSV code block start: %w", err)
+	}
+
+	if _, err := csvMarkdownFile.Write(csvBuffer.Bytes()); err != nil {
+		return fmt.Errorf("failed to write CSV content: %w", err)
+	}
+
+	if _, err := csvMarkdownFile.WriteString("\n```\n"); err != nil {
+		return fmt.Errorf("failed to write CSV code block end: %w", err)
+	}
 
 	reportFilePath := filepath.Join(reportPath, reportBaseName+".md")
 	reportFile, err := os.Create(reportFilePath)
@@ -329,14 +374,6 @@ order: 1
 
 This directory contains resource annotation reports generated from the [Terraform provider codebase](https://github.com/MyPureCloud/terraform-provider-genesyscloud). These reports provide information about team ownership and contact details for resources in the CX as Code Terraform Provider.
 
-## Available Reports
-
-The reports are available in multiple formats:
-
-- **[Markdown Report](%s.md)**
-- **[JSON Report](%s.json)**
-- **[CSV Report](%s.csv)**
-
 ## Report Contents
 
 Report contains:
@@ -353,7 +390,7 @@ Reports are automatically generated.
 **Last Updated**: %s
 
 **Total Resources**: %d
-`, reportBaseName, reportBaseName, reportBaseName, getCurrentDate(), len(fullMetadata))
+`, getCurrentDate(), len(fullMetadata))
 
 	if _, err := indexFile.WriteString(indexContent); err != nil {
 		return fmt.Errorf("failed to write index file: %w", err)
@@ -362,8 +399,8 @@ Reports are automatically generated.
 	fmt.Printf("Report generated successfully!\n")
 	fmt.Printf("  Index:  %s\n", indexPath)
 	fmt.Printf("  Report: %s\n", reportFilePath)
-	fmt.Printf("  JSON:   %s\n", jsonPath)
-	fmt.Printf("  CSV:    %s\n", csvPath)
+	fmt.Printf("  JSON:   %s\n", jsonMarkdownPath)
+	fmt.Printf("  CSV:    %s\n", csvMarkdownPath)
 
 	return nil
 }
