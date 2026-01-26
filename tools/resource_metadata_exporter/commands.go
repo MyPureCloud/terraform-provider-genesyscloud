@@ -284,8 +284,6 @@ title: Resource Support Directory
 order: 2
 ---
 
-# CX as Code - Resource Support Directory
-
 This report contains the information and contact details for the teams that are responsible for the resources in the CX as Code project.
 
 ---
@@ -325,7 +323,7 @@ This report is automatically generated from resource metadata annotations in the
 
 	indexContent := fmt.Sprintf(`---
 title: Overview
-group: Resource Reports
+group: Resource Support Reports
 order: 1
 ---
 
@@ -341,7 +339,7 @@ The reports are available in multiple formats:
 
 ## Report Contents
 
-Each report contains:
+Report contains:
 - Resource type identifiers
 - Package names
 - Team ownership information
