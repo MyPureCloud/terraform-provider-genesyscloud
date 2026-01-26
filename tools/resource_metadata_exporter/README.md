@@ -449,7 +449,7 @@ resource-metadata-exporter discover --path ./genesyscloud
 resource-metadata-exporter validate --path ./genesyscloud
 
 # 3. Export report
-resource-metadata-exporter report --output resource-ownership.md
+resource-metadata-exporter report --output resource-ownership
 
 # Or export individual formats
 resource-metadata-exporter export --format markdown --output resource-ownership.md

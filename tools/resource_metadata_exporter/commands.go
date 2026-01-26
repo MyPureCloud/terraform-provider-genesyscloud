@@ -372,7 +372,7 @@ This report is automatically generated from resource metadata annotations in the
 
 	indexContent := fmt.Sprintf(`---
 title: Overview
-group: Resource Support Reports
+group: CX-as-Code
 order: 1
 ---
 
