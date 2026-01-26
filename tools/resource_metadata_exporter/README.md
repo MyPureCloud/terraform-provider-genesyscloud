@@ -71,7 +71,7 @@ resource-metadata-exporter validate --path ./genesyscloud
 resource-metadata-exporter template --resource genesyscloud_new_resource --package new_package
 
 # Generate documentation report
-resource-metadata-exporter report --output resource-metadata-report.md
+resource-metadata-exporter report --output resource-metadata-report
 ```
 
 ### Command Reference
@@ -175,8 +175,8 @@ resource-metadata-exporter report --output docs/resource-ownership
 **Output:**
 The report command generates three files:
 - `{output-name}.md` - Markdown report
-- `{output-name}.json` - JSON export
-- `{output-name}.csv` - CSV export
+- `{output-name}.json.md` - JSON export
+- `{output-name}.csv.md` - CSV export
 
 ## Resource Annotation Guide
 
