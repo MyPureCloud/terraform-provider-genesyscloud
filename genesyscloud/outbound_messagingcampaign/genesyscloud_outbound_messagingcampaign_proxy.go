@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
@@ -107,7 +107,7 @@ func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 	var allMessagingCampaigns []platformclientv2.Messagingcampaign
 	const pageSize = 100
 
-	messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, 1, "", "", "", "", []string{}, "", "", []string{}, "", "")
+	messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, 1, "", "", "", "", []string{}, "", "", []string{}, "", "", []string{})
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to get messaging campaign: %v", err)
 	}
@@ -118,7 +118,7 @@ func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 	allMessagingCampaigns = append(allMessagingCampaigns, *messagingCampaigns.Entities...)
 
 	for pageNum := 2; pageNum <= *messagingCampaigns.PageCount; pageNum++ {
-		messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{}, "", "")
+		messagingCampaigns, resp, err := p.outboundApi.GetOutboundMessagingcampaigns(pageSize, pageNum, "", "", "", "", []string{}, "", "", []string{}, "", "", []string{})
 		if err != nil {
 			return nil, resp, fmt.Errorf("Failed to get messaging campaign: %v", err)
 		}

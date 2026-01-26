@@ -25,8 +25,8 @@ resource "genesyscloud_conversations_messaging_integrations_apple" "example" {
   messages_for_business_id = "your-apple-messages-business-id"
   business_name            = "Your Business Name"
   logo_url                 = "https://example.com/logo.png"
-  supported_content_id     = genesyscloud_conversations_messaging_supportedcontent.example.id
-  messaging_setting_id     = genesyscloud_conversations_messaging_settings.example.id
+  messaging_setting_id     = genesyscloud_conversations_messaging_settings.example_settings.id
+  supported_content_id     = genesyscloud_conversations_messaging_supportedcontent.example_supported_content.id
 
   apple_i_message_app {
     application_name = "Your App Name"
@@ -45,7 +45,7 @@ resource "genesyscloud_conversations_messaging_integrations_apple" "example" {
     store_name                        = "Your Store"
     merchant_id                       = "merchant.com.yourcompany.yourstore"
     domain_name                       = "yourstore.com"
-    payment_capabilities              = ["supports3DS", "supportsCredit", "supportsDebit"]
+    payment_capabilities              = ["3DS"]
     supported_payment_networks        = ["visa", "masterCard", "amex"]
     payment_certificate_credential_id = "your-payment-certificate-credential-id"
     payment_gateway_url               = "https://yourstore.com/payment-gateway"

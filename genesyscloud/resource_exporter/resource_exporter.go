@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v171/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -125,6 +125,9 @@ type ResourceExporter struct {
 	// A map of resource attributes to types that they reference
 	// Attributes in nested objects can be defined with a '.' separator
 	RefAttrs map[string]*RefAttrSettings
+
+	// ThirdPartyRefAttrs specifies which attributes reference third party files e.g. genesyscloud_flow.filepath references a YAML file
+	ThirdPartyRefAttrs []string
 
 	// AllowZeroValues is a list of attributes that should allow zero values in the export.
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
