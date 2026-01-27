@@ -101,7 +101,7 @@ func ResourceTest() *schema.Resource {
 	os.Stdout = w
 
 	// Run export command
-	exportCmd.SetArgs([]string{"--format", "markdown"})
+	exportCmd.SetArgs([]string{"--format", "markdown", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stdout
@@ -117,16 +117,15 @@ func ResourceTest() *schema.Resource {
 		t.Errorf("Export command failed: %v", err)
 	}
 
-	// Check markdown output
-	if !strings.Contains(output, "# Genesys Cloud Terraform Provider - Resource Metadata") {
+	if !strings.Contains(output, "# CX as Code - Resource Support Directory") {
 		t.Error("Expected markdown header")
 	}
 
-	if !strings.Contains(output, "| Resource Type | Package | Team | Chat Room | Description |") {
+	if !strings.Contains(output, "| Resource Type | Package | Team | Genesys Cloud Chat Room | Description |") {
 		t.Error("Expected markdown table header")
 	}
 
-	if !strings.Contains(output, "genesyscloud_test") {
+	if !strings.Contains(output, `genesyscloud\_test`) {
 		t.Error("Expected resource type in output")
 	}
 }
@@ -166,7 +165,7 @@ func ResourceTest() *schema.Resource {
 	os.Stdout = w
 
 	// Run export command
-	exportCmd.SetArgs([]string{"--format", "json"})
+	exportCmd.SetArgs([]string{"--format", "json", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stdout
@@ -233,7 +232,7 @@ func ResourceTest() *schema.Resource {
 	os.Stdout = w
 
 	// Run export command
-	exportCmd.SetArgs([]string{"--format", "csv"})
+	exportCmd.SetArgs([]string{"--format", "csv", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stdout
@@ -301,7 +300,7 @@ func ResourceTest() *schema.Resource {
 	os.Stderr = w
 
 	// Run export command with invalid format
-	exportCmd.SetArgs([]string{"--format", "invalid"})
+	exportCmd.SetArgs([]string{"--format", "invalid", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stderr
@@ -487,11 +486,11 @@ func TestExportFunctions(t *testing.T) {
 	}
 
 	output := buf.String()
-	if !strings.Contains(output, "# Genesys Cloud Terraform Provider - Resource Metadata") {
+	if !strings.Contains(output, "# CX as Code - Resource Support Directory") {
 		t.Error("Expected markdown header")
 	}
 
-	if !strings.Contains(output, "genesyscloud_test") {
+	if !strings.Contains(output, `genesyscloud\_test`) {
 		t.Error("Expected resource type in markdown")
 	}
 

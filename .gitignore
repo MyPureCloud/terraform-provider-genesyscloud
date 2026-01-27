@@ -58,3 +58,5 @@ consistency-errors.log.json
 test/temp/*
 
 public/data/dependency_tree*
+
+tools/resource_metadata_exporter/build/*
