@@ -543,26 +543,72 @@ func GetAllUsers(ctx context.Context, clientConfig *platformclientv2.Configurati
 // This is functionally identical to GetAllUsers() but returns SDK-style diagnostics
 // instead of Framework diagnostics for backward compatibility with legacy code paths.
 //
-// This function is used by:
-// - Legacy export code that expects SDK diagnostic types
-// - Migration utilities transitioning from SDK to Framework
+// For Plugin Framework resources, this function sets a lazy fetch callback in ResourceMeta
+// that will be invoked AFTER filtering, only for users that will be exported. This matches
+// SDK v2's pattern of fetching attributes in Phase 2 (after filtering) rather than Phase 1.
 //
-// Returns: Map of user IDs to ResourceMeta with SDK-style error handling
+// Returns: Map of user IDs to ResourceMeta with lazy fetch callbacks
 func GetAllUsersSDK(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, sdkdiag.Diagnostics) {
 	proxy := GetUserProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
+	// Step 1: Fetch all user IDs (lightweight - 1 API call)
 	users, resp, err := proxy.GetAllUser(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get users: %s", err), resp)
 	}
 
+	log.Printf("[INFO] Found %d users for export", len(*users))
+
+	// Step 2: Create ResourceMeta with lazy fetch callback for each user
 	for _, user := range *users {
-		if user.Id != nil && user.Email != nil {
-			resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email}
+		if user.Id == nil || user.Email == nil {
+			continue
+		}
+
+		hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department,
+			user.PrimaryContactInfo, user.Addresses)
+		if err != nil {
+			return nil, sdkdiag.FromErr(err)
+		}
+
+		// Capture user ID for closure
+		userId := *user.Id
+
+		resources[*user.Id] = &resourceExporter.ResourceMeta{
+			BlockLabel: *user.Email,
+			BlockHash:  hashedUniqueFields,
+
+			// Set lazy fetch callback - will be called AFTER filtering, only for exported users
+			// This callback fetches full user details and builds the complete attribute map
+			LazyFetchAttributes: func(fetchCtx context.Context) (map[string]string, error) {
+				log.Printf("[DEBUG] EXPORT: Lazy fetch callback CALLED for user %s", userId)
+
+				// Fetch full user details with expansions
+				expansions := []string{"skills", "languages", "locations", "profileSkills", "certifications", "employerInfo"}
+				fullUser, _, err := proxy.getUserById(fetchCtx, userId, expansions, "")
+				if err != nil {
+					log.Printf("[ERROR] EXPORT: Failed to fetch user details for %s: %v", userId, err)
+					return nil, fmt.Errorf("failed to fetch user details: %w", err)
+				}
+				log.Printf("[DEBUG] EXPORT: Successfully fetched user details for %s", userId)
+
+				// Build complete attribute map (reuses existing function)
+				attributes, err := buildUserAttributes(fetchCtx, fullUser, proxy)
+				if err != nil {
+					log.Printf("[ERROR] EXPORT: Failed to build attributes for %s: %v", userId, err)
+					return nil, fmt.Errorf("failed to build attributes: %w", err)
+				}
+
+				log.Printf("[DEBUG] EXPORT: Built %d attributes for user %s", len(attributes), userId)
+				log.Printf("[DEBUG] EXPORT: Attribute keys: %v", getAttributeKeys(attributes))
+				log.Printf("[DEBUG] EXPORT: Returning %d attributes for user %s", len(attributes), userId)
+				return attributes, nil
+			},
 		}
 	}
 
+	log.Printf("[INFO] EXPORT: Created lazy fetch callbacks for %d users", len(resources))
 	return resources, nil
 }
 
@@ -592,4 +638,14 @@ func (r *UserFrameworkResource) ImportState(ctx context.Context, req resource.Im
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+}
+
+// getAttributeKeys returns a slice of keys from the attributes map for logging purposes.
+// This is a temporary helper function for EXPORT debugging and should be removed after debugging.
+func getAttributeKeys(attrs map[string]string) []string {
+	keys := make([]string, 0, len(attrs))
+	for k := range attrs {
+		keys = append(keys, k)
+	}
+	return keys
 }
