@@ -13,7 +13,7 @@ func getGreetingFromResourceData(d *schema.ResourceData) platformclientv2.Greeti
 		Name:        platformclientv2.String(d.Get("name").(string)),
 		VarType:     platformclientv2.String(d.Get("type").(string)),
 		OwnerType:   platformclientv2.String(d.Get("owner_type").(string)),
-		Owner:       &platformclientv2.Domainentity{Name: platformclientv2.String(d.Get("owner").(string)), Id: platformclientv2.String(d.Get("owner").(string))},
+		Owner:       &platformclientv2.Domainentity{Name: platformclientv2.String(d.Get("owner_id").(string)), Id: platformclientv2.String(d.Get("owner_id").(string))},
 		AudioFile:   buildAudioFile(d.Get("audio_file").([]interface{})),
 		CreatedDate: parseStringToTime(d.Get("created_date").(string)),
 		CreatedBy:   platformclientv2.String(d.Get("created_by").(string)),
@@ -114,7 +114,7 @@ func GenerateGreeting(
   name        = "%s"
   type        = "%s"
   owner_type  = "%s"
-  owner       = "%s"
+  owner_id    = %s
   audio_tts   = "%s"
 }`, resourceLabel, name, greetingType, ownerType, owner, audioTts)
 }

@@ -4,6 +4,8 @@ import (
 	"sync"
 	"testing"
 
+	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -25,6 +27,7 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
+	providerResources[userResource.ResourceType] = userResource.ResourceUser()
 	providerResources[ResourceType] = ResourceGreeting()
 }
 

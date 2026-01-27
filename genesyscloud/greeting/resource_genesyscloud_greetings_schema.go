@@ -46,10 +46,15 @@ func ResourceGreeting() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"USER", "ORGANIZATION", "GROUP"}, false),
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					// API may override owner_type. Suppress diffs when both values exist.
+					return oldValue != "" && newValue != ""
+				},
 			},
-			"owner": {
-				Description: "Greeting owner",
-				Required:    true,
+			"owner_id": {
+				Description: "The ID of the owner (user, organization, or group) of the greeting.",
+				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			"audio_file": {
@@ -109,6 +114,8 @@ func ResourceGreeting() *schema.Resource {
 func GreetingExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGreetings),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"owner_id": {RefType: "genesyscloud_user"},
+		},
 	}
 }

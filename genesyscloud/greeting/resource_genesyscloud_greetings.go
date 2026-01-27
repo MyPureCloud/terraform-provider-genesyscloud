@@ -74,16 +74,18 @@ func readGreeting(ctx context.Context, d *schema.ResourceData, meta interface{})
 		resourcedata.SetNillableValue(d, "type", greeting.VarType)
 		resourcedata.SetNillableValue(d, "owner_type", greeting.OwnerType)
 		resourcedata.SetNillableValue(d, "audio_tts", greeting.AudioTTS)
+		resourcedata.SetNillableValue(d, "owner_id", greeting.Owner.Id)
 
-		// Only set owner if it was provided in config to avoid plan diffs
-		configOwner := d.Get("owner").(string)
-		if configOwner != "" && greeting.Owner != nil && greeting.Owner.Id != nil {
-			d.Set("owner", *greeting.Owner.Id)
+		// Convert time.Time to ISO-8601 string
+		if greeting.CreatedDate != nil {
+			d.Set("created_date", greeting.CreatedDate.Format(time.RFC3339))
 		}
-
-		if greeting.AudioFile != nil {
-			d.Set("audio_file", flattenAudioFile(greeting.AudioFile))
+		resourcedata.SetNillableValue(d, "created_by", greeting.CreatedBy)
+		if greeting.ModifiedDate != nil {
+			d.Set("modified_date", greeting.ModifiedDate.Format(time.RFC3339))
 		}
+		resourcedata.SetNillableValue(d, "modified_by", greeting.ModifiedBy)
+		resourcedata.SetNillableValue(d, "audio_file", greeting.AudioFile)
 
 		log.Printf("Read greeting %s", d.Id())
 		return cc.CheckState(d)
@@ -100,7 +102,7 @@ func updateGreeting(ctx context.Context, d *schema.ResourceData, meta interface{
 	// - If owner is set in config, use it.
 	// - Otherwise, fetch existing greeting and reuse its owner ID.
 	configOwner := ""
-	if v, ok := d.GetOk("owner"); ok {
+	if v, ok := d.GetOk("owner_id"); ok {
 		configOwner = v.(string)
 	}
 
