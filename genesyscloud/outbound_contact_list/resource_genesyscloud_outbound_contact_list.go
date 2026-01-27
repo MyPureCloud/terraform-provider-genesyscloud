@@ -180,7 +180,15 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("column_names", *sdkContactList.ColumnNames)
 		}
 		if sdkContactList.PhoneColumns != nil {
-			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns))
+			flattenedPhoneColumns := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns)
+
+			if existingRaw, ok := d.GetOk("phone_columns"); ok {
+				if existingSet, ok := existingRaw.(*schema.Set); ok && existingSet != nil && flattenedPhoneColumns != nil {
+					flattenedPhoneColumns = mergePhoneColumnsCallableTimeColumnFromState(existingSet, flattenedPhoneColumns)
+				}
+			}
+
+			_ = d.Set("phone_columns", flattenedPhoneColumns)
 		}
 		if sdkContactList.EmailColumns != nil {
 			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns))
