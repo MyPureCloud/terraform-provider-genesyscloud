@@ -109,6 +109,14 @@ func ResourceBcpTfExporter() *schema.Resource {
 				Default:     "bcp_export.json",
 				ForceNew:    true,
 			},
+			"log_permissions_filename": {
+				// Name of the JSON export file for outputting permissions errors.
+				// If not specified, no separate permissions file will be created.
+				Description: "Name of the file to output permissions errors",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+			},
 			"include_filter_resources": {
 				// Include only resources that match the specified resource types.
 				// Use exact resource type names (e.g., "genesyscloud_user", "genesyscloud_group").

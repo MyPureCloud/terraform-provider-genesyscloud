@@ -18,6 +18,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
@@ -38,6 +39,7 @@ type BcpExportData map[string][]BcpResource
 func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	directory := d.Get("directory").(string)
 	filename := d.Get("filename").(string)
+	logPermissionErrorsFilename := d.Get("log_permissions_filename").(string)
 
 	validatedDir, validatedFilename, err := validatePath(directory, filename)
 	if err != nil {
@@ -61,11 +63,31 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 
 		diagErr := exporter.LoadSanitizedResourceMap(ctx, resourceType, nil)
 		if diagErr != nil {
-			tflog.Error(ctx, "Error loading resources", map[string]interface{}{
-				"resource_type": resourceType,
-				"error":         fmt.Sprintf("%v", diagErr),
-			})
-			return diagErr
+			if errors.ContainsPermissionsErrorOnly(diagErr) {
+				// Log permission errors but continue processing other resources
+				errMsg := fmt.Sprintf("%v", diagErr)
+
+				tflog.Warn(ctx, "Permission denied loading resource", map[string]interface{}{
+					"resource_type": resourceType,
+					"error":         errMsg,
+				})
+				if logPermissionErrorsFilename != "" {
+					// Log permission errors to file
+					jsonLog, _ := json.Marshal(map[string]string{
+						"resource_type": resourceType,
+						"error":         errMsg,
+					})
+					// amazonq-ignore-next-line
+					files.WriteToFile(jsonLog, logPermissionErrorsFilename)
+				}
+				continue
+			} else {
+				tflog.Error(ctx, "Error loading resources", map[string]interface{}{
+					"resource_type": resourceType,
+					"error":         fmt.Sprintf("%v", diagErr),
+				})
+				return diagErr
+			}
 		}
 
 		resourceMap := exporter.GetSanitizedResourceMap()
