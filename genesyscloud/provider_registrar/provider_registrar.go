@@ -38,8 +38,8 @@ import (
 	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
-	greeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	greetingUser "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting_user"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	guideVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide_version"
@@ -227,7 +227,6 @@ func registerResources() {
 	regInstance := &RegisterInstance{}
 	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
-	greeting.SetRegistrar(regInstance)                                     //Registering greeting
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
 	dt.SetRegistrar(regInstance)                                           //Registering architect data table
@@ -238,6 +237,7 @@ func registerResources() {
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
+	greetingUser.SetRegistrar(regInstance)                                 //Registering greeting user
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
 	guide.SetRegistrar(regInstance)                                        //Registering guide
 	guideVersion.SetRegistrar(regInstance)                                 //Registering Guide Version

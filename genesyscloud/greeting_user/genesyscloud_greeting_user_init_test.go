@@ -1,9 +1,10 @@
-package greeting
+package greeting_user
 
 import (
 	"sync"
 	"testing"
 
+	groupResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -28,6 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[userResource.ResourceType] = userResource.ResourceUser()
+	providerResources[groupResource.ResourceType] = groupResource.ResourceGroup()
 	providerResources[ResourceType] = ResourceGreeting()
 }
 

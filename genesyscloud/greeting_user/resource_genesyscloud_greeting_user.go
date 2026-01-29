@@ -1,4 +1,4 @@
-package greeting
+package greeting_user
 
 import (
 	"context"
@@ -37,14 +37,14 @@ func getAllGreetings(ctx context.Context, clientConfig *platformclientv2.Configu
 	return resources, nil
 }
 
-func createGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createUserGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGreeetingProxy(sdkConfig)
 
-	greetingReq := getGreetingFromResourceData(d)
+	greetingReq := getUserGreetingFromResourceData(d)
 
 	log.Printf("Creating greeting")
-	greeting, resp, err := proxy.createGreeting(ctx, &greetingReq)
+	greeting, resp, err := proxy.createUserGreeting(ctx, &greetingReq)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create greeting error: %s", err), resp)
 	}
@@ -52,17 +52,17 @@ func createGreeting(ctx context.Context, d *schema.ResourceData, meta interface{
 	d.SetId(*greeting.Id)
 
 	log.Printf("Created greeting %s", *greeting.Id)
-	return readGreeting(ctx, d, meta)
+	return readUserGreeting(ctx, d, meta)
 }
 
-func readGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readUserGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGreeetingProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGreeting(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading greeting %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		greeting, resp, getErr := proxy.getGreetingById(ctx, d.Id())
+		greeting, resp, getErr := proxy.getUserGreetingById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read greeting %s | error: %s", d.Id(), getErr), resp))
@@ -74,17 +74,7 @@ func readGreeting(ctx context.Context, d *schema.ResourceData, meta interface{})
 		resourcedata.SetNillableValue(d, "type", greeting.VarType)
 		resourcedata.SetNillableValue(d, "owner_type", greeting.OwnerType)
 		resourcedata.SetNillableValue(d, "audio_tts", greeting.AudioTTS)
-		resourcedata.SetNillableValue(d, "owner_id", greeting.Owner.Id)
-
-		// Convert time.Time to ISO-8601 string
-		if greeting.CreatedDate != nil {
-			d.Set("created_date", greeting.CreatedDate.Format(time.RFC3339))
-		}
-		resourcedata.SetNillableValue(d, "created_by", greeting.CreatedBy)
-		if greeting.ModifiedDate != nil {
-			d.Set("modified_date", greeting.ModifiedDate.Format(time.RFC3339))
-		}
-		resourcedata.SetNillableValue(d, "modified_by", greeting.ModifiedBy)
+		resourcedata.SetNillableValue(d, "user_id", greeting.Owner.Id)
 		resourcedata.SetNillableValue(d, "audio_file", greeting.AudioFile)
 
 		log.Printf("Read greeting %s", d.Id())
@@ -92,39 +82,14 @@ func readGreeting(ctx context.Context, d *schema.ResourceData, meta interface{})
 	})
 }
 
-func updateGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateUserGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGreeetingProxy(sdkConfig)
 
-	greetingReq := getGreetingFromResourceData(d)
-
-	// Ensure owner ID is present on update:
-	// - If owner is set in config, use it.
-	// - Otherwise, fetch existing greeting and reuse its owner ID.
-	configOwner := ""
-	if v, ok := d.GetOk("owner_id"); ok {
-		configOwner = v.(string)
-	}
-
-	if configOwner != "" {
-		// Use owner from config
-		if greetingReq.Owner == nil {
-			greetingReq.Owner = &platformclientv2.Domainentity{}
-		}
-		greetingReq.Owner.Id = &configOwner
-	} else {
-		// Reuse existing owner from API
-		existing, resp, err := proxy.getGreetingById(ctx, d.Id())
-		if err != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read existing greeting %s before update error: %s", d.Id(), err), resp)
-		}
-		if existing != nil && existing.Owner != nil && existing.Owner.Id != nil {
-			greetingReq.Owner = existing.Owner
-		}
-	}
+	greetingReq := getUserGreetingFromResourceData(d)
 
 	log.Printf("Updating greeting")
-	greeting, resp, err := proxy.updateGreeting(ctx, d.Id(), &greetingReq)
+	greeting, resp, err := proxy.updateUserGreeting(ctx, d.Id(), &greetingReq)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update greeting error: %s", err), resp)
 	}
@@ -132,22 +97,22 @@ func updateGreeting(ctx context.Context, d *schema.ResourceData, meta interface{
 	if greeting != nil && greeting.Id != nil {
 		log.Printf("Updated greeting %s", *greeting.Id)
 	}
-	return readGreeting(ctx, d, meta)
+	return readUserGreeting(ctx, d, meta)
 }
 
-func deleteGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteUserGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGreeetingProxy(sdkConfig)
 
 	log.Printf("Deleting greeting %s", d.Id())
 
-	resp, err := proxy.deleteGreeting(ctx, d.Id())
+	resp, err := proxy.deleteUserGreeting(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Greeting %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getGreetingById(ctx, d.Id())
+		_, resp, err := proxy.getUserGreetingById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Greeting deleted

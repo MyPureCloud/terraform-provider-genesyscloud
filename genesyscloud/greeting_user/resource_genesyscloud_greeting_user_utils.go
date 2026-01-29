@@ -1,4 +1,4 @@
-package greeting
+package greeting_user
 
 import (
 	"fmt"
@@ -8,30 +8,20 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
-func getGreetingFromResourceData(d *schema.ResourceData) platformclientv2.Greeting {
+func getUserGreetingFromResourceData(d *schema.ResourceData) platformclientv2.Greeting {
 	greeting := platformclientv2.Greeting{
-		Name:        platformclientv2.String(d.Get("name").(string)),
-		VarType:     platformclientv2.String(d.Get("type").(string)),
-		OwnerType:   platformclientv2.String(d.Get("owner_type").(string)),
-		Owner:       &platformclientv2.Domainentity{Name: platformclientv2.String(d.Get("owner_id").(string)), Id: platformclientv2.String(d.Get("owner_id").(string))},
-		AudioFile:   buildAudioFile(d.Get("audio_file").([]interface{})),
-		CreatedDate: parseStringToTime(d.Get("created_date").(string)),
-		CreatedBy:   platformclientv2.String(d.Get("created_by").(string)),
-		ModifiedBy:  platformclientv2.String(d.Get("modified_by").(string)),
+		Name:      platformclientv2.String(d.Get("name").(string)),
+		VarType:   platformclientv2.String(d.Get("type").(string)),
+		OwnerType: platformclientv2.String(d.Get("owner_type").(string)),
+		AudioFile: buildAudioFile(d.Get("audio_file").([]interface{})),
+		Owner: &platformclientv2.Domainentity{
+			Id: platformclientv2.String(d.Get("user_id").(string)),
+		},
 	}
 
 	// audio_tts is optional, only set if provided
 	if audioTts, ok := d.GetOk("audio_tts"); ok {
 		greeting.AudioTTS = platformclientv2.String(audioTts.(string))
-	}
-
-	// modified_date is optional, only set if provided
-	if modifiedDate, ok := d.GetOk("modified_date"); ok {
-		if dateStr := modifiedDate.(string); dateStr != "" {
-			if t, err := time.Parse(time.RFC3339, dateStr); err == nil {
-				greeting.ModifiedDate = &t
-			}
-		}
 	}
 
 	return greeting
@@ -95,26 +85,26 @@ func parseStringToTime(dateStr string) *time.Time {
 	return nil
 }
 
-func extractDomainEntityName(entity *platformclientv2.Domainentity) *string {
+func extractDomainEntityName(entity *platformclientv2.Domainentityref) *string {
 	if entity == nil {
 		return nil
 	}
 	return entity.Name
 }
 
-func GenerateGreeting(
+func GenerateGreetingUser(
 	resourceLabel string,
 	name string,
 	greetingType string,
 	ownerType string,
-	owner string,
+	user string,
 	audioTts string,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_greeting" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_greeting_user" "%s" {
   name        = "%s"
   type        = "%s"
   owner_type  = "%s"
-  owner_id    = %s
+  user_id    = %s
   audio_tts   = "%s"
-}`, resourceLabel, name, greetingType, ownerType, owner, audioTts)
+}`, resourceLabel, name, greetingType, ownerType, user, audioTts)
 }

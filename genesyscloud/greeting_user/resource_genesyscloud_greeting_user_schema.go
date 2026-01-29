@@ -1,4 +1,4 @@
-package greeting
+package greeting_user
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -15,16 +15,16 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(ResourceType, GreetingExporter())
 }
 
-const ResourceType = "genesyscloud_greeting"
+const ResourceType = "genesyscloud_greeting_user"
 
 func ResourceGreeting() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Greetings",
+		Description: "Genesys Cloud Greetings (User)",
 
-		CreateContext: provider.CreateWithPooledClient(createGreeting),
-		ReadContext:   provider.ReadWithPooledClient(readGreeting),
-		UpdateContext: provider.UpdateWithPooledClient(updateGreeting),
-		DeleteContext: provider.DeleteWithPooledClient(deleteGreeting),
+		CreateContext: provider.CreateWithPooledClient(createUserGreeting),
+		ReadContext:   provider.ReadWithPooledClient(readUserGreeting),
+		UpdateContext: provider.UpdateWithPooledClient(updateUserGreeting),
+		DeleteContext: provider.DeleteWithPooledClient(deleteUserGreeting),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -36,26 +36,30 @@ func ResourceGreeting() *schema.Resource {
 				Optional:    true,
 			},
 			"type": {
-				Description:  "Greeting type (STATION | VOICEMAIL | NAME).",
+				Description:  "Greeting type. NAME is only supported type for user greetings.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"STATION", "VOICEMAIL", "NAME"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"NAME"}, false),
 			},
 			"owner_type": {
-				Description:  "Greeting owner type (USER | ORGANIZATION | GROUP).",
+				Description:  "Greeting owner type. USER is the only supported owner type for user greetings.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"USER", "ORGANIZATION", "GROUP"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"USER"}, false),
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
 					// API may override owner_type. Suppress diffs when both values exist.
 					return oldValue != "" && newValue != ""
 				},
 			},
-			"owner_id": {
-				Description: "The ID of the owner (user, organization, or group) of the greeting.",
+			"user_id": {
+				Description: "The ID of the user owner of the greeting.",
 				Optional:    true,
 				Computed:    true,
 				Type:        schema.TypeString,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					// Suppress diffs when both values exist - API may override or user reference resolves differently
+					return oldValue != "" && newValue != ""
+				},
 			},
 			"audio_file": {
 				Description: "Greeting audio file.",
@@ -87,26 +91,6 @@ func ResourceGreeting() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"created_date": {
-				Description: "Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"created_by": {
-				Description: "Greeting created by.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"modified_date": {
-				Description: "Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"modified_by": {
-				Description: "Greeting modified by.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
 		},
 	}
 }
@@ -115,7 +99,7 @@ func GreetingExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGreetings),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"owner_id": {RefType: "genesyscloud_user"},
+			"user_id": {RefType: "genesyscloud_user"},
 		},
 	}
 }
