@@ -195,6 +195,7 @@ var (
 				Description: "The width of the cell (with unit)",
 				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    1,
 				Elem:        documentElement,
 			},
 		},
@@ -249,6 +250,7 @@ var (
 				Description: "The width of the table (with unit)",
 				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    1,
 				Elem:        documentElement,
 			},
 			"alignment": {
@@ -578,6 +580,7 @@ var (
 				Description: "The width (with unit) for the property",
 				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    1,
 				Elem:        documentElement,
 			},
 			"alt_text": {
@@ -611,12 +614,14 @@ var (
 				Description: "The width (with unit) for the property",
 				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    1,
 				Elem:        documentElement,
 			},
 			"height": {
 				Description: "The height (with unit) for the property",
 				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    1,
 				Elem:        documentElement,
 			},
 		},

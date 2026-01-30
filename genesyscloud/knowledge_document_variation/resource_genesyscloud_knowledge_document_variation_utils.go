@@ -274,8 +274,8 @@ func buildDocumentVideoProperties(propertiesIn map[string]interface{}) *platform
 	propertiesOut := platformclientv2.Documentbodyvideoproperties{
 		BackgroundColor: resourcedata.GetNillableValueFromMap[string](propertiesMap, "background_color", false),
 		Align:           resourcedata.GetNillableValueFromMap[string](propertiesMap, "align", false),
-		Width:           builddocumentElement(propertiesMap, "width"),
-		Height:          builddocumentElement(propertiesMap, "height"),
+		Width:           buildDocumentElement(propertiesMap, "width"),
+		Height:          buildDocumentElement(propertiesMap, "height"),
 	}
 
 	// If indentation isn't part of state don't include it in api body
@@ -302,7 +302,7 @@ func buildDocumentImageProperties(propertiesIn map[string]interface{}) *platform
 		BackgroundColor: resourcedata.GetNillableValueFromMap[string](propertiesMap, "background_color", false),
 		Align:           resourcedata.GetNillableValueFromMap[string](propertiesMap, "align", false),
 		Width:           nillableFloat32FromMap(propertiesMap, "width"),
-		WidthWithUnit:   builddocumentElement(propertiesMap, "width_with_unit"),
+		WidthWithUnit:   buildDocumentElement(propertiesMap, "width_with_unit"),
 		AltText:         resourcedata.GetNillableValueFromMap[string](propertiesMap, "alt_text", false),
 	}
 
@@ -543,7 +543,7 @@ func buildDocumentTableProperties(propertiesIn map[string]interface{}) *platform
 	}
 	propertiesOut := platformclientv2.Documentbodytableproperties{
 		Width:           nillableFloat32FromMap(propertiesMap, "width"),
-		WidthWithUnit:   builddocumentElement(propertiesMap, "width_with_unit"),
+		WidthWithUnit:   buildDocumentElement(propertiesMap, "width_with_unit"),
 		Alignment:       resourcedata.GetNillableValueFromMap[string](propertiesMap, "alignment", false),
 		Height:          nillableFloat32FromMap(propertiesMap, "height"),
 		CellSpacing:     nillableFloat32FromMap(propertiesMap, "cell_spacing"),
@@ -603,7 +603,7 @@ func buildDocumentTableCaptionBlocks(blocksIn map[string]interface{}) *[]platfor
 	return &blocksOut
 }
 
-func builddocumentElement(elementIn map[string]interface{}, key string) *platformclientv2.Documentelementlength {
+func buildDocumentElement(elementIn map[string]interface{}, key string) *platformclientv2.Documentelementlength {
 	elementSlice, ok := elementIn[key].([]interface{})
 	if !ok || len(elementSlice) == 0 {
 		return nil
@@ -721,7 +721,7 @@ func buildDocumentTableCellProperties(propertiesIn map[string]interface{}) *plat
 		BorderColor:     resourcedata.GetNillableValueFromMap[string](propertiesMap, "border_color", false),
 		BackgroundColor: resourcedata.GetNillableValueFromMap[string](propertiesMap, "background_color", false),
 		Width:           nillableFloat32FromMap(propertiesMap, "width"),
-		WidthWithUnit:   builddocumentElement(propertiesMap, "width_with_unit"),
+		WidthWithUnit:   buildDocumentElement(propertiesMap, "width_with_unit"),
 	}
 	return &propertiesOut
 }
@@ -939,10 +939,10 @@ func flattenDocumentVideoProperties(propertiesIn *platformclientv2.Documentbodyv
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "indentation", propertiesIn.Indentation)
 
 	if propertiesIn.Width != nil {
-		propertiesOut["width"] = flattendocumentElement(propertiesIn.Width)
+		propertiesOut["width"] = flattenDocumentElement(propertiesIn.Width)
 	}
 	if propertiesIn.Height != nil {
-		propertiesOut["height"] = flattendocumentElement(propertiesIn.Height)
+		propertiesOut["height"] = flattenDocumentElement(propertiesIn.Height)
 	}
 
 	if len(propertiesOut) == 0 {
@@ -963,7 +963,7 @@ func flattenDocumentImageProperties(propertiesIn *platformclientv2.Documentbodyi
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "width", propertiesIn.Width)
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "alt_text", propertiesIn.AltText)
 	if propertiesIn.WidthWithUnit != nil {
-		propertiesOut["width_with_unit"] = flattendocumentElement(propertiesIn.WidthWithUnit)
+		propertiesOut["width_with_unit"] = flattenDocumentElement(propertiesIn.WidthWithUnit)
 	}
 
 	if len(propertiesOut) == 0 {
@@ -1207,7 +1207,7 @@ func flattenDocumentTableProperties(propertiesIn platformclientv2.Documentbodyta
 
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "width", propertiesIn.Width)
 	if propertiesIn.WidthWithUnit != nil {
-		propertiesOut["width_with_unit"] = flattendocumentElement(propertiesIn.WidthWithUnit)
+		propertiesOut["width_with_unit"] = flattenDocumentElement(propertiesIn.WidthWithUnit)
 	}
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "cell_padding", propertiesIn.CellPadding)
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "border_width", propertiesIn.BorderWidth)
@@ -1263,7 +1263,7 @@ func flattenDocumentTableCaptionBlocks(blocksIn []platformclientv2.Documentbodyt
 	return blocksOut
 }
 
-func flattendocumentElement(elementIn *platformclientv2.Documentelementlength) []interface{} {
+func flattenDocumentElement(elementIn *platformclientv2.Documentelementlength) []interface{} {
 	if elementIn == nil || elementIn.Value == nil || elementIn.Unit == nil {
 		return nil
 	}
@@ -1362,7 +1362,7 @@ func flattenDocumentTableCellProperties(propertiesIn platformclientv2.Documentbo
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "background_color", propertiesIn.BackgroundColor)
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "width", propertiesIn.Width)
 	if propertiesIn.WidthWithUnit != nil {
-		propertiesOut["width_with_unit"] = flattendocumentElement(propertiesIn.WidthWithUnit)
+		propertiesOut["width_with_unit"] = flattenDocumentElement(propertiesIn.WidthWithUnit)
 	}
 
 	if len(propertiesOut) == 0 {
