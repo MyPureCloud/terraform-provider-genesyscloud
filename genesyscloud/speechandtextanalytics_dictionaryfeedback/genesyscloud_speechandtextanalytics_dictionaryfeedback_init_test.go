@@ -1,4 +1,4 @@
-package workforcemanagement_businessunits
+package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"sync"
@@ -8,7 +8,8 @@ import (
 )
 
 /*
-The genesyscloud_workforcemanagement_businessunits_init_test.go file is used to initialize the data sources and resources used in testing the workforcemanagement_businessunits resource
+   The genesyscloud_speechandtextanalytics_dictionaryfeedback_init_test.go file is used to initialize the data sources and resources
+   used in testing the speechandtextanalytics_dictionaryfeedback resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -27,20 +28,23 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceType] = ResourceWorkforcemanagementBusinessunits()
+	providerResources[ResourceType] = ResourceDictionaryFeedback()
+	// TODO: Add references
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[ResourceType] = DataSourceWorkforcemanagementBusinessunits()
+
+	providerDataSources[ResourceType] = DataSourceDictionaryFeedback()
+	// TODO: Add references
 }
 
-// initTestResources initializes all test resources.
+// initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	providerResources = make(map[string]*schema.Resource)
 	providerDataSources = make(map[string]*schema.Resource)
+	providerResources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
@@ -50,9 +54,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for workforcemanagement_businessunits package
+	// Run setup function before starting the test suite for the speechandtextanalytics_dictionaryfeedback package
 	initTestResources()
 
-	// Run the test suite for the workforcemanagement_businessunits package
+	// Run the test suite for the speechandtextanalytics_dictionaryfeedback package
 	m.Run()
 }

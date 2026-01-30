@@ -44,6 +44,12 @@ func ResourceTelephonyExtensionPool() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"division_id": {
+				Description: `The division this campaign belongs to.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 }
@@ -72,7 +78,9 @@ func DataSourceExtensionPool() *schema.Resource {
 func TelephonyExtensionPoolExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllExtensionPools),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 	}
 }
 
