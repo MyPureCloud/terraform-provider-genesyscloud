@@ -112,6 +112,7 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 		}
 		resourcedata.SetNillableValue(d, "match_any_conditions", campaignRule.MatchAnyConditions)
 		resourcedata.SetNillableValue(d, "enabled", campaignRule.Enabled)
+		resourcedata.SetNillableValue(d, "campaign_rule_processing", campaignRule.CampaignRuleProcessing)
 
 		log.Printf("Read Outbound Campaign Rule %s %s", d.Id(), *campaignRule.Name)
 		return cc.CheckState(d)

@@ -356,6 +356,12 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Default:     false,
 				Type:        schema.TypeBool,
 			},
+			`campaign_rule_processing`: {
+				Description:  `CampaignRule processing algorithm.Valid values: v2.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"v2"}, false),
+			},
 		},
 	}
 }
