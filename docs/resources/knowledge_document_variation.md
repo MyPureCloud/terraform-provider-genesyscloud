@@ -177,7 +177,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.image.properties.width_with_unit`
@@ -249,7 +249,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -321,7 +321,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -392,7 +392,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -447,9 +447,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -540,9 +540,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -633,9 +633,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.video.properties.height`
@@ -730,7 +730,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.image.properties.width_with_unit`
@@ -785,9 +785,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.video.properties.height`
@@ -895,7 +895,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.image.properties.width_with_unit`
@@ -967,7 +967,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -1039,7 +1039,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -1110,7 +1110,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -1165,9 +1165,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -1258,9 +1258,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -1351,9 +1351,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.video.properties.height`
@@ -1448,7 +1448,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.image.properties.width_with_unit`
@@ -1503,9 +1503,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.video.properties.height`
@@ -1613,7 +1613,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.image.properties.width_with_unit`
@@ -1685,7 +1685,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -1757,7 +1757,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -1828,7 +1828,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -1883,9 +1883,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -1976,9 +1976,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -2069,9 +2069,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.video.properties.height`
@@ -2166,7 +2166,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.paragraph.blocks.image.properties.width_with_unit`
@@ -2221,9 +2221,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.paragraph.blocks.video.properties.height`
@@ -2330,7 +2330,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.image.properties.width_with_unit`
@@ -2402,7 +2402,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -2474,7 +2474,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -2545,7 +2545,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -2600,9 +2600,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -2693,9 +2693,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -2786,9 +2786,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.list.blocks.blocks.video.properties.height`
@@ -2883,7 +2883,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.paragraph.blocks.image.properties.width_with_unit`
@@ -2938,9 +2938,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.paragraph.blocks.video.properties.height`
@@ -3019,9 +3019,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.blocks.video.properties.height`
@@ -3061,7 +3061,7 @@ Optional:
 - `scope` (String) The scope of the cell. Valid values: Row, Column, RowGroup, ColumnGroup, None
 - `vertical_align` (String) The vertical alignment of the cell. Valid values: Top, Middle, Bottom
 - `width` (Number) The width of the cell (without unit)
-- `width_with_unit` (Block List) The width of the cell (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width of the cell (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--rows--cells--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.rows.cells.properties.width_with_unit`
@@ -3103,7 +3103,7 @@ Optional:
 - `cell_spacing` (Number) The spacing of cells in the table
 - `height` (Number) The height of the table
 - `width` (Number) The width of the table (without unit)
-- `width_with_unit` (Block List) The width of the table (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width of the table (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption`
@@ -3149,7 +3149,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.image.properties.width_with_unit`
@@ -3221,7 +3221,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -3293,7 +3293,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -3364,7 +3364,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -3419,9 +3419,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -3512,9 +3512,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -3605,9 +3605,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.video.properties.height`
@@ -3702,7 +3702,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.paragraph.blocks.image.properties.width_with_unit`
@@ -3757,9 +3757,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.paragraph.blocks.video.properties.height`
@@ -3838,9 +3838,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.table.properties.caption.blocks.video.properties.height`
@@ -3917,9 +3917,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.blocks.video.properties.height`
@@ -3959,7 +3959,7 @@ Optional:
 - `scope` (String) The scope of the cell. Valid values: Row, Column, RowGroup, ColumnGroup, None
 - `vertical_align` (String) The vertical alignment of the cell. Valid values: Top, Middle, Bottom
 - `width` (Number) The width of the cell (without unit)
-- `width_with_unit` (Block List) The width of the cell (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width of the cell (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--rows--cells--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.rows.cells.properties.width_with_unit`
@@ -4001,7 +4001,7 @@ Optional:
 - `cell_spacing` (Number) The spacing of cells in the table
 - `height` (Number) The height of the table
 - `width` (Number) The width of the table (without unit)
-- `width_with_unit` (Block List) The width of the table (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width of the table (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption`
@@ -4047,7 +4047,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.image.properties.width_with_unit`
@@ -4119,7 +4119,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -4191,7 +4191,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -4262,7 +4262,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -4317,9 +4317,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -4410,9 +4410,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -4503,9 +4503,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.list.blocks.blocks.video.properties.height`
@@ -4600,7 +4600,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.paragraph.blocks.image.properties.width_with_unit`
@@ -4655,9 +4655,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.paragraph.blocks.video.properties.height`
@@ -4736,9 +4736,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--table--properties--caption--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.table.properties.caption.blocks.video.properties.height`
@@ -4815,9 +4815,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.video.properties.height`
@@ -4857,7 +4857,7 @@ Optional:
 - `scope` (String) The scope of the cell. Valid values: Row, Column, RowGroup, ColumnGroup, None
 - `vertical_align` (String) The vertical alignment of the cell. Valid values: Top, Middle, Bottom
 - `width` (Number) The width of the cell (without unit)
-- `width_with_unit` (Block List) The width of the cell (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width of the cell (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.properties.width_with_unit`
@@ -4899,7 +4899,7 @@ Optional:
 - `cell_spacing` (Number) The spacing of cells in the table
 - `height` (Number) The height of the table
 - `width` (Number) The width of the table (without unit)
-- `width_with_unit` (Block List) The width of the table (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width of the table (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption`
@@ -4945,7 +4945,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.image.properties.width_with_unit`
@@ -5017,7 +5017,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -5089,7 +5089,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -5160,7 +5160,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
@@ -5215,9 +5215,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -5308,9 +5308,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
@@ -5401,9 +5401,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.video.properties.height`
@@ -5498,7 +5498,7 @@ Optional:
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 - `width` (Number) The width (without unit) for the property
-- `width_with_unit` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit))
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.image.properties.width_with_unit`
@@ -5553,9 +5553,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.video.properties.height`
@@ -5634,9 +5634,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.video.properties.height`
@@ -5689,9 +5689,9 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `height` (Block List) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video--properties--height))
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
-- `width` (Block List) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video--properties--width))
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video--properties--width))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--video--properties--height"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.video.properties.height`
