@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -41,19 +40,7 @@ func (d *routingWrapupcodeFrameworkDataSource) Metadata(ctx context.Context, req
 }
 
 func (d *routingWrapupcodeFrameworkDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Data source for Genesys Cloud Wrap-up Code. Select a wrap-up code by name",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "The globally unique identifier for the wrapup code.",
-				Computed:    true,
-			},
-			"name": schema.StringAttribute{
-				Description: "Wrap-up code name.",
-				Required:    true,
-			},
-		},
-	}
+	resp.Schema = RoutingWrapupcodeDataSourceSchema()
 }
 
 func (d *routingWrapupcodeFrameworkDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {

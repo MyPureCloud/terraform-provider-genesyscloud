@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	datasourceschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -19,6 +23,55 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterFrameworkResource(ResourceType, NewRoutingWrapupcodeFrameworkResource)
 	regInstance.RegisterFrameworkDataSource(ResourceType, NewRoutingWrapupcodeFrameworkDataSource)
 	regInstance.RegisterExporter(ResourceType, RoutingWrapupcodeExporter())
+}
+
+// RoutingWrapupcodeResourceSchema returns the schema for the routing wrapupcode resource
+func RoutingWrapupcodeResourceSchema() schema.Schema {
+	return schema.Schema{
+		Description: "Genesys Cloud Routing Wrapup Code",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "The globally unique identifier for the wrapup code.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"name": schema.StringAttribute{
+				Description: "Wrapup Code name.",
+				Required:    true,
+			},
+			"division_id": schema.StringAttribute{
+				Description: "The division to which this routing wrapupcode will belong.",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"description": schema.StringAttribute{
+				Description: "The wrap-up code description.",
+				Optional:    true,
+			},
+		},
+	}
+}
+
+// RoutingWrapupcodeDataSourceSchema returns the schema for the routing wrapupcode data source
+func RoutingWrapupcodeDataSourceSchema() datasourceschema.Schema {
+	return datasourceschema.Schema{
+		Description: "Data source for Genesys Cloud Wrap-up Code. Select a wrap-up code by name",
+		Attributes: map[string]datasourceschema.Attribute{
+			"id": datasourceschema.StringAttribute{
+				Description: "The globally unique identifier for the wrapup code.",
+				Computed:    true,
+			},
+			"name": datasourceschema.StringAttribute{
+				Description: "Wrap-up code name.",
+				Required:    true,
+			},
+		},
+	}
 }
 
 func RoutingWrapupcodeExporter() *resourceExporter.ResourceExporter {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
@@ -41,19 +40,7 @@ func (d *routingLanguageFrameworkDataSource) Metadata(ctx context.Context, req d
 }
 
 func (d *routingLanguageFrameworkDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Data source for Genesys Cloud Routing Languages. Select a language by name.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "The ID of the routing language.",
-				Computed:    true,
-			},
-			"name": schema.StringAttribute{
-				Description: "Language name.",
-				Required:    true,
-			},
-		},
-	}
+	resp.Schema = RoutingLanguageDataSourceSchema()
 }
 
 func (d *routingLanguageFrameworkDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
