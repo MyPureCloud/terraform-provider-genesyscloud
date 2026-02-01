@@ -1,15 +1,12 @@
 package routing_wrapupcode
 
 import (
-	"context"
 	"fmt"
 
 	datasourceschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -76,32 +73,11 @@ func RoutingWrapupcodeDataSourceSchema() datasourceschema.Schema {
 
 func RoutingWrapupcodeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingWrapupcodes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingWrapupcodesSDK),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},
 	}
-}
-
-// GetAllRoutingWrapupcodes retrieves all routing wrapupcodes for export using the proxy
-func GetAllRoutingWrapupcodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getRoutingWrapupcodeProxy(clientConfig)
-	wrapupcodes, _, err := proxy.getAllRoutingWrapupcode(ctx)
-	if err != nil {
-		return nil, diag.Errorf("Failed to get routing wrapupcodes for export: %v", err)
-	}
-
-	if wrapupcodes == nil {
-		return resourceExporter.ResourceIDMetaMap{}, nil
-	}
-
-	exportMap := make(resourceExporter.ResourceIDMetaMap)
-	for _, wrapupcode := range *wrapupcodes {
-		exportMap[*wrapupcode.Id] = &resourceExporter.ResourceMeta{
-			BlockLabel: *wrapupcode.Name,
-		}
-	}
-	return exportMap, nil
 }
 
 // GenerateRoutingWrapupcodeResource generates a routing wrapupcode resource for cross-package testing

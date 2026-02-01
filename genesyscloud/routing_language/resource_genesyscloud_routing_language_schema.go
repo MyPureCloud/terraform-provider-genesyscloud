@@ -1,15 +1,12 @@
 package routing_language
 
 import (
-	"context"
 	"fmt"
 
 	datasourceschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -68,29 +65,8 @@ func RoutingLanguageDataSourceSchema() datasourceschema.Schema {
 
 func RoutingLanguageExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingLanguages),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingLanguagesSDK),
 	}
-}
-
-// GetAllRoutingLanguages retrieves all routing languages for export using the proxy
-func GetAllRoutingLanguages(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getRoutingLanguageProxy(clientConfig)
-	languages, _, err := proxy.getAllRoutingLanguages(ctx, "")
-	if err != nil {
-		return nil, diag.Errorf("Failed to get routing languages for export: %v", err)
-	}
-
-	if languages == nil {
-		return resourceExporter.ResourceIDMetaMap{}, nil
-	}
-
-	exportMap := make(resourceExporter.ResourceIDMetaMap)
-	for _, language := range *languages {
-		exportMap[*language.Id] = &resourceExporter.ResourceMeta{
-			BlockLabel: *language.Name,
-		}
-	}
-	return exportMap, nil
 }
 
 func GenerateRoutingLanguageResource(

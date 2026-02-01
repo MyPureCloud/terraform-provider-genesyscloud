@@ -6,12 +6,15 @@ import (
 	"log"
 	"time"
 
+	pfdiag "github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	sdkdiag "github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -260,4 +263,109 @@ func updateFrameworkModelFromAPI(model *routingWrapupcodeFrameworkResourceModel,
 	} else {
 		model.DivisionId = types.StringNull()
 	}
+}
+
+// GetAllRoutingWrapupcodes retrieves all routing wrapupcodes for export using Plugin Framework diagnostics.
+// This is the future Phase 2 implementation that will be used once the exporter is updated
+// to work natively with Framework types.
+//
+// Returns:
+//   - resourceExporter.ResourceIDMetaMap: Map of wrapupcode IDs to metadata
+//   - pfdiag.Diagnostics: Plugin Framework diagnostics
+//
+// Note: Currently NOT used by exporter. Exporter uses GetAllRoutingWrapupcodesSDK (SDK version).
+func GetAllRoutingWrapupcodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, pfdiag.Diagnostics) {
+	var diagErr pfdiag.Diagnostics
+	proxy := getRoutingWrapupcodeProxy(clientConfig)
+	wrapupcodes, _, err := proxy.getAllRoutingWrapupcode(ctx)
+	if err != nil {
+		diagErr.AddError("Failed to get routing wrapupcodes for export", err.Error())
+		return nil, diagErr
+	}
+
+	if wrapupcodes == nil {
+		return resourceExporter.ResourceIDMetaMap{}, nil
+	}
+
+	exportMap := make(resourceExporter.ResourceIDMetaMap)
+	for _, wrapupcode := range *wrapupcodes {
+		hashedUniqueFields, err := util.QuickHashFields(*wrapupcode.Name)
+		if err != nil {
+			diagErr.AddError("Failed to hash wrapupcode fields", err.Error())
+			return nil, diagErr
+		}
+		exportMap[*wrapupcode.Id] = &resourceExporter.ResourceMeta{
+			BlockLabel: *wrapupcode.Name,
+			// Calculate BlockHash for stable export identity
+			BlockHash: hashedUniqueFields,
+		}
+	}
+	return exportMap, nil
+}
+
+// GetAllRoutingWrapupcodesSDK retrieves all routing wrapupcodes for export using SDK diagnostics.
+// This is the Phase 1 implementation that converts SDK types to flat attribute maps
+// for the legacy exporter's dependency resolution logic.
+//
+// IMPORTANT: This function is CURRENTLY USED by the exporter (see RoutingWrapupcodeExporter).
+// It implements the lazy fetch pattern for performance optimization.
+//
+// Returns:
+//   - resourceExporter.ResourceIDMetaMap: Map of wrapupcode IDs to metadata with flat attributes
+//   - sdkdiag.Diagnostics: SDK diagnostics (required by current exporter)
+//
+// Lazy Fetch Pattern:
+//   - First API call: Fetch all wrapupcode IDs and names (lightweight)
+//   - Filter: Apply exporter filters to determine which wrapupcodes to export
+//   - Second API call: Fetch full details ONLY for filtered wrapupcodes (performance optimization)
+//
+// TODO: Remove this function once all resources are migrated to Plugin Framework
+// and the exporter is updated to use GetAllRoutingWrapupcodes (Phase 2).
+func GetAllRoutingWrapupcodesSDK(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, sdkdiag.Diagnostics) {
+	proxy := getRoutingWrapupcodeProxy(clientConfig)
+
+	// Step 1: Fetch all wrapupcodes (lightweight - just IDs and names)
+	wrapupcodes, _, err := proxy.getAllRoutingWrapupcode(ctx)
+	if err != nil {
+		return nil, sdkdiag.Errorf("Failed to get routing wrapupcodes for export: %v", err)
+	}
+
+	if wrapupcodes == nil {
+		return resourceExporter.ResourceIDMetaMap{}, nil
+	}
+
+	// Step 2: Build initial export map with IDs and names
+	exportMap := make(resourceExporter.ResourceIDMetaMap)
+	for _, wrapupcode := range *wrapupcodes {
+		hashedUniqueFields, err := util.QuickHashFields(*wrapupcode.Name)
+		if err != nil {
+			return nil, sdkdiag.Errorf("Failed to hash wrapupcode fields: %v", err)
+		}
+		exportMap[*wrapupcode.Id] = &resourceExporter.ResourceMeta{
+			BlockLabel: *wrapupcode.Name,
+			BlockHash:  hashedUniqueFields,
+		}
+	}
+
+	// Step 3: Lazy fetch - Get full details ONLY for filtered wrapupcodes
+	// Note: For wrapupcode, the initial fetch already includes all attributes (name, division, description)
+	// so we don't need additional API calls. However, we still build the flat attribute map
+	// for consistency with the exporter's dependency resolution logic.
+	for _, wrapupcode := range *wrapupcodes {
+		if wrapupcode.Id == nil {
+			continue
+		}
+
+		// Build flat attribute map for exporter (Phase 1 temporary)
+		attributes := buildWrapupcodeAttributes(&wrapupcode)
+
+		// Update export map with attributes
+		if meta, exists := exportMap[*wrapupcode.Id]; exists {
+			meta.ExportAttributes = attributes
+		} else {
+			log.Printf("Warning: Wrapupcode %s not found in export map", *wrapupcode.Id)
+		}
+	}
+
+	return exportMap, nil
 }
