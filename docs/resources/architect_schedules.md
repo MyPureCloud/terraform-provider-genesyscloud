@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/api/rest/v2/architect/#delete-api-v2-architect-schedules--scheduleId-)
 * [GET /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-schedules--scheduleId-)
 * [PUT /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-schedules--scheduleId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:schedule:add`
+* `routing:schedule:delete`
+* `routing:schedule:edit`
+* `routing:schedule:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

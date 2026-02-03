@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-ivrs--ivrId-)
 * [DELETE /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/api/rest/v2/architect/#delete-api-v2-architect-ivrs--ivrId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:callRoute:add`
+* `routing:callRoute:delete`
+* `routing:callRoute:edit`
+* `routing:callRoute:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

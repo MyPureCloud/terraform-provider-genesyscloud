@@ -19,6 +19,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations--documentVariationId-)
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations--documentVariationId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations--documentVariationId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `knowledge:document:add`
+* `knowledge:document:delete`
+* `knowledge:document:edit`
+* `knowledge:document:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `knowledge`
+* `knowledge:readonly`
+
 
 ## Example Usage
 

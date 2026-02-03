@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [DELETE /api/v2/conversations/summaries/settings/{summarySettingId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-summaries-settings--summarySettingId-)
 - [GET /api/v2/conversations/summaries/settings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-summaries-settings)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `aiStudio:summaryConfig:add`
+* `aiStudio:summaryConfig:delete`
+* `aiStudio:summaryConfig:edit`
+* `aiStudio:summaryConfig:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `ai-studio`
+* `ai-studio:readonly`
+
 
 ## Example Usage
 

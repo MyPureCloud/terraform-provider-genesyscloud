@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-dnclists--dncListId-)
 * [PUT /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-dnclists--dncListId-)
 * [DELETE /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-dnclists--dncListId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:dncList:add`
+* `outbound:dncList:delete`
+* `outbound:dncList:edit`
+* `outbound:dncList:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 
