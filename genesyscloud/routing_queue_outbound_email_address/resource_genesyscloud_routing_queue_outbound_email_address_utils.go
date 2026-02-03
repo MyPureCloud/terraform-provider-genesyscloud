@@ -1,6 +1,6 @@
 package routing_queue_outbound_email_address
 
-import "github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+import "github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
 
 func isQueueEmailAddressEmpty(qea *platformclientv2.Queueemailaddress) bool {
 	if qea == nil {
