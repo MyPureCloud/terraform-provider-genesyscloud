@@ -58,3 +58,4 @@ consistency-errors.log.json
 test/temp/*
 
 public/data/dependency_tree*
+public/data/resource_permissions*
