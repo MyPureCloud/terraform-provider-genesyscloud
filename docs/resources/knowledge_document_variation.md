@@ -23,6 +23,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
+// To enable nested tables, set ENABLE_NESTED_TABLES as an environment variable
 resource "genesyscloud_knowledge_document_variation" "example_document_variation" {
   knowledge_base_id     = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   knowledge_document_id = genesyscloud_knowledge_document.example_unpublished_document.id
@@ -38,6 +39,11 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
               text      = "Paragraph text"
               marks     = ["Bold", "Italic", "Underline"]
               hyperlink = "https://example.com/hyperlink"
+              properties {
+                font_size        = "Large"
+                text_color       = "#000000"
+                background_color = "#FFFFFF"
+              }
             }
           }
           blocks {
@@ -70,10 +76,26 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
         }
       }
       blocks {
-        type = "Image"
-        image {
-          url       = "https://example.com/image"
-          hyperlink = "https://example.com/hyperlink"
+        type = "Table"
+        table {
+          rows {
+            cells {
+              blocks {
+                type = "Text"
+                text {
+                  text = "Cell A1"
+                }
+              }
+            }
+            cells {
+              blocks {
+                type = "Text"
+                text {
+                  text = "Cell B1"
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -86,9 +108,9 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
 
 ### Required
 
-- `knowledge_base_id` (String) Knowledge base id of the label
-- `knowledge_document_id` (String) Knowledge document id of the label
-- `knowledge_document_variation` (Block List, Min: 1, Max: 1) Knowledge document variation (see [below for nested schema](#nestedblock--knowledge_document_variation))
+- `knowledge_base_id` (String) The knowledge base id of the variation
+- `knowledge_document_id` (String) The knowledge document id of the variation
+- `knowledge_document_variation` (Block List, Min: 1, Max: 1) The knowledge document variation (see [below for nested schema](#nestedblock--knowledge_document_variation))
 
 ### Optional
 
@@ -104,33 +126,35 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
 Optional:
 
 - `body` (Block List, Max: 1) The content for the variation. (see [below for nested schema](#nestedblock--knowledge_document_variation--body))
-- `contexts` (Block List) The context values associated with the variation (see [below for nested schema](#nestedblock--knowledge_document_variation--contexts))
+- `contexts` (Block List) The context values associated with the variation
 - `name` (String) The name of the variation
+- `priority` (Number) The priority of the variation
 
 Read-Only:
 
-- `document_version` (List of Object) The version of the document. (see [below for nested schema](#nestedatt--knowledge_document_variation--document_version))
+- `document_version` (List of Object) The version of the document.
 
 <a id="nestedblock--knowledge_document_variation--body"></a>
 ### Nested Schema for `knowledge_document_variation.body`
 
 Required:
 
-- `blocks` (Block List, Min: 1) The content for the variation. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks))
+- `blocks` (Block List, Min: 1) The content for the body. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks`
 
 Required:
 
-- `type` (String) The type of the block for the body. This determines which body block object (paragraph, list, video or image) would have a value.
+- `type` (String) The type of the block for the body. This determines which body block object (paragraph, image, video, list or table) would have a value.
 
 Optional:
 
 - `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image))
-- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list))
-- `paragraph` (Block List, Max: 1) Paragraph. It must contain a value if the type of the block is Paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph))
-- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList.
+- `paragraph` (Block List, Max: 1) Paragraph. It must contain a value if the type of the block is Paragraph.
+- `table` (Block List, Max: 1) Table. It must contain a value if the type of the block is Table.
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video.
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--image"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.image`
@@ -142,7 +166,32 @@ Required:
 Optional:
 
 - `hyperlink` (String) The URL of the page that the hyperlink goes to.
-- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image--properties))
+- `properties` (Block List) The properties for the image
+
+### Nested Schema for `knowledge_document_variation.body.blocks.list`
+
+**Note:** Lists are recursive. A list contains `ListItem` entries, and each list item contains `blocks`. Those blocks can be leaf blocks (Text/Image/Video) or container blocks (another List or a Table). We document the block shapes once; deeper nesting reuses the same shapes.
+
+**Nested tables:** To allow `Table` blocks inside list items (and tables inside tables), set `ENABLE_NESTED_TABLES` as an environment variable before running the provider/doc generation.
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list.Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list.Valid values: Normal, Square, Circle, None
+
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--image--properties"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.image.properties`
@@ -154,108 +203,17 @@ Optional:
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 
 
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list`
-
-Optional:
-
-- `blocks` (Block List) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks))
-- `properties` (Block List) Properties for the UnorderedList or OrderedList (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--properties))
-
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks`
 
 Required:
 
 - `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks))
-- `type` (String) The type of the list block.
+- `type` (String) The type of the list. Valid values: ListItem
 
 Optional:
 
-- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--properties))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks`
-
-Required:
-
-- `type` (String) The type of the content block.
-
-Optional:
-
-- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image))
-- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text))
-- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.image`
-
-Required:
-
-- `url` (String) The URL for the image.
-
-Optional:
-
-- `hyperlink` (String) The URL of the page that the hyperlink goes to.
-- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.image.properties`
-
-Optional:
-
-- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
-- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `indentation` (Number) The indentation for the property. The valid values in 'em'
-
-
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.text`
-
-Required:
-
-- `text` (String) Text
-
-Optional:
-
-- `hyperlink` (String) The URL of the page that the hyperlink goes to.
-- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
-- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text--properties))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.text.properties`
-
-Optional:
-
-- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
-- `font_size` (String) The font size for the text. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
-- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
-
-
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.video`
-
-Required:
-
-- `url` (String) The URL for the video.
-
-Optional:
-
-- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.video.properties`
-
-Optional:
-
-- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
-- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `indentation` (Number) The indentation for the property. The valid values in 'em'
-
-
+- `properties` (Block List) The properties for the list block
 
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--properties"></a>
@@ -273,104 +231,46 @@ Optional:
 - `unordered_type` (String) The type of icon for the unordered list.Valid values: Normal, Square, Circle, None
 
 
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks`
 
-<a id="nestedblock--knowledge_document_variation--body--blocks--list--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.list.properties`
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, image, video, list, or table) would have a value.
 
 Optional:
 
-- `ordered_type` (String) The type of icon for the ordered list.Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
-- `unordered_type` (String) The type of icon for the unordered list.Valid values: Normal, Square, Circle, None
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list))
+- `table` (Block List, Max: 1) Table. It must contain a value if the type of the block is Table. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video))
 
-
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.paragraph`
 
+Required:
+
+- `blocks` (Block List, Min: 1) The content for the paragraph.
+
 Optional:
 
-- `blocks` (Block List) The content for the variation. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks))
-- `properties` (Block List) The properties for the paragraph (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--properties))
+- `properties` (Block List) The properties for the paragraph
 
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks`
+### Nested Schema for `knowledge_document_variation.body.blocks.table`
+
+**Note:** Tables nest via `rows` → `cells` → `blocks`. Cell blocks can include leaf blocks (Text/Image/Video/Paragraph) or container blocks (List/Table), so deep nesting repeats the same block shapes.
+
+**Nested tables:** If you want a table inside a table cell (or inside a list item), set `ENABLE_NESTED_TABLES` as an environment variable before running the provider/doc generation.
 
 Required:
 
-- `type` (String) The type of the content block.
+- `rows` (Block List, Min: 1) The rows in the table (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows))
 
 Optional:
 
-- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image))
-- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text))
-- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.image`
-
-Required:
-
-- `url` (String) The URL for the image.
-
-Optional:
-
-- `hyperlink` (String) The URL of the page that the hyperlink goes to.
-- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.image.properties`
-
-Optional:
-
-- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
-- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `properties` (Block List) The properties for the table
 
 
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.text`
-
-Required:
-
-- `text` (String) Text
-
-Optional:
-
-- `hyperlink` (String) The URL of the page that the hyperlink goes to.
-- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
-- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text--properties))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.text.properties`
-
-Optional:
-
-- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
-- `font_size` (String) The font size for the text. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
-- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
-
-
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.video`
-
-Required:
-
-- `url` (String) The URL for the video.
-
-Optional:
-
-- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties))
-
-<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.video.properties`
-
-Optional:
-
-- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
-- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
-- `indentation` (Number) The indentation for the property. The valid values in 'em'
 
 
 
@@ -388,9 +288,25 @@ Optional:
 - `text_color` (String) The text color for the paragraph. The valid values in hex color code representation. For example black color - #000000
 
 
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks`
 
-<a id="nestedblock--knowledge_document_variation--body--blocks--video"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.video`
+Required:
+
+- `type` (String) The type of the content block.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video))
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.video`
 
 Required:
 
@@ -398,10 +314,12 @@ Required:
 
 Optional:
 
-- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video--properties))
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties))
 
-<a id="nestedblock--knowledge_document_variation--body--blocks--video--properties"></a>
-### Nested Schema for `knowledge_document_variation.body.blocks.video.properties`
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.video.properties`
 
 Optional:
 
@@ -410,26 +328,192 @@ Optional:
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
 
 
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text--properties))
 
 
 
-<a id="nestedblock--knowledge_document_variation--contexts"></a>
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties))
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties))
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text--properties))
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties))
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows`
+
+Required:
+
+- `cells` (Block List, Min: 1) The cells in a table row (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells))
+
+Optional:
+
+- `properties` (Block List) The properties for a table row
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items in a row cell (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks))
+
+Optional:
+
+- `properties` (Block List) The properties for a row cell
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the table. This determines which table cell block object (text, image, video, list, paragraph, or table) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list))
+- `paragraph` (Block List, Max: 1) Paragraph. It must contain a value if the type of the block is Paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph))
+- `table` (Block List, Max: 1) Table. It must contain a value if the type of the block is Table. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video))
+
+### Nested Schema for `knowledge_document_variation.body.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video
+
 ### Nested Schema for `knowledge_document_variation.contexts`
 
 Required:
 
-- `context` (Block List, Min: 1) The knowledge context associated with the variation (see [below for nested schema](#nestedblock--knowledge_document_variation--contexts--context))
+- `context` (Block List, Min: 1) The knowledge context associated with the variation
 
 Optional:
 
-- `values` (Block List) The list of knowledge context values associated with the variation (see [below for nested schema](#nestedblock--knowledge_document_variation--contexts--values))
+- `values` (Block List) The list of knowledge context values associated with the variation
 
-<a id="nestedblock--knowledge_document_variation--contexts--context"></a>
-### Nested Schema for `knowledge_document_variation.contexts.context`
+### Nested Schema for `knowledge_document_variation.document_version`
 
-Required:
+Read-Only:
 
-- `context_id` (String) The globally unique identifier for the knowledge context
+- `id` (String)
+
+
 
 
 <a id="nestedblock--knowledge_document_variation--contexts--values"></a>
@@ -440,11 +524,20 @@ Required:
 - `value_id` (String) The globally unique identifier for the knowledge context value
 
 
+<a id="nestedblock--knowledge_document_variation--contexts--context"></a>
+### Nested Schema for `knowledge_document_variation.contexts.context`
 
-<a id="nestedatt--knowledge_document_variation--document_version"></a>
-### Nested Schema for `knowledge_document_variation.document_version`
+Required:
 
-Read-Only:
+- `context_id` (String) The globally unique identifier for the knowledge context
 
-- `id` (String)
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
 
