@@ -2,11 +2,10 @@ package knowledge_document_variation
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
-	"sync"
 
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -14,24 +13,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
-// Since API allows infinite nesting of lists/tables, we are setting a max depth we will allow in terraform
-const (
-	maxListDepth  = 3
-	maxTableDepth = 3
-)
-
-// Warn only once when max depth is hit
-var (
-	warnBuildListTruncateOnce    sync.Once
-	warnFlattenListTruncateOnce  sync.Once
-	warnBuildTableTruncateOnce   sync.Once
-	warnFlattenTableTruncateOnce sync.Once
-)
-
-func buildDocumentContentListBlocks(blocksIn map[string]interface{}, listDepth int) *[]platformclientv2.Documentlistcontentblock {
+func buildDocumentContentListBlocks(blocksIn map[string]interface{}, listDepth int) (*[]platformclientv2.Documentlistcontentblock, error) {
 	blocksSlice, ok := blocksIn["blocks"].([]interface{})
 	if !ok || len(blocksSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]platformclientv2.Documentlistcontentblock, 0)
@@ -48,24 +33,26 @@ func buildDocumentContentListBlocks(blocksIn map[string]interface{}, listDepth i
 			Image:   buildDocumentImage(blockMap),
 			Video:   buildDocumentVideo(blockMap),
 		}
-		if _, ok := blockMap["list"]; ok {
-			if listDepth+1 < maxListDepth {
-				blockOut.List = buildDocumentList(blockMap, listDepth+1)
-			} else {
-				warnBuildListTruncateOnce.Do(func() {
-					log.Printf("[WARN] knowledge_document_variation: nested list exceeds maxListDepth=%d; truncating at attemptedDepth=%d",
-						maxListDepth, listDepth+1)
-				})
+		listSlice, ok := blockMap["list"].([]interface{})
+		if ok && len(listSlice) > 0 {
+			attemptedDepth := listDepth + 1
+			if attemptedDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedDepth)
 			}
+			listOut, err := buildDocumentList(blockMap, attemptedDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOut.List = listOut
 		}
 		blocksOut = append(blocksOut, blockOut)
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	return &blocksOut
+	return &blocksOut, nil
 }
 
 func buildDocumentContentBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentcontentblock {
@@ -97,10 +84,10 @@ func buildDocumentContentBlocks(blocksIn map[string]interface{}) *[]platformclie
 	return &blocksOut
 }
 
-func buildDocumentListBlocks(blocksIn map[string]interface{}, listDepth int) *[]platformclientv2.Documentbodylistblock {
+func buildDocumentListBlocks(blocksIn map[string]interface{}, listDepth int) (*[]platformclientv2.Documentbodylistblock, error) {
 	blocksSlice, ok := blocksIn["blocks"].([]interface{})
 	if !ok || len(blocksSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]platformclientv2.Documentbodylistblock, 0)
@@ -111,18 +98,22 @@ func buildDocumentListBlocks(blocksIn map[string]interface{}, listDepth int) *[]
 			continue
 		}
 
+		contentBlocksOut, err := buildDocumentContentListBlocks(blockMap, listDepth)
+		if err != nil {
+			return nil, err
+		}
 		blockOut := platformclientv2.Documentbodylistblock{
 			VarType:    resourcedata.GetNillableValueFromMap[string](blockMap, "type", false),
-			Blocks:     buildDocumentContentListBlocks(blockMap, listDepth),
+			Blocks:     contentBlocksOut,
 			Properties: buildDocumentListBlockProperties(blockMap),
 		}
 		blocksOut = append(blocksOut, blockOut)
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return &blocksOut
+	return &blocksOut, nil
 }
 
 func buildDocumentListBlockProperties(propertiesIn map[string]interface{}) *platformclientv2.Documentbodylistitemproperties {
@@ -332,25 +323,29 @@ func buildDocumentVideo(videoIn map[string]interface{}) *platformclientv2.Docume
 	return &videoOut
 }
 
-func buildDocumentList(listIn map[string]interface{}, listDepth int) *platformclientv2.Documentbodylist {
+func buildDocumentList(listIn map[string]interface{}, listDepth int) (*platformclientv2.Documentbodylist, error) {
 	listSlice, ok := listIn["list"].([]interface{})
 	if !ok || len(listSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	listMap, ok := listSlice[0].(map[string]interface{})
 	if !ok {
-		return nil
+		return nil, nil
 	}
 
+	listBlocksOut, err := buildDocumentListBlocks(listMap, listDepth)
+	if err != nil {
+		return nil, err
+	}
 	listOut := platformclientv2.Documentbodylist{
-		Blocks:     buildDocumentListBlocks(listMap, listDepth),
+		Blocks:     listBlocksOut,
 		Properties: buildDocumentListProperties(listMap),
 	}
 	if listOut.Blocks == nil && listOut.Properties == nil {
-		return nil
+		return nil, nil
 	}
-	return &listOut
+	return &listOut, nil
 }
 
 func buildDocumentListProperties(propertiesIn map[string]interface{}) *platformclientv2.Documentbodylistblockproperties {
@@ -372,10 +367,10 @@ func buildDocumentListProperties(propertiesIn map[string]interface{}) *platformc
 	return &propertiesOut
 }
 
-func buildDocumentBodyBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentbodyblock {
+func buildDocumentBodyBlocks(blocksIn map[string]interface{}, listDepth int, tableDepth int) (*[]platformclientv2.Documentbodyblock, error) {
 	blocksSlice, ok := blocksIn["blocks"].([]interface{})
 	if !ok || len(blocksSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]platformclientv2.Documentbodyblock, 0)
@@ -386,53 +381,87 @@ func buildDocumentBodyBlocks(blocksIn map[string]interface{}) *[]platformclientv
 			continue
 		}
 
+		var err error
+		var listOut *platformclientv2.Documentbodylist
+		listSlice, ok := blockMap["list"].([]interface{})
+		if ok && len(listSlice) > 0 {
+			attemptedListDepth := listDepth + 1
+			if attemptedListDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedListDepth)
+			}
+			listOut, err = buildDocumentList(blockMap, attemptedListDepth)
+			if err != nil {
+				return nil, err
+			}
+		}
+		var tableOut *platformclientv2.Documentbodytable
+		tableSlice, ok := blockMap["table"].([]interface{})
+		if ok && len(tableSlice) > 0 {
+			attemptedTableDepth := tableDepth + 1
+			if attemptedTableDepth > maxTableDepth {
+				return nil, tableDepthError(maxTableDepth, attemptedTableDepth)
+			}
+			tableOut, err = buildDocumentTable(blockMap, listDepth, attemptedTableDepth)
+			if err != nil {
+				return nil, err
+			}
+		}
 		blockOut := platformclientv2.Documentbodyblock{
 			VarType:   resourcedata.GetNillableValueFromMap[string](blockMap, "type", false),
 			Paragraph: buildDocumentParagraph(blockMap),
 			Image:     buildDocumentImage(blockMap),
 			Video:     buildDocumentVideo(blockMap),
-			List:      buildDocumentList(blockMap, 0),
-			Table:     buildDocumentTable(blockMap, 0),
+			List:      listOut,
+			Table:     tableOut,
 		}
 		blocksOut = append(blocksOut, blockOut)
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	return &blocksOut
+	return &blocksOut, nil
 }
 
-func buildVariationBody(bodyIn map[string]interface{}) *platformclientv2.Documentbodyrequest {
+func buildVariationBody(bodyIn map[string]interface{}) (*platformclientv2.Documentbodyrequest, error) {
 	bodySlice, ok := bodyIn["body"].([]interface{})
 	if !ok || len(bodySlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	bodyMap, ok := bodySlice[0].(map[string]interface{})
 	if !ok {
-		return nil
+		return nil, nil
 	}
 
-	bodyOut := platformclientv2.Documentbodyrequest{
-		Blocks: buildDocumentBodyBlocks(bodyMap),
+	bodyBlocksOut, err := buildDocumentBodyBlocks(bodyMap, 0, 0)
+	if err != nil {
+		return nil, err
 	}
-	return &bodyOut
+	bodyOut := platformclientv2.Documentbodyrequest{
+		Blocks: bodyBlocksOut,
+	}
+	return &bodyOut, nil
 }
 
-func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
+func buildKnowledgeDocumentVariation(variationIn map[string]interface{}) (*platformclientv2.Documentvariationrequest, error) {
 	if variationIn == nil {
-		return nil
+		return nil, nil
+	}
+
+	bodyOut, err := buildVariationBody(variationIn)
+	if err != nil {
+		return nil, err
 	}
 
 	variationOut := platformclientv2.Documentvariationrequest{
 		Name:     resourcedata.GetNillableValueFromMap[string](variationIn, "name", true),
-		Body:     buildVariationBody(variationIn),
+		Body:     bodyOut,
 		Contexts: buildVariationContexts(variationIn),
 		Priority: resourcedata.GetNillableValueFromMap[int](variationIn, "priority", false),
 	}
-	return &variationOut
+	return &variationOut, nil
 }
 
 func buildVariationContexts(contextsIn map[string]interface{}) *[]platformclientv2.Documentvariationcontext {
@@ -502,44 +531,61 @@ func buildVariationContextValue(valuesIn map[string]interface{}) *[]platformclie
 	return &valuesOut
 }
 
-func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) *platformclientv2.Documentvariationrequest {
+func buildKnowledgeDocumentVariationUpdate(variationIn map[string]interface{}) (*platformclientv2.Documentvariationrequest, error) {
+	bodyOut, err := buildVariationBody(variationIn)
+	if err != nil {
+		return nil, err
+	}
 	variationOut := platformclientv2.Documentvariationrequest{
 		Name:     resourcedata.GetNillableValueFromMap[string](variationIn, "name", true),
-		Body:     buildVariationBody(variationIn),
+		Body:     bodyOut,
 		Priority: resourcedata.GetNillableValueFromMap[int](variationIn, "priority", false),
 	}
-	return &variationOut
+	return &variationOut, nil
 }
 
-func buildDocumentTable(tableIn map[string]interface{}, tableDepth int) *platformclientv2.Documentbodytable {
+func buildDocumentTable(tableIn map[string]interface{}, listDepth int, tableDepth int) (*platformclientv2.Documentbodytable, error) {
 	tableSlice, ok := tableIn["table"].([]interface{})
 	if !ok || len(tableSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	tableMap, ok := tableSlice[0].(map[string]interface{})
 	if !ok {
-		return nil
+		return nil, nil
+	}
+	tableRowsOut, err := buildDocumentTableRowBlocks(tableMap, listDepth, tableDepth)
+	if err != nil {
+		return nil, err
+	}
+	propertiesOut, err := buildDocumentTableProperties(tableMap, listDepth)
+	if err != nil {
+		return nil, err
 	}
 	tableOut := platformclientv2.Documentbodytable{
-		Properties: buildDocumentTableProperties(tableMap),
-		Rows:       buildDocumentTableRowBlocks(tableMap, tableDepth),
+		Properties: propertiesOut,
+		Rows:       tableRowsOut,
 	}
 	if tableOut.Rows == nil && tableOut.Properties == nil {
-		return nil
+		return nil, nil
 	}
-	return &tableOut
+	return &tableOut, nil
 }
 
-func buildDocumentTableProperties(propertiesIn map[string]interface{}) *platformclientv2.Documentbodytableproperties {
+func buildDocumentTableProperties(propertiesIn map[string]interface{}, listDepth int) (*platformclientv2.Documentbodytableproperties, error) {
 	propertiesSlice, ok := propertiesIn["properties"].([]interface{})
 	if !ok || len(propertiesSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	propertiesMap, ok := propertiesSlice[0].(map[string]interface{})
 	if !ok {
-		return nil
+		return nil, nil
+	}
+
+	captionOut, err := buildDocumentTableCaption(propertiesMap, listDepth)
+	if err != nil {
+		return nil, err
 	}
 	propertiesOut := platformclientv2.Documentbodytableproperties{
 		Width:           nillableFloat32FromMap(propertiesMap, "width"),
@@ -547,36 +593,41 @@ func buildDocumentTableProperties(propertiesIn map[string]interface{}) *platform
 		Alignment:       resourcedata.GetNillableValueFromMap[string](propertiesMap, "alignment", false),
 		Height:          nillableFloat32FromMap(propertiesMap, "height"),
 		CellSpacing:     nillableFloat32FromMap(propertiesMap, "cell_spacing"),
-		Caption:         buildDocumentTableCaption(propertiesMap),
+		Caption:         captionOut,
 		CellPadding:     nillableFloat32FromMap(propertiesMap, "cell_padding"),
 		BorderWidth:     nillableFloat32FromMap(propertiesMap, "border_width"),
 		BorderStyle:     resourcedata.GetNillableValueFromMap[string](propertiesMap, "border_style", false),
 		BorderColor:     resourcedata.GetNillableValueFromMap[string](propertiesMap, "border_color", false),
 		BackgroundColor: resourcedata.GetNillableValueFromMap[string](propertiesMap, "background_color", false),
 	}
-	return &propertiesOut
+	return &propertiesOut, nil
 }
 
-func buildDocumentTableCaption(captionIn map[string]interface{}) *platformclientv2.Documentbodytablecaptionblock {
+func buildDocumentTableCaption(captionIn map[string]interface{}, listDepth int) (*platformclientv2.Documentbodytablecaptionblock, error) {
 	captionSlice, ok := captionIn["caption"].([]interface{})
 	if !ok || len(captionSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	captionMap, ok := captionSlice[0].(map[string]interface{})
 	if !ok {
-		return nil
+		return nil, nil
+	}
+
+	captionBlocksOut, err := buildDocumentTableCaptionBlocks(captionMap, listDepth)
+	if err != nil {
+		return nil, err
 	}
 	captionOut := platformclientv2.Documentbodytablecaptionblock{
-		Blocks: buildDocumentTableCaptionBlocks(captionMap),
+		Blocks: captionBlocksOut,
 	}
-	return &captionOut
+	return &captionOut, nil
 }
 
-func buildDocumentTableCaptionBlocks(blocksIn map[string]interface{}) *[]platformclientv2.Documentbodytablecaptionitem {
+func buildDocumentTableCaptionBlocks(blocksIn map[string]interface{}, listDepth int) (*[]platformclientv2.Documentbodytablecaptionitem, error) {
 	blocksSlice, ok := blocksIn["blocks"].([]interface{})
 	if !ok || len(blocksSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]platformclientv2.Documentbodytablecaptionitem, 0)
@@ -586,21 +637,34 @@ func buildDocumentTableCaptionBlocks(blocksIn map[string]interface{}) *[]platfor
 		if !ok {
 			continue
 		}
+		var listOut *platformclientv2.Documentbodylist
+		listSlice, ok := blockMap["list"].([]interface{})
+		if ok && len(listSlice) > 0 {
+			attemptedListDepth := listDepth + 1
+			if attemptedListDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedListDepth)
+			}
+			var err error
+			listOut, err = buildDocumentList(blockMap, attemptedListDepth)
+			if err != nil {
+				return nil, err
+			}
+		}
 		blockOut := platformclientv2.Documentbodytablecaptionitem{
 			VarType:   resourcedata.GetNillableValueFromMap[string](blockMap, "type", false),
 			Text:      buildDocumentText(blockMap),
 			Image:     buildDocumentImage(blockMap),
 			Video:     buildDocumentVideo(blockMap),
-			List:      buildDocumentList(blockMap, 0),
+			List:      listOut,
 			Paragraph: buildDocumentParagraph(blockMap),
 		}
 		blocksOut = append(blocksOut, blockOut)
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return &blocksOut
+	return &blocksOut, nil
 }
 
 func buildDocumentElement(elementIn map[string]interface{}, key string) *platformclientv2.Documentelementlength {
@@ -625,10 +689,10 @@ func buildDocumentElement(elementIn map[string]interface{}, key string) *platfor
 	return &elementOut
 }
 
-func buildDocumentTableRowBlocks(blocksIn map[string]interface{}, tableDepth int) *[]platformclientv2.Documentbodytablerowblock {
+func buildDocumentTableRowBlocks(blocksIn map[string]interface{}, listDepth int, tableDepth int) (*[]platformclientv2.Documentbodytablerowblock, error) {
 	blocksSlice, ok := blocksIn["rows"].([]interface{})
 	if !ok || len(blocksSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]platformclientv2.Documentbodytablerowblock, 0, len(blocksSlice))
@@ -638,17 +702,21 @@ func buildDocumentTableRowBlocks(blocksIn map[string]interface{}, tableDepth int
 		if !ok {
 			continue
 		}
+		cellBlocksOut, err := buildDocumentTableCellBlocks(blockMap, listDepth, tableDepth)
+		if err != nil {
+			return nil, err
+		}
 		blockOut := platformclientv2.Documentbodytablerowblock{
 			Properties: buildDocumentTableRowProperties(blockMap),
-			Cells:      buildDocumentTableCellBlocks(blockMap, tableDepth),
+			Cells:      cellBlocksOut,
 		}
 		blocksOut = append(blocksOut, blockOut)
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return &blocksOut
+	return &blocksOut, nil
 }
 
 func buildDocumentTableRowProperties(propertiesIn map[string]interface{}) *platformclientv2.Documentbodytablerowblockproperties {
@@ -672,10 +740,10 @@ func buildDocumentTableRowProperties(propertiesIn map[string]interface{}) *platf
 	return &propertiesOut
 }
 
-func buildDocumentTableCellBlocks(blocksIn map[string]interface{}, tableDepth int) *[]platformclientv2.Documentbodytablecellblock {
+func buildDocumentTableCellBlocks(blocksIn map[string]interface{}, listDepth int, tableDepth int) (*[]platformclientv2.Documentbodytablecellblock, error) {
 	blocksSlice, ok := blocksIn["cells"].([]interface{})
 	if !ok || len(blocksSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]platformclientv2.Documentbodytablecellblock, 0, len(blocksSlice))
@@ -685,17 +753,21 @@ func buildDocumentTableCellBlocks(blocksIn map[string]interface{}, tableDepth in
 		if !ok {
 			continue
 		}
+		contentBlocksOut, err := buildDocumentTableContentBlocks(blockMap, listDepth, tableDepth)
+		if err != nil {
+			return nil, err
+		}
 		blockOut := platformclientv2.Documentbodytablecellblock{
 			Properties: buildDocumentTableCellProperties(blockMap),
-			Blocks:     buildDocumentTableContentBlocks(blockMap, tableDepth),
+			Blocks:     contentBlocksOut,
 		}
 		blocksOut = append(blocksOut, blockOut)
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return &blocksOut
+	return &blocksOut, nil
 }
 
 func buildDocumentTableCellProperties(propertiesIn map[string]interface{}) *platformclientv2.Documentbodytablecellblockproperties {
@@ -726,10 +798,10 @@ func buildDocumentTableCellProperties(propertiesIn map[string]interface{}) *plat
 	return &propertiesOut
 }
 
-func buildDocumentTableContentBlocks(blocksIn map[string]interface{}, tableDepth int) *[]platformclientv2.Documenttablecontentblock {
+func buildDocumentTableContentBlocks(blocksIn map[string]interface{}, listDepth int, tableDepth int) (*[]platformclientv2.Documenttablecontentblock, error) {
 	blocksSlice, ok := blocksIn["blocks"].([]interface{})
 	if !ok || len(blocksSlice) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]platformclientv2.Documenttablecontentblock, 0, len(blocksSlice))
@@ -739,31 +811,46 @@ func buildDocumentTableContentBlocks(blocksIn map[string]interface{}, tableDepth
 		if !ok {
 			continue
 		}
+		var listOut *platformclientv2.Documentbodylist
+		listSlice, ok := blockMap["list"].([]interface{})
+		if ok && len(listSlice) > 0 {
+			attemptedListDepth := listDepth + 1
+			if attemptedListDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedListDepth)
+			}
+			var err error
+			listOut, err = buildDocumentList(blockMap, attemptedListDepth)
+			if err != nil {
+				return nil, err
+			}
+		}
 		blockOut := platformclientv2.Documenttablecontentblock{
 			VarType:   resourcedata.GetNillableValueFromMap[string](blockMap, "type", false),
 			Text:      buildDocumentText(blockMap),
 			Image:     buildDocumentImage(blockMap),
 			Video:     buildDocumentVideo(blockMap),
-			List:      buildDocumentList(blockMap, 0),
+			List:      listOut,
 			Paragraph: buildDocumentParagraph(blockMap),
 		}
-		if _, ok := blockMap["table"]; ok {
-			if tableDepth+1 < maxTableDepth {
-				blockOut.Table = buildDocumentTable(blockMap, tableDepth+1)
-			} else {
-				warnBuildTableTruncateOnce.Do(func() {
-					log.Printf("[WARN] knowledge_document_variation: nested table exceeds maxTableDepth=%d; truncating at attemptedDepth=%d",
-						maxTableDepth, tableDepth+1)
-				})
+		tableSlice, ok := blockMap["table"].([]interface{})
+		if ok && len(tableSlice) > 0 {
+			attemptedTableDepth := tableDepth + 1
+			if attemptedTableDepth > maxTableDepth {
+				return nil, tableDepthError(maxTableDepth, attemptedTableDepth)
 			}
+			tableOut, err := buildDocumentTable(blockMap, listDepth, attemptedTableDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOut.Table = tableOut
 		}
 		blocksOut = append(blocksOut, blockOut)
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return &blocksOut
+	return &blocksOut, nil
 }
 
 // Flatten Functions
@@ -800,15 +887,18 @@ func flattenDocumentText(textIn platformclientv2.Documenttext) []interface{} {
 	if textIn.Text != nil && *textIn.Text != "" {
 		textOut["text"] = *textIn.Text
 	}
-	if textIn.Marks != nil {
-		markSet := lists.StringListToSet(*textIn.Marks)
-		textOut["marks"] = markSet
+	if textIn.Marks != nil && len(*textIn.Marks) > 0 {
+		textOut["marks"] = lists.StringListToSet(*textIn.Marks)
 	}
 	if textIn.Hyperlink != nil && *textIn.Hyperlink != "" {
 		textOut["hyperlink"] = *textIn.Hyperlink
 	}
 	if textIn.Properties != nil {
 		textOut["properties"] = flattenTextProperties(*textIn.Properties)
+	}
+
+	if len(textOut) == 0 {
+		return nil
 	}
 
 	return []interface{}{textOut}
@@ -843,9 +933,9 @@ func flattenVariationContexts(contextsIn []platformclientv2.Documentvariationcon
 	return contextsOut
 }
 
-func flattenDocumentContentListBlocks(blocksIn []platformclientv2.Documentlistcontentblock, listDepth int) []interface{} {
+func flattenDocumentContentListBlocks(blocksIn []platformclientv2.Documentlistcontentblock, listDepth int) ([]interface{}, error) {
 	if len(blocksIn) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]interface{}, 0)
@@ -865,19 +955,23 @@ func flattenDocumentContentListBlocks(blocksIn []platformclientv2.Documentlistco
 			blockOutMap["video"] = flattenDocumentVideo(*block.Video)
 		}
 		if block.List != nil {
-			if listDepth+1 < maxListDepth {
-				blockOutMap["list"] = flattenDocumentList(*block.List, listDepth+1)
-			} else {
-				warnFlattenListTruncateOnce.Do(func() {
-					log.Printf("[WARN] knowledge_document_variation: flatten nested list exceeds maxListDepth=%d; truncating at attemptedDepth=%d",
-						maxListDepth, listDepth+1)
-				})
+			attemptedListDepth := listDepth + 1
+			if attemptedListDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedListDepth)
 			}
+			listOut, err := flattenDocumentList(*block.List, attemptedListDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["list"] = listOut
 		}
 
+		if len(blockOutMap) == 0 {
+			continue
+		}
 		blocksOut = append(blocksOut, blockOutMap)
 	}
-	return blocksOut
+	return blocksOut, nil
 }
 
 func flattenDocumentContentBlocks(blocksIn []platformclientv2.Documentcontentblock) []interface{} {
@@ -902,6 +996,9 @@ func flattenDocumentContentBlocks(blocksIn []platformclientv2.Documentcontentblo
 			blockOutMap["video"] = flattenDocumentVideo(*block.Video)
 		}
 
+		if len(blockOutMap) == 0 {
+			continue
+		}
 		blocksOut = append(blocksOut, blockOutMap)
 	}
 	return blocksOut
@@ -911,6 +1008,9 @@ func flattenVariationContext(contextIn platformclientv2.Knowledgecontextreferenc
 	contextOut := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(contextOut, "context_id", contextIn.Id)
+	if len(contextOut) == 0 {
+		return nil
+	}
 	return []interface{}{contextOut}
 }
 
@@ -1017,9 +1117,9 @@ func flattenDocumentListBlockProperties(propertiesIn platformclientv2.Documentbo
 	return []interface{}{propertiesOut}
 }
 
-func flattenDocumentListBlocks(blocksIn []platformclientv2.Documentbodylistblock, listDepth int) []interface{} {
+func flattenDocumentListBlocks(blocksIn []platformclientv2.Documentbodylistblock, listDepth int) ([]interface{}, error) {
 	if len(blocksIn) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]interface{}, 0)
@@ -1029,15 +1129,26 @@ func flattenDocumentListBlocks(blocksIn []platformclientv2.Documentbodylistblock
 
 		resourcedata.SetMapValueIfNotNil(blockOutMap, "type", block.VarType)
 		if block.Blocks != nil {
-			blockOutMap["blocks"] = flattenDocumentContentListBlocks(*block.Blocks, listDepth)
+			blocksOut, err := flattenDocumentContentListBlocks(*block.Blocks, listDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["blocks"] = blocksOut
 		}
 		if block.Properties != nil {
 			blockOutMap["properties"] = flattenDocumentListBlockProperties(*block.Properties)
 		}
 
+		if len(blockOutMap) == 0 {
+			continue
+		}
 		blocksOut = append(blocksOut, blockOutMap)
 	}
-	return blocksOut
+
+	if len(blocksOut) == 0 {
+		return nil, nil
+	}
+	return blocksOut, nil
 }
 
 func flattenDocumentParagraph(paragraphIn platformclientv2.Documentbodyparagraph) []interface{} {
@@ -1049,6 +1160,10 @@ func flattenDocumentParagraph(paragraphIn platformclientv2.Documentbodyparagraph
 	if paragraphIn.Properties != nil {
 		propertiesArray := []platformclientv2.Documentbodyparagraphproperties{*paragraphIn.Properties}
 		paragraphOut["properties"] = flattenParagraphProperties(propertiesArray)
+	}
+
+	if len(paragraphOut) == 0 {
+		return nil
 	}
 
 	return []interface{}{paragraphOut}
@@ -1093,6 +1208,10 @@ func flattenDocumentImage(imageIn platformclientv2.Documentbodyimage) []interfac
 		imageOut["properties"] = flattenDocumentImageProperties(imageIn.Properties)
 	}
 
+	if len(imageOut) == 0 {
+		return nil
+	}
+
 	return []interface{}{imageOut}
 }
 
@@ -1104,25 +1223,37 @@ func flattenDocumentVideo(videoIn platformclientv2.Documentbodyvideo) []interfac
 		videoOut["properties"] = flattenDocumentVideoProperties(videoIn.Properties)
 	}
 
+	if len(videoOut) == 0 {
+		return nil
+	}
+
 	return []interface{}{videoOut}
 }
 
-func flattenDocumentList(listIn platformclientv2.Documentbodylist, listDepth int) []interface{} {
+func flattenDocumentList(listIn platformclientv2.Documentbodylist, listDepth int) ([]interface{}, error) {
 	listOut := make(map[string]interface{})
 
 	if listIn.Blocks != nil {
-		listOut["blocks"] = flattenDocumentListBlocks(*listIn.Blocks, listDepth)
+		blocksOut, err := flattenDocumentListBlocks(*listIn.Blocks, listDepth)
+		if err != nil {
+			return nil, err
+		}
+		listOut["blocks"] = blocksOut
 	}
 	if listIn.Properties != nil {
 		listOut["properties"] = flattenDocumentListProperties([]platformclientv2.Documentbodylistblockproperties{*listIn.Properties})
 	}
 
-	return []interface{}{listOut}
+	if len(listOut) == 0 {
+		return nil, nil
+	}
+
+	return []interface{}{listOut}, nil
 }
 
-func flattenDocumentBodyBlocks(blocksIn []platformclientv2.Documentbodyblock) []interface{} {
+func flattenDocumentBodyBlocks(blocksIn []platformclientv2.Documentbodyblock, listDepth int, tableDepth int) ([]interface{}, error) {
 	if len(blocksIn) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	blocksOut := make([]interface{}, 0)
@@ -1141,25 +1272,52 @@ func flattenDocumentBodyBlocks(blocksIn []platformclientv2.Documentbodyblock) []
 			blockOutMap["video"] = flattenDocumentVideo(*block.Video)
 		}
 		if block.List != nil {
-			blockOutMap["list"] = flattenDocumentList(*block.List, 0)
+			attemptedListDepth := listDepth + 1
+			if attemptedListDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedListDepth)
+			}
+			listOut, err := flattenDocumentList(*block.List, attemptedListDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["list"] = listOut
 		}
 		if block.Table != nil {
-			blockOutMap["table"] = flattenDocumentTable(*block.Table, 0)
+			attemptedTableDepth := tableDepth + 1
+			if attemptedTableDepth > maxTableDepth {
+				return nil, tableDepthError(maxTableDepth, attemptedTableDepth)
+			}
+			tableOut, err := flattenDocumentTable(*block.Table, listDepth, attemptedTableDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["table"] = tableOut
+		}
+		if len(blockOutMap) == 0 {
+			continue
 		}
 		blocksOut = append(blocksOut, blockOutMap)
 	}
 
-	return blocksOut
+	return blocksOut, nil
 }
 
-func flattenVariationBody(bodyIn platformclientv2.Documentbodyresponse) []interface{} {
+func flattenVariationBody(bodyIn platformclientv2.Documentbodyresponse) ([]interface{}, error) {
 	bodyOut := make(map[string]interface{})
 
 	if bodyIn.Blocks != nil {
-		bodyOut["blocks"] = flattenDocumentBodyBlocks(*bodyIn.Blocks)
+		blocksOut, err := flattenDocumentBodyBlocks(*bodyIn.Blocks, 0, 0)
+		if err != nil {
+			return nil, err
+		}
+		bodyOut["blocks"] = blocksOut
 	}
 
-	return []interface{}{bodyOut}
+	if len(bodyOut) == 0 {
+		return nil, nil
+	}
+
+	return []interface{}{bodyOut}, nil
 }
 
 func flattenDocumentVersion(versionIn platformclientv2.Addressableentityref) []interface{} {
@@ -1169,13 +1327,17 @@ func flattenDocumentVersion(versionIn platformclientv2.Addressableentityref) []i
 	return []interface{}{versionOut}
 }
 
-func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvariationresponse) []interface{} {
+func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvariationresponse) ([]interface{}, error) {
 	variationOut := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(variationOut, "name", variationIn.Name)
 
 	if variationIn.Body != nil {
-		variationOut["body"] = flattenVariationBody(*variationIn.Body)
+		bodyOut, err := flattenVariationBody(*variationIn.Body)
+		if err != nil {
+			return nil, err
+		}
+		variationOut["body"] = bodyOut
 	}
 	if variationIn.DocumentVersion != nil {
 		variationOut["document_version"] = flattenDocumentVersion(*variationIn.DocumentVersion)
@@ -1187,22 +1349,34 @@ func flattenKnowledgeDocumentVariation(variationIn platformclientv2.Documentvari
 		variationOut["priority"] = *variationIn.Priority
 	}
 
-	return []interface{}{variationOut}
+	return []interface{}{variationOut}, nil
 }
 
-func flattenDocumentTable(tableIn platformclientv2.Documentbodytable, tableDepth int) []interface{} {
+func flattenDocumentTable(tableIn platformclientv2.Documentbodytable, listDepth int, tableDepth int) ([]interface{}, error) {
 	tableOut := make(map[string]interface{})
 
 	if tableIn.Properties != nil {
-		tableOut["properties"] = flattenDocumentTableProperties(*tableIn.Properties)
+		propsOut, err := flattenDocumentTableProperties(*tableIn.Properties, listDepth)
+		if err != nil {
+			return nil, err
+		}
+		tableOut["properties"] = propsOut
 	}
 	if tableIn.Rows != nil {
-		tableOut["rows"] = flattenDocumentTableRowBlocks(*tableIn.Rows, tableDepth)
+		rowsOut, err := flattenDocumentTableRowBlocks(*tableIn.Rows, listDepth, tableDepth)
+		if err != nil {
+			return nil, err
+		}
+		tableOut["rows"] = rowsOut
 	}
-	return []interface{}{tableOut}
+
+	if len(tableOut) == 0 {
+		return nil, nil
+	}
+	return []interface{}{tableOut}, nil
 }
 
-func flattenDocumentTableProperties(propertiesIn platformclientv2.Documentbodytableproperties) []interface{} {
+func flattenDocumentTableProperties(propertiesIn platformclientv2.Documentbodytableproperties, listDepth int) ([]interface{}, error) {
 	propertiesOut := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "width", propertiesIn.Width)
@@ -1218,25 +1392,37 @@ func flattenDocumentTableProperties(propertiesIn platformclientv2.Documentbodyta
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "height", propertiesIn.Height)
 	resourcedata.SetMapValueIfNotNil(propertiesOut, "cell_spacing", propertiesIn.CellSpacing)
 	if propertiesIn.Caption != nil {
-		propertiesOut["caption"] = flattenDocumentTableCaption(*propertiesIn.Caption)
+		captionOut, err := flattenDocumentTableCaption(*propertiesIn.Caption, listDepth)
+		if err != nil {
+			return nil, err
+		}
+		propertiesOut["caption"] = captionOut
 	}
 
 	if len(propertiesOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return []interface{}{propertiesOut}
+	return []interface{}{propertiesOut}, nil
 }
 
-func flattenDocumentTableCaption(captionIn platformclientv2.Documentbodytablecaptionblock) []interface{} {
+func flattenDocumentTableCaption(captionIn platformclientv2.Documentbodytablecaptionblock, listDepth int) ([]interface{}, error) {
 	captionOut := make(map[string]interface{})
 
 	if captionIn.Blocks != nil {
-		captionOut["blocks"] = flattenDocumentTableCaptionBlocks(*captionIn.Blocks)
+		blocksOut, err := flattenDocumentTableCaptionBlocks(*captionIn.Blocks, listDepth)
+		if err != nil {
+			return nil, err
+		}
+		captionOut["blocks"] = blocksOut
 	}
-	return []interface{}{captionOut}
+
+	if len(captionOut) == 0 {
+		return nil, nil
+	}
+	return []interface{}{captionOut}, nil
 }
 
-func flattenDocumentTableCaptionBlocks(blocksIn []platformclientv2.Documentbodytablecaptionitem) []interface{} {
+func flattenDocumentTableCaptionBlocks(blocksIn []platformclientv2.Documentbodytablecaptionitem, listDepth int) ([]interface{}, error) {
 	blocksOut := make([]interface{}, 0)
 
 	for _, block := range blocksIn {
@@ -1253,14 +1439,29 @@ func flattenDocumentTableCaptionBlocks(blocksIn []platformclientv2.Documentbodyt
 			blockOutMap["video"] = flattenDocumentVideo(*block.Video)
 		}
 		if block.List != nil {
-			blockOutMap["list"] = flattenDocumentList(*block.List, 0)
+			attemptedListDepth := listDepth + 1
+			if attemptedListDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedListDepth)
+			}
+			listOut, err := flattenDocumentList(*block.List, attemptedListDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["list"] = listOut
 		}
 		if block.Paragraph != nil {
 			blockOutMap["paragraph"] = flattenDocumentParagraph(*block.Paragraph)
 		}
+		if len(blockOutMap) == 0 {
+			continue
+		}
 		blocksOut = append(blocksOut, blockOutMap)
 	}
-	return blocksOut
+
+	if len(blocksOut) == 0 {
+		return nil, nil
+	}
+	return blocksOut, nil
 }
 
 func flattenDocumentElement(elementIn *platformclientv2.Documentelementlength) []interface{} {
@@ -1274,9 +1475,9 @@ func flattenDocumentElement(elementIn *platformclientv2.Documentelementlength) [
 	return []interface{}{elementOut}
 }
 
-func flattenDocumentTableRowBlocks(blocksIn []platformclientv2.Documentbodytablerowblock, tableDepth int) []interface{} {
+func flattenDocumentTableRowBlocks(blocksIn []platformclientv2.Documentbodytablerowblock, listDepth int, tableDepth int) ([]interface{}, error) {
 	if len(blocksIn) == 0 {
-		return nil
+		return nil, nil
 	}
 	blocksOut := make([]interface{}, 0)
 
@@ -1287,7 +1488,11 @@ func flattenDocumentTableRowBlocks(blocksIn []platformclientv2.Documentbodytable
 			blockOutMap["properties"] = flattenDocumentTableRowProperties(*block.Properties)
 		}
 		if block.Cells != nil {
-			blockOutMap["cells"] = flattenDocumentTableCellBlocks(*block.Cells, tableDepth)
+			cellsOut, err := flattenDocumentTableCellBlocks(*block.Cells, listDepth, tableDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["cells"] = cellsOut
 		}
 
 		if len(blockOutMap) == 0 {
@@ -1297,9 +1502,9 @@ func flattenDocumentTableRowBlocks(blocksIn []platformclientv2.Documentbodytable
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return blocksOut
+	return blocksOut, nil
 }
 
 func flattenDocumentTableRowProperties(propertiesIn platformclientv2.Documentbodytablerowblockproperties) []interface{} {
@@ -1318,9 +1523,9 @@ func flattenDocumentTableRowProperties(propertiesIn platformclientv2.Documentbod
 	return []interface{}{propertiesOut}
 }
 
-func flattenDocumentTableCellBlocks(blocksIn []platformclientv2.Documentbodytablecellblock, tableDepth int) []interface{} {
+func flattenDocumentTableCellBlocks(blocksIn []platformclientv2.Documentbodytablecellblock, listDepth int, tableDepth int) ([]interface{}, error) {
 	if len(blocksIn) == 0 {
-		return nil
+		return nil, nil
 	}
 	blocksOut := make([]interface{}, 0)
 
@@ -1331,7 +1536,11 @@ func flattenDocumentTableCellBlocks(blocksIn []platformclientv2.Documentbodytabl
 			blockOutMap["properties"] = flattenDocumentTableCellProperties(*block.Properties)
 		}
 		if block.Blocks != nil {
-			blockOutMap["blocks"] = flattenDocumentTableContentBlocks(*block.Blocks, tableDepth)
+			blocksOutInner, err := flattenDocumentTableContentBlocks(*block.Blocks, listDepth, tableDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["blocks"] = blocksOutInner
 		}
 
 		if len(blockOutMap) == 0 {
@@ -1341,9 +1550,9 @@ func flattenDocumentTableCellBlocks(blocksIn []platformclientv2.Documentbodytabl
 	}
 
 	if len(blocksOut) == 0 {
-		return nil
+		return nil, nil
 	}
-	return blocksOut
+	return blocksOut, nil
 }
 
 func flattenDocumentTableCellProperties(propertiesIn platformclientv2.Documentbodytablecellblockproperties) []interface{} {
@@ -1371,7 +1580,7 @@ func flattenDocumentTableCellProperties(propertiesIn platformclientv2.Documentbo
 	return []interface{}{propertiesOut}
 }
 
-func flattenDocumentTableContentBlocks(blocksIn []platformclientv2.Documenttablecontentblock, tableDepth int) []interface{} {
+func flattenDocumentTableContentBlocks(blocksIn []platformclientv2.Documenttablecontentblock, listDepth int, tableDepth int) ([]interface{}, error) {
 	blocksOut := make([]interface{}, 0)
 
 	for _, block := range blocksIn {
@@ -1390,27 +1599,54 @@ func flattenDocumentTableContentBlocks(blocksIn []platformclientv2.Documenttable
 			blockOutMap["video"] = flattenDocumentVideo(*block.Video)
 		}
 		if block.List != nil {
-			blockOutMap["list"] = flattenDocumentList(*block.List, 0)
+			attemptedListDepth := listDepth + 1
+			if attemptedListDepth > maxListDepth {
+				return nil, listDepthError(maxListDepth, attemptedListDepth)
+			}
+			listOut, err := flattenDocumentList(*block.List, attemptedListDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["list"] = listOut
 		}
 		if block.Paragraph != nil {
 			blockOutMap["paragraph"] = flattenDocumentParagraph(*block.Paragraph)
 		}
 		if block.Table != nil {
-			if tableDepth+1 < maxTableDepth {
-				blockOutMap["table"] = flattenDocumentTable(*block.Table, tableDepth+1)
-			} else {
-				warnFlattenTableTruncateOnce.Do(func() {
-					log.Printf("[WARN] knowledge_document_variation: flatten nested table exceeds maxTableDepth=%d; truncating at attemptedDepth=%d",
-						maxTableDepth, tableDepth+1)
-				})
+			attemptedTableDepth := tableDepth + 1
+			if attemptedTableDepth > maxTableDepth {
+				return nil, tableDepthError(maxTableDepth, attemptedTableDepth)
 			}
+			tableOut, err := flattenDocumentTable(*block.Table, listDepth, attemptedTableDepth)
+			if err != nil {
+				return nil, err
+			}
+			blockOutMap["table"] = tableOut
+		}
+		if len(blockOutMap) == 0 {
+			continue
 		}
 		blocksOut = append(blocksOut, blockOutMap)
 	}
-	return blocksOut
+
+	if len(blocksOut) == 0 {
+		return nil, nil
+	}
+	return blocksOut, nil
 }
 
 // Utils
+func tableDepthError(maxDepth, attemptedDepth int) error {
+	msg := fmt.Sprintf("tables exceed max depth of %d (attempted depth is %d)", maxDepth, attemptedDepth)
+	if !featureToggles.KDVToggleExists() {
+		msg = fmt.Sprintf("%s; set %s to allow nested tables", msg, featureToggles.KDVToggleName())
+	}
+	return fmt.Errorf("%s", msg)
+}
+
+func listDepthError(maxDepth, attemptedDepth int) error {
+	return fmt.Errorf("lists exceed max depth of %d (attempted depth is %d)", maxDepth, attemptedDepth)
+}
 
 func nillableIntFromMap(m map[string]interface{}, key string) *int {
 	if v := resourcedata.GetNillableValueFromMap[int](m, key, false); v != nil {

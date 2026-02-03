@@ -1,3 +1,4 @@
+// To enable nested tables, set ENABLE_NESTED_TABLES as an environment variable
 resource "genesyscloud_knowledge_document_variation" "example_document_variation" {
   knowledge_base_id     = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   knowledge_document_id = genesyscloud_knowledge_document.example_unpublished_document.id

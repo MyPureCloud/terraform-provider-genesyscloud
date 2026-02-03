@@ -3,6 +3,7 @@ package knowledge_document_variation
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -449,6 +450,158 @@ func TestAccResourceKnowledgeDocumentVariationDifferentTypes(t *testing.T) {
 	})
 }
 
+func TestAccResourceKnowledgeDocumentVariationListDepthExceeded(t *testing.T) {
+	var (
+		variationResourceLabel1         = "test-variation1"
+		knowledgeBaseResourceLabel1     = "test-knowledgebase1"
+		knowledgeBaseName1              = "Test-Terraform-Knowledge-Base" + uuid.NewString()
+		knowledgeBaseDescription1       = "test-knowledgebase-description1"
+		coreLanguage1                   = "en-US"
+		knowledgeDocumentResourceLabel1 = "test-knowledge-document1"
+		title                           = "Terraform Knowledge Document"
+		visible                         = true
+		docPublished                    = false
+		phrase                          = "Terraform Knowledge Document"
+		autocomplete                    = true
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		Steps: []resource.TestStep{
+			{
+				// Create: fail greater than max depth
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResourceLabel1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					coreLanguage1,
+				) +
+					generateKnowledgeDocumentBasic(
+						knowledgeDocumentResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						title,
+						visible,
+						docPublished,
+						phrase,
+						autocomplete,
+					) +
+					generateKnowledgeDocumentVariationListDepth(
+						variationResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						knowledgeDocumentResourceLabel1,
+						maxListDepth+1,
+					),
+				ExpectError: regexp.MustCompile(`Unsupported block type`),
+			},
+			{
+				// Update: succeed at max depth
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResourceLabel1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					coreLanguage1,
+				) +
+					generateKnowledgeDocumentBasic(
+						knowledgeDocumentResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						title,
+						visible,
+						docPublished,
+						phrase,
+						autocomplete,
+					) +
+					generateKnowledgeDocumentVariationListDepth(
+						variationResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						knowledgeDocumentResourceLabel1,
+						maxListDepth,
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.type", "UnorderedList"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyKnowledgeDocumentVariationDestroyed,
+	})
+}
+
+func TestAccResourceKnowledgeDocumentVariationTableDepthExceeded(t *testing.T) {
+	var (
+		variationResourceLabel1         = "test-variation1"
+		knowledgeBaseResourceLabel1     = "test-knowledgebase1"
+		knowledgeBaseName1              = "Test-Terraform-Knowledge-Base" + uuid.NewString()
+		knowledgeBaseDescription1       = "test-knowledgebase-description1"
+		coreLanguage1                   = "en-US"
+		knowledgeDocumentResourceLabel1 = "test-knowledge-document1"
+		title                           = "Terraform Knowledge Document"
+		visible                         = true
+		docPublished                    = false
+		phrase                          = "Terraform Knowledge Document"
+		autocomplete                    = true
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		Steps: []resource.TestStep{
+			{
+				// Create: fail greater than max table depth
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResourceLabel1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					coreLanguage1,
+				) +
+					generateKnowledgeDocumentBasic(
+						knowledgeDocumentResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						title,
+						visible,
+						docPublished,
+						phrase,
+						autocomplete,
+					) +
+					generateKnowledgeDocumentVariationTableDepth(
+						variationResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						knowledgeDocumentResourceLabel1,
+						maxTableDepth+1,
+					),
+				ExpectError: regexp.MustCompile(`Unsupported block type`),
+			},
+			{
+				// Update: succeed at max table depth
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
+					knowledgeBaseResourceLabel1,
+					knowledgeBaseName1,
+					knowledgeBaseDescription1,
+					coreLanguage1,
+				) +
+					generateKnowledgeDocumentBasic(
+						knowledgeDocumentResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						title,
+						visible,
+						docPublished,
+						phrase,
+						autocomplete,
+					) +
+					generateKnowledgeDocumentVariationTableDepth(
+						variationResourceLabel1,
+						knowledgeBaseResourceLabel1,
+						knowledgeDocumentResourceLabel1,
+						maxTableDepth,
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+variationResourceLabel1, "knowledge_document_variation.0.body.0.blocks.0.type", "Table"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyKnowledgeDocumentVariationDestroyed,
+	})
+}
+
 func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResourceLabel string, knowledgeDocumentResourceLabel string, published bool, bodyBlockType string, contentBlockType string, imageUrl string, hyperlink string, videoUrl string, listType string, documentText string, marks []string, name string, priority int, contextId, valueId string, properties map[string]string) string {
 	variation := fmt.Sprintf(`
         resource "genesyscloud_knowledge_document_variation" "%s" {
@@ -466,6 +619,143 @@ func generateKnowledgeDocumentVariation(resourceLabel string, knowledgeBaseResou
 		generateKnowledgeDocumentVariationBody(bodyBlockType, contentBlockType, imageUrl, hyperlink, videoUrl, listType, documentText, marks, name, priority, contextId, valueId, properties),
 	)
 	return variation
+}
+
+func generateKnowledgeDocumentVariationListDepth(
+	variationResourceLabel,
+	knowledgeBaseResourceLabel,
+	knowledgeDocumentResourceLabel string,
+	testDepth int,
+) string {
+	variationListDepthExceeded := fmt.Sprintf(`
+		resource "genesyscloud_knowledge_document_variation" "%s" {
+  			knowledge_base_id     = genesyscloud_knowledge_knowledgebase.%s.id
+  			knowledge_document_id = genesyscloud_knowledge_document.%s.id
+  			published = true
+			knowledge_document_variation {
+    			name     = "Default"
+    			priority = 1
+    			body {
+      				%s
+    			}
+  			}
+		}
+		`, variationResourceLabel,
+		knowledgeBaseResourceLabel,
+		knowledgeDocumentResourceLabel,
+		generateNestedListBody(testDepth),
+	)
+	return variationListDepthExceeded
+}
+
+func generateKnowledgeDocumentVariationTableDepth(
+	variationResourceLabel,
+	knowledgeBaseResourceLabel,
+	knowledgeDocumentResourceLabel string,
+	testDepth int,
+) string {
+	variationListDepthExceeded := fmt.Sprintf(`
+		resource "genesyscloud_knowledge_document_variation" "%s" {
+  			knowledge_base_id     = genesyscloud_knowledge_knowledgebase.%s.id
+  			knowledge_document_id = genesyscloud_knowledge_document.%s.id
+  			published = true
+			knowledge_document_variation {
+    			name     = "Default"
+    			priority = 1
+    			body {
+      				%s
+    			}
+  			}
+		}
+		`, variationResourceLabel,
+		knowledgeBaseResourceLabel,
+		knowledgeDocumentResourceLabel,
+		generateNestedTableBody(testDepth),
+	)
+	return variationListDepthExceeded
+}
+
+func generateNestedListBody(depth int) string {
+	return fmt.Sprintf(`
+		blocks {
+			type = "UnorderedList"
+			list {
+				%v
+			}
+		}
+	`, generateNestedListItem(depth))
+}
+
+func generateNestedListItem(depth int) string {
+	textBlock := `
+		blocks {
+			type = "Text"
+			text { text = "too deep" }
+		}
+	`
+
+	if depth <= 1 {
+		return fmt.Sprintf(`
+			blocks {
+				type = "ListItem"
+				%v
+			}
+		`, textBlock)
+	}
+
+	return fmt.Sprintf(`
+		blocks {
+			type = "ListItem"
+			%v
+			blocks {
+				type = "UnorderedList"
+				list {
+					%v
+				}
+			}
+		}
+	`, textBlock, generateNestedListItem(depth-1))
+}
+
+func generateNestedTableBody(depth int) string {
+	return fmt.Sprintf(`
+		blocks {
+			type = "Table"
+			table {
+				rows {
+					cells {
+						%v
+					}
+				}
+			}
+		}
+	`, generateNestedTableBlock(depth))
+}
+
+func generateNestedTableBlock(depth int) string {
+	textBlock := `
+		blocks {
+			type = "Text"
+			text { text = "too deep" }
+		}
+	`
+
+	if depth <= 1 {
+		return textBlock
+	}
+
+	return fmt.Sprintf(`
+		blocks {
+			type = "Table"
+			table {
+				rows {
+					cells {
+						%v
+					}
+				}
+			}
+		}
+	`, generateNestedTableBlock(depth-1))
 }
 
 func generateKnowledgeContexts(contextId, valueId string) string {

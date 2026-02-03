@@ -1,6 +1,7 @@
 package knowledge_document_variation
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 const ResourceType = "genesyscloud_knowledge_document_variation"
@@ -21,6 +23,21 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterDataSource(ResourceType, dataSourceKnowledgeDocumentVariation())
 	l.RegisterExporter(ResourceType, KnowledgeDocumentVariationExporter())
 }
+
+// Since API allows infinite nesting of lists/tables, we are setting max depths we will allow in terraform
+// FYI - 9 is the number of nested lists (bullets) that MS Word supports
+const maxListDepth = 9
+
+// Tables produce a HUGE schema, which slows plan considerably. Thus we are blocking nested tables by default
+var maxTableDepth = func() int {
+	if featureToggles.KDVToggleExists() {
+		log.Printf("%s is set, enabling nested tables support in %s",
+			featureToggles.KDVToggleName(), ResourceType)
+		// Change this if you want to allow more table depth
+		return 3
+	}
+	return 1
+}()
 
 var (
 	knowledgeDocumentVariation = &schema.Resource{
